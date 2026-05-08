@@ -1,8 +1,8 @@
 {
   "generatedAt": "2026-05-07T23:43:24.146620Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
-  "channelId": "preview",
-  "releaseVersion": "run-20260503-163502",
+  "channelId": "docker",
+  "releaseVersion": "run-20260420-072339",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
   "reasons": [],
@@ -24,10 +24,6 @@
       "reasons": []
     },
     "workflowExecutionReview": {
-      "status": "pass",
-      "reasons": []
-    },
-    "directFlagshipSliceReview": {
       "status": "pass",
       "reasons": []
     }
@@ -158,63 +154,12 @@
     ],
     "release_channel_promoted_non_fallback_desktop_heads": [],
     "workflow_parity_receipt_channel_ids": {
-      "chummer5a_workflow_parity": "preview",
-      "sr4_workflow_parity": "preview",
-      "sr6_workflow_parity": "preview",
-      "sr4_sr6_frontier": "preview",
-      "ruleset_ui_adaptation": "preview",
-      "desktop_visual_familiarity_gate": "preview",
-      "chummer5a_screenshot_review_gate": "preview",
-      "next90_m141_direct_import_route_proof": "preview"
+      "chummer5a_workflow_parity": "docker",
+      "sr4_workflow_parity": "docker",
+      "sr6_workflow_parity": "docker",
+      "sr4_sr6_frontier": "docker",
+      "ruleset_ui_adaptation": "docker"
     },
-    "direct_workflow_runtime_marker_checks": {
-      "dense_builder_career": {
-        "required": [
-          "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
-          "Character_creation_preserves_familiar_dense_builder_rhythm",
-          "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm"
-        ],
-        "missing": [],
-        "status": "pass"
-      },
-      "initiative_utility": {
-        "required": [
-          "menu:dice_roller_or_workflow:initiative_screenshot",
-          "\"initiative\": \"11 + 2d6\""
-        ],
-        "missing": [],
-        "status": "pass"
-      },
-      "contacts_lifestyles_notes": {
-        "required": [
-          "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
-          "\"tab-lifestyle.lifestyles\"",
-          "\"tab-notes.metadata\""
-        ],
-        "missing": [],
-        "status": "pass"
-      }
-    },
-    "direct_workflow_required_screenshot_files": [
-      "05-dense-section-light.png",
-      "07-loaded-runner-tabs-light.png",
-      "10-contacts-section-light.png",
-      "11-diary-dialog-light.png",
-      "14-advancement-dialog-light.png"
-    ],
-    "direct_workflow_missing_screenshot_files": [],
-    "direct_workflow_dense_initiative_route_status": "pass",
-    "direct_workflow_dense_initiative_route_ids": [
-      "menu:dice_roller_or_workflow:initiative_screenshot",
-      "dice_roller",
-      "initiative_screenshot"
-    ],
-    "direct_workflow_dense_initiative_screenshots": [
-      "05-dense-section-light.png",
-      "07-loaded-runner-tabs-light.png"
-    ],
-    "direct_workflow_missing_review_jobs": [],
-    "direct_workflow_failing_review_jobs": [],
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -222,14 +167,9 @@
     "flagship_gate.headProofs.status_malformed_entries": [],
     "flagship_gate.headProofs.status_non_canonical_keys": [],
     "flagship_gate.headProofs.status_duplicate_normalized_keys": [],
-    "flagship_primary_desktop_heads": [
-      "avalonia"
-    ],
-    "flagship_declared_desktop_fallback_heads": [
-      "blazor-desktop"
-    ],
     "flagship_required_desktop_heads": [
-      "avalonia"
+      "avalonia",
+      "blazor-desktop"
     ],
     "canonical_required_desktop_heads": [
       "avalonia"
@@ -275,19 +215,35 @@
         "requiredLifecycleTests": "pass",
         "sourceTestFile": "pass",
         "testSuites": "pass"
+      },
+      "blazor-desktop": {
+        "status": "pass",
+        "shellChrome": "pass",
+        "commandSurface": "pass",
+        "dialogSurface": "pass",
+        "journeyPanels": "pass",
+        "releaseLifecycle": "pass",
+        "requiredShellTests": "pass",
+        "requiredLifecycleTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
       }
     },
     "flagship_head_missing_contract_markers": {
-      "avalonia": []
+      "avalonia": [],
+      "blazor-desktop": []
     },
     "flagship_head_source_test_file_paths": {
-      "avalonia": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+      "avalonia": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
     },
     "flagship_head_source_test_file_exists": {
-      "avalonia": true
+      "avalonia": true,
+      "blazor-desktop": true
     },
     "flagship_head_source_test_file_within_repo_root": {
-      "avalonia": true
+      "avalonia": true,
+      "blazor-desktop": true
     },
     "flagship_missing_or_not_ready_desktop_heads": [],
     "workflow_family_receipt_count_checked": 60,
@@ -313,11 +269,6 @@
       "metatype-priorities-karma-entry",
       "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
       "recovery-reload-migration-roundtrips"
-    ],
-    "direct_flagship_workflow_family_ids": [
-      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
-      "metatype-priorities-karma-entry",
-      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources"
     ],
     "missing_required_workflow_family_ids": {},
     "not_ready_required_workflow_family_ids": {},

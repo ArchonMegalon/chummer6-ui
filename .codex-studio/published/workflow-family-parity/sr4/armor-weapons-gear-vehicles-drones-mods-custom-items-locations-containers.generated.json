@@ -8,23 +8,19 @@
     "edition": "sr4",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
     "proofKind": "sr4_family_oracle",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
-      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
-      "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
-      "Legacy_ui_controls_keep_recursive_parity",
-      "Quick_action_roots_are_exhaustively_classified"
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
       "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
     },
     "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
+      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/executed/sr4/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
     ],
     "executionFailures": [],
     "executionExternalBlockers": []

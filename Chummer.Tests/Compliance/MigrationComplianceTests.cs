@@ -4841,6 +4841,10 @@ public class MigrationComplianceTests
         StringAssert.Contains(chummer5aLayoutHardGateText, "blazor_layout_reasons");
         StringAssert.Contains(chummer5aLayoutHardGateText, "shared_catalog_reasons");
         StringAssert.Contains(chummer5aLayoutHardGateText, "release_wiring_reasons");
+        StringAssert.Contains(chummer5aLayoutHardGateText, "canonical_presentation_root=\"${CHUMMER_CANONICAL_PRESENTATION_ROOT:-$repo_root}\"");
+        Assert.IsFalse(
+            chummer5aLayoutHardGateText.Contains("CHUMMER_CANONICAL_PRESENTATION_ROOT:-/docker/chummercomplete/chummer-presentation", StringComparison.Ordinal),
+            "The layout hard gate must default to the current checkout instead of a stale sibling presentation tree.");
         StringAssert.Contains(chummer5aLayoutHardGateText, "\"legacyBaselineReview\"");
         StringAssert.Contains(chummer5aLayoutHardGateText, "\"avaloniaLayoutReview\"");
         StringAssert.Contains(chummer5aLayoutHardGateText, "\"blazorLayoutReview\"");

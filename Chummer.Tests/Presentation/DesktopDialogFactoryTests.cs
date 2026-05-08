@@ -1871,7 +1871,33 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"), "1/2 covered");
         Assert.IsNotNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "heroLabXml", StringComparison.Ordinal)));
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"), "partial");
+        Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"));
+        Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
+        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMissingSources"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_xml_editor_surfaces_xml_bridge_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            "xml_editor",
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: "<character><name>Amend Test</name></character>",
+            currentWorkspace: null,
+            rulesetId: "sr6",
+            masterIndex: CreateMasterIndexResponse());
+
+        Assert.AreEqual("dialog.xml_editor", dialog.Id);
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataLanePosture"));
+        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorXmlBridgePosture"));
+        Assert.AreEqual("custom-data authoring is partial: 2 configured custom-data directories with stale overlay bridge posture.", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorCustomDataAuthoringReceipt"));
+        Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorXmlBridgeReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "xmlEditorDialog"), "Amend Test");
     }
 
     [TestMethod]

@@ -6,7 +6,7 @@ cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
 legacy_frmcareer_designer_path="${CHUMMER5A_LEGACY_FRMCAREER_DESIGNER_PATH:-/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs}"
-canonical_presentation_root="${CHUMMER_CANONICAL_PRESENTATION_ROOT:-/docker/chummercomplete/chummer-presentation}"
+canonical_presentation_root="${CHUMMER_CANONICAL_PRESENTATION_ROOT:-$repo_root}"
 menu_bar_axaml_path="$repo_root/Chummer.Avalonia/Controls/ShellMenuBarControl.axaml"
 toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml"
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"

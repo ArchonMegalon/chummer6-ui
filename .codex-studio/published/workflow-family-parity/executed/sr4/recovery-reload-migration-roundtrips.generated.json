@@ -8,13 +8,11 @@
     "edition": "sr4",
     "familyId": "recovery-reload-migration-roundtrips",
     "proofKind": "sr4_family_oracle",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_metadata_save_roundtrip_match",
-      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -48,9 +46,7 @@
     "external_blocker": "",
     "matchedPassedTests": [
       "Avalonia_and_Blazor_metadata_save_roundtrip_match",
-      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
     ],
     "missingAuditTests": [],
     "failedAuditTests": {}

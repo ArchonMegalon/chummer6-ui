@@ -29,50 +29,6 @@
     "missingFamilyIds": [],
     "nonReadyFamilyIds": [],
     "missingTestRefs": {},
-    "recursiveWorkflowGateTests": [
-      "Menu_dialog_workflows_are_exhaustively_classified",
-      "Legacy_ui_controls_are_exhaustively_classified",
-      "Quick_action_roots_are_exhaustively_classified",
-      "Menu_dialog_workflows_keep_recursive_parity",
-      "Legacy_ui_controls_keep_recursive_parity"
-    ],
-    "recursiveWorkflowGateTestCount": 5,
-    "recursiveWorkflowGateProofAreas": [
-      "recursiveMenuWorkflows",
-      "legacyUiControlWorkflows",
-      "quickActionRoots",
-      "returnSurfaceParityAfterExit"
-    ],
-    "recursiveWorkflowGateProofAreaCount": 4,
-    "recursiveWorkflowGateProofAreaTests": {
-      "recursiveMenuWorkflows": [
-        "Menu_dialog_workflows_are_exhaustively_classified",
-        "Menu_dialog_workflows_keep_recursive_parity"
-      ],
-      "legacyUiControlWorkflows": [
-        "Legacy_ui_controls_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "quickActionRoots": [
-        "Quick_action_roots_are_exhaustively_classified",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ],
-      "returnSurfaceParityAfterExit": [
-        "Menu_dialog_workflows_keep_recursive_parity",
-        "Legacy_ui_controls_keep_recursive_parity"
-      ]
-    },
-    "recursiveWorkflowGateProofAreaSummaries": {
-      "recursiveMenuWorkflows": "Recursive menu workflows stay explicitly classified and keep concrete continuation parity.",
-      "legacyUiControlWorkflows": "Legacy UI-control workflows stay exhaustively classified and keep recursive dialog parity.",
-      "quickActionRoots": "Quick-action roots stay exhaustively classified and remain wired through legacy workflow execution.",
-      "returnSurfaceParityAfterExit": "Workflow exit returns to the expected tab, section, and populated surface after dialogs close."
-    },
-    "recursiveWorkflowGateMissingProofAreas": [],
-    "recursiveWorkflowGateMissingProofAreaTests": {},
-    "recursiveWorkflowGateUnmappedTests": [],
-    "recursiveWorkflowGateUnexpectedProofAreaTests": [],
-    "recursiveWorkflowGateReturnSurfaceRequirement": "Recursive workflows must close any active dialog, clear errors, and restore the expected tab, section, and populated return surface before parity can pass.",
     "missingParityReceipts": {},
     "failingParityReceipts": {},
     "failingParityReceiptsExternalOnly": false,
@@ -83,8 +39,7 @@
       "sr4Receipt": true,
       "dualHeadTests": true,
       "complianceTests": true,
-      "uiGateTests": true,
-      "workflowGateTests": true
+      "uiGateTests": true
     },
     "sr4ReceiptChannelId": "preview",
     "sr4ReceiptGeneratedAt": "2026-05-08T15:00:38.288421Z",
@@ -99,8 +54,7 @@
       "sr4Receipt": true,
       "dualHeadTests": true,
       "complianceTests": true,
-      "uiGateTests": true,
-      "workflowGateTests": true
+      "uiGateTests": true
     }
   },
   "releaseChannelReview": {

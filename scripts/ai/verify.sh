@@ -126,6 +126,12 @@ bash scripts/ai/milestones/section-host-ruleset-parity-check.sh
 echo "[verify] checking standalone interactive control inventory guard..."
 bash scripts/ai/milestones/interactive-control-inventory-check.sh
 
+echo "[verify] checking Chummer5a legacy UI element parity guard..."
+bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh
+
+echo "[verify] checking Chummer4 legacy UI element parity guard..."
+bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh
+
 echo "[verify] checking ui-kit shell chrome guard..."
 bash scripts/ai/milestones/p5-ui-kit-shell-chrome-check.sh
 

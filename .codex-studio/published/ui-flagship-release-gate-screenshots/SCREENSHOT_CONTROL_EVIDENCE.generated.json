@@ -14,7 +14,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -37,12 +36,10 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "MenuBarPanel",
         "MenuBarRegion",
-        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -87,15 +84,6 @@
         "border"
       ],
       "visibleNamedControls": [
-        {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -279,7 +267,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Section",
+          "text": "Section Review",
           "x": 0,
           "y": 0,
           "width": 190,
@@ -293,15 +281,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -338,15 +317,6 @@
           "y": 0,
           "width": 1280,
           "height": 34
-        },
-        {
-          "name": "OpenForExportButton",
-          "controlType": "Button",
-          "text": "",
-          "x": 174,
-          "y": 2,
-          "width": 26,
-          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -732,13 +702,11 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
         "Character Roster",
         "Section",
         "Section Payload",
+        "Section Review",
         "(none)",
         "New Character",
         "file",
@@ -778,7 +746,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -801,12 +768,10 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "MenuBarPanel",
         "MenuBarRegion",
-        "OpenForExportButton",
         "PART_BorderElement",
         "PART_ContentPresenter",
         "PART_HeaderPresenter",
@@ -851,15 +816,6 @@
         "border"
       ],
       "visibleNamedControls": [
-        {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -1043,7 +999,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Section",
+          "text": "Section Review",
           "x": 0,
           "y": 0,
           "width": 190,
@@ -1057,15 +1013,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -1102,15 +1049,6 @@
           "y": 0,
           "width": 1280,
           "height": 34
-        },
-        {
-          "name": "OpenForExportButton",
-          "controlType": "Button",
-          "text": "",
-          "x": 174,
-          "y": 2,
-          "width": 26,
-          "height": 24
         },
         {
           "name": "PART_BorderElement",
@@ -1496,13 +1434,11 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
         "Character Roster",
         "Section",
         "Section Payload",
+        "Section Review",
         "(none)",
         "New Character",
         "file",
@@ -1998,7 +1934,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -2025,7 +1960,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -2091,15 +2025,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -2156,7 +2081,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware",
+          "text": "Cyberware Overview",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -2312,16 +2237,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 227,
+          "width": 242,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware",
+          "text": "Cyberware Loadout Review",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -2332,15 +2257,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -2438,7 +2354,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -2483,7 +2399,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -2564,7 +2480,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -2672,7 +2588,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -2717,7 +2633,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 227,
+          "width": 242,
           "height": 660
         },
         {
@@ -2825,7 +2741,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -2834,7 +2750,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 225,
+          "width": 240,
           "height": 46
         },
         {
@@ -2906,9 +2822,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -2936,6 +2849,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
+        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -2973,6 +2887,7 @@
         "Automatics 6",
         "Name",
         "Section Payload",
+        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -3019,7 +2934,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -3046,7 +2960,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -3112,15 +3025,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -3177,7 +3081,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware",
+          "text": "Cyberware Overview",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -3333,16 +3237,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 227,
+          "width": 242,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware",
+          "text": "Cyberware Loadout Review",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -3353,15 +3257,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -3459,7 +3354,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -3504,7 +3399,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -3585,7 +3480,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -3693,7 +3588,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -3738,7 +3633,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 227,
+          "width": 242,
           "height": 660
         },
         {
@@ -3846,7 +3741,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -3855,7 +3750,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 225,
+          "width": 240,
           "height": 46
         },
         {
@@ -3927,9 +3822,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -3957,6 +3849,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
+        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -3994,6 +3887,7 @@
         "Automatics 6",
         "Name",
         "Section Payload",
+        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -4042,7 +3936,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -4069,7 +3962,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -4135,15 +4027,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -4200,7 +4083,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware",
+          "text": "Cyberware Overview",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -4356,16 +4239,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 227,
+          "width": 242,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware",
+          "text": "Cyberware Loadout Review",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -4376,15 +4259,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -4482,7 +4356,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -4527,7 +4401,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -4608,7 +4482,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -4716,7 +4590,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -4761,7 +4635,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 227,
+          "width": 242,
           "height": 660
         },
         {
@@ -4869,7 +4743,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -4878,7 +4752,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 225,
+          "width": 240,
           "height": 46
         },
         {
@@ -4950,9 +4824,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -4980,6 +4851,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
+        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -5017,6 +4889,7 @@
         "Automatics 6",
         "Name",
         "Section Payload",
+        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -5065,7 +4938,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -5092,7 +4964,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -5158,15 +5029,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -5223,7 +5085,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware",
+          "text": "Cyberware Overview",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -5379,16 +5241,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 227,
+          "width": 242,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware",
+          "text": "Cyberware Loadout Review",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -5399,15 +5261,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -5505,7 +5358,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -5550,7 +5403,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -5631,7 +5484,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -5739,7 +5592,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -5784,7 +5637,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 227,
+          "width": 242,
           "height": 660
         },
         {
@@ -5892,7 +5745,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -5901,7 +5754,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 225,
+          "width": 240,
           "height": 46
         },
         {
@@ -5973,9 +5826,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -6001,6 +5851,7 @@
         "Vehicle Locations",
         "Sources",
         "Custom Data Dirs",
+        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -6038,6 +5889,7 @@
         "Contact 1",
         "Fixer (Loyalty 4 / Connection 5)",
         "Section Payload",
+        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",
@@ -6076,7 +5928,7 @@
       "screenshot": "08-cyberware-dialog-light.png",
       "theme": "Light",
       "dialogTitle": "Add Cyberware",
-      "dialogMessage": "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
+      "dialogMessage": "Search, filter, review source/cost/essence details, and confirm the selected implant.",
       "dialogFieldLabels": [
         "Navigation",
         "[Cyberware] \u251C\u2500 Augmentation Frames \u2502 \u2514\u2500 Cyberlimbs \u2514\u2500 Core Systems \u251C\u2500 \u003E Bodyware \u2514\u2500 Headware",
@@ -6138,7 +5990,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Suites and accessories after picking the base implant",
+        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Review suites and accessories after picking the base implant",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Cyberware \u003E Core Systems \u003E Bodyware Filter Posture | grade, availability, and source stay live",
         "Live Recalculation",
@@ -6149,7 +6001,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
+        "Review source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
         "Notes",
         "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added. Grade, book, and availability filters stay visible like the old selection form while Add \u0026 More remains available."
       ],
@@ -7176,7 +7028,7 @@
         {
           "name": "DialogMessageText",
           "controlType": "TextBlock",
-          "text": "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
+          "text": "Search, filter, review source/cost/essence details, and confirm the selected implant.",
           "x": 0,
           "y": 0,
           "width": 842,
@@ -7347,7 +7199,7 @@
       ],
       "visibleTextSamples": [
         "Add Cyberware",
-        "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
+        "Search, filter, review source/cost/essence details, and confirm the selected implant.",
         "Navigation",
         "[Cyberware] \u251C\u2500 Augmentation Frames \u2502 \u2514\u2500 Cyberlimbs \u2514\u2500 Core Systems \u251C\u2500 \u003E Bodyware \u2514\u2500 Headware",
         "Search",
@@ -7400,7 +7252,7 @@
         "Follow-through",
         "Add \u0026 More keeps the selector open",
         "Category Commands",
-        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Suites and accessories after picking the base implant",
+        "Group | Core Systems Category | Bodyware Search Scope | current category only Data File | Core Rulebook Move the tree without losing grade or availability posture Review suites and accessories after picking the base implant",
         "Filter Summary",
         "Filtered Catalog | 4 shown / 4 total Category Path | Cyberware \u003E Core Systems \u003E Bodyware Filter Posture | grade, availability, and source stay live",
         "Live Recalculation",
@@ -7411,7 +7263,7 @@
         "Add Again",
         "Stays open",
         "Result Commands",
-        "Source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
+        "Review source, cost, and essence for Wired Reflexes 2 Use OK once or Add \u0026 More for repeated bodyware picks Keep grade Standard and rating posture visible while browsing",
         "Notes",
         "Grade modifiers, essence/cost deltas, and source details are surfaced here before the implant is added. Grade, book, and availability filters stay visible like the old selection form while Add \u0026 More remains available.",
         "Add Wired Reflexes 2",
@@ -7438,7 +7290,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -7464,7 +7315,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -7532,15 +7382,6 @@
         "border"
       ],
       "visibleNamedControls": [
-        {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -7751,7 +7592,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Vehicles",
+          "text": "Vehicles Loadout Review",
           "x": 0,
           "y": 0,
           "width": 398,
@@ -7765,15 +7606,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -8366,9 +8198,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -8398,6 +8227,7 @@
         "Vehicle 1",
         "Roadmaster \u00B7 Armor 16 / Handling 3",
         "Section Payload",
+        "Vehicles Loadout Review",
         "Add Vehicle",
         "(none)",
         "New Character",
@@ -8446,7 +8276,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -8472,7 +8301,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -8540,15 +8368,6 @@
         "border"
       ],
       "visibleNamedControls": [
-        {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
         {
           "name": "CenterShellRegion",
           "controlType": "Grid",
@@ -8759,7 +8578,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Contacts",
+          "text": "Contacts Review",
           "x": 0,
           "y": 0,
           "width": 592,
@@ -8773,15 +8592,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -9374,9 +9184,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -9407,6 +9214,7 @@
         "Contact 1",
         "Fixer (Loyalty 4 / Connection 5)",
         "Section Payload",
+        "Contacts Review",
         "Add Contact",
         "(none)",
         "New Character",
@@ -11284,7 +11092,7 @@
       "screenshot": "14-advancement-dialog-light.png",
       "theme": "Light",
       "dialogTitle": "Add Initiation / Submersion",
-      "dialogMessage": "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
+      "dialogMessage": "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
       "dialogFieldLabels": [
         "Navigation",
         "[Initiation] \u251C\u2500 Metamagics \u251C\u2500 Echos \u251C\u2500 Ordeals \u2514\u2500 Notes",
@@ -11641,7 +11449,7 @@
         {
           "name": "DialogMessageText",
           "controlType": "TextBlock",
-          "text": "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
+          "text": "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
           "x": 0,
           "y": 0,
           "width": 842,
@@ -11776,7 +11584,7 @@
       ],
       "visibleTextSamples": [
         "Add Initiation / Submersion",
-        "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
+        "Choose the reward, review grade and track, then confirm the initiation or submersion step.",
         "Navigation",
         "[Initiation] \u251C\u2500 Metamagics \u251C\u2500 Echos \u251C\u2500 Ordeals \u2514\u2500 Notes",
         "Track",
@@ -11815,7 +11623,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -11841,7 +11648,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -11907,15 +11713,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -11963,7 +11760,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Attributes",
+          "text": "Runner Summary",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -12125,7 +11922,7 @@
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Attributes",
+          "text": "Attributes Review",
           "x": 0,
           "y": 0,
           "width": 414,
@@ -12139,15 +11936,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -12713,9 +12501,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: ready, workspace=demo-runner, open=1, saved=unsaved, last-command=global_settings",
         "SR5 Editor Tabs",
         "Runner",
@@ -12741,7 +12526,7 @@
         "Vehicle Locations",
         "Sources",
         "Custom Data Dirs",
-        "Attributes",
+        "Runner Summary",
         "BOD",
         "5",
         "AGI",
@@ -12766,6 +12551,7 @@
         "Attribute 2",
         "Agility \u00B7 Total 7",
         "Section Payload",
+        "Attributes Review",
         "(none)",
         "New Character",
         "file",
@@ -13081,7 +12867,6 @@
       "dialogMessage": "",
       "dialogFieldLabels": [
         "Open Characters",
-        "Demo \u00B7 Soma [sr5]",
         "Watch Folder",
         "Character Name:",
         "Soma",
@@ -13111,13 +12896,11 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "ChevronPath",
         "DialogFieldInput_rosterSelectedRunnerId",
         "DialogFieldsPanel",
         "DialogTitleText",
         "PART_BorderElement",
         "PART_ContentPresenter",
-        "PART_ExpandCollapseChevron",
         "PART_ExpandCollapseChevronContainer",
         "PART_Header",
         "PART_HeaderPresenter",
@@ -13133,15 +12916,6 @@
         "rosterDetailTabs"
       ],
       "visibleNamedControls": [
-        {
-          "name": "ChevronPath",
-          "controlType": "Path",
-          "text": "",
-          "x": 0,
-          "y": 3,
-          "width": 12,
-          "height": 6
-        },
         {
           "name": "DialogFieldInput_rosterSelectedRunnerId",
           "controlType": "TreeView",
@@ -13186,15 +12960,6 @@
           "y": 0,
           "width": 900,
           "height": 620
-        },
-        {
-          "name": "PART_ExpandCollapseChevron",
-          "controlType": "ToggleButton",
-          "text": "",
-          "x": 0,
-          "y": 5,
-          "width": 12,
-          "height": 12
         },
         {
           "name": "PART_ExpandCollapseChevronContainer",
@@ -13317,7 +13082,6 @@
       "visibleTextSamples": [
         "Character Roster",
         "Open Characters",
-        "Demo \u00B7 Soma [sr5]",
         "Watch Folder",
         "Character Name:",
         "Soma",
@@ -13355,7 +13119,6 @@
       "dialogActionIds": [],
       "dialogActionControlIds": [],
       "visibleNamedControlIds": [
-        "CampaignWorkspaceButton",
         "CenterShellRegion",
         "CharacterRosterControl",
         "CharacterStateText",
@@ -13382,7 +13145,6 @@
         "ExpanderContent",
         "ExpanderHeader",
         "FileMenuButton",
-        "GmPrepButton",
         "HelpMenuButton",
         "ImportFileButton",
         "LoadedRunnerTabStrip",
@@ -13448,15 +13210,6 @@
       ],
       "visibleNamedControls": [
         {
-          "name": "CampaignWorkspaceButton",
-          "controlType": "Button",
-          "text": "Campaign",
-          "x": 309,
-          "y": 3,
-          "width": 73,
-          "height": 22
-        },
-        {
           "name": "CenterShellRegion",
           "controlType": "Grid",
           "text": "",
@@ -13513,7 +13266,7 @@
         {
           "name": "ClassicCharacterSummaryTitle",
           "controlType": "TextBlock",
-          "text": "Cyberware",
+          "text": "Cyberware Overview",
           "x": 0,
           "y": 0,
           "width": 1036,
@@ -13669,16 +13422,16 @@
           "text": "",
           "x": 0,
           "y": 48,
-          "width": 227,
+          "width": 242,
           "height": 612
         },
         {
           "name": "ExpanderHeader",
           "controlType": "ToggleButton",
-          "text": "Cyberware",
+          "text": "Cyberware Loadout Review",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -13689,15 +13442,6 @@
           "y": 0,
           "width": 31,
           "height": 32
-        },
-        {
-          "name": "GmPrepButton",
-          "controlType": "Button",
-          "text": "GM",
-          "x": 203,
-          "y": 3,
-          "width": 42,
-          "height": 22
         },
         {
           "name": "HelpMenuButton",
@@ -13795,7 +13539,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -13840,7 +13584,7 @@
           "text": "",
           "x": 3,
           "y": 2,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -13921,7 +13665,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 185,
+          "width": 200,
           "height": 573
         },
         {
@@ -14029,7 +13773,7 @@
           "text": "Cyberware Name: Soma Metatype: Human Ruleset: sr5 Initiative: 11 \\u002B 2d6 Armor: 12 Essence: 5.34 Name: Soma Role: Street Sam BOD: 5 AGI: 7 REA: 6 Firearms 1: Automatics 6 Stealth 1: Sneaking 5 Weapons 1: Ares Alpha Armor 1: Armor Jacket Cyberware 1: Wired Reflexes 2 \u002B2 more entries Payload { \u0022name\u0022: \u0022Soma\u0022, \u0022ruleset\u0022: \u0022sr5\u0022, \u0022metatype\u0022: \u0022Human\u0022, \u0022priority\u0022: \u0022Standard\u0022, \u0022role\u0022: \u0022Street Sam\u0022, \u0022attributes\u0022: { \u0022Body\u0022: 5, \u0022Agility\u0022: 7, \u0022Reaction\u0022: 6, \u0022Strength\u0022: 4, \u0022Willpower\u0022: 3, \u0022Logic\u0022: 3 }, \u0022combat\u0022: { \u0022initiative\u0022: \u002211 \u002B 2d6\u0022, \u0022armor\u0022: 12, \u0022essence\u0022: 5.34 } }",
           "x": 0,
           "y": 0,
-          "width": 193,
+          "width": 208,
           "height": 579
         },
         {
@@ -14074,7 +13818,7 @@
           "text": "",
           "x": 0,
           "y": 271,
-          "width": 227,
+          "width": 242,
           "height": 660
         },
         {
@@ -14182,7 +13926,7 @@
           "text": "",
           "x": 0,
           "y": 0,
-          "width": 227,
+          "width": 242,
           "height": 48
         },
         {
@@ -14191,7 +13935,7 @@
           "text": "",
           "x": 1,
           "y": 1,
-          "width": 225,
+          "width": 240,
           "height": 46
         },
         {
@@ -14263,9 +14007,6 @@
         "Tools",
         "Windows",
         "Help",
-        "GM",
-        "Roster",
-        "Campaign",
         "State: Open Character File selection cancelled.",
         "SR5 Editor Tabs",
         "Runner",
@@ -14293,6 +14034,7 @@
         "Powers",
         "Complex Forms",
         "Martial Arts",
+        "Cyberware Overview",
         "Metatype",
         "Human",
         "Role",
@@ -14330,6 +14072,7 @@
         "Automatics 6",
         "Name",
         "Section Payload",
+        "Cyberware Loadout Review",
         "Add Cyberware",
         "(none)",
         "New Character",

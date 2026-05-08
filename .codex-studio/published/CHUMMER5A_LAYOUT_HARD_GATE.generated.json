@@ -52,7 +52,7 @@
       "Windows",
       "Help"
     ],
-    "blazorRoot": "/docker/chummercomplete/chummer-presentation/Chummer.Blazor",
+    "blazorRoot": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Blazor",
     "toolstripButtonPositions": {
       "SaveButton": 430,
       "PrintButton": 583,
@@ -60,9 +60,9 @@
       "DesktopHomeButton": 891,
       "ImportFileButton": 1058,
       "CloseWorkspaceButton": 1223,
-      "SettingsButton": 2651,
-      "LoadDemoRunnerButton": 2308,
-      "ImportRawButton": 2485
+      "SettingsButton": 2121,
+      "LoadDemoRunnerButton": 1778,
+      "ImportRawButton": 1955
     },
     "toolstripButtonVisibility": {
       "SaveButton": true,

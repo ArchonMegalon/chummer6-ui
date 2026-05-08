@@ -6,11 +6,9 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
-using System.Globalization;
 using System.IO;
 using System.Text.Json;
 
@@ -25,9 +23,9 @@ public partial class DesktopDialogWindow : Window
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
+    private string? _preferredFocusControlName;
+    private int? _preferredFocusSelectionStart;
     private bool _suppressCloseNotification;
-    private string? _lastFocusedControlName;
-    private int? _lastFocusedTextCaretIndex;
 
     public DesktopDialogWindow()
     {
@@ -57,11 +55,7 @@ public partial class DesktopDialogWindow : Window
 
     public void BindDialog(DesktopDialogState dialog)
     {
-        string? previousDialogId = BoundDialogId;
-        bool shouldRestoreFocus = IsVisible
-            && string.Equals(previousDialogId, dialog.Id, StringComparison.Ordinal)
-            && !string.IsNullOrWhiteSpace(_lastFocusedControlName);
-
+        CapturePreferredFocusState();
         BoundDialogId = dialog.Id;
         ApplyDialogSizing(dialog.Id);
         Title = dialog.Title;
@@ -75,10 +69,7 @@ public partial class DesktopDialogWindow : Window
         RefreshDialogVisuals();
         if (IsVisible)
         {
-            if (!shouldRestoreFocus || !TryRestoreFocusedControl())
-            {
-                FocusPreferredControl();
-            }
+            FocusPreferredControl();
         }
     }
 
@@ -336,7 +327,7 @@ public partial class DesktopDialogWindow : Window
         };
         TextBlock settingLabel = new()
         {
-            Text = "Build Method:",
+            Text = "Use Setting:",
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             Name = DesktopDialogAccessibility.BuildFieldLabelName("newCharacterBuildMethod")
@@ -345,7 +336,6 @@ public partial class DesktopDialogWindow : Window
 
         ComboBox buildMethodCombo = BuildSelectComboBox(buildMethodField, minWidth: 220);
         buildMethodCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod");
-        ApplyAccessibility(buildMethodCombo, buildMethodField.AccessibleName, buildMethodField.ToolTip, buildMethodField.HelpText);
         Grid.SetColumn(buildMethodCombo, 1);
         settingRow.Children.Add(buildMethodCombo);
 
@@ -385,7 +375,6 @@ public partial class DesktopDialogWindow : Window
 
         ComboBox rulesetCombo = BuildSelectComboBox(rulesetField, minWidth: 180);
         rulesetCombo.Name = DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId");
-        ApplyAccessibility(rulesetCombo, rulesetField.AccessibleName, rulesetField.ToolTip, rulesetField.HelpText);
         Grid.SetColumn(rulesetCombo, 1);
         rulesetRow.Children.Add(rulesetCombo);
 
@@ -493,7 +482,7 @@ public partial class DesktopDialogWindow : Window
         };
         topBar.Children.Add(rollLabel);
 
-        NumericUpDown diceCountTextBox = BuildLegacyInlineNumericUpDown(diceCountField, width: 56, minimum: 1m, maximum: 999m);
+        TextBox diceCountTextBox = BuildLegacyInlineTextBox(diceCountField, width: 56);
         Grid.SetColumn(diceCountTextBox, 1);
         topBar.Children.Add(diceCountTextBox);
 
@@ -549,13 +538,13 @@ public partial class DesktopDialogWindow : Window
         Grid.SetColumn(rightPane, 1);
         Grid.SetRow(rightPane, 1);
 
-        AddCheckboxRow(rightPane, 0, BuildLegacyInlineCheckBox(ruleOf6Field));
-        AddCheckboxRow(rightPane, 1, BuildLegacyInlineCheckBox(cinematicGameplayField));
-        AddCheckboxRow(rightPane, 2, BuildLegacyInlineCheckBox(rushJobField));
-        AddCheckboxRow(rightPane, 3, BuildLegacyInlineCheckBox(bubbleDieField));
-        AddCheckboxRow(rightPane, 4, BuildLegacyInlineCheckBox(variableGlitchField));
-        AddLabeledValueRow(rightPane, 5, "Threshold:", BuildLegacyInlineNumericUpDown(thresholdField, width: 64, minimum: 0m, maximum: 999m));
-        AddLabeledValueRow(rightPane, 6, "Gremlins:", BuildLegacyInlineNumericUpDown(gremlinsField, width: 64, minimum: 0m, maximum: 4m));
+        AddCheckboxRow(rightPane, 0, BuildLegacyInlineCheckBox(ruleOf6Field, "using Rule of 6"));
+        AddCheckboxRow(rightPane, 1, BuildLegacyInlineCheckBox(cinematicGameplayField, "Hit on 4, 5, or 6"));
+        AddCheckboxRow(rightPane, 2, BuildLegacyInlineCheckBox(rushJobField, "Rushed Job (Glitch on 1 or 2)"));
+        AddCheckboxRow(rightPane, 3, BuildLegacyInlineCheckBox(bubbleDieField, "Bubble Die (Fix Even Dicepool Glitch Chances)"));
+        AddCheckboxRow(rightPane, 4, BuildLegacyInlineCheckBox(variableGlitchField, "Glitch on More 1's than Hits, Not Half Dicepool"));
+        AddLabeledValueRow(rightPane, 5, "Threshold:", BuildLegacyInlineTextBox(thresholdField, width: 64));
+        AddLabeledValueRow(rightPane, 6, "Gremlins:", BuildLegacyInlineTextBox(gremlinsField, width: 64));
 
         Grid resultsPane = new()
         {
@@ -888,9 +877,7 @@ public partial class DesktopDialogWindow : Window
         rosterTree.Name = DesktopDialogAccessibility.BuildFieldInputName(selectedRunnerField.Id);
         ApplyAccessibility(rosterTree, selectedRunnerField.AccessibleName, selectedRunnerField.ToolTip, selectedRunnerField.HelpText);
         rosterTree.MinHeight = 420;
-        long lastRosterActivationClickTimestamp = 0;
-        string? lastRosterActivationKey = null;
-        async Task openSelectedRosterNodeAsync()
+        rosterTree.DoubleTapped += async (_, _) =>
         {
             if (rosterTree.SelectedItem is not RosterTreeItem node)
             {
@@ -909,61 +896,8 @@ public partial class DesktopDialogWindow : Window
                     () => _adapter!.ExecuteDialogActionAsync("open_watch_file", CancellationToken.None),
                     "execute action 'open_watch_file'");
             }
-        }
-
-        static string? BuildRosterActivationKey(object? selectedItem)
-            => selectedItem is not RosterTreeItem node
-                ? null
-                : !string.IsNullOrWhiteSpace(node.RunnerId)
-                    ? $"runner:{node.RunnerId}"
-                    : !string.IsNullOrWhiteSpace(node.WatchFile)
-                        ? $"watch:{node.WatchFile}"
-                        : null;
-
-        rosterTree.PointerPressed += async (_, e) =>
-        {
-            if (e.ClickCount < 2
-                || e.GetCurrentPoint(rosterTree).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonPressed)
-            {
-                return;
-            }
-
-            await openSelectedRosterNodeAsync();
-            e.Handled = true;
         };
-        rosterTree.PointerReleased += async (_, e) =>
-        {
-            if (e.InitialPressMouseButton != MouseButton.Left
-                || e.GetCurrentPoint(rosterTree).Properties.PointerUpdateKind != PointerUpdateKind.LeftButtonReleased)
-            {
-                return;
-            }
-
-            string? activationKey = BuildRosterActivationKey(rosterTree.SelectedItem);
-            if (string.IsNullOrWhiteSpace(activationKey))
-            {
-                lastRosterActivationClickTimestamp = 0;
-                lastRosterActivationKey = null;
-                return;
-            }
-
-            long now = Environment.TickCount64;
-            if (string.Equals(lastRosterActivationKey, activationKey, StringComparison.Ordinal)
-                && now - lastRosterActivationClickTimestamp <= 700)
-            {
-                lastRosterActivationClickTimestamp = 0;
-                lastRosterActivationKey = null;
-                await openSelectedRosterNodeAsync();
-                e.Handled = true;
-                return;
-            }
-
-            lastRosterActivationClickTimestamp = now;
-            lastRosterActivationKey = activationKey;
-        };
-        rosterTree.DoubleTapped += async (_, _) => await openSelectedRosterNodeAsync();
         left.Children.Add(rosterTree);
-        ExpandLegacyRosterTree(rosterTree);
 
         Grid.SetColumn(left, 0);
         shell.Children.Add(left);
@@ -1017,7 +951,7 @@ public partial class DesktopDialogWindow : Window
         ApplyAccessibility(
             detailTabsControl,
             "Character roster detail tabs",
-            "Description, Concept, Background, Character Notes, and Game Notes.",
+            "Review Description, Concept, Background, Character Notes, and Game Notes.",
             "Switch between the legacy Character Roster detail tabs.");
         Grid.SetRow(detailTabsControl, 2);
         right.Children.Add(detailTabsControl);
@@ -1636,48 +1570,6 @@ public partial class DesktopDialogWindow : Window
         return textBox;
     }
 
-    private NumericUpDown BuildLegacyInlineNumericUpDown(
-        DesktopDialogField field,
-        double width,
-        decimal minimum,
-        decimal maximum,
-        decimal increment = 1m)
-    {
-        decimal? parsedValue = decimal.TryParse(field.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal numericValue)
-            ? numericValue
-            : null;
-        NumericUpDown numericUpDown = new()
-        {
-            Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
-            Width = width,
-            Minimum = minimum,
-            Maximum = maximum,
-            Increment = increment,
-            FormatString = "0",
-            ClipValueToMinMax = true,
-            AllowSpin = !field.IsReadOnly,
-            ShowButtonSpinner = true,
-            IsReadOnly = field.IsReadOnly,
-            Value = parsedValue
-        };
-        ApplyAccessibility(numericUpDown, field.AccessibleName, field.ToolTip, field.HelpText);
-        if (!field.IsReadOnly)
-        {
-            numericUpDown.ValueChanged += (_, _) =>
-            {
-                string nextValue = ((numericUpDown.Value ?? minimum)).ToString(CultureInfo.InvariantCulture);
-                if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
-                {
-                    return;
-                }
-
-                QueueDialogFieldUpdate(field.Id, nextValue);
-            };
-        }
-
-        return numericUpDown;
-    }
-
     private static string[] SplitLines(string value)
     {
         string[] lines = value.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -1709,12 +1601,11 @@ public partial class DesktopDialogWindow : Window
         grid.Children.Add(valueControl);
     }
 
-    private void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
+    private static void ApplyAccessibility(Control control, string accessibleName, string toolTip, string helpText)
     {
         AutomationProperties.SetName(control, accessibleName);
         AutomationProperties.SetHelpText(control, helpText);
         ToolTip.SetTip(control, toolTip);
-        TrackFocus(control);
     }
 
     private void BuildActions(IReadOnlyList<DesktopDialogAction> actions)
@@ -1880,10 +1771,7 @@ public partial class DesktopDialogWindow : Window
                 TextWrapping = TextWrapping.Wrap
             },
             item => item?.Children ?? []);
-        RosterTreeItem? initialSelectedNode = FindSelectedRosterTreeNode(roots, selectedRunnerId, selectedWatchFile)
-            ?? roots.SelectMany(root => root.Children)
-                .FirstOrDefault(node => !string.IsNullOrWhiteSpace(node.RunnerId) || !string.IsNullOrWhiteSpace(node.WatchFile));
-        treeView.SelectedItem = initialSelectedNode;
+        treeView.SelectedItem = FindSelectedRosterTreeNode(roots, selectedRunnerId, selectedWatchFile);
         treeView.SelectionChanged += (_, _) =>
         {
             if (treeView.SelectedItem is not RosterTreeItem selectedNode)
@@ -1904,40 +1792,7 @@ public partial class DesktopDialogWindow : Window
                 QueueDialogFieldUpdate("rosterSelectedWatchFile", selectedNode.WatchFile);
             }
         };
-        treeView.AttachedToVisualTree += (_, _) =>
-        {
-            void restoreSelectedNode()
-            {
-                if (initialSelectedNode is not null && treeView.SelectedItem is null)
-                {
-                    treeView.SelectedItem = initialSelectedNode;
-                }
-            }
-
-            Dispatcher.UIThread.Post(restoreSelectedNode, DispatcherPriority.Loaded);
-            Dispatcher.UIThread.Post(restoreSelectedNode, DispatcherPriority.Background);
-        };
         return treeView;
-    }
-
-    private static void ExpandLegacyRosterTree(TreeView treeView)
-    {
-        void expandVisibleNodes()
-        {
-            foreach (TreeViewItem item in treeView.GetVisualDescendants().OfType<TreeViewItem>())
-            {
-                if (item.DataContext is RosterTreeItem rosterItem && rosterItem.Children.Count > 0)
-                {
-                    item.IsExpanded = true;
-                }
-            }
-        }
-
-        Dispatcher.UIThread.Post(() =>
-        {
-            expandVisibleNodes();
-            Dispatcher.UIThread.Post(expandVisibleNodes, DispatcherPriority.Background);
-        }, DispatcherPriority.Loaded);
     }
 
     private static RosterTreeItem? FindSelectedRosterTreeNode(
@@ -2056,6 +1911,28 @@ public partial class DesktopDialogWindow : Window
         FocusPreferredControl();
     }
 
+    private void CapturePreferredFocusState()
+    {
+        _preferredFocusControlName = null;
+        _preferredFocusSelectionStart = null;
+
+        if (FocusManager.GetFocusedElement() is not Control focusedControl)
+        {
+            return;
+        }
+
+        if (focusedControl.GetVisualRoot() is not DesktopDialogWindow)
+        {
+            return;
+        }
+
+        _preferredFocusControlName = focusedControl.Name;
+        if (focusedControl is TextBox textBox)
+        {
+            _preferredFocusSelectionStart = textBox.CaretIndex;
+        }
+    }
+
     private async void QueueDialogFieldUpdate(string fieldId, string value)
     {
         if (_adapter is null)
@@ -2129,6 +2006,11 @@ public partial class DesktopDialogWindow : Window
 
     private void FocusPreferredControl()
     {
+        if (TryRestorePreferredFocus())
+        {
+            return;
+        }
+
         Button? primaryAction = _dialogActionsPanel.Children
             .OfType<Button>()
             .FirstOrDefault(button => button.FontWeight == FontWeight.SemiBold);
@@ -2148,52 +2030,31 @@ public partial class DesktopDialogWindow : Window
             .Focus();
     }
 
-    private void TrackFocus(Control control)
+    private bool TryRestorePreferredFocus()
     {
-        control.GotFocus += (_, _) => RememberFocusedControl(control);
-
-        if (control is TextBox textBox)
-        {
-            textBox.TextChanged += (_, _) => RememberFocusedControl(textBox);
-        }
-    }
-
-    private void RememberFocusedControl(Control control)
-    {
-        if (string.IsNullOrWhiteSpace(control.Name))
-        {
-            return;
-        }
-
-        _lastFocusedControlName = control.Name;
-        _lastFocusedTextCaretIndex = control is TextBox textBox
-            ? textBox.CaretIndex
-            : null;
-    }
-
-    private bool TryRestoreFocusedControl()
-    {
-        if (string.IsNullOrWhiteSpace(_lastFocusedControlName))
+        if (string.IsNullOrWhiteSpace(_preferredFocusControlName))
         {
             return false;
         }
 
-        Control? target = _dialogFieldsPanel.GetVisualDescendants()
+        Control? control = this.GetVisualDescendants()
             .OfType<Control>()
-            .Concat(_dialogActionsPanel.GetVisualDescendants().OfType<Control>())
-            .FirstOrDefault(control => string.Equals(control.Name, _lastFocusedControlName, StringComparison.Ordinal));
-        if (target is null || !target.Focusable || !target.IsEnabled)
+            .FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, _preferredFocusControlName, StringComparison.Ordinal));
+        if (control is not InputElement inputElement
+            || !inputElement.Focusable
+            || !control.IsEnabled)
         {
             return false;
         }
 
-        target.Focus();
-        if (target is TextBox textBox && _lastFocusedTextCaretIndex is int caretIndex)
+        bool focused = inputElement.Focus();
+        if (focused && control is TextBox textBox && _preferredFocusSelectionStart is int caretIndex)
         {
             textBox.CaretIndex = Math.Clamp(caretIndex, 0, textBox.Text?.Length ?? 0);
         }
 
-        return true;
+        return focused;
     }
 }
 

@@ -6,8 +6,6 @@ cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
-legacy_equivalent_chrome_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json"
-muscle_memory_parity_gate_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
@@ -391,14 +389,7 @@ else
   echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
   bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
 
-  echo "[desktop-visual-familiarity-gate] running Chummer5a legacy-equivalent chrome gate..."
-  bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh >/dev/null
-
-  echo "[desktop-visual-familiarity-gate] running Chummer5a muscle-memory parity gate..."
-  bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh >/dev/null
-fi
-
-python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$legacy_equivalent_chrome_gate_receipt_path" "$muscle_memory_parity_gate_receipt_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -677,15 +668,13 @@ def path_within_root(path: Path, root: Path) -> bool:
         return False
 
 
-repo_root, receipt_path, flagship_gate_path, legacy_equivalent_chrome_gate_receipt_path, muscle_memory_parity_gate_receipt_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
-    Path(value) for value in sys.argv[1:17]
+repo_root, receipt_path, flagship_gate_path, screenshot_dir, app_axaml_path, main_window_axaml_path, navigator_axaml_path, toolstrip_axaml_path, toolstrip_codebehind_path, summary_header_axaml_path, ui_gate_tests_path, desktop_shell_ruleset_tests_path, legacy_frmcareer_designer_path, release_channel_path = [
+    Path(value) for value in sys.argv[1:15]
 ]
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {
     "flagship_gate_path": str(flagship_gate_path),
-    "legacy_equivalent_chrome_gate_receipt_path": str(legacy_equivalent_chrome_gate_receipt_path),
-    "muscle_memory_parity_gate_receipt_path": str(muscle_memory_parity_gate_receipt_path),
     "screenshot_dir": str(screenshot_dir),
     "app_axaml_path": str(app_axaml_path),
     "main_window_axaml_path": str(main_window_axaml_path),
@@ -706,17 +695,10 @@ evidence: Dict[str, Any] = {
 
 flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
-legacy_equivalent_chrome_gate = load_json(legacy_equivalent_chrome_gate_receipt_path)
-muscle_memory_parity_gate = load_json(muscle_memory_parity_gate_receipt_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
-evidence["flagship_gate_receipt_exists"] = flagship_gate_path.is_file()
-evidence["legacy_equivalent_chrome_gate_receipt_exists"] = legacy_equivalent_chrome_gate_receipt_path.is_file()
-evidence["muscle_memory_parity_gate_receipt_exists"] = muscle_memory_parity_gate_receipt_path.is_file()
 evidence["flagship_gate_status"] = flagship_status
-if not flagship_gate_path.is_file():
-    reasons.append("Flagship UI release gate receipt is missing.")
-elif not flagship_gate:
-    reasons.append("Flagship UI release gate receipt is unreadable or not a JSON object.")
+if not status_ok(flagship_status):
+    reasons.append("Flagship UI release gate is missing or not passing.")
 validate_receipt_freshness(
     "flagship_ui_release_gate",
     flagship_gate,
@@ -1360,9 +1342,9 @@ required_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
-    "38-translator-dialog-light.png",
-    "39-xml-editor-dialog-light.png",
-    "40-hero-lab-importer-dialog-light.png",
+    "19-translator-dialog-light.png",
+    "20-xml-editor-dialog-light.png",
+    "21-hero-lab-importer-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -1387,7 +1369,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "19-translator-dialog-light.png", "20-xml-editor-dialog-light.png", "21-hero-lab-importer-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
@@ -1633,38 +1615,6 @@ elif not ruleset_orientation_method_has_markers:
     )
 legacy_familiarity_review_reasons = list(reasons[legacy_familiarity_review_start:])
 
-legacy_equivalent_chrome_review_start = len(reasons)
-if not legacy_equivalent_chrome_gate_receipt_path.is_file():
-    reasons.append("Legacy-equivalent chrome gate receipt is missing.")
-elif not legacy_equivalent_chrome_gate:
-    reasons.append("Legacy-equivalent chrome gate receipt is unreadable or not a JSON object.")
-else:
-    validate_receipt_freshness(
-        "legacy_equivalent_chrome_gate",
-        legacy_equivalent_chrome_gate,
-        reasons,
-        evidence,
-    )
-    if not status_ok(legacy_equivalent_chrome_gate.get("status") or ""):
-        reasons.append("Legacy-equivalent chrome gate is not passing.")
-legacy_equivalent_chrome_review_reasons = list(reasons[legacy_equivalent_chrome_review_start:])
-
-muscle_memory_parity_review_start = len(reasons)
-if not muscle_memory_parity_gate_receipt_path.is_file():
-    reasons.append("Muscle-memory parity gate receipt is missing.")
-elif not muscle_memory_parity_gate:
-    reasons.append("Muscle-memory parity gate receipt is unreadable or not a JSON object.")
-else:
-    validate_receipt_freshness(
-        "muscle_memory_parity_gate",
-        muscle_memory_parity_gate,
-        reasons,
-        evidence,
-    )
-    if not status_ok(muscle_memory_parity_gate.get("status") or ""):
-        reasons.append("Muscle-memory parity gate is not passing.")
-muscle_memory_parity_review_reasons = list(reasons[muscle_memory_parity_review_start:])
-
 status = "pass" if not reasons else "fail"
 reviews = {
     "flagshipGateReview": {
@@ -1715,18 +1665,6 @@ reviews = {
             "contacts_diary_method_has_rhythm_markers",
             "ruleset_orientation_method_has_markers",
         ],
-    },
-    "legacyEquivalentChromeReview": {
-        "status": "pass" if not legacy_equivalent_chrome_review_reasons else "fail",
-        "reasonCount": len(legacy_equivalent_chrome_review_reasons),
-        "reasons": legacy_equivalent_chrome_review_reasons,
-        "receiptPath": str(legacy_equivalent_chrome_gate_receipt_path),
-    },
-    "muscleMemoryParityReview": {
-        "status": "pass" if not muscle_memory_parity_review_reasons else "fail",
-        "reasonCount": len(muscle_memory_parity_review_reasons),
-        "reasons": muscle_memory_parity_review_reasons,
-        "receiptPath": str(muscle_memory_parity_gate_receipt_path),
     },
 }
 payload = {

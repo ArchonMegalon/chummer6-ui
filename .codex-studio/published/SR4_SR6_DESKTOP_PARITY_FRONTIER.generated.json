@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-05-08T15:04:39.544208Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
-  "channelId": "preview",
+  "channelId": "docker",
   "status": "pass",
   "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable workflow, coverage, ruleset-adaptation, release-channel, and gate-execution subreviews.",
   "reasons": [],
@@ -24,10 +24,10 @@
     "rulesetUiAdaptationStatus": "pass",
     "sr4ClosureCounts": null,
     "sr6ClosureCounts": null,
-    "sr4ChannelId": "preview",
-    "sr6ChannelId": "preview",
-    "chummer5aChannelId": "preview",
-    "rulesetUiAdaptationChannelId": "preview"
+    "sr4ChannelId": "docker",
+    "sr6ChannelId": "docker",
+    "chummer5aChannelId": "docker",
+    "rulesetUiAdaptationChannelId": "docker"
   },
   "releaseChannelReview": {
     "status": "pass",
@@ -113,10 +113,10 @@
     "reasons": [],
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "receiptChannelIds": {
-      "sr4": "preview",
-      "sr6": "preview",
-      "chummer5a": "preview",
-      "rulesetUiAdaptation": "preview"
+      "sr4": "docker",
+      "sr6": "docker",
+      "chummer5a": "docker",
+      "rulesetUiAdaptation": "docker"
     },
     "receiptReleaseChannelPaths": {
       "sr4": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
@@ -125,10 +125,10 @@
       "rulesetUiAdaptation": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "receiptReleaseChannelChannelIds": {
-      "sr4": "preview",
-      "sr6": "preview",
-      "chummer5a": "preview",
-      "rulesetUiAdaptation": "preview"
+      "sr4": "docker",
+      "sr6": "docker",
+      "chummer5a": "docker",
+      "rulesetUiAdaptation": "docker"
     },
     "receiptReleaseChannelGeneratedAts": {
       "sr4": "2026-05-07T21:12:55Z",

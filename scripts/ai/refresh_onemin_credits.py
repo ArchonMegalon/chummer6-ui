@@ -17,9 +17,14 @@ DEFAULT_HISTORY_PATH = Path("/docker/fleet/state/onemin_credit_history.csv")
 DEFAULT_RUNTIME_ROOT = Path("/docker/fleet/state/browseract_bootstrap/runtime")
 DEFAULT_LATEST_AGGREGATE_FILENAME = "onemin_aggregate_billing_full_refresh_latest.json"
 DEFAULT_BROWSERACT_REFRESH_STATE_ROOT = Path("/docker/EA/state")
+DEFAULT_BROWSERACT_MAX_AGE_SECONDS = 6 * 60 * 60
 FIELDNAMES = (
     "recorded_at_local",
     "recorded_at_utc",
+    "measurement_trust",
+    "payload_source",
+    "source_recorded_at_utc",
+    "source_age_seconds",
     "free_credits",
     "max_credits",
     "percent_remaining",
@@ -46,6 +51,7 @@ FIELDNAMES = (
     "burn_rate_credits_per_hour",
     "burn_rate_credits_per_day",
     "burn_rate_source",
+    "refresh_error",
 )
 
 
@@ -67,6 +73,16 @@ def _latest_aggregate_filename() -> str:
 def _browseract_refresh_state_root() -> Path:
     raw = str(os.environ.get("ONEMIN_BROWSERACT_REFRESH_STATE_ROOT", "") or "").strip()
     return Path(raw) if raw else DEFAULT_BROWSERACT_REFRESH_STATE_ROOT
+
+
+def _browseract_max_age_seconds() -> int:
+    raw = str(os.environ.get("ONEMIN_BROWSERACT_MAX_AGE_SECONDS", "") or "").strip()
+    if not raw:
+        return DEFAULT_BROWSERACT_MAX_AGE_SECONDS
+    try:
+        return max(0, int(float(raw)))
+    except ValueError:
+        return DEFAULT_BROWSERACT_MAX_AGE_SECONDS
 
 
 def _coerce_int(value: Any) -> int | None:
@@ -216,12 +232,41 @@ def _prefer_browseract_refresh_payload(payload: dict[str, Any], browseract_paylo
     browseract_recorded_at = _parse_iso(browseract_payload.get("recorded_at_utc"))
     if browseract_recorded_at is None:
         return payload
+    browseract_age_seconds = int((datetime.now(timezone.utc) - browseract_recorded_at).total_seconds())
+    if browseract_age_seconds > _browseract_max_age_seconds():
+        merged = dict(payload)
+        merged.setdefault("ignored_browseract_payload_source", "browseract_refresh_summary")
+        merged.setdefault("ignored_browseract_recorded_at_utc", browseract_payload.get("recorded_at_utc"))
+        merged.setdefault("ignored_browseract_age_seconds", browseract_age_seconds)
+        return merged
     if payload_recorded_at is not None and browseract_recorded_at <= payload_recorded_at and not bool(payload.get("used_precomputed_aggregate")):
         return payload
     merged = dict(payload)
     merged.update(browseract_payload)
     merged["payload_source"] = "browseract_refresh_summary"
     return merged
+
+
+def _source_recorded_at(payload: dict[str, Any]) -> datetime | None:
+    for key in ("recorded_at_utc", "payload_fetched_at", "last_probe_at_utc"):
+        parsed = _parse_iso(payload.get(key))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def _measurement_trust(payload: dict[str, Any], *, source_age_seconds: int | None) -> str:
+    payload_source = str(payload.get("payload_source") or "").strip()
+    if source_age_seconds is None:
+        return "unknown_source_time"
+    if payload_source.endswith("_cache") or payload_source == "browseract_refresh_summary":
+        if source_age_seconds is not None and source_age_seconds > _browseract_max_age_seconds():
+            return "stale"
+    if bool(payload.get("used_precomputed_aggregate")) and source_age_seconds is not None and source_age_seconds > _browseract_max_age_seconds():
+        return "stale"
+    if source_age_seconds is not None and source_age_seconds > _browseract_max_age_seconds():
+        return "stale"
+    return "fresh"
 
 
 def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -288,7 +333,7 @@ def load_payload() -> dict[str, Any]:
     env = os.environ.copy()
     env.setdefault("CODEXEA_STATUS_CONNECT_TIMEOUT_SECONDS", "5")
     env.setdefault("CODEXEA_ONEMIN_STATUS_TIMEOUT_SECONDS", "60")
-    env.setdefault("CODEXEA_ONEMIN_BILLING_TIMEOUT_SECONDS", "7200")
+    env.setdefault("CODEXEA_ONEMIN_BILLING_TIMEOUT_SECONDS", "180")
     result = subprocess.run(
         [
             "codexea",
@@ -305,21 +350,42 @@ def load_payload() -> dict[str, Any]:
     )
     if result.returncode != 0:
         if browseract_payload is not None:
-            return browseract_payload
+            payload = dict(browseract_payload)
+            payload["refresh_error"] = result.stderr.strip() or "codexea onemin aggregate refresh failed"
+            return payload
         raise SystemExit(result.stderr.strip() or "codexea onemin aggregate refresh failed")
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
         if browseract_payload is not None:
-            return browseract_payload
+            payload = dict(browseract_payload)
+            payload["refresh_error"] = f"codexea onemin aggregate refresh returned invalid JSON: {exc}"
+            return payload
         raise SystemExit(f"codexea onemin aggregate refresh returned invalid JSON: {exc}") from exc
     if not isinstance(payload, dict):
         if browseract_payload is not None:
-            return browseract_payload
+            payload = dict(browseract_payload)
+            payload["refresh_error"] = "codexea onemin aggregate refresh returned a non-object payload"
+            return payload
         raise SystemExit("codexea onemin aggregate refresh returned a non-object payload")
     data = payload.get("data")
     if isinstance(data, dict):
-        payload = data
+        envelope = {
+            key: payload.get(key)
+            for key in (
+                "message",
+                "payload_source",
+                "payload_fetched_at",
+                "status_error",
+                "profiles_error",
+                "source_notice",
+                "exit_code",
+                "ok",
+            )
+            if payload.get(key) not in (None, "")
+        }
+        envelope.update(data)
+        payload = envelope
     return _prefer_browseract_refresh_payload(payload, browseract_payload)
 
 
@@ -398,6 +464,24 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     recorded_at_utc = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
     recorded_at_local = datetime.now().astimezone().replace(microsecond=0).isoformat()
+    source_recorded_at_dt = _source_recorded_at(payload)
+    source_recorded_at_utc = (
+        source_recorded_at_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        if source_recorded_at_dt is not None
+        else ""
+    )
+    source_age_seconds = (
+        int((now - source_recorded_at_dt.astimezone(timezone.utc)).total_seconds())
+        if source_recorded_at_dt is not None
+        else None
+    )
+    measurement_trust = _measurement_trust(payload, source_age_seconds=source_age_seconds)
+    payload = {
+        **payload,
+        "measurement_trust": measurement_trust,
+        "source_recorded_at_utc": source_recorded_at_utc,
+        "source_age_seconds": source_age_seconds,
+    }
 
     history_path = _history_path()
     runtime_root = _runtime_root()
@@ -422,7 +506,11 @@ def main() -> int:
     burn_rate_credits_per_hour = None
     burn_rate_credits_per_day = None
     burn_rate_source = ""
-    if delta_credits is not None and delta_seconds and delta_seconds > 0:
+    if measurement_trust != "fresh":
+        delta_credits = None
+        delta_seconds = None
+        burn_rate_source = "stale_source_no_burn"
+    elif delta_credits is not None and delta_seconds and delta_seconds > 0:
         burn_rate_credits_per_hour = (0 - float(delta_credits)) * 3600.0 / float(delta_seconds)
         burn_rate_credits_per_day = burn_rate_credits_per_hour * 24.0
         burn_rate_source = "history_delta"
@@ -430,6 +518,10 @@ def main() -> int:
     row = {
         "recorded_at_local": recorded_at_local,
         "recorded_at_utc": recorded_at_utc,
+        "measurement_trust": measurement_trust,
+        "payload_source": str(payload.get("payload_source") or ""),
+        "source_recorded_at_utc": source_recorded_at_utc,
+        "source_age_seconds": source_age_seconds if source_age_seconds is not None else "",
         "free_credits": normalized["free_credits"],
         "max_credits": normalized["max_credits"],
         "percent_remaining": normalized["percent_remaining"],
@@ -456,6 +548,7 @@ def main() -> int:
         "burn_rate_credits_per_hour": burn_rate_credits_per_hour if burn_rate_credits_per_hour is not None else "",
         "burn_rate_credits_per_day": burn_rate_credits_per_day if burn_rate_credits_per_day is not None else "",
         "burn_rate_source": burn_rate_source,
+        "refresh_error": str(payload.get("refresh_error") or payload.get("status_error") or ""),
     }
     append_history(history_path=history_path, row=row)
     latest_path, archive_path = write_runtime_aggregate(
@@ -469,6 +562,10 @@ def main() -> int:
 
     result = {
         "recorded_at_utc": recorded_at_utc,
+        "measurement_trust": measurement_trust,
+        "payload_source": str(payload.get("payload_source") or ""),
+        "source_recorded_at_utc": source_recorded_at_utc,
+        "source_age_seconds": source_age_seconds,
         "free_credits": normalized["free_credits"],
         "max_credits": normalized["max_credits"],
         "percent_remaining": normalized["percent_remaining"],

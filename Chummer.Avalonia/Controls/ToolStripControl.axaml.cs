@@ -30,6 +30,9 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? RosterMovementRequested;
     public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CloseWorkspaceRequested;
+    public event EventHandler? GmPrepRequested;
+    public event EventHandler? RosterMovementRequested;
+    public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CampaignWorkspaceRequested;
     public event EventHandler? UpdateStatusRequested;
     public event EventHandler? InstallLinkingRequested;
@@ -198,6 +201,21 @@ public partial class ToolStripControl : UserControl
     private void OpenForExportButton_OnClick(object? sender, RoutedEventArgs e)
     {
         OpenForExportRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        GmPrepRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RosterMovementButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RosterMovementRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void RuleEnvironmentStudioButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void CampaignWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
