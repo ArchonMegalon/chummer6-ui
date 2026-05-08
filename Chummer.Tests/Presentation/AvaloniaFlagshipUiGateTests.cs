@@ -5,9 +5,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -63,10 +66,8 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] HiddenWorkbenchToolbarButtons =
     [
         "OpenForPrintingButton",
-        "OpenForExportButton",
         "ImportRawButton",
         "LoadDemoRunnerButton",
-        "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
         "SupportButton",
@@ -75,21 +76,48 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] HiddenRuntimeLoadedToolbarButtons =
     [
         "OpenForPrintingButton",
-        "OpenForExportButton",
         "LoadDemoRunnerButton",
-        "CampaignWorkspaceButton",
         "UpdateStatusButton",
         "InstallLinkingButton",
         "SupportButton",
         "ReportIssueButton",
     ];
     private static readonly string[] SupportedRulesetIds = [RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6];
+    private static readonly string[] ExpectedLegacyCareerTabIds =
+    [
+        "tab-adept",
+        "tab-armor",
+        "tab-attributes",
+        "tab-calendar",
+        "tab-combat",
+        "tab-contacts",
+        "tab-cyberware",
+        "tab-gear",
+        "tab-improvements",
+        "tab-info",
+        "tab-lifestyle",
+        "tab-magician",
+        "tab-notes",
+        "tab-qualities",
+        "tab-skills",
+        "tab-technomancer",
+        "tab-vehicles"
+    ];
+    private static readonly string[] ForbiddenLoadedRunnerTabIds = ["tab-create", "tab-rules"];
     private static readonly string[] StandaloneMenuButtonNames =
     [
         "FileMenuButton",
         "ToolsMenuButton",
         "WindowsMenuButton",
         "HelpMenuButton",
+    ];
+    private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
+    [
+        "Bastion.chum5",
+        "Fuzzy-chargen.chum5",
+        "Soma.chum5",
+        "Tenshi.chum5",
+        "Popstar.chum5",
     ];
     private static readonly string[] ExpectedFileMenuCommandIds = ["new_character", "open_character", "save_character"];
     private static readonly string[] ExpectedSummaryHeaderTabSelectionOrder = ["tab-gear", "tab-profile"];
@@ -99,6 +127,63 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly string[] ExpectedNavigatorWorkflowSurfaceSelection = ["workflow-progress"];
     private static readonly string[] ExpectedSettingsCommandSelection = ["global_settings"];
     private static readonly string[] ExpectedSaveDialogActionSelection = ["save"];
+    private static readonly string[] RequiredMuscleMemoryCommandDialogIds = AppCommandCatalog.All
+        .Select(command => command.Id)
+        .Where(OverviewCommandPolicy.IsDialogCommand)
+        .Where(commandId => !OverviewCommandPolicy.IsRuntimeInspectorCommand(commandId))
+        .OrderBy(commandId => commandId, StringComparer.Ordinal)
+        .ToArray();
+    private static readonly IReadOnlyDictionary<string, string> MuscleMemorySectionByUiControlId =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["create_entry"] = "progress",
+            ["delete_entry"] = "progress",
+            ["edit_entry"] = "progress",
+            ["open_notes"] = "notes",
+            ["move_up"] = "progress",
+            ["move_down"] = "progress",
+            ["toggle_free_paid"] = "progress",
+            ["show_source"] = "rules",
+            ["gear_add"] = "inventory",
+            ["gear_edit"] = "inventory",
+            ["gear_delete"] = "inventory",
+            ["gear_mount"] = "inventory",
+            ["gear_source"] = "inventory",
+            ["cyberware_add"] = "cyberwares",
+            ["cyberware_edit"] = "cyberwares",
+            ["cyberware_delete"] = "cyberwares",
+            ["drug_add"] = "drugs",
+            ["drug_delete"] = "drugs",
+            ["magic_add"] = "spells",
+            ["magic_delete"] = "spells",
+            ["magic_bind"] = "spells",
+            ["magic_source"] = "spells",
+            ["spell_add"] = "spells",
+            ["adept_power_add"] = "powers",
+            ["complex_form_add"] = "complexforms",
+            ["initiation_add"] = "initiationgrades",
+            ["spirit_add"] = "spirits",
+            ["critter_power_add"] = "critterpowers",
+            ["matrix_program_add"] = "complexforms",
+            ["skill_add"] = "skills",
+            ["skill_specialize"] = "skills",
+            ["skill_remove"] = "skills",
+            ["skill_group"] = "skills",
+            ["combat_add_weapon"] = "weapons",
+            ["combat_add_armor"] = "armors",
+            ["combat_reload"] = "weapons",
+            ["combat_damage_track"] = "build",
+            ["vehicle_add"] = "vehicles",
+            ["vehicle_edit"] = "vehicles",
+            ["vehicle_delete"] = "vehicles",
+            ["vehicle_mod_add"] = "vehicles",
+            ["contact_add"] = "contacts",
+            ["contact_edit"] = "contacts",
+            ["contact_remove"] = "contacts",
+            ["contact_connection"] = "contacts",
+            ["quality_add"] = "qualities",
+            ["quality_delete"] = "qualities"
+        };
     private static readonly VeteranCertificationReviewStep[] VeteranCertificationReviewSteps =
     [
         new(
@@ -136,7 +221,25 @@ public sealed class AvaloniaFlagshipUiGateTests
             "18-import-dialog-light.png",
             "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.",
             "Chummer5a File/Open and Hero Lab Importer import route lineage.",
-            ["Open Character"])];
+            ["Open Character"]),
+        new(
+            "translator",
+            "38-translator-dialog-light.png",
+            "Execute translator and capture the governed language-lane dialog.",
+            "Chummer5a Translator utility lineage.",
+            ["Translator", "Translator Lane", "Translator Bridge"]),
+        new(
+            "xml_editor",
+            "39-xml-editor-dialog-light.png",
+            "Execute xml_editor and capture the XML amendment editor posture.",
+            "Chummer5a XML editor and custom-data bridge lineage.",
+            ["XML Editor", "XML Bridge", "Custom Data Lane"]),
+        new(
+            "hero_lab_importer",
+            "40-hero-lab-importer-dialog-light.png",
+            "Execute hero_lab_importer and capture import-oracle plus adjacent SR6 proof.",
+            "Chummer5a Hero Lab Importer and adjacent import-oracle lineage.",
+            ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle"])];
     private static readonly string[] RequiredWorkflowFamilyIds =
     [
         "create-open-import-save-save-as-print-export",
@@ -158,7 +261,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             [
                 "19-workflow-file-menu-loaded-light.png",
                 "36-workflow-new-character-dialog-light.png",
-                "18-import-dialog-light.png"
+                "18-import-dialog-light.png",
+                "40-hero-lab-importer-dialog-light.png"
             ]),
         new(
             "metatype-priorities-karma-entry",
@@ -268,7 +372,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Avalonia_startup_enters_the_workbench_without_reopening_the_desktop_home_cockpit()
+    public void Avalonia_startup_keeps_the_workbench_as_first_paint_but_still_invokes_restore_continuation_when_needed()
     {
         string appPath = ResolveSourceFile("Chummer.Avalonia", "App.axaml.cs");
         string appText = File.ReadAllText(appPath);
@@ -277,6 +381,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsTrue(
             appText.Contains("if (installLinkingContext is not null)", StringComparison.Ordinal),
             "Startup modal prompts should still be gated on active install-linking context.");
+        Assert.IsFalse(
+            appText.Contains("DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);", StringComparison.Ordinal),
+            "The flagship Avalonia startup path must stay on the workbench by default instead of reopening the desktop home cockpit.");
     }
 
     [TestMethod]
@@ -298,13 +405,18 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string projectorPath = ResolveSourceFile("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
         string summaryHeaderPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml.cs");
+        string summaryHeaderMarkupPath = ResolveSourceFile("Chummer.Avalonia", "Controls", "SummaryHeaderControl.axaml");
         string projectorText = File.ReadAllText(projectorPath);
         string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
+        string summaryHeaderMarkupText = File.ReadAllText(summaryHeaderMarkupPath);
 
         StringAssert.Contains(projectorText, "ShowNavigatorPane: false");
         StringAssert.Contains(projectorText, "return [];");
-        StringAssert.Contains(summaryHeaderText, "RestoreContinuityStatusBorder.IsVisible = false;");
-        StringAssert.Contains(summaryHeaderText, "RestoreContinuityActionPanel.IsVisible = false;");
+        StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
+        StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
+        StringAssert.Contains(summaryHeaderText, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
+        StringAssert.Contains(summaryHeaderMarkupText, "Keep Local Work");
+        StringAssert.Contains(summaryHeaderMarkupText, "Review Campaign Workspace");
     }
 
     [TestMethod]
@@ -361,6 +473,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
+        StringAssert.Contains(visualGateText, "promote_fresh_runtime_screenshot_pack");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-parity-tester/live/screenshots/actual");
+        StringAssert.Contains(visualGateText, ".codex-studio/out/ui-flagship-release-gate-screenshots-debug");
         StringAssert.Contains(layoutGateText, "defaultSingleRunnerKeepsWorkspaceChromeCollapsed");
         StringAssert.Contains(appAxamlText, "FontFamily\" Value=\"Trebuchet MS,Verdana,Geneva,Arial\"");
         StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
@@ -645,6 +761,27 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_chummer5a_fixture_ui_reconstruction_receipts_pass_for_default_first_slice()
+    {
+        string receiptsDirectory = ResolveFixtureUiReconstructionReceiptsDirectory();
+        FixtureUiReconstructionMaterializationResult[] results = ResolveChummer5aFixtureUiReconstructionFixtureNames()
+            .Select(fixtureName => MaterializeFixtureUiReconstructionReceipt(fixtureName, receiptsDirectory))
+            .ToArray();
+
+        FixtureUiReconstructionMaterializationResult[] failures = results
+            .Where(result => !string.Equals(result.Status, "pass", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (failures.Length > 0)
+        {
+            string message = string.Join(
+                Environment.NewLine,
+                failures.Select(result =>
+                    $"{result.FixtureName}: {string.Join(" | ", result.Reasons.Where(reason => !string.IsNullOrWhiteSpace(reason)))}"));
+            Assert.Fail("Fixture UI reconstruction materialization failed." + Environment.NewLine + message);
+        }
+    }
+
+    [TestMethod]
     public void Runtime_backed_file_menu_new_critter_imports_a_real_workspace_without_extra_dialog_chrome()
     {
         WithRuntimeHarness(harness =>
@@ -689,10 +826,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(() =>
                 harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
 
-            Button createButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("create_character"));
-            Assert.IsTrue(createButton.IsEnabled, "New Character OK action must be enabled.");
-            createButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            ClickRuntimeDialogAction(harness, "create_character");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.priority_workflow" },
+                context: "new character follow-up workflow");
 
+            ClickRuntimeDialogAction(harness, "complete_new_character_workflow");
             harness.WaitUntil(() =>
                 harness.State.WorkspaceId is not null
                 && harness.State.Session.OpenWorkspaces.Count > 0
@@ -785,6 +924,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "DesktopHomeButton",
                 "ImportFileButton",
                 "CloseWorkspaceButton",
+                "OpenForExportButton",
+                "GmPrepButton",
+                "RosterMovementButton",
+                "CampaignWorkspaceButton",
             ];
 
             foreach (string buttonName in primaryButtons)
@@ -821,6 +964,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .ToArray();
             string[] shellChromeLabels = harness.Window.GetVisualDescendants()
                 .OfType<TextBlock>()
+                .Where(text => text.IsVisible)
                 .Select(text => text.Text ?? string.Empty)
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
@@ -1020,6 +1164,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "DesktopHomeButton",
                 "ImportFileButton",
                 "CloseWorkspaceButton",
+                "OpenForExportButton",
+                "GmPrepButton",
+                "RosterMovementButton",
+                "CampaignWorkspaceButton",
             ];
 
             foreach (string menuName in menuButtons)
@@ -1188,6 +1336,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
+            control.OpenForExportRequested += (_, _) => raisedEvents.Add("open_for_export");
+            control.GmPrepRequested += (_, _) => raisedEvents.Add("gm_prep");
+            control.RosterMovementRequested += (_, _) => raisedEvents.Add("roster_movement");
+            control.CampaignWorkspaceRequested += (_, _) => raisedEvents.Add("campaign_workspace");
+
+            control.SetState(new ToolStripState(
+                "State: ready",
+                ShowOpenForExport: true,
+                ShowGmPrep: true,
+                ShowRosterMovement: true,
+                ShowCampaignWorkspace: true));
 
             (string ButtonName, string EventId)[] buttonMap =
             [
@@ -1197,6 +1356,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("DesktopHomeButton", "desktop_home"),
                 ("ImportFileButton", "import_file"),
                 ("CloseWorkspaceButton", "close_workspace"),
+                ("OpenForExportButton", "open_for_export"),
+                ("GmPrepButton", "gm_prep"),
+                ("RosterMovementButton", "roster_movement"),
+                ("CampaignWorkspaceButton", "campaign_workspace"),
             ];
 
             foreach ((string buttonName, _) in buttonMap)
@@ -1205,7 +1368,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             CollectionAssert.AreEqual(buttonMap.Select(item => item.EventId).ToArray(), raisedEvents.ToArray());
-            Assert.IsFalse(FindDescendant<Button>(control, "CampaignWorkspaceButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "UpdateStatusButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "InstallLinkingButton").IsVisible);
             Assert.IsFalse(FindDescendant<Button>(control, "SupportButton").IsVisible);
@@ -1280,7 +1442,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Standalone_summary_header_stays_hidden_for_strict_shell_parity()
+    public void Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff()
     {
         WithStandaloneControl<SummaryHeaderControl>(control =>
         {
@@ -1297,8 +1459,59 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
             PumpStandaloneUi();
 
-            Assert.IsFalse(control.IsVisible, "Summary header must stay hidden in the strict Chummer5a-faithful shell.");
-            Assert.AreEqual(0d, control.Height, "Summary header must collapse out of layout when hidden.");
+            Assert.IsTrue(control.IsVisible, "Summary header must keep loaded-runner navigation tabs visible.");
+            Assert.IsTrue(FindDescendant<Control>(control, "NavigationTabsPanel").IsVisible);
+            Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
+            Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_summary_header_surfaces_restore_handoff_actions_when_present()
+    {
+        WithStandaloneControl<SummaryHeaderControl>(control =>
+        {
+            int keepLocalRequests = 0;
+            int saveLocalRequests = 0;
+            int campaignWorkspaceRequests = 0;
+            int workspaceSupportRequests = 0;
+
+            control.KeepLocalWorkRequested += (_, _) => keepLocalRequests++;
+            control.SaveLocalWorkRequested += (_, _) => saveLocalRequests++;
+            control.CampaignWorkspaceRequested += (_, _) => campaignWorkspaceRequests++;
+            control.WorkspaceSupportRequested += (_, _) => workspaceSupportRequests++;
+
+            control.SetState(new SummaryHeaderState(
+                NavigationTabsHeading: "Runner Tabs",
+                NavigationTabs:
+                [
+                    new NavigatorTabItem("tab-profile", "Profile", "profile", "runner", true),
+                    new NavigatorTabItem("tab-gear", "Gear", "gear", "runner", true),
+                ],
+                ActiveTabId: "tab-profile",
+                HasVisibleContent: true,
+                RestoreContinuitySummary: "Restore choice: continue from runner-1.",
+                StaleStateSummary: "Stale state: runner-1 stays visible.",
+                ConflictChoiceSummary: "Conflict choices: keep local work, save local work, or review Campaign Workspace.",
+                CanSaveLocalWorkBeforeRestore: true));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            Assert.IsTrue(control.IsVisible, "Summary header must surface a real restore handoff when the shell has one.");
+            Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
+            Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
+            Assert.IsTrue(FindDescendant<Button>(control, "SaveLocalWorkButton").IsEnabled);
+
+            RaiseClick(FindDescendant<Button>(control, "KeepLocalWorkButton"));
+            RaiseClick(FindDescendant<Button>(control, "SaveLocalWorkButton"));
+            RaiseClick(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton"));
+            RaiseClick(FindDescendant<Button>(control, "OpenWorkspaceSupportButton"));
+
+            Assert.AreEqual(1, keepLocalRequests);
+            Assert.AreEqual(1, saveLocalRequests);
+            Assert.AreEqual(1, campaignWorkspaceRequests);
+            Assert.AreEqual(1, workspaceSupportRequests);
         });
     }
 
@@ -1343,6 +1556,69 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_navigation_tabs_keep_selection_routable_across_equal_refreshes()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<string> selectedTabs = [];
+            control.NavigationTabSelected += (_, tabId) => selectedTabs.Add(tabId);
+
+            NavigatorTabItem[] tabs =
+            [
+                new("tab-profile", "Runner", "profile", "character", true),
+                new("tab-gear", "Gear", "gear", "character", true),
+                new("tab-calendar", "Calendar", "calendar", "character", true),
+            ];
+            control.SetState(new SectionHostState(
+                SectionId: "profile",
+                NavigationTabs: tabs,
+                ActiveTabId: "tab-profile",
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: "{}",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            control.SetState(new SectionHostState(
+                SectionId: "gear",
+                NavigationTabs:
+                [
+                    new("tab-profile", "Runner", "profile", "character", true),
+                    new("tab-gear", "Gear", "gear", "character", true),
+                    new("tab-calendar", "Calendar", "calendar", "character", true),
+                ],
+                ActiveTabId: "tab-gear",
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: "{}",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
+
+            TabStrip tabStrip = FindDescendant<TabStrip>(control, "LoadedRunnerTabStrip");
+            tabStrip.SelectedItem = tabs[2];
+            PumpStandaloneUi();
+
+            CollectionAssert.AreEqual(new[] { "tab-calendar" }, selectedTabs.ToArray());
+        });
+    }
+
+    [TestMethod]
     public void Standalone_section_action_tab_buttons_raise_expected_events()
     {
         WithStandaloneControl<SectionHostControl>(control =>
@@ -1380,6 +1656,399 @@ public sealed class AvaloniaFlagshipUiGateTests
             PumpStandaloneUi();
 
             CollectionAssert.AreEqual(new[] { "tab-info.profile" }, selectedActions.ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_surfaces_text_first_explain_drawer_summary_when_packet_metadata_is_present()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            const string previewJson =
+                """
+{
+  "section": "weapons",
+  "weapons": [
+    {
+      "name": "Ares Alpha",
+      "damage": "11P",
+      "ap": "-2",
+      "explainEntryId": "explain.weapon.ares-alpha",
+      "sourceAnchor": "Street Grimoire p. 42",
+      "sourceAnchorLaunchSummary": "Open the local rulebook anchor from this desktop route.",
+      "staleSnapshotSummary": "Refresh before trusting a what-if answer from an older packet.",
+      "followUpSummary": "Why not burst fire now? stays bounded to the current packet."
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "weapons",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("weapons[0]", "Ares Alpha · 11P AP -2")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            TextBlock contextSummary = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+            TextBox preview = FindDescendant<TextBox>(control, "SectionPreviewBox");
+
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Explain: explain.weapon.ares-alpha");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source anchor: Street Grimoire p. 42");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source launch: Open the local rulebook anchor from this desktop route.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Stale state: Refresh before trusting a what-if answer from an older packet.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Follow-up: Why not burst fire now? stays bounded to the current packet.");
+
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain drawer");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain packet: explain.weapon.ares-alpha");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source anchor: Street Grimoire p. 42");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source launch: Open the local rulebook anchor from this desktop route.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Stale state: Refresh before trusting a what-if answer from an older packet.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Follow-up: Why not burst fire now? stays bounded to the current packet.");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            const string previewJson =
+                """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "value_ref": "combat.defense_rating",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localBindingAvailable": true
+            }
+          ],
+          "stale_if_snapshot_changes": {
+            "snapshot_ref": "snapshot.before",
+            "current_snapshot_ref": "snapshot.after"
+          },
+          "counterfactual_actions": [
+            {
+              "question": "Why not add the shield bonus?"
+            },
+            {
+              "summary": "What if I unequip the jacket?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            TextBlock contextSummary = FindDescendant<TextBlock>(control, "SectionContextSummaryText");
+            TextBox preview = FindDescendant<TextBox>(control, "SectionPreviewBox");
+
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Explain: packet.defense-rating.9");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source anchor: Core Rulebook p. 111 · Defense Rating");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Source launch: Open the bound local rulebook anchor from this desktop route.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Stale state: Packet snapshot snapshot.before no longer matches current snapshot snapshot.after. Refresh before trusting this value.");
+            StringAssert.Contains(contextSummary.Text ?? string.Empty, "Follow-up: Why not add the shield bonus? ; What if I unequip the jacket?");
+
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain drawer");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Explain packet: packet.defense-rating.9");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source anchor: Core Rulebook p. 111 · Defense Rating");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Source launch: Open the bound local rulebook anchor from this desktop route.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Stale state: Packet snapshot snapshot.before no longer matches current snapshot snapshot.after. Refresh before trusting this value.");
+            StringAssert.Contains(preview.Text ?? string.Empty, "Follow-up: Why not add the shield bonus? ; What if I unequip the jacket?");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<string> requestedActions = [];
+            control.QuickActionRequested += (_, actionId) => requestedActions.Add(actionId);
+
+            const string previewJson =
+                """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ],
+          "counterfactual_actions": [
+            {
+              "question": "Why not add the shield bonus?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: string.Empty,
+                PreviewJson: previewJson,
+                Rows:
+                [
+                    new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                ],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            Assert.IsTrue(FindDescendant<Control>(control, "SectionQuickActionsBorder").IsVisible);
+            Assert.AreEqual("Open Rule Environment Studio", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_rule_environment_studio").Content);
+            Assert.AreEqual("Open Source Anchor", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_source_anchor").Content);
+            Assert.AreEqual("Review Bounded Follow-up", FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.review_bounded_follow_up").Content);
+
+            RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_rule_environment_studio"));
+            RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.review_bounded_follow_up"));
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "explain_drawer.open_rule_environment_studio",
+                    "explain_drawer.review_bounded_follow_up"
+                },
+                requestedActions);
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer()
+    {
+        string? launchedTarget = null;
+        Func<string, bool>? originalLauncher = SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting;
+        SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting = target =>
+        {
+            launchedTarget = target;
+            return true;
+        };
+
+        try
+        {
+            WithStandaloneControl<SectionHostControl>(control =>
+            {
+                const string previewJson =
+                    """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Defense Rating",
+      "value": "9",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.defense-rating.9",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "111",
+              "section": "Defense Rating",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""";
+
+                control.SetState(new SectionHostState(
+                    SectionId: "attributes",
+                    NavigationTabs: [],
+                    ActiveTabId: null,
+                    SectionActions: [],
+                    ActiveActionId: null,
+                    Notice: string.Empty,
+                    PreviewJson: previewJson,
+                    Rows:
+                    [
+                        new SectionRowDisplayItem("cards[0]", "Defense Rating · 9")
+                    ],
+                    QuickActions: [],
+                    BuildLab: null,
+                    BrowseWorkspace: null,
+                    ContactGraph: null,
+                    DowntimePlanner: null,
+                    NpcPersonaStudio: null));
+                control.Measure(new Size(1440d, 960d));
+                control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+                PumpStandaloneUi();
+
+                RaiseClick(FindDescendant<Button>(control, "SectionQuickAction_explain_drawer.open_source_anchor"));
+            });
+
+            Assert.AreEqual("/tmp/core-rulebook.pdf", launchedTarget);
+        }
+        finally
+        {
+            SectionHostControl.ExplainDrawerSourceAnchorLauncherOverrideForTesting = originalLauncher;
+        }
+    }
+
+    [TestMethod]
+    public void Main_window_review_bounded_follow_up_opens_text_first_desktop_follow_up_window()
+    {
+        WithHarness(harness =>
+        {
+            DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting = null;
+            harness.WaitForReady();
+            harness.SetActiveSectionForTesting("explaindrawer");
+            harness.Click("SectionQuickAction_explain_drawer.review_bounded_follow_up");
+
+            harness.WaitUntil(
+                () => DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting is { IsVisible: true },
+                context: "wait for explain follow-up window");
+
+            Window followUpWindow = DesktopExplainDrawerFollowUpWindow.LastShownWindowForTesting
+                ?? throw new AssertFailedException("Explain Follow-up window should be visible.");
+
+            string[] visibleText = followUpWindow.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Where(text => text.IsVisible)
+                .Select(text => text.Text ?? string.Empty)
+                .ToArray();
+
+            Assert.IsTrue(visibleText.Any(text => text.Contains("packet.armor.12", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Packet snapshot snapshot.before no longer matches current snapshot snapshot.after.", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("What if I unequip the jacket?", StringComparison.Ordinal)));
+
+            followUpWindow.Close();
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_section_actions_keep_selection_routable_across_equal_refreshes()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            List<string> selectedActions = [];
+            control.SectionActionSelected += (_, actionId) => selectedActions.Add(actionId);
+
+            NavigatorSectionActionItem[] actions =
+            [
+                new("tab-calendar.calendar", "Calendar Entries", WorkspaceSurfaceActionKind.Section),
+                new("tab-calendar.expenses", "Expense Timeline", WorkspaceSurfaceActionKind.Section),
+            ];
+            control.SetState(new SectionHostState(
+                SectionId: "calendar",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: actions,
+                ActiveActionId: "tab-calendar.calendar",
+                Notice: string.Empty,
+                PreviewJson: "{}",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            control.Measure(new Size(1440d, 960d));
+            control.Arrange(new Rect(0d, 0d, 1440d, 960d));
+            PumpStandaloneUi();
+
+            control.SetState(new SectionHostState(
+                SectionId: "expenses",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions:
+                [
+                    new("tab-calendar.calendar", "Calendar Entries", WorkspaceSurfaceActionKind.Section),
+                    new("tab-calendar.expenses", "Expense Timeline", WorkspaceSurfaceActionKind.Section),
+                ],
+                ActiveActionId: "tab-calendar.expenses",
+                Notice: string.Empty,
+                PreviewJson: "{}",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
+
+            TabStrip tabStrip = FindDescendant<TabStrip>(control, "SectionActionTabStrip");
+            tabStrip.SelectedItem = actions[0];
+            PumpStandaloneUi();
+
+            CollectionAssert.AreEqual(new[] { "tab-calendar.calendar" }, selectedActions.ToArray());
         });
     }
 
@@ -1684,6 +2353,153 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6()
+    {
+        RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+        var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
+        var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+        string[] runtimeLoadedRunnerRulesetIds =
+        [
+            RulesetDefaults.Sr5
+        ];
+
+        foreach (string rulesetId in runtimeLoadedRunnerRulesetIds)
+        {
+            string expectedBuildMethod = string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+                ? "BP"
+                : "Priority";
+
+            WithRulesetRuntimeLoadedRunnerHarness(harness =>
+            {
+                TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+                Control sectionActionBorder = harness.FindControl<Control>("SectionActionTabStripBorder");
+                TabStrip sectionActionTabStrip = harness.FindControl<TabStrip>("SectionActionTabStrip");
+                Control quickActionBorder = harness.FindControl<Control>("SectionQuickActionsBorder");
+                ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
+                TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
+
+                harness.WaitUntil(
+                    () => SnapshotLoadedRunnerTabs(loadedRunnerTabStrip).Length > 0,
+                    context: $"loaded-runner tab inventory for '{rulesetId}'");
+
+                NavigatorTabItem[] visibleTabs = SnapshotLoadedRunnerTabs(loadedRunnerTabStrip);
+                string[] visibleTabIds = visibleTabs.Select(tab => tab.Id).ToArray();
+
+                CollectionAssert.AreEquivalent(
+                    ExpectedLegacyCareerTabIds,
+                    visibleTabIds,
+                    $"Loaded runner tab inventory drifted for '{rulesetId}'.");
+
+                foreach (string forbiddenTabId in ForbiddenLoadedRunnerTabIds)
+                {
+                    Assert.IsFalse(
+                        visibleTabIds.Contains(forbiddenTabId, StringComparer.Ordinal),
+                        $"Loaded runner posture for '{rulesetId}' must not surface non-career tab '{forbiddenTabId}'.");
+                }
+
+                foreach (string tabId in ExpectedLegacyCareerTabIds)
+                {
+                    if (string.Equals(tabId, "tab-adept", StringComparison.Ordinal)
+                        && (string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+                            || string.Equals(rulesetId, RulesetDefaults.Sr5, StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
+
+                    harness.Presenter.SelectTabAsync(tabId, CancellationToken.None).GetAwaiter().GetResult();
+                    harness.WaitUntil(
+                        () => string.Equals(harness.State.ActiveTabId, tabId, StringComparison.Ordinal),
+                        context: $"active tab '{tabId}' for '{rulesetId}'");
+
+                    WorkspaceSurfaceActionDefinition[] expectedActions = shellCatalogResolver
+                        .ResolveWorkspaceActionsForTab(tabId, rulesetId)
+                        .Where(action => !string.Equals(action.Id, "tab-notes.data_exporter", StringComparison.Ordinal))
+                        .ToArray();
+
+                    Assert.IsTrue(
+                        expectedActions.Length > 0,
+                        $"Tab '{tabId}' must expose at least one runtime-backed workspace action for '{rulesetId}'.");
+
+                    foreach (WorkspaceSurfaceActionDefinition action in expectedActions)
+                    {
+                        harness.Presenter.ExecuteWorkspaceActionAsync(action, CancellationToken.None).GetAwaiter().GetResult();
+
+                        switch (action.Kind)
+                        {
+                            case WorkspaceSurfaceActionKind.Section:
+                            case WorkspaceSurfaceActionKind.Summary:
+                            case WorkspaceSurfaceActionKind.Validate:
+                                harness.WaitUntil(
+                                    () => string.Equals(harness.State.ActiveActionId, action.Id, StringComparison.Ordinal)
+                                        && string.Equals(harness.State.ActiveSectionId, action.TargetId, StringComparison.Ordinal)
+                                        && sectionRows.ItemCount > 0
+                                        && !string.IsNullOrWhiteSpace(preview.Text),
+                                    context: $"section payload for '{action.Id}' under '{rulesetId}'");
+
+                                string previewText = preview.Text ?? string.Empty;
+                                Assert.IsTrue(
+                                    previewText.Contains($"\"section\": \"{action.TargetId}\"", StringComparison.Ordinal)
+                                    || previewText.Contains($"\"sectionId\": \"{action.TargetId}\"", StringComparison.Ordinal)
+                                    || string.Equals(action.TargetId, "summary", StringComparison.Ordinal)
+                                    || string.Equals(action.TargetId, "validate", StringComparison.Ordinal),
+                                    $"Preview payload for '{action.Id}' under '{rulesetId}' must stay grounded in the active section identity.");
+
+                                SectionQuickActionDefinition[] expectedQuickActions = SectionQuickActionCatalog
+                                    .ForSection(rulesetId, action.TargetId)
+                                    .ToArray();
+                                string[] actualQuickActionIds = harness.Window.GetVisualDescendants()
+                                    .OfType<Control>()
+                                    .Where(control =>
+                                        control.IsVisible
+                                        && !string.IsNullOrWhiteSpace(control.Name)
+                                        && control.Name.StartsWith("SectionQuickAction_", StringComparison.Ordinal))
+                                    .Select(control => control.Name!["SectionQuickAction_".Length..])
+                                    .OrderBy(static id => id, StringComparer.Ordinal)
+                                    .ToArray();
+
+                                if (expectedQuickActions.Length == 0)
+                                {
+                                    Assert.IsFalse(
+                                        quickActionBorder.IsVisible,
+                                        $"Section '{action.TargetId}' under '{rulesetId}' must not invent unsupported quick-action chrome.");
+                                }
+                                else
+                                {
+                                    Assert.IsTrue(
+                                        quickActionBorder.IsVisible,
+                                        $"Section '{action.TargetId}' under '{rulesetId}' must surface its backed quick actions.");
+                                    CollectionAssert.AreEquivalent(
+                                        expectedQuickActions.Select(quickAction => quickAction.ControlId).ToArray(),
+                                        actualQuickActionIds,
+                                        $"Quick-action drift detected for section '{action.TargetId}' under '{rulesetId}'.");
+                                }
+
+                                break;
+
+                            case WorkspaceSurfaceActionKind.Metadata:
+                                harness.WaitUntil(
+                                    () => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true },
+                                    context: $"metadata dialog for '{action.Id}' under '{rulesetId}'");
+
+                                Button cancelButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("cancel"));
+                                cancelButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                harness.WaitUntil(
+                                    () => harness.Window.PeekDialogWindowForTesting() is null,
+                                    context: $"metadata dialog close for '{action.Id}' under '{rulesetId}'");
+                                break;
+
+                            default:
+                                Assert.Fail(
+                                    $"Action '{action.Id}' under '{rulesetId}' uses unsupported parity kind '{action.Kind}'.");
+                                break;
+                        }
+                    }
+                }
+            }, rulesetId, expectedBuildMethod);
+        }
+    }
+
+    [TestMethod]
     public void Runtime_backed_global_settings_omits_plugin_surface_and_inline_apply_button()
     {
         WithLoadedRunnerHarness(harness =>
@@ -1842,6 +2658,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             harness.ClickDialogAction("create_character");
             harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.priority_workflow" }
+                && harness.Presenter.ImportCalls == 0,
+                context: "priority follow-up dialog");
+            CollectionAssert.Contains(
+                harness.DialogActionIds(),
+                "complete_new_character_workflow",
+                "New Character must materialize a follow-up confirmation action before importing a starter workspace.");
+            harness.ClickDialogAction("complete_new_character_workflow");
+            harness.WaitUntil(() =>
                 harness.Presenter.ImportCalls > 0
                 && harness.Presenter.State.WorkspaceId is not null
                 && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
@@ -1852,6 +2677,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(
                 harness.Presenter.State.Session.OpenWorkspaces.Count > 0,
                 "New Character must create an open workspace entry after the starter import completes.");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<metatype>Human</metatype>");
             StringAssert.Contains(harness.Presenter.LastImportedDocument!.Content, "<attributes>");
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<newskills>");
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<qualities>");
@@ -1872,6 +2698,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             harness.ClickDialogAction("create_character");
             harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.priority_workflow" },
+                context: "starter attribute workflow dialog");
+            harness.ClickDialogAction("complete_new_character_workflow");
+            harness.WaitUntil(() =>
                 harness.Presenter.ImportCalls > 0
                 && harness.Presenter.State.WorkspaceId is not null
                 && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
@@ -1882,6 +2712,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
             Expander previewExpander = harness.FindControl<Expander>("SectionReviewExpander");
+            TextBlock classicSummaryTitle = harness.FindControl<TextBlock>("ClassicCharacterSummaryTitle");
 
             harness.WaitUntil(() =>
             {
@@ -1909,6 +2740,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(
                 (previewExpander.Header?.ToString() ?? string.Empty).Contains("Review", StringComparison.OrdinalIgnoreCase),
                 "The section preview header must not invent Review chrome that Chummer5A never had.");
+            Assert.IsFalse(
+                (classicSummaryTitle.Text ?? string.Empty).Contains("Runner Summary", StringComparison.Ordinal),
+                "The dense workbench must not reintroduce synthetic Runner Summary chrome once the same function already lives inside the classic sheet posture.");
         });
     }
 
@@ -1938,12 +2772,364 @@ public sealed class AvaloniaFlagshipUiGateTests
                     StringComparison.Ordinal));
 
             harness.ClickDialogAction("create_character");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.karma_workflow" }
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterWorkflowBuildMethod"),
+                    "BP",
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterWorkflowRulesetId"),
+                    RulesetDefaults.Sr4,
+                    StringComparison.Ordinal),
+                context: "sr4 karma follow-up");
+            harness.ClickDialogAction("complete_new_character_workflow");
             harness.WaitUntil(() => harness.Presenter.ImportCalls > 0 && harness.Presenter.LastImportedDocument is not null);
 
             Assert.AreEqual(RulesetDefaults.Sr4, harness.Presenter.LastImportedDocument!.RulesetId);
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<buildmethod>BP</buildmethod>");
             StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<gameedition>SR4</gameedition>");
+            StringAssert.Contains(harness.Presenter.LastImportedDocument.Content, "<metatype>Human</metatype>");
         });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6()
+    {
+        var scenarios = new[]
+        {
+            new { RulesetId = RulesetDefaults.Sr4, BuildMethod = "BP", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr4, BuildMethod = "Karma", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr5, BuildMethod = "Priority", ExpectedDialogId = "dialog.new_character.priority_workflow", ExpectsPriorityFields = true, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr5, BuildMethod = "SumToTen", ExpectedDialogId = "dialog.new_character.priority_workflow", ExpectsPriorityFields = true, ExpectsSumToTen = true },
+            new { RulesetId = RulesetDefaults.Sr5, BuildMethod = "Karma", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr5, BuildMethod = "LifeModule", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr6, BuildMethod = "Priority", ExpectedDialogId = "dialog.new_character.priority_workflow", ExpectsPriorityFields = true, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr6, BuildMethod = "SumToTen", ExpectedDialogId = "dialog.new_character.priority_workflow", ExpectsPriorityFields = true, ExpectsSumToTen = true },
+            new { RulesetId = RulesetDefaults.Sr6, BuildMethod = "Karma", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false },
+            new { RulesetId = RulesetDefaults.Sr6, BuildMethod = "LifeModule", ExpectedDialogId = "dialog.new_character.karma_workflow", ExpectsPriorityFields = false, ExpectsSumToTen = false }
+        };
+
+        foreach (var scenario in scenarios)
+        {
+            WithHarness(harness =>
+            {
+                harness.WaitForReady();
+                harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+                harness.WaitUntil(() =>
+                    harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" },
+                    context: $"open new_character for {scenario.RulesetId}/{scenario.BuildMethod}");
+
+                SelectDialogOption(
+                    harness,
+                    "newCharacterRulesetId",
+                    scenario.RulesetId,
+                    $"ruleset {scenario.RulesetId} for {scenario.BuildMethod}");
+                SelectDialogOption(
+                    harness,
+                    "newCharacterBuildMethod",
+                    scenario.BuildMethod,
+                    $"build method {scenario.BuildMethod} for {scenario.RulesetId}");
+
+                harness.ClickDialogAction("create_character");
+                harness.WaitUntil(() =>
+                    harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: var dialogId }
+                    && string.Equals(dialogId, scenario.ExpectedDialogId, StringComparison.Ordinal)
+                    && string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterWorkflowRulesetId"),
+                        scenario.RulesetId,
+                        StringComparison.Ordinal)
+                    && string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterWorkflowBuildMethod"),
+                        scenario.BuildMethod,
+                        StringComparison.Ordinal)
+                    && harness.Presenter.ImportCalls == 0,
+                    context: $"workflow materialization for {scenario.RulesetId}/{scenario.BuildMethod}");
+
+                DesktopDialogState workflowDialog = harness.State.ActiveDialog
+                    ?? throw new AssertFailedException($"Workflow dialog was not published for {scenario.RulesetId}/{scenario.BuildMethod}.");
+
+                SelectDialogOption(
+                    harness,
+                    "newCharacterMetatypeCategory",
+                    "Metahuman",
+                    $"metatype category for {scenario.RulesetId}/{scenario.BuildMethod}");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterMetatype"),
+                        "Elf",
+                        StringComparison.Ordinal),
+                    context: $"default metatype rematerialization for {scenario.RulesetId}/{scenario.BuildMethod}");
+
+                if (scenario.ExpectsPriorityFields)
+                {
+                    Assert.IsNotNull(
+                        workflowDialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityHeritage", StringComparison.Ordinal)),
+                        $"Priority workflow must expose the priority ladder for {scenario.RulesetId}/{scenario.BuildMethod}.");
+                    SelectDialogOption(
+                        harness,
+                        "newCharacterPriorityTalentChoice",
+                        "Adept",
+                        $"talent choice for {scenario.RulesetId}/{scenario.BuildMethod}");
+                }
+                else
+                {
+                    Assert.IsNull(
+                        workflowDialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterPriorityHeritage", StringComparison.Ordinal)),
+                        $"Karma workflow must not surface the priority ladder for {scenario.RulesetId}/{scenario.BuildMethod}.");
+                }
+
+                string summaryFieldId = scenario.ExpectsPriorityFields
+                    ? "newCharacterPriorityWorkflowSummary"
+                    : "newCharacterKarmaWorkflowSummary";
+                string summary = DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, summaryFieldId) ?? string.Empty;
+                StringAssert.Contains(summary, $"Route | {scenario.RulesetId.ToUpperInvariant()} {scenario.BuildMethod}");
+                StringAssert.Contains(summary, "Metatype | Elf (Metahuman)");
+                if (scenario.ExpectsSumToTen)
+                {
+                    StringAssert.Contains(summary, "Sum-to-Ten Total | 10");
+                }
+
+                harness.ClickDialogAction("complete_new_character_workflow");
+                harness.WaitUntil(() =>
+                    harness.Presenter.ImportCalls > 0
+                    && harness.Presenter.LastImportedDocument is not null
+                    && harness.Window.PeekDialogWindowForTesting() is null,
+                    context: $"starter workspace import for {scenario.RulesetId}/{scenario.BuildMethod}");
+
+                string importedContent = harness.Presenter.LastImportedDocument!.Content;
+                Assert.AreEqual(scenario.RulesetId, harness.Presenter.LastImportedDocument.RulesetId);
+                StringAssert.Contains(importedContent, $"<buildmethod>{scenario.BuildMethod}</buildmethod>");
+                StringAssert.Contains(importedContent, "<metatype>Elf</metatype>");
+                StringAssert.Contains(importedContent, "<metatypecategory>Metahuman</metatypecategory>");
+                if (scenario.ExpectsPriorityFields)
+                {
+                    StringAssert.Contains(importedContent, "<prioritytalent>Adept</prioritytalent>");
+                    StringAssert.Contains(importedContent, "<adept>True</adept>");
+                    StringAssert.Contains(importedContent, "<magician>False</magician>");
+                    StringAssert.Contains(importedContent, "<technomancer>False</technomancer>");
+                    StringAssert.Contains(importedContent, "<magenabled>True</magenabled>");
+                    StringAssert.Contains(importedContent, "<resenabled>False</resenabled>");
+                    if (scenario.ExpectsSumToTen)
+                    {
+                        StringAssert.Contains(importedContent, "<sumtoten>10</sumtoten>");
+                    }
+                    else
+                    {
+                        Assert.IsFalse(
+                            importedContent.Contains("<sumtoten>10</sumtoten>", StringComparison.Ordinal),
+                            $"Only SumToTen should emit sum-to-ten grounding for {scenario.RulesetId}/{scenario.BuildMethod}.");
+                    }
+                }
+                else
+                {
+                    Assert.IsFalse(
+                        importedContent.Contains("<prioritymetatype>", StringComparison.Ordinal),
+                        $"Karma workflow must not inject priority ladder grounding for {scenario.RulesetId}/{scenario.BuildMethod}.");
+                }
+            });
+        }
+    }
+
+    [TestMethod]
+    public void Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            Button modifyButton = harness.FindControl<Button>("newCharacterModifyButton");
+            modifyButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_settings" },
+                context: "character settings from new_character");
+
+            SelectDialogOption(harness, "characterPriority", "SumToTen", "saved character priority");
+            CheckBox houseRulesCheckBox = harness.FindControl<CheckBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("characterHouseRulesEnabled"));
+            houseRulesCheckBox.IsChecked = true;
+            harness.WaitUntil(() =>
+                string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "characterHouseRulesEnabled"),
+                    "true",
+                    StringComparison.Ordinal),
+                context: "house rules toggle");
+            harness.ClickDialogAction("save");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is null
+                && string.Equals(harness.State.Preferences.CharacterPriority, "SumToTen", StringComparison.Ordinal)
+                && harness.State.Preferences.HouseRulesEnabled,
+                context: "saved character settings");
+
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" },
+                context: "reopen new_character with saved defaults");
+
+            Assert.AreEqual("SumToTen", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterBuildMethod"));
+            Assert.AreEqual("SumToTen", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterPreferredBuildMethod"));
+            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterHouseRulesEnabled"));
+            StringAssert.Contains(harness.State.ActiveDialog!.Message ?? string.Empty, "House rules are enabled");
+
+            harness.ClickDialogAction("create_character");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character.priority_workflow" },
+                context: "sum-to-ten priority workflow");
+            string priorityWorkflowSummary = DesktopDialogFieldValueParser.GetValue(
+                harness.State.ActiveDialog!,
+                "newCharacterPriorityWorkflowSummary") ?? string.Empty;
+            StringAssert.Contains(priorityWorkflowSummary, "House Rules | Enabled");
+            StringAssert.Contains(priorityWorkflowSummary, "Sum-to-Ten Total | 10");
+
+            harness.ClickDialogAction("cancel");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null, context: "close priority workflow");
+
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" },
+                context: "reopen new_character before sr4 normalization");
+
+            SelectDialogOption(harness, "newCharacterRulesetId", RulesetDefaults.Sr4, "sr4 ruleset normalization");
+            harness.WaitUntil(() =>
+                string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterBuildMethod"),
+                    "BP",
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterHouseRulesEnabled"),
+                    "true",
+                    StringComparison.Ordinal),
+                context: "sr4 build method normalization");
+            StringAssert.Contains(harness.State.ActiveDialog!.Message ?? string.Empty, "House rules are enabled");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_gear_add_dialog_uses_legacy_category_combobox_posture()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            TextBlock categoryLabel = harness.FindControl<TextBlock>(DesktopDialogAccessibility.BuildFieldLabelName("uiGearCategory"));
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            ComboBox dataFileCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBookFilter"));
+
+            Assert.AreEqual("Category", categoryLabel.Text);
+            Assert.AreEqual("Show All", (categoryCombo.SelectedItem as DesktopDialogFieldOption)?.Value);
+            CollectionAssert.AreEqual(
+                new[] { "Show All", "Armor", "Visual", "Pistols", "Medical" },
+                categoryCombo.ItemsSource!.OfType<DesktopDialogFieldOption>().Select(option => option.Value).ToArray());
+            CollectionAssert.AreEqual(
+                new[] { "All Books", "Core Rulebook" },
+                dataFileCombo.ItemsSource!.OfType<DesktopDialogFieldOption>().Select(option => option.Value).ToArray());
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_chummer5a_muscle_memory_inventory_receipt_covers_every_surface_and_element()
+    {
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithLoadedRunnerHarness(assertion),
+            "chummer6-ui.chummer5a_muscle_memory_inventory",
+            "Runtime muscle-memory inventory captured every shell, menu, workspace, and dialog surface without generic parity drift.",
+            "Runtime muscle-memory inventory found generic parity drift in the promoted UI surface inventory.");
+        PersistMuscleMemoryInventoryReceipt(receipt, ResolveChummer5aMuscleMemoryInventoryReceiptPath());
+
+        if (receipt.Reasons.Length > 0)
+        {
+            Assert.Fail(string.Join(Environment.NewLine, receipt.Reasons));
+        }
+    }
+
+    [TestMethod]
+    public void Runtime_backed_chummer5a_muscle_memory_inventory_secondary_routes_distinguish_tooltip_hosts_from_real_auxiliary_routes()
+    {
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithLoadedRunnerHarness(assertion),
+            "chummer6-ui.chummer5a_muscle_memory_inventory",
+            "Runtime muscle-memory inventory kept tooltip hosts separate from real secondary-route surfaces.",
+            "Runtime muscle-memory inventory mixed tooltip hosts into secondary-route parity.");
+
+        Assert.AreEqual("pass", receipt.Reviews.AuxiliaryPointerHostTruthReview.Status);
+        Assert.AreEqual(
+            0,
+            receipt.Evidence.MiddleClickRouteCount,
+            "The promoted desktop head must not advertise middle-click parity until a real legacy middle-click route is proven.");
+
+        if (receipt.Evidence.ContextMenuHostCount == 0 && receipt.Evidence.SecondaryFlyoutHostCount == 0)
+        {
+            Assert.AreEqual(
+                0,
+                receipt.Evidence.RightClickRouteCount,
+                "No promoted control should claim right-click parity when there is no real context-menu or flyout host.");
+            Assert.AreEqual(
+                0,
+                receipt.Evidence.SecondaryExpandRouteCount,
+                "No promoted control should claim secondary-expand parity when there is no real flyout host.");
+        }
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_chummer4_muscle_memory_inventory_receipt_covers_every_surface_and_element()
+    {
+        MuscleMemoryInventoryReceipt baselineReceipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithSr5LoadedRunnerHarness(assertion),
+            "chummer6-ui.shared_sr5_muscle_memory_inventory",
+            "SR5 shared muscle-memory baseline captured every promoted shell, menu, workspace, and dialog surface without generic parity drift.",
+            "SR5 shared muscle-memory baseline found generic parity drift in the promoted UI surface inventory.");
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithSr4LoadedRunnerHarness(assertion),
+            "chummer6-ui.chummer4_sr4_muscle_memory_inventory",
+            "SR4/Chummer4 muscle-memory inventory captured every promoted shell, menu, workspace, and dialog surface without generic parity drift.",
+            "SR4/Chummer4 muscle-memory inventory found promoted-surface parity drift in the runtime desktop inventory.");
+        receipt = EnforceSharedBaselineParity(
+            receipt,
+            baselineReceipt,
+            "SR4",
+            compareDialogCopyAndGeometry: false,
+            "SR4/Chummer4 muscle-memory inventory matched the promoted desktop baseline across all shared surfaces.",
+            "SR4/Chummer4 muscle-memory inventory drifted from the promoted desktop baseline on shared surfaces.");
+        PersistMuscleMemoryInventoryReceipt(receipt, ResolveSr4MuscleMemoryInventoryReceiptPath());
+
+        if (receipt.Reasons.Length > 0)
+        {
+            Assert.Fail(string.Join(Environment.NewLine, receipt.Reasons));
+        }
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract()
+    {
+        MuscleMemoryInventoryReceipt baselineReceipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithSr5LoadedRunnerHarness(assertion),
+            "chummer6-ui.shared_sr5_muscle_memory_inventory",
+            "SR5 shared muscle-memory baseline captured every promoted shell, menu, workspace, and dialog surface without generic parity drift.",
+            "SR5 shared muscle-memory baseline found generic parity drift in the promoted UI surface inventory.");
+        MuscleMemoryInventoryReceipt receipt = CaptureMuscleMemoryInventoryReceipt(
+            assertion => WithSr6LoadedRunnerHarness(assertion),
+            "chummer6-ui.sr6_shared_muscle_memory_inventory",
+            "SR6 shared muscle-memory inventory captured every promoted shell, menu, workspace, and dialog surface without generic parity drift.",
+            "SR6 shared muscle-memory inventory found promoted-surface parity drift in the runtime desktop inventory.");
+        receipt = EnforceSharedBaselineParity(
+            receipt,
+            baselineReceipt,
+            "SR6",
+            compareDialogCopyAndGeometry: true,
+            "SR6 shared muscle-memory inventory matched the promoted desktop baseline across all shared surfaces.",
+            "SR6 shared muscle-memory inventory drifted from the promoted desktop baseline on shared surfaces.");
+        PersistMuscleMemoryInventoryReceipt(receipt, ResolveSr6MuscleMemoryInventoryReceiptPath());
+
+        if (receipt.Reasons.Length > 0)
+        {
+            Assert.Fail(string.Join(Environment.NewLine, receipt.Reasons));
+        }
     }
 
     [TestMethod]
@@ -2019,6 +3205,64 @@ public sealed class AvaloniaFlagshipUiGateTests
             modifyButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             harness.WaitUntil(() =>
                 harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_settings" });
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("translator");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.translator" });
+            DesktopDialogState translatorDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("Translator dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(translatorDialog, "translatorLanePosture"));
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(translatorDialog, "translatorBridgePosture"));
+            harness.ClickDialogAction("close");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null);
+
+            harness.SelectCommand("xml_editor");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.xml_editor" });
+            DesktopDialogState xmlEditorDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("XML Editor dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorLanePosture"));
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorCustomDataLanePosture"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(xmlEditorDialog, "xmlEditorReceipt"), "governed for this parity fixture");
+            harness.ClickDialogAction("cancel");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null);
+
+            harness.SelectCommand("hero_lab_importer");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.hero_lab_importer" });
+            DesktopDialogState heroLabDialog = harness.Presenter.State.ActiveDialog
+                ?? throw new AssertFailedException("Hero Lab Importer dialog should be active.");
+            Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleLanePosture"));
+            Assert.AreEqual("1/1 · 100%", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleCoverage"));
+            Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabFixtureCount"));
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabImportOracleReceipt"), "governed for this parity fixture");
+            StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(heroLabDialog, "heroLabAdjacentSr6OracleReceipt"), "current for this parity fixture");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("master_index");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.master_index" });
+
+            harness.Click(DesktopDialogAccessibility.BuildFieldInputName("masterIndexCurrentSourcebook"));
+            harness.WaitUntil(() => harness.Presenter.ExecutedDialogActionIds.Contains("open_source"));
+            Assert.AreEqual(
+                "dialog.master_index",
+                harness.Window.PeekDialogWindowForTesting()?.BoundDialogId,
+                "Source click must stay on the legacy Master Index surface after opening the linked PDF route.");
         });
     }
 
@@ -2123,6 +3367,33 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_mouse_only_character_roster_double_tap_opens_selected_runner()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("character_roster");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.character_roster" });
+
+            string selectedRunnerId = DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "rosterSelectedRunnerId") ?? string.Empty;
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(selectedRunnerId),
+                "Character Roster must have a selected runner before the legacy double-click route is exercised.");
+
+            harness.DoubleTap(DesktopDialogAccessibility.BuildFieldInputName("rosterSelectedRunnerId"));
+            harness.WaitUntil(() => harness.Presenter.ExecutedDialogActionIds.Contains("open_runner"));
+            harness.WaitUntil(() => harness.Presenter.State.ActiveDialog is null);
+            Assert.AreEqual(
+                selectedRunnerId,
+                harness.Presenter.State.WorkspaceId?.Value,
+                "Double-tapping the selected roster runner must activate that runner.");
+            Assert.IsNull(
+                harness.Window.PeekDialogWindowForTesting(),
+                "Double-tapping the selected roster runner must dismiss the roster dialog once the runner is opened.");
+        });
+    }
+
+    [TestMethod]
     public void Active_dialog_screenshots_capture_the_modal_window_surface()
     {
         WithLoadedRunnerHarness(harness =>
@@ -2166,6 +3437,252 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Assert.IsTrue(harness.ScreenshotRootContainsVisibleText("Startup Ruleset"));
             Assert.IsTrue(harness.ScreenshotRootContainsVisibleText("Ruleset"));
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_switch_ruleset_dialog_preserves_compact_combo_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("switch_ruleset", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.switch_ruleset" });
+
+            ComboBox? rulesetCombo = harness.FindControlOnScreenshotRootOrDefault<ComboBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("preferredRulesetId"));
+            TextBox? rulesetTextBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("preferredRulesetId"));
+
+            Assert.IsNotNull(rulesetCombo, "SR4 ruleset switching must preserve a legacy-style chooser.");
+            Assert.IsNull(rulesetTextBox, "SR4 ruleset switching must not degrade into a freeform textbox.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_new_character_dialog_preserves_chummer4_build_method_combo_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal)));
+
+            ComboBox? buildMethodCombo = harness.FindControlOnScreenshotRootOrDefault<ComboBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+            TextBox? buildMethodTextBox = harness.FindControlOnScreenshotRootOrDefault<TextBox>(
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+
+            Assert.IsNotNull(buildMethodCombo, "SR4 new-character posture must preserve a Chummer4-style build-method combo.");
+            Assert.IsNull(buildMethodTextBox, "SR4 new-character posture must not degrade build method into a textbox.");
+            Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(harness.Presenter.State.ActiveDialog!, "newCharacterBuildMethod"));
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_new_character_preserves_modify_button_row_order_and_footer_posture()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            ComboBox rulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            DesktopDialogFieldOption sr4Option = rulesetCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, RulesetDefaults.Sr4, StringComparison.Ordinal));
+            rulesetCombo.SelectedItem = sr4Option;
+
+            harness.WaitUntil(() =>
+                harness.Presenter.DialogFieldUpdates.Any(update =>
+                    string.Equals(update.FieldId, "newCharacterRulesetId", StringComparison.Ordinal)
+                    && string.Equals(update.Value, RulesetDefaults.Sr4, StringComparison.Ordinal)));
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            ComboBox buildMethodCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterBuildMethod"));
+            ComboBox rebuiltRulesetCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("newCharacterRulesetId"));
+            Button modifyButton = harness.FindControl<Button>("newCharacterModifyButton");
+            Button createButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("create_character"));
+            Button cancelButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("cancel"));
+
+            Rect buildMethodBounds = GetBoundsRelativeToRoot(buildMethodCombo, root);
+            Rect rulesetBounds = GetBoundsRelativeToRoot(rebuiltRulesetCombo, root);
+            Rect modifyBounds = GetBoundsRelativeToRoot(modifyButton, root);
+            Rect createBounds = GetBoundsRelativeToRoot(createButton, root);
+            Rect cancelBounds = GetBoundsRelativeToRoot(cancelButton, root);
+
+            Assert.IsTrue(
+                Math.Abs(buildMethodBounds.Y - modifyBounds.Y) <= 18d,
+                $"SR4 build-method chooser and Modify button must stay on the same row band, actual {buildMethodBounds.Y:0.##} vs {modifyBounds.Y:0.##}.");
+            Assert.IsTrue(
+                modifyBounds.X > buildMethodBounds.X,
+                "SR4 Modify button must stay to the right of the build-method chooser.");
+            Assert.IsTrue(
+                rulesetBounds.Y > buildMethodBounds.Y,
+                "SR4 ruleset chooser must remain below the build-method row.");
+            Assert.IsTrue(
+                Math.Abs(createBounds.Y - cancelBounds.Y) <= 18d,
+                $"SR4 footer actions must stay on one band, actual {createBounds.Y:0.##} vs {cancelBounds.Y:0.##}.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_dice_roller_preserves_chummer4_checkbox_copy()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("dice_roller");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.dice_roller" });
+
+            string[] checkboxLabels =
+            [
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceRuleOf6")).Content?.ToString() ?? string.Empty,
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceCinematicGameplay")).Content?.ToString() ?? string.Empty,
+                harness.FindControl<CheckBox>(DesktopDialogAccessibility.BuildFieldInputName("diceRushJob")).Content?.ToString() ?? string.Empty
+            ];
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "using Rule of 6",
+                    "Hit on 4, 5, or 6",
+                    "Rushed Job (Glitch on 1 or 2)"
+                },
+                checkboxLabels);
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_dice_roller_preserves_chummer4_spinner_posture_and_topbar_geography()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SelectCommand("dice_roller");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.dice_roller" });
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            NumericUpDown diceCount = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceCount"));
+            NumericUpDown threshold = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceThreshold"));
+            NumericUpDown gremlins = harness.FindControl<NumericUpDown>(DesktopDialogAccessibility.BuildFieldInputName("diceGremlins"));
+            ComboBox methodCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("diceMethod"));
+            ListBox resultsList = harness.FindControl<ListBox>(DesktopDialogAccessibility.BuildFieldInputName("diceResultsList"));
+            Button rollButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("roll"));
+            Button rerollButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("reroll_misses"));
+
+            Rect diceCountBounds = GetBoundsRelativeToRoot(diceCount, root);
+            Rect methodBounds = GetBoundsRelativeToRoot(methodCombo, root);
+            Rect rollBounds = GetBoundsRelativeToRoot(rollButton, root);
+            Rect rerollBounds = GetBoundsRelativeToRoot(rerollButton, root);
+            Rect thresholdBounds = GetBoundsRelativeToRoot(threshold, root);
+            Rect gremlinsBounds = GetBoundsRelativeToRoot(gremlins, root);
+            Rect resultsListBounds = GetBoundsRelativeToRoot(resultsList, root);
+
+            Assert.IsTrue(
+                Math.Abs(diceCountBounds.Y - methodBounds.Y) <= 18d
+                && Math.Abs(methodBounds.Y - rollBounds.Y) <= 18d,
+                "SR4 dice-count spinner, method combo, and Roll button must stay on the legacy top bar.");
+            Assert.IsTrue(
+                diceCountBounds.X < methodBounds.X
+                && methodBounds.X < rollBounds.X
+                && rollBounds.X < rerollBounds.X,
+                "SR4 dice roller top-bar controls must preserve the legacy left-to-right order.");
+            Assert.IsTrue(
+                thresholdBounds.X >= methodBounds.X
+                && gremlinsBounds.X >= methodBounds.X,
+                "SR4 threshold and gremlins spinners must stay in the right-side option pane.");
+            Assert.IsTrue(
+                Math.Abs(thresholdBounds.X - gremlinsBounds.X) <= 24d
+                && gremlinsBounds.Y > thresholdBounds.Y,
+                "SR4 threshold and gremlins spinners must stay vertically stacked in the same control column.");
+            Assert.IsTrue(
+                resultsListBounds.X < thresholdBounds.X,
+                "SR4 roll history list must stay in the left pane rather than collapsing into the right-side controls.");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_starter_runner_gear_add_uses_chummer4_category_combobox_posture()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            TextBlock categoryLabel = harness.FindControl<TextBlock>(DesktopDialogAccessibility.BuildFieldLabelName("uiGearCategory"));
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            TextBox? categoryTextBox = harness.FindControlOrDefault<TextBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+
+            Assert.AreEqual("Category", categoryLabel.Text);
+            Assert.IsNotNull(categoryCombo, "SR4 gear selection must preserve a category combo.");
+            Assert.IsNull(categoryTextBox, "SR4 gear selection must not degrade category into a textbox.");
+            Assert.AreEqual("Show All", (categoryCombo.SelectedItem as DesktopDialogFieldOption)?.Value);
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_sr4_starter_runner_gear_add_preserves_two_pane_geography_and_primary_action_band()
+    {
+        WithSr4LoadedRunnerHarness(harness =>
+        {
+            harness.SetActiveSectionForTesting("inventory");
+            harness.OpenUiControl("gear_add");
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.ui.gear_add" });
+
+            Control root = harness.GetScreenshotRootControlForTesting();
+            ComboBox categoryCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCategory"));
+            ComboBox dataFileCombo = harness.FindControl<ComboBox>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBookFilter"));
+            Control candidateList = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearCandidateList"));
+            Control browseGrid = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearBrowseGrid"));
+            Control selectionDetails = harness.FindControl<Control>(DesktopDialogAccessibility.BuildFieldInputName("uiGearSelectionDetails"));
+            Button addButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("add"));
+            Button addMoreButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("add_more"));
+            Button cancelButton = harness.FindControl<Button>(DesktopDialogAccessibility.BuildActionName("cancel"));
+
+            Rect categoryBounds = GetBoundsRelativeToRoot(categoryCombo, root);
+            Rect dataFileBounds = GetBoundsRelativeToRoot(dataFileCombo, root);
+            Rect candidateBounds = GetBoundsRelativeToRoot(candidateList, root);
+            Rect browseGridBounds = GetBoundsRelativeToRoot(browseGrid, root);
+            Rect detailsBounds = GetBoundsRelativeToRoot(selectionDetails, root);
+            Rect addBounds = GetBoundsRelativeToRoot(addButton, root);
+            Rect addMoreBounds = GetBoundsRelativeToRoot(addMoreButton, root);
+            Rect cancelBounds = GetBoundsRelativeToRoot(cancelButton, root);
+
+            Assert.IsTrue(
+                categoryBounds.Y < candidateBounds.Y,
+                "SR4 gear category chooser must stay above the browse list.");
+            Assert.IsTrue(
+                dataFileBounds.Y < detailsBounds.Y,
+                "SR4 gear data-file filter must stay above the right-side detail pane.");
+            Assert.IsTrue(
+                candidateBounds.X < browseGridBounds.X,
+                "SR4 gear browse list must stay to the left of the paired browse grid.");
+            Assert.IsTrue(
+                detailsBounds.Y > browseGridBounds.Y,
+                "SR4 gear selection details must stay below the top browse row rather than replacing it.");
+            Assert.IsTrue(
+                Math.Abs(addBounds.Y - addMoreBounds.Y) <= 18d
+                && Math.Abs(addBounds.Y - cancelBounds.Y) <= 18d,
+                "SR4 gear add/footer actions must stay on a single legacy action band.");
         });
     }
 
@@ -2432,11 +3949,15 @@ public sealed class AvaloniaFlagshipUiGateTests
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
             Control classicCharacterSheet = harness.FindControl<Control>("ClassicCharacterSheetBorder");
+            TextBlock classicSummaryTitle = harness.FindControl<TextBlock>("ClassicCharacterSummaryTitle");
 
             harness.WaitUntil(() => sectionRows.ItemCount >= 8);
             string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
 
-            Assert.IsTrue(classicCharacterSheet.IsVisible, "Dense character-sheet posture must surface a visible runner summary band.");
+            Assert.IsTrue(classicCharacterSheet.IsVisible, "Dense character-sheet posture must surface a visible compact summary band.");
+            Assert.IsFalse(
+                (classicSummaryTitle.Text ?? string.Empty).Contains("Runner Summary", StringComparison.Ordinal),
+                "The dense workbench must not reintroduce synthetic Runner Summary chrome once the same function already lives inside the classic sheet posture.");
             CollectionAssert.Contains(rowText, "attributes.body = 5");
             CollectionAssert.Contains(rowText, "attributes.agility = 7");
             CollectionAssert.Contains(rowText, "skills.firearms[0] = Automatics 6");
@@ -2687,6 +4208,86 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6()
+    {
+        RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
+        var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
+        var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+        string[] runtimeLoadedRunnerRulesetIds =
+        [
+            RulesetDefaults.Sr5
+        ];
+
+        foreach (string rulesetId in runtimeLoadedRunnerRulesetIds)
+        {
+            string expectedBuildMethod = string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+                ? "BP"
+                : "Priority";
+
+            void AssertWorkflowMatrix(RuntimeFlagshipUiHarness harness)
+            {
+                NavigatorTabItem[] visibleTabs = SnapshotLoadedRunnerTabs(harness.FindControl<TabStrip>("LoadedRunnerTabStrip"));
+                HashSet<string> coveredWorkflowControlIds = new(StringComparer.Ordinal);
+
+                foreach (NavigatorTabItem tab in visibleTabs)
+                {
+                    WorkspaceSurfaceActionDefinition[] expectedActions = shellCatalogResolver
+                        .ResolveWorkspaceActionsForTab(tab.Id, rulesetId)
+                        .Where(action => action.Kind is WorkspaceSurfaceActionKind.Section or WorkspaceSurfaceActionKind.Summary or WorkspaceSurfaceActionKind.Validate)
+                        .ToArray();
+
+                    foreach (WorkspaceSurfaceActionDefinition action in expectedActions)
+                    {
+                        SectionQuickActionDefinition[] quickActions = SectionQuickActionCatalog
+                            .ForSection(rulesetId, action.TargetId)
+                            .Where(quickAction => RuntimeQuickActionWorkflowContracts.ContainsKey(quickAction.ControlId))
+                            .ToArray();
+                        if (quickActions.Length == 0)
+                        {
+                            continue;
+                        }
+
+                        harness.Presenter.ExecuteWorkspaceActionAsync(action, CancellationToken.None).GetAwaiter().GetResult();
+                        harness.WaitUntil(
+                            () => string.Equals(harness.State.ActiveSectionId, action.TargetId, StringComparison.Ordinal)
+                                && harness.State.ActiveSectionRows.Count > 0
+                                && harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible,
+                            context: $"quick-action host for '{action.TargetId}' under '{rulesetId}'");
+
+                        foreach (SectionQuickActionDefinition quickAction in quickActions)
+                        {
+                            if (!coveredWorkflowControlIds.Add(quickAction.ControlId))
+                            {
+                                continue;
+                            }
+
+                            RuntimeQuickActionWorkflowContract contract = RuntimeQuickActionWorkflowContracts[quickAction.ControlId];
+                            AssertRuntimeQuickActionWorkflowContract(harness, rulesetId, action.TargetId, quickAction, contract);
+                        }
+                    }
+                }
+
+                string[] expectedWorkflowControlIds = visibleTabs
+                    .SelectMany(tab => shellCatalogResolver.ResolveWorkspaceActionsForTab(tab.Id, rulesetId))
+                    .Where(action => action.Kind is WorkspaceSurfaceActionKind.Section or WorkspaceSurfaceActionKind.Summary or WorkspaceSurfaceActionKind.Validate)
+                    .SelectMany(action => SectionQuickActionCatalog.ForSection(rulesetId, action.TargetId))
+                    .Select(quickAction => quickAction.ControlId)
+                    .Where(RuntimeQuickActionWorkflowContracts.ContainsKey)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(static controlId => controlId, StringComparer.Ordinal)
+                    .ToArray();
+
+                CollectionAssert.AreEquivalent(
+                    expectedWorkflowControlIds,
+                    coveredWorkflowControlIds.OrderBy(static controlId => controlId, StringComparer.Ordinal).ToArray(),
+                    $"Loaded-runner workflow matrix skipped a surfaced quick-action dialog under '{rulesetId}'.");
+            }
+
+            WithRulesetRuntimeLoadedRunnerHarness(AssertWorkflowMatrix, rulesetId, expectedBuildMethod);
+        }
+    }
+
+    [TestMethod]
     public void Screenshot_workflow_coverage_requires_multiple_frames_for_every_canonical_family()
     {
         string[] actualFamilyIds = RequiredWorkflowScreenshotCoverage
@@ -2750,7 +4351,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             "15-creation-section-light.png",
             GetVeteranCertificationReviewStep("master_index").ScreenshotFileName,
             GetVeteranCertificationReviewStep("roster").ScreenshotFileName,
-            GetVeteranCertificationReviewStep("import").ScreenshotFileName
+            GetVeteranCertificationReviewStep("import").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("translator").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName,
+            GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName
         ];
         string[] expectedFiles =
         [
@@ -2858,13 +4462,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 WithIsolatedHarness(harness =>
                 {
                     LoadDemoRunner(harness);
-                    harness.Click(menuButtonName);
-                    harness.WaitUntil(() =>
-                    {
-                        MenuItem[] commands = SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName));
-                        return commands.Any(command => string.Equals(command.Tag?.ToString(), commandId, StringComparison.Ordinal));
-                    });
-                    harness.ClickMenuCommand(commandId);
+                    harness.SelectCommand(commandId);
                     AssertDialogContainsAll(harness, requiredMarkers);
                     prepare?.Invoke(harness);
                     CaptureCurrentFrame(harness, fileName);
@@ -3204,6 +4802,27 @@ public sealed class AvaloniaFlagshipUiGateTests
                     CaptureCurrentFrame(harness, GetVeteranCertificationReviewStep("import").ScreenshotFileName);
                     return true;
                 });
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("translator").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "translator",
+                    "close",
+                    GetVeteranCertificationReviewStep("translator").RequiredDialogMarkers);
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("xml_editor").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "xml_editor",
+                    "cancel",
+                    GetVeteranCertificationReviewStep("xml_editor").RequiredDialogMarkers);
+
+                CaptureDialogFrameInFreshHarness(
+                    GetVeteranCertificationReviewStep("hero_lab_importer").ScreenshotFileName,
+                    "ToolsMenuButton",
+                    "hero_lab_importer",
+                    "cancel",
+                    GetVeteranCertificationReviewStep("hero_lab_importer").RequiredDialogMarkers);
             }
             finally
             {
@@ -3294,6 +4913,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         HeadlessUnitTestSession? session = null;
         try
         {
+            ResetHeadlessSession();
             session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
             return session.Dispatch(() =>
                 {
@@ -3307,6 +4927,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         finally
         {
             DisposeHeadlessSessionQuietly(session);
+            ResetHeadlessSession();
         }
     }
 
@@ -3399,6 +5020,662 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         return match;
     }
+
+    private static string[] ResolveChummer5aFixtureUiReconstructionFixtureNames()
+    {
+        string? configuredFixtureFile = Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_FIXTURES_FILE");
+        if (!string.IsNullOrWhiteSpace(configuredFixtureFile))
+        {
+            string[] fixtureNames = File.ReadAllLines(configuredFixtureFile)
+                .Select(line => line.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (fixtureNames.Length == 0)
+            {
+                throw new AssertFailedException(
+                    $"Fixture UI reconstruction fixture file '{configuredFixtureFile}' did not contain any fixture names.");
+            }
+
+            return fixtureNames;
+        }
+
+        string scope = (Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_SCOPE") ?? string.Empty).Trim();
+        if (string.Equals(scope, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            string[] allFixtureNames = Directory.EnumerateFiles(ResolveTestFilesDirectory(), "*.chum5")
+                .Select(Path.GetFileName)
+                .Where(static name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(static name => name, StringComparer.Ordinal)
+                .ToArray()!;
+            if (allFixtureNames.Length == 0)
+            {
+                throw new AssertFailedException("Fixture UI reconstruction scope 'all' resolved zero .chum5 fixtures.");
+            }
+
+            return allFixtureNames;
+        }
+
+        return DefaultChummer5aFixtureUiReconstructionFixtureNames;
+    }
+
+    private static string ResolveTestFilesDirectory()
+    {
+        string[] candidates =
+        {
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles"),
+            Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"),
+            Path.Combine(AppContext.BaseDirectory, "TestFiles"),
+            Path.Combine("/src", "Chummer.Tests", "TestFiles"),
+            "/docker/chummercomplete/chummer-presentation/Chummer.Tests/TestFiles"
+        };
+
+        string? match = candidates.FirstOrDefault(Directory.Exists);
+        if (match is null)
+        {
+            throw new DirectoryNotFoundException("Could not locate the Chummer test fixture directory.");
+        }
+
+        return match;
+    }
+
+    private static string ResolveFixtureUiReconstructionReceiptsDirectory()
+    {
+        string? configuredPath = Environment.GetEnvironmentVariable("CHUMMER_FIXTURE_UI_RECONSTRUCTION_RECEIPTS_DIR");
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return Path.GetFullPath(configuredPath);
+        }
+
+        string docsDirectory = Path.GetDirectoryName(ResolveSourceFile("docs", "PARITY_ORACLE.json"))
+            ?? throw new DirectoryNotFoundException("Could not resolve docs directory for fixture UI reconstruction receipts.");
+        string repoRoot = Directory.GetParent(docsDirectory)?.FullName
+            ?? throw new DirectoryNotFoundException("Could not resolve repo root for fixture UI reconstruction receipts.");
+        return Path.GetFullPath(
+            Path.Combine(
+                repoRoot,
+                ".codex-studio",
+                "out",
+                "test-fixture-ui-reconstruction",
+                Guid.NewGuid().ToString("N")));
+    }
+
+    private static FixtureUiReconstructionMaterializationResult MaterializeFixtureUiReconstructionReceipt(
+        string fixtureName,
+        string receiptsDirectory)
+    {
+        Directory.CreateDirectory(receiptsDirectory);
+
+        string receiptPath = Path.Combine(receiptsDirectory, $"{fixtureName}.generated.json");
+        string openedScreenshotFileName = $"{fixtureName}-opened.png";
+        string exportDialogScreenshotFileName = $"{fixtureName}-export-dialog.png";
+        string printedScreenshotFileName = $"{fixtureName}-printed.png";
+        string reloadedScreenshotFileName = $"{fixtureName}-reloaded.png";
+        string openedScreenshotPath = Path.Combine(receiptsDirectory, openedScreenshotFileName);
+        string exportDialogScreenshotPath = Path.Combine(receiptsDirectory, exportDialogScreenshotFileName);
+        string printedScreenshotPath = Path.Combine(receiptsDirectory, printedScreenshotFileName);
+        string reloadedScreenshotPath = Path.Combine(receiptsDirectory, reloadedScreenshotFileName);
+        string savedFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.roundtrip.chum5");
+        string exportFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.export.json");
+        string printPreviewFilePath = Path.Combine(receiptsDirectory, $"{fixtureName}.print.html");
+        string pdfArtifactPath = Path.Combine(receiptsDirectory, $"{fixtureName}.print.pdf");
+
+        List<string> reasons = [];
+        List<string> screenshots = [];
+        List<string> pickerTitles = [];
+        Dictionary<string, bool> assertions = new(StringComparer.Ordinal)
+        {
+            ["openedByUi"] = false,
+            ["savedByUi"] = false,
+            ["exportedByUi"] = false,
+            ["printedByUi"] = false,
+            ["pdfArtifactProducedByUiPrintRoute"] = false,
+            ["outputArtifactsProducedByUi"] = false,
+            ["reloadedByUi"] = false,
+            ["roundTripPreservedIdentity"] = false,
+        };
+
+        string sourceFixturePath = FindTestFilePath(fixtureName);
+        byte[] sourceFixtureBytes = File.ReadAllBytes(sourceFixturePath);
+        FixtureUiIdentity sourceIdentity = ReadFixtureUiIdentity(sourceFixtureBytes, fixtureName);
+        FixtureUiIdentity openedIdentity = sourceIdentity;
+        FixtureUiIdentity savedIdentity = sourceIdentity;
+        FixtureUiIdentity reloadedIdentity = sourceIdentity;
+        int importCallCount = 0;
+        int saveCallCount = 0;
+        int exportCallCount = 0;
+        int printCallCount = 0;
+        long exportByteCount = 0;
+        long printPreviewByteCount = 0;
+        long pdfArtifactByteCount = 0;
+        string exportFileName = string.Empty;
+        string printFileName = string.Empty;
+        string printMimeType = string.Empty;
+        string printTitle = string.Empty;
+        Queue<(byte[] Payload, string SourceLabel)> importPayloads = new();
+        importPayloads.Enqueue((sourceFixtureBytes, fixtureName));
+
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? originalImportOverride =
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingDownloadDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSaveDownloadOverride =
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingExportDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSaveExportOverride =
+            MainWindowDesktopFileCoordinator.SaveExportOverride;
+        Func<global::Avalonia.Platform.Storage.IStorageProvider, PendingPrintDispatchRequest, CancellationToken, Task<DesktopDownloadSaveResult>>? originalSavePrintOverride =
+            MainWindowDesktopFileCoordinator.SavePrintOverride;
+
+        try
+        {
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride =
+                (_, title, _) =>
+                {
+                    pickerTitles.Add(title);
+                    importCallCount++;
+                    if (importPayloads.Count == 0)
+                    {
+                        return Task.FromResult(new DesktopImportFileResult(DesktopFileOperationOutcome.Cancelled, Payload: null, SourceLabel: null));
+                    }
+
+                    (byte[] payload, string sourceLabel) = importPayloads.Dequeue();
+                    return Task.FromResult(new DesktopImportFileResult(DesktopFileOperationOutcome.Completed, payload, sourceLabel));
+                };
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride =
+                (_, request, _) =>
+                {
+                    saveCallCount++;
+                    byte[] payload = Convert.FromBase64String(request.Download.ContentBase64);
+                    File.WriteAllBytes(savedFilePath, payload);
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: downloaded {request.Download.FileName} to {Path.GetFileName(savedFilePath)}."));
+                };
+            MainWindowDesktopFileCoordinator.SaveExportOverride =
+                (_, request, _) =>
+                {
+                    exportCallCount++;
+                    exportFileName = request.Export.FileName;
+                    byte[] payload = Convert.FromBase64String(request.Export.ContentBase64);
+                    exportByteCount = payload.LongLength;
+                    File.WriteAllBytes(exportFilePath, payload);
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: exported {request.Export.FileName} to {Path.GetFileName(exportFilePath)}."));
+                };
+            MainWindowDesktopFileCoordinator.SavePrintOverride =
+                (_, request, _) =>
+                {
+                    printCallCount++;
+                    printFileName = request.Print.FileName;
+                    printMimeType = request.Print.MimeType;
+                    printTitle = request.Print.Title;
+                    byte[] payload = Convert.FromBase64String(request.Print.ContentBase64);
+                    printPreviewByteCount = payload.LongLength;
+                    File.WriteAllBytes(printPreviewFilePath, payload);
+
+                    byte[] pdfPayload = BuildMinimalPdfFromHtmlPrintPreview(
+                        string.IsNullOrWhiteSpace(request.Print.Title) ? request.Print.FileName : request.Print.Title,
+                        payload);
+                    pdfArtifactByteCount = pdfPayload.LongLength;
+                    File.WriteAllBytes(pdfArtifactPath, pdfPayload);
+
+                    return Task.FromResult(
+                        new DesktopDownloadSaveResult(
+                            DesktopFileOperationOutcome.Completed,
+                            $"Notice: saved print preview {request.Print.FileName} and PDF bridge {Path.GetFileName(pdfArtifactPath)}."));
+                };
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "open_character");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is not null
+                        && harness.State.Profile is not null
+                        && harness.State.Session.OpenWorkspaces.Count > 0
+                        && !harness.State.IsBusy,
+                    context: $"open fixture '{fixtureName}'");
+
+                assertions["openedByUi"] = importCallCount >= 1;
+                openedIdentity = CaptureRuntimeFixtureUiIdentity(harness, fixtureName);
+                File.WriteAllBytes(openedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(openedScreenshotFileName);
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "save_character_as");
+                harness.WaitUntil(
+                    () => saveCallCount >= 1
+                        && File.Exists(savedFilePath)
+                        && !harness.State.IsBusy,
+                    context: $"save fixture '{fixtureName}'");
+
+                assertions["savedByUi"] = saveCallCount >= 1;
+                byte[] savedFixtureBytes = File.ReadAllBytes(savedFilePath);
+                savedIdentity = ReadFixtureUiIdentity(savedFixtureBytes, fixtureName);
+
+                harness.SelectCommand("export_character");
+                harness.WaitUntil(
+                    () => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.export_character" },
+                    context: $"open export dialog for '{fixtureName}'");
+                File.WriteAllBytes(exportDialogScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(exportDialogScreenshotFileName);
+
+                ClickRuntimeDialogAction(harness, "download");
+                harness.WaitUntil(
+                    () => exportCallCount >= 1
+                        && File.Exists(exportFilePath)
+                        && harness.Window.PeekDialogWindowForTesting() is null
+                        && !harness.State.IsBusy,
+                    context: $"export fixture '{fixtureName}'");
+                assertions["exportedByUi"] =
+                    exportCallCount >= 1
+                    && exportByteCount > 0
+                    && File.Exists(exportFilePath);
+
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "print_character");
+                harness.WaitUntil(
+                    () => printCallCount >= 1
+                        && File.Exists(printPreviewFilePath)
+                        && File.Exists(pdfArtifactPath)
+                        && !harness.State.IsBusy,
+                    context: $"print fixture '{fixtureName}'");
+                assertions["printedByUi"] =
+                    printCallCount >= 1
+                    && printPreviewByteCount > 0
+                    && File.Exists(printPreviewFilePath)
+                    && string.Equals(printMimeType, "text/html", StringComparison.OrdinalIgnoreCase)
+                    && Encoding.UTF8.GetString(File.ReadAllBytes(printPreviewFilePath))
+                        .Contains("<html", StringComparison.OrdinalIgnoreCase);
+                assertions["pdfArtifactProducedByUiPrintRoute"] =
+                    printCallCount >= 1
+                    && pdfArtifactByteCount > 0
+                    && File.Exists(pdfArtifactPath)
+                    && HasPdfHeader(File.ReadAllBytes(pdfArtifactPath));
+                assertions["outputArtifactsProducedByUi"] =
+                    assertions["savedByUi"]
+                    && assertions["exportedByUi"]
+                    && assertions["printedByUi"]
+                    && assertions["pdfArtifactProducedByUiPrintRoute"];
+                File.WriteAllBytes(printedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(printedScreenshotFileName);
+
+                ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is null
+                        && harness.State.Session.OpenWorkspaces.Count == 0
+                        && !harness.State.IsBusy,
+                    context: $"close fixture '{fixtureName}' after save");
+
+                importPayloads.Enqueue((savedFixtureBytes, Path.GetFileName(savedFilePath)));
+                ClickRuntimeMenuCommand(harness, "FileMenuButton", "open_character");
+                harness.WaitUntil(
+                    () => harness.State.WorkspaceId is not null
+                        && harness.State.Profile is not null
+                        && harness.State.Session.OpenWorkspaces.Count > 0
+                        && !harness.State.IsBusy,
+                    context: $"reload fixture '{fixtureName}'");
+
+                assertions["reloadedByUi"] = importCallCount >= 2;
+                reloadedIdentity = CaptureRuntimeFixtureUiIdentity(harness, fixtureName);
+                File.WriteAllBytes(reloadedScreenshotPath, harness.CaptureScreenshotBytes());
+                screenshots.Add(reloadedScreenshotFileName);
+            });
+        }
+        catch (Exception ex)
+        {
+            reasons.Add(ex.Message);
+        }
+        finally
+        {
+            MainWindowDesktopFileCoordinator.OpenImportFileOverride = originalImportOverride;
+            MainWindowDesktopFileCoordinator.SaveDownloadOverride = originalSaveDownloadOverride;
+            MainWindowDesktopFileCoordinator.SaveExportOverride = originalSaveExportOverride;
+            MainWindowDesktopFileCoordinator.SavePrintOverride = originalSavePrintOverride;
+        }
+
+        if (pickerTitles.Count != 2
+            || pickerTitles.Any(title => !string.Equals(title, "Open Character File", StringComparison.Ordinal)))
+        {
+            reasons.Add($"Expected two host file-open picker calls for '{fixtureName}', but saw: {string.Join(", ", pickerTitles)}");
+        }
+
+        if (!assertions["openedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete an initial UI open route.");
+        }
+
+        if (!assertions["savedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI save-as route.");
+        }
+
+        if (!assertions["exportedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI export route.");
+        }
+
+        if (!assertions["printedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI print-preview route.");
+        }
+
+        if (!assertions["pdfArtifactProducedByUiPrintRoute"])
+        {
+            reasons.Add($"'{fixtureName}' did not materialize a PDF artifact from the UI print route.");
+        }
+
+        if (!assertions["outputArtifactsProducedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not publish the full save/export/print output artifact set.");
+        }
+
+        if (!assertions["reloadedByUi"])
+        {
+            reasons.Add($"'{fixtureName}' did not complete a UI reload route.");
+        }
+
+        assertions["roundTripPreservedIdentity"] =
+            assertions["openedByUi"]
+            && assertions["savedByUi"]
+            && assertions["reloadedByUi"]
+            && FixtureUiIdentityEquivalent(sourceIdentity, openedIdentity)
+            && FixtureUiIdentityEquivalent(sourceIdentity, savedIdentity)
+            && FixtureUiIdentityEquivalent(sourceIdentity, reloadedIdentity);
+        if (!assertions["roundTripPreservedIdentity"])
+        {
+            reasons.Add(
+                $"'{fixtureName}' identity drifted across the open/save/reload roundtrip. "
+                + $"Source={DescribeFixtureUiIdentity(sourceIdentity)}; "
+                + $"Opened={DescribeFixtureUiIdentity(openedIdentity)}; "
+                + $"Saved={DescribeFixtureUiIdentity(savedIdentity)}; "
+                + $"Reloaded={DescribeFixtureUiIdentity(reloadedIdentity)}.");
+        }
+
+        if (screenshots.Count < 4)
+        {
+            reasons.Add($"'{fixtureName}' did not publish the expected UI reconstruction screenshots.");
+        }
+
+        string status = reasons.Count == 0 && assertions.Values.All(static value => value) ? "pass" : "fail";
+        Dictionary<string, object?> payload = new(StringComparer.Ordinal)
+        {
+            ["generatedAt"] = DateTime.UtcNow.ToString("O"),
+            ["contract_name"] = "chummer6-ui.chummer5a_fixture_ui_reconstruction",
+            ["status"] = status,
+            ["summary"] = status == "pass"
+                ? $"UI reconstruction parity passed for {fixtureName}."
+                : $"UI reconstruction parity failed for {fixtureName}.",
+            ["fixtureName"] = fixtureName,
+            ["characterName"] = sourceIdentity.CharacterName,
+            ["linux_binary_under_test"] = true,
+            ["used_internal_apis"] = false,
+            ["screenshots"] = screenshots.ToArray(),
+            ["assertions"] = assertions,
+            ["reasons"] = reasons.ToArray(),
+            ["evidence"] = new Dictionary<string, object?>
+            {
+                ["fixturePath"] = sourceFixturePath,
+                ["savedFilePath"] = savedFilePath,
+                ["exportFilePath"] = exportFilePath,
+                ["printPreviewFilePath"] = printPreviewFilePath,
+                ["pdfArtifactPath"] = pdfArtifactPath,
+                ["pickerTitles"] = pickerTitles.ToArray(),
+                ["outputRouteFacts"] = new Dictionary<string, object?>
+                {
+                    ["exportCallCount"] = exportCallCount,
+                    ["exportFileName"] = exportFileName,
+                    ["exportByteCount"] = exportByteCount,
+                    ["printCallCount"] = printCallCount,
+                    ["printFileName"] = printFileName,
+                    ["printMimeType"] = printMimeType,
+                    ["printTitle"] = printTitle,
+                    ["printPreviewByteCount"] = printPreviewByteCount,
+                    ["pdfArtifactByteCount"] = pdfArtifactByteCount,
+                },
+                ["sourceIdentity"] = BuildFixtureUiIdentityPayload(sourceIdentity),
+                ["openedIdentity"] = BuildFixtureUiIdentityPayload(openedIdentity),
+                ["savedIdentity"] = BuildFixtureUiIdentityPayload(savedIdentity),
+                ["reloadedIdentity"] = BuildFixtureUiIdentityPayload(reloadedIdentity),
+            },
+        };
+        File.WriteAllText(
+            receiptPath,
+            JsonSerializer.Serialize(payload, ScreenshotEvidenceJsonOptions));
+
+        return new FixtureUiReconstructionMaterializationResult(
+            fixtureName,
+            receiptPath,
+            status,
+            reasons.ToArray());
+    }
+
+    private static FixtureUiIdentity ReadFixtureUiIdentity(byte[] xmlBytes, string fixtureName)
+    {
+        using MemoryStream stream = new(xmlBytes, writable: false);
+        using System.Xml.XmlReader reader = System.Xml.XmlReader.Create(
+            stream,
+            new System.Xml.XmlReaderSettings
+            {
+                DtdProcessing = System.Xml.DtdProcessing.Prohibit,
+                IgnoreComments = true,
+                IgnoreWhitespace = true
+            });
+        XElement root = XElement.Load(reader);
+
+        string rawName = (root.Element("name")?.Value ?? string.Empty).Trim();
+        string alias = (root.Element("alias")?.Value ?? string.Empty).Trim();
+        string buildMethod = (root.Element("buildmethod")?.Value ?? string.Empty).Trim();
+        string metatype = (root.Element("metatype")?.Value ?? string.Empty).Trim();
+        string rulesetId = NormalizeFixtureRulesetId((root.Element("gameedition")?.Value ?? string.Empty).Trim());
+        string characterName = string.IsNullOrWhiteSpace(rawName)
+            ? Path.GetFileNameWithoutExtension(fixtureName)
+            : rawName;
+
+        return new FixtureUiIdentity(
+            CharacterName: characterName,
+            PrimaryToken: ResolveFixtureIdentityToken(rawName, alias, fixtureName),
+            Alias: alias,
+            BuildMethod: buildMethod,
+            Metatype: metatype,
+            RulesetId: rulesetId);
+    }
+
+    private static FixtureUiIdentity CaptureRuntimeFixtureUiIdentity(RuntimeFlagshipUiHarness harness, string fixtureName)
+    {
+        CharacterProfileSection profile = harness.State.Profile
+            ?? throw new AssertFailedException($"Runtime fixture '{fixtureName}' did not materialize a profile.");
+        OpenWorkspaceState? workspace = harness.State.WorkspaceId is { } workspaceId
+            ? harness.State.OpenWorkspaces.FirstOrDefault(candidate => candidate.Id.Equals(workspaceId))
+            : null;
+
+        return new FixtureUiIdentity(
+            CharacterName: string.IsNullOrWhiteSpace(profile.Name)
+                ? Path.GetFileNameWithoutExtension(fixtureName)
+                : profile.Name,
+            PrimaryToken: ResolveFixtureIdentityToken(profile.Name, profile.Alias, fixtureName),
+            Alias: profile.Alias,
+            BuildMethod: profile.BuildMethod,
+            Metatype: profile.Metatype,
+            RulesetId: NormalizeFixtureRulesetId(workspace?.RulesetId ?? string.Empty));
+    }
+
+    private static bool FixtureUiIdentityEquivalent(FixtureUiIdentity expected, FixtureUiIdentity actual)
+    {
+        return string.Equals(expected.PrimaryToken, actual.PrimaryToken, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(expected.BuildMethod, actual.BuildMethod, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(expected.RulesetId, actual.RulesetId, StringComparison.OrdinalIgnoreCase)
+            && (string.IsNullOrWhiteSpace(expected.Alias)
+                || string.Equals(expected.Alias, actual.Alias, StringComparison.OrdinalIgnoreCase))
+            && (string.IsNullOrWhiteSpace(expected.Metatype)
+                || string.Equals(expected.Metatype, actual.Metatype, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string ResolveFixtureIdentityToken(string? rawName, string? alias, string fixtureName)
+    {
+        string candidate = string.IsNullOrWhiteSpace(rawName)
+            ? string.IsNullOrWhiteSpace(alias)
+                ? Path.GetFileNameWithoutExtension(fixtureName)
+                : alias
+            : rawName;
+        return string.Join(" ", candidate.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    private static string NormalizeFixtureRulesetId(string rawValue)
+    {
+        string trimmed = rawValue.Trim();
+        return trimmed.ToUpperInvariant() switch
+        {
+            "SR4" => RulesetDefaults.Sr4,
+            "SR5" => RulesetDefaults.Sr5,
+            "SR6" => RulesetDefaults.Sr6,
+            _ => RulesetDefaults.NormalizeOptional(trimmed) ?? string.Empty,
+        };
+    }
+
+    private static string DescribeFixtureUiIdentity(FixtureUiIdentity identity)
+        => $"primary={identity.PrimaryToken}, alias={identity.Alias}, build={identity.BuildMethod}, metatype={identity.Metatype}, ruleset={identity.RulesetId}";
+
+    private static Dictionary<string, object?> BuildFixtureUiIdentityPayload(FixtureUiIdentity identity)
+        => new(StringComparer.Ordinal)
+        {
+            ["characterName"] = identity.CharacterName,
+            ["primaryToken"] = identity.PrimaryToken,
+            ["alias"] = identity.Alias,
+            ["buildMethod"] = identity.BuildMethod,
+            ["metatype"] = identity.Metatype,
+            ["rulesetId"] = identity.RulesetId,
+        };
+
+    private static byte[] BuildMinimalPdfFromHtmlPrintPreview(string title, byte[] htmlBytes)
+    {
+        string html = Encoding.UTF8.GetString(htmlBytes);
+        string normalizedTitle = NormalizePdfLine(title);
+        string plainText = ExtractPlainTextFromHtml(html);
+        List<string> lines = [];
+
+        if (!string.IsNullOrWhiteSpace(normalizedTitle))
+        {
+            lines.Add(normalizedTitle);
+        }
+
+        foreach (string line in plainText.Split('\n'))
+        {
+            string normalizedLine = NormalizePdfLine(line);
+            if (!string.IsNullOrWhiteSpace(normalizedLine))
+            {
+                lines.Add(normalizedLine);
+            }
+        }
+
+        if (lines.Count == 0)
+        {
+            lines.Add("Print preview");
+        }
+
+        const int MaxLines = 48;
+        StringBuilder content = new();
+        content.Append("BT\n/F1 11 Tf\n50 790 Td\n14 TL\n");
+        bool wroteLine = false;
+        foreach (string line in lines.Take(MaxLines))
+        {
+            if (wroteLine)
+            {
+                content.Append("T*\n");
+            }
+
+            content.Append('(')
+                .Append(EscapePdfText(line))
+                .Append(") Tj\n");
+            wroteLine = true;
+        }
+
+        content.Append("ET\n");
+        byte[] contentBytes = Encoding.ASCII.GetBytes(content.ToString());
+
+        using MemoryStream stream = new();
+        stream.Write(
+        [
+            0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A,
+            0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A
+        ]);
+
+        List<long> offsets = [0];
+
+        void WriteObject(string payload)
+        {
+            offsets.Add(stream.Position);
+            byte[] bytes = Encoding.ASCII.GetBytes(payload);
+            stream.Write(bytes, 0, bytes.Length);
+        }
+
+        WriteObject("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+        WriteObject("2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n");
+        WriteObject("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n");
+        offsets.Add(stream.Position);
+        byte[] streamHeader = Encoding.ASCII.GetBytes($"4 0 obj\n<< /Length {contentBytes.Length} >>\nstream\n");
+        stream.Write(streamHeader, 0, streamHeader.Length);
+        stream.Write(contentBytes, 0, contentBytes.Length);
+        byte[] streamFooter = Encoding.ASCII.GetBytes("endstream\nendobj\n");
+        stream.Write(streamFooter, 0, streamFooter.Length);
+        WriteObject("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
+
+        long xrefOffset = stream.Position;
+        byte[] xrefHeader = Encoding.ASCII.GetBytes($"xref\n0 {offsets.Count}\n");
+        stream.Write(xrefHeader, 0, xrefHeader.Length);
+        byte[] freeEntry = Encoding.ASCII.GetBytes("0000000000 65535 f \n");
+        stream.Write(freeEntry, 0, freeEntry.Length);
+        foreach (long offset in offsets.Skip(1))
+        {
+            byte[] entry = Encoding.ASCII.GetBytes($"{offset:0000000000} 00000 n \n");
+            stream.Write(entry, 0, entry.Length);
+        }
+
+        byte[] trailer = Encoding.ASCII.GetBytes(
+            $"trailer\n<< /Size {offsets.Count} /Root 1 0 R >>\nstartxref\n{xrefOffset}\n%%EOF\n");
+        stream.Write(trailer, 0, trailer.Length);
+        return stream.ToArray();
+    }
+
+    private static string ExtractPlainTextFromHtml(string html)
+    {
+        string normalized = Regex.Replace(html, "(?i)<br\\s*/?>", "\n");
+        normalized = Regex.Replace(normalized, "(?i)</(p|div|h1|h2|h3|li|tr|section|article)>", "\n");
+        normalized = Regex.Replace(normalized, "<[^>]+>", " ");
+        normalized = WebUtility.HtmlDecode(normalized);
+        normalized = Regex.Replace(normalized, @"\r\n?|\u2028|\u2029", "\n");
+        normalized = Regex.Replace(normalized, @"[ \t\f\v]+", " ");
+        normalized = Regex.Replace(normalized, @"\n{3,}", "\n\n");
+        return normalized.Trim();
+    }
+
+    private static string NormalizePdfLine(string value)
+    {
+        string trimmed = value.Trim();
+        if (trimmed.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        char[] normalized = trimmed
+            .Select(ch => ch is >= ' ' and <= '~' ? ch : '?')
+            .ToArray();
+        return new string(normalized);
+    }
+
+    private static string EscapePdfText(string value)
+        => value
+            .Replace(@"\", @"\\", StringComparison.Ordinal)
+            .Replace("(", @"\(", StringComparison.Ordinal)
+            .Replace(")", @"\)", StringComparison.Ordinal);
+
+    private static bool HasPdfHeader(byte[] bytes)
+        => bytes.Length >= 5
+            && bytes[0] == (byte)'%'
+            && bytes[1] == (byte)'P'
+            && bytes[2] == (byte)'D'
+            && bytes[3] == (byte)'F'
+            && bytes[4] == (byte)'-';
 
     private static string ResolveSourceFile(params string[] segments)
     {
@@ -3651,6 +5928,126 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderBy(control => control.Name, StringComparer.Ordinal)
             .ToArray();
 
+    private sealed record ParityOracleInventory(
+        string[] WorkspaceActions,
+        string[] DesktopControls,
+        string[] AcknowledgedDialogFactoryOnlyDesktopControls);
+
+    private sealed record MuscleMemoryInventoryReceipt(
+        string ContractName,
+        string GeneratedAt,
+        string Status,
+        string Summary,
+        string[] Reasons,
+        MuscleMemoryInventoryEvidence Evidence,
+        MuscleMemoryInventoryReviews Reviews);
+
+    private sealed record MuscleMemoryInventoryEvidence(
+        string ParityOraclePath,
+        int ShellSurfaceCount,
+        int MenuRootCount,
+        int WorkspaceActionCount,
+        int DialogSurfaceCount,
+        int UiControlSurfaceCount,
+        int CommandDialogSurfaceCount,
+        int TotalVisibleElementCount,
+        int TooltipBearingFieldCount,
+        int TooltipBearingActionCount,
+        int ContextMenuHostCount,
+        int SecondaryFlyoutHostCount,
+        int HoverRouteCount,
+        int RightClickRouteCount,
+        int SecondaryExpandRouteCount,
+        int MiddleClickRouteCount,
+        MuscleMemorySurfaceEvidence[] ShellSurfaces,
+        MuscleMemorySurfaceEvidence[] MenuRootSurfaces,
+        MuscleMemorySurfaceEvidence[] WorkspaceActionSurfaces,
+        MuscleMemorySurfaceEvidence[] DialogSurfaces);
+
+    private sealed record MuscleMemoryInventoryReviews(
+        ReviewResult SurfaceCoverageReview,
+        ReviewResult DialogWidgetClassReview,
+        ReviewResult DialogLabelReview,
+        ReviewResult DialogLayoutSlotReview,
+        ReviewResult DialogFieldOrderReview,
+        ReviewResult DialogActionOrderReview,
+        ReviewResult PointerRouteReview,
+        ReviewResult AuxiliaryPointerRouteReview,
+        ReviewResult AuxiliaryPointerHostTruthReview,
+        ReviewResult TooltipCoverageReview,
+        ReviewResult DialogGeometryReview,
+        ReviewResult SharedBaselineParityReview);
+
+    private sealed record ReviewResult(
+        string Status,
+        int ReasonCount,
+        string[] Reasons);
+
+    private sealed record MuscleMemorySurfaceEvidence(
+        string SurfaceKind,
+        string SurfaceId,
+        string Title,
+        string Route,
+        string DialogId,
+        int VisibleElementCount,
+        int InteractiveElementCount,
+        string[] VisibleTextSamples,
+        string[] VisibleNamedControlIds,
+        string[] MenuCommandIds,
+        string[] VisibleTabLabels,
+        string[] QuickActionIds,
+        MuscleMemoryElementEvidence[] Elements,
+        MuscleMemoryDialogFieldEvidence[] DialogFields,
+        MuscleMemoryDialogActionEvidence[] DialogActions);
+
+    private sealed record MuscleMemoryElementEvidence(
+        string Key,
+        string Name,
+        string ControlType,
+        string Text,
+        string ToolTip,
+        bool Interactive,
+        bool HasContextMenu,
+        bool HasContextFlyout,
+        string LayoutZone,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
+    private sealed record MuscleMemoryDialogFieldEvidence(
+        string FieldId,
+        string ExpectedLabel,
+        string ExpectedInputType,
+        string ExpectedVisualKind,
+        string ExpectedLayoutSlot,
+        int OptionsCount,
+        bool IsVisible,
+        string RuntimeLabelText,
+        string RuntimeControlType,
+        string RuntimeToolTip,
+        string RuntimeLayoutZone,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
+    private sealed record MuscleMemoryDialogActionEvidence(
+        string ActionId,
+        string ExpectedLabel,
+        bool IsPrimary,
+        bool IsVisible,
+        string RuntimeLabelText,
+        string RuntimeControlType,
+        string RuntimeToolTip,
+        string[] MouseRoutes,
+        double X,
+        double Y,
+        double Width,
+        double Height);
+
     private sealed record VeteranCertificationReviewStep(
         string Surface,
         string ScreenshotFileName,
@@ -3787,6 +6184,1544 @@ public sealed class AvaloniaFlagshipUiGateTests
         harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
     }
 
+    private static ParityOracleInventory LoadParityOracleInventory()
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(ResolveSourceFile("docs", "PARITY_ORACLE.json")));
+        JsonElement root = document.RootElement;
+        return new ParityOracleInventory(
+            WorkspaceActions: ReadParityOracleStringArray(root, "workspaceActions"),
+            DesktopControls: ReadParityOracleStringArray(root, "desktopControls"),
+            AcknowledgedDialogFactoryOnlyDesktopControls: ReadParityOracleStringArray(root, "acknowledgedDialogFactoryOnlyDesktopControls"));
+    }
+
+    private static string[] ReadParityOracleStringArray(JsonElement root, string propertyName)
+    {
+        if (!root.TryGetProperty(propertyName, out JsonElement property)
+            || property.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        return property.EnumerateArray()
+            .Select(element => element.GetString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+    }
+
+    private static string ResolveChummer5aMuscleMemoryInventoryReceiptPath()
+        => ResolveMuscleMemoryInventoryReceiptPath(
+            "CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH",
+            "CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
+
+    private static string ResolveSr4MuscleMemoryInventoryReceiptPath()
+        => ResolveMuscleMemoryInventoryReceiptPath(
+            "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH",
+            "CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json");
+
+    private static string ResolveSr6MuscleMemoryInventoryReceiptPath()
+        => ResolveMuscleMemoryInventoryReceiptPath(
+            "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH",
+            "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json");
+
+    private static string ResolveMuscleMemoryInventoryReceiptPath(string envVarName, string defaultFileName)
+    {
+        string? configured = Environment.GetEnvironmentVariable(envVarName)
+            ?? Environment.GetEnvironmentVariable("CHUMMER_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH");
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return Path.GetFullPath(configured);
+        }
+
+        string docsDirectory = Path.GetDirectoryName(ResolveSourceFile("docs", "PARITY_ORACLE.json"))
+            ?? throw new DirectoryNotFoundException("Could not resolve docs directory for muscle-memory inventory receipt.");
+        string repoRoot = Directory.GetParent(docsDirectory)?.FullName
+            ?? throw new DirectoryNotFoundException("Could not resolve repo root for muscle-memory inventory receipt.");
+        return Path.GetFullPath(
+            Path.Combine(
+                repoRoot,
+                ".codex-studio",
+                "published",
+                defaultFileName));
+    }
+
+    private static MuscleMemoryInventoryReceipt CaptureMuscleMemoryInventoryReceipt(
+        Action<Action<FlagshipUiHarness>> harnessRunner,
+        string contractName,
+        string successSummary,
+        string failureSummary)
+    {
+        ParityOracleInventory oracle = LoadParityOracleInventory();
+        HashSet<string> commandDialogIds = new(RequiredMuscleMemoryCommandDialogIds, StringComparer.Ordinal);
+        string[] uiControlIds = oracle.DesktopControls
+            .Concat(oracle.AcknowledgedDialogFactoryOnlyDesktopControls)
+            .Where(id => !commandDialogIds.Contains(id))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        List<MuscleMemorySurfaceEvidence> shellSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> menuRootSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> workspaceActionSurfaces = [];
+        List<MuscleMemorySurfaceEvidence> dialogSurfaces = [];
+
+        harnessRunner(harness =>
+        {
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "menu_bar",
+                "Menu Bar",
+                "ShellMenuBarControl",
+                harness.FindControl<Control>("ShellMenuBarControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "tool_strip",
+                "Tool Strip",
+                "ToolStripControl",
+                harness.FindControl<Control>("ToolStripControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "summary_header",
+                "Summary Header",
+                "SummaryHeaderControl",
+                harness.FindControl<Control>("SummaryHeaderControl")));
+            shellSurfaces.Add(CaptureSurfaceEvidence(
+                "shell",
+                "status_strip",
+                "Status Strip",
+                "StatusStripControl",
+                harness.FindControl<Control>("StatusStripControl")));
+
+            foreach (string menuButtonName in StandaloneMenuButtonNames)
+            {
+                harness.Click(menuButtonName);
+                MenuItem rootMenuItem = harness.FindControl<MenuItem>(menuButtonName);
+                harness.WaitUntil(() => SnapshotMenuCommands(rootMenuItem).Length > 0);
+                menuRootSurfaces.Add(CaptureMenuRootSurfaceEvidence(menuButtonName, rootMenuItem));
+                harness.CloseMenu(menuButtonName);
+            }
+
+            foreach (string sectionId in oracle.WorkspaceActions)
+            {
+                workspaceActionSurfaces.Add(CaptureWorkspaceActionSurfaceEvidence(harness, sectionId));
+            }
+
+            foreach (string controlId in uiControlIds)
+            {
+                if (MuscleMemorySectionByUiControlId.TryGetValue(controlId, out string? sectionId))
+                {
+                    harness.SetActiveSectionForTesting(sectionId);
+                }
+
+                harness.OpenUiControl(controlId);
+                DesktopDialogState dialogState = WaitForActiveDialog(harness, $"ui control '{controlId}'");
+                dialogSurfaces.Add(CaptureDialogSurfaceEvidence(
+                    harness,
+                    "uiControl",
+                    controlId,
+                    dialogState));
+                CloseActiveDialog(harness);
+            }
+
+            foreach (string commandId in RequiredMuscleMemoryCommandDialogIds)
+            {
+                harness.Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
+                DesktopDialogState dialogState = WaitForActiveDialog(harness, $"command '{commandId}'");
+                dialogSurfaces.Add(CaptureDialogSurfaceEvidence(
+                    harness,
+                    "commandDialog",
+                    commandId,
+                    dialogState));
+                CloseActiveDialog(harness);
+            }
+        });
+
+        return BuildMuscleMemoryInventoryReceipt(
+            contractName,
+            successSummary,
+            failureSummary,
+            oracle,
+            uiControlIds,
+            shellSurfaces,
+            menuRootSurfaces,
+            workspaceActionSurfaces,
+            dialogSurfaces);
+    }
+
+    private static void PersistMuscleMemoryInventoryReceipt(MuscleMemoryInventoryReceipt receipt, string receiptPath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
+        File.WriteAllText(
+            receiptPath,
+            JsonSerializer.Serialize(receipt, ScreenshotEvidenceJsonOptions));
+    }
+
+    private static MuscleMemoryInventoryReceipt EnforceSharedBaselineParity(
+        MuscleMemoryInventoryReceipt candidate,
+        MuscleMemoryInventoryReceipt baseline,
+        string candidateLabel,
+        bool compareDialogCopyAndGeometry,
+        string successSummary,
+        string failureSummary)
+    {
+        List<string> sharedBaselineReasons = BuildSharedBaselineParityReasons(
+            baseline,
+            candidate,
+            candidateLabel,
+            compareDialogCopyAndGeometry);
+        ReviewResult sharedBaselineParityReview = BuildReviewResult(sharedBaselineReasons);
+        string[] reasons =
+        [
+            .. candidate.Reasons,
+            .. sharedBaselineReasons
+        ];
+
+        return candidate with
+        {
+            Status = reasons.Length == 0 ? "pass" : "fail",
+            Summary = reasons.Length == 0 ? successSummary : failureSummary,
+            Reasons = reasons,
+            Reviews = candidate.Reviews with
+            {
+                SharedBaselineParityReview = sharedBaselineParityReview
+            }
+        };
+    }
+
+    private static List<string> BuildSharedBaselineParityReasons(
+        MuscleMemoryInventoryReceipt baseline,
+        MuscleMemoryInventoryReceipt candidate,
+        string candidateLabel,
+        bool compareDialogCopyAndGeometry)
+    {
+        List<string> reasons = [];
+
+        CompareSurfaceIdSet(
+            baseline.Evidence.ShellSurfaces,
+            candidate.Evidence.ShellSurfaces,
+            $"{candidateLabel} shell",
+            reasons);
+        CompareSurfaceIdSet(
+            baseline.Evidence.MenuRootSurfaces,
+            candidate.Evidence.MenuRootSurfaces,
+            $"{candidateLabel} menu roots",
+            reasons);
+        CompareSurfaceIdSet(
+            baseline.Evidence.WorkspaceActionSurfaces,
+            candidate.Evidence.WorkspaceActionSurfaces,
+            $"{candidateLabel} workspace surfaces",
+            reasons);
+        CompareSurfaceIdSet(
+            baseline.Evidence.DialogSurfaces,
+            candidate.Evidence.DialogSurfaces,
+            $"{candidateLabel} dialog surfaces",
+            reasons);
+
+        Dictionary<string, MuscleMemorySurfaceEvidence> baselineMenuRoots = baseline.Evidence.MenuRootSurfaces
+            .ToDictionary(surface => surface.SurfaceId, StringComparer.Ordinal);
+        Dictionary<string, MuscleMemorySurfaceEvidence> baselineShellSurfaces = baseline.Evidence.ShellSurfaces
+            .ToDictionary(surface => surface.SurfaceId, StringComparer.Ordinal);
+        foreach (MuscleMemorySurfaceEvidence candidateSurface in candidate.Evidence.ShellSurfaces)
+        {
+            if (!baselineShellSurfaces.TryGetValue(candidateSurface.SurfaceId, out MuscleMemorySurfaceEvidence? baselineSurface))
+            {
+                continue;
+            }
+
+            CompareNamedInteractiveElements(
+                baselineSurface,
+                candidateSurface,
+                $"{candidateLabel} shell",
+                reasons);
+        }
+
+        foreach (MuscleMemorySurfaceEvidence candidateSurface in candidate.Evidence.MenuRootSurfaces)
+        {
+            if (!baselineMenuRoots.TryGetValue(candidateSurface.SurfaceId, out MuscleMemorySurfaceEvidence? baselineSurface))
+            {
+                continue;
+            }
+
+            if (!candidateSurface.MenuCommandIds.SequenceEqual(baselineSurface.MenuCommandIds, StringComparer.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} menu root '{candidateSurface.SurfaceId}' drifted from baseline command order [{string.Join(", ", baselineSurface.MenuCommandIds)}] to [{string.Join(", ", candidateSurface.MenuCommandIds)}].");
+            }
+        }
+
+        Dictionary<string, MuscleMemorySurfaceEvidence> baselineWorkspaceSurfaces = baseline.Evidence.WorkspaceActionSurfaces
+            .ToDictionary(surface => surface.SurfaceId, StringComparer.Ordinal);
+        foreach (MuscleMemorySurfaceEvidence candidateSurface in candidate.Evidence.WorkspaceActionSurfaces)
+        {
+            if (!baselineWorkspaceSurfaces.TryGetValue(candidateSurface.SurfaceId, out MuscleMemorySurfaceEvidence? baselineSurface))
+            {
+                continue;
+            }
+
+            CompareNamedInteractiveElements(
+                baselineSurface,
+                candidateSurface,
+                $"{candidateLabel} workspace",
+                reasons);
+
+            if (!candidateSurface.QuickActionIds.SequenceEqual(baselineSurface.QuickActionIds, StringComparer.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} workspace '{candidateSurface.SurfaceId}' drifted from baseline quick-action order [{string.Join(", ", baselineSurface.QuickActionIds)}] to [{string.Join(", ", candidateSurface.QuickActionIds)}].");
+            }
+        }
+
+        Dictionary<string, MuscleMemorySurfaceEvidence> baselineDialogSurfaces = baseline.Evidence.DialogSurfaces
+            .ToDictionary(surface => surface.SurfaceId, StringComparer.Ordinal);
+        foreach (MuscleMemorySurfaceEvidence candidateSurface in candidate.Evidence.DialogSurfaces)
+        {
+            if (!baselineDialogSurfaces.TryGetValue(candidateSurface.SurfaceId, out MuscleMemorySurfaceEvidence? baselineSurface))
+            {
+                continue;
+            }
+
+            CompareDialogActionParity(
+                baselineSurface,
+                candidateSurface,
+                candidateLabel,
+                compareDialogCopyAndGeometry,
+                reasons);
+            CompareDialogFieldParity(
+                baselineSurface,
+                candidateSurface,
+                candidateLabel,
+                compareDialogCopyAndGeometry,
+                reasons);
+        }
+
+        return reasons;
+    }
+
+    private static void CompareSurfaceIdSet(
+        IReadOnlyList<MuscleMemorySurfaceEvidence> baselineSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> candidateSurfaces,
+        string scope,
+        List<string> reasons)
+    {
+        string[] baselineIds = baselineSurfaces.Select(surface => surface.SurfaceId).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        string[] candidateIds = candidateSurfaces.Select(surface => surface.SurfaceId).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        if (!baselineIds.SequenceEqual(candidateIds, StringComparer.Ordinal))
+        {
+            reasons.Add(
+                $"{scope} drifted from baseline surface set [{string.Join(", ", baselineIds)}] to [{string.Join(", ", candidateIds)}].");
+        }
+    }
+
+    private static void CompareNamedInteractiveElements(
+        MuscleMemorySurfaceEvidence baselineSurface,
+        MuscleMemorySurfaceEvidence candidateSurface,
+        string scopeLabel,
+        List<string> reasons)
+    {
+        Dictionary<string, MuscleMemoryElementEvidence[]> baselineElements = GroupInteractiveNamedElements(baselineSurface.Elements);
+        Dictionary<string, MuscleMemoryElementEvidence[]> candidateElements = GroupInteractiveNamedElements(candidateSurface.Elements);
+
+        string[] baselineElementNames = baselineElements.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        string[] candidateElementNames = candidateElements.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        if (!baselineElementNames.SequenceEqual(candidateElementNames, StringComparer.Ordinal))
+        {
+            reasons.Add(
+                $"{scopeLabel} '{candidateSurface.SurfaceId}' drifted from baseline named interactive set [{string.Join(", ", baselineElementNames)}] to [{string.Join(", ", candidateElementNames)}].");
+            return;
+        }
+
+        foreach ((string name, MuscleMemoryElementEvidence[] candidateGroup) in candidateElements.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            MuscleMemoryElementEvidence[] baselineGroup = baselineElements[name];
+            if (candidateGroup.Length != baselineGroup.Length)
+            {
+                reasons.Add(
+                    $"{scopeLabel} '{candidateSurface.SurfaceId}.{name}' drifted from baseline instance count {baselineGroup.Length} to {candidateGroup.Length}.");
+            }
+
+            int pairCount = Math.Min(candidateGroup.Length, baselineGroup.Length);
+            for (int index = 0; index < pairCount; index++)
+            {
+                MuscleMemoryElementEvidence baselineElement = baselineGroup[index];
+                MuscleMemoryElementEvidence candidateElement = candidateGroup[index];
+                string elementLabel = pairCount == 1
+                    ? $"{candidateSurface.SurfaceId}.{name}"
+                    : $"{candidateSurface.SurfaceId}.{name}[{index + 1}]";
+
+                if (!string.Equals(candidateElement.ControlType, baselineElement.ControlType, StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        $"{scopeLabel} '{elementLabel}' drifted from baseline control type '{baselineElement.ControlType}' to '{candidateElement.ControlType}'.");
+                }
+
+                if (ShouldCompareSharedBaselineElementText(baselineSurface, baselineElement)
+                    && !string.Equals(candidateElement.Text, baselineElement.Text, StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        $"{scopeLabel} '{elementLabel}' drifted from baseline text '{baselineElement.Text}' to '{candidateElement.Text}'.");
+                }
+
+                if (ShouldCompareSharedBaselineElementToolTip(baselineSurface, baselineElement)
+                    && !string.Equals(candidateElement.ToolTip, baselineElement.ToolTip, StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        $"{scopeLabel} '{elementLabel}' drifted from baseline tooltip '{baselineElement.ToolTip}' to '{candidateElement.ToolTip}'.");
+                }
+
+                if (!string.Equals(candidateElement.LayoutZone, baselineElement.LayoutZone, StringComparison.Ordinal))
+                {
+                    reasons.Add(
+                        $"{scopeLabel} '{elementLabel}' drifted from baseline layout zone '{baselineElement.LayoutZone}' to '{candidateElement.LayoutZone}'.");
+                }
+
+                if (!candidateElement.MouseRoutes.SequenceEqual(baselineElement.MouseRoutes, StringComparer.Ordinal))
+                {
+                    reasons.Add(
+                        $"{scopeLabel} '{elementLabel}' drifted from baseline mouse routes [{string.Join(", ", baselineElement.MouseRoutes)}] to [{string.Join(", ", candidateElement.MouseRoutes)}].");
+                }
+
+                if (ShouldCompareSharedBaselineElementGeometry(baselineSurface, baselineElement))
+                {
+                    CompareGeometryParity(
+                        scopeLabel,
+                        elementLabel,
+                        baselineElement.X,
+                        baselineElement.Y,
+                        baselineElement.Width,
+                        baselineElement.Height,
+                        candidateElement.X,
+                        candidateElement.Y,
+                        candidateElement.Width,
+                        candidateElement.Height,
+                        reasons);
+                }
+            }
+        }
+    }
+
+    private static void CompareDialogFieldParity(
+        MuscleMemorySurfaceEvidence baselineSurface,
+        MuscleMemorySurfaceEvidence candidateSurface,
+        string candidateLabel,
+        bool compareCopyAndGeometry,
+        List<string> reasons)
+    {
+        Dictionary<string, MuscleMemoryDialogFieldEvidence> baselineFields = baselineSurface.DialogFields
+            .Where(field => field.IsVisible)
+            .ToDictionary(field => field.FieldId, StringComparer.Ordinal);
+        Dictionary<string, MuscleMemoryDialogFieldEvidence> candidateFields = candidateSurface.DialogFields
+            .Where(field => field.IsVisible)
+            .ToDictionary(field => field.FieldId, StringComparer.Ordinal);
+
+        string[] baselineFieldIds = baselineFields.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        string[] candidateFieldIds = candidateFields.Keys.OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        if (!baselineFieldIds.SequenceEqual(candidateFieldIds, StringComparer.Ordinal))
+        {
+            reasons.Add(
+                $"{candidateLabel} dialog '{candidateSurface.SurfaceId}' drifted from baseline visible field set [{string.Join(", ", baselineFieldIds)}] to [{string.Join(", ", candidateFieldIds)}].");
+            return;
+        }
+
+        foreach ((string fieldId, MuscleMemoryDialogFieldEvidence candidateField) in candidateFields.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            MuscleMemoryDialogFieldEvidence baselineField = baselineFields[fieldId];
+            if (!string.Equals(candidateField.RuntimeControlType, baselineField.RuntimeControlType, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{fieldId}' drifted from baseline control type '{baselineField.RuntimeControlType}' to '{candidateField.RuntimeControlType}'.");
+            }
+
+            if (compareCopyAndGeometry
+                && !string.Equals(candidateField.RuntimeLabelText, baselineField.RuntimeLabelText, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{fieldId}' drifted from baseline label '{baselineField.RuntimeLabelText}' to '{candidateField.RuntimeLabelText}'.");
+            }
+
+            if (compareCopyAndGeometry
+                && !string.Equals(candidateField.RuntimeToolTip, baselineField.RuntimeToolTip, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{fieldId}' drifted from baseline tooltip '{baselineField.RuntimeToolTip}' to '{candidateField.RuntimeToolTip}'.");
+                }
+
+            if (!string.Equals(candidateField.RuntimeLayoutZone, baselineField.RuntimeLayoutZone, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{fieldId}' drifted from baseline layout zone '{baselineField.RuntimeLayoutZone}' to '{candidateField.RuntimeLayoutZone}'.");
+            }
+
+            if (!candidateField.MouseRoutes.SequenceEqual(baselineField.MouseRoutes, StringComparer.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{fieldId}' drifted from baseline mouse routes [{string.Join(", ", baselineField.MouseRoutes)}] to [{string.Join(", ", candidateField.MouseRoutes)}].");
+            }
+
+            if (compareCopyAndGeometry)
+            {
+                CompareGeometryParity(
+                    $"{candidateLabel} dialog",
+                    $"{candidateSurface.SurfaceId}.{fieldId}",
+                    baselineField.X,
+                    baselineField.Y,
+                    baselineField.Width,
+                    baselineField.Height,
+                    candidateField.X,
+                    candidateField.Y,
+                    candidateField.Width,
+                    candidateField.Height,
+                    reasons);
+            }
+        }
+    }
+
+    private static void CompareDialogActionParity(
+        MuscleMemorySurfaceEvidence baselineSurface,
+        MuscleMemorySurfaceEvidence candidateSurface,
+        string candidateLabel,
+        bool compareCopyAndGeometry,
+        List<string> reasons)
+    {
+        MuscleMemoryDialogActionEvidence[] baselineActions = baselineSurface.DialogActions
+            .Where(action => action.IsVisible)
+            .OrderBy(action => action.X)
+            .ToArray();
+        MuscleMemoryDialogActionEvidence[] candidateActions = candidateSurface.DialogActions
+            .Where(action => action.IsVisible)
+            .OrderBy(action => action.X)
+            .ToArray();
+
+        string[] baselineActionIds = baselineActions.Select(action => action.ActionId).ToArray();
+        string[] candidateActionIds = candidateActions.Select(action => action.ActionId).ToArray();
+        if (!baselineActionIds.SequenceEqual(candidateActionIds, StringComparer.Ordinal))
+        {
+            reasons.Add(
+                $"{candidateLabel} dialog '{candidateSurface.SurfaceId}' drifted from baseline visible action order [{string.Join(", ", baselineActionIds)}] to [{string.Join(", ", candidateActionIds)}].");
+            return;
+        }
+
+        foreach ((MuscleMemoryDialogActionEvidence baselineAction, MuscleMemoryDialogActionEvidence candidateAction) in baselineActions.Zip(candidateActions))
+        {
+            if (!string.Equals(candidateAction.RuntimeControlType, baselineAction.RuntimeControlType, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{candidateAction.ActionId}' drifted from baseline action control type '{baselineAction.RuntimeControlType}' to '{candidateAction.RuntimeControlType}'.");
+            }
+
+            if (compareCopyAndGeometry
+                && !string.Equals(candidateAction.RuntimeLabelText, baselineAction.RuntimeLabelText, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{candidateAction.ActionId}' drifted from baseline action label '{baselineAction.RuntimeLabelText}' to '{candidateAction.RuntimeLabelText}'.");
+            }
+
+            if (compareCopyAndGeometry
+                && !string.Equals(candidateAction.RuntimeToolTip, baselineAction.RuntimeToolTip, StringComparison.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{candidateAction.ActionId}' drifted from baseline action tooltip '{baselineAction.RuntimeToolTip}' to '{candidateAction.RuntimeToolTip}'.");
+            }
+
+            if (!candidateAction.MouseRoutes.SequenceEqual(baselineAction.MouseRoutes, StringComparer.Ordinal))
+            {
+                reasons.Add(
+                    $"{candidateLabel} dialog '{candidateSurface.SurfaceId}.{candidateAction.ActionId}' drifted from baseline action mouse routes [{string.Join(", ", baselineAction.MouseRoutes)}] to [{string.Join(", ", candidateAction.MouseRoutes)}].");
+            }
+
+            if (compareCopyAndGeometry)
+            {
+                CompareGeometryParity(
+                    $"{candidateLabel} dialog",
+                    $"{candidateSurface.SurfaceId}.{candidateAction.ActionId}",
+                    baselineAction.X,
+                    baselineAction.Y,
+                    baselineAction.Width,
+                    baselineAction.Height,
+                    candidateAction.X,
+                    candidateAction.Y,
+                    candidateAction.Width,
+                    candidateAction.Height,
+                    reasons);
+            }
+        }
+    }
+
+    private static bool ShouldCompareSharedBaselineElementText(MuscleMemorySurfaceEvidence surface, MuscleMemoryElementEvidence element)
+        => !IsSharedBaselineVolatileElement(surface, element);
+
+    private static bool ShouldCompareSharedBaselineElementToolTip(MuscleMemorySurfaceEvidence surface, MuscleMemoryElementEvidence element)
+        => !IsSharedBaselineVolatileElement(surface, element);
+
+    private static bool ShouldCompareSharedBaselineElementGeometry(MuscleMemorySurfaceEvidence surface, MuscleMemoryElementEvidence element)
+        => !IsSharedBaselineVolatileElement(surface, element);
+
+    private static bool IsSharedBaselineVolatileElement(MuscleMemorySurfaceEvidence surface, MuscleMemoryElementEvidence element)
+    {
+        if (element.Name.StartsWith("PART_", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!string.Equals(surface.SurfaceKind, "workspaceAction", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return element.Name is "SectionPreviewBox" or "SectionRowsList" or "ExpanderHeader";
+    }
+
+    private static Dictionary<string, MuscleMemoryElementEvidence[]> GroupInteractiveNamedElements(IEnumerable<MuscleMemoryElementEvidence> elements)
+        => elements
+            .Where(element => element.Interactive && !string.IsNullOrWhiteSpace(element.Name))
+            .GroupBy(element => element.Name, StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderBy(element => element.Y)
+                    .ThenBy(element => element.X)
+                    .ThenBy(element => element.ControlType, StringComparer.Ordinal)
+                    .ThenBy(element => element.Text, StringComparer.Ordinal)
+                    .ThenBy(element => element.ToolTip, StringComparer.Ordinal)
+                    .ToArray(),
+                StringComparer.Ordinal);
+
+    private static void CompareGeometryParity(
+        string scopeLabel,
+        string subjectId,
+        double baselineX,
+        double baselineY,
+        double baselineWidth,
+        double baselineHeight,
+        double candidateX,
+        double candidateY,
+        double candidateWidth,
+        double candidateHeight,
+        List<string> reasons)
+    {
+        const double PositionTolerance = 18d;
+        const double SizeTolerance = 24d;
+        if (Math.Abs(candidateX - baselineX) > PositionTolerance
+            || Math.Abs(candidateY - baselineY) > PositionTolerance
+            || Math.Abs(candidateWidth - baselineWidth) > SizeTolerance
+            || Math.Abs(candidateHeight - baselineHeight) > SizeTolerance)
+        {
+            reasons.Add(
+                $"{scopeLabel} '{subjectId}' drifted from baseline geometry x={baselineX:0.##}, y={baselineY:0.##}, w={baselineWidth:0.##}, h={baselineHeight:0.##} to x={candidateX:0.##}, y={candidateY:0.##}, w={candidateWidth:0.##}, h={candidateHeight:0.##}.");
+        }
+    }
+
+    private static DesktopDialogState WaitForActiveDialog(FlagshipUiHarness harness, string context)
+    {
+        harness.WaitUntil(() => harness.Presenter.State.ActiveDialog is not null, 4000, context);
+        return harness.Presenter.State.ActiveDialog
+            ?? throw new AssertFailedException($"Expected an active dialog surface for {context}.");
+    }
+
+    private static void CloseActiveDialog(FlagshipUiHarness harness)
+    {
+        string[] availableActionIds = harness.DialogActionIds();
+        string? actionId = new[] { "cancel", "close", "add", "ok", "continue", "apply", "delete" }
+            .FirstOrDefault(candidate => availableActionIds.Contains(candidate, StringComparer.Ordinal));
+        if (actionId is not null)
+        {
+            harness.InvokeDialogAction(actionId);
+        }
+        else
+        {
+            harness.Presenter.CloseDialogAsync(CancellationToken.None).GetAwaiter().GetResult();
+        }
+
+        harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureMenuRootSurfaceEvidence(string menuButtonName, MenuItem rootMenuItem)
+    {
+        string[] commandIds = SnapshotMenuCommands(rootMenuItem)
+            .Select(command => command.Tag?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
+        string title = NormalizeEvidenceText(rootMenuItem.Header?.ToString());
+        return CaptureSurfaceEvidence(
+            "menuRoot",
+            menuButtonName,
+            string.IsNullOrWhiteSpace(title) ? menuButtonName : title,
+            menuButtonName,
+            rootMenuItem,
+            menuCommandIds: commandIds);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureWorkspaceActionSurfaceEvidence(FlagshipUiHarness harness, string sectionId)
+    {
+        harness.SetActiveSectionForTesting(sectionId);
+        harness.WaitUntil(() => string.Equals(harness.Presenter.State.ActiveSectionId, sectionId, StringComparison.Ordinal));
+        Control sectionRoot = harness.FindControl<Control>("SectionHostControl");
+        harness.WaitUntil(() => CaptureVisibleSurfaceElements(sectionRoot).Length > 0);
+        return CaptureSurfaceEvidence(
+            "workspaceAction",
+            sectionId,
+            sectionId,
+            $"section:{sectionId}",
+            sectionRoot,
+            visibleTabLabels: FindDescendantOrDefault<TabStrip>(sectionRoot, "LoadedRunnerTabStrip") is { IsVisible: true } tabStrip
+                ? SnapshotLoadedRunnerTabs(tabStrip).Select(tab => NormalizeEvidenceText(tab.Label)).ToArray()
+                : [],
+            quickActionIds: sectionRoot.GetVisualDescendants()
+                .OfType<Control>()
+                .Where(control =>
+                    control.IsVisible
+                    && !string.IsNullOrWhiteSpace(control.Name)
+                    && control.Name.StartsWith("SectionQuickAction_", StringComparison.Ordinal))
+                .Select(control => control.Name!)
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(static value => value, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureDialogSurfaceEvidence(
+        FlagshipUiHarness harness,
+        string surfaceKind,
+        string surfaceId,
+        DesktopDialogState dialogState)
+    {
+        Control root = harness.GetScreenshotRootControlForTesting();
+        return CaptureSurfaceEvidence(
+            surfaceKind,
+            surfaceId,
+            dialogState.Title,
+            harness.Window.PeekDialogWindowForTesting()?.BoundDialogId ?? dialogState.Id,
+            root,
+            dialogState,
+            harness.Window.PeekDialogWindowForTesting()?.BoundDialogId ?? dialogState.Id);
+    }
+
+    private static MuscleMemorySurfaceEvidence CaptureSurfaceEvidence(
+        string surfaceKind,
+        string surfaceId,
+        string title,
+        string route,
+        Control root,
+        DesktopDialogState? dialogState = null,
+        string? dialogId = null,
+        string[]? menuCommandIds = null,
+        string[]? visibleTabLabels = null,
+        string[]? quickActionIds = null)
+    {
+        MuscleMemoryElementEvidence[] elements = CaptureVisibleSurfaceElements(root);
+        string[] visibleNamedControlIds = elements
+            .Select(element => element.Name)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleTextSamples = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(textBlock => textBlock.IsVisible && textBlock.Bounds.Width > 0d && textBlock.Bounds.Height > 0d)
+            .Select(textBlock => NormalizeEvidenceText(textBlock.Text))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        MuscleMemoryDialogFieldEvidence[] dialogFields = dialogState is null
+            ? []
+            : dialogState.Fields.Select(field => CaptureDialogFieldEvidence(root, field)).ToArray();
+        MuscleMemoryDialogActionEvidence[] dialogActions = dialogState is null
+            ? []
+            : dialogState.Actions.Select(action => CaptureDialogActionEvidence(root, action)).ToArray();
+
+        return new MuscleMemorySurfaceEvidence(
+            SurfaceKind: surfaceKind,
+            SurfaceId: surfaceId,
+            Title: title,
+            Route: route,
+            DialogId: dialogId ?? string.Empty,
+            VisibleElementCount: elements.Length,
+            InteractiveElementCount: elements.Count(element => element.Interactive),
+            VisibleTextSamples: visibleTextSamples,
+            VisibleNamedControlIds: visibleNamedControlIds,
+            MenuCommandIds: menuCommandIds ?? [],
+            VisibleTabLabels: visibleTabLabels ?? [],
+            QuickActionIds: quickActionIds ?? [],
+            Elements: elements,
+            DialogFields: dialogFields,
+            DialogActions: dialogActions);
+    }
+
+    private static MuscleMemoryDialogFieldEvidence CaptureDialogFieldEvidence(Control root, DesktopDialogField field)
+    {
+        TextBlock? labelBlock = FindDescendantOrDefault<TextBlock>(root, DesktopDialogAccessibility.BuildFieldLabelName(field.Id));
+        Control? inputControl = root.GetVisualDescendants()
+            .OfType<Control>()
+            .FirstOrDefault(control => string.Equals(control.Name, DesktopDialogAccessibility.BuildFieldInputName(field.Id), StringComparison.Ordinal));
+        bool isVisible = (labelBlock?.IsVisible ?? false) || (inputControl?.IsVisible ?? false);
+        string toolTip = TryReadToolTip(inputControl);
+        Rect inputBounds = inputControl is null ? default : GetBoundsRelativeToRoot(inputControl, root);
+        return new MuscleMemoryDialogFieldEvidence(
+            FieldId: field.Id,
+            ExpectedLabel: field.Label,
+            ExpectedInputType: field.InputType,
+            ExpectedVisualKind: field.VisualKind.ToString(),
+            ExpectedLayoutSlot: field.LayoutSlot,
+            OptionsCount: field.Options?.Count ?? 0,
+            IsVisible: isVisible,
+            RuntimeLabelText: ResolveRuntimeFieldLabelText(root, labelBlock, inputControl),
+            RuntimeControlType: inputControl?.GetType().Name ?? string.Empty,
+            RuntimeToolTip: toolTip,
+            RuntimeLayoutZone: inputControl is null ? "hidden" : ComputeLayoutZone(inputBounds, Math.Max(root.Bounds.Width, root.DesiredSize.Width)),
+            MouseRoutes: inputControl is null ? [] : InferMouseRoutes(inputControl, toolTip),
+            X: inputControl is null ? 0d : Math.Round(inputBounds.X, 2),
+            Y: inputControl is null ? 0d : Math.Round(inputBounds.Y, 2),
+            Width: inputControl is null ? 0d : Math.Round(inputBounds.Width, 2),
+            Height: inputControl is null ? 0d : Math.Round(inputBounds.Height, 2));
+    }
+
+    private static MuscleMemoryDialogActionEvidence CaptureDialogActionEvidence(Control root, DesktopDialogAction action)
+    {
+        Button? button = FindDescendantOrDefault<Button>(root, DesktopDialogAccessibility.BuildActionName(action.Id));
+        string toolTip = TryReadToolTip(button);
+        Rect buttonBounds = button is null ? default : GetBoundsRelativeToRoot(button, root);
+        return new MuscleMemoryDialogActionEvidence(
+            ActionId: action.Id,
+            ExpectedLabel: action.Label,
+            IsPrimary: action.IsPrimary,
+            IsVisible: button?.IsVisible ?? false,
+            RuntimeLabelText: NormalizeEvidenceText(button is null ? string.Empty : GetPrimaryButtonLabel(button)),
+            RuntimeControlType: button?.GetType().Name ?? string.Empty,
+            RuntimeToolTip: toolTip,
+            MouseRoutes: button is null ? [] : InferMouseRoutes(button, toolTip),
+            X: button is null ? 0d : Math.Round(buttonBounds.X, 2),
+            Y: button is null ? 0d : Math.Round(buttonBounds.Y, 2),
+            Width: button is null ? 0d : Math.Round(buttonBounds.Width, 2),
+            Height: button is null ? 0d : Math.Round(buttonBounds.Height, 2));
+    }
+
+    private static MuscleMemoryElementEvidence[] CaptureVisibleSurfaceElements(Control root)
+    {
+        double surfaceWidth = Math.Max(root.Bounds.Width, root.DesiredSize.Width);
+        int fallbackIndex = 0;
+        return root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control =>
+                control.IsVisible
+                && control.Bounds.Width > 0d
+                && control.Bounds.Height > 0d
+                && IsMuscleMemoryRelevantControl(control))
+            .Select(control => BuildMuscleMemoryElementEvidence(control, root, surfaceWidth, fallbackIndex++))
+            .ToArray();
+    }
+
+    private static MuscleMemoryElementEvidence BuildMuscleMemoryElementEvidence(Control control, Control root, double surfaceWidth, int fallbackIndex)
+    {
+        string text = ExtractMuscleMemoryElementText(control);
+        string toolTip = TryReadToolTip(control);
+        string name = control.Name ?? string.Empty;
+        bool interactive = IsInteractiveControl(control);
+        bool hasContextMenu = HasContextMenu(control);
+        bool hasContextFlyout = HasContextFlyout(control);
+        string key = !string.IsNullOrWhiteSpace(name)
+            ? name
+            : $"{control.GetType().Name}:{fallbackIndex}:{text}";
+        Rect bounds = GetBoundsRelativeToRoot(control, root);
+
+        return new MuscleMemoryElementEvidence(
+            Key: key,
+            Name: name,
+            ControlType: control.GetType().Name,
+            Text: text,
+            ToolTip: toolTip,
+            Interactive: interactive,
+            HasContextMenu: hasContextMenu,
+            HasContextFlyout: hasContextFlyout,
+            LayoutZone: ComputeLayoutZone(bounds, surfaceWidth),
+            MouseRoutes: interactive ? InferMouseRoutes(control, toolTip) : [],
+            X: Math.Round(bounds.X, 2),
+            Y: Math.Round(bounds.Y, 2),
+            Width: Math.Round(bounds.Width, 2),
+            Height: Math.Round(bounds.Height, 2));
+    }
+
+    private static bool IsMuscleMemoryRelevantControl(Control control)
+        => !string.IsNullOrWhiteSpace(control.Name)
+            || control is TextBlock
+            || control is Button
+            || control is MenuItem
+            || control is TextBox
+            || control is NumericUpDown
+            || control is ComboBox
+            || control is CheckBox
+            || control is ListBox
+            || control is TreeView
+            || control is TabStrip
+            || control is Border
+            || control is Expander
+            || control is Panel;
+
+    private static bool IsInteractiveControl(Control control)
+        => control is Button
+            || control is MenuItem
+            || control is TextBox
+            || control is NumericUpDown
+            || control is ComboBox
+            || control is CheckBox
+            || control is ListBox
+            || control is TreeView
+            || control is TabStrip;
+
+    private static string ExtractMuscleMemoryElementText(Control control)
+    {
+        return control switch
+        {
+            TextBlock textBlock => NormalizeEvidenceText(textBlock.Text),
+            TextBox textBox => NormalizeEvidenceText(textBox.Text ?? textBox.Watermark?.ToString()),
+            NumericUpDown numericUpDown => NormalizeEvidenceText(
+                numericUpDown.Text
+                ?? numericUpDown.Value?.ToString()
+                ?? numericUpDown.Watermark?.ToString()),
+            CheckBox checkBox => NormalizeEvidenceText(checkBox.Content?.ToString()),
+            Button button => NormalizeEvidenceText(GetPrimaryButtonLabel(button)),
+            MenuItem menuItem => NormalizeEvidenceText(menuItem.Header?.ToString()),
+            ComboBox comboBox => NormalizeEvidenceText(
+                comboBox.SelectedItem switch
+                {
+                    DesktopDialogFieldOption option => option.Value,
+                    _ => comboBox.SelectedItem?.ToString()
+                }),
+            Expander expander => NormalizeEvidenceText(expander.Header?.ToString()),
+            _ => string.Empty,
+        };
+    }
+
+    private static string TryReadToolTip(Control? control)
+    {
+        for (Control? current = control; current is not null; current = current.Parent as Control)
+        {
+            string toolTip = NormalizeEvidenceText(ToolTip.GetTip(current)?.ToString());
+            if (!string.IsNullOrWhiteSpace(toolTip))
+            {
+                return toolTip;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static string ResolveRuntimeFieldLabelText(Control root, TextBlock? labelBlock, Control? inputControl)
+    {
+        string directLabel = NormalizeLabelText(labelBlock?.Text);
+        if (!string.IsNullOrWhiteSpace(directLabel))
+        {
+            return directLabel;
+        }
+
+        if (inputControl is CheckBox checkBox)
+        {
+            string checkBoxContent = NormalizeLabelText(checkBox.Content?.ToString());
+            if (!string.IsNullOrWhiteSpace(checkBoxContent))
+            {
+                return checkBoxContent;
+            }
+        }
+
+        if (inputControl is null)
+        {
+            return string.Empty;
+        }
+
+        string toolTipLabel = ExtractLabelFromToolTip(TryReadToolTip(inputControl));
+        if (!string.IsNullOrWhiteSpace(toolTipLabel))
+        {
+            return toolTipLabel;
+        }
+
+        TextBlock? nearbyLabel = FindNearestFieldLabel(root, inputControl);
+        return NormalizeLabelText(nearbyLabel?.Text);
+    }
+
+    private static TextBlock? FindNearestFieldLabel(Control root, Control inputControl)
+    {
+        Rect inputBounds = GetBoundsRelativeToRoot(inputControl, root);
+        double inputCenterY = inputBounds.Y + (inputBounds.Height / 2d);
+        TextBlock[] candidates = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(textBlock =>
+                textBlock.IsVisible
+                && textBlock.Bounds.Width > 0d
+                && textBlock.Bounds.Height > 0d
+                && !string.IsNullOrWhiteSpace(NormalizeEvidenceText(textBlock.Text)))
+            .ToArray();
+
+        TextBlock? leftAligned = candidates
+            .Select(textBlock => new
+            {
+                TextBlock = textBlock,
+                Bounds = GetBoundsRelativeToRoot(textBlock, root)
+            })
+            .Select(candidate => new
+            {
+                candidate.TextBlock,
+                candidate.Bounds,
+                VerticalDistance = Math.Abs((candidate.Bounds.Y + (candidate.Bounds.Height / 2d)) - inputCenterY),
+                HorizontalGap = inputBounds.X - (candidate.Bounds.X + candidate.Bounds.Width)
+            })
+            .Where(candidate =>
+                candidate.VerticalDistance <= Math.Max(18d, inputBounds.Height)
+                && candidate.HorizontalGap >= -8d
+                && candidate.HorizontalGap <= Math.Max(48d, inputBounds.Width))
+            .OrderBy(candidate => candidate.VerticalDistance)
+            .ThenBy(candidate => Math.Abs(candidate.HorizontalGap))
+            .Select(candidate => candidate.TextBlock)
+            .FirstOrDefault();
+        if (leftAligned is not null)
+        {
+            return leftAligned;
+        }
+
+        return candidates
+            .Select(textBlock => new
+            {
+                TextBlock = textBlock,
+                Bounds = GetBoundsRelativeToRoot(textBlock, root)
+            })
+            .Select(candidate => new
+            {
+                candidate.TextBlock,
+                candidate.Bounds,
+                VerticalGap = inputBounds.Y - (candidate.Bounds.Y + candidate.Bounds.Height),
+                HorizontalOverlap = Math.Min(inputBounds.X + inputBounds.Width, candidate.Bounds.X + candidate.Bounds.Width)
+                    - Math.Max(inputBounds.X, candidate.Bounds.X)
+            })
+            .Where(candidate => candidate.VerticalGap >= -12d
+                && candidate.VerticalGap <= 24d
+                && candidate.HorizontalOverlap >= Math.Min(48d, inputBounds.Width))
+            .OrderBy(candidate => Math.Abs(candidate.VerticalGap))
+            .ThenByDescending(candidate => candidate.HorizontalOverlap)
+            .Select(candidate => candidate.TextBlock)
+            .FirstOrDefault();
+    }
+
+    private static string NormalizeLabelText(string? text)
+    {
+        string normalized = NormalizeEvidenceText(text);
+        return normalized.TrimEnd(':').Trim();
+    }
+
+    private static string ExtractLabelFromToolTip(string toolTip)
+    {
+        string normalized = NormalizeEvidenceText(toolTip);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        int separatorIndex = normalized.IndexOf(':');
+        return separatorIndex > 0
+            ? NormalizeLabelText(normalized[..separatorIndex])
+            : NormalizeLabelText(normalized);
+    }
+
+    private static bool HasContextMenu(Control control)
+        => control.ContextMenu is not null;
+
+    private static bool HasContextFlyout(Control control)
+        => TryGetSecondaryFlyout(control) is not null;
+
+    private static FlyoutBase? TryGetSecondaryFlyout(Control control)
+    {
+        if (ToolTip.GetTip(control) is not null)
+        {
+            return null;
+        }
+
+        if (control.ContextFlyout is { } contextFlyout
+            && !IsToolTipFlyout(contextFlyout))
+        {
+            return contextFlyout;
+        }
+
+        return null;
+    }
+
+    private static bool IsToolTipFlyout(object? candidate)
+        => candidate is ToolTip
+            || string.Equals(candidate?.GetType().Name, nameof(ToolTip), StringComparison.Ordinal);
+
+    private static string[] InferMouseRoutes(Control control, string toolTip)
+    {
+        List<string> routes = ["left_click"];
+        if (!string.IsNullOrWhiteSpace(toolTip))
+        {
+            routes.Add("hover");
+        }
+
+        if (control is MenuItem)
+        {
+            routes.Add("submenu_open");
+        }
+
+        if (control is ListBox or TreeView)
+        {
+            routes.Add("double_click");
+            routes.Add("wheel");
+        }
+
+        if (control is CheckBox)
+        {
+            routes.Add("toggle");
+        }
+
+        if (control is ComboBox)
+        {
+            routes.Add("wheel");
+            routes.Add("expand");
+        }
+
+        if (control is NumericUpDown)
+        {
+            routes.Add("wheel");
+            routes.Add("focus");
+            routes.Add("spin");
+        }
+
+        if (control is TextBox)
+        {
+            routes.Add("focus");
+            routes.Add("text_select");
+        }
+
+        if (control is TabStrip)
+        {
+            routes.Add("tab_select");
+        }
+
+        if (HasContextMenu(control))
+        {
+            routes.Add("right_click");
+        }
+
+        if (HasContextFlyout(control))
+        {
+            routes.Add("right_click");
+            routes.Add("secondary_expand");
+        }
+
+        return routes
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static Rect GetBoundsRelativeToRoot(Control control, Visual root)
+    {
+        Point origin = control.TranslatePoint(default, root) ?? default;
+        return new Rect(origin, control.Bounds.Size);
+    }
+
+    private static string ComputeLayoutZone(Rect bounds, double surfaceWidth)
+    {
+        if (surfaceWidth <= 0d)
+        {
+            return "unknown";
+        }
+
+        double center = bounds.X + (bounds.Width / 2d);
+        double third = surfaceWidth / 3d;
+        return center < third
+            ? "left"
+            : center < (third * 2d)
+                ? "center"
+                : "right";
+    }
+
+    private static MuscleMemoryInventoryReceipt BuildMuscleMemoryInventoryReceipt(
+        string contractName,
+        string successSummary,
+        string failureSummary,
+        ParityOracleInventory oracle,
+        IReadOnlyList<string> uiControlIds,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> shellSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> menuRootSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> workspaceActionSurfaces,
+        IReadOnlyList<MuscleMemorySurfaceEvidence> dialogSurfaces)
+    {
+        List<string> surfaceCoverageReasons = [];
+        if (shellSurfaces.Count != 4)
+        {
+            surfaceCoverageReasons.Add($"Expected 4 shell surfaces but captured {shellSurfaces.Count}.");
+        }
+
+        string[] rootMenuLabels = menuRootSurfaces.Select(surface => surface.Title).ToArray();
+        if (!ClassicMenuLabels.SequenceEqual(rootMenuLabels, StringComparer.Ordinal))
+        {
+            surfaceCoverageReasons.Add("Classic root menu labels drifted from File/Tools/Windows/Help order.");
+        }
+
+        if (workspaceActionSurfaces.Count != oracle.WorkspaceActions.Length)
+        {
+            surfaceCoverageReasons.Add(
+                $"Expected {oracle.WorkspaceActions.Length} workspace-action surfaces but captured {workspaceActionSurfaces.Count}.");
+        }
+
+        string[] missingWorkspaceActions = oracle.WorkspaceActions
+            .Except(workspaceActionSurfaces.Select(surface => surface.SurfaceId), StringComparer.Ordinal)
+            .ToArray();
+        if (missingWorkspaceActions.Length > 0)
+        {
+            surfaceCoverageReasons.Add("Missing workspace-action surfaces: " + string.Join(", ", missingWorkspaceActions));
+        }
+
+        int expectedDialogSurfaceCount = uiControlIds.Count + RequiredMuscleMemoryCommandDialogIds.Length;
+        if (dialogSurfaces.Count != expectedDialogSurfaceCount)
+        {
+            surfaceCoverageReasons.Add(
+                $"Expected {expectedDialogSurfaceCount} dialog surfaces but captured {dialogSurfaces.Count}.");
+        }
+
+        string[] missingDialogSurfaces = uiControlIds
+            .Concat(RequiredMuscleMemoryCommandDialogIds)
+            .Except(dialogSurfaces.Select(surface => surface.SurfaceId), StringComparer.Ordinal)
+            .ToArray();
+        if (missingDialogSurfaces.Length > 0)
+        {
+            surfaceCoverageReasons.Add("Missing dialog surfaces: " + string.Join(", ", missingDialogSurfaces));
+        }
+
+        if (shellSurfaces.Concat(menuRootSurfaces).Concat(workspaceActionSurfaces).Concat(dialogSurfaces)
+            .Any(surface => surface.VisibleElementCount == 0
+                && !string.Equals(surface.SurfaceId, "summary_header", StringComparison.Ordinal)))
+        {
+            surfaceCoverageReasons.Add("One or more captured surfaces had zero visible UI elements.");
+        }
+
+        List<string> dialogWidgetReasons = [];
+        List<string> dialogLabelReasons = [];
+        List<string> dialogLayoutSlotReasons = [];
+        List<string> dialogFieldOrderReasons = [];
+        List<string> dialogActionOrderReasons = [];
+        List<string> pointerRouteReasons = [];
+        List<string> auxiliaryPointerRouteReasons = [];
+        List<string> auxiliaryPointerHostTruthReasons = [];
+        List<string> tooltipCoverageReasons = [];
+        List<string> dialogGeometryReasons = [];
+
+        foreach (MuscleMemorySurfaceEvidence surface in shellSurfaces
+                     .Concat(menuRootSurfaces)
+                     .Concat(workspaceActionSurfaces)
+                     .Concat(dialogSurfaces))
+        {
+            foreach (MuscleMemoryElementEvidence element in surface.Elements.Where(element => element.Interactive))
+            {
+                if (element.HasContextMenu
+                    && !element.MouseRoutes.Contains("right_click", StringComparer.Ordinal))
+                {
+                    auxiliaryPointerRouteReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} exposes a context menu without a right-click route.");
+                }
+
+                if (element.HasContextFlyout
+                    && !element.MouseRoutes.Contains("secondary_expand", StringComparer.Ordinal))
+                {
+                    auxiliaryPointerRouteReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} exposes a flyout without a secondary-expand route.");
+                }
+
+                if (element.MouseRoutes.Contains("right_click", StringComparer.Ordinal)
+                    && !element.HasContextMenu
+                    && !element.HasContextFlyout)
+                {
+                    auxiliaryPointerHostTruthReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} claimed a right-click route without a real context-menu or flyout host.");
+                }
+
+                if (element.MouseRoutes.Contains("secondary_expand", StringComparer.Ordinal)
+                    && !element.HasContextFlyout)
+                {
+                    auxiliaryPointerHostTruthReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} claimed a secondary-expand route without a real flyout host.");
+                }
+
+                if (element.MouseRoutes.Contains("middle_click", StringComparer.Ordinal))
+                {
+                    auxiliaryPointerHostTruthReasons.Add(
+                        $"{surface.SurfaceId}.{element.Key} claimed middle-click parity without an explicit promoted legacy route proof.");
+                }
+            }
+        }
+
+        foreach (MuscleMemorySurfaceEvidence dialogSurface in dialogSurfaces)
+        {
+            foreach (MuscleMemoryDialogFieldEvidence field in dialogSurface.DialogFields.Where(field => field.IsVisible))
+            {
+                string[] expectedControlTypes = ResolveExpectedRuntimeControlTypes(field);
+                if (expectedControlTypes.Length > 0
+                    && !expectedControlTypes.Contains(field.RuntimeControlType, StringComparer.Ordinal))
+                {
+                    dialogWidgetReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} expected {string.Join('/', expectedControlTypes)} for {field.ExpectedInputType}/{field.ExpectedVisualKind} but rendered {field.RuntimeControlType}.");
+                }
+
+                if (!string.Equals(
+                        NormalizeLabelText(field.ExpectedLabel),
+                        NormalizeLabelText(field.RuntimeLabelText),
+                        StringComparison.Ordinal))
+                {
+                    dialogLabelReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} label drifted from '{field.ExpectedLabel}' to '{field.RuntimeLabelText}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(field.RuntimeToolTip))
+                {
+                    tooltipCoverageReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} is missing tooltip coverage.");
+                }
+
+                if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Left, StringComparison.Ordinal)
+                         && string.Equals(field.RuntimeLayoutZone, "right", StringComparison.Ordinal))
+                {
+                    dialogLayoutSlotReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} drifted from left-slot posture into the right pane.");
+                }
+                else if (string.Equals(field.ExpectedLayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal)
+                         && string.Equals(field.RuntimeLayoutZone, "left", StringComparison.Ordinal))
+                {
+                    dialogLayoutSlotReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} drifted from right-slot posture into the left pane.");
+                }
+
+                if (field.MouseRoutes.Length == 0)
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} exposed no mouse-route hints.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(field.RuntimeToolTip)
+                    && !field.MouseRoutes.Contains("hover", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} exposed tooltip content without a hover route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(CheckBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("toggle", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its checkbox toggle route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(ComboBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("expand", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its combobox expand route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(NumericUpDown), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("spin", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its numeric spinner route.");
+                }
+
+                if (string.Equals(field.RuntimeControlType, nameof(ListBox), StringComparison.Ordinal)
+                    && !field.MouseRoutes.Contains("double_click", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{field.FieldId} lost its list double-click route.");
+                }
+
+                if (!string.Equals(field.RuntimeControlType, nameof(CheckBox), StringComparison.Ordinal)
+                    && !string.Equals(field.RuntimeControlType, nameof(NumericUpDown), StringComparison.Ordinal)
+                    && field.Width < 96d)
+                {
+                    dialogGeometryReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{field.FieldId} rendered too narrowly for stable mouse-target parity ({field.Width:0.##}px).");
+                }
+            }
+
+            foreach (string layoutSlot in new[] { DesktopDialogFieldLayoutSlots.Left, DesktopDialogFieldLayoutSlots.Right })
+            {
+                MuscleMemoryDialogFieldEvidence[] slotFields = dialogSurface.DialogFields
+                    .Where(field =>
+                        field.IsVisible
+                        && string.Equals(field.ExpectedLayoutSlot, layoutSlot, StringComparison.Ordinal))
+                    .ToArray();
+                if (slotFields.Length <= 1)
+                {
+                    continue;
+                }
+
+                string[] expectedFieldOrder = slotFields
+                    .Select(field => field.FieldId)
+                    .ToArray();
+                string[] runtimeFieldOrder = slotFields
+                    .OrderBy(field => Math.Round(field.Y / 18d, MidpointRounding.AwayFromZero))
+                    .ThenBy(field => field.X)
+                    .Select(field => field.FieldId)
+                    .ToArray();
+                if (!expectedFieldOrder.SequenceEqual(runtimeFieldOrder, StringComparer.Ordinal))
+                {
+                    dialogFieldOrderReasons.Add(
+                        $"{dialogSurface.SurfaceId} {layoutSlot.ToLowerInvariant()}-slot field order drifted from [{string.Join(", ", expectedFieldOrder)}] to [{string.Join(", ", runtimeFieldOrder)}].");
+                }
+            }
+
+            foreach (MuscleMemoryDialogActionEvidence action in dialogSurface.DialogActions.Where(action => action.IsVisible))
+            {
+                if (!string.Equals(
+                        NormalizeEvidenceText(action.ExpectedLabel),
+                        NormalizeEvidenceText(action.RuntimeLabelText),
+                        StringComparison.Ordinal))
+                {
+                    dialogLabelReasons.Add(
+                        $"{dialogSurface.SurfaceId}.{action.ActionId} action label drifted from '{action.ExpectedLabel}' to '{action.RuntimeLabelText}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(action.RuntimeToolTip))
+                {
+                    tooltipCoverageReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} is missing tooltip coverage.");
+                }
+
+                if (action.MouseRoutes.Length == 0)
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} exposed no mouse-route hints.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(action.RuntimeToolTip)
+                    && !action.MouseRoutes.Contains("hover", StringComparer.Ordinal))
+                {
+                    pointerRouteReasons.Add($"{dialogSurface.SurfaceId}.{action.ActionId} exposed tooltip content without a hover route.");
+                }
+            }
+
+            MuscleMemoryDialogActionEvidence[] visibleActions = dialogSurface.DialogActions
+                .Where(action => action.IsVisible)
+                .ToArray();
+            string[] expectedVisibleActionOrder = visibleActions
+                .Select(action => action.ActionId)
+                .ToArray();
+            string[] runtimeVisibleActionOrder = visibleActions
+                .OrderBy(action => action.X)
+                .Select(action => action.ActionId)
+                .ToArray();
+            if (!expectedVisibleActionOrder.SequenceEqual(runtimeVisibleActionOrder, StringComparer.Ordinal))
+            {
+                dialogActionOrderReasons.Add(
+                    $"{dialogSurface.SurfaceId} action order drifted from [{string.Join(", ", expectedVisibleActionOrder)}] to [{string.Join(", ", runtimeVisibleActionOrder)}].");
+            }
+
+            if (visibleActions.Length > 1)
+            {
+                double minY = visibleActions.Min(action => action.Y);
+                double maxY = visibleActions.Max(action => action.Y);
+                if ((maxY - minY) > 28d)
+                {
+                    dialogGeometryReasons.Add(
+                        $"{dialogSurface.SurfaceId} action strip drifted across multiple vertical bands ({minY:0.##}px..{maxY:0.##}px).");
+                }
+
+            }
+        }
+
+        ReviewResult surfaceCoverageReview = BuildReviewResult(surfaceCoverageReasons);
+        ReviewResult dialogWidgetClassReview = BuildReviewResult(dialogWidgetReasons);
+        ReviewResult dialogLabelReview = BuildReviewResult(dialogLabelReasons);
+        ReviewResult dialogLayoutSlotReview = BuildReviewResult(dialogLayoutSlotReasons);
+        ReviewResult dialogFieldOrderReview = BuildReviewResult(dialogFieldOrderReasons);
+        ReviewResult dialogActionOrderReview = BuildReviewResult(dialogActionOrderReasons);
+        ReviewResult pointerRouteReview = BuildReviewResult(pointerRouteReasons);
+        ReviewResult auxiliaryPointerRouteReview = BuildReviewResult(auxiliaryPointerRouteReasons);
+        ReviewResult auxiliaryPointerHostTruthReview = BuildReviewResult(auxiliaryPointerHostTruthReasons);
+        ReviewResult tooltipCoverageReview = BuildReviewResult(tooltipCoverageReasons);
+        ReviewResult dialogGeometryReview = BuildReviewResult(dialogGeometryReasons);
+        ReviewResult sharedBaselineParityReview = BuildReviewResult([]);
+
+        string[] reasons =
+        [
+            .. surfaceCoverageReasons,
+            .. dialogWidgetReasons,
+            .. dialogLabelReasons,
+            .. dialogLayoutSlotReasons,
+            .. dialogFieldOrderReasons,
+            .. dialogActionOrderReasons,
+            .. pointerRouteReasons,
+            .. auxiliaryPointerRouteReasons,
+            .. auxiliaryPointerHostTruthReasons,
+            .. tooltipCoverageReasons,
+            .. dialogGeometryReasons
+        ];
+
+        MuscleMemorySurfaceEvidence[] allSurfaces = shellSurfaces
+            .Concat(menuRootSurfaces)
+            .Concat(workspaceActionSurfaces)
+            .Concat(dialogSurfaces)
+            .ToArray();
+
+        MuscleMemoryInventoryEvidence evidence = new(
+            ParityOraclePath: ResolveSourceFile("docs", "PARITY_ORACLE.json"),
+            ShellSurfaceCount: shellSurfaces.Count,
+            MenuRootCount: menuRootSurfaces.Count,
+            WorkspaceActionCount: workspaceActionSurfaces.Count,
+            DialogSurfaceCount: dialogSurfaces.Count,
+            UiControlSurfaceCount: dialogSurfaces.Count(surface => string.Equals(surface.SurfaceKind, "uiControl", StringComparison.Ordinal)),
+            CommandDialogSurfaceCount: dialogSurfaces.Count(surface => string.Equals(surface.SurfaceKind, "commandDialog", StringComparison.Ordinal)),
+            TotalVisibleElementCount: shellSurfaces.Sum(surface => surface.VisibleElementCount)
+                + menuRootSurfaces.Sum(surface => surface.VisibleElementCount)
+                + workspaceActionSurfaces.Sum(surface => surface.VisibleElementCount)
+                + dialogSurfaces.Sum(surface => surface.VisibleElementCount),
+            TooltipBearingFieldCount: dialogSurfaces.Sum(surface => surface.DialogFields.Count(field => field.IsVisible && !string.IsNullOrWhiteSpace(field.RuntimeToolTip))),
+            TooltipBearingActionCount: dialogSurfaces.Sum(surface => surface.DialogActions.Count(action => action.IsVisible && !string.IsNullOrWhiteSpace(action.RuntimeToolTip))),
+            ContextMenuHostCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.HasContextMenu)),
+            SecondaryFlyoutHostCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.HasContextFlyout)),
+            HoverRouteCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.MouseRoutes.Contains("hover", StringComparer.Ordinal))),
+            RightClickRouteCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.MouseRoutes.Contains("right_click", StringComparer.Ordinal))),
+            SecondaryExpandRouteCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.MouseRoutes.Contains("secondary_expand", StringComparer.Ordinal))),
+            MiddleClickRouteCount: allSurfaces.Sum(surface => surface.Elements.Count(element => element.MouseRoutes.Contains("middle_click", StringComparer.Ordinal))),
+            ShellSurfaces: shellSurfaces.ToArray(),
+            MenuRootSurfaces: menuRootSurfaces.ToArray(),
+            WorkspaceActionSurfaces: workspaceActionSurfaces.ToArray(),
+            DialogSurfaces: dialogSurfaces.ToArray());
+
+        return new MuscleMemoryInventoryReceipt(
+            ContractName: contractName,
+            GeneratedAt: DateTime.UtcNow.ToString("O"),
+            Status: reasons.Length == 0 ? "pass" : "fail",
+            Summary: reasons.Length == 0 ? successSummary : failureSummary,
+            Reasons: reasons,
+            Evidence: evidence,
+            Reviews: new MuscleMemoryInventoryReviews(
+                SurfaceCoverageReview: surfaceCoverageReview,
+                DialogWidgetClassReview: dialogWidgetClassReview,
+                DialogLabelReview: dialogLabelReview,
+                DialogLayoutSlotReview: dialogLayoutSlotReview,
+                DialogFieldOrderReview: dialogFieldOrderReview,
+                DialogActionOrderReview: dialogActionOrderReview,
+                PointerRouteReview: pointerRouteReview,
+                AuxiliaryPointerRouteReview: auxiliaryPointerRouteReview,
+                AuxiliaryPointerHostTruthReview: auxiliaryPointerHostTruthReview,
+                TooltipCoverageReview: tooltipCoverageReview,
+                DialogGeometryReview: dialogGeometryReview,
+                SharedBaselineParityReview: sharedBaselineParityReview));
+    }
+
+    private static ReviewResult BuildReviewResult(IReadOnlyList<string> reasons)
+        => new(
+            Status: reasons.Count == 0 ? "pass" : "fail",
+            ReasonCount: reasons.Count,
+            Reasons: reasons.ToArray());
+
+    private static string[] ResolveExpectedRuntimeControlTypes(MuscleMemoryDialogFieldEvidence field)
+    {
+        if (string.Equals(field.ExpectedInputType, "checkbox", StringComparison.Ordinal))
+        {
+            return [nameof(CheckBox)];
+        }
+
+        if (!string.Equals(field.ExpectedInputType, "select", StringComparison.Ordinal))
+        {
+            if (string.Equals(field.ExpectedInputType, "number", StringComparison.Ordinal))
+            {
+                return [nameof(TextBox), nameof(NumericUpDown)];
+            }
+
+            return [];
+        }
+
+        return field.ExpectedVisualKind.ToLowerInvariant() switch
+        {
+            "list" => [nameof(ListBox)],
+            "tree" => [nameof(TreeView)],
+            _ => [nameof(ComboBox)]
+        };
+    }
+
     private static void WithLoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
     {
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -3816,6 +7751,46 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
     }
 
+    private static void WithSr4LoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
+        => WithRulesetLoadedRunnerHarness(assertion, RulesetDefaults.Sr4, "BP");
+
+    private static void WithSr5LoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
+        => WithRulesetLoadedRunnerHarness(assertion, RulesetDefaults.Sr5, "Priority");
+
+    private static void WithSr6LoadedRunnerHarness(Action<FlagshipUiHarness> assertion)
+        => WithRulesetLoadedRunnerHarness(assertion, RulesetDefaults.Sr6, "Priority");
+
+    private static void WithRulesetLoadedRunnerHarness(Action<FlagshipUiHarness> assertion, string rulesetId, string expectedBuildMethod)
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ExecuteCommandAsync("new_character", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            SelectDialogOption(harness, "newCharacterRulesetId", rulesetId, $"ruleset {rulesetId} for non-runtime workflow");
+            SelectDialogOption(harness, "newCharacterBuildMethod", expectedBuildMethod, $"build method {expectedBuildMethod} for non-runtime workflow");
+
+            harness.ClickDialogAction("create_character");
+            string expectedWorkflowDialogId = ResolveExpectedNewCharacterWorkflowDialogId(expectedBuildMethod);
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: var dialogId }
+                && string.Equals(dialogId, expectedWorkflowDialogId, StringComparison.Ordinal)
+                && harness.Presenter.ImportCalls == 0,
+                context: $"new character follow-up for '{rulesetId}/{expectedBuildMethod}'");
+            harness.ClickDialogAction("complete_new_character_workflow");
+            harness.WaitUntil(() =>
+                harness.Presenter.ImportCalls > 0
+                && harness.Presenter.State.WorkspaceId is not null
+                && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
+                && harness.Window.PeekDialogWindowForTesting() is null
+                && string.Equals(harness.Presenter.LastImportedDocument?.RulesetId, rulesetId, StringComparison.Ordinal));
+
+            assertion(harness);
+        });
+    }
+
     private static void WithRuntimeLoadedRunnerHarness(Action<RuntimeFlagshipUiHarness> assertion)
     {
         string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
@@ -3843,6 +7818,309 @@ public sealed class AvaloniaFlagshipUiGateTests
                 File.Delete(targetPath);
             }
         }
+    }
+
+    private static void WithImportedRuntimeRunnerHarness(Action<RuntimeFlagshipUiHarness> assertion, string rulesetId, string buildMethod)
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Presenter.ImportAsync(
+                    new WorkspaceImportDocument(
+                        CreateRuntimeStarterCharacterXml(rulesetId, $"{rulesetId.ToUpperInvariant()} Runtime Runner", $"{rulesetId.ToUpperInvariant()}RT", buildMethod),
+                        rulesetId,
+                        WorkspaceDocumentFormat.NativeXml),
+                    CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+
+            harness.WaitUntil(
+                () => harness.State.WorkspaceId is not null
+                    && harness.State.Session.OpenWorkspaces.Count > 0
+                    && !harness.State.IsBusy,
+                context: $"import starter workspace for '{rulesetId}/{buildMethod}'");
+
+            assertion(harness);
+        });
+    }
+
+    private static void WithRulesetRuntimeLoadedRunnerHarness(Action<RuntimeFlagshipUiHarness> assertion, string rulesetId, string expectedBuildMethod)
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton")).Length > 0);
+
+            MenuItem newCharacterCommand = SnapshotMenuCommands(harness.FindControl<MenuItem>("FileMenuButton"))
+                .FirstOrDefault(command => string.Equals(command.Tag?.ToString(), "new_character", StringComparison.Ordinal))
+                ?? throw new AssertFailedException("File menu must expose New Character.");
+
+            RaiseMenuItemClick(newCharacterCommand);
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.new_character" });
+
+            SelectDialogOption(harness, "newCharacterRulesetId", rulesetId, $"ruleset {rulesetId} for runtime workflow");
+            SelectDialogOption(harness, "newCharacterBuildMethod", expectedBuildMethod, $"build method {expectedBuildMethod} for {rulesetId}");
+
+            ClickRuntimeDialogAction(harness, "create_character");
+            string expectedWorkflowDialogId = ResolveExpectedNewCharacterWorkflowDialogId(expectedBuildMethod);
+            harness.WaitUntil(() =>
+                harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: var dialogId }
+                && string.Equals(dialogId, expectedWorkflowDialogId, StringComparison.Ordinal)
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterWorkflowRulesetId"),
+                    rulesetId,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterWorkflowBuildMethod"),
+                    expectedBuildMethod,
+                    StringComparison.Ordinal)
+                && !harness.State.IsBusy,
+                context: $"new character follow-up for '{rulesetId}/{expectedBuildMethod}'");
+
+            SelectDialogOption(harness, "newCharacterMetatypeCategory", "Metahuman", $"metatype category for runtime workflow {rulesetId}/{expectedBuildMethod}");
+            harness.WaitUntil(
+                () => string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterMetatype"),
+                    "Elf",
+                    StringComparison.Ordinal),
+                context: $"default metatype rematerialization for runtime workflow {rulesetId}/{expectedBuildMethod}");
+
+            if (!string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+                && harness.State.ActiveDialog?.Fields.Any(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal)) == true)
+            {
+                SelectDialogOption(
+                    harness,
+                    "newCharacterPriorityTalentChoice",
+                    "Adept",
+                    $"talent choice for runtime workflow {rulesetId}/{expectedBuildMethod}");
+            }
+
+            ClickRuntimeDialogAction(harness, "cancel");
+            harness.WaitUntil(
+                () => harness.Window.PeekDialogWindowForTesting() is null,
+                context: $"close new character workflow for '{rulesetId}/{expectedBuildMethod}'");
+
+            harness.Presenter.ImportAsync(
+                    new WorkspaceImportDocument(
+                        CreateRuntimeStarterCharacterXml(
+                            rulesetId,
+                            $"{rulesetId.ToUpperInvariant()} Runtime Runner",
+                            $"{rulesetId.ToUpperInvariant()}RT",
+                            expectedBuildMethod),
+                        rulesetId,
+                        WorkspaceDocumentFormat.NativeXml),
+                    CancellationToken.None)
+                .GetAwaiter()
+                .GetResult();
+
+            bool WorkspaceOpened()
+                => harness.Presenter.State.WorkspaceId is not null
+                    && harness.Presenter.State.Session.OpenWorkspaces.Count > 0
+                    && harness.Window.PeekDialogWindowForTesting() is null
+                    && !harness.State.IsBusy;
+
+            harness.WaitUntil(() =>
+                WorkspaceOpened()
+                || !string.IsNullOrWhiteSpace(harness.Presenter.State.Error)
+                || (!string.IsNullOrWhiteSpace(harness.Presenter.State.Notice)
+                    && harness.Window.PeekDialogWindowForTesting() is null
+                    && !harness.State.IsBusy),
+                context: $"runtime starter workspace import for '{rulesetId}'");
+
+            if (!WorkspaceOpened())
+            {
+                throw new AssertFailedException(
+                    $"Runtime workflow did not open a workspace for '{rulesetId}/{expectedBuildMethod}'. " +
+                    $"error='{harness.Presenter.State.Error ?? string.Empty}' " +
+                    $"notice='{harness.Presenter.State.Notice ?? string.Empty}' " +
+                    $"dialog='{harness.Presenter.State.ActiveDialog?.Id ?? "(none)"}' " +
+                    $"workspace='{harness.Presenter.State.WorkspaceId?.Value ?? "(none)"}' " +
+                    $"openWorkspaces={harness.Presenter.State.Session.OpenWorkspaces.Count}.");
+            }
+
+            assertion(harness);
+        });
+    }
+
+    private static string ResolveExpectedNewCharacterWorkflowDialogId(string buildMethod)
+        => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
+                ? "dialog.new_character.priority_workflow"
+                : "dialog.new_character.karma_workflow";
+
+    private static string CreateRuntimeStarterCharacterXml(
+        string rulesetId,
+        string name,
+        string alias,
+        string buildMethod)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string edition = normalizedRulesetId switch
+        {
+            var id when string.Equals(id, RulesetDefaults.Sr6, StringComparison.Ordinal) => "SR6",
+            var id when string.Equals(id, RulesetDefaults.Sr4, StringComparison.Ordinal) => "SR4",
+            _ => "SR5"
+        };
+        XElement root = XElement.Parse(File.ReadAllText(FindTestFilePath("Soma (Career).chum5")));
+
+        SetWorkspaceField(root, "name", name);
+        SetWorkspaceField(root, "alias", alias);
+        SetWorkspaceField(root, "gameedition", edition);
+        SetWorkspaceField(root, "buildmethod", buildMethod);
+        if (!string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(buildMethod, "SumtoTen", StringComparison.OrdinalIgnoreCase))
+        {
+            SetWorkspaceField(root, "sumtoten", "0");
+        }
+
+        return root.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private static void SetWorkspaceField(XElement root, string fieldName, string value)
+    {
+        XElement? field = root.Element(fieldName);
+        if (field is null)
+        {
+            root.Add(new XElement(fieldName, value));
+            return;
+        }
+
+        field.Value = value;
+    }
+
+    private static void SelectDialogOption(FlagshipUiHarness harness, string fieldId, string value, string? context = null)
+    {
+        harness.Presenter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None).GetAwaiter().GetResult();
+        harness.WaitUntil(
+            () => string.Equals(
+                DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, fieldId),
+                value,
+                StringComparison.Ordinal),
+            context: context ?? $"dialog option '{fieldId}' -> '{value}'");
+    }
+
+    private static void SelectDialogOption(RuntimeFlagshipUiHarness harness, string fieldId, string value, string? context = null)
+    {
+        harness.Presenter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None).GetAwaiter().GetResult();
+        harness.WaitUntil(
+            () => string.Equals(
+                DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, fieldId),
+                value,
+                StringComparison.Ordinal),
+            context: context ?? $"runtime dialog option '{fieldId}' -> '{value}'");
+    }
+
+    private static void AssertRuntimeQuickActionWorkflowContract(
+        RuntimeFlagshipUiHarness harness,
+        string rulesetId,
+        string sectionId,
+        SectionQuickActionDefinition quickAction,
+        RuntimeQuickActionWorkflowContract contract)
+    {
+        Button quickActionButton = harness.FindControl<Button>($"SectionQuickAction_{quickAction.ControlId}");
+        Assert.IsTrue(quickActionButton.IsVisible, $"Quick action '{quickAction.ControlId}' must be visible for '{sectionId}' under '{rulesetId}'.");
+        Assert.AreEqual(
+            quickAction.Label,
+            GetPrimaryButtonLabel(quickActionButton),
+            $"Quick action label drifted for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'.");
+
+        harness.Click($"SectionQuickAction_{quickAction.ControlId}");
+        harness.WaitUntil(
+            () => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: var dialogId }
+                && string.Equals(dialogId, contract.DialogId, StringComparison.Ordinal)
+                && string.Equals(harness.State.ActiveDialog?.Title, contract.Title, StringComparison.Ordinal),
+            context: $"dialog materialization for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'");
+
+        DesktopDialogState dialog = harness.State.ActiveDialog
+            ?? throw new AssertFailedException($"Quick action '{quickAction.ControlId}' did not produce an active dialog under '{sectionId}' / '{rulesetId}'.");
+
+        DesktopDialogField primaryField = dialog.Fields
+            .SingleOrDefault(field => string.Equals(field.Id, contract.RequiredFieldId, StringComparison.Ordinal))
+            ?? throw new AssertFailedException($"Dialog '{contract.DialogId}' is missing required field '{contract.RequiredFieldId}'.");
+        Assert.AreEqual(
+            contract.RequiredFieldLabel,
+            primaryField.Label,
+            $"Dialog '{contract.DialogId}' surfaced the wrong primary field label for '{quickAction.ControlId}'.");
+        string? requiredFieldValue = DesktopDialogFieldValueParser.GetValue(dialog, contract.RequiredFieldId);
+        if (!contract.AllowEmptyValue)
+        {
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(requiredFieldValue),
+                $"Dialog '{contract.DialogId}' must materialize a value for '{contract.RequiredFieldId}'.");
+        }
+
+        string[] actionIds = dialog.Actions
+            .Select(action => action.Id)
+            .ToArray();
+        foreach (string requiredActionId in contract.RequiredActionIds)
+        {
+            CollectionAssert.Contains(
+                actionIds,
+                requiredActionId,
+                $"Dialog '{contract.DialogId}' is missing required action '{requiredActionId}'.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(contract.ContinueActionId))
+        {
+            ClickRuntimeDialogAction(harness, contract.ContinueActionId);
+            harness.WaitUntil(
+                () => harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: var dialogId }
+                    && string.Equals(dialogId, contract.DialogId, StringComparison.Ordinal)
+                    && (harness.State.Notice ?? string.Empty).Contains(contract.ContinueNoticeFragment ?? "remains open", StringComparison.OrdinalIgnoreCase),
+                context: $"continuation for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'");
+
+            DesktopDialogState continuedDialog = harness.State.ActiveDialog
+                ?? throw new AssertFailedException($"Dialog '{contract.DialogId}' vanished after '{contract.ContinueActionId}'.");
+            CollectionAssert.Contains(
+                continuedDialog.Actions.Select(action => action.Id).ToArray(),
+                contract.ContinueActionId,
+                $"Dialog '{contract.DialogId}' must stay open after '{contract.ContinueActionId}'.");
+            if (!contract.AllowEmptyValue)
+            {
+                Assert.IsFalse(
+                    string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(continuedDialog, contract.RequiredFieldId)),
+                    $"Dialog '{contract.DialogId}' must rematerialize '{contract.RequiredFieldId}' after '{contract.ContinueActionId}'.");
+            }
+
+            ClickRuntimeDialogAction(harness, "cancel");
+            harness.WaitUntil(
+                () => harness.Window.PeekDialogWindowForTesting() is null,
+                context: $"cancel close for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'");
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(contract.CommitActionId))
+        {
+            ClickRuntimeDialogAction(harness, contract.CommitActionId);
+            harness.WaitUntil(
+                () => harness.Window.PeekDialogWindowForTesting() is null
+                    && (harness.State.Notice ?? string.Empty).Contains(contract.CommitNoticeFragment ?? string.Empty, StringComparison.OrdinalIgnoreCase),
+                context: $"commit close for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'");
+            return;
+        }
+
+        ClickRuntimeDialogAction(harness, "cancel");
+        harness.WaitUntil(
+            () => harness.Window.PeekDialogWindowForTesting() is null,
+            context: $"dialog close for '{quickAction.ControlId}' under '{sectionId}' / '{rulesetId}'");
+    }
+
+    private static void ClickRuntimeDialogAction(RuntimeFlagshipUiHarness harness, string actionId)
+        => harness.Click(DesktopDialogAccessibility.BuildActionName(actionId));
+
+    private static void ClickRuntimeMenuCommand(RuntimeFlagshipUiHarness harness, string menuButtonName, string commandId)
+    {
+        harness.Click(menuButtonName);
+        harness.WaitUntil(
+            () => SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName))
+                .Any(command => string.Equals(command.Tag?.ToString(), commandId, StringComparison.Ordinal)),
+            context: $"runtime menu command '{commandId}' in '{menuButtonName}'");
+
+        MenuItem command = SnapshotMenuCommands(harness.FindControl<MenuItem>(menuButtonName))
+            .First(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal));
+        RaiseMenuItemClick(command);
     }
 
     private static void WithStandaloneControl<TControl>(Action<TControl> assertion)
@@ -4011,6 +8289,33 @@ public sealed class AvaloniaFlagshipUiGateTests
             new WorkspaceImportRulesetDetector());
     }
 
+    private static string ResolveFixtureContentRoot()
+    {
+        string[] candidates =
+        {
+            "/docker/chummercomplete/chummer-core-engine/Chummer",
+            Path.Combine(Directory.GetCurrentDirectory(), "Chummer"),
+            Directory.GetCurrentDirectory()
+        };
+
+        return candidates.FirstOrDefault(candidate => Directory.Exists(Path.Combine(candidate, "data")))
+            ?? candidates[0];
+    }
+
+    private static string? ResolveFixtureAmendsPath()
+    {
+        string currentDirectory = Directory.GetCurrentDirectory();
+        string[] candidates =
+        {
+            Path.Combine(currentDirectory, "Docker", "Amends"),
+            Path.Combine(currentDirectory, "..", "..", "..", "Docker", "Amends"),
+            "/docker/chummercomplete/chummer6-ui/Docker/Amends",
+            "/docker/chummercomplete/chummer-presentation/Docker/Amends"
+        };
+
+        return candidates.FirstOrDefault(Directory.Exists);
+    }
+
     private sealed class FlagshipUiHarness : IDisposable
     {
         private readonly CharacterOverviewViewModelAdapter _adapter;
@@ -4135,16 +8440,96 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return;
             }
 
+            Window pointerHost = ResolvePointerHost(control);
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
-                Window);
+                pointerHost);
             Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
 
             Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            pointerHost.MouseMove(location, RawInputModifiers.None);
+            pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+            pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
             Pump();
+        }
+
+        public void DoubleTap(string controlName)
+        {
+            Control control = FindControl<Control>(controlName);
+            if (control is TreeView treeView && treeView.SelectedItem is not null)
+            {
+                WaitUntil(
+                    () => treeView.GetVisualDescendants()
+                        .OfType<TreeViewItem>()
+                        .Any(candidate => candidate.IsVisible && Equals(candidate.DataContext, treeView.SelectedItem)),
+                    timeoutMs: 1000,
+                    context: $"wait for realized selected tree view item for '{controlName}'");
+            }
+
+            Control pointerTarget = ResolvePointerTarget(control);
+            Window pointerHost = ResolvePointerHost(pointerTarget);
+            Point? translated = pointerTarget.TranslatePoint(
+                new Point(pointerTarget.Bounds.Width / 2d, pointerTarget.Bounds.Height / 2d),
+                pointerHost);
+            Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
+
+            Point location = translated!.Value;
+            global::Avalonia.Input.Pointer pointer = new(1, PointerType.Mouse, true);
+            PointerPressedEventArgs BuildPressedArgs(int clickCount) => new(
+                pointerTarget,
+                pointer,
+                pointerHost,
+                location,
+                (ulong)Environment.TickCount64,
+                new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed),
+                KeyModifiers.None,
+                clickCount);
+            PointerReleasedEventArgs BuildReleasedArgs() => new(
+                pointerTarget,
+                pointer,
+                pointerHost,
+                location,
+                (ulong)Environment.TickCount64,
+                new PointerPointProperties(RawInputModifiers.None, PointerUpdateKind.LeftButtonReleased),
+                KeyModifiers.None,
+                MouseButton.Left);
+
+            if (ReferenceEquals(pointerHost, Window))
+            {
+                pointerHost.MouseMove(location, RawInputModifiers.None);
+                pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+                pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+                pointerHost.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+                pointerHost.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            }
+            else
+            {
+                pointerTarget.RaiseEvent(BuildPressedArgs(1));
+                pointerTarget.RaiseEvent(BuildReleasedArgs());
+                pointerTarget.RaiseEvent(BuildPressedArgs(2));
+                pointerTarget.RaiseEvent(BuildReleasedArgs());
+            }
+
+            PointerPressedEventArgs pressedArgs = BuildPressedArgs(2);
+            pointerTarget.RaiseEvent(pressedArgs);
+            pointerTarget.RaiseEvent(new TappedEventArgs(InputElement.DoubleTappedEvent, pressedArgs));
+            Pump();
+        }
+
+        private Window ResolvePointerHost(Control control)
+            => control.GetVisualRoot() as Window ?? Window;
+
+        private static Control ResolvePointerTarget(Control control)
+        {
+            if (control is TreeView treeView && treeView.SelectedItem is not null)
+            {
+                return treeView.GetVisualDescendants()
+                    .OfType<TreeViewItem>()
+                    .FirstOrDefault(candidate => candidate.IsVisible && Equals(candidate.DataContext, treeView.SelectedItem))
+                    ?? control;
+            }
+
+            return control;
         }
 
         public void ClickLoadedRunnerTab(string labelFragment)
@@ -4659,7 +9044,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000)
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000, string? context = null)
         {
             DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
@@ -4673,7 +9058,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Pump();
             }
 
-            Assert.Fail("Timed out waiting for UI condition.");
+            Assert.Fail(
+                string.IsNullOrWhiteSpace(context)
+                    ? "Timed out waiting for UI condition."
+                    : $"Timed out waiting for UI condition: {context}.");
         }
 
         private static void Pump()
@@ -4763,9 +9151,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             RulesetPluginRegistry pluginRegistry = CreateShellPluginRegistry();
             var selectionPolicy = new DefaultRulesetSelectionPolicy(pluginRegistry);
             var shellCatalogResolver = new RulesetShellCatalogResolverService(pluginRegistry, selectionPolicy);
+            string contentRoot = ResolveFixtureContentRoot();
+            string? amendsPath = ResolveFixtureAmendsPath();
+            var overlays = new Chummer.Infrastructure.Files.FileSystemContentOverlayCatalogService(
+                contentRoot,
+                Directory.GetCurrentDirectory(),
+                amendsPath);
             var client = new FixtureBackedChummerClient(
                 CreateWorkspaceService(),
                 shellCatalogResolver,
+                toolCatalogService: new Chummer.Infrastructure.Xml.XmlToolCatalogService(overlays),
                 rulesetSelectionPolicy: selectionPolicy);
             var bootstrapProvider = new ShellBootstrapDataProvider(client);
 
@@ -4836,6 +9231,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void SelectCommand(string commandId)
+        {
+            ListBox commandsList = FindControl<ListBox>("CommandsList");
+            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
+            commandsList.SelectedItem = null;
+            Pump();
+            commandsList.SelectedItem = command;
+            Pump();
+        }
+
+
         public T FindControl<T>(string name)
             where T : Control
         {
@@ -4862,7 +9271,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000)
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000, string? context = null)
         {
             DateTime deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
             while (DateTime.UtcNow < deadline)
@@ -4876,13 +9285,76 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Pump();
             }
 
-            Assert.Fail("Timed out waiting for runtime-backed UI condition.");
+            Assert.Fail(
+                string.IsNullOrWhiteSpace(context)
+                    ? "Timed out waiting for runtime-backed UI condition."
+                    : $"Timed out waiting for runtime-backed UI condition: {context}.");
+        }
+
+        public byte[] CaptureScreenshotBytes()
+        {
+            Control screenshotRoot = Window.Content as Control ?? Window;
+            using RenderTargetBitmap bitmap = RenderControlToBitmap(screenshotRoot, new Size(980d, 640d));
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            if (output.Length > 0)
+            {
+                return output.ToArray();
+            }
+
+            throw new AssertFailedException("No runtime-backed rendered frame was available for screenshot capture.");
         }
 
         public void Dispose()
         {
             Window.Close();
             _adapter.Dispose();
+        }
+
+        private static RenderTargetBitmap RenderControlToBitmap(Control control, Size fallbackSize)
+        {
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                if (control.Bounds.Width <= 0d || control.Bounds.Height <= 0d)
+                {
+                    control.Measure(fallbackSize);
+                    control.Arrange(new Rect(fallbackSize));
+                }
+
+                if (control.GetVisualRoot() is Visual visualRoot)
+                {
+                    visualRoot.InvalidateVisual();
+                    if (visualRoot is global::Avalonia.Layout.Layoutable visualLayoutable)
+                    {
+                        visualLayoutable.UpdateLayout();
+                    }
+                }
+
+                control.InvalidateMeasure();
+                control.InvalidateArrange();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                control.InvalidateVisual();
+                if (control is global::Avalonia.Layout.Layoutable layoutable)
+                {
+                    layoutable.UpdateLayout();
+                }
+                Pump();
+                double renderWidth = Math.Max(control.Bounds.Width, control.DesiredSize.Width);
+                double renderHeight = Math.Max(control.Bounds.Height, control.DesiredSize.Height);
+                PixelSize pixelSize = new(
+                    Math.Max(1, (int)Math.Ceiling(renderWidth)),
+                    Math.Max(1, (int)Math.Ceiling(renderHeight)));
+                RenderTargetBitmap bitmap = new(pixelSize, new Vector(96, 96));
+                bitmap.Render(control);
+                if (pixelSize.Width > 0 && pixelSize.Height > 0)
+                {
+                    return bitmap;
+                }
+
+                bitmap.Dispose();
+            }
+
+            throw new AssertFailedException($"No rendered frame was available for runtime-backed screenshot capture of '{control.GetType().Name}'.");
         }
 
         private static void Pump()
@@ -5089,6 +9561,28 @@ public sealed class AvaloniaFlagshipUiGateTests
             };
         }
 
+        private static string ResolveDialogRulesetId(CharacterOverviewState state)
+        {
+            if (state.WorkspaceId is { } workspaceId)
+            {
+                string? activeWorkspaceRulesetId = state.OpenWorkspaces
+                    .Where(workspace => workspace.Id.Equals(workspaceId))
+                    .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                    .FirstOrDefault(static rulesetId => !string.IsNullOrWhiteSpace(rulesetId));
+                if (!string.IsNullOrWhiteSpace(activeWorkspaceRulesetId))
+                {
+                    return activeWorkspaceRulesetId;
+                }
+            }
+
+            return state.OpenWorkspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .Concat(state.Commands.Select(command => RulesetDefaults.NormalizeOptional(command.RulesetId)))
+                .Concat(state.NavigationTabs.Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId)))
+                .FirstOrDefault(static rulesetId => !string.IsNullOrWhiteSpace(rulesetId))
+                ?? RulesetDefaults.Sr5;
+        }
+
         public Task UpdateMetadataAsync(UpdateWorkspaceMetadata command, CancellationToken ct) => Task.CompletedTask;
 
         public Task SaveAsync(CancellationToken ct)
@@ -5200,6 +9694,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     if (OverviewCommandPolicy.IsDialogCommand(commandId)
                         || OverviewCommandPolicy.IsImportHintCommand(commandId))
                     {
+                        string commandRulesetId = ResolveDialogRulesetId(_state);
                         Publish(_state with
                         {
                             LastCommandId = commandId,
@@ -5209,10 +9704,17 @@ public sealed class AvaloniaFlagshipUiGateTests
                                 _state.Preferences,
                                 _state.ActiveSectionJson,
                                 _state.WorkspaceId,
-                                RulesetDefaults.Sr5,
+                                commandRulesetId,
                                 masterIndex: string.Equals(commandId, "master_index", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "translator", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "xml_editor", StringComparison.Ordinal)
+                                    || string.Equals(commandId, "hero_lab_importer", StringComparison.Ordinal)
                                     ? CreateLinkedMasterIndexResponse()
-                                    : null),
+                                    : null,
+                                translatorLanguages: string.Equals(commandId, "translator", StringComparison.Ordinal)
+                                    ? CreateTranslatorLanguagesResponse()
+                                    : null,
+                                openWorkspaces: _state.OpenWorkspaces),
                             Error = null
                         });
                     }
@@ -5772,6 +10274,47 @@ public sealed class AvaloniaFlagshipUiGateTests
                             new SectionRowState("attributes[4]", "Willpower · Total 3"),
                             new SectionRowState("attributes[5]", "Logic · Total 3")
                         ]);
+                case "explaindrawer":
+                    return (
+                        """
+{
+  "section": "attributes",
+  "cards": [
+    {
+      "label": "Armor",
+      "value": "12",
+      "details": {
+        "explanationPacket": {
+          "packet_id": "packet.armor.12",
+          "source_anchors": [
+            {
+              "book": "Core Rulebook",
+              "page": "438",
+              "section": "Armor Jacket",
+              "localPdfPath": "/tmp/core-rulebook.pdf"
+            }
+          ],
+          "stale_if_snapshot_changes": {
+            "snapshot_ref": "snapshot.before",
+            "current_snapshot_ref": "snapshot.after"
+          },
+          "counterfactual_actions": [
+            {
+              "question": "Why not stack a shield?"
+            },
+            {
+              "summary": "What if I unequip the jacket?"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("cards[0]", "Armor Jacket · 12")
+                        ]);
                 case "skills":
                     return (
                         """
@@ -6138,6 +10681,54 @@ public sealed class AvaloniaFlagshipUiGateTests
             => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>.Failure(0, "disabled"));
     }
 
+    private sealed record RuntimeQuickActionWorkflowContract(
+        string DialogId,
+        string Title,
+        string RequiredFieldId,
+        string RequiredFieldLabel,
+        string[] RequiredActionIds,
+        string? ContinueActionId = null,
+        string? ContinueNoticeFragment = null,
+        string? CommitActionId = null,
+        string? CommitNoticeFragment = null,
+        bool AllowEmptyValue = false);
+
+    private sealed record FixtureUiIdentity(
+        string CharacterName,
+        string PrimaryToken,
+        string Alias,
+        string BuildMethod,
+        string Metatype,
+        string RulesetId);
+
+    private sealed record FixtureUiReconstructionMaterializationResult(
+        string FixtureName,
+        string ReceiptPath,
+        string Status,
+        string[] Reasons);
+
+    private static readonly IReadOnlyDictionary<string, RuntimeQuickActionWorkflowContract> RuntimeQuickActionWorkflowContracts =
+        new Dictionary<string, RuntimeQuickActionWorkflowContract>(StringComparer.Ordinal)
+        {
+            ["open_notes"] = new("dialog.ui.open_notes", "Notes", "uiNotesEditor", "Notes", ["save", "cancel"], CommitActionId: "save", CommitNoticeFragment: "Notes saved.", AllowEmptyValue: true),
+            ["gear_add"] = new("dialog.ui.gear_add", "Add Gear", "uiGearName", "Gear Name", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["combat_add_weapon"] = new("dialog.ui.combat_add_weapon", "Add Weapon", "uiWeaponName", "Weapon", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["combat_add_armor"] = new("dialog.ui.combat_add_armor", "Add Armor", "uiArmorName", "Armor", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["cyberware_add"] = new("dialog.ui.cyberware_add", "Add Cyberware", "uiCyberwareName", "Cyberware", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["drug_add"] = new("dialog.ui.drug_add", "Add Drug", "uiDrugName", "Drug", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["spell_add"] = new("dialog.ui.spell_add", "Add Spell", "uiSpellName", "Spell", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["adept_power_add"] = new("dialog.ui.adept_power_add", "Add Adept Power", "uiAdeptPowerName", "Power", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["complex_form_add"] = new("dialog.ui.complex_form_add", "Add Complex Form", "uiComplexFormName", "Complex Form", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["initiation_add"] = new("dialog.ui.initiation_add", "Add Initiation / Submersion", "uiInitiationReward", "Reward", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["spirit_add"] = new("dialog.ui.spirit_add", "Add Spirit / Ally / Familiar", "uiSpiritName", "Name", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["critter_power_add"] = new("dialog.ui.critter_power_add", "Add Critter Power", "uiCritterPowerName", "Power", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["matrix_program_add"] = new("dialog.ui.matrix_program_add", "Add Program / Cyberdeck Item", "uiMatrixProgramName", "Program", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["vehicle_add"] = new("dialog.ui.vehicle_add", "Add Vehicle / Drone", "uiVehicleName", "Vehicle", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["contact_add"] = new("dialog.ui.contact_add", "Add Contact", "uiContactName", "Contact Name", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["skill_add"] = new("dialog.ui.skill_add", "Add Skill", "uiSkillName", "Skill", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open"),
+            ["quality_add"] = new("dialog.ui.quality_add", "Add Quality", "uiQualityName", "Quality", ["add", "add_more", "cancel"], ContinueActionId: "add_more", ContinueNoticeFragment: "remains open")
+        };
+
     private static MasterIndexResponse CreateLinkedMasterIndexResponse()
         => new(
             Count: 1,
@@ -6223,6 +10814,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             HouseRuleOverlayCount: 0,
             Sr6SuccessorLaneReceipt: "sr6 successor lane is governed for this parity fixture.");
 
+    private static TranslatorLanguagesResponse CreateTranslatorLanguagesResponse()
+        => new(
+            Count: 2,
+            EnabledLanguageOverlayCount: 1,
+            Languages:
+            [
+                new TranslatorLanguageEntry("en-us", "English"),
+                new TranslatorLanguageEntry("de-de", "Deutsch")
+            ],
+            TranslatorBridgePosture: "governed");
+
     private static ShellState CreateShellState()
     {
         AppCommandDefinition[] commands =
@@ -6243,6 +10845,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             new("dice_roller", "command.dice_roller", "tools", false, true, RulesetDefaults.Sr5),
             new("global_settings", "command.global_settings", "tools", false, true, RulesetDefaults.Sr5),
             new("character_settings", "command.character_settings", "tools", false, true, RulesetDefaults.Sr5),
+            new("translator", "command.translator", "tools", false, true, RulesetDefaults.Sr5),
+            new("xml_editor", "command.xml_editor", "tools", false, true, RulesetDefaults.Sr5),
+            new("hero_lab_importer", "command.hero_lab_importer", "tools", false, true, RulesetDefaults.Sr5),
             new("update", "command.update", "tools", false, true, RulesetDefaults.Sr5),
             new("master_index", "command.master_index", "tools", false, true, RulesetDefaults.Sr5),
             new("character_roster", "command.character_roster", "tools", false, true, RulesetDefaults.Sr5),

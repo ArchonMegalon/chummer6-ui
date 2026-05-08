@@ -1,0 +1,119 @@
+{
+  "generatedAt": "2026-05-05T07:20:50Z",
+  "status": "pass",
+  "unresolved": [],
+  "contract_name": "chummer6-ui.next90_m145_ui_desktop_explain_drawer_and_follow_up",
+  "evidence": {
+    "packageId": "next90-m145-ui-desktop-explain-drawer-and-follow-up",
+    "title": "Wire the desktop explain drawer, source-anchor launch, stale-state handling, and text-first follow-up on promoted workbench routes.",
+    "task": "Wire packet-backed desktop explain drawers, source-anchor affordances, stale snapshot handling, and text-first bounded follow-up across promoted workbench routes.",
+    "frontierId": 1452045202,
+    "milestoneId": 145,
+    "workTaskId": "145.2",
+    "wave": "W28",
+    "repo": "chummer6-ui",
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "ownedSurfaces": [
+      "explain_every_value_drawer:ui",
+      "grounded_follow_up:desktop"
+    ],
+    "queueChecks": {
+      "registry_task_complete": true,
+      "registry_task_unique": true,
+      "registry_direct_proof_command_recorded": true,
+      "queue_package_unique": true,
+      "design_queue_package_unique": true,
+      "queue_title_matches": true,
+      "design_queue_title_matches": true,
+      "queue_task_matches": true,
+      "design_queue_task_matches": true,
+      "queue_frontier_matches": true,
+      "design_queue_frontier_matches": true,
+      "queue_work_task_matches": true,
+      "design_queue_work_task_matches": true,
+      "queue_status_complete": true,
+      "design_queue_status_complete": true,
+      "queue_completion_action_matches": true,
+      "design_queue_completion_action_matches": true,
+      "queue_do_not_reopen_reason_matches": true,
+      "design_queue_do_not_reopen_reason_matches": true,
+      "allowed_paths_exact": true,
+      "design_allowed_paths_exact": true,
+      "owned_surfaces_exact": true,
+      "design_owned_surfaces_exact": true,
+      "proof_items_exact": true,
+      "design_proof_items_exact": true,
+      "queue_design_block_parity": true
+    },
+    "sourceChecks": {
+      "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs": {
+        "ExplainDrawerOpenSourceAnchorActionId": true,
+        "ExplainDrawerReviewBoundedFollowUpActionId": true,
+        "_currentExplainDrawerContext = ReadExplainDrawerContext(TryParseRootObject(previewJson));": true,
+        "ReadExplainDrawerContext(root);": true,
+        "return \"Open the bound local rulebook anchor from this desktop route.\";": true,
+        "return \"Open the cited source anchor from this desktop route.\";": true,
+        "return $\"Packet snapshot {packetSnapshot} no longer matches current snapshot {currentSnapshot}. Refresh before trusting this value.\";": true,
+        "renderedActions.Add(new SectionQuickActionDisplayItem(": true,
+        "TryOpenExplainDrawerSourceAnchor()": true
+      },
+      "Chummer.Avalonia/DesktopExplainDrawerFollowUpWindow.cs": {
+        "Title = \"Explain Follow-up\";": true,
+        "Follow-up stays text-first, packet-backed, and scoped to the current desktop snapshot.": true,
+        "CreateSection(\"Stale-state posture\", FirstNonBlank(_context.StaleState, \"No stale-state warning is attached to this packet.\"))": true,
+        "CreateSection(\"Bounded follow-up\", FirstNonBlank(_context.FollowUp, \"No bounded follow-up is attached to this packet.\"))": true,
+        "actions.Insert(0, CreateButton(\"Open Source Anchor\", OpenSourceAnchorAsync));": true,
+        "_statusText.Text = $\"Opened source anchor for {_context.ExplainPacket}.\";": true
+      },
+      "Chummer.Avalonia/MainWindow.SelectionHandlers.cs": {
+        "TryHandleExplainDrawerQuickActionAsync": true,
+        "ExplainDrawerContext? explainContext = _controls.SectionHost.GetCurrentExplainDrawerContext();": true,
+        "DesktopExplainDrawerFollowUpWindow.ShowAsync(this, explainContext)": true,
+        "MainWindowFeedbackCoordinator.ShowExplainFollowUpReviewed(_controls.ToolStrip);": true,
+        "MainWindowFeedbackCoordinator.ShowExplainFollowUpUnavailable(_controls.ToolStrip);": true
+      },
+      "Chummer.Avalonia/MainWindow.FeedbackCoordinator.cs": {
+        "ShowExplainFollowUpReviewed": true,
+        "ShowExplainFollowUpUnavailable": true,
+        "Explain follow-up stayed text-first with source-anchor and stale-state posture visible.": true,
+        "Explain follow-up is unavailable because the current section has no explain packet.": true
+      },
+      "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": {
+        "Standalone_section_context_surfaces_text_first_explain_drawer_summary_when_packet_metadata_is_present": true,
+        "Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy": true,
+        "Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up": true,
+        "Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer": true,
+        "Main_window_review_bounded_follow_up_opens_text_first_desktop_follow_up_window": true
+      },
+      "Chummer.Tests/Compliance/Next90M145DesktopExplainDrawerGuardTests.cs": {
+        "M145_desktop_explain_drawer_guard_is_wired_into_standard_verify": true,
+        "NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json": true
+      },
+      "scripts/ai/verify.sh": {
+        "checking next-90 M145 desktop explain drawer and bounded follow-up guard": true,
+        "bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh": true
+      }
+    },
+    "proofCommands": {
+      "directProofCommand": "bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh",
+      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M145DesktopExplainDrawerGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy|FullyQualifiedName~Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up|FullyQualifiedName~Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer\" --no-restore -p:BuildProjectReferences=false"
+    },
+    "proofFiles": [
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopExplainDrawerFollowUpWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.FeedbackCoordinator.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M145DesktopExplainDrawerGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json",
+      "bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh"
+    ]
+  }
+}

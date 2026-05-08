@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-05-08T15:07:13.025345Z",
+  "contractName": "chummer6-ui.chummer_shared_legacy_equivalent_chrome_gate",
+  "status": "fail",
+  "summary": "Shared legacy-equivalent runtime chrome drift was detected.",
+  "reasons": [
+    "chummer5a shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
+    "sr4 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
+    "sr6 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement"
+  ],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
+    "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_POLICY.json",
+    "designDocPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_EXIT_TESTS.md",
+    "inventoryPaths": {
+      "chummer5a": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json",
+      "sr4": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json",
+      "sr6": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json"
+    },
+    "runtimeHitCount": 9,
+    "runtimeHits": [
+      {
+        "lane": "chummer5a",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "chummer5a",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "chummer5a",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr4",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr4",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr4",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr6",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr6",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      },
+      {
+        "lane": "sr6",
+        "tokenId": "review_framing",
+        "surfaceId": "tool_strip",
+        "sourceKind": "elements.toolTip",
+        "text": "Review Roster Movement"
+      }
+    ],
+    "reasonCount": 3,
+    "failureCount": 3
+  },
+  "reviews": {
+    "policyReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "inventoryReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    },
+    "runtimeChromeReview": {
+      "status": "fail",
+      "reasonCount": 3,
+      "reasons": [
+        "chummer5a shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
+        "sr4 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
+        "sr6 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement"
+      ]
+    },
+    "wiringReview": {
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
+    }
+  }
+}

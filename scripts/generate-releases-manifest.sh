@@ -438,7 +438,8 @@ for artifact in payload.get("artifacts") or []:
     if kind not in {"installer", "dmg", "pkg", "msix"}:
         continue
 
-    if str(artifact.get("installAccessClass") or "").strip().lower() == access_class:
+    current_access_class = str(artifact.get("installAccessClass") or "").strip().lower()
+    if current_access_class:
         continue
 
     artifact["installAccessClass"] = access_class
@@ -711,10 +712,6 @@ python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
   --max-receipt-age-seconds "${CHUMMER_EXTERNAL_PROOF_MAX_RECEIPT_AGE_SECONDS:-604800}" \
   >/dev/null
 verify_args=()
-if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
-  verify_args+=(--require-complete-desktop-coverage)
-fi
-python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${verify_args[@]}" "$CANONICAL_MANIFEST_PATH" >/dev/null
 readarray -t promoted_file_names < <(python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 import json
 import sys
@@ -733,6 +730,54 @@ for artifact in payload.get("artifacts") or []:
         seen.add(file_name)
 PY
 )
+
+sync_promoted_files_dir() {
+  local target_dir="$1"
+  local target_label="$2"
+  local artifact_path=""
+  local file_name=""
+  local -a sync_artifacts=()
+
+  mkdir -p "$target_dir"
+  for file_name in "${promoted_file_names[@]}"; do
+    artifact_path="$DOWNLOADS_DIR/$file_name"
+    if [[ ! -f "$artifact_path" ]]; then
+      echo "promoted artifact missing from downloads source: $artifact_path" >&2
+      exit 1
+    fi
+    sync_artifacts+=("$artifact_path")
+  done
+
+  if [[ "${#sync_artifacts[@]}" -gt 0 ]]; then
+    rm -f \
+      "$target_dir"/chummer-*.exe \
+      "$target_dir"/chummer-*.zip \
+      "$target_dir"/chummer-*.tar.gz \
+      "$target_dir"/chummer-*-installer.deb \
+      "$target_dir"/chummer-*-installer.pkg \
+      "$target_dir"/chummer-*-installer.dmg \
+      "$target_dir"/chummer-*-installer.msix
+    cp -f "${sync_artifacts[@]}" "$target_dir"/
+    echo "synced ${#sync_artifacts[@]} ${target_label} artifact(s) -> $target_dir"
+  else
+    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for $target_label sync"
+  fi
+}
+
+canonical_files_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/files"
+resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
+resolved_canonical_files_dir="$(realpath -m "$canonical_files_dir")"
+if [[ "$resolved_downloads_dir" == "$resolved_canonical_files_dir" ]]; then
+  echo "canonical files dir matches downloads source; skipped canonical files sync"
+else
+  sync_promoted_files_dir "$canonical_files_dir" "canonical release"
+fi
+
+if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
+  verify_args+=(--require-complete-desktop-coverage)
+fi
+python3 "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "${verify_args[@]}" "$CANONICAL_MANIFEST_PATH" >/dev/null
+
 promotion_evidence_args=(
   --manifest "$CANONICAL_MANIFEST_PATH"
   --startup-smoke-dir "$STARTUP_SMOKE_DIR"
@@ -798,8 +843,7 @@ else
   fi
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
-  mkdir -p "$portal_files_dir"
-  portal_artifacts=()
+  declare -a portal_artifacts=()
   for file_name in "${promoted_file_names[@]}"; do
     artifact_path="$DOWNLOADS_DIR/$file_name"
     if [[ ! -f "$artifact_path" ]]; then
@@ -808,7 +852,11 @@ else
     fi
     portal_artifacts+=("$artifact_path")
   done
+
   if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
+    # Force overwrite so repeated manifest publication stays idempotent even when
+    # the portal mirror already contains a prior copy of the promoted artifact set.
+    mkdir -p "$portal_files_dir"
     rm -f \
       "$portal_files_dir"/chummer-*.exe \
       "$portal_files_dir"/chummer-*.zip \
@@ -817,11 +865,9 @@ else
       "$portal_files_dir"/chummer-*-installer.pkg \
       "$portal_files_dir"/chummer-*-installer.dmg \
       "$portal_files_dir"/chummer-*-installer.msix
-    # Force overwrite so repeated manifest publication stays idempotent even when
-    # the portal mirror already contains a prior copy of the promoted artifact set.
     cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
     echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
   else
-    echo "no local desktop artifacts found in $DOWNLOADS_DIR for portal file sync"
+    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for local portal sync"
   fi
 fi

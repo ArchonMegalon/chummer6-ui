@@ -1,0 +1,116 @@
+{
+  "contractName": "chummer6-ui.chummer5a_legacy_equivalent_chrome_policy",
+  "summary": "Fail-closed policy for removable Chummer6-only chrome on surfaces where Chummer5A already provided the same user function.",
+  "auditRequiredFields": [
+    "family_id",
+    "surface_id",
+    "dialog_id",
+    "element_id",
+    "element_label",
+    "present_in_chummer5a",
+    "present_in_chummer6",
+    "visual_parity",
+    "behavioral_parity",
+    "removable_if_not_in_chummer5a",
+    "reason"
+  ],
+  "allowedYesNoFields": [
+    "present_in_chummer5a",
+    "present_in_chummer6",
+    "visual_parity",
+    "behavioral_parity",
+    "removable_if_not_in_chummer5a"
+  ],
+  "rows": [
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "attributes_workspace",
+      "dialog_id": "section_host_classic_summary_band",
+      "element_id": "runner_summary_heading",
+      "element_label": "Runner Summary",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "no",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Chummer5A already carried the same dense character-summary job inside the workbench, so a separate Runner Summary label should stay stripped.",
+      "legacy_function": "dense character facts near the active workbench",
+      "source_absence_checks": [
+        {
+          "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+          "mode": "literal_absence",
+          "value": "Runner Summary"
+        },
+        {
+          "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+          "mode": "literal_absence",
+          "value": "Runner Summary"
+        },
+        {
+          "path": "Chummer.Blazor/Components/Shell/SectionPane.razor",
+          "mode": "literal_absence",
+          "value": "Runner Summary"
+        },
+        {
+          "path": "scripts/chummer5a_parity_tester.py",
+          "mode": "literal_absence",
+          "value": "Runner Summary"
+        }
+      ],
+      "required_marker_checks": [
+        {
+          "path": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "literals": [
+            "must not reintroduce synthetic Runner Summary chrome"
+          ]
+        }
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "attributes_workspace",
+      "dialog_id": "section_preview_detail_pane",
+      "element_id": "review_framing",
+      "element_label": "Review framing",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "no",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Chummer5A already had a detail pane for the same job, so replacement detail surfaces must not relabel that posture as Review.",
+      "legacy_function": "dense section detail and preview posture",
+      "source_absence_checks": [
+        {
+          "path": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+          "mode": "regex_absence",
+          "value": "Header=\\\"[^\\\"]*Review[^\\\"]*\\\""
+        },
+        {
+          "path": "Chummer.Blazor/Components/Shell/SectionPane.razor",
+          "mode": "regex_absence",
+          "value": ">\\s*[^<]*Review[^<]*<"
+        }
+      ],
+      "required_marker_checks": [
+        {
+          "path": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "literals": [
+            "The section preview header must not invent Review chrome that Chummer5A never had."
+          ]
+        },
+        {
+          "path": "scripts/chummer5a_parity_tester.py",
+          "literals": [
+            "section_preview_omits_review_copy"
+          ]
+        },
+        {
+          "path": "scripts/ai/milestones/user-journey-tester-audit.sh",
+          "literals": [
+            "section_preview_omits_review_copy"
+          ]
+        }
+      ]
+    }
+  ]
+}

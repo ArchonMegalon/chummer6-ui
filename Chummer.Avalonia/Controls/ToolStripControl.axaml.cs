@@ -41,12 +41,26 @@ public partial class ToolStripControl : UserControl
     public void SetState(ToolStripState state)
     {
         SetStatusText(state.StatusText);
+        ApplyVisibility(OpenForExportButton, state.ShowOpenForExport);
+        ApplyVisibility(GmPrepButton, state.ShowGmPrep);
+        ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);
+        ApplyVisibility(CampaignWorkspaceButton, state.ShowCampaignWorkspace);
     }
 
     public void SetStatusText(string statusText)
     {
         StatusText.Text = statusText;
         StatusTextBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText);
+    }
+
+    private static void ApplyVisibility(Control control, bool? isVisible)
+    {
+        if (!isVisible.HasValue)
+        {
+            return;
+        }
+
+        control.IsVisible = isVisible.Value;
     }
 
     private void ApplyLocalization()
@@ -227,4 +241,9 @@ public partial class ToolStripControl : UserControl
     }
 }
 
-public sealed record ToolStripState(string StatusText);
+public sealed record ToolStripState(
+    string StatusText,
+    bool? ShowOpenForExport = null,
+    bool? ShowGmPrep = null,
+    bool? ShowRosterMovement = null,
+    bool? ShowCampaignWorkspace = null);

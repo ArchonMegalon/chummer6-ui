@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
+
+if [[ -f "$proof_file" ]]; then
+  python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
+else
+  echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
+fi
+
+bash "$repo_root/scripts/verify-releases-manifest.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
@@ -91,6 +104,9 @@ bash scripts/ai/milestones/b11-npc-persona-studio-check.sh
 
 echo "[verify] checking UI milestone coverage registry guard..."
 bash scripts/ai/milestones/ui-milestone-coverage-check.sh
+
+echo "[verify] syncing canonical UI design mirror subset..."
+bash scripts/ai/sync-ui-design-mirror.sh >/dev/null
 
 echo "[verify] checking UI design mirror hygiene guard..."
 bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh
@@ -184,8 +200,32 @@ bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh
 echo "[verify] checking veteran task-time evidence gate..."
 bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh
 
+echo "[verify] checking Chummer5a legacy-equivalent chrome gate..."
+bash scripts/ai/milestones/chummer5a-legacy-equivalent-chrome-gate.sh
+
+echo "[verify] checking Chummer5a muscle-memory parity gate..."
+bash scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh
+
+echo "[verify] checking Chummer4/SR4 muscle-memory parity gate..."
+bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh
+
+echo "[verify] checking SR6 shared muscle-memory parity gate..."
+bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh
+
+echo "[verify] checking shared legacy-equivalent chrome gate..."
+bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
+
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
+
+echo "[verify] checking next-90 M141 direct import-route proof guard..."
+bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh
+
+echo "[verify] checking next-90 M142 direct workflow proof guard..."
+bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh
+
+echo "[verify] checking next-90 M143 direct output proof guard..."
+bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh
 
 echo "[verify] checking dense workbench recovery gate..."
 bash scripts/ai/milestones/dense-workbench-recovery-gate.sh
@@ -960,6 +1000,45 @@ bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh
 
 echo "[verify] checking next-90 M109 build explain artifact companion closure guard..."
 bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh
+
+echo "[verify] checking next-90 M115 portable dossier desktop actions guard..."
+bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh
+
+echo "[verify] checking next-90 M116 creator publication and moderation desktop actions guard..."
+bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh
+
+echo "[verify] checking next-90 M117 desktop artifact shelf entrypoint guard..."
+bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh
+
+echo "[verify] checking next-90 M118 organizer desktop operations guard..."
+bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh
+
+echo "[verify] checking next-90 M119 first playable session desktop flow guard..."
+bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh
+
+echo "[verify] checking next-90 M121 desktop GM Runboard route guard..."
+bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh
+
+echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
+bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh
+
+echo "[verify] checking next-90 M113 GM prep and roster movement desktop surface guard..."
+bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh
+
+echo "[verify] checking CharacterRosterStructureParityGuardTests..."
+if ! rg -n "CharacterRosterStructureParityGuardTests|Chummer6_roster" Chummer.Tests/Compliance/CharacterRosterStructureParityGuardTests.cs Chummer.Tests/Presentation/CharacterRosterStructureParityGuardTests.cs >/dev/null; then
+  echo "[verify] FAIL: CharacterRosterStructureParityGuardTests must exist and contain roster structure tests."
+  exit 170
+fi
+
+echo "[verify] checking next-90 M114 rule-environment studio desktop surface guard..."
+bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh
+
+echo "[verify] checking next-90 M145 desktop explain drawer and bounded follow-up guard..."
+bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh
+
+echo "[verify] checking next-90 M135 desktop surface coverage closure guard..."
+bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh
 
 echo "[verify] checking B15 localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh

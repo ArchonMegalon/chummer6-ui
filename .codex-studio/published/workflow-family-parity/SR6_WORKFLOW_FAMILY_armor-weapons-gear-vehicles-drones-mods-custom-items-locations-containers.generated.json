@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T11:09:32.225492Z",
+  "generatedAt": "2026-05-08T15:03:28.502094Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family parity evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
@@ -13,7 +13,11 @@
     "auditTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "classification": "carry-forward",

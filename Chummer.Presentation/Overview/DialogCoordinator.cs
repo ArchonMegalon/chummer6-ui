@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 
 namespace Chummer.Presentation.Overview;
 
@@ -85,6 +86,14 @@ public sealed class DialogCoordinator : IDialogCoordinator
             && string.Equals(actionId, "create_character", StringComparison.Ordinal))
         {
             await CreateCharacterFromDialogAsync(dialog, context, ct);
+            return;
+        }
+
+        if ((string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                || string.Equals(dialog.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
+            && string.Equals(actionId, "complete_new_character_workflow", StringComparison.Ordinal))
+        {
+            await CompleteNewCharacterWorkflowAsync(dialog, context, ct);
             return;
         }
 
@@ -976,6 +985,45 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string name = ReadDialogValue(dialog, "newCharacterName", "New Character").Trim();
         string alias = ReadDialogValue(dialog, "newCharacterAlias", "Runner").Trim();
         string buildMethod = ReadDialogValue(dialog, "newCharacterBuildMethod", "Priority").Trim();
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterHouseRulesEnabled",
+            context.State.Preferences.HouseRulesEnabled);
+
+        if (string.IsNullOrWhiteSpace(alias))
+        {
+            alias = "Runner";
+        }
+
+        DesktopDialogState nextDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled,
+            name,
+            alias);
+        context.Publish(context.State with
+        {
+            ActiveDialog = nextDialog,
+            Error = null,
+            Notice = null
+        });
+        await Task.CompletedTask;
+    }
+
+    private static async Task CompleteNewCharacterWorkflowAsync(
+        DesktopDialogState dialog,
+        DialogCoordinationContext context,
+        CancellationToken ct)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(ReadDialogValue(dialog, "newCharacterWorkflowRulesetId", RulesetDefaults.Sr5))
+            ?? RulesetDefaults.Sr5;
+        string name = ReadDialogValue(dialog, "newCharacterWorkflowName", "New Character").Trim();
+        string alias = ReadDialogValue(dialog, "newCharacterWorkflowAlias", "Runner").Trim();
+        string buildMethod = ReadDialogValue(dialog, "newCharacterWorkflowBuildMethod", "Priority").Trim();
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "newCharacterWorkflowHouseRulesEnabled",
+            context.State.Preferences.HouseRulesEnabled);
 
         if (string.IsNullOrWhiteSpace(alias))
         {
@@ -983,9 +1031,15 @@ public sealed class DialogCoordinator : IDialogCoordinator
         }
 
         string xml = StarterWorkspaceXmlFactory.CreateCharacterXml(rulesetId, name, alias, buildMethod);
+        string groundedXml = ApplyNewCharacterWorkflowSelections(
+            dialog,
+            xml,
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled);
         await context.ImportAsync(
             new WorkspaceImportDocument(
-                xml,
+                groundedXml,
                 rulesetId,
                 WorkspaceDocumentFormat.NativeXml),
             ct);
@@ -997,9 +1051,105 @@ public sealed class DialogCoordinator : IDialogCoordinator
             {
                 ActiveDialog = null,
                 Error = null,
-                Notice = $"Created '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()})."
+                Notice = houseRulesEnabled
+                    ? $"Created '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()}) with house rules enabled."
+                    : $"Created '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()})."
             });
         }
+    }
+
+    private static string ApplyNewCharacterWorkflowSelections(
+        DesktopDialogState dialog,
+        string xml,
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled)
+    {
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement? character = document.Root;
+        if (character is null)
+        {
+            return xml;
+        }
+
+        string metatypeCategory = ReadDialogValue(dialog, "newCharacterMetatypeCategory", "Standard").Trim();
+        string metatype = ReadDialogValue(dialog, "newCharacterMetatype", "Human").Trim();
+        SetCharacterElement(character, "metatype", string.IsNullOrWhiteSpace(metatype) ? "Human" : metatype);
+        SetCharacterElement(character, "metatypecategory", string.IsNullOrWhiteSpace(metatypeCategory) ? "Standard" : metatypeCategory);
+
+        if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
+        {
+            SetCharacterElement(character, "prioritymetatype", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityHeritage", "D")));
+            SetCharacterElement(character, "priorityattributes", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityAttributes", "B")));
+            SetCharacterElement(character, "priorityspecial", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityTalent", "E")));
+            SetCharacterElement(character, "priorityskills", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPrioritySkills", "C")));
+            SetCharacterElement(character, "priorityresources", NormalizePrioritySelection(ReadDialogValue(dialog, "newCharacterPriorityResources", "A")));
+            string priorityTalentChoice = ReadDialogValue(dialog, "newCharacterPriorityTalentChoice", "Mundane").Trim();
+            bool isAdept = string.Equals(priorityTalentChoice, "Adept", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(priorityTalentChoice, "Mystic Adept", StringComparison.OrdinalIgnoreCase);
+            bool isMagician = string.Equals(priorityTalentChoice, "Magician", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(priorityTalentChoice, "Mystic Adept", StringComparison.OrdinalIgnoreCase);
+            bool isTechnomancer = string.Equals(priorityTalentChoice, "Technomancer", StringComparison.OrdinalIgnoreCase);
+
+            SetCharacterElement(character, "prioritytalent", priorityTalentChoice);
+            SetCharacterElement(character, "adept", isAdept ? "True" : "False");
+            SetCharacterElement(character, "magician", isMagician ? "True" : "False");
+            SetCharacterElement(character, "technomancer", isTechnomancer ? "True" : "False");
+            SetCharacterElement(character, "magenabled", (isAdept || isMagician) ? "True" : "False");
+            SetCharacterElement(character, "resenabled", isTechnomancer ? "True" : "False");
+            SetCharacterElement(character, "depenabled", "False");
+            if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase))
+            {
+                SetCharacterElement(character, "sumtoten", "10");
+            }
+        }
+
+        if (houseRulesEnabled)
+        {
+            string currentSettings = ReadCharacterElement(character, "settings", "Core Rulebook");
+            if (!currentSettings.Contains("House Rules", StringComparison.OrdinalIgnoreCase))
+            {
+                SetCharacterElement(character, "settings", $"{currentSettings} (House Rules)");
+            }
+
+            string currentNotes = ReadCharacterElement(character, "notes", string.Empty);
+            if (!currentNotes.Contains("House rules enabled.", StringComparison.OrdinalIgnoreCase))
+            {
+                string nextNotes = string.IsNullOrWhiteSpace(currentNotes)
+                    ? "House rules enabled."
+                    : $"{currentNotes} House rules enabled.";
+                SetCharacterElement(character, "notes", nextNotes.Trim());
+            }
+        }
+
+        using StringWriter writer = new(CultureInfo.InvariantCulture);
+        document.Save(writer, SaveOptions.DisableFormatting);
+        return writer.ToString();
+    }
+
+    private static string ReadCharacterElement(XElement character, string elementName, string fallback)
+        => character.Element(elementName)?.Value ?? fallback;
+
+    private static string NormalizePrioritySelection(string priority)
+        => priority.Trim().ToUpperInvariant() switch
+        {
+            "A" => "A,4",
+            "B" => "B,3",
+            "C" => "C,2",
+            "D" => "D,1",
+            _ => "E,0"
+        };
+
+    private static void SetCharacterElement(XElement character, string elementName, string value)
+    {
+        XElement? element = character.Element(elementName);
+        if (element is null)
+        {
+            character.Add(new XElement(elementName, value));
+            return;
+        }
+
+        element.Value = value;
     }
 
     private static bool TryReadDiceRequest(

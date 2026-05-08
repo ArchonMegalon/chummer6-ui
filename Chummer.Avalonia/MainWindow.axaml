@@ -29,7 +29,18 @@
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="0" Margin="1,1,1,0">
+    <!-- Classic shell baseline: ColumnDefinitions="0,*,0" before the roster pane expands the left column. -->
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="2" Margin="1,1,1,0">
+      <!-- Character Roster Pane (left) - Chummer5a treCharacterList equivalent -->
+      <Border x:Name="RosterPaneRegion"
+              Grid.Column="0"
+              Classes="shell-panel"
+              Width="228"
+              MinWidth="180"
+              MaxWidth="300">
+        <controls:CharacterRosterControl x:Name="CharacterRosterControl" />
+      </Border>
+
       <Border x:Name="LeftNavigatorRegion"
               Grid.Column="0"
               Classes="shell-panel"

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-01T11:00:40Z",
+  "generated_at": "2026-05-08T15:04:28Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -24,13 +24,9 @@
   "explicit_fallback_runtime": "pass",
   "signoff_smoke_runner": {
     "status": "pass",
-    "retry_attempted": true,
-    "retry_reason": "metadata_reference_rebuild",
+    "retry_attempted": false,
+    "retry_reason": "",
     "log_excerpt": [
-      "    0 Warning(s)",
-      "    0 Error(s)",
-      "",
-      "Time Elapsed 00:00:07.88",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
@@ -96,37 +92,52 @@
       "legacy_data_xml_present": true
     }
   ],
-  "legacy_language_root": "/docker/chummercomplete/chummer6-ui/Chummer/lang",
+  "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
-    "blockingFindings": [],
-    "blockingFindingsCount": 0,
-    "blocking_findings": [],
-    "blocking_findings_count": 0,
     "contract_name": "chummer6-ui.local_release_proof",
-    "evidence": {
-      "desktop_semantic_statuses": {
-        "legacyMainframeVisualSimilarity": "pass",
-        "runtimeBackedCharacterRoster": "pass",
-        "runtimeBackedFileMenuRoutes": "pass",
-        "runtimeBackedLegacyWorkbench": "pass",
-        "runtimeBackedMasterIndex": "pass"
-      },
-      "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-      "repo_root": "/docker/chummercomplete/chummer-presentation",
-      "source_markers": {
-        "avalonia_head_present": true,
-        "character_roster_route": true,
-        "desktop_runtime_present": true,
-        "file_open_save_import_routes": true,
-        "master_index_route": true,
-        "workflow_execution_parity": true
+    "generated_at": "2026-05-07T01:04:47Z",
+    "status": "passed",
+    "base_url": "http://127.0.0.1:8091",
+    "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
+    "playwright_timeout_seconds": 240,
+    "edge_rebuild_skipped": true,
+    "route_probe_executed": false,
+    "journeys_passed": [
+      "install_claim_restore_continue",
+      "build_explain_publish",
+      "campaign_session_recover_recap",
+      "report_cluster_release_notify",
+      "organize_community_and_close_loop"
+    ],
+    "desktop_workspace_routes": [
+      "gm_prep_packets:desktop",
+      "roster_movement:desktop"
+    ],
+    "proof_routes": [
+      "/downloads/install/avalonia-linux-x64-installer",
+      "/home/access",
+      "/home/work",
+      "/account/work",
+      "/account/support",
+      "/contact",
+      "/downloads/install/avalonia-osx-arm64-installer",
+      "/downloads/install/avalonia-win-x64-installer"
+    ],
+    "receipts": [
+      {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "package_id": "next90-m113-ui-gm-prep-roster-surface",
+        "status": "pass",
+        "surface_routes": [
+          "gm_prep_packets:desktop",
+          "roster_movement:desktop"
+        ]
       }
-    },
-    "generatedAt": "2026-04-26T15:17:04Z",
-    "generated_at": "2026-04-26T15:17:04Z",
-    "reasons": [],
-    "status": "pass",
-    "summary": "UI local release proof is backed by current desktop source markers and the promoted release channel."
+    ],
+    "notes": [
+      "Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.",
+      "next90-m113-ui-gm-prep-roster-surface anchors the desktop workspace proof shelf for GM prep and roster movement."
+    ]
   },
   "blocking_findings": [],
   "translation_backlog_findings": [],
@@ -648,7 +659,7 @@
       },
       "required_receipts": {
         "local_release_proof": {
-          "status": "pass",
+          "status": "passed",
           "path": null
         }
       },
@@ -683,8 +694,8 @@
       "generated_artifacts"
     ],
     "signoffStatus": 0,
-    "retryAttempted": true,
-    "retryReason": "metadata_reference_rebuild",
+    "retryAttempted": false,
+    "retryReason": "",
     "blockingFindingCount": 0,
     "translationBacklogCount": 0,
     "reasonCount": 0,

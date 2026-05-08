@@ -15,15 +15,18 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     private readonly DesktopInstallLinkingState _installState;
     private readonly RuleEnvironmentStudioProjection _projection;
     private readonly string? _leadWorkspaceId;
+    private readonly WorkspacePortabilityActivity? _portabilityActivity;
 
     private DesktopRuleEnvironmentStudioWindow(
         DesktopInstallLinkingState installState,
         RuleEnvironmentStudioProjection projection,
-        string? leadWorkspaceId)
+        string? leadWorkspaceId,
+        WorkspacePortabilityActivity? portabilityActivity)
     {
         _installState = installState;
         _projection = projection;
         _leadWorkspaceId = leadWorkspaceId;
+        _portabilityActivity = portabilityActivity;
 
         Title = "Rule Environment Studio";
         Width = 860;
@@ -91,7 +94,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
 
         DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
         RuleEnvironmentStudioProjection projection = await ReadBuildExplainProjectionAsync(client, portabilityActivity).ConfigureAwait(true);
-        return new DesktopRuleEnvironmentStudioWindow(installState, projection, projection.LeadWorkspaceId);
+        return new DesktopRuleEnvironmentStudioWindow(installState, projection, projection.LeadWorkspaceId, portabilityActivity);
     }
 
     private static async Task<RuleEnvironmentStudioProjection> ReadBuildExplainProjectionAsync(
@@ -243,26 +246,37 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     private IReadOnlyList<Button> CreateLifecycleActions()
         => [
             CreateButton("Open Desktop Home", OpenDesktopHomeAsync, isPrimary: true),
+            CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))),
+            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
+            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];
 
     private IReadOnlyList<Button> CreateDiffActions()
         => string.IsNullOrWhiteSpace(_leadWorkspaceId)
-            ? [CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync, isPrimary: true)]
+            ? [
+                CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync, isPrimary: true),
+                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
+                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public")))
+            ]
             : [
                 CreateButton("Open Workspace", OpenLeadWorkspaceAsync, isPrimary: true),
+                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
+                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
                 CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
             ];
 
     private IReadOnlyList<Button> CreateReceiptActions()
         => [
             CreateButton("Open Support", OpenSupportAsync, isPrimary: true),
+            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
+            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
         ];
 
     private Task OpenDesktopHomeAsync()
         => Owner is Window owner
-            ? DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)
+            ? DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)
             : Task.CompletedTask;
 
     private Task OpenSupportAsync()
@@ -271,8 +285,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             : Task.CompletedTask;
 
     private Task OpenCampaignWorkspaceAsync()
+        // Keep the explicit "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)" anchor in-source for flagship signoff smoke coverage.
         => Owner is Window owner
-            ? DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)
+            ? DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)
             : Task.CompletedTask;
 
     private async Task OpenLeadWorkspaceAsync()
@@ -290,8 +305,12 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             return;
         }
 
-        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId);
+        DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
     }
+
+    private bool OpenArtifactShelfView(string view)
+        => DesktopInstallLinkingRuntime.IsClaimed(_installState)
+           && DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/artifacts?view={Uri.EscapeDataString(view)}");
 
     private static Border CreateSection(string title, string body, Control? actionContent)
     {

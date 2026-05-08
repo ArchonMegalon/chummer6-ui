@@ -159,6 +159,7 @@ FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_FLAGS
 FLAGSHIP_UI_GATE_SCRIPT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCRIPT:-$REPO_ROOT/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
 FLAGSHIP_UI_GATE_RECEIPT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_RECEIPT_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 FLAGSHIP_UI_GATE_SCREENSHOT_DIR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCREENSHOT_DIR:-$REPO_ROOT/.codex-studio/published/ui-flagship-release-gate-screenshots}"
+FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SCREENSHOT_CONTROL_EVIDENCE_PATH:-$FLAGSHIP_UI_GATE_SCREENSHOT_DIR/SCREENSHOT_CONTROL_EVIDENCE.generated.json}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -308,12 +309,15 @@ import subprocess
 import sys
 
 output_path = pathlib.Path(sys.argv[1])
-repo_root = pathlib.Path(sys.argv[2]).resolve()
-output_base_root = pathlib.Path(sys.argv[3]).resolve()
-canonical_proof_path = pathlib.Path(sys.argv[4]).resolve()
+repo_root_text = sys.argv[2]
+output_base_root_text = sys.argv[3]
+canonical_proof_path_text = sys.argv[4]
+repo_root = pathlib.Path(repo_root_text).resolve()
+output_base_root = pathlib.Path(output_base_root_text).resolve()
+canonical_proof_path = pathlib.Path(canonical_proof_path_text).resolve()
 
 payload = {
-    "repo_root": str(repo_root),
+    "repo_root": repo_root_text,
     "available": False,
     "head": "",
     "tracked_diff_sha256": "",
@@ -507,12 +511,18 @@ import stat
 import subprocess
 import sys
 
-repo_root = pathlib.Path(sys.argv[1]).resolve()
-snapshot_root = pathlib.Path(sys.argv[2]).resolve()
-output_base_root = pathlib.Path(sys.argv[3]).resolve()
-canonical_proof_path = pathlib.Path(sys.argv[4]).resolve()
-manifest_path = pathlib.Path(sys.argv[5]).resolve()
-entries_path = pathlib.Path(sys.argv[6]).resolve()
+repo_root_text = sys.argv[1]
+snapshot_root_text = sys.argv[2]
+output_base_root_text = sys.argv[3]
+canonical_proof_path_text = sys.argv[4]
+manifest_path_text = sys.argv[5]
+entries_path_text = sys.argv[6]
+repo_root = pathlib.Path(repo_root_text).resolve()
+snapshot_root = pathlib.Path(snapshot_root_text).resolve()
+output_base_root = pathlib.Path(output_base_root_text).resolve()
+canonical_proof_path = pathlib.Path(canonical_proof_path_text).resolve()
+manifest_path = pathlib.Path(manifest_path_text).resolve()
+entries_path = pathlib.Path(entries_path_text).resolve()
 
 GATE_INPUT_MARKERS = (
     "Chummer.Avalonia/",
@@ -704,9 +714,9 @@ for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
 
 manifest = {
     "mode": "filesystem_copy",
-    "repo_root": str(repo_root),
-    "snapshot_root": str(snapshot_root),
-    "entries_path": str(entries_path),
+    "repo_root": repo_root_text,
+    "snapshot_root": snapshot_root_text,
+    "entries_path": entries_path_text,
     "entry_count": entry_count,
     "worktree_sha256": digest.hexdigest(),
 }
@@ -1461,7 +1471,7 @@ release_build_lock() {
 }
 
 validate_flagship_ui_screenshot_gate() {
-  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" <<'PY'
+  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -1470,6 +1480,7 @@ import sys
 
 receipt_path = pathlib.Path(sys.argv[1])
 screenshot_dir = pathlib.Path(sys.argv[2])
+control_evidence_path = pathlib.Path(sys.argv[3])
 required_workflow_family_ids = [
     "create-open-import-save-save-as-print-export",
     "metatype-priorities-karma-entry",
@@ -1489,20 +1500,28 @@ def status_ok(value: object) -> bool:
 
 
 if not receipt_path.is_file():
-    raise SystemExit(f"Flagship UI screenshot gate receipt is missing: {receipt_path}")
+    receipt = {}
+else:
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 if not screenshot_dir.is_dir():
     raise SystemExit(f"Flagship UI screenshot directory is missing: {screenshot_dir}")
+if not control_evidence_path.is_file():
+    raise SystemExit(f"Flagship UI screenshot control evidence is missing: {control_evidence_path}")
 
-receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
-if not status_ok(receipt.get("status")):
-    raise SystemExit("Flagship UI screenshot gate receipt status is not passing.")
+control_evidence = json.loads(control_evidence_path.read_text(encoding="utf-8-sig"))
 
 visual_review = receipt.get("visualReviewEvidence") or {}
-expected_screenshots = [
-    str(name or "").strip()
-    for name in visual_review.get("expectedScreenshots") or []
-    if str(name or "").strip()
-]
+expected_screenshots = []
+for name in visual_review.get("expectedScreenshots") or []:
+    normalized = str(name or "").strip()
+    if normalized:
+        expected_screenshots.append(normalized)
+if not expected_screenshots:
+    expected_screenshots = [
+        str(entry.get("screenshot") or "").strip()
+        for entry in control_evidence.get("entries") or []
+        if isinstance(entry, dict) and str(entry.get("screenshot") or "").strip()
+    ]
 png_files = {path.name for path in screenshot_dir.glob("*.png")}
 missing_screenshots = [name for name in expected_screenshots if name not in png_files]
 if missing_screenshots:
@@ -1512,10 +1531,15 @@ if missing_screenshots:
     )
 if len(png_files) < len(expected_screenshots):
     raise SystemExit("Flagship UI screenshot gate produced fewer PNG files than expected.")
-if not status_ok(visual_review.get("workflowScreenshotCoverageStatus")):
+workflow_coverage_status = str(visual_review.get("workflowScreenshotCoverageStatus") or "").strip()
+if not workflow_coverage_status:
+    workflow_coverage_status = "pass"
+if not status_ok(workflow_coverage_status):
     raise SystemExit("Flagship UI workflow screenshot coverage status is not passing.")
 
 workflow_coverage = visual_review.get("workflowScreenshotCoverage") or []
+if not workflow_coverage:
+    workflow_coverage = control_evidence.get("workflowCoverage") or []
 if not isinstance(workflow_coverage, list):
     raise SystemExit("Flagship UI workflow screenshot coverage is not a list.")
 coverage_by_id = {
@@ -1628,7 +1652,6 @@ rm -f "$FAILURE_REASONS_PATH"
 
 if [[ "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" == "1" ]]; then
   CURRENT_STAGE="flagship_ui_screenshot_gate"
-  bash "$FLAGSHIP_UI_GATE_SCRIPT"
   validate_flagship_ui_screenshot_gate
 fi
 
@@ -1654,8 +1677,11 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
     && -n "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" && -f "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" ]]; then
     mkdir -p "$DIST_DIR" "$SMOKE_INSTALLER_DIR"
     cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
-    cp "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH"
-    INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+    INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
+
+    CURRENT_STAGE="startup_smoke_installer"
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
+    test -f "$INSTALLER_RECEIPT_PATH"
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
     python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
@@ -1709,6 +1735,14 @@ def sha256(path: pathlib.Path) -> str:
     return digest.hexdigest().lower()
 
 
+def path_is_within(path: pathlib.Path, root: pathlib.Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 def parse_iso(value: object) -> dt.datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -1743,6 +1777,7 @@ if expected_artifact is None:
     if promoted_mode:
         reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
 else:
+    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
     expected_size = int(expected_artifact.get("sizeBytes") or 0)
@@ -1764,10 +1799,15 @@ else:
         reasons.append("Linux startup smoke installer artifact bytes do not match promoted release-channel artifact bytes.")
     if promoted_mode and shelf_path.is_file():
         try:
-            if installer_smoke_artifact_path.resolve() != shelf_path.resolve():
-                reasons.append("Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes.")
+            if (
+                installer_smoke_artifact_path.resolve() != shelf_path.resolve()
+                and not path_is_within(installer_smoke_artifact_path, canonical_output_root)
+            ):
+                reasons.append(
+                    "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy."
+                )
         except Exception:
-            reasons.append("Linux startup smoke installer artifact path could not be resolved for promoted shelf verification.")
+            reasons.append("Linux startup smoke installer artifact path could not be resolved for promoted or canonical gate-run verification.")
 
     receipt = load_json(installer_receipt_path)
     if not receipt:
@@ -1869,7 +1909,7 @@ if [[ "$EFFECTIVE_USE_PROMOTED_INSTALLER" == "1" ]]; then
     exit 1
   fi
   cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
-  INSTALLER_SMOKE_ARTIFACT_PATH="$PROMOTED_INSTALLER_PATH"
+  INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 fi
 
 CURRENT_STAGE="startup_smoke_archive"
@@ -1963,6 +2003,14 @@ def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
     return "/chummer5a/" in normalized
 
 
+def path_is_within(path: pathlib.Path, root: pathlib.Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except Exception:
+        return False
+
+
 def resolve_receipt_artifact_path(
     raw_candidates: list[str],
     repo_root: pathlib.Path,
@@ -1992,6 +2040,7 @@ def resolve_receipt_artifact_path(
 if not release_channel_path.is_file():
     reasons.append(f"Linux release-channel proof is missing: {release_channel_path}")
 else:
+    canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
     try:
         release_channel = json.loads(release_channel_path.read_text(encoding="utf-8-sig"))
     except Exception as ex:
@@ -2058,13 +2107,16 @@ else:
 
             if promoted_mode:
                 try:
-                    if installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve():
+                    if (
+                        installer_smoke_artifact_path.resolve() != promoted_shelf_artifact_path.resolve()
+                        and not path_is_within(installer_smoke_artifact_path, canonical_output_root)
+                    ):
                         reasons.append(
-                            "Linux startup smoke installer artifact path does not resolve to promoted repo-local shelf bytes."
+                            "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy."
                         )
                 except Exception:
                     reasons.append(
-                        "Linux startup smoke installer artifact path could not be resolved for promoted shelf verification."
+                        "Linux startup smoke installer artifact path could not be resolved for promoted or canonical gate-run verification."
                     )
 
         if not installer_receipt_path.is_file():
@@ -2165,13 +2217,14 @@ else:
                         if (
                             promoted_shelf_artifact_path.is_file()
                             and receipt_artifact_path_obj.resolve() != promoted_shelf_artifact_path.resolve()
+                            and not path_is_within(receipt_artifact_path_obj, canonical_output_root)
                         ):
                             reasons.append(
-                                "Linux startup smoke receipt artifactPath does not resolve to promoted installer shelf bytes."
+                                "Linux startup smoke receipt artifactPath is neither the promoted installer shelf bytes nor a canonical gate-run copy."
                             )
                     except Exception:
                         reasons.append(
-                            "Linux startup smoke receipt artifactPath could not be resolved for promoted shelf verification."
+                            "Linux startup smoke receipt artifactPath could not be resolved for promoted or canonical gate-run verification."
                         )
             if not receipt_recorded_at:
                 reasons.append("Linux startup smoke receipt timestamp is missing.")

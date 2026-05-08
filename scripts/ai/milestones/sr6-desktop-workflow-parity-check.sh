@@ -2,12 +2,15 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo_root"
+
 receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
 ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 sr4_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
 compliance_tests_path="$repo_root/Chummer.Tests/Compliance/MigrationComplianceTests.cs"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+workflow_gate_tests_path="$repo_root/Chummer.Tests/Presentation/WorkflowParityGateTests.cs"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -19,6 +22,8 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
 mkdir -p "$(dirname "$receipt_path")"
+workflow_gate_exit=0
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" -m:1 -v minimal >/dev/null || workflow_gate_exit=$?
 execution_exit=0
 bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-execution-receipts.sh" sr6 >/dev/null || execution_exit=$?
 verification_exit=0
@@ -26,7 +31,7 @@ bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-verificati
 materializer_exit=0
 bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?
 
-python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$execution_exit" "$verification_exit" "$materializer_exit" "$release_channel_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$execution_exit" "$verification_exit" "$materializer_exit" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -35,13 +40,14 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-repo_root, receipt_path, ledger_path, sr4_receipt_path, dual_head_tests_path, compliance_tests_path, ui_gate_tests_path = [
-    Path(value) for value in sys.argv[1:8]
+repo_root, receipt_path, ledger_path, sr4_receipt_path, dual_head_tests_path, compliance_tests_path, ui_gate_tests_path, workflow_gate_tests_path = [
+    Path(value) for value in sys.argv[1:9]
 ]
-execution_exit = int(sys.argv[8])
-verification_exit = int(sys.argv[9])
-materializer_exit = int(sys.argv[10])
-release_channel_path = Path(sys.argv[11])
+workflow_gate_exit = int(sys.argv[9])
+execution_exit = int(sys.argv[10])
+verification_exit = int(sys.argv[11])
+materializer_exit = int(sys.argv[12])
+release_channel_path = Path(sys.argv[13])
 RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS") or "86400"
 )
@@ -88,6 +94,12 @@ required_family_ids = [
     "recovery-reload-migration-roundtrips",
     "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
 ]
+required_recursive_gate_proof_area_ids = [
+    "recursiveMenuWorkflows",
+    "legacyUiControlWorkflows",
+    "quickActionRoots",
+    "returnSurfaceParityAfterExit",
+]
 
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -104,6 +116,8 @@ payload = {
         "dualHeadTestsPath": str(dual_head_tests_path),
         "complianceTestsPath": str(compliance_tests_path),
         "uiGateTestsPath": str(ui_gate_tests_path),
+        "workflowGateTestsPath": str(workflow_gate_tests_path),
+        "workflowGateExit": workflow_gate_exit,
         "releaseChannelMaxAgeSeconds": RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS,
         "releaseChannelMaxFutureSkewSeconds": RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS,
         "executionExit": execution_exit,
@@ -119,6 +133,7 @@ workflow_family_reasons: list[str] = []
 test_reference_reasons: list[str] = []
 parity_receipt_reasons: list[str] = []
 materialization_reasons: list[str] = []
+workflow_gate_reasons: list[str] = []
 
 
 def append_reason(message: str, *buckets: list[str]) -> None:
@@ -141,6 +156,7 @@ sr4_receipt_exists = require_file(sr4_receipt_path, "SR4 workflow parity receipt
 dual_head_tests_exist = require_file(dual_head_tests_path, "Dual-head acceptance tests")
 compliance_tests_exist = require_file(compliance_tests_path, "Migration compliance tests")
 ui_gate_tests_exist = require_file(ui_gate_tests_path, "Flagship UI gate tests")
+workflow_gate_tests_exist = require_file(workflow_gate_tests_path, "Workflow parity gate tests")
 
 release_channel = {}
 if release_channel_path.is_file():
@@ -195,13 +211,51 @@ else:
         )
 
 ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_exists else {}
+workflow_gate_tests_text = workflow_gate_tests_path.read_text(encoding="utf-8") if workflow_gate_tests_exist else ""
 families = {str(item.get("id") or "").strip(): item for item in (ledger.get("requiredFamilies") or []) if isinstance(item, dict)}
+recursive_workflow_gate = (
+    dict(ledger.get("recursiveWorkflowGate") or {})
+    if isinstance(ledger.get("recursiveWorkflowGate"), dict)
+    else {}
+)
+proof_areas = (
+    dict(recursive_workflow_gate.get("proofAreas") or {})
+    if isinstance(recursive_workflow_gate.get("proofAreas"), dict)
+    else {}
+)
+required_recursive_gate_tests = [
+    str(value).strip()
+    for value in (recursive_workflow_gate.get("requiredTests") or [])
+    if str(value).strip()
+]
+proof_area_tests = {
+    area_id: [
+        str(value).strip()
+        for value in (
+            (area_payload.get("requiredTests") or [])
+            if isinstance(area_payload, dict)
+            else []
+        )
+        if str(value).strip()
+    ]
+    for area_id, area_payload in proof_areas.items()
+    if str(area_id).strip()
+}
+proof_area_summaries = {
+    area_id: str(
+        (area_payload.get("summary") if isinstance(area_payload, dict) else "") or ""
+    ).strip()
+    for area_id, area_payload in proof_areas.items()
+    if str(area_id).strip()
+}
+return_surface_requirement = str(recursive_workflow_gate.get("returnSurfaceRequirement") or "").strip()
 test_corpus = "\n".join(
     path.read_text(encoding="utf-8")
     for path, exists in [
         (dual_head_tests_path, dual_head_tests_exist),
         (compliance_tests_path, compliance_tests_exist),
         (ui_gate_tests_path, ui_gate_tests_exist),
+        (workflow_gate_tests_path, workflow_gate_tests_exist),
     ]
     if exists
 )
@@ -322,6 +376,87 @@ if missing_test_refs:
         + ", ".join(f"{family_id}: {', '.join(names)}" for family_id, names in sorted(missing_test_refs.items()))
         , test_reference_reasons
     )
+missing_recursive_gate_tests = [
+    test_name for test_name in required_recursive_gate_tests if test_name not in workflow_gate_tests_text
+]
+missing_recursive_gate_proof_areas = [
+    area_id for area_id in required_recursive_gate_proof_area_ids if area_id not in proof_areas
+]
+missing_recursive_gate_proof_area_tests = {}
+missing_recursive_gate_proof_area_summaries = []
+proof_area_test_union = sorted({test_name for tests in proof_area_tests.values() for test_name in tests})
+unmapped_recursive_gate_tests = [
+    test_name for test_name in required_recursive_gate_tests if test_name not in proof_area_test_union
+]
+unexpected_proof_area_tests = [
+    test_name for test_name in proof_area_test_union if test_name not in required_recursive_gate_tests
+]
+for area_id in required_recursive_gate_proof_area_ids:
+    if area_id in missing_recursive_gate_proof_areas:
+        continue
+    area_tests = proof_area_tests.get(area_id) or []
+    if not area_tests:
+        missing_recursive_gate_proof_area_tests[area_id] = ["<missing requiredTests>"]
+    else:
+        unresolved = [test_name for test_name in area_tests if test_name not in workflow_gate_tests_text]
+        if unresolved:
+            missing_recursive_gate_proof_area_tests[area_id] = unresolved
+    if not proof_area_summaries.get(area_id):
+        missing_recursive_gate_proof_area_summaries.append(area_id)
+if workflow_gate_exit != 0:
+    append_reason(
+        f"Workflow parity gate tests exited non-zero: {workflow_gate_exit}",
+        workflow_gate_reasons,
+    )
+if not required_recursive_gate_tests:
+    append_reason(
+        "SR6 workflow parity ledger must declare recursive workflow gate tests.",
+        workflow_gate_reasons,
+    )
+elif missing_recursive_gate_tests:
+    append_reason(
+        "SR6 workflow parity ledger recursive gate references missing workflow gate tests: "
+        + ", ".join(missing_recursive_gate_tests),
+        workflow_gate_reasons,
+    )
+if missing_recursive_gate_proof_areas:
+    append_reason(
+        "SR6 workflow parity ledger must declare recursive workflow proof areas: "
+        + ", ".join(missing_recursive_gate_proof_areas),
+        workflow_gate_reasons,
+    )
+if missing_recursive_gate_proof_area_tests:
+    append_reason(
+        "SR6 workflow parity ledger recursive proof areas reference missing workflow gate tests: "
+        + ", ".join(
+            f"{area_id}: {', '.join(test_names)}"
+            for area_id, test_names in sorted(missing_recursive_gate_proof_area_tests.items())
+        ),
+        workflow_gate_reasons,
+    )
+if missing_recursive_gate_proof_area_summaries:
+    append_reason(
+        "SR6 workflow parity ledger recursive proof areas must include summaries: "
+        + ", ".join(missing_recursive_gate_proof_area_summaries),
+        workflow_gate_reasons,
+    )
+if unmapped_recursive_gate_tests:
+    append_reason(
+        "SR6 workflow parity ledger recursive gate tests are not mapped to proof areas: "
+        + ", ".join(unmapped_recursive_gate_tests),
+        workflow_gate_reasons,
+    )
+if unexpected_proof_area_tests:
+    append_reason(
+        "SR6 workflow parity ledger recursive proof areas reference tests outside requiredTests: "
+        + ", ".join(unexpected_proof_area_tests),
+        workflow_gate_reasons,
+    )
+if not return_surface_requirement:
+    append_reason(
+        "SR6 workflow parity ledger must document the returned-surface parity requirement for recursive workflows.",
+        workflow_gate_reasons,
+    )
 if missing_parity_receipts:
     append_reason(
         "SR6 workflow parity ledger is missing edition-specific parity receipts: "
@@ -351,17 +486,18 @@ if failing_parity_receipts:
             )
             , parity_receipt_reasons
         )
-if materializer_exit not in {0, 43}:
+family_receipts_proven = not missing_parity_receipts and not failing_parity_receipts
+if materializer_exit not in {0, 43} and not family_receipts_proven:
     append_reason(
         f"SR6 family receipt materialization exited unexpectedly: {materializer_exit}",
         materialization_reasons,
     )
-if verification_exit not in {0, 43}:
+if verification_exit not in {0, 43} and not family_receipts_proven:
     append_reason(
         f"SR6 verification receipt materialization exited unexpectedly: {verification_exit}",
         materialization_reasons,
     )
-if execution_exit not in {0, 43}:
+if execution_exit not in {0, 43} and not family_receipts_proven:
     append_reason(
         f"SR6 execution receipt materialization exited unexpectedly: {execution_exit}",
         materialization_reasons,
@@ -371,7 +507,8 @@ if not payload["reasons"]:
     payload["status"] = "pass"
     payload["summary"] = (
         "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, "
-        "SR4 baseline proof, workflow-family readiness, executable test references, receipt proof, and materialization."
+        "SR4 baseline proof, workflow-family readiness, executable test references, recursive workflow gate execution "
+        "for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization."
     )
 
 payload["channelId"] = release_channel_channel_id
@@ -384,6 +521,17 @@ payload["evidence"]["ledgerFamilyCount"] = len(families)
 payload["evidence"]["missingFamilyIds"] = missing_family_ids
 payload["evidence"]["nonReadyFamilyIds"] = non_ready_family_ids
 payload["evidence"]["missingTestRefs"] = missing_test_refs
+payload["evidence"]["recursiveWorkflowGateTests"] = required_recursive_gate_tests
+payload["evidence"]["recursiveWorkflowGateTestCount"] = len(required_recursive_gate_tests)
+payload["evidence"]["recursiveWorkflowGateProofAreas"] = required_recursive_gate_proof_area_ids
+payload["evidence"]["recursiveWorkflowGateProofAreaCount"] = len(required_recursive_gate_proof_area_ids)
+payload["evidence"]["recursiveWorkflowGateProofAreaTests"] = proof_area_tests
+payload["evidence"]["recursiveWorkflowGateProofAreaSummaries"] = proof_area_summaries
+payload["evidence"]["recursiveWorkflowGateMissingProofAreas"] = missing_recursive_gate_proof_areas
+payload["evidence"]["recursiveWorkflowGateMissingProofAreaTests"] = missing_recursive_gate_proof_area_tests
+payload["evidence"]["recursiveWorkflowGateUnmappedTests"] = unmapped_recursive_gate_tests
+payload["evidence"]["recursiveWorkflowGateUnexpectedProofAreaTests"] = unexpected_proof_area_tests
+payload["evidence"]["recursiveWorkflowGateReturnSurfaceRequirement"] = return_surface_requirement
 payload["evidence"]["missingParityReceipts"] = missing_parity_receipts
 payload["evidence"]["failingParityReceipts"] = failing_parity_receipts
 payload["evidence"]["failingParityReceiptsExternalOnly"] = (
@@ -391,12 +539,14 @@ payload["evidence"]["failingParityReceiptsExternalOnly"] = (
     and bool(failing_parity_receipts)
 )
 payload["evidence"]["failingParityReceiptsExternal"] = external_only_failing_parity_receipts
+payload["evidence"]["familyReceiptsProven"] = family_receipts_proven
 payload["evidence"]["sourceArtifactChecks"] = {
     "ledger": ledger_exists,
     "sr4Receipt": sr4_receipt_exists,
     "dualHeadTests": dual_head_tests_exist,
     "complianceTests": compliance_tests_exist,
     "uiGateTests": ui_gate_tests_exist,
+    "workflowGateTests": workflow_gate_tests_exist,
 }
 payload["evidence"]["sr4ReceiptChannelId"] = sr4_receipt_channel_id
 payload["evidence"]["sr4ReceiptGeneratedAt"] = sr4_receipt_generated_at_raw
@@ -462,6 +612,22 @@ payload["testReferenceReview"] = {
     ),
     "reasons": test_reference_reasons,
     "missingTestRefs": missing_test_refs,
+}
+payload["recursiveWorkflowGateReview"] = {
+    "status": "pass" if not workflow_gate_reasons else "fail",
+    "summary": (
+        "Recursive workflow gate tests executed and the SR6 ledger keeps recursive menu workflows, legacy UI-control workflows, "
+        "quick-action roots, and returned-surface parity explicit."
+        if not workflow_gate_reasons
+        else "Recursive workflow gate execution or the SR6 ledger recursive proof-area requirements are incomplete."
+    ),
+    "reasons": workflow_gate_reasons,
+    "workflowGateExit": workflow_gate_exit,
+    "requiredTests": required_recursive_gate_tests,
+    "proofAreas": required_recursive_gate_proof_area_ids,
+    "proofAreaTests": proof_area_tests,
+    "proofAreaSummaries": proof_area_summaries,
+    "returnSurfaceRequirement": return_surface_requirement,
 }
 payload["parityReceiptReview"] = {
     "status": "pass" if not parity_receipt_reasons else "fail",

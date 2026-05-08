@@ -29,8 +29,10 @@ bash scripts/migration-loop.sh 1
 bash scripts/audit-ui-parity.sh
 docker compose --profile test run --rm chummer-tests \
   dotnet test Chummer.Tests/Chummer.Tests.csproj -c Release -f net10.0 \
-  --filter "FullyQualifiedName~ArchitectureGuardrailTests|FullyQualifiedName~MigrationComplianceTests|FullyQualifiedName~DualHeadAcceptanceTests"
+  --filter "FullyQualifiedName~ArchitectureGuardrailTests|FullyQualifiedName~MigrationComplianceTests|FullyQualifiedName~DualHeadAcceptanceTests|FullyQualifiedName~WorkflowParityGateTests"
 ```
+
+Recursive workflow parity is fail-closing: dialog/menu continuations and quick-action roots must restore the expected tab and populated section surface before parity claims can pass.
 
 ## Migration direction
 

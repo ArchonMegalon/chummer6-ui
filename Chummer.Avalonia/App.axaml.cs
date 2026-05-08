@@ -158,6 +158,17 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop campaign workspace window: {ex}");
             }
         }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignAdoption))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowCampaignAdoptionAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop campaign adoption window: {ex}");
+            }
+        }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmPrepPackets))
         {
             try
@@ -169,6 +180,17 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop GM prep packets window: {ex}");
             }
         }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmRunboard))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop GM Runboard window: {ex}");
+            }
+        }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement))
         {
             try
@@ -178,6 +200,28 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop roster movement window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerOperations))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer operations window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerRoles))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowRolesAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer roles window: {ex}");
             }
         }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RuleEnvironmentStudio))

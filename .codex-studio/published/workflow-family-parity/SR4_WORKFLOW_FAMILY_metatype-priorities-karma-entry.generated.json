@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T11:09:09.956324Z",
+  "generatedAt": "2026-05-08T15:00:38.239630Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family parity evidence is explicitly grounded for metatype-priorities-karma-entry.",
@@ -13,7 +13,10 @@
     "auditTests": [
       "Avalonia_and_Blazor_character_settings_save_updates_shared_state",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6",
+      "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults",
+      "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+      "Menu_dialog_workflows_keep_recursive_parity"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",

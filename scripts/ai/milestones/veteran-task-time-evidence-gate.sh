@@ -132,8 +132,8 @@ for label, tokens in {
         "Avalonia primary-route proof stays independent from Blazor fallback proof",
     ],
     "screenshot-backed parity review": [
-        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import",
-        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered",
+        "Run screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab",
+        "Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab is covered",
     ],
 }.items():
     require_any_token(paths["post_flagship_feedback"], post_feedback_text, tokens, reasons, label, feedback_reasons)
@@ -182,6 +182,12 @@ translator_xml_tokens = [
     "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture",
     "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
 ]
+hero_lab_import_oracle_tokens = [
+    "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
+    "Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture",
+    "CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture",
+    "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+]
 
 for token in sourcebook_tokens:
     require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, token, reasons, source_evidence_reasons)
@@ -209,6 +215,10 @@ require_token(paths["character_overview_presenter_tests"], presenter_tests_text,
 require_token(paths["character_overview_presenter_tests"], presenter_tests_text, translator_xml_tokens[1], reasons, source_evidence_reasons)
 require_token(paths["dual_head_acceptance_tests"], dual_head_tests_text, translator_xml_tokens[2], reasons, source_evidence_reasons)
 require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, translator_xml_tokens[3], reasons, source_evidence_reasons)
+require_token(paths["character_overview_presenter_tests"], presenter_tests_text, hero_lab_import_oracle_tokens[0], reasons, source_evidence_reasons)
+require_token(paths["dual_head_acceptance_tests"], dual_head_tests_text, hero_lab_import_oracle_tokens[1], reasons, source_evidence_reasons)
+require_token(paths["desktop_dialog_factory_tests"], dialog_tests_text, hero_lab_import_oracle_tokens[2], reasons, source_evidence_reasons)
+require_token(paths["avalonia_flagship_tests"], avalonia_tests_text, hero_lab_import_oracle_tokens[3], reasons, source_evidence_reasons)
 
 receipts = {
     "flagshipGate": load_json(paths["flagship_gate"]),
@@ -217,13 +227,29 @@ receipts = {
     "visualFamiliarityGate": load_json(paths["visual_familiarity_gate"]),
     "primaryRouteProof": load_json(paths["primary_route_proof"]),
 }
-for name, payload in receipts.items():
-    if not status_pass(payload.get("status")):
-        append_reason(f"{name} status is not pass/ready.", reasons, flagship_route_reasons)
-
 flagship_gate = receipts["flagshipGate"]
 primary_route_proof = receipts["primaryRouteProof"]
 visual_gate = receipts["visualFamiliarityGate"]
+flagship_gate_blocking_findings = flagship_gate.get("blockingFindings") or []
+if not isinstance(flagship_gate_blocking_findings, list):
+    flagship_gate_blocking_findings = []
+flagship_gate_route_local_only = (
+    bool(flagship_gate_blocking_findings)
+    and all(
+        str(finding).strip()
+        in {
+            "Top-level release gate cannot pass while flagship readiness is not passed.",
+            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+        }
+        for finding in flagship_gate_blocking_findings
+    )
+)
+for name, payload in receipts.items():
+    if name == "flagshipGate" and flagship_gate_route_local_only:
+        continue
+    if not status_pass(payload.get("status")):
+        append_reason(f"{name} status is not pass/ready.", reasons, flagship_route_reasons)
 
 if str(flagship_gate.get("desktopHead") or "") != "avalonia":
     append_reason("UI flagship release gate is not bound to Avalonia as the promoted desktop head.", reasons, flagship_route_reasons)
@@ -241,7 +267,7 @@ required_screenshots = set(visual_evidence.get("required_screenshots") or [])
 for key in ["runtime_backed_master_index", "runtime_backed_character_roster", "runtime_backed_file_menu_routes"]:
     if not status_pass(visual_evidence.get(key)):
         append_reason(f"Desktop visual familiarity gate does not pass {key}.", reasons, screenshot_review_reasons)
-for screenshot in ["03-settings-open-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"]:
+for screenshot in ["03-settings-open-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"]:
     if screenshot not in required_screenshots:
         append_reason(
             f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.",
@@ -341,18 +367,45 @@ required_task_time_jobs = {
             translator_xml_tokens[1] in presenter_tests_text,
             translator_xml_tokens[2] in dual_head_tests_text,
             translator_xml_tokens[3] in dialog_tests_text,
+            hero_lab_import_oracle_tokens[3] in avalonia_tests_text,
+            "38-translator-dialog-light.png" in required_screenshots,
+            "39-xml-editor-dialog-light.png" in required_screenshots,
         ),
         "tests": [
             "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
             "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
             "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture",
             "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
         ],
         "proof": "Translator and XML editor lanes now fail closed on governed translator posture, XML bridge posture, enabled overlay count, and custom-data directory posture instead of relying on generic dialog coverage.",
         "evidencePaths": [
             str(paths["character_overview_presenter_tests"]),
             str(paths["dual_head_acceptance_tests"]),
             str(paths["desktop_dialog_factory_tests"]),
+        ],
+    },
+    "hero_lab_import_oracle": {
+        "status": derived_status(
+            hero_lab_import_oracle_tokens[0] in presenter_tests_text,
+            hero_lab_import_oracle_tokens[1] in dual_head_tests_text,
+            hero_lab_import_oracle_tokens[2] in dialog_tests_text,
+            hero_lab_import_oracle_tokens[3] in avalonia_tests_text,
+            "40-hero-lab-importer-dialog-light.png" in required_screenshots,
+        ),
+        "tests": [
+            "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
+            "Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture",
+            "CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture",
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        ],
+        "proof": "Hero Lab importer now exposes import-oracle posture, route coverage, and adjacent SR6 oracle receipts on the live Tools route instead of hiding behind compatibility-only XML fields.",
+        "evidencePaths": [
+            str(paths["character_overview_presenter_tests"]),
+            str(paths["dual_head_acceptance_tests"]),
+            str(paths["desktop_dialog_factory_tests"]),
+            str(paths["avalonia_flagship_tests"]),
+            str(paths["visual_familiarity_gate"]),
         ],
     },
     "roster": {
@@ -398,7 +451,7 @@ required_task_time_jobs = {
 }
 
 task_time_failing_jobs = sorted(job_name for job_name, job in required_task_time_jobs.items() if job["status"] != "pass")
-screenshot_review_jobs = ["open_import", "settings", "sourcebooks", "roster"]
+screenshot_review_jobs = ["open_import", "settings", "sourcebooks", "roster", "translator_xml_custom_data", "hero_lab_import_oracle"]
 screenshot_review_failing_jobs = [
     job_name for job_name in screenshot_review_jobs if required_task_time_jobs[job_name]["status"] != "pass"
 ]

@@ -94,6 +94,41 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    public async Task InitializeAsync_supplements_sparse_bootstrap_with_compatibility_commands_and_tabs()
+    {
+        var client = new FakeChummerClient();
+        var bootstrap = new ShellBootstrapData(
+            RulesetId: RulesetDefaults.Sr6,
+            Commands:
+            [
+                new AppCommandDefinition("open_character", "command.open_character", "file", false, true, string.Empty)
+            ],
+            NavigationTabs:
+            [
+                new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, string.Empty)
+            ],
+            Workspaces: [],
+            PreferredRulesetId: RulesetDefaults.Sr6,
+            ActiveRulesetId: RulesetDefaults.Sr6);
+        var presenter = new CharacterOverviewPresenter(
+            client,
+            bootstrapDataProvider: new ShellBootstrapDataProviderStub(bootstrap));
+
+        await presenter.InitializeAsync(CancellationToken.None);
+
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "translator");
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "xml_editor");
+        CollectionAssert.Contains(presenter.State.Commands.Select(command => command.Id).ToArray(), "hero_lab_importer");
+        CollectionAssert.Contains(presenter.State.NavigationTabs.Select(tab => tab.Id).ToArray(), "tab-attributes");
+        Assert.AreEqual(
+            RulesetDefaults.Sr6,
+            presenter.State.Commands.First(command => string.Equals(command.Id, "translator", StringComparison.Ordinal)).RulesetId);
+        Assert.AreEqual(
+            RulesetDefaults.Sr6,
+            presenter.State.NavigationTabs.First(tab => string.Equals(tab.Id, "tab-attributes", StringComparison.Ordinal)).RulesetId);
+    }
+
+    [TestMethod]
     public async Task LoadAsync_populates_profile_progress_and_skills()
     {
         var client = new FakeChummerClient();
@@ -571,12 +606,17 @@ public class CharacterOverviewPresenterTests
         await presenter.UpdateDialogFieldAsync("newCharacterRulesetId", RulesetDefaults.Sr6, CancellationToken.None);
         await presenter.UpdateDialogFieldAsync("newCharacterBuildMethod", "Karma", CancellationToken.None);
         await presenter.ExecuteDialogActionAsync("create_character", CancellationToken.None);
+        Assert.AreEqual("dialog.new_character.karma_workflow", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(client.LastImportedDocument);
+
+        await presenter.ExecuteDialogActionAsync("complete_new_character_workflow", CancellationToken.None);
 
         Assert.IsNotNull(client.LastImportedDocument);
         Assert.AreEqual(RulesetDefaults.Sr6, client.LastImportedDocument!.RulesetId);
         StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<alias>Runner</alias>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<buildmethod>Karma</buildmethod>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<metatype>Human</metatype>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<attributes>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<newskills>");
         StringAssert.Contains(client.LastImportedDocument.Content, "<qualities>");
@@ -612,6 +652,32 @@ public class CharacterOverviewPresenterTests
             presenter.State.ActiveSectionId is "inventory" or "gear",
             "Gear tab must land on a populated inventory-facing section.");
         Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+    }
+
+    [TestMethod]
+    public async Task ExecuteDialogActionAsync_create_character_priority_branch_materializes_followup_and_imports_grounded_workspace()
+    {
+        var client = new FakeChummerClient();
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterRulesetId", RulesetDefaults.Sr6, CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterBuildMethod", "Priority", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("create_character", CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.priority_workflow", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(client.LastImportedDocument);
+
+        await presenter.UpdateDialogFieldAsync("newCharacterMetatypeCategory", "Metahuman", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterMetatype", "Elf", CancellationToken.None);
+        await presenter.UpdateDialogFieldAsync("newCharacterPriorityTalentChoice", "Adept", CancellationToken.None);
+        await presenter.ExecuteDialogActionAsync("complete_new_character_workflow", CancellationToken.None);
+
+        Assert.IsNotNull(client.LastImportedDocument);
+        StringAssert.Contains(client.LastImportedDocument!.Content, "<metatype>Elf</metatype>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<metatypecategory>Metahuman</metatypecategory>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritymetatype>D,1</prioritymetatype>");
+        StringAssert.Contains(client.LastImportedDocument.Content, "<prioritytalent>Adept</prioritytalent>");
     }
 
     [TestMethod]
@@ -930,6 +996,46 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataLanePosture"));
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorCustomDataDirectoryCount"));
         Assert.AreEqual("xml bridge is governed: 2 enabled data overlays expose XML payloads.", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "xmlEditorReceipt"));
+    }
+
+    [TestMethod]
+    public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture()
+    {
+        var client = new FakeChummerClient();
+        client.SeedToolCatalog(
+            new MasterIndexResponse(
+                Count: 1,
+                GeneratedUtc: DateTimeOffset.UtcNow,
+                Files: [],
+                ReferenceLanePosture: "governed",
+                SourcebookCount: 1,
+                Sourcebooks: [],
+                ImportOracleLanePosture: "partial",
+                ImportOracleReceiptPosture: "stale",
+                LegacyChummer4FixtureCount: 18,
+                LegacyChummer5FixtureCount: 31,
+                HeroLabFixtureCount: 0,
+                AdjacentSr6OracleReceiptPosture: "partial",
+                AdjacentSr6OracleSourcesCovered: 1,
+                AdjacentSr6OracleSourcesExpected: 2,
+                ImportOracleSourcesCovered: 3,
+                ImportOracleSourcesExpected: 4,
+                ImportOracleCoveragePercent: 75,
+                ImportOracleMissingSources: ["Hero Lab"],
+                ImportOracleLaneReceipt: "import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.",
+                AdjacentSr6OracleLaneReceipt: "adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink."),
+            new TranslatorLanguagesResponse(0, []));
+        var presenter = new CharacterOverviewPresenter(client);
+
+        await presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None);
+
+        Assert.IsNotNull(presenter.State.ActiveDialog);
+        Assert.AreEqual("dialog.hero_lab_importer", presenter.State.ActiveDialog?.Id);
+        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleLanePosture"));
+        Assert.AreEqual("3/4 · 75%", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleCoverage"));
+        Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabFixtureCount"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "heroLabAdjacentSr6OracleReceipt"), "1/2 covered");
     }
 
     [TestMethod]
@@ -2384,6 +2490,36 @@ public class CharacterOverviewPresenterTests
         public void SyncOverviewFeedback(ShellOverviewFeedback feedback)
         {
             LastOverviewFeedback = feedback;
+        }
+    }
+
+    private sealed class ShellBootstrapDataProviderStub : IShellBootstrapDataProvider
+    {
+        private readonly ShellBootstrapData _bootstrap;
+
+        public ShellBootstrapDataProviderStub(ShellBootstrapData bootstrap)
+        {
+            _bootstrap = bootstrap;
+        }
+
+        public Task<ShellBootstrapData> GetAsync(CancellationToken ct)
+        {
+            return Task.FromResult(_bootstrap);
+        }
+
+        public Task<ShellBootstrapData> GetAsync(string? rulesetId, CancellationToken ct)
+        {
+            string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.ActiveRulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.PreferredRulesetId)
+                ?? RulesetDefaults.NormalizeOptional(_bootstrap.RulesetId)
+                ?? RulesetDefaults.Sr5;
+            return Task.FromResult(_bootstrap with
+            {
+                RulesetId = normalizedRulesetId,
+                PreferredRulesetId = normalizedRulesetId,
+                ActiveRulesetId = normalizedRulesetId
+            });
         }
     }
 }
