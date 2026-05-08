@@ -1,7 +1,59 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/"
 
+@using Chummer.Blazor.Components.Shared
+@using Chummer.Presentation.Overview
+
 <!-- Desktop shell route anchor: the flagship workbench stays home cockpit off the root route. -->
 <section hidden data-testid="desktop-shell-route-anchor">
     Desktop shell route anchor.
 </section>
+
+<section hidden aria-hidden="true" data-testid="npc-persona-studio-route-anchor">
+    <NpcPersonaStudioPanel Projection="DefaultNpcPersonaStudioProjection" />
+</section>
+
+@code {
+    private static readonly NpcPersonaStudioState DefaultNpcPersonaStudioProjection =
+        new(
+            DefaultPersonaId: "home-route-anchor",
+            SelectedPersonaId: "home-route-anchor",
+            PromptPolicy: "Keep the NPC persona policy rails available on the Blazor home route.",
+            Personas:
+            [
+                new NpcPersonaDescriptorState(
+                    PersonaId: "home-route-anchor",
+                    Label: "Home Route Anchor",
+                    EvidenceFirst: true,
+                    Summary: "The root route keeps the NPC persona contract visible without changing the flagship desktop posture.",
+                    Provenance: "home.route/default",
+                    ApprovalState: "approved",
+                    IsSelected: true)
+            ],
+            Policies:
+            [
+                new NpcPersonaRoutePolicyState(
+                    RouteType: "home",
+                    RouteClassId: "blazor-home",
+                    PersonaId: "home-route-anchor",
+                    PrimaryProviderId: "chummer-home",
+                    ToolingEnabled: true,
+                    ApprovalState: "approved",
+                    AllowedToolIds: ["home"]),
+                new NpcPersonaRoutePolicyState(
+                    RouteType: "coach",
+                    RouteClassId: "grounded_rules_chat",
+                    PersonaId: "home-route-anchor",
+                    PrimaryProviderId: "aimagicx",
+                    ToolingEnabled: true,
+                    ApprovalState: "draft",
+                    AllowedToolIds: ["open-coach"])
+            ],
+            EvidenceLines:
+            [
+                "Prompt policy: Keep the NPC persona policy rails available on the Blazor home route.",
+                "Persona provenance: home.route/default"
+            ],
+            HasDraftPolicies: true,
+            HasApprovedPolicies: true);
+}

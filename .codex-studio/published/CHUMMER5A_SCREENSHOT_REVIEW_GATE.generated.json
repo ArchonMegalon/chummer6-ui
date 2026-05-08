@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T14:07:23.642753Z",
+  "generatedAt": "2026-05-08T15:10:56.698162Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "releaseVersion": "run-20260503-163502",
@@ -31,6 +31,7 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
+    "flagshipGateRouteLocalOnly": false,
     "visualReviewStatuses": {
       "flagshipGateReview": "pass",
       "headProofReview": "pass",
@@ -281,6 +282,7 @@
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
+    "flagshipGateRouteLocalOnly": false,
     "reviewedJobs": [
       "dense_builder",
       "hero_lab_import_oracle",

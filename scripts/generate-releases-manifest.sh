@@ -438,7 +438,8 @@ for artifact in payload.get("artifacts") or []:
     if kind not in {"installer", "dmg", "pkg", "msix"}:
         continue
 
-    if str(artifact.get("installAccessClass") or "").strip().lower() == access_class:
+    current_access_class = str(artifact.get("installAccessClass") or "").strip().lower()
+    if current_access_class:
         continue
 
     artifact["installAccessClass"] = access_class
@@ -842,7 +843,31 @@ else
   fi
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
-  # Force overwrite so repeated manifest publication stays idempotent even when
-  # the portal mirror already contains a prior copy of the promoted artifact set.
-  sync_promoted_files_dir "$portal_files_dir" "local portal"
+  declare -a portal_artifacts=()
+  for file_name in "${promoted_file_names[@]}"; do
+    artifact_path="$DOWNLOADS_DIR/$file_name"
+    if [[ ! -f "$artifact_path" ]]; then
+      echo "promoted artifact missing from downloads source: $artifact_path" >&2
+      exit 1
+    fi
+    portal_artifacts+=("$artifact_path")
+  done
+
+  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
+    # Force overwrite so repeated manifest publication stays idempotent even when
+    # the portal mirror already contains a prior copy of the promoted artifact set.
+    mkdir -p "$portal_files_dir"
+    rm -f \
+      "$portal_files_dir"/chummer-*.exe \
+      "$portal_files_dir"/chummer-*.zip \
+      "$portal_files_dir"/chummer-*.tar.gz \
+      "$portal_files_dir"/chummer-*-installer.deb \
+      "$portal_files_dir"/chummer-*-installer.pkg \
+      "$portal_files_dir"/chummer-*-installer.dmg \
+      "$portal_files_dir"/chummer-*-installer.msix
+    cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
+    echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
+  else
+    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for local portal sync"
+  fi
 fi

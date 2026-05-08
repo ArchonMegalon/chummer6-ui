@@ -1168,6 +1168,22 @@ payload = {
             "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
         ],
     },
+    "directImportRouteProof": {
+        "reviewJobs": [
+            "translator_xml_custom_data",
+            "hero_lab_import_oracle",
+        ],
+        "screenshots": [
+            "38-translator-dialog-light.png",
+            "39-xml-editor-dialog-light.png",
+            "40-hero-lab-importer-dialog-light.png",
+        ],
+        "characterOverviewPresenterTests": [
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
+            "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
+            "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
+        ],
+    },
     "uiElementParityAuditProof": {
         "status": proof_status(
             ui_element_visual_no_count == 0,
@@ -1219,7 +1235,8 @@ PY
 
 if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   echo "[b14] materializing desktop workflow execution gate..."
-  bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
+  CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
+    bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
   echo "[b14] materializing desktop visual familiarity exit gate..."
   CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \

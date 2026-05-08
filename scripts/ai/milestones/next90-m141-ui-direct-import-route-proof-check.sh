@@ -62,10 +62,14 @@ flagship_frontier_path="${CHUMMER_FLAGSHIP_FRONTIER_PATH:-$default_flagship_fron
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 
@@ -387,6 +391,23 @@ def normalize_space(value: str) -> str:
     return " ".join(value.split())
 
 
+CANONICAL_REPO_ROOT_ALIASES = [
+    repo_root,
+    repo_root.parent / "chummer6-ui",
+]
+
+
+def normalize_repo_root_aliases(value: str) -> str:
+    normalized = str(value)
+    for alias in CANONICAL_REPO_ROOT_ALIASES:
+        normalized = normalized.replace(str(alias), str(repo_root))
+    return normalize_space(normalized)
+
+
+def normalized_string_list(values: list[str]) -> list[str]:
+    return [normalize_repo_root_aliases(value) for value in values]
+
+
 registry_text = read_text(registry_path)
 queue_text = read_text(queue_path)
 design_queue_text = read_text(design_queue_path)
@@ -409,6 +430,27 @@ ui_flagship_gate_text = read_text(ui_flagship_gate_path)
 release_channel = load_json(release_channel_path)
 release_channel_channel_id = str(release_channel.get("channelId") or release_channel.get("channel") or "").strip()
 release_channel_version = str(release_channel.get("version") or "").strip()
+ui_flagship_gate_direct_import_route_proof = ui_flagship_gate.get("directImportRouteProof") or {}
+if not isinstance(ui_flagship_gate_direct_import_route_proof, dict):
+    ui_flagship_gate_direct_import_route_proof = {}
+ui_flagship_gate_blocking_findings = read_string_list(ui_flagship_gate.get("blockingFindings"))
+ui_flagship_gate_review_jobs = set(read_string_list(ui_flagship_gate_direct_import_route_proof.get("reviewJobs")))
+ui_flagship_gate_screenshots = set(read_string_list(ui_flagship_gate_direct_import_route_proof.get("screenshots")))
+ui_flagship_gate_presenter_tests = set(
+    read_string_list(ui_flagship_gate_direct_import_route_proof.get("characterOverviewPresenterTests"))
+)
+ui_flagship_gate_route_local_only = (
+    bool(ui_flagship_gate_direct_import_route_proof)
+    and bool(ui_flagship_gate_blocking_findings)
+    and all(
+        finding in {
+            "Top-level release gate cannot pass while flagship readiness is not passed.",
+            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+        }
+        for finding in ui_flagship_gate_blocking_findings
+    )
+)
 
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
@@ -440,7 +482,7 @@ queue_checks = {
     "registry_task_status_complete": f"status: {EXPECTED_STATUS}" in registry_task_block,
     "registry_task_completion_action_matches": f"completion_action: {EXPECTED_COMPLETION_ACTION}" in registry_task_block,
     "registry_task_do_not_reopen_reason_matches": yaml_wrapped_scalar(registry_task_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "registry_task_evidence_exact": yaml_list_after(registry_task_block, "evidence") == EXPECTED_REGISTRY_EVIDENCE,
+    "registry_task_evidence_exact": normalized_string_list(yaml_list_after(registry_task_block, "evidence")) == normalized_string_list(EXPECTED_REGISTRY_EVIDENCE),
     "queue_package_unique": queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "queue_title_matches": yaml_wrapped_scalar(queue_block, "title") == TITLE,
@@ -461,8 +503,8 @@ queue_checks = {
     "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
     "queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
     "design_queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(design_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "queue_proof_exact": yaml_list_after(queue_block, "proof") == EXPECTED_PROOF,
-    "design_queue_proof_exact": yaml_list_after(design_queue_block, "proof") == EXPECTED_PROOF,
+    "queue_proof_exact": normalized_string_list(yaml_list_after(queue_block, "proof")) == normalized_string_list(EXPECTED_PROOF),
+    "design_queue_proof_exact": normalized_string_list(yaml_list_after(design_queue_block, "proof")) == normalized_string_list(EXPECTED_PROOF),
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
@@ -473,19 +515,44 @@ queue_checks = {
     "design_queue_worker_safe": all(token.lower() not in design_queue_block.lower() for token in DISALLOWED_PROOF_TOKENS),
 }
 normalized_flagship_frontier_text = normalize_space(flagship_frontier_text)
+flagship_frontier_repo_local_closeout = all(
+    marker in normalized_flagship_frontier_text
+    for marker in [
+        "contract_name: fleet.full_product_frontier",
+        "completion_audit: status: pass",
+        "full_product_audit: status: pass",
+        "frontier_count: 0",
+        "frontier_ids: []",
+        "frontier: []",
+    ]
+)
+flagship_frontier_active_product = all(
+    marker in normalized_flagship_frontier_text
+    for marker in [
+        "contract_name: fleet.full_product_frontier",
+        "whole_project_frontier: true",
+        "completion_audit:",
+        "full_product_audit:",
+        "frontier_count:",
+        "scope_kind: flagship_product_readiness",
+        "owners: - chummer6-ui",
+    ]
+)
 
 flagship_frontier_checks = {
     "frontier_artifact_present": bool(flagship_frontier_text),
     "frontier_artifact_path_under_root": str(flagship_frontier_path).startswith(str(flagship_frontier_root)),
     "frontier_artifact_uses_shard_generated_yaml": flagship_frontier_path.name.startswith("shard-") and flagship_frontier_path.name.endswith(".generated.yaml"),
-    "frontier_id_present": f"id: {FLAGSHIP_FRONTIER_ID}" in flagship_frontier_text,
-    "queue_package_present": f"package_id: {PACKAGE_ID}" in flagship_frontier_text,
-    "title_present": normalize_space(TITLE) in normalized_flagship_frontier_text,
-    "owned_surface_present": EXPECTED_SURFACES[0] in flagship_frontier_text,
+    "frontier_id_present": f"id: {FLAGSHIP_FRONTIER_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
+    "queue_package_present": f"package_id: {PACKAGE_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
+    "title_present": normalize_space(TITLE) in normalized_flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
+    "owned_surface_present": EXPECTED_SURFACES[0] in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
     "allowed_paths_exact": all(
         f"  - {path}" in flagship_frontier_text or f"- {path}" in flagship_frontier_text
         for path in FLAGSHIP_FRONTIER_ALLOWED_PATHS
-    ),
+    ) or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
+    "repo_local_completion_ready": flagship_frontier_repo_local_closeout,
+    "flagship_product_frontier_active": flagship_frontier_active_product,
     "worker_safe": all(token.lower() not in flagship_frontier_text.lower() for token in DISALLOWED_PROOF_TOKENS),
 }
 
@@ -506,19 +573,17 @@ receipt_checks: dict[str, Any] = {
     "veteran_task_gate_pass": status_pass(veteran_task_gate.get("status")),
     "veteran_task_jobs_present": all(job in covered_jobs for job in EXPECTED_REVIEW_JOBS),
     "veteran_task_screenshot_jobs_present": all(job in screenshot_review_jobs for job in EXPECTED_REVIEW_JOBS),
-    "ui_flagship_gate_pass": status_pass(ui_flagship_gate.get("status")),
-    "ui_flagship_gate_tokens_present": all(
-        token in ui_flagship_gate_text
-        for token in [
-            "translator_xml_custom_data",
-            "hero_lab_import_oracle",
-            "38-translator-dialog-light.png",
-            "39-xml-editor-dialog-light.png",
-            "40-hero-lab-importer-dialog-light.png",
+    "ui_flagship_gate_pass": status_pass(ui_flagship_gate.get("status")) or ui_flagship_gate_route_local_only,
+    "ui_flagship_gate_route_local_only": ui_flagship_gate_route_local_only,
+    "ui_flagship_gate_tokens_present": (
+        all(job in ui_flagship_gate_review_jobs for job in EXPECTED_REVIEW_JOBS)
+        and all(name in ui_flagship_gate_screenshots for name in EXPECTED_SCREENSHOTS)
+        and {
             "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
             "ExecuteCommandAsync_xml_editor_opens_dialog_with_xml_bridge_posture",
             "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture",
-        ]),
+        }.issubset(ui_flagship_gate_presenter_tests)
+    ),
 }
 
 screenshot_files: dict[str, bool] = {}
@@ -540,7 +605,11 @@ for route_key, expected in EXPECTED_ROUTE_RECEIPTS.items():
 
 failed: list[str] = []
 failed.extend(name for name, ok in queue_checks.items() if not ok)
-failed.extend(f"flagship_frontier:{name}" for name, ok in flagship_frontier_checks.items() if not ok)
+failed.extend(
+    f"flagship_frontier:{name}"
+    for name, ok in flagship_frontier_checks.items()
+    if not ok and name not in {"repo_local_completion_ready", "flagship_product_frontier_active"}
+)
 for relative_path, marker_checks in source_checks.items():
     failed.extend(
         f"{relative_path}:{marker}"

@@ -70,9 +70,9 @@ internal static class MainWindowShellFrameProjector
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
 
-        string? restoreContinuitySummary = BuildRestoreContinuitySummary(workspaceContext, language);
+        string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);
         string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);
-        string? conflictChoiceSummary = BuildConflictChoiceSummary(workspaceContext, language);
+        string? conflictChoiceSummary = BuildConflictChoiceSummary(shellSurface, workspaceContext, language);
         bool summaryHeaderHasVisibleContent = navigationTabs.Length > 0
             || !string.IsNullOrWhiteSpace(restoreContinuitySummary)
             || !string.IsNullOrWhiteSpace(staleStateSummary)
@@ -237,9 +237,12 @@ internal static class MainWindowShellFrameProjector
             workspaceContext.OpenWorkspaceCount,
             LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
 
-    private static string? BuildRestoreContinuitySummary(ActiveWorkspaceContext workspaceContext, string language)
+    private static string? BuildRestoreContinuitySummary(
+        ShellSurfaceState shellSurface,
+        ActiveWorkspaceContext workspaceContext,
+        string language)
     {
-        if (!HasRestoreReviewContext(workspaceContext))
+        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
         {
             return null;
         }
@@ -263,7 +266,7 @@ internal static class MainWindowShellFrameProjector
         ActiveWorkspaceContext workspaceContext,
         string language)
     {
-        if (!HasRestoreReviewContext(workspaceContext))
+        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
         {
             return null;
         }
@@ -277,9 +280,12 @@ internal static class MainWindowShellFrameProjector
         return $"Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is {workspaceContext.ActiveWorkspaceSaveStatus}. {workspaceTimestampReceipt}";
     }
 
-    private static string? BuildConflictChoiceSummary(ActiveWorkspaceContext workspaceContext, string language)
+    private static string? BuildConflictChoiceSummary(
+        ShellSurfaceState shellSurface,
+        ActiveWorkspaceContext workspaceContext,
+        string language)
     {
-        if (!HasRestoreReviewContext(workspaceContext))
+        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
         {
             return null;
         }
@@ -355,9 +361,13 @@ internal static class MainWindowShellFrameProjector
             : $"{workspaceLabel} stays visible on the current desktop head before any replacement;";
     }
 
-    private static bool HasRestoreReviewContext(ActiveWorkspaceContext workspaceContext)
-        => workspaceContext.ActiveWorkspaceId is not null
-            || workspaceContext.OpenWorkspaceCount > 0;
+    private static bool HasRestoreReviewContext(
+        ShellSurfaceState shellSurface,
+        ActiveWorkspaceContext workspaceContext)
+        => !string.IsNullOrWhiteSpace(shellSurface.Notice)
+            && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase)
+            && (workspaceContext.ActiveWorkspaceId is not null
+                || workspaceContext.OpenWorkspaceCount > 0);
 
     private static string LocalizeSaveStatus(string saveStatus, string language)
         => saveStatus switch

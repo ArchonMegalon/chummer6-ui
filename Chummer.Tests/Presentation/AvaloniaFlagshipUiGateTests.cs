@@ -378,13 +378,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         string appText = File.ReadAllText(appPath);
 
         StringAssert.Contains(appText, "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);");
-        StringAssert.Contains(appText, "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);");
         Assert.IsTrue(
             appText.Contains("if (installLinkingContext is not null)", StringComparison.Ordinal),
             "Startup modal prompts should still be gated on active install-linking context.");
-        Assert.IsTrue(
-            appText.Contains("else", StringComparison.Ordinal),
-            "The desktop home surface should stay on the default-launch path instead of pre-empting explicit startup-surface routes.");
+        Assert.IsFalse(
+            appText.Contains("DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);", StringComparison.Ordinal),
+            "The flagship Avalonia startup path must stay on the workbench by default instead of reopening the desktop home cockpit.");
     }
 
     [TestMethod]
@@ -1443,7 +1442,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Standalone_summary_header_stays_hidden_without_restore_handoff()
+    public void Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff()
     {
         WithStandaloneControl<SummaryHeaderControl>(control =>
         {
@@ -1460,8 +1459,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
             PumpStandaloneUi();
 
-            Assert.IsFalse(control.IsVisible, "Summary header must stay hidden in the strict Chummer5a-faithful shell.");
-            Assert.AreEqual(0d, control.Height, "Summary header must collapse out of layout when hidden.");
+            Assert.IsTrue(control.IsVisible, "Summary header must keep loaded-runner navigation tabs visible.");
+            Assert.IsTrue(FindDescendant<Control>(control, "NavigationTabsPanel").IsVisible);
+            Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
+            Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
         });
     }
 

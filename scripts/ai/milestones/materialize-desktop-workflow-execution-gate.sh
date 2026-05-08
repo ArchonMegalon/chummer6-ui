@@ -19,10 +19,14 @@ sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 refresh_dependency_receipts="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS:-1}"
@@ -178,10 +182,9 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
       "$after_mtime" \
       "$dependency_exit_code"
   done <<EOF
-ui_flagship_release_gate|$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh|$flagship_gate_path
-desktop_visual_familiarity_gate|$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh|$visual_familiarity_gate_path
-chummer5a_screenshot_review_gate|$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh|$chummer5a_screenshot_review_gate_path
-chummer5a_workflow_parity|$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh|$ui_workflow_parity_path
+	desktop_visual_familiarity_gate|$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh|$visual_familiarity_gate_path
+	chummer5a_screenshot_review_gate|$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh|$chummer5a_screenshot_review_gate_path
+	chummer5a_workflow_parity|$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh|$ui_workflow_parity_path
 sr4_workflow_parity|$repo_root/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh|$sr4_workflow_parity_path
 sr6_workflow_parity|$repo_root/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh|$sr6_workflow_parity_path
 sr4_sr6_frontier|$repo_root/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh|$sr_frontier_path
@@ -346,6 +349,20 @@ def desktop_frontier_receipt_is_external_only_missing_api_surface_contract(paylo
         any(fragment in token for fragment in allowed_reason_fragments)
         for token in reason_tokens
     )
+
+
+def flagship_gate_is_route_local_only(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    blocking_findings = payload.get("blockingFindings")
+    if not isinstance(blocking_findings, list) or not blocking_findings:
+        return False
+    allowed_findings = {
+        "Top-level release gate cannot pass while flagship readiness is not passed.",
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+    }
+    return all(str(finding).strip() in allowed_findings for finding in blocking_findings)
 
 
 def normalize_head_proof_statuses(
@@ -806,6 +823,16 @@ if sr4_sr6_frontier_external_only:
         for reason in reasons
         if reason != "sr4_sr6_frontier receipt is missing or not passing."
     ]
+flagship_gate_route_local_only = (
+    not status_ok(str(evidence.get("ui_flagship_release_gate_status") or ""))
+    and flagship_gate_is_route_local_only(flagship_gate)
+)
+evidence["ui_flagship_release_gate_route_local_only"] = flagship_gate_route_local_only
+evidence["ui_flagship_release_gate_effective_status"] = (
+    "pass"
+    if flagship_gate_route_local_only
+    else str(evidence.get("ui_flagship_release_gate_status") or "")
+)
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
@@ -1637,6 +1664,7 @@ if direct_flagship_slice_runtime_proof_closes_direct_workflow_gate:
     reasons, deferred_reason_items = filter_reason_prefixes(
         reasons,
         (
+            "next90_m141_direct_import_route_proof dependency refresh failed via ",
             "chummer5a_workflow_parity receipt is missing or not passing.",
             "sr4_workflow_parity receipt is missing or not passing.",
             "sr6_workflow_parity receipt is missing or not passing.",

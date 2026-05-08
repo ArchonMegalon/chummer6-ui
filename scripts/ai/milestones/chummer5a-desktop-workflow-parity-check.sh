@@ -15,10 +15,16 @@ workflow_gate_tests_path="$repo_root/Chummer.Tests/Presentation/WorkflowParityGa
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ "${CHUMMER_DESKTOP_WORKFLOW_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-0}" == "1" \
+  && -f "$verified_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 

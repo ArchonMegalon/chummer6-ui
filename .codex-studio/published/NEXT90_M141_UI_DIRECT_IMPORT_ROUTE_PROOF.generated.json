@@ -1,15 +1,8 @@
 {
-  "generatedAt": "2026-05-07T00:56:23Z",
+  "generatedAt": "2026-05-07T23:43:24Z",
   "status": "fail",
   "unresolved": [
-    "registry_task_evidence_exact",
-    "queue_proof_exact",
-    "design_queue_proof_exact",
-    "flagship_frontier:frontier_id_present",
-    "flagship_frontier:queue_package_present",
-    "flagship_frontier:title_present",
-    "flagship_frontier:owned_surface_present",
-    "flagship_frontier:allowed_paths_exact"
+    "ui_flagship_gate_route_local_only"
   ],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "preview",
@@ -42,7 +35,7 @@
       "registry_task_status_complete": true,
       "registry_task_completion_action_matches": true,
       "registry_task_do_not_reopen_reason_matches": true,
-      "registry_task_evidence_exact": false,
+      "registry_task_evidence_exact": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_title_matches": true,
@@ -63,8 +56,8 @@
       "design_queue_completion_action_matches": true,
       "queue_do_not_reopen_reason_matches": true,
       "design_queue_do_not_reopen_reason_matches": true,
-      "queue_proof_exact": false,
-      "design_queue_proof_exact": false,
+      "queue_proof_exact": true,
+      "design_queue_proof_exact": true,
       "allowed_paths_exact": true,
       "design_allowed_paths_exact": true,
       "owned_surfaces_exact": true,
@@ -79,11 +72,13 @@
       "frontier_artifact_present": true,
       "frontier_artifact_path_under_root": true,
       "frontier_artifact_uses_shard_generated_yaml": true,
-      "frontier_id_present": false,
-      "queue_package_present": false,
-      "title_present": false,
-      "owned_surface_present": false,
-      "allowed_paths_exact": false,
+      "frontier_id_present": true,
+      "queue_package_present": true,
+      "title_present": true,
+      "owned_surface_present": true,
+      "allowed_paths_exact": true,
+      "repo_local_completion_ready": true,
+      "flagship_product_frontier_active": false,
       "worker_safe": true
     },
     "sourceChecks": {
@@ -148,10 +143,10 @@
       }
     },
     "supportingReceipts": {
-      "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-      "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-      "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
-      "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "visualFamiliarityGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+      "screenshotReviewGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "veteranTaskTimeGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+      "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
       "flagshipFrontier": "/docker/fleet/.codex-studio/published/full-product-frontiers/shard-1.generated.yaml"
     },
@@ -168,6 +163,7 @@
       "veteran_task_jobs_present": true,
       "veteran_task_screenshot_jobs_present": true,
       "ui_flagship_gate_pass": true,
+      "ui_flagship_gate_route_local_only": false,
       "ui_flagship_gate_tokens_present": true
     },
     "routeReceiptChecks": {
@@ -197,18 +193,18 @@
       "40-hero-lab-importer-dialog-light.png": true
     },
     "proofFiles": [
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Compliance/Next90M141DirectImportRouteProofGuardTests.cs",
-      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Chummer.Tests.csproj",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
-      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
-      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M141DirectImportRouteProofGuardTests.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
+      "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
     ],
     "proofCommands": [
       "bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",

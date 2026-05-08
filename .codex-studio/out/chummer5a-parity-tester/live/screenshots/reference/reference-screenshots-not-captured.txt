@@ -1,2 +1,0 @@
-Legacy reference screenshots were not present for this run.
-The tester used Chummer5a structural oracle sources plus published Chummer6 screenshot/control evidence instead.

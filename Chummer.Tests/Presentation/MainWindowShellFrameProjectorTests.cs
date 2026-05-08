@@ -148,7 +148,8 @@ public sealed class MainWindowShellFrameProjectorTests
                     RulesetDefaults.Sr5,
                     HasSavedWorkspace: false)
             ],
-            activeWorkspaceId: workspaceId);
+            activeWorkspaceId: workspaceId,
+            shellNotice: "Restored 1 workspace(s).");
 
         StringAssert.Contains(
             frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
@@ -182,7 +183,8 @@ public sealed class MainWindowShellFrameProjectorTests
                     RulesetDefaults.Sr6,
                     HasSavedWorkspace: true)
             ],
-            activeWorkspaceId: null);
+            activeWorkspaceId: null,
+            shellNotice: "Restored 1 workspace(s).");
 
         StringAssert.Contains(
             frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
@@ -286,7 +288,8 @@ public sealed class MainWindowShellFrameProjectorTests
         string activeTabId,
         WorkspaceSurfaceActionDefinition[]? workspaceActions = null,
         OpenWorkspaceState[]? openWorkspaces = null,
-        CharacterWorkspaceId? activeWorkspaceId = null)
+        CharacterWorkspaceId? activeWorkspaceId = null,
+        string? shellNotice = null)
     {
         OpenWorkspaceState[] resolvedOpenWorkspaces = openWorkspaces ?? [];
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
@@ -316,7 +319,10 @@ public sealed class MainWindowShellFrameProjectorTests
             LastCommandId: null,
             WorkflowDefinitions: [],
             WorkflowSurfaces: [],
-            ActiveRuntime: null);
+            ActiveRuntime: null)
+        {
+            Notice = shellNotice
+        };
 
         return MainWindowShellFrameProjector.Project(overviewState, shellSurface, AlwaysAvailableEvaluator.Instance);
     }

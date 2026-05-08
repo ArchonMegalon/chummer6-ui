@@ -88,6 +88,37 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
+    public void Workflow_execution_gate_defers_stale_m141_refresh_failures_once_direct_flagship_proof_is_current()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "\"next90_m141_direct_import_route_proof\", next90_m141_direct_import_route_proof");
+        StringAssert.Contains(scriptText, "next90_m141_direct_import_route_proof dependency refresh failed via ");
+        StringAssert.Contains(
+            scriptText,
+            "\"next90_m141_direct_import_route_proof dependency refresh failed via \",",
+            "The workflow gate must defer stale M141 dependency-refresh failures once the direct flagship slice proof already closes the route-local desktop workflow bar.");
+    }
+
+    [TestMethod]
+    public void Workflow_execution_gate_treats_route_local_only_flagship_release_failures_as_effectively_passing()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def flagship_gate_is_route_local_only(payload: Dict[str, Any]) -> bool:");
+        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_route_local_only\"] = flagship_gate_route_local_only");
+        StringAssert.Contains(scriptText, "evidence[\"ui_flagship_release_gate_effective_status\"] = (");
+        StringAssert.Contains(
+            scriptText,
+            "\"Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.\",",
+            "The workflow gate must only defer the known route-local flagship recursion findings, not unrelated flagship failures.");
+    }
+
+    [TestMethod]
     public void Flagship_ui_release_gate_republishes_screenshot_pack_with_gate_run_freshness()
     {
         string repoRoot = FindRepoRoot();
