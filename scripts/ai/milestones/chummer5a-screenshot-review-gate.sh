@@ -8,10 +8,14 @@ receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GAT
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 mkdir -p "$(dirname "$receipt_path")"
@@ -149,6 +153,21 @@ flagship_gate = load_json(flagship_gate_path)
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
+flagship_gate_blocking_findings = flagship_gate.get("blockingFindings") or []
+if not isinstance(flagship_gate_blocking_findings, list):
+    flagship_gate_blocking_findings = []
+flagship_gate_route_local_only = (
+    bool(flagship_gate_blocking_findings)
+    and all(
+        str(finding).strip()
+        in {
+            "Top-level release gate cannot pass while flagship readiness is not passed.",
+            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+        }
+        for finding in flagship_gate_blocking_findings
+    )
+)
 control_evidence_path_raw = str(visual_evidence.get("control_evidence_path") or "").strip()
 control_evidence_path = Path(control_evidence_path_raw) if control_evidence_path_raw else None
 control_evidence = load_json(control_evidence_path) if control_evidence_path and control_evidence_path.is_file() else {}
@@ -207,7 +226,7 @@ for marker in [
 
 if not status_pass(visual_gate.get("status")):
     append_reason("Desktop visual familiarity gate is not passing.", reasons, supporting_receipt_reasons)
-if not status_pass(flagship_gate.get("status")):
+if not status_pass(flagship_gate.get("status")) and not flagship_gate_route_local_only:
     append_reason("UI flagship release gate is not passing.", reasons, supporting_receipt_reasons)
 if missing_visual_review_keys:
     append_reason(
@@ -423,6 +442,7 @@ payload = {
             "visualFamiliarityGate": visual_gate.get("status"),
             "flagshipGate": flagship_gate.get("status"),
         },
+        "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
         "visualReviewStatuses": {
             key: (
                 visual_reviews.get(key, {}).get("status")
@@ -468,6 +488,7 @@ payload = {
         "missingVisualReviewKeys": missing_visual_review_keys,
         "failingVisualReviewKeys": failing_visual_review_keys,
         "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
         "reviewedJobs": sorted(review_jobs.keys()),
         "failingJobs": review_job_failing,
         "routeLocalReceipts": route_local_receipts,

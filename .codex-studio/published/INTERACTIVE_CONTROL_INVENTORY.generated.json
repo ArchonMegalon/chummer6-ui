@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-22T01:09:25.284040Z",
+  "generatedAt": "2026-05-08T14:52:16.836881Z",
   "contract_name": "chummer6-ui.interactive_control_inventory",
   "status": "pass",
   "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
@@ -35,7 +35,7 @@
       "Standalone_toolstrip_buttons_raise_expected_events": true,
       "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events": true,
       "Standalone_workspace_strip_quick_start_button_raises_expected_event": true,
-      "Standalone_summary_header_tab_buttons_raise_expected_events": true,
+      "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff": true,
       "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events": true,
       "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions": true,
       "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true
@@ -60,8 +60,6 @@
       },
       "shell_menu_axaml": {
         "FileMenuButton": true,
-        "EditMenuButton": true,
-        "SpecialMenuButton": true,
         "ToolsMenuButton": true,
         "WindowsMenuButton": true,
         "HelpMenuButton": true
@@ -79,12 +77,14 @@
         "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);": true
       },
       "summary_header_axaml": {
-        "LoadedRunnerTabStripBorder": true,
-        "LoadedRunnerTabStrip": true
+        "x:Name=\"NavigationTabsPanel\"": true,
+        "IsVisible=\"False\"": true,
+        "x:Name=\"RestoreContinuityStatusBorder\"": true
       },
       "summary_header_codebehind": {
-        "LoadedRunnerTabStrip_OnSelectionChanged": true,
-        "NavigationTabSelected?.Invoke(this, tab.Id);": true
+        "bool showNavigation = NavigationTabsPanel.IsVisible;": true,
+        "bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;": true,
+        "Height = IsVisible ? double.NaN : 0d;": true
       },
       "navigator_axaml": {
         "NavigatorTree": true,
@@ -178,7 +178,7 @@
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
         "--filter",
-        "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_tab_buttons_raise_expected_events|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+        "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
         "-v",
         "minimal"
       ],
@@ -206,7 +206,7 @@
       "-p:NuGetAudit=false"
     ],
     "buildExitCode": 0,
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:08.15",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:08.71",
     "testResults": {
       "fullInteractiveControlInventory": {
         "command": [
@@ -215,7 +215,7 @@
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
           "--filter",
-          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_tab_buttons_raise_expected_events|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
           "-v",
           "minimal"
         ],
@@ -236,7 +236,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 3 s - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 4 s - Chummer.Tests.dll (net10.0)"
       }
     },
     "fullInteractiveControlInventory": "pass",
@@ -258,7 +258,7 @@
       "Standalone_toolstrip_buttons_raise_expected_events": true,
       "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events": true,
       "Standalone_workspace_strip_quick_start_button_raises_expected_event": true,
-      "Standalone_summary_header_tab_buttons_raise_expected_events": true,
+      "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff": true,
       "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events": true,
       "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions": true,
       "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true
@@ -334,7 +334,7 @@
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
           "--filter",
-          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_tab_buttons_raise_expected_events|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
           "-v",
           "minimal"
         ],
@@ -355,7 +355,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 3 s - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 4 s - Chummer.Tests.dll (net10.0)"
       }
     }
   }

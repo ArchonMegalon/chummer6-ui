@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-07T00:21:55.384258Z",
+  "generatedAt": "2026-05-08T15:05:44.085757Z",
   "contractName": "chummer6-ui.chummer5a_muscle_memory_parity_gate",
   "status": "pass",
   "summary": "Muscle-memory parity policy, full-scope design, detailed seed checks, and release wiring are all present.",
@@ -17,7 +17,7 @@
     "runtimeShellSurfaceCount": 4,
     "runtimeMenuRootCount": 4,
     "runtimeDialogSurfaceCount": 71,
-    "runtimeVisibleElementCount": 17021,
+    "runtimeVisibleElementCount": 17037,
     "detailedDialogResults": [
       {
         "dialogId": "gear_add",

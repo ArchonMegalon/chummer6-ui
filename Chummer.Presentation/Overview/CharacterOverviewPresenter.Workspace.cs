@@ -203,9 +203,9 @@ public sealed partial class CharacterOverviewPresenter
         {
             string[] visibleNewWorkspaceTabPreference =
             [
+                "tab-info",
                 "tab-attributes",
                 "tab-skills",
-                "tab-info",
                 "tab-gear",
                 "tab-qualities"
             ];

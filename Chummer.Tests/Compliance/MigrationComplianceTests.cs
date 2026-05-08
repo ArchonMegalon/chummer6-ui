@@ -4544,6 +4544,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "required_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "legacyEquivalentChromeReview");
         StringAssert.Contains(screenshotReviewGateText, "muscleMemoryParityReview");
+        StringAssert.Contains(screenshotReviewGateText, "flagship_gate_blocking_findings");
+        StringAssert.Contains(screenshotReviewGateText, "flagship_gate_route_local_only");
         StringAssert.Contains(screenshotReviewGateText, "missing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "failing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "visual_failure_count");
@@ -4553,6 +4555,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "\"reviewJobsSummary\"");
         StringAssert.Contains(screenshotReviewGateText, "\"visualReviewStatuses\"");
         StringAssert.Contains(screenshotReviewGateText, "\"visualFailureCount\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"flagshipGateRouteLocalOnly\"");
         StringAssert.Contains(screenshotReviewGateText, "\"evidence\": {");
         StringAssert.Contains(screenshotReviewGateText, "\"requiredVisualReviewKeys\"");
         StringAssert.Contains(screenshotReviewGateText, "\"missingVisualReviewKeys\"");
@@ -5448,6 +5451,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "workflow_execution_review_reasons");
         StringAssert.Contains(workflowGateScriptText, "filter_reason_prefixes");
         StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_runtime_proof_closes_direct_workflow_gate");
+        StringAssert.Contains(workflowGateScriptText, "\"next90_m141_direct_import_route_proof dependency refresh failed via \",");
         StringAssert.Contains(workflowGateScriptText, "direct_flagship_slice_deferred_reason_items");
         StringAssert.Contains(workflowGateScriptText, "upstream_receipt_review_deferred_reasons");
         StringAssert.Contains(workflowGateScriptText, "workflow_family_review_deferred_reasons");

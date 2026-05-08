@@ -76,9 +76,9 @@ public partial class SummaryHeaderControl : UserControl
                 || !string.IsNullOrWhiteSpace(state.RestoreDecisionActionStatus)
                 || !string.IsNullOrWhiteSpace(state.RestoreDecisionSelectionId));
         SetRestoreContinuityStatus(state, hasRecoveryContext);
-        bool showNavigation = NavigationTabsPanel.IsVisible;
+        bool showNavigation = state.HasVisibleContent || NavigationTabsPanel.IsVisible;
         bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;
-        IsVisible = showRestore;
+        IsVisible = showNavigation || showRestore;
         Height = IsVisible ? double.NaN : 0d;
         RootBorder.IsVisible = IsVisible;
     }

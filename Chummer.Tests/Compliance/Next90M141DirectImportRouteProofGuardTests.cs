@@ -140,6 +140,8 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.IsTrue(flagshipFrontierChecks.GetProperty("title_present").GetBoolean());
         Assert.IsTrue(flagshipFrontierChecks.GetProperty("owned_surface_present").GetBoolean());
         Assert.IsTrue(flagshipFrontierChecks.GetProperty("allowed_paths_exact").GetBoolean());
+        Assert.IsTrue(flagshipFrontierChecks.TryGetProperty("repo_local_completion_ready", out _));
+        Assert.IsTrue(flagshipFrontierChecks.TryGetProperty("flagship_product_frontier_active", out _));
         Assert.IsTrue(flagshipFrontierChecks.GetProperty("worker_safe").GetBoolean());
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
@@ -167,6 +169,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.IsTrue(receiptChecks.GetProperty("veteran_task_jobs_present").GetBoolean());
         Assert.IsTrue(receiptChecks.GetProperty("veteran_task_screenshot_jobs_present").GetBoolean());
         Assert.IsTrue(receiptChecks.GetProperty("ui_flagship_gate_pass").GetBoolean());
+        Assert.IsTrue(receiptChecks.TryGetProperty("ui_flagship_gate_route_local_only", out _));
         Assert.IsTrue(receiptChecks.GetProperty("ui_flagship_gate_tokens_present").GetBoolean());
 
         JsonElement routeReceiptChecks = evidence.GetProperty("routeReceiptChecks");
@@ -217,9 +220,33 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
 
         string flagshipFrontierText = File.ReadAllText(flagshipFrontierPath);
         StringAssert.Contains(flagshipFrontierText, "frontier_ids:");
-        StringAssert.Contains(flagshipFrontierText, "- 1922169755");
-        StringAssert.Contains(flagshipFrontierText, "package_id: next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment");
-        StringAssert.Contains(flagshipFrontierText, "Capture direct screenshot and runtime proof for translator, XML amendment");
+        bool hasLegacyFrontierPackage =
+            flagshipFrontierText.Contains("- 1922169755", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains(
+                "package_id: next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
+                StringComparison.Ordinal)
+            && flagshipFrontierText.Contains(
+                "Capture direct screenshot and runtime proof for translator, XML amendment",
+                StringComparison.Ordinal);
+        bool hasRepoLocalFrontierCloseout =
+            flagshipFrontierText.Contains("contract_name: fleet.full_product_frontier", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("frontier_count: 0", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("frontier_ids: []", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("frontier: []", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("completion_audit:", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("full_product_audit:", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("status: pass", StringComparison.Ordinal);
+        bool hasActiveFlagshipProductFrontier =
+            flagshipFrontierText.Contains("contract_name: fleet.full_product_frontier", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("whole_project_frontier: true", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("frontier_count:", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("scope_kind: flagship_product_readiness", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("- chummer6-ui", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("completion_audit:", StringComparison.Ordinal)
+            && flagshipFrontierText.Contains("full_product_audit:", StringComparison.Ordinal);
+        Assert.IsTrue(
+            hasLegacyFrontierPackage || hasRepoLocalFrontierCloseout || hasActiveFlagshipProductFrontier,
+            "Flagship frontier proof must either keep the legacy M141 package row, explicitly report repo-local frontier closeout, or expose the active flagship-product frontier artifact.");
         Assert.IsFalse(
             flagshipFrontierText.Contains("TASK_LOCAL_TELEMETRY.generated.json", StringComparison.OrdinalIgnoreCase),
             "Flagship frontier proof must stay worker-safe and must not cite task-local telemetry helper output.");

@@ -337,16 +337,5 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop settings command surface: {ex}");
             }
         }
-        else
-        {
-            try
-            {
-                await DesktopHomeWindow.ShowIfNeededAsync(owner, "avalonia", installContext: null);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to display the desktop home window: {ex}");
-            }
-        }
     }
 }

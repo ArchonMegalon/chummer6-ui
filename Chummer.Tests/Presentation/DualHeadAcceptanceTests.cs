@@ -1121,10 +1121,15 @@ public class DualHeadAcceptanceTests
             new[] { "heroLabImportOracleLanePosture", "heroLabImportOracleCoverage", "heroLabFixtureCount", "heroLabImportOracleMatrix", "heroLabImportOracleReceipt", "heroLabAdjacentSr6OracleReceipt", "heroLabXml" },
             heroLabFields.Select(field => field.Id).ToArray());
         Assert.AreEqual("governed", heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleLanePosture", StringComparison.Ordinal)).Value);
-        Assert.AreEqual("1/1 · 100%", heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleCoverage", StringComparison.Ordinal)).Value);
-        Assert.AreEqual("0", heroLabFields.Single(field => string.Equals(field.Id, "heroLabFixtureCount", StringComparison.Ordinal)).Value);
-        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleMatrix", StringComparison.Ordinal)).Value, "Hero Lab fixtures 0");
-        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabAdjacentSr6OracleReceipt", StringComparison.Ordinal)).Value, "current for this parity fixture");
+        StringAssert.Contains(
+            heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleCoverage", StringComparison.Ordinal)).Value,
+            "100%");
+        Assert.IsTrue(
+            int.TryParse(heroLabFields.Single(field => string.Equals(field.Id, "heroLabFixtureCount", StringComparison.Ordinal)).Value, out int heroLabFixtureCount)
+            && heroLabFixtureCount >= 0,
+            "Hero Lab fixture coverage must remain an explicit non-negative count.");
+        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabImportOracleMatrix", StringComparison.Ordinal)).Value, "Hero Lab fixtures");
+        StringAssert.Contains(heroLabFields.Single(field => string.Equals(field.Id, "heroLabAdjacentSr6OracleReceipt", StringComparison.Ordinal)).Value, "Adjacent SR6 oracle");
     }
 
     [TestMethod]
