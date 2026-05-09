@@ -14,4 +14,5 @@ Closed follow-on proof incorporated:
 - Avalonia primary-route proof stays independent from Blazor fallback proof through `.codex-studio/published/NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json`.
 - Channel, build, rollback, support-packet, installer, update, recovery, restore, stale-state, and conflict-choice proof is covered by `scripts/ai/milestones/b14-flagship-ui-release-gate.sh` and the desktop lifecycle runtime tests it requires.
 - Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, import, translator, XML amendment, and Hero Lab is covered by `scripts/ai/milestones/chummer5a-screenshot-review-gate.sh`.
+- Screenshot-backed parity review for menu, toolstrip, roster, master index, settings, and import is covered by `scripts/ai/milestones/chummer5a-screenshot-review-gate.sh`.
 - Import/build/support diagnostic explain evidence remains enforced by the flagship release gate and veteran task-time evidence gate.

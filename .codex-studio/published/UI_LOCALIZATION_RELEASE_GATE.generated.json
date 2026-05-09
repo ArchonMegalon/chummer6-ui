@@ -115,8 +115,8 @@
     ],
     "proof_routes": [
       "/downloads/install/avalonia-linux-x64-installer",
-      "/home/access",
-      "/home/work",
+      "/workspace/access",
+      "/workspace/work",
       "/account/work",
       "/account/support",
       "/contact",

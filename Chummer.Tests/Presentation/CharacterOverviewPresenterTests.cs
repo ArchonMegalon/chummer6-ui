@@ -758,13 +758,14 @@ public class CharacterOverviewPresenterTests
                 TranslatorLanguageCount: 6,
                 EnabledLanguageOverlayCount: 3),
             new TranslatorLanguagesResponse(
-                EnabledLanguageOverlayCount: 1,
+                Count: 2,
                 Languages:
                 [
-                    new TranslatorLanguageEntry("en-us", "English", true),
-                    new TranslatorLanguageEntry("de-de", "Deutsch", true)
+                    new TranslatorLanguageEntry("en-us", "English"),
+                    new TranslatorLanguageEntry("de-de", "Deutsch")
                 ],
-                TranslatorBridgePosture: "partial"));
+                TranslatorBridgePosture: "partial",
+                EnabledLanguageOverlayCount: 1));
         var presenter = new CharacterOverviewPresenter(client);
 
         await presenter.ExecuteCommandAsync("translator", CancellationToken.None);

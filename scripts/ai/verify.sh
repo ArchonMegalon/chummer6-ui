@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
 proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
+manifest_target="${1:-}"
 
 if [[ -f "$proof_file" ]]; then
   python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
@@ -10,7 +11,7 @@ else
   echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
 fi
 
-bash "$repo_root/scripts/verify-releases-manifest.sh"
+bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -43,7 +44,8 @@ echo "[verify] checking contract package consumption..."
 bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 echo "[verify] checking desktop runtime resilience regression guard..."
-bash scripts/ai/test.sh Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj -v minimal
+desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then

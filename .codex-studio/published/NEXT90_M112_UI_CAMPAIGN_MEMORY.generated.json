@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T05:49:07Z",
+  "generatedAt": "2026-05-09T10:42:34Z",
   "packageId": "next90-m112-ui-campaign-memory",
   "title": "Surface campaign memory and consequences on desktop",
   "task": "Make campaign consequences, stale state, and next-session return actions visible on the promoted desktop route.",
@@ -60,12 +60,12 @@
     "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
   },
   "proofFiles": [
-    "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M112_UI_CAMPAIGN_MEMORY.generated.json",
-    "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
-    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/DesktopHomeWindow.cs",
-    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
-    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
-    "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M112CampaignMemoryGuardTests.cs"
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M112_UI_CAMPAIGN_MEMORY.generated.json",
+    "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M112CampaignMemoryGuardTests.cs"
   ],
   "failures": []
 }

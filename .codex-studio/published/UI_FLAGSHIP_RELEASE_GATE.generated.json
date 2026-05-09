@@ -1,5 +1,9 @@
 {
   "generatedAt": "2026-05-08T15:04:28.373540Z",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260503-163502",
+  "version": "run-20260503-163502",
   "status": "pass",
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
@@ -10,7 +14,7 @@
     "blazor-desktop"
   ],
   "artifactPresence": {
-    "bundledDemoRunnerPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
+    "bundledDemoRunnerPath": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/bin/Release/net10.0/Samples/Legacy/Soma-Career.chum5",
     "bundledDemoRunnerPresent": true
   },
   "interactionProof": {
@@ -42,12 +46,12 @@
     "runtimeBackedTabPanelOnlyHeader": "pass",
     "runtimeBackedChromeEnabledAfterRunnerLoad": "pass",
     "runtimeBackedDemoRunnerImport": "pass",
-    "interactiveControlInventoryReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+    "interactiveControlInventoryReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
     "fullInteractiveControlInventory": "pass",
     "mainWindowInteractionInventory": "pass",
-    "legacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "legacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacyUiElementParity": "pass",
-    "chummer4LegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "chummer4LegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "chummer4LegacyUiElementParity": "pass",
     "runtimeBackedLegacyWorkbench": "pass",
     "legacyDenseBuilderRhythm": "pass",
@@ -75,7 +79,7 @@
         "AvaloniaFlagshipUiGateTests",
         "DualHeadAcceptanceTests"
       ],
-      "sourceTestFile": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
       "visualReview": "pass",
       "themeReadabilityContrast": "pass",
       "bundledDemoRunner": "pass",
@@ -134,7 +138,7 @@
       "dialogSurface": "pass",
       "journeyPanels": "pass",
       "releaseLifecycle": "pass",
-      "sourceTestFile": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+      "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
       "requiredShellTests": [
         "MenuBar_invokes_toggle_and_execute_callbacks",
         "WorkspaceLeftPane_renders_shell_controls_and_invokes_callbacks",
@@ -142,7 +146,7 @@
         "StatusStrip_announces_status_via_shared_live_region_semantics",
         "CampaignJournalPanel_renders_explicit_downtime_planner_calendar_and_schedule_views"
       ],
-      "desktopShellRulesetSourceTestFile": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
+      "desktopShellRulesetSourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
       "requiredDesktopShellLayoutTests": [
         "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
         "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session"
@@ -161,20 +165,20 @@
       "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
       "TryHandleAsync_writes_receipt_when_requested"
     ],
-    "desktopUpdateRuntimeTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/DesktopUpdateRuntimeTests.cs",
-    "desktopInstallLinkingRuntimeTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
-    "desktopStartupSmokeRuntimeTestsPath": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
+    "desktopUpdateRuntimeTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/DesktopUpdateRuntimeTests.cs",
+    "desktopInstallLinkingRuntimeTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
+    "desktopStartupSmokeRuntimeTestsPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs"
   },
   "workflowEquivalenceProof": {
     "status": "pass",
-    "sourceTestFile": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-    "explicitParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "explicitLegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
-    "explicitChummer4LegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
-    "explicitSr4ParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "explicitSr6ParityReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "explicitSr4Sr6FrontierReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
-    "desktopWorkflowExecutionReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+    "sourceTestFile": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+    "explicitParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "explicitLegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "explicitChummer4LegacyUiElementParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "explicitSr4ParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "explicitSr6ParityReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "explicitSr4Sr6FrontierReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+    "desktopWorkflowExecutionReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
     "requiredDualHeadTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_workspace_action_summary_matches",
@@ -266,11 +270,11 @@
   },
   "localizationReleaseProof": {
     "status": "pass",
-    "localizationReleaseGateReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json",
+    "localizationReleaseGateReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json",
     "translationBacklogFindings": []
   },
   "visualReviewEvidence": {
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "expectedScreenshots": [
       "01-initial-shell-light.png",
       "02-menu-open-light.png",
@@ -622,12 +626,12 @@
     ]
   },
   "signoffLane": {
-    "workbenchReleaseSignoffPath": "/docker/chummercomplete/chummer-presentation-clean/docs/WORKBENCH_RELEASE_SIGNOFF.md",
+    "workbenchReleaseSignoffPath": "/docker/chummercomplete/chummer6-ui/docs/WORKBENCH_RELEASE_SIGNOFF.md",
     "citesReleaseGate": true
   },
   "classicDenseWorkbenchPostureProof": {
     "status": "pass",
-    "classicDenseWorkbenchPostureReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "classicDenseWorkbenchPostureReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
     "frontierIdsClosed": [
       1524553407,
       3384607072,
@@ -678,7 +682,7 @@
   },
   "veteranTaskTimeEvidenceProof": {
     "status": "pass",
-    "veteranTaskTimeEvidenceReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+    "veteranTaskTimeEvidenceReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
     "frontierIdsClosed": [
       3515644054,
       1019154541,
@@ -700,10 +704,10 @@
         ],
         "proof": "File-menu open/import stays runtime-backed, exposes the import dialog template, and exercises dual-head import plus workspace switching.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
         ]
       },
       "save": {
@@ -716,8 +720,8 @@
         ],
         "proof": "Save is a first-class File/toolstrip command that marks workspaces saved and remains covered through dual-head dispatch plus import-switch-save flow.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
         ]
       },
       "settings": {
@@ -730,10 +734,10 @@
         ],
         "proof": "Settings opens through the desktop command surface, saves preferences, and has screenshot-backed dialog evidence on the promoted Avalonia head.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
         ]
       },
       "sourcebooks": {
@@ -743,9 +747,9 @@
         ],
         "proof": "Master index sourcebook posture exposes governed reference provenance, selection coverage, and sourcebook rows.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Presentation/Overview/DesktopDialogFactory.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Presentation/Overview/DesktopDialogFactory.cs",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
         ]
       },
       "translator_xml_custom_data": {
@@ -758,9 +762,9 @@
         ],
         "proof": "Translator and XML editor lanes now fail closed on governed translator posture, XML bridge posture, enabled overlay count, and custom-data directory posture instead of relying on generic dialog coverage.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs"
         ]
       },
       "roster": {
@@ -772,10 +776,10 @@
         ],
         "proof": "Character roster is a runtime-backed Tools route with open-runner count, saved count, ruleset mix, active workspace, and roster entries.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-          "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
         ]
       },
       "print_export": {
@@ -786,7 +790,7 @@
         ],
         "proof": "Dual-head promoted workflow tests exercise matching download/export/print receipts and import-switch-save flow.",
         "evidencePaths": [
-          "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
+          "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
         ]
       }
     },
@@ -805,7 +809,7 @@
   },
   "chummer5aScreenshotReviewProof": {
     "status": "pass",
-    "screenshotReviewReceiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "screenshotReviewReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "frontierIdsClosed": [
       3782970110,
       2714856833,

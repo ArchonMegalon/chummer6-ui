@@ -1,19 +1,25 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.502094Z",
+  "generatedAt": "2026-05-08T19:14:10.208992Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family parity evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family parity evidence is incomplete for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [
+    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail; external_blocker=missing_api_surface_contract)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
+      "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "classification": "carry-forward",
@@ -24,10 +30,12 @@
         "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections"
       ]
     },
-    "verificationReceipts": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json"
+    "verificationReceipts": [],
+    "verificationFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.generated.json (fail; external_blocker=missing_api_surface_contract)"
     ],
-    "verificationFailures": [],
-    "verificationExternalBlockers": []
+    "verificationExternalBlockers": [
+      "missing_api_surface_contract"
+    ]
   }
 }

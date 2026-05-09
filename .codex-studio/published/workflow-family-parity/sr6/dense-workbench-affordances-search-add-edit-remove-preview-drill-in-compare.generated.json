@@ -1,19 +1,26 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.443971Z",
+  "generatedAt": "2026-05-08T19:14:09.073970Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family verification evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family verification evidence is incomplete for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail; external_blocker=missing_api_surface_contract)"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-      "Menu_click_surfaces_visible_command_choices_in_shell"
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Menu_click_surfaces_visible_command_choices_in_shell",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "classification": "carry-forward",
@@ -24,10 +31,12 @@
         "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
       ]
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/executed/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.generated.json (fail; external_blocker=missing_api_surface_contract)"
     ],
-    "executionFailures": [],
-    "executionExternalBlockers": []
+    "executionExternalBlockers": [
+      "missing_api_surface_contract"
+    ]
   }
 }

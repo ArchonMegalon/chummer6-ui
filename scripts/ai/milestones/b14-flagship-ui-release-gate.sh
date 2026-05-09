@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 output_dir="$repo_root/Chummer.Avalonia/bin/Release/net10.0"
@@ -9,6 +17,7 @@ sample_path="$output_dir/Samples/Legacy/Soma-Career.chum5"
 receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
+lock_owner_pid_path="$lock_dir/owner.pid"
 capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
 staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
@@ -29,6 +38,14 @@ veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path="$canonical_release_channel_path"
+else
+  release_channel_path="$default_release_channel_path"
+fi
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
 skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
@@ -119,7 +136,7 @@ required_avalonia_tests = [
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
-    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
@@ -204,16 +221,16 @@ PY
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 run_with_retry 2 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" --no-restore -v minimal >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" --no-restore -v minimal >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests" -v minimal >/dev/null
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj \
+  --filter "FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests" --no-restore -v minimal >/dev/null
 
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
 from __future__ import annotations
@@ -322,8 +339,8 @@ PY
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 2 "cross-head workflow parity tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" -v minimal >/dev/null
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj \
+  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" --no-restore -v minimal >/dev/null
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
@@ -334,7 +351,7 @@ bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$release_channel_path"
 import json
 import os
 import sys
@@ -357,7 +374,8 @@ from datetime import datetime, timezone
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
-) = sys.argv[1:17]
+    release_channel_path,
+) = sys.argv[1:18]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -403,6 +421,24 @@ required_lifecycle_runtime_tests = [
     "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
     "TryHandleAsync_writes_receipt_when_requested",
 ]
+release_channel_payload = {}
+release_channel_channel_id = ""
+release_channel_version = ""
+if os.path.isfile(release_channel_path):
+    with open(release_channel_path, "r", encoding="utf-8-sig") as handle:
+        loaded_release_channel = json.load(handle)
+    if isinstance(loaded_release_channel, dict):
+        release_channel_payload = loaded_release_channel
+release_channel_channel_id = str(
+    release_channel_payload.get("channelId")
+    or release_channel_payload.get("channel")
+    or ""
+).strip()
+release_channel_version = str(
+    release_channel_payload.get("releaseVersion")
+    or release_channel_payload.get("version")
+    or ""
+).strip()
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -460,6 +496,11 @@ if missing:
 
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+    "contract_name": "chummer6-ui.flagship_ui_release_gate",
+    "channelId": release_channel_channel_id,
+    "channel": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
+    "version": release_channel_version,
     "status": "pass",
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",

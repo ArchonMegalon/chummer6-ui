@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
@@ -30,7 +38,7 @@ release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_
 
 mkdir -p "$(dirname "$receipt_path")"
 workflow_gate_exit=0
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" -m:1 -v minimal >/dev/null || workflow_gate_exit=$?
+dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" --no-restore -v minimal >/dev/null || workflow_gate_exit=$?
 
 python3 - <<'PY' "$receipt_path" "$ledger_path" "$oracle_path" "$checklist_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$release_channel_path"
 from __future__ import annotations

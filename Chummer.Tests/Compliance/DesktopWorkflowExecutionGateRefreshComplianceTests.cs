@@ -119,6 +119,17 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
+    public void Workflow_execution_gate_treats_missing_status_values_as_not_ready_instead_of_crashing()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def status_ok(value: Any) -> bool:");
+        StringAssert.Contains(scriptText, "return normalize_token(value) in {\"pass\", \"passed\", \"ready\"}");
+    }
+
+    [TestMethod]
     public void Flagship_ui_release_gate_republishes_screenshot_pack_with_gate_run_freshness()
     {
         string repoRoot = FindRepoRoot();

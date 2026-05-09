@@ -16,11 +16,14 @@
     <AssemblyAttribute Include="Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelizeAttribute" />
   </ItemGroup>
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT' and '$(TargetFrameworks)' == ''">net10.0;net10.0-windows</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT' and '$(TargetFrameworks)' == ''">net10.0</TargetFrameworks>
     <GenerateAssemblyInfo>True</GenerateAssemblyInfo>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <RunDesktopUpdateTestsOnly Condition="'$(RunDesktopUpdateTestsOnly)' == ''">false</RunDesktopUpdateTestsOnly>
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
 	<AnalysisLevel>latest-minimum</AnalysisLevel>
@@ -52,6 +55,7 @@
     <Compile Remove="**\*.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopPreferenceRuntimeTests.cs" />
+    <Compile Include="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="DesktopUpdateManifestParserTests.cs" />
     <Compile Include="DesktopUpdateRuntimeTests.cs" />
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
@@ -102,6 +106,7 @@
     <Compile Include="Presentation\DialogCoordinatorTests.cs" />
     <Compile Include="Presentation\DesktopFileCoordinatorTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
+    <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
     <Compile Include="Presentation\DesktopDialogFactoryTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />

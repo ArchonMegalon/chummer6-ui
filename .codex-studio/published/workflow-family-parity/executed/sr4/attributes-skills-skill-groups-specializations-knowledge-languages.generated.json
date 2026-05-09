@@ -1,18 +1,25 @@
 {
-  "generatedAt": "2026-05-08T15:00:38.114288Z",
+  "generatedAt": "2026-05-08T19:12:23.676860Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR4 workflow-family execution evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 workflow-family execution evidence is incomplete for attributes-skills-skill-groups-specializations-knowledge-languages.",
+  "reasons": [
+    "dotnet test execution failed (exit 1): [with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock",
+    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections, Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6, Legacy_ui_controls_keep_recursive_parity, Quick_action_roots_are_exhaustively_classified"
+  ],
   "evidence": {
     "edition": "sr4",
     "familyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
     "proofKind": "sr4_family_oracle",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -22,8 +29,8 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
-      "exitCode": 0,
-      "attemptCount": 1,
+      "exitCode": 1,
+      "attemptCount": 2,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -43,12 +50,15 @@
         }
       ]
     },
-    "external_blocker": "",
-    "matchedPassedTests": [
+    "external_blocker": "missing_api_surface_contract",
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections",
-      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

@@ -1,5 +1,6 @@
 #nullable enable annotations
 
+using System;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -63,7 +64,7 @@ public sealed class Next90M112CampaignMemoryGuardTests
 
     private static string FindRepoRoot()
     {
-        string? current = TestContext.DeploymentDirectory;
+        string? current = AppContext.BaseDirectory;
         while (!string.IsNullOrWhiteSpace(current))
         {
             if (File.Exists(Path.Combine(current, "Chummer.sln")))
@@ -77,6 +78,4 @@ public sealed class Next90M112CampaignMemoryGuardTests
         Assert.Fail("Could not locate repository root from deployment directory.");
         return string.Empty;
     }
-
-    public TestContext TestContext { get; set; } = null!;
 }
