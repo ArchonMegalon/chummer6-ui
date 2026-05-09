@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
@@ -20,7 +28,7 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$repo_root" "$receipt_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
@@ -32,6 +40,7 @@ from typing import Any
 
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
+release_channel_path = Path(sys.argv[3])
 
 
 def now_iso() -> str:
@@ -83,13 +92,13 @@ review_jobs = {
         "frontierId": 2714856833,
         "screenshots": ["16-master-index-dialog-light.png"],
         "evidenceKeys": ["runtime_backed_master_index"],
-        "testMarkers": ["Master_index_is_a_first_class_runtime_backed_workbench_route"],
+        "testMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "roster": {
         "frontierId": 1186439541,
         "screenshots": ["17-character-roster-dialog-light.png"],
         "evidenceKeys": ["runtime_backed_character_roster"],
-        "testMarkers": ["Character_roster_is_a_first_class_runtime_backed_workbench_route"],
+        "testMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "settings": {
         "frontierId": 4871476959,
@@ -99,21 +108,21 @@ review_jobs = {
     },
     "translator": {
         "frontierId": 1922169755,
-        "screenshots": ["19-translator-dialog-light.png"],
+        "screenshots": ["38-translator-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
     "xml_editor": {
         "frontierId": 1922169755,
-        "screenshots": ["20-xml-editor-dialog-light.png"],
+        "screenshots": ["39-xml-editor-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
     "hero_lab_importer": {
         "frontierId": 1922169755,
-        "screenshots": ["21-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
+        "screenshots": ["40-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
 }
 
@@ -146,6 +155,7 @@ if missing_paths:
 
 visual_gate = load_json(visual_gate_path)
 flagship_gate = load_json(flagship_gate_path)
+release_channel = load_json(release_channel_path) if release_channel_path.is_file() else {}
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
@@ -314,6 +324,10 @@ review_job_failing = sorted(job_name for job_name, job in job_results.items() if
 payload = {
     "generatedAt": now_iso(),
     "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
+    "channelId": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+    "channel": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+    "releaseVersion": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
+    "version": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
     "status": "pass" if not reasons else "fail",
     "summary": (
         "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes."
@@ -373,8 +387,12 @@ payload = {
         "supportingReceipts": {
             "visualFamiliarityGate": str(visual_gate_path),
             "flagshipGate": str(flagship_gate_path),
+            "releaseChannel": str(release_channel_path),
         },
         "screenshotDirectory": screenshot_dir_raw,
+        "releaseChannelPath": str(release_channel_path),
+        "releaseChannelChannelId": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+        "releaseChannelVersion": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
         "requiredVisualReviewKeys": required_visual_review_keys,
         "missingVisualReviewKeys": missing_visual_review_keys,
         "failingVisualReviewKeys": failing_visual_review_keys,

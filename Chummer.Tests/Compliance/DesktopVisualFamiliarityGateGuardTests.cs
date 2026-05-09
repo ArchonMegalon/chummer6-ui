@@ -32,9 +32,9 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         "16-master-index-dialog-light.png",
         "17-character-roster-dialog-light.png",
         "18-import-dialog-light.png",
-        "19-translator-dialog-light.png",
-        "20-xml-editor-dialog-light.png",
-        "21-hero-lab-importer-dialog-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png",
     ];
 
     [TestMethod]

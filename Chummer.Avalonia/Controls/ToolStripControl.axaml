@@ -20,9 +20,6 @@
       <Button x:Name="LoadDemoRunnerButton" IsVisible="False" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
       <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="XML" MinWidth="42" Margin="0,0,3,0" Click="ImportRawButton_OnClick" />
       <Button x:Name="SettingsButton" IsVisible="False" Classes="shell-action quiet" Content="Options" MinWidth="62" Click="SettingsButton_OnClick" />
-      <Button x:Name="GmPrepButton" IsVisible="False" Content="GM Prep" Click="GmPrepButton_OnClick" />
-      <Button x:Name="RosterMovementButton" IsVisible="False" Content="Roster" Click="RosterMovementButton_OnClick" />
-      <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Content="Rules" Click="RuleEnvironmentStudioButton_OnClick" />
       <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Content="Campaign" Click="CampaignWorkspaceButton_OnClick" />
       <Button x:Name="UpdateStatusButton" IsVisible="False" Content="Update" Click="UpdateStatusButton_OnClick" />
       <Button x:Name="InstallLinkingButton" IsVisible="False" Content="Link" Click="InstallLinkingButton_OnClick" />

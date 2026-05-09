@@ -161,6 +161,18 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         await dialog.ShowDialog(owner);
     }
 
+    public static Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowGmPrepAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowRosterMovementAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
     private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(string headId)
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))

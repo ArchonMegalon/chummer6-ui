@@ -35,6 +35,11 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "used_internal_apis=false");
         StringAssert.Contains(scriptText, "PNG_SIGNATURE");
         StringAssert.Contains(scriptText, "CHUMMER_USER_JOURNEY_TESTER_RUN_LINUX_GATE");
+        StringAssert.Contains(scriptText, "linux_gate_temp_path=\"\"");
+        StringAssert.Contains(scriptText, "trap cleanup EXIT");
+        StringAssert.Contains(scriptText, "if [[ -z \"${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH:-}\" ]]; then");
+        StringAssert.Contains(scriptText, "linux_gate_temp_path=\"$(mktemp)\"");
+        StringAssert.Contains(scriptText, "CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH=\"$linux_gate_path\" \\");
     }
 
     [TestMethod]

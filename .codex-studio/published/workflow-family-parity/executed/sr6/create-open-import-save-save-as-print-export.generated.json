@@ -1,18 +1,23 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.353460Z",
+  "generatedAt": "2026-05-08T19:14:08.345666Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR6 workflow-family execution evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR6 workflow-family execution evidence is incomplete for create-open-import-save-save-as-print-export.",
+  "reasons": [
+    "dotnet test execution failed (exit 1): [with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock",
+    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches, Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts, Menu_dialog_workflows_keep_recursive_parity"
+  ],
   "evidence": {
     "edition": "sr6",
     "familyId": "create-open-import-save-save-as-print-export",
     "proofKind": "sr6_family_release_gated_execution",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
+      "Menu_dialog_workflows_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",
@@ -26,8 +31,8 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 0,
-      "attemptCount": 1,
+      "exitCode": 1,
+      "attemptCount": 2,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -47,12 +52,13 @@
         }
       ]
     },
-    "external_blocker": "",
-    "matchedPassedTests": [
+    "external_blocker": "missing_api_surface_contract",
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches",
-      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts"
+      "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
+      "Menu_dialog_workflows_keep_recursive_parity"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

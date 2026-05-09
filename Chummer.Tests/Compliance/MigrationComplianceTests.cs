@@ -3272,6 +3272,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(helperScriptText, "Chummer.Run.Contracts");
         StringAssert.Contains(helperScriptText, "Chummer.Hub.Registry.Contracts");
         StringAssert.Contains(helperScriptText, "-p:ChummerUseLocalCompatibilityTree=true");
+        StringAssert.Contains(helperScriptText, "local configuration=\"$3\"");
+        StringAssert.Contains(helperScriptText, "dotnet build \"$project_path\" -c \"$configuration\"");
+        StringAssert.Contains(helperScriptText, "\"$prebuild_configuration\"");
         StringAssert.Contains(desktopRuntimeProjectText, "ProjectReference Include=\"$(ChummerLocalHubRegistryContractsProject)\"");
         StringAssert.Contains(desktopRuntimeProjectText, "PackageReference Include=\"$(ChummerHubRegistryContractsPackageId)\" Version=\"$(ChummerHubRegistryContractsPackageVersion)\"");
         Assert.IsFalse(

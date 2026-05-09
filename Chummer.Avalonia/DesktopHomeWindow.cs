@@ -220,12 +220,12 @@ internal sealed class DesktopHomeWindow : Window
         };
     }
 
-    public static async Task ShowAsync(Window owner, string headId)
+    public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopHomeWindow dialog = await CreateAsync(headId, installContext: null).ConfigureAwait(true);
+        DesktopHomeWindow dialog = await CreateAsync(headId, installContext: null, portabilityActivity).ConfigureAwait(true);
         await dialog.ShowDialog(owner);
     }
 
@@ -234,12 +234,14 @@ internal sealed class DesktopHomeWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopHomeWindow dialog = await CreateAsync(headId, installContext, portabilityActivity: null).ConfigureAwait(true);
-        if (!ShouldShow(
+        DesktopHomeWindow dialog = await CreateAsync(headId, installContext).ConfigureAwait(true);
+        if (!ShouldShowOnStartup(
                 installContext,
+                dialog._installState,
                 dialog._updateStatus,
                 dialog._recentWorkspaces,
                 dialog._campaignProjection,
+                dialog._campaignServerPlane,
                 dialog._supportProjection))
         {
             return;
@@ -248,7 +250,10 @@ internal sealed class DesktopHomeWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopHomeWindow> CreateAsync(string headId, DesktopInstallLinkingStartupContext? installContext)
+    private static async Task<DesktopHomeWindow> CreateAsync(
+        string headId,
+        DesktopInstallLinkingStartupContext? installContext,
+        WorkspacePortabilityActivity? portabilityActivity = null)
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
             ?? throw new InvalidOperationException("Desktop home requires an IChummerClient instance."));
@@ -278,15 +283,21 @@ internal sealed class DesktopHomeWindow : Window
             buildExplainProjection);
     }
 
-    private static bool ShouldShow(
+    internal static bool ShouldShowOnStartup(
         DesktopInstallLinkingStartupContext? installContext,
         DesktopInstallLinkingState installState,
         DesktopUpdateClientStatus updateStatus,
         IReadOnlyList<WorkspaceListItem> workspaces,
         DesktopHomeCampaignProjection campaignProjection,
+        DesktopHomeCampaignServerPlane? campaignServerPlane,
         DesktopHomeSupportProjection supportProjection)
     {
         if (installContext?.ShouldPrompt == true)
+        {
+            return true;
+        }
+
+        if (installContext?.ClaimResult is not null)
         {
             return true;
         }
@@ -301,17 +312,37 @@ internal sealed class DesktopHomeWindow : Window
             return true;
         }
 
-        if (!HasWorkspaces(workspaces)
-            && !string.IsNullOrWhiteSpace(campaignProjection.LeadWorkspaceId))
+        if (ShouldShowForRestoreContinuityReview(installState, workspaces, campaignProjection, campaignServerPlane))
         {
             return true;
         }
 
+        // The default flagship desktop route should land in the actual workbench quick-start shell,
+        // not a separate dashboard-style window, unless there is real follow-through to review.
         return false;
     }
 
     private static DesktopPreferenceState ReadPreferences(string headId)
         => DesktopPreferenceRuntime.LoadOrCreateState(headId);
+
+    private static bool HasWorkspaces(IReadOnlyList<WorkspaceListItem> workspaces)
+        => workspaces.Count > 0;
+
+    private static bool ShouldShowForRestoreContinuityReview(
+        DesktopInstallLinkingState installState,
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        DesktopHomeCampaignProjection campaignProjection,
+        DesktopHomeCampaignServerPlane? campaignServerPlane)
+    {
+        if (campaignProjection.Watchouts.Count > 0)
+        {
+            return true;
+        }
+
+        return DesktopInstallLinkingRuntime.IsClaimed(installState)
+            && workspaces.Count > 0
+            && (campaignServerPlane is null || IsServerContinuityOlderThanLocalWorkspace(workspaces, campaignServerPlane));
+    }
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
     {
@@ -506,6 +537,22 @@ internal sealed class DesktopHomeWindow : Window
         {
             return null;
         }
+    }
+
+    private static bool IsServerContinuityOlderThanLocalWorkspace(
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        DesktopHomeCampaignServerPlane? campaignServerPlane)
+    {
+        if (campaignServerPlane is null || workspaces.Count == 0)
+        {
+            return false;
+        }
+
+        DateTimeOffset latestLocalWorkspaceUpdate = workspaces
+            .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
+            .DefaultIfEmpty(DateTimeOffset.MinValue)
+            .Max();
+        return latestLocalWorkspaceUpdate > campaignServerPlane.GeneratedAtUtc.ToUniversalTime();
     }
 
     private static async Task<DesktopHomeSupportProjection> ReadSupportProjectionAsync(
@@ -1323,6 +1370,59 @@ internal sealed class DesktopHomeWindow : Window
         => _recentWorkspaces.Count > 0
             ? OpenCurrentWorkspace()
             : DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
+
+    private bool HasFirstPlayableSession()
+        => _campaignProjection.ReadinessHighlights.Any(static line =>
+            line.StartsWith("First session:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Starter lane next:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Campaign-ready lane:", StringComparison.OrdinalIgnoreCase));
+
+    private Task OpenStarterLaneReviewAsync()
+        => OpenCampaignWorkspaceAsync();
+
+    private Task OpenCampaignPrimerArtifact()
+        => DesktopCampaignArtifactWindow.ShowPrimerAsync(this, _installState.HeadId);
+
+    private Task OpenMissionBriefingArtifact()
+        => DesktopCampaignArtifactWindow.ShowMissionBriefingAsync(this, _installState.HeadId);
+
+    private Task OpenCreatorPublicationAsync()
+        => DesktopCreatorPublicationWindow.ShowAsync(this, _installState.HeadId);
+
+    private Task OpenOrganizerOperationsAsync()
+        => DesktopOrganizerOperationsWindow.ShowAsync(this, _installState.HeadId);
+
+    private Task OpenCreatorModerationAsync()
+        => DesktopCreatorPublicationWindow.ShowModerationAsync(this, _installState.HeadId);
+
+    private Task OpenOrganizerRolesAsync()
+        => DesktopOrganizerOperationsWindow.ShowRolesAsync(this, _installState.HeadId);
+
+    private Task OpenCampaignAdoptionAsync()
+        => OpenCampaignWorkspaceAsync();
+
+    private Task OpenGmRunboardAsync()
+        => DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId);
+
+    private bool HasPortableExchangePreview()
+        => _campaignProjection.ReadinessHighlights.Any(static line =>
+            line.StartsWith("Portable exchange:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Exchange context:", StringComparison.OrdinalIgnoreCase));
+
+    private Task OpenPortableExchangeAsync()
+        => Task.FromResult(DesktopInstallLinkingRuntime.TryOpenRelativePortal("/artifacts?view=campaign"));
+
+    private Task OpenReplayAfterActionAsync()
+        => Task.FromResult(DesktopInstallLinkingRuntime.TryOpenRelativePortal("/artifacts/replay-after-action"));
+
+    private Task OpenGmPrepPacketsAsync()
+        => DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId);
+
+    private Task OpenRosterMovementAsync()
+        => DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId);
+
+    private Task OpenRuleEnvironmentStudioAsync()
+        => DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId);
 
     private async Task OpenSettingsAsync()
     {

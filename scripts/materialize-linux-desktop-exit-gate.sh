@@ -99,6 +99,8 @@ esac
 
 PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROJECT_PATH:-$DEFAULT_PROJECT_PATH}"
 TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj}"
+TEST_ASSEMBLY_NAME="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_ASSEMBLY_NAME:-Chummer.Desktop.Runtime.Tests.dll}"
+TEST_FILTER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_FILTER:-FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests}"
 RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 RELEASE_CHANNEL_ID_DEFAULT="$(
@@ -152,7 +154,9 @@ READY_CHECKPOINT="pre_ui_event_loop"
 OUTPUT_BASE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_OUTPUT_ROOT:-$REPO_ROOT/.codex-studio/out/linux-desktop-exit-gate}"
 RUN_RETENTION_COUNT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_RETENTION_COUNT:-40}"
 PROOF_PATH="${CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH:-$DEFAULT_PROOF_PATH}"
-BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$WORKSPACE_ROOT/.linux-desktop-exit-gate.build.lock}"
+PACKAGE_PLANE_LOCK_ROOT_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$WORKSPACE_ROOT/.tmp/ai}"
+PACKAGE_PLANE_LOCK_PATH_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$PACKAGE_PLANE_LOCK_ROOT_DEFAULT/with-package-plane.lock}"
+BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$PACKAGE_PLANE_LOCK_PATH_DEFAULT}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
 USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}"
 FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_FLAGSHIP_UI_GATE:-1}"
@@ -160,6 +164,8 @@ FLAGSHIP_UI_GATE_SCRIPT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCRI
 FLAGSHIP_UI_GATE_RECEIPT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_RECEIPT_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 FLAGSHIP_UI_GATE_SCREENSHOT_DIR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCREENSHOT_DIR:-$REPO_ROOT/.codex-studio/published/ui-flagship-release-gate-screenshots}"
 FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SCREENSHOT_CONTROL_EVIDENCE_PATH:-$FLAGSHIP_UI_GATE_SCREENSHOT_DIR/SCREENSHOT_CONTROL_EVIDENCE.generated.json}"
+SNAPSHOT_WRITABLE_STATE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT:-$WORKSPACE_ROOT/.tmp/ai/linux-desktop-exit-gate}"
+SNAPSHOT_NUGET_PACKAGES="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES:-$WORKSPACE_ROOT/.tmp/ai/nuget/packages}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -182,10 +188,12 @@ SOURCE_SNAPSHOT_ROOT=""
 ARCHIVE_PATH="$DIST_DIR/chummer-$APP_KEY-$RID.tar.gz"
 INSTALLER_PATH="$DIST_DIR/chummer-$APP_KEY-$RID-installer.deb"
 TEST_TRX_PATH="$TEST_RESULTS_DIR/desktop-runtime-tests.trx"
+TEST_STATUS_PATH="$TEST_RESULTS_DIR/desktop-runtime-tests.status.json"
 ARCHIVE_RECEIPT_PATH="$SMOKE_ARCHIVE_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
 INSTALLER_RECEIPT_PATH="$SMOKE_INSTALLER_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
 BUILD_LOCK_FD=""
 BUILD_LOCK_DIR=""
+BUILD_LOCK_WAIT_SECONDS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_WAIT_SECONDS:-10}"
 
 CURRENT_STAGE="init"
 GIT_IDENTITY_NOTE=""
@@ -307,6 +315,7 @@ import pathlib
 import stat
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 output_path = pathlib.Path(sys.argv[1])
 repo_root_text = sys.argv[2]
@@ -377,6 +386,54 @@ def is_gate_input(relative_path: str) -> bool:
     return False
 
 
+def is_generated_build_output(relative_path: str) -> bool:
+    parts = tuple(part for part in pathlib.Path(relative_path).parts if part)
+    return any(part in {"bin", "obj", "TestResults"} for part in parts)
+
+
+def add_msbuild_linked_entries(entries, markers):
+    ordered_entries = list(entries)
+    seen = set(entries)
+
+    for relative in list(ordered_entries):
+        if not relative.endswith(("proj", ".props", ".targets")):
+            continue
+
+        project_path = repo_root / relative
+        if not project_path.is_file():
+            continue
+
+        try:
+            root = ET.fromstring(project_path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            continue
+
+        for element in root.iter():
+            for attribute_name in ("Include", "Update", "Remove"):
+                raw_value = str(element.attrib.get(attribute_name) or "").strip()
+                if not raw_value or "*" in raw_value or "$(" in raw_value:
+                    continue
+                candidate = raw_value.replace("\\", "/")
+                resolved = (project_path.parent / candidate).resolve()
+                try:
+                    resolved.relative_to(repo_root)
+                except Exception:
+                    continue
+                if not resolved.is_file():
+                    continue
+                resolved_relative = resolved.relative_to(repo_root).as_posix()
+                if (
+                    resolved_relative in seen
+                    or is_excluded(resolved_relative, markers)
+                    or is_generated_build_output(resolved_relative)
+                ):
+                    continue
+                seen.add(resolved_relative)
+                ordered_entries.append(resolved_relative)
+
+    return sorted(ordered_entries)
+
+
 def iter_repo_entries(markers):
     try:
         cache_listing = subprocess.run(
@@ -392,6 +449,8 @@ def iter_repo_entries(markers):
                 continue
             if not is_gate_input(relative):
                 continue
+            if is_generated_build_output(relative):
+                continue
             seen.add(relative)
             entries.append(relative)
         try:
@@ -405,6 +464,8 @@ def iter_repo_entries(markers):
                 if not relative or relative in seen or is_excluded(relative, markers):
                     continue
                 if not is_gate_input(relative):
+                    continue
+                if is_generated_build_output(relative):
                     continue
                 seen.add(relative)
                 entries.append(relative)
@@ -427,6 +488,8 @@ def iter_repo_entries(markers):
                 continue
             if not is_gate_input(relative):
                 continue
+            if is_generated_build_output(relative):
+                continue
             entries.append(relative)
         if entries:
             return entries
@@ -443,6 +506,8 @@ def iter_repo_entries(markers):
             if not relative or relative in seen or is_excluded(relative, markers):
                 continue
             if not is_gate_input(relative):
+                continue
+            if is_generated_build_output(relative):
                 continue
             seen.add(relative)
             entries.append(relative)
@@ -464,7 +529,7 @@ except Exception:
 
 digest = hashlib.sha256()
 entry_count = 0
-for relative in iter_repo_entries(normalize_markers()):
+for relative in add_msbuild_linked_entries(iter_repo_entries(normalize_markers()), normalize_markers()):
     path = repo_root / relative
     try:
         stat_result = os.lstat(path)
@@ -510,6 +575,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
 
 repo_root_text = sys.argv[1]
 snapshot_root_text = sys.argv[2]
@@ -549,6 +615,16 @@ GATE_INPUT_MARKERS = (
 
 SUPPLEMENTAL_SNAPSHOT_PATHS = (
     "Chummer.Desktop.Assets/",
+    "Chummer.Avalonia/bin/",
+    "Chummer.Avalonia/obj/",
+    "Chummer.Blazor.Desktop/bin/",
+    "Chummer.Blazor.Desktop/obj/",
+    "Chummer.Desktop.Runtime/bin/",
+    "Chummer.Desktop.Runtime/obj/",
+    "Chummer.Desktop.Runtime.Tests/bin/",
+    "Chummer.Desktop.Runtime.Tests/obj/",
+    "Chummer.Presentation/bin/",
+    "Chummer.Presentation/obj/",
 )
 
 
@@ -582,6 +658,11 @@ def is_gate_input(relative_path: str) -> bool:
     return False
 
 
+def is_generated_build_output(relative_path: str) -> bool:
+    parts = tuple(part for part in pathlib.Path(relative_path).parts if part)
+    return any(part in {"bin", "obj", "TestResults"} for part in parts)
+
+
 def iter_tracked_repo_entries(markers):
     try:
         cache_listing = subprocess.run(
@@ -597,6 +678,8 @@ def iter_tracked_repo_entries(markers):
                 continue
             if not is_gate_input(relative):
                 continue
+            if is_generated_build_output(relative):
+                continue
             seen.add(relative)
             entries.append(relative)
         try:
@@ -610,6 +693,8 @@ def iter_tracked_repo_entries(markers):
                 if not relative or relative in seen or is_excluded(relative, markers):
                     continue
                 if not is_gate_input(relative):
+                    continue
+                if is_generated_build_output(relative):
                     continue
                 seen.add(relative)
                 entries.append(relative)
@@ -631,6 +716,8 @@ def iter_tracked_repo_entries(markers):
                 continue
             if not is_gate_input(relative):
                 continue
+            if is_generated_build_output(relative):
+                continue
             entries.append(relative)
         if entries:
             return entries
@@ -645,6 +732,8 @@ def iter_tracked_repo_entries(markers):
         for raw_item in untracked_listing.split("\0"):
             relative = raw_item.strip()
             if not relative or relative in seen or is_excluded(relative, markers):
+                continue
+            if is_generated_build_output(relative):
                 continue
             seen.add(relative)
             entries.append(relative)
@@ -662,11 +751,53 @@ def iter_tracked_repo_entries(markers):
                 continue
             if path.is_dir():
                 continue
+            if is_generated_build_output(relative):
+                continue
             entries.append(relative)
         return entries
 
 
-tracked_entries = iter_tracked_repo_entries(normalize_markers())
+def add_msbuild_linked_entries(entries, markers):
+    ordered_entries = list(entries)
+    seen = set(entries)
+
+    for relative in list(ordered_entries):
+        if not relative.endswith(("proj", ".props", ".targets")):
+            continue
+
+        project_path = repo_root / relative
+        if not project_path.is_file():
+            continue
+
+        try:
+            root = ET.fromstring(project_path.read_text(encoding="utf-8-sig"))
+        except Exception:
+            continue
+
+        for element in root.iter():
+            for attribute_name in ("Include", "Update", "Remove"):
+                raw_value = str(element.attrib.get(attribute_name) or "").strip()
+                if not raw_value or "*" in raw_value or "$(" in raw_value:
+                    continue
+                candidate = raw_value.replace("\\", "/")
+                resolved = (project_path.parent / candidate).resolve()
+                try:
+                    resolved.relative_to(repo_root)
+                except Exception:
+                    continue
+                if not resolved.is_file():
+                    continue
+                resolved_relative = resolved.relative_to(repo_root).as_posix()
+                if resolved_relative in seen or is_excluded(resolved_relative, markers):
+                    continue
+                seen.add(resolved_relative)
+                ordered_entries.append(resolved_relative)
+
+    return sorted(ordered_entries)
+
+
+markers = normalize_markers()
+tracked_entries = add_msbuild_linked_entries(iter_tracked_repo_entries(markers), markers)
 snapshot_root.mkdir(parents=True, exist_ok=True)
 digest = hashlib.sha256()
 entry_count = 0
@@ -873,9 +1004,9 @@ write_proof() {
   refresh_source_snapshot_manifest
 
   python3 - "$RUN_PROOF_PATH" "$REPO_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$proof_status" "$reason" "$CURRENT_STAGE" "$exit_code" \
-    "$APP_KEY" "$PROJECT_PATH" "$TEST_PROJECT_PATH" "$RID" "$LAUNCH_TARGET" "$VERSION" "$CHANNEL" "$FRAMEWORK" \
+    "$APP_KEY" "$PROJECT_PATH" "$TEST_PROJECT_PATH" "$TEST_ASSEMBLY_NAME" "$RID" "$LAUNCH_TARGET" "$VERSION" "$CHANNEL" "$FRAMEWORK" \
     "$READY_CHECKPOINT" "$RUN_ROOT" "$PUBLISH_DIR" "$DIST_DIR" "$ARCHIVE_PATH" "$INSTALLER_PATH" "$ARCHIVE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH" \
-    "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
+    "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$TEST_STATUS_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
     "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" \
     "$FAILURE_REASONS_PATH" "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_GATE_SCRIPT" <<'PY'
 import datetime as dt
@@ -902,6 +1033,7 @@ import xml.etree.ElementTree as ET
     app_key,
     project_path,
     test_project_path,
+    test_assembly_name,
     rid,
     launch_target,
     version,
@@ -917,6 +1049,7 @@ import xml.etree.ElementTree as ET
     installer_receipt_path,
     test_results_dir,
     test_trx_path,
+    test_status_path,
     git_start_path,
     git_finish_path,
     source_snapshot_manifest_path,
@@ -1029,6 +1162,16 @@ def parse_trx_summary(path_text: str):
     return summary
 
 
+def derive_test_status(path_text: str):
+    summary = parse_trx_summary(path_text)
+    path = pathlib.Path(path_text)
+    if not path.is_file():
+        return "missing", summary
+    if summary["failed"] == 0 and summary["total"] > 0:
+        return "passed", summary
+    return "failed", summary
+
+
 def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical_proof_path_text: str):
     payload = {
         "repo_root": repo_root_text,
@@ -1039,6 +1182,11 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
     }
     gate_input_markers = (
         "Chummer.Avalonia/",
+        "Chummer.Blazor/",
+        "Chummer.Blazor.Desktop/",
+        "Chummer/chummer.ico",
+        "Chummer/chummer6-icon-preview.png",
+        "Chummer/changelog.txt",
         "Chummer.Desktop.Assets/",
         "Chummer.Desktop.Runtime/",
         "Chummer.Desktop.Runtime.Tests/",
@@ -1074,6 +1222,62 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
         marker = relative.as_posix().rstrip("/")
         if marker:
             exclude_markers.append(marker)
+
+    def is_excluded(relative: str) -> bool:
+        return any(relative == marker or relative.startswith(f"{marker}/") for marker in exclude_markers)
+
+    def is_gate_input(relative: str) -> bool:
+        return any(
+            relative.startswith(marker) if marker.endswith("/") else relative == marker
+            for marker in gate_input_markers
+        )
+
+    def is_generated_build_output(relative: str) -> bool:
+        parts = tuple(part for part in pathlib.Path(relative).parts if part)
+        return any(part in {"bin", "obj", "TestResults"} for part in parts)
+
+    def add_msbuild_linked_entries(entries: list[str]) -> list[str]:
+        ordered_entries = list(entries)
+        seen = set(entries)
+
+        for relative in list(ordered_entries):
+            if not relative.endswith(("proj", ".props", ".targets")):
+                continue
+
+            project_path = repo_root_path / relative
+            if not project_path.is_file():
+                continue
+
+            try:
+                root = ET.fromstring(project_path.read_text(encoding="utf-8-sig"))
+            except Exception:
+                continue
+
+            for element in root.iter():
+                for attribute_name in ("Include", "Update", "Remove"):
+                    raw_value = str(element.attrib.get(attribute_name) or "").strip()
+                    if not raw_value or "*" in raw_value or "$(" in raw_value:
+                        continue
+                    candidate = raw_value.replace("\\", "/")
+                    resolved = (project_path.parent / candidate).resolve()
+                    try:
+                        resolved.relative_to(repo_root_path)
+                    except Exception:
+                        continue
+                    if not resolved.is_file():
+                        continue
+                    resolved_relative = resolved.relative_to(repo_root_path).as_posix()
+                    if (
+                        resolved_relative in seen
+                        or is_excluded(resolved_relative)
+                        or is_generated_build_output(resolved_relative)
+                    ):
+                        continue
+                    seen.add(resolved_relative)
+                    ordered_entries.append(resolved_relative)
+
+        return sorted(ordered_entries)
+
     def list_gate_inputs() -> list[str]:
         cache_listing = subprocess.run(
             ["git", "-C", repo_root_text, "ls-files", "-z", "--cached"],
@@ -1086,12 +1290,11 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
             relative = raw_item.strip()
             if not relative or relative in seen:
                 continue
-            if any(relative == marker or relative.startswith(f"{marker}/") for marker in exclude_markers):
+            if is_excluded(relative):
                 continue
-            if not any(
-                relative.startswith(marker) if marker.endswith("/") else relative == marker
-                for marker in gate_input_markers
-            ):
+            if not is_gate_input(relative):
+                continue
+            if is_generated_build_output(relative):
                 continue
             seen.add(relative)
             entries.append(relative)
@@ -1105,19 +1308,17 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
                 relative = raw_item.strip()
                 if not relative or relative in seen:
                     continue
-                if any(relative == marker or relative.startswith(f"{marker}/") for marker in exclude_markers):
+                if is_excluded(relative):
                     continue
-                if not any(
-                    relative.startswith(marker) if marker.endswith("/") else relative == marker
-                    for marker in gate_input_markers
-                ):
+                if not is_gate_input(relative):
+                    continue
+                if is_generated_build_output(relative):
                     continue
                 seen.add(relative)
                 entries.append(relative)
         except Exception:
             pass
-        entries.sort()
-        return entries
+        return add_msbuild_linked_entries(sorted(entries))
 
     try:
         entries = list_gate_inputs()
@@ -1161,7 +1362,22 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
 
 archive_receipt = load_json(archive_receipt_path)
 installer_receipt = load_json(installer_receipt_path)
-test_summary = parse_trx_summary(test_trx_path)
+test_status_payload = load_json(test_status_path) or {}
+test_status, test_summary = derive_test_status(test_trx_path)
+if isinstance(test_status_payload, dict):
+    stable_status = str(test_status_payload.get("status") or "").strip()
+    if stable_status:
+        test_status = stable_status
+    stable_summary = test_status_payload.get("summary")
+    if isinstance(stable_summary, dict):
+        merged_summary = dict(test_summary)
+        for key in ("total", "passed", "failed", "skipped"):
+            value = stable_summary.get(key)
+            try:
+                merged_summary[key] = int(value)
+            except Exception:
+                pass
+        test_summary = merged_summary
 git_start = load_json(git_start_path) or {"available": False}
 git_finish = load_json(git_finish_path) or {"available": False}
 source_snapshot = load_json(source_snapshot_manifest_path) or {}
@@ -1320,11 +1536,9 @@ payload = {
         "framework": framework,
         "results_directory": test_results_dir,
         "trx_path": test_trx_path,
-        "status": "passed"
-        if pathlib.Path(test_trx_path).is_file() and test_summary["failed"] == 0 and test_summary["total"] > 0
-        else ("missing" if not pathlib.Path(test_trx_path).is_file() else "failed"),
+        "status": test_status,
         "summary": test_summary,
-        "assembly_name": "Chummer.Desktop.Runtime.Tests.dll",
+        "assembly_name": test_assembly_name,
     },
     "flagship_ui_screenshot_gate": {
         "enabled": str(flagship_ui_screenshot_gate_enabled).strip() == "1",
@@ -1347,9 +1561,10 @@ payload = {
         "workflow_screenshot_coverage": flagship_ui_workflow_coverage,
     },
     "git": {
-        **current_git,
+        **git_finish,
         "start": git_start,
         "finish": git_finish,
+        "current": current_git,
         "identity_stable": identity_stable,
     },
     "source_snapshot": source_snapshot,
@@ -1366,6 +1581,8 @@ payload = {
     "proof_git_identity_stable": bool(identity_stable),
     "proof_git_head_matches_current": str(git_finish.get("head") or "") == str(current_git.get("head") or ""),
     "proof_tracked_diff_sha256": str(git_finish.get("tracked_diff_sha256") or ""),
+    "source_snapshot_mode": str(source_snapshot.get("mode") or ""),
+    "source_snapshot_root": str(source_snapshot.get("root") or ""),
     "source_snapshot_entry_count": int(source_snapshot.get("entry_count") or 0),
     "source_snapshot_finish_entry_count": int(source_snapshot.get("finish_entry_count") or 0),
     "source_snapshot_worktree_sha256": str(source_snapshot.get("worktree_sha256") or ""),
@@ -1421,10 +1638,9 @@ if new_payload and existing_payload:
     existing_stage = str(existing_payload.get("stage") or "").strip()
     new_stage = str(new_payload.get("stage") or "").strip()
     early_infra_failure_stages = {"build_lock"}
-    if same_identity and str(existing_payload.get("status") or "").strip() == "passed" and str(new_payload.get("status") or "").strip() != "passed":
-        publish = False
-    elif (
+    if (
         existing_payload
+        and same_identity
         and str(existing_payload.get("status") or "").strip() == "passed"
         and str(new_payload.get("status") or "").strip() != "passed"
         and new_stage in early_infra_failure_stages
@@ -1443,18 +1659,67 @@ if publish:
 PY
 }
 
+run_with_heartbeat() {
+  local label="$1"
+  shift
+
+  local interval="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_HEARTBEAT_SECONDS:-20}"
+  if ! [[ "$interval" =~ ^[0-9]+$ ]] || [[ "$interval" -lt 1 ]]; then
+    interval=20
+  fi
+
+  "$@" &
+  local command_pid=$!
+  (
+    while kill -0 "$command_pid" 2>/dev/null; do
+      sleep "$interval"
+      if kill -0 "$command_pid" 2>/dev/null; then
+        echo "[linux-desktop-exit-gate] ${label} still running..."
+      fi
+    done
+  ) &
+  local heartbeat_pid=$!
+
+  local status=0
+  if ! wait "$command_pid"; then
+    status=$?
+  fi
+
+  kill "$heartbeat_pid" 2>/dev/null || true
+  wait "$heartbeat_pid" 2>/dev/null || true
+  return "$status"
+}
+
 acquire_build_lock() {
+  local wait_seconds="$BUILD_LOCK_WAIT_SECONDS"
+  if ! [[ "$wait_seconds" =~ ^[0-9]+$ ]] || [[ "$wait_seconds" -lt 1 ]]; then
+    wait_seconds=10
+  fi
+
+  mkdir -p "$(dirname "$BUILD_LOCK_PATH")"
+
   if command -v flock >/dev/null 2>&1; then
     BUILD_LOCK_FD="8"
     eval "exec ${BUILD_LOCK_FD}>\"\$BUILD_LOCK_PATH\""
-    flock "$BUILD_LOCK_FD"
+    if flock -n "$BUILD_LOCK_FD"; then
+      echo "[linux-desktop-exit-gate] acquired build lock: $BUILD_LOCK_PATH"
+      return
+    fi
+
+    echo "[linux-desktop-exit-gate] waiting for build lock: $BUILD_LOCK_PATH"
+    while ! flock -w "$wait_seconds" "$BUILD_LOCK_FD"; do
+      echo "[linux-desktop-exit-gate] still waiting for build lock after ${wait_seconds}s: $BUILD_LOCK_PATH"
+    done
+    echo "[linux-desktop-exit-gate] acquired build lock: $BUILD_LOCK_PATH"
     return
   fi
 
   BUILD_LOCK_DIR="${BUILD_LOCK_PATH}.lockdir"
   while ! mkdir "$BUILD_LOCK_DIR" 2>/dev/null; do
+    echo "[linux-desktop-exit-gate] waiting for build lock directory: $BUILD_LOCK_DIR"
     sleep 1
   done
+  echo "[linux-desktop-exit-gate] acquired build lock directory: $BUILD_LOCK_DIR"
 }
 
 release_build_lock() {
@@ -1586,12 +1851,217 @@ on_error() {
   exit "$exit_code"
 }
 
+announce_stage() {
+  local stage_name="$1"
+  local detail="${2:-}"
+  if [[ -n "$detail" ]]; then
+    echo "[linux-desktop-exit-gate] stage=$stage_name $detail"
+  else
+    echo "[linux-desktop-exit-gate] stage=$stage_name"
+  fi
+}
+
 cleanup_snapshot() {
   if [[ -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
-    rm -rf "$SOURCE_SNAPSHOT_ROOT"
+    rm -rf "$SOURCE_SNAPSHOT_ROOT" || true
   fi
   release_build_lock
   prune_old_run_roots
+}
+
+run_snapshot_command() {
+  WRITABLE_STATE_ROOT="$SNAPSHOT_WRITABLE_STATE_ROOT" \
+  NUGET_PACKAGES="$SNAPSHOT_NUGET_PACKAGES" \
+  CHUMMER_PACKAGE_PLANE_LOCK_FILE="$BUILD_LOCK_PATH" \
+  CHUMMER_PACKAGE_PLANE_LOCK_HELD=1 \
+  "$@"
+}
+
+normalize_test_trx_path() {
+  if [[ -f "$TEST_TRX_PATH" ]]; then
+    return
+  fi
+
+  local discovered_trx=""
+  local candidate_dir
+  local -a candidate_dirs=(
+    "$TEST_RESULTS_DIR"
+  )
+
+  if [[ -n "$SOURCE_SNAPSHOT_ROOT" ]]; then
+    candidate_dirs+=(
+      "$SOURCE_SNAPSHOT_ROOT/TestResults"
+      "$SOURCE_SNAPSHOT_ROOT/Chummer.Desktop.Runtime.Tests/TestResults"
+    )
+  fi
+
+  for candidate_dir in "${candidate_dirs[@]}"; do
+    if [[ ! -d "$candidate_dir" ]]; then
+      continue
+    fi
+
+    discovered_trx="$(find "$candidate_dir" -maxdepth 1 -type f -name '*.trx' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2- || true)"
+    if [[ -n "$discovered_trx" && -f "$discovered_trx" ]]; then
+      break
+    fi
+  done
+
+  if [[ -z "$discovered_trx" || ! -f "$discovered_trx" ]]; then
+    echo "[linux-desktop-exit-gate] desktop runtime unit tests did not produce a TRX report in expected test-results locations" >&2
+    return 1
+  fi
+
+  cp "$discovered_trx" "$TEST_TRX_PATH"
+}
+
+test_trx_has_runnable_results() {
+  python3 - "$TEST_TRX_PATH" <<'PY'
+import pathlib
+import sys
+import xml.etree.ElementTree as ET
+
+trx_path = pathlib.Path(sys.argv[1])
+if not trx_path.is_file():
+    raise SystemExit(1)
+
+try:
+    root = ET.fromstring(trx_path.read_text(encoding="utf-8"))
+except Exception:
+    raise SystemExit(1)
+
+counters = None
+for element in root.iter():
+    if element.tag.endswith("Counters"):
+        counters = element
+        break
+
+if counters is None:
+    raise SystemExit(1)
+
+try:
+    total = int(counters.attrib.get("total") or "0")
+    failed = int(counters.attrib.get("failed") or "0")
+except ValueError:
+    raise SystemExit(1)
+
+if total < 1 or failed > 0:
+    raise SystemExit(1)
+PY
+}
+
+assert_test_trx_passes() {
+  if ! test_trx_has_runnable_results; then
+    echo "[linux-desktop-exit-gate] desktop runtime unit tests did not produce any passing runnable test results" >&2
+    return 1
+  fi
+}
+
+capture_test_status_snapshot() {
+  python3 - "$TEST_TRX_PATH" "$TEST_STATUS_PATH" <<'PY'
+import json
+import pathlib
+import sys
+import xml.etree.ElementTree as ET
+
+trx_path = pathlib.Path(sys.argv[1])
+status_path = pathlib.Path(sys.argv[2])
+summary = {"total": 0, "passed": 0, "failed": 0, "skipped": 0}
+status = "missing"
+
+if trx_path.is_file():
+    status = "failed"
+    try:
+        root = ET.fromstring(trx_path.read_text(encoding="utf-8"))
+    except ET.ParseError:
+        root = None
+    if root is not None:
+        counters = None
+        for element in root.iter():
+            if element.tag.endswith("Counters"):
+                counters = element
+                break
+        if counters is not None:
+            for key in summary:
+                raw = counters.attrib.get(key)
+                try:
+                    summary[key] = int(raw) if raw is not None else 0
+                except ValueError:
+                    summary[key] = 0
+            if summary["failed"] == 0 and summary["total"] > 0:
+                status = "passed"
+
+status_path.write_text(
+    json.dumps({"status": status, "summary": summary}, indent=2) + "\n",
+    encoding="utf-8",
+)
+PY
+}
+
+run_runtime_test_host_direct() {
+  local test_project_dir="$SOURCE_SNAPSHOT_ROOT/$(dirname "$TEST_PROJECT_PATH")"
+  local test_host_path="$test_project_dir/bin/Release/$FRAMEWORK/${TEST_ASSEMBLY_NAME%.dll}"
+  local -a build_args=(
+    build
+    "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH"
+    -c Release
+    -f "$FRAMEWORK"
+    -p:ProduceReferenceAssembly=false
+    --nologo
+    --disable-build-servers
+    -m:1
+  )
+  local -a host_args=(
+    --results-directory "$TEST_RESULTS_DIR"
+    --report-trx
+    --report-trx-filename "$(basename "$TEST_TRX_PATH")"
+  )
+
+  if [[ -n "$TEST_FILTER" ]]; then
+    host_args+=(--filter "$TEST_FILTER")
+  fi
+
+  run_with_heartbeat "desktop runtime test host build" \
+    run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" "${build_args[@]}"
+
+  if [[ ! -x "$test_host_path" ]]; then
+    echo "[linux-desktop-exit-gate] desktop runtime test host is missing or not executable: $test_host_path" >&2
+    return 1
+  fi
+
+  rm -f "$TEST_TRX_PATH"
+  run_with_heartbeat "desktop runtime test host" \
+    run_snapshot_command bash -lc '
+      set -euo pipefail
+      test_host_path="$1"
+      shift
+      cd "$(dirname "$test_host_path")"
+      exec "./$(basename "$test_host_path")" "$@"
+    ' _ "$test_host_path" "${host_args[@]}"
+}
+
+run_runtime_test_wrapper_in_snapshot() {
+  local -a wrapper_args=(
+    "$TEST_PROJECT_PATH"
+    -c Release
+    -f "$FRAMEWORK"
+    -p:ProduceReferenceAssembly=false
+    --logger "trx;LogFileName=$(basename "$TEST_TRX_PATH")"
+    --results-directory "$TEST_RESULTS_DIR"
+    -m:1
+  )
+
+  if [[ -n "$TEST_FILTER" ]]; then
+    wrapper_args+=(--filter "$TEST_FILTER")
+  fi
+
+  run_with_heartbeat "desktop runtime unit tests" \
+    run_snapshot_command bash -lc '
+      set -euo pipefail
+      snapshot_root="$1"
+      shift
+      cd "$snapshot_root"
+      exec bash "$snapshot_root/scripts/ai/test.sh" "$@"
+    ' _ "$SOURCE_SNAPSHOT_ROOT" "${wrapper_args[@]}"
 }
 
 prune_old_run_roots() {
@@ -1599,49 +2069,48 @@ prune_old_run_roots() {
     RUN_RETENTION_COUNT=40
   fi
 
-  python3 - "$OUTPUT_BASE_ROOT" "$LATEST_LINK" "$RUN_ROOT" "$RUN_RETENTION_COUNT" <<'PY'
-from __future__ import annotations
+  if [[ ! -d "$OUTPUT_BASE_ROOT" ]]; then
+    return
+  fi
 
-import pathlib
-import shutil
-import sys
+  local current_run_root
+  current_run_root="$(readlink -f "$RUN_ROOT" 2>/dev/null || printf '%s' "$RUN_ROOT")"
 
-output_base_root = pathlib.Path(sys.argv[1])
-latest_link = pathlib.Path(sys.argv[2])
-current_run_root = pathlib.Path(sys.argv[3]).resolve()
-retention_count = int(sys.argv[4])
+  declare -A keep_roots=()
+  keep_roots["$current_run_root"]=1
 
-if not output_base_root.is_dir():
-    raise SystemExit(0)
+  if [[ -L "$LATEST_LINK" ]]; then
+    local latest_run_root=""
+    latest_run_root="$(readlink -f "$LATEST_LINK" 2>/dev/null || true)"
+    if [[ -n "$latest_run_root" ]]; then
+      keep_roots["$latest_run_root"]=1
+    fi
+  fi
 
-preserve = {current_run_root}
-if latest_link.is_symlink():
-    try:
-        preserve.add(latest_link.resolve())
-    except Exception:
-        pass
+  local line=""
+  local path=""
+  local resolved_path=""
+  local retained=0
+  while IFS= read -r line; do
+    path="${line#* }"
+    [[ -n "$path" ]] || continue
+    resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
+    if (( retained < RUN_RETENTION_COUNT )); then
+      keep_roots["$resolved_path"]=1
+      ((retained += 1))
+    fi
+  done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
 
-run_roots = [
-    path
-    for path in output_base_root.iterdir()
-    if path.is_dir() and path.name.startswith("run.")
-]
+  while IFS= read -r line; do
+    path="${line#* }"
+    [[ -n "$path" ]] || continue
+    resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
+    if [[ -n "${keep_roots[$resolved_path]:-}" ]]; then
+      continue
+    fi
 
-ranked = sorted(
-    run_roots,
-    key=lambda path: path.stat().st_mtime,
-    reverse=True,
-)
-
-kept_by_retention = {path.resolve() for path in ranked[:retention_count]}
-keep = kept_by_retention.union(preserve)
-
-for candidate in run_roots:
-    resolved = candidate.resolve()
-    if resolved in keep:
-        continue
-    shutil.rmtree(candidate, ignore_errors=True)
-PY
+    rm -rf "$path"
+  done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
 }
 
 trap on_error ERR
@@ -1649,26 +2118,53 @@ trap 'cleanup_snapshot' EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
 rm -f "$FAILURE_REASONS_PATH"
+rm -f "$TEST_TRX_PATH"
+rm -f "$TEST_STATUS_PATH"
+rm -rf "$TEST_RESULTS_DIR"/*
 
 if [[ "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" == "1" ]]; then
   CURRENT_STAGE="flagship_ui_screenshot_gate"
+  announce_stage "$CURRENT_STAGE" "validating flagship screenshot coverage"
   validate_flagship_ui_screenshot_gate
 fi
 
 capture_git_metadata "$GIT_START_PATH"
 
 CURRENT_STAGE="source_snapshot"
+announce_stage "$CURRENT_STAGE" "capturing immutable source snapshot"
 materialize_source_snapshot
 
 CURRENT_STAGE="build_lock"
+announce_stage "$CURRENT_STAGE" "waiting for serialized package-plane access"
 acquire_build_lock
 
 CURRENT_STAGE="unit_tests"
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/test.sh" "$SOURCE_SNAPSHOT_ROOT/$TEST_PROJECT_PATH" -c Release -f "$FRAMEWORK" --logger "trx;LogFileName=$(basename "$TEST_TRX_PATH")" --results-directory "$TEST_RESULTS_DIR"
+announce_stage "$CURRENT_STAGE" "running desktop runtime unit tests"
+if ! run_runtime_test_wrapper_in_snapshot; then
+  echo "[linux-desktop-exit-gate] dotnet test wrapper did not produce runnable desktop runtime test results; retrying via direct MSTest host" >&2
+  rm -f "$TEST_TRX_PATH"
+  if ! run_runtime_test_host_direct; then
+    echo "[linux-desktop-exit-gate] direct MSTest host fallback failed" >&2
+    exit 1
+  fi
+else
+  if ! normalize_test_trx_path || ! test_trx_has_runnable_results; then
+    echo "[linux-desktop-exit-gate] dotnet test wrapper did not produce runnable desktop runtime test results; retrying via direct MSTest host" >&2
+    rm -f "$TEST_TRX_PATH"
+    if ! run_runtime_test_host_direct; then
+      echo "[linux-desktop-exit-gate] direct MSTest host fallback failed" >&2
+      exit 1
+    fi
+  fi
+fi
+normalize_test_trx_path
 test -f "$TEST_TRX_PATH"
+assert_test_trx_passes
+capture_test_status_snapshot
 
 if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_ONLY:-0}" == "1" ]]; then
   CURRENT_STAGE="promoted_installer_shelf_probe"
+  announce_stage "$CURRENT_STAGE" "probing promoted installer shelf"
   if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
     PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path || true)"
   fi
@@ -1680,10 +2176,13 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
     INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 
     CURRENT_STAGE="startup_smoke_installer"
-    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
+    announce_stage "$CURRENT_STAGE" "running startup smoke against promoted installer"
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "promoted installer startup smoke" \
+      run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
     test -f "$INSTALLER_RECEIPT_PATH"
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
+    announce_stage "$CURRENT_STAGE" "verifying promoted installer receipt integrity"
     python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
@@ -1773,10 +2272,10 @@ for item in release_channel.get("artifacts") or []:
         expected_artifact = item
         break
 
-if expected_artifact is None:
-    if promoted_mode:
-        reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
-else:
+if expected_artifact is None and promoted_mode:
+    reasons.append(f"Release channel does not publish a Linux installer artifact for {app_key} ({rid}).")
+
+if expected_artifact is not None:
     canonical_output_root = repo_root / ".codex-studio" / "out" / "linux-desktop-exit-gate"
     expected_file_name = str(expected_artifact.get("fileName") or "").strip()
     expected_sha = normalize_token(expected_artifact.get("sha256"))
@@ -1865,16 +2364,19 @@ if reasons:
 PY
 
     CURRENT_STAGE="source_snapshot_identity"
+    announce_stage "$CURRENT_STAGE" "revalidating source snapshot identity"
     refresh_source_snapshot_manifest
     assert_source_snapshot_identity_stable
 
     CURRENT_STAGE="git_identity_stability"
+    announce_stage "$CURRENT_STAGE" "checking repo git identity stability"
     capture_git_metadata "$GIT_FINISH_PATH"
     if ! assert_repo_git_identity_stable; then
       GIT_IDENTITY_NOTE=" (post-run git identity drift detected outside the isolated source snapshot; source snapshot identity stayed stable)"
     fi
 
     CURRENT_STAGE="complete"
+    announce_stage "$CURRENT_STAGE" "publishing passing proof"
     write_proof "passed" "linux promoted installer shelf, startup smoke, and unit tests passed$GIT_IDENTITY_NOTE" "0"
     publish_canonical_proof
     echo "linux desktop exit gate passed; proof: $PROOF_PATH"
@@ -1883,11 +2385,15 @@ PY
 fi
 
 CURRENT_STAGE="publish_linux_binary"
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
+announce_stage "$CURRENT_STAGE" "publishing self-contained linux desktop binary"
+run_with_heartbeat "linux desktop publish" \
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
 test -f "$PUBLISH_DIR/$LAUNCH_TARGET"
 
 CURRENT_STAGE="package_linux_artifacts"
-bash "$SOURCE_SNAPSHOT_ROOT/scripts/build-desktop-installer.sh" "$PUBLISH_DIR" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$DIST_DIR" "$VERSION"
+announce_stage "$CURRENT_STAGE" "creating archive and installer artifacts"
+run_with_heartbeat "linux desktop packaging" \
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/build-desktop-installer.sh" "$PUBLISH_DIR" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$DIST_DIR" "$VERSION"
 test -f "$ARCHIVE_PATH"
 test -f "$INSTALLER_PATH"
 INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
@@ -1901,6 +2407,7 @@ fi
 
 if [[ "$EFFECTIVE_USE_PROMOTED_INSTALLER" == "1" ]]; then
   CURRENT_STAGE="resolve_promoted_installer"
+  announce_stage "$CURRENT_STAGE" "replacing installer with promoted shelf bytes"
   if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
     PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path)"
   fi
@@ -1913,14 +2420,19 @@ if [[ "$EFFECTIVE_USE_PROMOTED_INSTALLER" == "1" ]]; then
 fi
 
 CURRENT_STAGE="startup_smoke_archive"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
+announce_stage "$CURRENT_STAGE" "running startup smoke against archive artifact"
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "archive startup smoke" \
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
 test -f "$ARCHIVE_RECEIPT_PATH"
 
 CURRENT_STAGE="startup_smoke_installer"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
+announce_stage "$CURRENT_STAGE" "running startup smoke against installer artifact"
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "installer startup smoke" \
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
 test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
+announce_stage "$CURRENT_STAGE" "verifying release-channel and smoke receipt integrity"
 python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
@@ -2256,16 +2768,19 @@ if reasons:
 PY
 
 CURRENT_STAGE="source_snapshot_identity"
+announce_stage "$CURRENT_STAGE" "revalidating source snapshot identity"
 refresh_source_snapshot_manifest
 assert_source_snapshot_identity_stable
 
 CURRENT_STAGE="git_identity_stability"
+announce_stage "$CURRENT_STAGE" "checking repo git identity stability"
 capture_git_metadata "$GIT_FINISH_PATH"
 if ! assert_repo_git_identity_stable; then
   GIT_IDENTITY_NOTE=" (post-run git identity drift detected outside the isolated source snapshot; source snapshot identity stayed stable)"
 fi
 
 CURRENT_STAGE="complete"
+announce_stage "$CURRENT_STAGE" "publishing passing proof"
 write_proof "passed" "linux desktop build, startup smoke, and unit tests passed$GIT_IDENTITY_NOTE" "0"
 publish_canonical_proof
 echo "linux desktop exit gate passed; proof: $PROOF_PATH"

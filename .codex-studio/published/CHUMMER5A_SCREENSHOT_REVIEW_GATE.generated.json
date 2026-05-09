@@ -1,14 +1,19 @@
 {
-  "generatedAt": "2026-05-08T15:28:37.648583Z",
+  "generatedAt": "2026-05-08T20:45:19.545237Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260503-163502",
+  "version": "run-20260503-163502",
   "status": "pass",
-  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, and settings.",
+  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
   "frontierIdsClosed": [
     3782970110,
     2714856833,
     1186439541,
-    4871476959
+    4871476959,
+    1922169755
   ],
   "feedbackSources": [
     "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
@@ -61,30 +66,36 @@
       "15-creation-section-light.png",
       "16-master-index-dialog-light.png",
       "17-character-roster-dialog-light.png",
-      "18-import-dialog-light.png"
+      "18-import-dialog-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
     ],
     "missingScreenshots": [],
     "invalidScreenshots": [],
     "undersizedScreenshots": [],
     "staleScreenshots": [],
     "screenshotsOlderThanFlagshipReceipt": [],
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/ui-flagship-release-gate-screenshots"
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots"
   },
   "reviewJobsSummary": {
     "status": "pass",
     "failingJobs": [],
     "reviewedJobs": [
       "dense_builder",
+      "hero_lab_importer",
       "master_index",
       "roster",
-      "settings"
+      "settings",
+      "translator",
+      "xml_editor"
     ]
   },
   "supportingReceipts": {
     "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
   },
-  "screenshotDirectory": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
     "dense_builder": {
       "frontierId": 3782970110,
@@ -111,7 +122,7 @@
         "runtime_backed_master_index"
       ],
       "testMarkers": [
-        "Master_index_is_a_first_class_runtime_backed_workbench_route"
+        "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
       ],
       "reasons": []
     },
@@ -125,7 +136,7 @@
         "runtime_backed_character_roster"
       ],
       "testMarkers": [
-        "Character_roster_is_a_first_class_runtime_backed_workbench_route"
+        "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
       ],
       "reasons": []
     },
@@ -142,6 +153,43 @@
         "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
       ],
       "reasons": []
+    },
+    "translator": {
+      "frontierId": 1922169755,
+      "status": "pass",
+      "screenshots": [
+        "38-translator-dialog-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ],
+      "reasons": []
+    },
+    "xml_editor": {
+      "frontierId": 1922169755,
+      "status": "pass",
+      "screenshots": [
+        "39-xml-editor-dialog-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ],
+      "reasons": []
+    },
+    "hero_lab_importer": {
+      "frontierId": 1922169755,
+      "status": "pass",
+      "screenshots": [
+        "40-hero-lab-importer-dialog-light.png",
+        "18-import-dialog-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ],
+      "reasons": []
     }
   },
   "evidence": {
@@ -151,9 +199,13 @@
     ],
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-      "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+      "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelChannelId": "preview",
+    "releaseChannelVersion": "run-20260503-163502",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -168,9 +220,12 @@
     "flagshipGateRouteLocalOnly": false,
     "reviewedJobs": [
       "dense_builder",
+      "hero_lab_importer",
       "master_index",
       "roster",
-      "settings"
+      "settings",
+      "translator",
+      "xml_editor"
     ],
     "failingJobs": [],
     "reasonCount": 0,

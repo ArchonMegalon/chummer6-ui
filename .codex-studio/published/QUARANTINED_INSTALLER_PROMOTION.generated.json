@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-05-07T21:12:54Z",
-  "generated_at": "2026-05-07T21:12:54Z",
+  "generatedAt": "2026-05-08T20:43:29Z",
+  "generated_at": "2026-05-08T20:43:29Z",
   "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-  "downloadsDir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-  "startupSmokeDir": "/tmp/tmp.ziGCnQxsop",
+  "downloadsDir": "/tmp/tmp.qDOpCASUcP",
+  "startupSmokeDir": "/tmp/tmp.lMYjDx6YwG",
   "releaseChannel": "preview",
   "releaseVersion": "run-20260503-163502",
   "quarantineDirs": [
@@ -22,12 +22,12 @@
       "arch": "x64",
       "status": "skipped",
       "reasons": [
-        "startup smoke receipt stale: 1518347s exceeds 604800s",
+        "startup smoke receipt stale: 1602982s exceeds 604800s",
         "startup smoke artifactDigest does not match candidate bytes"
       ],
-      "startupSmokeReceiptPath": "/tmp/tmp.ziGCnQxsop/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.lMYjDx6YwG/startup-smoke-blazor-desktop-linux-x64.receipt.json",
       "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb"
+      "destinationPath": "/tmp/tmp.qDOpCASUcP/chummer-blazor-desktop-linux-x64-installer.deb"
     },
     {
       "candidatePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine/chummer-blazor-desktop-linux-x64-installer.deb",
@@ -38,12 +38,12 @@
       "arch": "x64",
       "status": "skipped",
       "reasons": [
-        "startup smoke receipt stale: 1518347s exceeds 604800s",
+        "startup smoke receipt stale: 1602982s exceeds 604800s",
         "startup smoke artifactDigest does not match candidate bytes"
       ],
-      "startupSmokeReceiptPath": "/tmp/tmp.ziGCnQxsop/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.lMYjDx6YwG/startup-smoke-blazor-desktop-linux-x64.receipt.json",
       "candidateSha256": "b36624a7b8a5a1b4e06cac6ead3040d86db542dd8dfe5694252d3b5cc54e6f56",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb"
+      "destinationPath": "/tmp/tmp.qDOpCASUcP/chummer-blazor-desktop-linux-x64-installer.deb"
     },
     {
       "candidatePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine/non-promoted-desktop-shelf/chummer-avalonia-osx-arm64-installer.dmg",
@@ -55,11 +55,11 @@
       "status": "skipped",
       "reasons": [
         "startup smoke hostClass does not match platform",
-        "startup smoke receipt stale: 962675s exceeds 604800s"
+        "startup smoke receipt stale: 1047310s exceeds 604800s"
       ],
-      "startupSmokeReceiptPath": "/tmp/tmp.ziGCnQxsop/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.lMYjDx6YwG/startup-smoke-avalonia-osx-arm64.receipt.json",
       "candidateSha256": "62e410197697915a84b011cc3b15293fa98a5f2852613fa59a930b910a55d354",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
+      "destinationPath": "/tmp/tmp.qDOpCASUcP/chummer-avalonia-osx-arm64-installer.dmg"
     },
     {
       "candidatePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine/non-promoted-desktop-shelf/chummer-blazor-desktop-linux-x64-installer.deb",
@@ -70,11 +70,11 @@
       "arch": "x64",
       "status": "skipped",
       "reasons": [
-        "startup smoke receipt stale: 1518347s exceeds 604800s"
+        "startup smoke receipt stale: 1602982s exceeds 604800s"
       ],
-      "startupSmokeReceiptPath": "/tmp/tmp.ziGCnQxsop/startup-smoke-blazor-desktop-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.lMYjDx6YwG/startup-smoke-blazor-desktop-linux-x64.receipt.json",
       "candidateSha256": "755de1de2a11d363f5f127dd81d9a00a1f33d9b20f6e75adb569d1c97e3faa94",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb"
+      "destinationPath": "/tmp/tmp.qDOpCASUcP/chummer-blazor-desktop-linux-x64-installer.deb"
     },
     {
       "candidatePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine/non-promoted-desktop-shelf/chummer-blazor-desktop-osx-arm64-installer.dmg",
@@ -86,11 +86,11 @@
       "status": "skipped",
       "reasons": [
         "startup smoke hostClass does not match platform",
-        "startup smoke receipt stale: 962642s exceeds 604800s"
+        "startup smoke receipt stale: 1047277s exceeds 604800s"
       ],
-      "startupSmokeReceiptPath": "/tmp/tmp.ziGCnQxsop/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.lMYjDx6YwG/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
       "candidateSha256": "f8a9f3647a9859c2810c7980d917cf7241ee685105c67df53ea99d4dfcabb2f9",
-      "destinationPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-osx-arm64-installer.dmg"
+      "destinationPath": "/tmp/tmp.qDOpCASUcP/chummer-blazor-desktop-osx-arm64-installer.dmg"
     }
   ]
 }

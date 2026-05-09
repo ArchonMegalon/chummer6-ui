@@ -1,28 +1,34 @@
 {
-  "generatedAt": "2026-05-08T15:00:38.178690Z",
+  "generatedAt": "2026-05-08T19:12:24.296843Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_verification_receipt",
-  "status": "pass",
-  "summary": "SR4 workflow-family verification evidence is explicitly grounded for qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 workflow-family verification evidence is incomplete for qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.",
+  "reasons": [
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail; external_blocker=missing_api_surface_contract)"
+  ],
   "evidence": {
     "edition": "sr4",
     "familyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
     "proofKind": "sr4_family_oracle",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections",
-      "Contacts_diary_and_support_routes_execute_with_public_path_visibility"
+      "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
       "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71"
     },
-    "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/executed/sr4/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json"
+    "executionReceipts": [],
+    "executionFailures": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources.generated.json (fail; external_blocker=missing_api_surface_contract)"
     ],
-    "executionFailures": [],
-    "executionExternalBlockers": []
+    "executionExternalBlockers": [
+      "missing_api_surface_contract"
+    ]
   }
 }

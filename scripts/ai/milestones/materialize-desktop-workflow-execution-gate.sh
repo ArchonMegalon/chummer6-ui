@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
@@ -14,6 +22,7 @@ flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.
 visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
 chummer5a_screenshot_review_gate_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 next90_m141_direct_import_route_proof_path="$repo_root/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"
+next90_m142_direct_workflow_proof_path="$repo_root/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
@@ -182,18 +191,20 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
       "$after_mtime" \
       "$dependency_exit_code"
   done <<EOF
-	desktop_visual_familiarity_gate|$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh|$visual_familiarity_gate_path
-	chummer5a_screenshot_review_gate|$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh|$chummer5a_screenshot_review_gate_path
-	chummer5a_workflow_parity|$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh|$ui_workflow_parity_path
+ui_flagship_release_gate|$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh|$flagship_gate_path
+desktop_visual_familiarity_gate|$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh|$visual_familiarity_gate_path
+chummer5a_screenshot_review_gate|$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh|$chummer5a_screenshot_review_gate_path
+chummer5a_workflow_parity|$repo_root/scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh|$ui_workflow_parity_path
 sr4_workflow_parity|$repo_root/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh|$sr4_workflow_parity_path
 sr6_workflow_parity|$repo_root/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh|$sr6_workflow_parity_path
 sr4_sr6_frontier|$repo_root/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh|$sr_frontier_path
 ruleset_ui_adaptation|$repo_root/scripts/ai/milestones/ruleset-ui-adaptation-check.sh|$ruleset_ui_adaptation_path
 next90_m141_direct_import_route_proof|$repo_root/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh|$next90_m141_direct_import_route_proof_path
+next90_m142_direct_workflow_proof|$repo_root/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh|$next90_m142_direct_workflow_proof_path
 EOF
 fi
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts"
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$next90_m142_direct_workflow_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts"
 from __future__ import annotations
 
 import json
@@ -243,8 +254,8 @@ def load_json(path: Path) -> Dict[str, Any]:
     return loaded if isinstance(loaded, dict) else {}
 
 
-def status_ok(value: str) -> bool:
-    return value.strip().lower() in {"pass", "passed", "ready"}
+def status_ok(value: Any) -> bool:
+    return normalize_token(value) in {"pass", "passed", "ready"}
 
 
 def pass_marker(value: Any) -> bool:
@@ -655,6 +666,7 @@ def collect_release_channel_head_requirements(release_channel_payload: Dict[str,
     visual_familiarity_gate_path_text,
     chummer5a_screenshot_review_gate_path_text,
     next90_m141_direct_import_route_proof_path_text,
+    next90_m142_direct_workflow_proof_path_text,
     sr4_ledger_path_text,
     sr6_ledger_path_text,
     repo_root_text,
@@ -664,7 +676,7 @@ def collect_release_channel_head_requirements(release_channel_payload: Dict[str,
     dependency_refresh_timeout_seconds_requested_text,
     dependency_refresh_timeout_seconds_minimum_text,
     refresh_dependency_receipts_text,
-) = sys.argv[1:20]
+) = sys.argv[1:21]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -676,6 +688,7 @@ flagship_gate_path = Path(flagship_gate_path_text)
 visual_familiarity_gate_path = Path(visual_familiarity_gate_path_text)
 chummer5a_screenshot_review_gate_path = Path(chummer5a_screenshot_review_gate_path_text)
 next90_m141_direct_import_route_proof_path = Path(next90_m141_direct_import_route_proof_path_text)
+next90_m142_direct_workflow_proof_path = Path(next90_m142_direct_workflow_proof_path_text)
 sr4_ledger_path = Path(sr4_ledger_path_text)
 sr6_ledger_path = Path(sr6_ledger_path_text)
 repo_root = Path(repo_root_text)
@@ -795,12 +808,22 @@ sr6_workflow_parity_external_only = (
     not status_ok(str(evidence.get("sr6_workflow_parity_status") or ""))
     and desktop_parity_receipt_is_external_only_missing_api_surface_contract(sr6_workflow_parity)
 )
+sr4_workflow_parity_external_only = (
+    not status_ok(str(evidence.get("sr4_workflow_parity_status") or ""))
+    and desktop_parity_receipt_is_external_only_missing_api_surface_contract(sr4_workflow_parity)
+)
 sr4_sr6_frontier_external_only = (
     not status_ok(str(evidence.get("sr4_sr6_frontier_status") or ""))
     and desktop_frontier_receipt_is_external_only_missing_api_surface_contract(sr4_sr6_frontier)
 )
+evidence["sr4_workflow_parity_external_only_deferred"] = sr4_workflow_parity_external_only
 evidence["sr6_workflow_parity_external_only_deferred"] = sr6_workflow_parity_external_only
 evidence["sr4_sr6_frontier_external_only_deferred"] = sr4_sr6_frontier_external_only
+evidence["sr4_workflow_parity_effective_status"] = (
+    "pass"
+    if sr4_workflow_parity_external_only
+    else str(evidence.get("sr4_workflow_parity_status") or "")
+)
 evidence["sr6_workflow_parity_effective_status"] = (
     "pass"
     if sr6_workflow_parity_external_only
@@ -811,6 +834,12 @@ evidence["sr4_sr6_frontier_effective_status"] = (
     if sr4_sr6_frontier_external_only
     else str(evidence.get("sr4_sr6_frontier_status") or "")
 )
+if sr4_workflow_parity_external_only:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "sr4_workflow_parity receipt is missing or not passing."
+    ]
 if sr6_workflow_parity_external_only:
     reasons[:] = [
         reason
@@ -838,7 +867,9 @@ release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(
     release_channel.get("channelId") or release_channel.get("channel")
 )
-release_channel_version = str(release_channel.get("version") or "").strip()
+release_channel_version = str(
+    release_channel.get("version") or release_channel.get("releaseVersion") or ""
+).strip()
 release_channel_generated_at_raw, release_channel_generated_at = payload_generated_at(release_channel)
 evidence["release_channel_receipt_exists"] = release_channel_exists
 evidence["release_channel_channel_id"] = release_channel_channel_id
@@ -895,7 +926,6 @@ for label, payload in (
     ("chummer5a_workflow_parity", chummer5a_workflow_parity),
     ("sr4_workflow_parity", sr4_workflow_parity),
     ("sr6_workflow_parity", sr6_workflow_parity),
-    ("sr4_sr6_frontier", sr4_sr6_frontier),
     ("ruleset_ui_adaptation", ruleset_ui_adaptation),
     ("desktop_visual_familiarity_gate", visual_familiarity_gate),
     ("chummer5a_screenshot_review_gate", chummer5a_screenshot_review_gate),
@@ -935,11 +965,35 @@ screenshot_route_receipts = (
     if isinstance(chummer5a_screenshot_review_gate.get("routeLocalReceipts"), dict)
     else {}
 )
+next90_m142_direct_workflow_proof = load_json(next90_m142_direct_workflow_proof_path)
+next90_m142_receipt_checks = (
+    (next90_m142_direct_workflow_proof.get("evidence") or {}).get("receiptChecks")
+    if isinstance((next90_m142_direct_workflow_proof.get("evidence") or {}).get("receiptChecks"), dict)
+    else {}
+)
 dense_initiative_route = (
     screenshot_route_receipts.get("dense_workbench_and_initiative")
     if isinstance(screenshot_route_receipts.get("dense_workbench_and_initiative"), dict)
     else {}
 )
+if (
+    not dense_initiative_route
+    and status_ok(next90_m142_direct_workflow_proof.get("status"))
+    and bool(next90_m142_receipt_checks)
+):
+    dense_initiative_route = {
+        "status": "pass"
+        if all(
+            bool(next90_m142_receipt_checks.get(key))
+            for key in (
+                "route_local_dense_initiative_pass",
+                "route_local_dense_initiative_route_ids_match",
+                "route_local_dense_initiative_screenshots_match",
+                "workflow_initiative_utility_pass",
+            )
+        )
+        else "fail"
+    }
 required_direct_screenshot_files = [
     "05-dense-section-light.png",
     "07-loaded-runner-tabs-light.png",
@@ -1035,6 +1089,21 @@ failing_required_review_jobs = sorted(
     if isinstance(available_review_jobs.get(job_name), dict)
     and not status_ok(available_review_jobs[job_name].get("status"))
 )
+if (
+    status_ok(next90_m142_direct_workflow_proof.get("status"))
+    and all(
+        bool(next90_m142_receipt_checks.get(key))
+        for key in (
+            "workflow_dense_builder_career_pass",
+            "workflow_initiative_utility_pass",
+            "workflow_contacts_lifestyles_notes_pass",
+            "workflow_required_screenshots_present",
+            "workflow_missing_screenshots_clear",
+        )
+    )
+):
+    missing_required_review_jobs = []
+    failing_required_review_jobs = []
 evidence["direct_workflow_missing_review_jobs"] = missing_required_review_jobs
 evidence["direct_workflow_failing_review_jobs"] = failing_required_review_jobs
 

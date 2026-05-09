@@ -1,19 +1,28 @@
 {
-  "generatedAt": "2026-05-08T15:00:38.116429Z",
+  "generatedAt": "2026-05-08T19:12:23.707263Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
-  "status": "pass",
-  "summary": "SR4 workflow-family execution evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 workflow-family execution evidence is incomplete for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
+  "reasons": [
+    "dotnet test execution failed (exit 1): [with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock",
+    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
+    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections, Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity, Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6, Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6, Menu_click_surfaces_visible_command_choices_in_shell, Menu_dialog_workflows_keep_recursive_parity, Legacy_ui_controls_keep_recursive_parity, Quick_action_roots_are_exhaustively_classified"
+  ],
   "evidence": {
     "edition": "sr4",
     "familyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
     "proofKind": "sr4_family_oracle",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR4_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER4_SR4_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-      "Menu_click_surfaces_visible_command_choices_in_shell"
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Menu_click_surfaces_visible_command_choices_in_shell",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
     "oracle": {
       "sourceRepoPath": "/docker/fleet/repos/chummer4",
@@ -23,8 +32,8 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/sr4-workflow-family-execution.trx",
-      "exitCode": 0,
-      "attemptCount": 1,
+      "exitCode": 1,
+      "attemptCount": 2,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -44,13 +53,18 @@
         }
       ]
     },
-    "external_blocker": "",
-    "matchedPassedTests": [
+    "external_blocker": "missing_api_surface_contract",
+    "matchedPassedTests": [],
+    "missingAuditTests": [
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
       "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
-      "Menu_click_surfaces_visible_command_choices_in_shell"
+      "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Menu_click_surfaces_visible_command_choices_in_shell",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity",
+      "Quick_action_roots_are_exhaustively_classified"
     ],
-    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

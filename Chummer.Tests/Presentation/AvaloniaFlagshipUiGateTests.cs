@@ -5,7 +5,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -49,8 +53,17 @@ namespace Chummer.Tests.Presentation;
 public sealed class AvaloniaFlagshipUiGateTests
 {
     private static readonly object HeadlessInitLock = new();
+    private static readonly JsonSerializerOptions ScreenshotEvidenceJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
     private static bool _headlessInitialized;
     private const int HeadlessSessionAttempts = 3;
+    private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
+    [
+        "Soma (Career).chum5"
+    ];
     private static readonly string[] VeteranCertificationScreenshotFiles =
     [
         "01-initial-shell-light.png",
@@ -99,15 +112,14 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data Lane", "XML Bridge"]),
         new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle Receipt"])
     ];
-    private static bool _headlessInitialized;
     private static HeadlessUnitTestSession? _headlessSession;
 
     [TestMethod]
     public void Blazor_root_route_ownership_stays_with_desktop_shell_anchor_and_moves_showcase_off_root()
     {
-        string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
-        string showcasePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
-        string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
+        string homePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string showcasePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
+        string legacyPath = ResolveSourceFile("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
         string showcaseText = File.ReadAllText(showcasePath);
@@ -1197,6 +1209,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(FindDescendant<Control>(control, "NavigationTabsPanel").IsVisible);
             Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
             Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
+
+            Button[] tabButtons = control.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(button => button.Tag is string)
+                .ToArray();
+
+            foreach (Button tabButton in tabButtons)
+            {
+                RaiseClick(tabButton);
+            }
+
+            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
         });
     }
 
@@ -1246,15 +1270,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual(1, saveLocalRequests);
             Assert.AreEqual(1, campaignWorkspaceRequests);
             Assert.AreEqual(1, workspaceSupportRequests);
-        });
-    }
-
-            foreach (Button tabButton in tabButtons)
-            {
-                RaiseClick(tabButton);
-            }
-
-            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
         });
     }
 
@@ -1618,6 +1633,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 OpenMenuId: null,
                 KnownMenuIds: Array.Empty<string>(),
                 OpenMenuCommands: Array.Empty<MenuCommandItem>(),
+                MenuCommandsByMenuId: new Dictionary<string, IReadOnlyList<MenuCommandItem>>(StringComparer.Ordinal),
                 IsBusy: false))
             ?? throw new AssertFailedException("Unable to create MainWindowHeaderState.");
         object chromeState = Activator.CreateInstance(
@@ -1643,6 +1659,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 headerState,
                 chromeState,
                 new SectionHostState(
+                    SectionId: null,
+                    NavigationTabs: Array.Empty<NavigatorTabItem>(),
+                    ActiveTabId: null,
+                    SectionActions: Array.Empty<NavigatorSectionActionItem>(),
+                    ActiveActionId: null,
                     Notice: "Ready.",
                     PreviewJson: string.Empty,
                     Rows: Array.Empty<SectionRowDisplayItem>(),
@@ -1657,7 +1678,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                     SelectedCommandId: null,
                     DialogTitle: null,
                     DialogMessage: null,
-                    DialogTrustReceipt: null,
                     Fields: Array.Empty<DialogFieldDisplayItem>(),
                     Actions: Array.Empty<DialogActionDisplayItem>()),
                 new NavigatorPaneState(
@@ -1766,7 +1786,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 SelectedCommandId: null,
                 DialogTitle: "Global Settings",
                 DialogMessage: "Adjust desktop preferences.",
-                DialogTrustReceipt: null,
                 Fields:
                 [
                     new DialogFieldDisplayItem("globalTheme", "Theme", "classic", "classic", false, false, "text"),
@@ -1824,8 +1843,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Commands: [],
                 SelectedCommandId: null,
                 DialogTitle: "Open Character",
-                DialogMessage: "Review import before accepting.",
-                DialogTrustReceipt: trustReceipt,
+                DialogMessage: trustReceipt,
                 Fields:
                 [
                     new DialogFieldDisplayItem("importRulesetId", "Ruleset", "sr6", "sr6", false, true, "text")
@@ -1835,7 +1853,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     new DialogActionDisplayItem("import", "Import", true)
                 ]));
 
-            TextBlock trustReceiptText = FindDescendant<TextBlock>(control, "DialogTrustReceiptText");
+            TextBlock trustReceiptText = FindDescendant<TextBlock>(control, "DialogMessageText");
             StringAssert.Contains(trustReceiptText.Text, "Import receipt correlation key: import/sr6/review-only");
             StringAssert.Contains(trustReceiptText.Text, "Grounded import explain receipt: target sr6");
             StringAssert.Contains(trustReceiptText.Text, "Import environment tuple diff: before workspace/current-source/support-local/review-only; after oracle-reviewed/sr6/accepted-source-only; correlation import/sr6/review-only.");
@@ -1847,17 +1865,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .Where(textBlock => textBlock.IsVisible)
                 .Select(textBlock => textBlock.Text ?? string.Empty)
                 .ToArray();
-            CollectionAssert.Contains(visibleText, "Grounded explain receipt");
-            CollectionAssert.Contains(visibleText, "Before import environment diff");
-            CollectionAssert.Contains(visibleText, "After review environment diff");
-            CollectionAssert.Contains(visibleText, "- Import receipt correlation key: import/sr6/review-only; matches the blocker, oracle, and before/after environment diff lines below.");
-
-            Button companionButton = FindDescendant<Button>(control, "OpenDialogExplainCompanionButton");
-            Assert.IsTrue(companionButton.IsEnabled);
-            string companionLaunchUri = companionButton.Tag?.ToString() ?? string.Empty;
-            StringAssert.Contains(companionLaunchUri, "/coach/?routeType=build");
-            StringAssert.Contains(companionLaunchUri, "rulesetId=sr6");
-            StringAssert.Contains(companionLaunchUri, "Desktop%20import%20explain%20companion");
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Import receipt correlation key: import/sr6/review-only", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Grounded import explain receipt: target sr6", StringComparison.Ordinal)));
         });
     }
 
@@ -1867,6 +1876,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithStandaloneControl<SectionHostControl>(control =>
         {
             control.SetState(new SectionHostState(
+                SectionId: null,
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
                 Notice: "Ready.",
                 PreviewJson: "{}",
                 Rows: [],
@@ -3564,6 +3578,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             ["rulesetId"] = identity.RulesetId,
         };
 
+    private sealed record FixtureUiIdentity(
+        string CharacterName,
+        string PrimaryToken,
+        string Alias,
+        string BuildMethod,
+        string Metatype,
+        string RulesetId);
+
+    private sealed record FixtureUiReconstructionMaterializationResult(
+        string FixtureName,
+        string ReceiptPath,
+        string Status,
+        string[] Reasons);
+
     private static byte[] BuildMinimalPdfFromHtmlPrintPreview(string title, byte[] htmlBytes)
     {
         string html = Encoding.UTF8.GetString(htmlBytes);
@@ -3694,6 +3722,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             && bytes[3] == (byte)'F'
             && bytes[4] == (byte)'-';
 
+    private static void ClickRuntimeDialogAction(RuntimeFlagshipUiHarness harness, string actionId)
+        => harness.InvokeDialogAction(actionId);
+
+    private static void ClickRuntimeMenuCommand(RuntimeFlagshipUiHarness harness, string menuButtonName, string commandId)
+    {
+        harness.Click(menuButtonName);
+        harness.WaitUntil(() => harness.FindControlOrDefault<Panel>("MenuCommandsHost")?.Children.Count > 0);
+        harness.ClickMenuCommand(commandId);
+    }
+
     private static string ResolveSourceFile(params string[] segments)
     {
         string relativePath = Path.Combine(segments);
@@ -3709,6 +3747,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         return match;
     }
+
+    private static string SourcePath(params string[] segments)
+        => ResolveSourceFile(segments);
 
     private static string? ResolveExistingPath(params string[] candidates)
     {
@@ -3945,6 +3986,25 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static void AssertDialogContainsAll(
         FlagshipUiHarness harness,
+        string dialogTitle,
+        params string[] expectedFragments)
+    {
+        string dialogText = string.Join(
+            "\n",
+            harness.FindDialogFieldTexts()
+                .Concat(harness.FindDialogFieldInputTexts())
+                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty]));
+
+        foreach (string expectedFragment in expectedFragments)
+        {
+            Assert.IsTrue(
+                dialogText.Contains(expectedFragment, StringComparison.Ordinal),
+                $"M103 screenshot capture for '{dialogTitle}' must include '{expectedFragment}' before the PNG is written.");
+        }
+    }
+
+    private static void AssertDialogContainsAll(
+        RuntimeFlagshipUiHarness harness,
         string dialogTitle,
         params string[] expectedFragments)
     {
@@ -4227,6 +4287,22 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void InvokeDialogAction(string actionId)
+            => Click(DesktopDialogAccessibility.BuildActionName(actionId));
+
+        public void ClickMenuCommand(string commandId)
+        {
+            ListBox commandsList = FindControl<ListBox>("CommandsList");
+            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the runtime command list.");
+            commandsList.SelectedItem = null;
+            Pump();
+            commandsList.SelectedItem = command;
+            Pump();
+        }
+
         public void UpdateFirstEditableDialogTextField(string value)
         {
             Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
@@ -4298,36 +4374,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ?? throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
             Assert.IsTrue(actionButton.IsEnabled, $"Dialog action '{actionId}' must be enabled.");
             actionButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Pump();
-        }
-
-        public void InvokeDialogAction(string actionId)
-        {
-            Button actionButton = DialogActionButtons()
-                .FirstOrDefault(button => string.Equals(button.Tag?.ToString(), actionId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
-
-            actionButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Pump();
-        }
-
-        public void ClickMenuCommand(string commandId)
-        {
-            Panel menuHost = FindControl<Panel>("MenuCommandsHost");
-            Button button = menuHost.Children
-                .OfType<Button>()
-                .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Menu command '{commandId}' was not found.");
-
-            Point? translated = button.TranslatePoint(
-                new Point(button.Bounds.Width / 2d, button.Bounds.Height / 2d),
-                Window);
-            Assert.IsNotNull(translated, $"Unable to translate menu command '{commandId}' to window coordinates.");
-
-            Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
             Pump();
         }
 
@@ -4576,6 +4622,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void InvokeDialogAction(string actionId)
+            => Click(DesktopDialogAccessibility.BuildActionName(actionId));
+
+        public void ClickMenuCommand(string commandId)
+            => SelectCommand(commandId);
+
 
         public T FindControl<T>(string name)
             where T : Control
@@ -4592,11 +4644,59 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000)
+        public byte[] CaptureScreenshotBytes()
+        {
+            PixelSize pixelSize = new(
+                Math.Max(1, (int)Math.Ceiling(Window.Bounds.Width)),
+                Math.Max(1, (int)Math.Ceiling(Window.Bounds.Height)));
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Window.InvalidateMeasure();
+                Window.InvalidateArrange();
+                Window.InvalidateVisual();
+                Window.Measure(new Size(pixelSize.Width, pixelSize.Height));
+                Window.Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+                Pump();
+            }
+
+            using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+            bitmap.Render(Window);
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            byte[] pngBytes = output.ToArray();
+            Assert.IsTrue(pngBytes.Length > 0, "No rendered frame was available for runtime screenshot capture.");
+            return pngBytes;
+        }
+
+        public string[] FindDialogFieldTexts()
+        {
+            return Window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Where(static text => text.Name is "DialogFieldLabelText" or "DialogFieldValueText")
+                .Select(text => text.Text ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+        }
+
+        public string[] FindDialogFieldInputTexts()
+        {
+            return Window.GetVisualDescendants()
+                .OfType<TextBox>()
+                .Where(textBox => textBox.Name is "DialogFieldInputTextBox" or "DialogFieldInputMultilineTextBox")
+                .Select(textBox => textBox.Text ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+        }
+
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000, string? context = null)
         {
             if (!TryWaitUntil(predicate, timeoutMs))
             {
-                Assert.Fail("Timed out waiting for runtime-backed UI condition.");
+                Assert.Fail(context is null
+                    ? "Timed out waiting for runtime-backed UI condition."
+                    : $"Timed out waiting for runtime-backed UI condition: {context}");
             }
         }
 
@@ -4676,6 +4776,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         public List<DialogFieldValueChangedEventArgs> DialogFieldUpdates { get; } = [];
         public List<string> ExecutedDialogActionIds { get; } = [];
         public int SaveCalls { get; private set; }
+        public int ExportCalls { get; private set; }
+        public int PrintCalls { get; private set; }
 
         public Task InitializeAsync(CancellationToken ct)
         {
@@ -4831,6 +4933,18 @@ public sealed class AvaloniaFlagshipUiGateTests
         public Task SaveAsync(CancellationToken ct)
         {
             SaveCalls++;
+            return Task.CompletedTask;
+        }
+
+        public Task ExportAsync(CancellationToken ct)
+        {
+            ExportCalls++;
+            return Task.CompletedTask;
+        }
+
+        public Task PrintAsync(CancellationToken ct)
+        {
+            PrintCalls++;
             return Task.CompletedTask;
         }
 

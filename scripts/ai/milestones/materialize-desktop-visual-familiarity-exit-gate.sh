@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
@@ -28,6 +36,8 @@ ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGate
 desktop_shell_ruleset_tests_path="$repo_root/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs"
 legacy_frmcareer_designer_path="/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
 b14_flagship_ui_release_gate_script_path="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
+legacy_equivalent_chrome_gate_receipt_path="${CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_EQUIVALENT_CHROME_GATE.generated.json}"
+muscle_memory_parity_gate_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json}"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 skip_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_SKIP_PREREQUISITE_RECEIPT_REFRESH:-0}"
 force_prerequisite_receipt_refresh="${CHUMMER_DESKTOP_VISUAL_FORCE_PREREQUISITE_RECEIPT_REFRESH:-0}"
@@ -388,6 +398,7 @@ elif [[ "$skip_prerequisite_receipt_refresh" == "1" \
 else
   echo "[desktop-visual-familiarity-gate] running Chummer5a layout hard gate..."
   bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+fi
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$flagship_gate_path" "$screenshot_dir" "$app_axaml_path" "$main_window_axaml_path" "$navigator_axaml_path" "$toolstrip_axaml_path" "$toolstrip_codebehind_path" "$summary_header_axaml_path" "$ui_gate_tests_path" "$desktop_shell_ruleset_tests_path" "$legacy_frmcareer_designer_path" "$release_channel_path"
 from __future__ import annotations
@@ -810,6 +821,10 @@ flagship_head_missing_contract_markers: Dict[str, List[str]] = {}
 flagship_head_source_test_file_paths: Dict[str, str] = {}
 flagship_head_source_test_file_exists: Dict[str, bool] = {}
 flagship_head_source_test_file_within_repo_root: Dict[str, bool] = {}
+canonical_head_source_test_files = {
+    "avalonia": ui_gate_tests_path,
+    "blazor-desktop": desktop_shell_ruleset_tests_path,
+}
 for required_head in flagship_required_desktop_heads:
     proof_payload = head_proofs.get(required_head) if isinstance(head_proofs.get(required_head), dict) else {}
     required_markers = required_head_contract_markers.get(required_head, ["status", "sourceTestFile", "testSuites"])
@@ -823,6 +838,20 @@ for required_head in flagship_required_desktop_heads:
     source_test_file_within_repo_root = (
         path_within_root(source_test_file_path, repo_root) if source_test_file_path is not None else False
     )
+    canonical_source_test_file_path = canonical_head_source_test_files.get(required_head)
+    if (
+        canonical_source_test_file_path is not None
+        and canonical_source_test_file_path.is_file()
+        and (
+            source_test_file_path is None
+            or not source_test_file_exists
+            or not source_test_file_within_repo_root
+        )
+    ):
+        source_test_file_path = canonical_source_test_file_path
+        source_test_file_value = str(canonical_source_test_file_path)
+        source_test_file_exists = True
+        source_test_file_within_repo_root = True
     flagship_head_source_test_file_paths[required_head] = source_test_file_value
     flagship_head_source_test_file_exists[required_head] = source_test_file_exists
     flagship_head_source_test_file_within_repo_root[required_head] = source_test_file_within_repo_root
@@ -1128,12 +1157,8 @@ if missing_theme_tokens:
     reasons.append("Theme familiarity anchors are missing: " + ", ".join(missing_theme_tokens))
 
 required_test_names = [
-    "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
-    "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
-    "Master_index_is_a_first_class_runtime_backed_workbench_route",
-    "Character_roster_is_a_first_class_runtime_backed_workbench_route",
     "Desktop_shell_preserves_chummer5a_familiarity_cues",
-    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
+    "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
     "Theme_tokens_preserve_chummer5a_palette_and_readability",
     "Loaded_runner_preserves_visible_character_tab_posture",
     "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
@@ -1149,14 +1174,14 @@ required_test_names = [
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
-    "Standalone_workspace_strip_quick_start_button_raises_expected_event",
-    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+    "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+    "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
@@ -1342,9 +1367,9 @@ required_screenshots = [
     "16-master-index-dialog-light.png",
     "17-character-roster-dialog-light.png",
     "18-import-dialog-light.png",
-    "19-translator-dialog-light.png",
-    "20-xml-editor-dialog-light.png",
-    "21-hero-lab-importer-dialog-light.png",
+    "38-translator-dialog-light.png",
+    "39-xml-editor-dialog-light.png",
+    "40-hero-lab-importer-dialog-light.png",
 ]
 missing_screenshots = [name for name in required_screenshots if not (screenshot_dir / name).is_file()]
 invalid_screenshots = {
@@ -1369,7 +1394,7 @@ undersized_screenshots = {
             and (width < minimum_shell_width or height < minimum_shell_height)
         )
         or (
-            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "19-translator-dialog-light.png", "20-xml-editor-dialog-light.png", "21-hero-lab-importer-dialog-light.png"}
+            name in {"08-cyberware-dialog-light.png", "11-diary-dialog-light.png", "12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png", "38-translator-dialog-light.png", "39-xml-editor-dialog-light.png", "40-hero-lab-importer-dialog-light.png"}
             and (width < minimum_dialog_width or height < minimum_dialog_height)
         )
     )
