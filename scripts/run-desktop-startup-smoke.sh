@@ -243,6 +243,15 @@ run_head_smoke() {
     RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
   fi
 
+  local bundle_extract_base_dir="$BUNDLE_EXTRACT_ROOT"
+  local runtime_home="$RUNTIME_HOME"
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    receipt_path="$(to_native_path "$receipt_path")"
+    packet_path="$(to_native_path "$packet_path")"
+    bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
+    runtime_home="$(to_native_path "$RUNTIME_HOME")"
+  fi
+
   CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
@@ -250,12 +259,12 @@ run_head_smoke() {
   CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$BUNDLE_EXTRACT_ROOT" \
-  HOME="$RUNTIME_HOME" \
-  XDG_CONFIG_HOME="$RUNTIME_HOME/.config" \
-  XDG_DATA_HOME="$RUNTIME_HOME/.local/share" \
-  XDG_STATE_HOME="$RUNTIME_HOME/.local/state" \
-  XDG_CACHE_HOME="$RUNTIME_HOME/.cache" \
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+  HOME="$runtime_home" \
+  XDG_CONFIG_HOME="$runtime_home/.config" \
+  XDG_DATA_HOME="$runtime_home/.local/share" \
+  XDG_STATE_HOME="$runtime_home/.local/state" \
+  XDG_CACHE_HOME="$runtime_home/.cache" \
   run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
 }
 
