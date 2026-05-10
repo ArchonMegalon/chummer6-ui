@@ -24,15 +24,28 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        ApplicationConfiguration.Initialize();
+        bool smokeInstall = args.Length > 1
+            && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase);
+
+        if (!smokeInstall)
+        {
+            ApplicationConfiguration.Initialize();
+        }
 
         if (!OperatingSystem.IsWindows())
         {
-            MessageBox.Show(
-                "This installer only runs on Windows.",
-                "Chummer Installer",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            if (smokeInstall)
+            {
+                Console.Error.WriteLine("This installer only runs on Windows.");
+            }
+            else
+            {
+                MessageBox.Show(
+                    "This installer only runs on Windows.",
+                    "Chummer Installer",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
             return 1;
         }
 
@@ -56,11 +69,18 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                ex.Message,
-                "Chummer Installer Failed",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            if (smokeInstall)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            else
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Chummer Installer Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
             return 1;
         }
     }
@@ -255,36 +275,38 @@ internal static class Program
             payload.CopyTo(zipFile);
         }
 
-        using ZipArchive archive = ZipFile.OpenRead(payloadZipPath);
-        string extractRoot = EnsureTrailingDirectorySeparator(Path.GetFullPath(tempExtractDir));
-        ZipArchiveEntry[] fileEntries = archive.Entries
-            .Where(static entry => !string.IsNullOrWhiteSpace(entry.Name))
-            .ToArray();
-        int extractedFiles = 0;
-        foreach (ZipArchiveEntry entry in archive.Entries)
+        using (ZipArchive archive = ZipFile.OpenRead(payloadZipPath))
         {
-            string destinationPath = Path.GetFullPath(Path.Combine(tempExtractDir, entry.FullName));
-            if (!destinationPath.StartsWith(extractRoot, StringComparison.OrdinalIgnoreCase))
+            string extractRoot = EnsureTrailingDirectorySeparator(Path.GetFullPath(tempExtractDir));
+            ZipArchiveEntry[] fileEntries = archive.Entries
+                .Where(static entry => !string.IsNullOrWhiteSpace(entry.Name))
+                .ToArray();
+            int extractedFiles = 0;
+            foreach (ZipArchiveEntry entry in archive.Entries)
             {
-                throw new InvalidOperationException(
-                    $"Installer payload entry '{entry.FullName}' would extract outside '{tempExtractDir}'.");
-            }
+                string destinationPath = Path.GetFullPath(Path.Combine(tempExtractDir, entry.FullName));
+                if (!destinationPath.StartsWith(extractRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Installer payload entry '{entry.FullName}' would extract outside '{tempExtractDir}'.");
+                }
 
-            if (string.IsNullOrWhiteSpace(entry.Name))
-            {
-                Directory.CreateDirectory(destinationPath);
-                continue;
-            }
+                if (string.IsNullOrWhiteSpace(entry.Name))
+                {
+                    Directory.CreateDirectory(destinationPath);
+                    continue;
+                }
 
-            string? destinationDirectory = Path.GetDirectoryName(destinationPath);
-            if (!string.IsNullOrWhiteSpace(destinationDirectory))
-            {
-                Directory.CreateDirectory(destinationDirectory);
-            }
+                string? destinationDirectory = Path.GetDirectoryName(destinationPath);
+                if (!string.IsNullOrWhiteSpace(destinationDirectory))
+                {
+                    Directory.CreateDirectory(destinationDirectory);
+                }
 
-            entry.ExtractToFile(destinationPath, overwrite: true);
-            extractedFiles++;
-            progress?.Report(new InstallProgressUpdate("Extracting application files", extractedFiles, fileEntries.Length));
+                entry.ExtractToFile(destinationPath, overwrite: true);
+                extractedFiles++;
+                progress?.Report(new InstallProgressUpdate("Extracting application files", extractedFiles, fileEntries.Length));
+            }
         }
 
         File.Delete(payloadZipPath);

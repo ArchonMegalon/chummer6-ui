@@ -144,6 +144,11 @@ to_native_path() {
 }
 
 run_with_optional_xvfb() {
+  if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    "$@"
+    return
+  fi
+
   if command -v xvfb-run >/dev/null 2>&1; then
     xvfb-run -a "$@"
     return
@@ -255,7 +260,9 @@ run_head_smoke() {
     receipt_path="$(to_native_path "$receipt_path")"
     packet_path="$(to_native_path "$packet_path")"
     bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
-    runtime_home="$(to_native_path "$RUNTIME_HOME")"
+    if ! command -v wine >/dev/null 2>&1; then
+      runtime_home="$(to_native_path "$RUNTIME_HOME")"
+    fi
   fi
 
   CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
