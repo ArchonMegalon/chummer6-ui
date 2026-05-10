@@ -106,17 +106,41 @@ PY
 }
 
 to_native_path() {
+  local input_path="$1"
+
   if command -v cygpath >/dev/null 2>&1; then
-    cygpath -w "$1"
+    cygpath -w "$input_path"
     return
   fi
 
   if command -v winepath >/dev/null 2>&1; then
-    winepath -w "$1" | tr -d '\r'
+    winepath -w "$input_path" | tr -d '\r'
     return
   fi
 
-  echo "$1"
+  if pwd -W >/dev/null 2>&1; then
+    case "$input_path" in
+      [A-Za-z]:[\\/]*)
+        echo "$input_path"
+        return
+        ;;
+      /*)
+        local parent_dir base_name native_parent
+        parent_dir="$(dirname "$input_path")"
+        base_name="$(basename "$input_path")"
+        if pushd "$parent_dir" >/dev/null 2>&1; then
+          native_parent="$(pwd -W | tr -d '\r')"
+          popd >/dev/null 2>&1 || true
+          if [[ -n "$native_parent" ]]; then
+            printf '%s\\%s\n' "$native_parent" "$base_name"
+            return
+          fi
+        fi
+        ;;
+    esac
+  fi
+
+  echo "$input_path"
 }
 
 run_with_optional_xvfb() {
@@ -141,6 +165,43 @@ run_windows_binary() {
     local native_executable_path
     native_executable_path="$(to_native_path "$executable_path")"
     run_with_optional_xvfb wine "$native_executable_path" "$@"
+    return
+  fi
+
+  if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+    local native_executable_path
+    native_executable_path="$(to_native_path "$executable_path")"
+    local powershell_bin="powershell.exe"
+    if command -v pwsh >/dev/null 2>&1; then
+      powershell_bin="pwsh"
+    fi
+    local args_json
+    args_json="$(python3 - "$@" <<'PY'
+import json
+import sys
+
+print(json.dumps(sys.argv[1:]))
+PY
+)"
+    CHUMMER_WINDOWS_BINARY_PATH="$native_executable_path" \
+    CHUMMER_WINDOWS_BINARY_ARGS_JSON="$args_json" \
+    "$powershell_bin" -NoLogo -NoProfile -Command '
+      $exe = $env:CHUMMER_WINDOWS_BINARY_PATH
+      $args = @()
+      if ($env:CHUMMER_WINDOWS_BINARY_ARGS_JSON) {
+        $decoded = ConvertFrom-Json $env:CHUMMER_WINDOWS_BINARY_ARGS_JSON
+        if ($null -ne $decoded) {
+          if ($decoded -is [System.Array]) {
+            $args = @($decoded)
+          }
+          else {
+            $args = @([string]$decoded)
+          }
+        }
+      }
+      & $exe @args
+      exit $LASTEXITCODE
+    '
     return
   fi
 
