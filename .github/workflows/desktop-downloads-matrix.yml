@@ -301,7 +301,9 @@ jobs:
             -o "$out_dir"
 
       - name: Publish secondary Windows desktop head
+        id: publish-secondary-windows-head
         if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -325,6 +327,35 @@ jobs:
             -p:ChummerDesktopReleaseVersion="$release_version" \
             -p:ChummerDesktopReleaseChannel="${{ steps.release-context.outputs.channel }}" \
             -o "$out_dir"
+
+      - name: Resolve secondary Windows desktop head
+        id: resolve-secondary-windows-head
+        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          publish_dir="out/blazor-desktop/${{ matrix.rid }}"
+          launch_target="Chummer.Blazor.Desktop.exe"
+          artifact_path="$publish_dir/$launch_target"
+          if [[ -f "$artifact_path" ]]; then
+            {
+              echo "enabled=true"
+              echo "publish_dir=$publish_dir"
+              echo "launch_target=$launch_target"
+              echo "relative_root=blazor-desktop"
+              echo "required_install_paths=avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Secondary Windows head is unavailable for ${{ matrix.rid }}; packaging Avalonia-only installer." >&2
+          {
+            echo "enabled=false"
+            echo "publish_dir="
+            echo "launch_target="
+            echo "relative_root="
+            echo "required_install_paths=Chummer.Avalonia.exe"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Preflight macOS packaging requirements
         if: ${{ startsWith(matrix.rid, 'osx-') }}
@@ -353,10 +384,10 @@ jobs:
           CHUMMER_MAC_APP_SIGN_IDENTITY: ${{ steps.prepare-macos-signing.outputs.sign_identity != '' && steps.prepare-macos-signing.outputs.sign_identity || vars.CHUMMER_MAC_APP_SIGN_IDENTITY }}
           CHUMMER_MAC_NOTARY_PROFILE: ${{ steps.prepare-macos-signing.outputs.notary_profile != '' && steps.prepare-macos-signing.outputs.notary_profile || vars.CHUMMER_MAC_NOTARY_PROFILE }}
           CHUMMER_MAC_SIGNING_RECEIPT_PATH: dist/signing/signing-${{ matrix.app }}-${{ matrix.rid }}.receipt.json
-          CHUMMER_WINDOWS_SECONDARY_HEAD_KEY: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'blazor-desktop' || '' }}
-          CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && format('out/blazor-desktop/{0}', matrix.rid) || '' }}
-          CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'Chummer.Blazor.Desktop.exe' || '' }}
-          CHUMMER_WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'blazor-desktop' || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_KEY: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.enabled == 'true' && 'blazor-desktop' || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_PUBLISH_DIR: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.publish_dir || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.launch_target || '' }}
+          CHUMMER_WINDOWS_SECONDARY_HEAD_RELATIVE_ROOT: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.relative_root || '' }}
         run: |
           set -euo pipefail
           release_version="run-${GITHUB_RUN_NUMBER:-local}"
@@ -374,7 +405,7 @@ jobs:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
-          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && 'avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe' || '' }}
+          CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.required_install_paths || '' }}
         run: |
           set -euo pipefail
           mkdir -p dist/startup-smoke
