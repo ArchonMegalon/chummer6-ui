@@ -156,11 +156,6 @@ run_windows_binary() {
   local executable_path="$1"
   shift
 
-  if command -v cygpath >/dev/null 2>&1; then
-    "$executable_path" "$@"
-    return
-  fi
-
   if command -v wine >/dev/null 2>&1; then
     local native_executable_path
     native_executable_path="$(to_native_path "$executable_path")"
@@ -202,6 +197,17 @@ PY
       & $exe @args
       exit $LASTEXITCODE
     '
+    return
+  fi
+
+  if command -v cygpath >/dev/null 2>&1; then
+    local unix_executable_path="$executable_path"
+    case "$executable_path" in
+      [A-Za-z]:[\\/]*)
+        unix_executable_path="$(cygpath -u "$executable_path")"
+        ;;
+    esac
+    "$unix_executable_path" "$@"
     return
   fi
 
