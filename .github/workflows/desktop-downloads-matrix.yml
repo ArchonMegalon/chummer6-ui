@@ -343,6 +343,7 @@ jobs:
               echo "publish_dir=$publish_dir"
               echo "launch_target=$launch_target"
               echo "relative_root=blazor-desktop"
+              echo "launch_relative_path=avalonia/Chummer.Avalonia.exe"
               echo "required_install_paths=avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe"
             } >> "$GITHUB_OUTPUT"
             exit 0
@@ -354,6 +355,7 @@ jobs:
             echo "publish_dir="
             echo "launch_target="
             echo "relative_root="
+            echo "launch_relative_path=Chummer.Avalonia.exe"
             echo "required_install_paths=Chummer.Avalonia.exe"
           } >> "$GITHUB_OUTPUT"
 
@@ -405,6 +407,7 @@ jobs:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
           CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
+          CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.launch_relative_path || '' }}
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.required_install_paths || '' }}
         run: |
           set -euo pipefail

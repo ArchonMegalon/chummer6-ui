@@ -221,7 +221,8 @@ run_windows_smoke() {
     fi
   fi
 
-  run_head_smoke "$INSTALL_ROOT/$LAUNCH_TARGET"
+  local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
+  run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
 }
 
 seed_dpkg_admin_dir() {
