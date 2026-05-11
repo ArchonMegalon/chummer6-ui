@@ -812,6 +812,7 @@ build_macos_installer() {
   fi
 
   mv "$PUBLISH_DIR" "$macos_dir"
+  PUBLISH_DIR="$macos_dir"
 
   if [[ ! -f "$macos_dir/$LAUNCH_TARGET" ]]; then
     echo "Launch target not found in macOS publish directory: $macos_dir/$LAUNCH_TARGET" >&2
