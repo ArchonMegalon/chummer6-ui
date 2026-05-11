@@ -786,6 +786,7 @@ build_macos_installer() {
   local contents_dir="$app_bundle/Contents"
   local macos_dir="$contents_dir/MacOS"
   local macos_icon_source
+  local macos_icon_runtime_source
   local macos_icon_name
   local macos_icon_plist_name
   local plist_path="$contents_dir/Info.plist"
@@ -802,9 +803,15 @@ build_macos_installer() {
 
   rm -rf "$stage_root"
   rm -rf "$hdiutil_tmp_work"
-  mkdir -p "$macos_dir" "$contents_dir/Resources"
+  mkdir -p "$contents_dir/Resources"
   mkdir -p "$hdiutil_tmp_work"
-  cp -a "$PUBLISH_DIR"/. "$macos_dir"/
+
+  if ! macos_icon_source="$(preflight_macos_packaging_requirements)"; then
+    echo "macOS packaging preflight failed." >&2
+    exit 1
+  fi
+
+  mv "$PUBLISH_DIR" "$macos_dir"
 
   if [[ ! -f "$macos_dir/$LAUNCH_TARGET" ]]; then
     echo "Launch target not found in macOS publish directory: $macos_dir/$LAUNCH_TARGET" >&2
@@ -812,14 +819,14 @@ build_macos_installer() {
   fi
   chmod 0755 "$macos_dir/$LAUNCH_TARGET"
 
-  if ! macos_icon_source="$(preflight_macos_packaging_requirements)"; then
-    echo "macOS packaging preflight failed." >&2
-    exit 1
+  macos_icon_runtime_source="$macos_icon_source"
+  if [[ "$macos_icon_source" == "$PUBLISH_DIR/"* ]]; then
+    macos_icon_runtime_source="$macos_dir/${macos_icon_source#"$PUBLISH_DIR/"}"
   fi
 
   macos_icon_name="$(basename "$macos_icon_source")"
   macos_icon_plist_name="${macos_icon_name%.icns}"
-  cp "$macos_icon_source" "$contents_dir/Resources/$macos_icon_name"
+  cp "$macos_icon_runtime_source" "$contents_dir/Resources/$macos_icon_name"
 
   echo "Using macOS icon source: $macos_icon_source" >&2
 

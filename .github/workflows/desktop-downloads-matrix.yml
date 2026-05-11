@@ -424,6 +424,9 @@ jobs:
           if [[ "${RUNNER_OS:-}" == "macOS" ]]; then
             rm -rf "$HOME/.nuget/packages" "$HOME/.dotnet/packs" \
               "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/m" "$GITHUB_WORKSPACE/l"
+            find "$GITHUB_WORKSPACE/r" \
+              \( -path "$GITHUB_WORKSPACE/r/out/${{ matrix.app }}/${{ matrix.rid }}" -o -path "$GITHUB_WORKSPACE/r/dist" \) -prune -o \
+              \( -name bin -o -name obj \) -type d -prune -exec rm -rf {} +
           fi
           export CHUMMER_DESKTOP_INSTALLER_TMPDIR="${GITHUB_WORKSPACE}/.tmp/desktop-installer"
           mkdir -p "${CHUMMER_DESKTOP_INSTALLER_TMPDIR}"
