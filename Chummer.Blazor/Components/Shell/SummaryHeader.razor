@@ -31,6 +31,18 @@
     public Chummer.Presentation.Shell.ShellSurfaceState ShellSurface { get; set; } = Chummer.Presentation.Shell.ShellSurfaceState.Empty;
 
     [Parameter]
+    public IReadOnlyList<NavigationTabDefinition> NavigationTabs { get; set; } = Array.Empty<NavigationTabDefinition>();
+
+    [Parameter]
+    public string? ActiveTabId { get; set; }
+
+    [Parameter]
+    public Func<NavigationTabDefinition, bool>? IsNavigationTabEnabled { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectTabRequested { get; set; }
+
+    [Parameter]
     public EventCallback InspectRuntimeRequested { get; set; }
 
     private string RuntimeSummary =>
