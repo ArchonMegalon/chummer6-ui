@@ -54,6 +54,7 @@ permissions:
 jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
+    if: ${{ !((startsWith(matrix.rid, 'osx-') || matrix.app == 'blazor-desktop') && vars.CHUMMER_ENABLE_OPTIONAL_MAC_PREVIEW_LANES != 'true') }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.tolerate_failure }}
     defaults:
