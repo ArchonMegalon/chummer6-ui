@@ -54,7 +54,6 @@ permissions:
 jobs:
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
-    if: ${{ !((startsWith(matrix.rid, 'osx-') || matrix.app == 'blazor-desktop') && vars.CHUMMER_ENABLE_OPTIONAL_MAC_PREVIEW_LANES != 'true') }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.tolerate_failure }}
     defaults:
@@ -99,27 +98,6 @@ jobs:
             rid: linux-arm64
             installer_ext: deb
             launch_target: Chummer.Avalonia
-            tolerate_failure: true
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: macos-latest
-            rid: osx-arm64
-            installer_ext: dmg
-            launch_target: Chummer.Avalonia
-            tolerate_failure: true
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: macos-13
-            rid: osx-x64
-            installer_ext: dmg
-            launch_target: Chummer.Avalonia
-            tolerate_failure: true
-          - app: blazor-desktop
-            project: Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj
-            os: macos-latest
-            rid: osx-arm64
-            installer_ext: dmg
-            launch_target: Chummer.Blazor.Desktop
             tolerate_failure: true
     steps:
       - name: Checkout
