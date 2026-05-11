@@ -308,7 +308,7 @@ jobs:
             -o "$out_dir"
 
       - name: Restore secondary Windows desktop head
-        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && vars.CHUMMER_WINDOWS_ENABLE_SECONDARY_HEAD == 'true' }}
         shell: bash
         run: |
           dotnet restore "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj" \
@@ -325,7 +325,7 @@ jobs:
 
       - name: Publish secondary Windows desktop head
         id: publish-secondary-windows-head
-        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && vars.CHUMMER_WINDOWS_ENABLE_SECONDARY_HEAD == 'true' }}
         continue-on-error: true
         shell: bash
         run: |
@@ -355,7 +355,7 @@ jobs:
 
       - name: Resolve secondary Windows desktop head
         id: resolve-secondary-windows-head
-        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' }}
+        if: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && vars.CHUMMER_WINDOWS_ENABLE_SECONDARY_HEAD == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
