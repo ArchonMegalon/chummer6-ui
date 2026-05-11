@@ -1115,8 +1115,8 @@ case "$RID" in
     require_publishable_release_version
     prune_release_symbols
     sign_macos_publish_binary_if_configured
-    build_portable_artifacts
     build_macos_installer
+    build_portable_artifacts
     ;;
   *)
     echo "Unsupported installer target RID: $RID" >&2
