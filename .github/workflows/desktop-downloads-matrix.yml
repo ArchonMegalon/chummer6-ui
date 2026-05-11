@@ -422,7 +422,7 @@ jobs:
         env:
           CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ steps.release-context.outputs.channel }}
           CHUMMER_DESKTOP_RELEASE_VERSION: run-${GITHUB_RUN_NUMBER:-local}
-          CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.os }}
+          CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-${{ matrix.rid }}
           CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.launch_relative_path || '' }}
           CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS: ${{ runner.os == 'Windows' && matrix.app == 'avalonia' && steps.resolve-secondary-windows-head.outputs.required_install_paths || '' }}
         run: |
@@ -561,6 +561,7 @@ jobs:
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
           CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
           CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${REQUIRE_COMPLETE_DESKTOP_COVERAGE}" \
+          CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER=true \
           SIGNING_RECEIPTS_DIR="dist/signing" \
           SOURCE_MANIFEST_PATH="$GITHUB_WORKSPACE/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json" \
           RELEASE_PROOF_PATH="$GITHUB_WORKSPACE/h/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \

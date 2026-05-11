@@ -81,16 +81,6 @@ arch_from_rid() {
 }
 
 sha256_file() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
-    return
-  fi
-
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$1" | awk '{print $1}'
-    return
-  fi
-
   python3 - "$1" <<'PY'
 import hashlib
 import pathlib
