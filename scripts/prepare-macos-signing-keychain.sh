@@ -87,9 +87,12 @@ prepare_keychain() {
   fi
   security set-keychain-settings -lut 21600 "$keychain_path"
   security unlock-keychain -p "$keychain_password" "$keychain_path"
-  mapfile -t existing_keychains < <(security list-keychains -d user | tr -d '"' | sed '/^[[:space:]]*$/d')
-  local merged_keychains=("$keychain_path")
+  local existing_keychains=()
   local existing_keychain
+  while IFS= read -r existing_keychain; do
+    existing_keychains+=("$existing_keychain")
+  done < <(security list-keychains -d user | tr -d '"' | sed '/^[[:space:]]*$/d')
+  local merged_keychains=("$keychain_path")
   for existing_keychain in "${existing_keychains[@]}"; do
     if [[ "$existing_keychain" != "$keychain_path" ]]; then
       merged_keychains+=("$existing_keychain")
