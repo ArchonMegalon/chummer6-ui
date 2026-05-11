@@ -482,6 +482,13 @@ jobs:
           ref: fleet/hub-registry
           path: g
 
+      - name: Checkout run-services compatibility tree
+        uses: actions/checkout@v4
+        with:
+          repository: ArchonMegalon/chummer6-hub
+          ref: main
+          path: h
+
       - name: Prepare hub-registry compatibility alias
         shell: bash
         run: |
@@ -551,6 +558,7 @@ jobs:
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
           CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
           SIGNING_RECEIPTS_DIR="dist/signing" \
+          RELEASE_PROOF_PATH="$GITHUB_WORKSPACE/h/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
           bash scripts/generate-releases-manifest.sh
 
