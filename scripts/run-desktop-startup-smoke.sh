@@ -348,6 +348,39 @@ PY
       return 0
     fi
 
+    local native_match=""
+    if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+      local powershell_bin="powershell.exe"
+      if command -v pwsh >/dev/null 2>&1; then
+        powershell_bin="pwsh"
+      fi
+      native_match="$(
+        CHUMMER_WINDOWS_SEARCH_ROOT="$native_install_root" \
+        CHUMMER_WINDOWS_SEARCH_BASENAME="$(basename "$requested_relative_path")" \
+        "$powershell_bin" -NoLogo -NoProfile -Command '
+          $root = $env:CHUMMER_WINDOWS_SEARCH_ROOT
+          $name = $env:CHUMMER_WINDOWS_SEARCH_BASENAME
+          if ([string]::IsNullOrWhiteSpace($root) -or [string]::IsNullOrWhiteSpace($name) -or -not (Test-Path -LiteralPath $root)) {
+            exit 1
+          }
+
+          $match = Get-ChildItem -LiteralPath $root -Recurse -File -Filter $name -ErrorAction SilentlyContinue |
+            Sort-Object @{ Expression = { $_.FullName.Split([System.IO.Path]::DirectorySeparatorChar).Count } }, FullName |
+            Select-Object -First 1
+          if ($null -eq $match) {
+            exit 1
+          }
+
+          $relative = [System.IO.Path]::GetRelativePath($root, $match.FullName)
+          [Console]::Out.Write(($relative -replace "\\\\", "/"))
+        ' 2>/dev/null
+      )" || native_match=""
+    fi
+    if [[ -n "$native_match" ]]; then
+      printf '%s\n' "$native_match"
+      return 0
+    fi
+
     return 1
   }
 
@@ -373,6 +406,19 @@ PY
       {
         printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}"
         find "$INSTALL_ROOT" -maxdepth 6 -type f | sort || true
+        if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+          local powershell_bin="powershell.exe"
+          if command -v pwsh >/dev/null 2>&1; then
+            powershell_bin="pwsh"
+          fi
+          CHUMMER_WINDOWS_SEARCH_ROOT="$native_install_root" \
+          "$powershell_bin" -NoLogo -NoProfile -Command '
+            if (Test-Path -LiteralPath $env:CHUMMER_WINDOWS_SEARCH_ROOT) {
+              Get-ChildItem -LiteralPath $env:CHUMMER_WINDOWS_SEARCH_ROOT -Recurse -File -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName
+            }
+          ' 2>/dev/null || true
+        fi
       } | tee -a "$LOG_PATH" >&2
       return 1
     fi
