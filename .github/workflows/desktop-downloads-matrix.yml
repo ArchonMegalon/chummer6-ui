@@ -480,7 +480,13 @@ jobs:
         with:
           repository: ArchonMegalon/chummer6-hub-registry
           ref: fleet/hub-registry
-          path: chummer-hub-registry
+          path: g
+
+      - name: Prepare hub-registry compatibility alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
 
       - name: Resolve desktop release context
         id: release-context
@@ -662,7 +668,13 @@ jobs:
         with:
           repository: ArchonMegalon/chummer6-hub-registry
           ref: fleet/hub-registry
-          path: chummer-hub-registry
+          path: g
+
+      - name: Prepare hub-registry compatibility alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
 
       - name: Download manifest bundle
         uses: actions/download-artifact@v4
@@ -708,7 +720,13 @@ jobs:
         with:
           repository: ArchonMegalon/chummer6-hub-registry
           ref: fleet/hub-registry
-          path: chummer-hub-registry
+          path: g
+
+      - name: Prepare hub-registry compatibility alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
 
       - name: Download manifest bundle
         uses: actions/download-artifact@v4
@@ -775,7 +793,13 @@ jobs:
         with:
           repository: ArchonMegalon/chummer6-hub-registry
           ref: fleet/hub-registry
-          path: chummer-hub-registry
+          path: g
+
+      - name: Prepare hub-registry compatibility alias
+        shell: bash
+        run: |
+          set -euo pipefail
+          ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
 
       - name: Download manifest bundle
         uses: actions/download-artifact@v4
