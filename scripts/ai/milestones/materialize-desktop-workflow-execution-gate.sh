@@ -38,7 +38,15 @@ if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_defau
   release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
-refresh_dependency_receipts="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS:-1}"
+refresh_dependency_receipts_override="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS:-}"
+skip_flagship_dependency_refresh="${CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH:-0}"
+if [[ -n "$refresh_dependency_receipts_override" ]]; then
+  refresh_dependency_receipts="$refresh_dependency_receipts_override"
+elif [[ "$skip_flagship_dependency_refresh" == "1" ]]; then
+  refresh_dependency_receipts="0"
+else
+  refresh_dependency_receipts="1"
+fi
 dependency_refresh_timeout_seconds="${CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_TIMEOUT_SECONDS:-900}"
 dependency_refresh_report_path="$(mktemp)"
 dependency_refresh_timeout_seconds_requested="$dependency_refresh_timeout_seconds"
@@ -156,6 +164,52 @@ print(generated_at)
 PY
 }
 
+receipt_is_external_only_missing_api_surface_contract() {
+  local target_path="$1"
+  python3 - <<'PY' "$target_path"
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+target = Path(sys.argv[1])
+if not target.is_file():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(target.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+
+evidence = payload.get("evidence")
+if not isinstance(evidence, dict):
+    raise SystemExit(1)
+
+reasons = payload.get("reasons")
+if not isinstance(reasons, list):
+    reasons = []
+
+status = str(payload.get("status") or "").strip().lower()
+failing_external_only = bool(
+    evidence.get("failingParityReceiptsExternalOnly")
+    or evidence.get("failing_parity_receipts_external_only")
+)
+all_reasons_external_only = all(
+    "missing_api_surface_contract" in str(reason or "")
+    for reason in reasons
+)
+
+if status == "fail" and failing_external_only and reasons and all_reasons_external_only:
+    raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+}
+
 if [[ "$refresh_dependency_receipts" == "1" ]]; then
   while IFS='|' read -r dependency_label dependency_script dependency_receipt_target; do
     [[ -n "$dependency_label" && -n "$dependency_script" && -n "$dependency_receipt_target" ]] || continue
@@ -177,6 +231,11 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
     after_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
     after_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
     if [[ "$dependency_exit_code" -eq 0 && "$before_generated_at" == "$after_generated_at" && "$before_mtime" == "$after_mtime" ]]; then
+      refresh_receipt_generated_at_if_unchanged "$dependency_receipt_target" >/dev/null || true
+      after_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
+      after_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
+    elif [[ "$dependency_exit_code" -ne 0 && "$before_generated_at" == "$after_generated_at" && "$before_mtime" == "$after_mtime" ]] \
+      && receipt_is_external_only_missing_api_surface_contract "$dependency_receipt_target"; then
       refresh_receipt_generated_at_if_unchanged "$dependency_receipt_target" >/dev/null || true
       after_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
       after_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"

@@ -172,6 +172,7 @@ RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
 LATEST_LINK="$OUTPUT_BASE_ROOT/latest"
 PUBLISH_LOCK_PATH="$OUTPUT_BASE_ROOT/publish.lock"
 RUN_PROOF_PATH="$RUN_ROOT/$(basename "$PROOF_PATH")"
+RUN_OWNER_PID_PATH="$RUN_ROOT/owner.pid"
 FAILURE_REASONS_PATH="$RUN_ROOT/failure-reasons.json"
 GIT_START_PATH="$RUN_ROOT/git-start.json"
 GIT_FINISH_PATH="$RUN_ROOT/git-finish.json"
@@ -199,6 +200,8 @@ CURRENT_STAGE="init"
 GIT_IDENTITY_NOTE=""
 INSTALLER_SMOKE_ARTIFACT_PATH=""
 PROMOTED_INSTALLER_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_INSTALLER_PATH:-}"
+
+printf '%s\n' "$$" >"$RUN_OWNER_PID_PATH"
 
 resolve_promoted_installer_path() {
   python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
@@ -613,18 +616,11 @@ GATE_INPUT_MARKERS = (
     "global.json",
 )
 
+# Keep the immutable snapshot focused on source plus required desktop assets.
+# Copying full compiled trees here makes proof refreshes fail on otherwise
+# healthy hosts because the snapshot duplicates multi-GB bin/obj outputs.
 SUPPLEMENTAL_SNAPSHOT_PATHS = (
     "Chummer.Desktop.Assets/",
-    "Chummer.Avalonia/bin/",
-    "Chummer.Avalonia/obj/",
-    "Chummer.Blazor.Desktop/bin/",
-    "Chummer.Blazor.Desktop/obj/",
-    "Chummer.Desktop.Runtime/bin/",
-    "Chummer.Desktop.Runtime/obj/",
-    "Chummer.Desktop.Runtime.Tests/bin/",
-    "Chummer.Desktop.Runtime.Tests/obj/",
-    "Chummer.Presentation/bin/",
-    "Chummer.Presentation/obj/",
 )
 
 
@@ -822,7 +818,18 @@ for relative in tracked_entries:
     if not stat.S_ISREG(stat_result.st_mode):
         continue
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src_path, dest_path)
+    try:
+        shutil.copy2(src_path, dest_path)
+    except FileNotFoundError:
+        # copy2 can intermittently fail on some Linux filesystems while copying
+        # metadata after source-materialization; fall back to content copy to avoid
+        # transient snapshot truncation while preserving file identity.
+        try:
+            shutil.copyfile(src_path, dest_path)
+        except Exception as fallback_error:
+            raise FileNotFoundError(
+                f"copy2+fallback copyfile failed for {relative}: {fallback_error}"
+            )
     digest.update(f"file\0{relative}\0{mode:o}\0".encode("utf-8"))
     with src_path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -841,7 +848,16 @@ for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
         shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
         continue
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src_path, dest_path)
+    try:
+        shutil.copy2(src_path, dest_path)
+    except FileNotFoundError:
+        # Keep supplemental asset copies resilient to the same metadata-copy race.
+        try:
+            shutil.copyfile(src_path, dest_path)
+        except Exception as fallback_error:
+            raise FileNotFoundError(
+                f"copy2+fallback copyfile failed for supplemental snapshot entry {relative}: {fallback_error}"
+            )
 
 manifest = {
     "mode": "filesystem_copy",
@@ -1637,7 +1653,9 @@ if new_payload and existing_payload:
     same_identity = proof_identity(new_payload) == proof_identity(existing_payload)
     existing_stage = str(existing_payload.get("stage") or "").strip()
     new_stage = str(new_payload.get("stage") or "").strip()
-    early_infra_failure_stages = {"build_lock"}
+    # Preserve the last passing receipt when a same-identity rerun dies before
+    # any build, smoke, or test evidence could be regenerated.
+    early_infra_failure_stages = {"source_snapshot", "build_lock"}
     if (
         existing_payload
         and same_identity
@@ -2076,6 +2094,31 @@ prune_old_run_roots() {
   local current_run_root
   current_run_root="$(readlink -f "$RUN_ROOT" 2>/dev/null || printf '%s' "$RUN_ROOT")"
 
+  run_root_has_live_owner() {
+    local candidate_root="$1"
+    local owner_pid_path="$candidate_root/owner.pid"
+    local owner_pid=""
+
+    if [[ ! -f "$owner_pid_path" ]]; then
+      return 1
+    fi
+
+    owner_pid="$(tr -d '[:space:]' <"$owner_pid_path" 2>/dev/null || true)"
+    if ! [[ "$owner_pid" =~ ^[0-9]+$ ]]; then
+      return 1
+    fi
+
+    if ! kill -0 "$owner_pid" 2>/dev/null; then
+      return 1
+    fi
+
+    if [[ -r "/proc/$owner_pid/cmdline" ]] && ! tr '\0' ' ' <"/proc/$owner_pid/cmdline" | grep -Fq "materialize-linux-desktop-exit-gate.sh"; then
+      return 1
+    fi
+
+    return 0
+  }
+
   declare -A keep_roots=()
   keep_roots["$current_run_root"]=1
 
@@ -2093,23 +2136,25 @@ prune_old_run_roots() {
   local retained=0
   while IFS= read -r line; do
     path="${line#* }"
-    [[ -n "$path" ]] || continue
-    resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
-    if (( retained < RUN_RETENTION_COUNT )); then
-      keep_roots["$resolved_path"]=1
-      ((retained += 1))
+    if [[ -n "$path" ]]; then
+      resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
+      if run_root_has_live_owner "$resolved_path"; then
+        keep_roots["$resolved_path"]=1
+      elif (( retained < RUN_RETENTION_COUNT )); then
+        keep_roots["$resolved_path"]=1
+        ((retained += 1))
+      fi
     fi
   done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
 
   while IFS= read -r line; do
     path="${line#* }"
-    [[ -n "$path" ]] || continue
-    resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
-    if [[ -n "${keep_roots[$resolved_path]:-}" ]]; then
-      continue
+    if [[ -n "$path" ]]; then
+      resolved_path="$(readlink -f "$path" 2>/dev/null || printf '%s' "$path")"
+      if ! run_root_has_live_owner "$resolved_path" && [[ -z "${keep_roots[$resolved_path]:-}" ]]; then
+        rm -rf "$path"
+      fi
     fi
-
-    rm -rf "$path"
   done < <(find "$OUTPUT_BASE_ROOT" -mindepth 1 -maxdepth 1 -type d -name 'run.*' -printf '%T@ %p\n' 2>/dev/null | sort -nr)
 }
 
@@ -2117,6 +2162,7 @@ trap on_error ERR
 trap 'cleanup_snapshot' EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
+printf '%s\n' "$$" >"$RUN_OWNER_PID_PATH"
 rm -f "$FAILURE_REASONS_PATH"
 rm -f "$TEST_TRX_PATH"
 rm -f "$TEST_STATUS_PATH"

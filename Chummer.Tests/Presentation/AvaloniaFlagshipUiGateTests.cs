@@ -1678,6 +1678,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     SelectedCommandId: null,
                     DialogTitle: null,
                     DialogMessage: null,
+                    DialogTrustReceipt: null,
                     Fields: Array.Empty<DialogFieldDisplayItem>(),
                     Actions: Array.Empty<DialogActionDisplayItem>()),
                 new NavigatorPaneState(
@@ -1786,6 +1787,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 SelectedCommandId: null,
                 DialogTitle: "Global Settings",
                 DialogMessage: "Adjust desktop preferences.",
+                DialogTrustReceipt: null,
                 Fields:
                 [
                     new DialogFieldDisplayItem("globalTheme", "Theme", "classic", "classic", false, false, "text"),
@@ -1844,6 +1846,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 SelectedCommandId: null,
                 DialogTitle: "Open Character",
                 DialogMessage: trustReceipt,
+                DialogTrustReceipt: trustReceipt,
                 Fields:
                 [
                     new DialogFieldDisplayItem("importRulesetId", "Ruleset", "sr6", "sr6", false, true, "text")
@@ -1908,6 +1911,34 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual("Open Explain Companion", companionButton.Content?.ToString());
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build blocker receipt:", StringComparison.Ordinal)));
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build compare companion:", StringComparison.Ordinal)));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityHeritage")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityAttributes")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityTalent")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityTalentChoice")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkills")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityResources")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatypeCategory")));
+            Assert.IsNotNull(FindDescendant<ListBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatype")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetavariant")));
+            Assert.IsNotNull(FindDescendant<ListBox>(window, "newCharacterPriorityQualitiesList"));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice1")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice2")));
+            Assert.IsNull(FindDescendantOrDefault<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice3")));
         });
     }
 
@@ -2296,19 +2327,78 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Character_creation_preserves_familiar_dense_builder_rhythm()
     {
-        WithLoadedRunnerHarness(harness =>
+        WithStandaloneControl<SectionHostControl>(control =>
         {
-            ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
-            TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
+            List<AttributeEditRequest> edits = [];
+            control.AttributeEditRequested += (_, request) => edits.Add(request);
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
 
-            harness.WaitUntil(() => sectionRows.ItemCount >= 8);
-            string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
+            Border attributeEditor = FindDescendant<Border>(control, "AttributeParityEditorBorder");
+            NumericUpDown baseEditor = FindDescendant<NumericUpDown>(control, "AttributeBaseEditor_BOD");
+            NumericUpDown karmaEditor = FindDescendant<NumericUpDown>(control, "AttributeKarmaEditor_BOD");
+            Expander reviewExpander = FindDescendant<Expander>(control, "SectionReviewExpander");
 
-            CollectionAssert.Contains(rowText, "attributes.body = 5");
-            CollectionAssert.Contains(rowText, "attributes.agility = 7");
-            CollectionAssert.Contains(rowText, "skills.firearms[0] = Automatics 6");
-            StringAssert.Contains(sectionPreview.Text ?? string.Empty, "\"attributes\"");
-            StringAssert.Contains(sectionPreview.Text ?? string.Empty, "\"combat\"");
+            Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
+            Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base numeric editor.");
+            Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma numeric editor.");
+            Assert.IsFalse(reviewExpander.IsVisible, "Character creation parity must not fall back to the review expander.");
+
+            baseEditor.Value = 4m;
+            PumpStandaloneUi();
+            Thread.Sleep(300);
+            PumpStandaloneUi();
+
+            Assert.IsTrue(
+                edits.Any(edit =>
+                    string.Equals(edit.AttributeName, "Body", StringComparison.Ordinal)
+                    && string.Equals(edit.Bucket, "base", StringComparison.Ordinal)
+                    && edit.Value == 4),
+                "Character creation parity must emit a real attribute edit request when the numeric editor changes.");
         });
     }
 
@@ -2713,12 +2803,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("attributes");
-                ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
-                harness.WaitUntil(() => attributeRows.ItemCount > 0);
-                object? attributeRow = SnapshotListBoxItems(attributeRows).FirstOrDefault();
-                Assert.IsNotNull(attributeRow, "Expected visible attributes rows before capturing character-creation familiarity proof.");
-                attributeRows.SelectedItem = attributeRow;
-                harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
+                harness.WaitUntil(() => harness.FindControl<Control>("AttributeParityEditorBorder").IsVisible);
+                Assert.IsNotNull(harness.FindControlOrDefault<NumericUpDown>("AttributeBaseEditor_BOD"), "Expected numeric attribute editors before capturing character-creation familiarity proof.");
                 captured[expectedFiles[14]] = harness.CaptureScreenshotBytes();
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
@@ -4162,6 +4248,55 @@ public sealed class AvaloniaFlagshipUiGateTests
         throw new AssertFailedException("Avalonia standalone headless session did not stabilize for flagship UI proof.", lastFailure);
     }
 
+    private static void WithStandaloneDialogWindow(Action<DesktopDialogWindow> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            DesktopDialogWindow window = new()
+                            {
+                                Width = 1080,
+                                Height = 900
+                            };
+                            window.Show();
+                            PumpStandaloneUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpStandaloneUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
+        }
+
+        throw new AssertFailedException("Avalonia standalone dialog-window headless session did not stabilize for flagship UI proof.", lastFailure);
+    }
+
     private static T FindDescendant<T>(Control root, string name)
         where T : Control
     {
@@ -4756,6 +4891,45 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderByDescending(static value => value.Length)
             .FirstOrDefault() ?? string.Empty;
 
+    private static DesktopDialogState BuildPriorityWorkflowDialogForTesting(string buildMethod)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "BuildNewCharacterContinuationDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog reflection entry point was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [RulesetDefaults.Sr5, buildMethod, true, "Nova", "Cipher"])
+            ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState RebuildPriorityWorkflowDialogField(DesktopDialogState dialog, string fieldId, string value)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "RebuildDynamicDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field =>
+            {
+                if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                {
+                    return field with { Value = value };
+                }
+
+                if (string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                {
+                    return field with { Value = fieldId };
+                }
+
+                return field;
+            })
+            .ToArray();
+
+        return (DesktopDialogState)(method.Invoke(null, [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
+            ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+    }
+
     private sealed class RecordingCharacterOverviewPresenter : ICharacterOverviewPresenter
     {
         private readonly DesktopDialogFactory _dialogFactory = new();
@@ -4774,6 +4948,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         public List<string> ExecutedWorkspaceActionIds { get; } = [];
         public List<string> ExecutedCommandIds { get; } = [];
         public List<DialogFieldValueChangedEventArgs> DialogFieldUpdates { get; } = [];
+        public List<AttributeEditRequest> AttributeEdits { get; } = [];
         public List<string> ExecutedDialogActionIds { get; } = [];
         public int SaveCalls { get; private set; }
         public int ExportCalls { get; private set; }
@@ -4989,18 +5164,44 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             DialogFieldUpdates.Add(new DialogFieldValueChangedEventArgs(fieldId, value ?? string.Empty));
 
+            DesktopDialogField[] updatedFields = dialog.Fields
+                .Select(field =>
+                {
+                    if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                    {
+                        return field with { Value = value ?? string.Empty };
+                    }
+
+                    if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                        && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                    {
+                        return field with { Value = fieldId };
+                    }
+
+                    return field;
+                })
+                .ToArray();
+
+            MethodInfo rebuildMethod = typeof(DesktopDialogFactory).GetMethod(
+                "RebuildDynamicDialog",
+                BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+            DesktopDialogState nextDialog = (DesktopDialogState)(rebuildMethod.Invoke(
+                null,
+                [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
+                ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+
             Publish(_state with
             {
-                ActiveDialog = dialog with
-                {
-                    Fields = dialog.Fields
-                        .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
-                            ? field with { Value = value ?? string.Empty }
-                            : field)
-                        .ToArray()
-                }
+                ActiveDialog = nextDialog
             });
 
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+        {
+            AttributeEdits.Add(request);
             return Task.CompletedTask;
         }
 
@@ -5159,6 +5360,57 @@ public sealed class AvaloniaFlagshipUiGateTests
 """,
                         [
                             new SectionRowState("progress[0]", "First extraction · +2 karma")
+                        ]);
+                case "attributes":
+                case "attributedetails":
+                    return (
+                        """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("attributes[0]", "Body 4"),
+                            new SectionRowState("attributes[1]", "Agility 5"),
+                            new SectionRowState("attributes[2]", "Reaction 5")
                         ]);
                 case "calendar":
                     return (

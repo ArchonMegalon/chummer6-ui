@@ -73,6 +73,13 @@ public partial class MainWindow
             $"execute section quick action '{controlId}'");
     }
 
+    private async void SectionHost_OnAttributeEditRequested(object? sender, AttributeEditRequest request)
+    {
+        await RunUiActionAsync(
+            () => _interactionCoordinator.ApplyAttributeEditAsync(request, CancellationToken.None),
+            $"update attribute '{request.AttributeName}' {request.Bucket}");
+    }
+
     private async Task<bool> TryHandleExplainDrawerQuickActionAsync(string controlId)
     {
         if (!string.Equals(controlId, ExplainDrawerOpenRuleEnvironmentStudioActionId, StringComparison.Ordinal)

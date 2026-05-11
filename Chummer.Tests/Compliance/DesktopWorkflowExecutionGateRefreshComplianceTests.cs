@@ -23,6 +23,20 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
+    public void Workflow_execution_gate_refreshes_external_only_missing_api_surface_contract_receipts_even_when_child_refresh_exits_non_zero()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "receipt_is_external_only_missing_api_surface_contract");
+        StringAssert.Contains(scriptText, "failingParityReceiptsExternalOnly");
+        StringAssert.Contains(scriptText, "\"missing_api_surface_contract\" in str(reason or \"\")");
+        StringAssert.Contains(scriptText, "elif [[ \"$dependency_exit_code\" -ne 0 && \"$before_generated_at\" == \"$after_generated_at\" && \"$before_mtime\" == \"$after_mtime\" ]]");
+        StringAssert.Contains(scriptText, "receipt_is_external_only_missing_api_surface_contract \"$dependency_receipt_target\"");
+    }
+
+    [TestMethod]
     public void Workflow_execution_gate_refreshes_visual_familiarity_before_screenshot_review()
     {
         string repoRoot = FindRepoRoot();

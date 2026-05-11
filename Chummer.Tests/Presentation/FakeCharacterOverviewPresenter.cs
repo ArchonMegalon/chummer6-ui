@@ -41,6 +41,8 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
 
     public string? UpdatedDialogFieldValue { get; private set; }
 
+    public AttributeEditRequest? AppliedAttributeEdit { get; private set; }
+
     public int CloseDialogCalls { get; private set; }
 
     public int SaveCalls { get; private set; }
@@ -110,6 +112,12 @@ internal sealed class FakeCharacterOverviewPresenter : ICharacterOverviewPresent
     {
         UpdatedDialogFieldId = fieldId;
         UpdatedDialogFieldValue = value;
+        return Task.CompletedTask;
+    }
+
+    public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+    {
+        AppliedAttributeEdit = request;
         return Task.CompletedTask;
     }
 

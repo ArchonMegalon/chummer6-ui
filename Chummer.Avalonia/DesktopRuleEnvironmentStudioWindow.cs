@@ -247,7 +247,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             [
                 $"Explain receipts: {_projection.ReceiptSummary}",
                 $"Rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
-                $"Explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(receipt)}",
+                "Explain receipt: " + DesktopTrustReceiptText.BuildImportExplainReceipt(receipt),
                 $"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
             ]);
     }

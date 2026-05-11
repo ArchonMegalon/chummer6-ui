@@ -306,6 +306,77 @@ public sealed class WorkflowParityGateTests
         Assert.IsTrue(harness.State.Session.OpenWorkspaces.Count > 0, "Completing the workflow must leave an open workspace in session state.");
     }
 
+    [TestMethod]
+    public async Task Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterPriorityHeritage", "A");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityHeritage"));
+        Assert.AreEqual("D", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityResources"));
+        Assert.AreEqual("newCharacterPriorityHeritage", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityLastChangedFieldId"));
+    }
+
+    [TestMethod]
+    public async Task Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "SumToTen");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterPriorityHeritage", "A");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityWorkflowState"));
+
+        Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityHeritage"));
+        Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityResources"));
+        Assert.AreEqual("13/10", runtimeState.SumToTenLabel);
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterPriorityTalent", "B");
+        harness.UpdateDialogField("newCharacterPriorityTalentChoice", "Magician");
+        harness.UpdateDialogField("newCharacterPrioritySkillChoice1", "Spellcasting");
+        harness.UpdateDialogField("newCharacterPrioritySkillChoice2", "Spellcasting");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityWorkflowState"));
+
+        Assert.IsTrue(runtimeState.SkillChoice1.Visible);
+        Assert.IsTrue(runtimeState.SkillChoice2.Visible);
+        Assert.IsFalse(runtimeState.SkillChoice3.Visible);
+        Assert.AreEqual("Spellcasting", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPrioritySkillChoice1"));
+        Assert.AreNotEqual(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPrioritySkillChoice1"),
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPrioritySkillChoice2"),
+            "Magician continuation must repair duplicate free-skill choices immediately.");
+    }
+
     private static DesktopDialogState CreateCommandDialog(string commandId, string rulesetId)
     {
         return DialogFactory.CreateCommandDialog(
@@ -1107,13 +1178,27 @@ public sealed class WorkflowParityGateTests
             DesktopDialogState dialog = State.ActiveDialog
                 ?? throw new InvalidOperationException("No active dialog is available for field updates.");
 
+            DesktopDialogField[] updatedFields = dialog.Fields
+                .Select(field =>
+                {
+                    if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                    {
+                        return field with { Value = value };
+                    }
+
+                    if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                        && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                    {
+                        return field with { Value = fieldId };
+                    }
+
+                    return field;
+                })
+                .ToArray();
+
             DesktopDialogState updatedDialog = dialog with
             {
-                Fields = dialog.Fields
-                    .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
-                        ? field with { Value = value }
-                        : field)
-                    .ToArray()
+                Fields = updatedFields
             };
 
             State = State with

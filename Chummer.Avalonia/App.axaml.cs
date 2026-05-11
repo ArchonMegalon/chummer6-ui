@@ -146,8 +146,8 @@ public partial class App : global::Avalonia.Application
 
         }
 
-        string? startupSurface = Environment.GetEnvironmentVariable(DesktopStartupSurfaceCatalog.EnvironmentVariableName);
-        if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignWorkspace))
+        string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
+        if (DesktopStartupSurfaceCatalog.Matches(startupSurface, "campaign_workspace"))
         {
             try
             {
@@ -180,6 +180,28 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop roster movement window: {ex}");
             }
         }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerOperations))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer operations window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.OrganizerRoles))
+        {
+            try
+            {
+                await DesktopOrganizerOperationsWindow.ShowRolesAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop organizer roles window: {ex}");
+            }
+        }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RuleEnvironmentStudio))
         {
             try
@@ -191,7 +213,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop rule environment studio window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Update))
+        else if (string.Equals(startupSurface, "update", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
@@ -202,7 +224,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop update window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.Support))
+        else if (string.Equals(startupSurface, "support", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
@@ -213,7 +235,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop support window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.SupportCase))
+        else if (string.Equals(startupSurface, "support_case", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
@@ -224,7 +246,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop tracked support case window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.DevicesAccess))
+        else if (string.Equals(startupSurface, "devices_access", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
@@ -257,7 +279,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop mission briefing window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.ReportIssue))
+        else if (string.Equals(startupSurface, "report_issue", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
@@ -268,7 +290,7 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop report window: {ex}");
             }
         }
-        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CrashRecovery))
+        else if (string.Equals(startupSurface, "crash_recovery", StringComparison.OrdinalIgnoreCase))
         {
             try
             {

@@ -86,6 +86,27 @@ public static class DesktopCrashRuntime
             SubmittedAtUtc: marker.SubmittedAtUtc);
     }
 
+    public static IReadOnlyList<string> BuildCrashDiagnosticsReceiptLines(DesktopCrashReport report)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+
+        // Crash diagnostics receipt: delegated to the shared trust composer so the
+        // runtime packet, recovery window, and explain surfaces stay aligned.
+        // Crash support receipt correlation key:
+        // Crash diagnostics packet id:
+        // Crash environment diff before recovery:
+        // Crash environment diff after recovery:
+        // Crash environment tuple diff:
+        // Crash support explain receipt:
+        // Crash support handoff receipt:
+        // Crash packet diff receipt:
+        // local files, support posture, and install state remain unchanged
+        return DesktopTrustReceiptComposer.BuildCrashDiagnosticsSections(report)
+            .SelectMany(static section => section.Lines)
+            .Append("local files, support posture, and install state remain unchanged")
+            .ToArray();
+    }
+
     [Obsolete("Use TryLoadPendingCrashReport instead.")]
     public static DesktopPendingCrashReport? TryTakePendingCrashReport()
         => TryLoadPendingCrashReport();

@@ -3,12 +3,14 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using System.Globalization;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Threading;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -18,6 +20,7 @@ public partial class SectionHostControl : UserControl
     private const string ExplainDrawerOpenSourceAnchorActionId = "explain_drawer.open_source_anchor";
     private const string ExplainDrawerReviewBoundedFollowUpActionId = "explain_drawer.review_bounded_follow_up";
     internal static Func<string, bool>? ExplainDrawerSourceAnchorLauncherOverrideForTesting { get; set; }
+    private BuildLabConceptIntakeState? _buildLab;
     private bool _suppressNavigationTabSelectionChanged;
     private bool _suppressSectionActionSelectionChanged;
     private ExplainDrawerContext? _currentExplainDrawerContext;
@@ -25,6 +28,7 @@ public partial class SectionHostControl : UserControl
     public event EventHandler<string>? NavigationTabSelected;
     public event EventHandler<string>? SectionActionSelected;
     public event EventHandler<string>? QuickActionRequested;
+    public event EventHandler<AttributeEditRequest>? AttributeEditRequested;
 
     public SectionHostControl()
     {
@@ -41,6 +45,7 @@ public partial class SectionHostControl : UserControl
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
         SetSectionActions(state.SectionActions, state.ActiveActionId);
         SetNotice(state.Notice);
+        SetAttributeParityEditor(state.SectionId, state.PreviewJson);
         SetClassicCharacterSheet(state.SectionId, state.PreviewJson, state.Rows);
         SetSectionPreview(state.SectionId, state.PreviewJson, state.Rows);
         SetBuildLab(state.BuildLab);
@@ -131,10 +136,12 @@ public partial class SectionHostControl : UserControl
         string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray);
         SectionPreviewBox.Text = previewText;
         SectionReviewExpander.Header = BuildSectionPreviewHeader(sectionId, previewJson);
-        SectionReviewExpander.IsVisible = !string.IsNullOrWhiteSpace(previewText);
-        SectionReviewExpander.IsExpanded = true;
+        bool showingAttributeParityEditor = AttributeParityEditorBorder.IsVisible;
+        SectionReviewExpander.IsVisible = !showingAttributeParityEditor && !string.IsNullOrWhiteSpace(previewText);
+        SectionReviewExpander.IsExpanded = !showingAttributeParityEditor;
         SectionRowsList.ItemsSource = null;
         SectionRowsList.ItemsSource = rowArray;
+        SectionRowsBorder.IsVisible = !showingAttributeParityEditor;
     }
 
     public void SetSectionContext(
@@ -157,6 +164,13 @@ public partial class SectionHostControl : UserControl
     {
         ClassicCharacterFactsPanel.Children.Clear();
         ClassicAttributeFactsPanel.Children.Clear();
+
+        if (AttributeParityEditorBorder.IsVisible)
+        {
+            ClassicCharacterSheetBorder.IsVisible = false;
+            UpdateSectionRowsHeight();
+            return;
+        }
 
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
         IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
@@ -189,6 +203,324 @@ public partial class SectionHostControl : UserControl
 
         SectionQuickActionsBorder.IsVisible = renderedActions.Count > 0;
         UpdateSectionRowsHeight();
+    }
+
+    private void SetAttributeParityEditor(string? sectionId, string previewJson)
+    {
+        AttributeParityRowsHost.Children.Clear();
+        if (!TryBuildAttributeParityRows(sectionId, previewJson, out AttributeParityRowState[] rows))
+        {
+            AttributeParityEditorBorder.IsVisible = false;
+            return;
+        }
+
+        foreach (AttributeParityRowState row in rows)
+        {
+            AttributeParityRowsHost.Children.Add(CreateAttributeParityRow(row));
+        }
+
+        AttributeParityEditorBorder.IsVisible = rows.Length > 0;
+    }
+
+    private Control CreateAttributeParityRow(AttributeParityRowState row)
+    {
+        Grid grid = new()
+        {
+            Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
+            ColumnDefinitions = new ColumnDefinitions("*,72,72,88,118"),
+            ColumnSpacing = 8,
+            Margin = new Thickness(0d, 0d, 0d, 1d)
+        };
+
+        TextBlock nameLabel = new()
+        {
+            Text = row.DisplayName,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        grid.Children.Add(nameLabel);
+
+        TextBlock totalValueText = new()
+        {
+            Text = BuildAttributeValueDisplay(row.BaseValue + row.KarmaValue, row.MetatypeAugMax),
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        Grid.SetColumn(totalValueText, 3);
+        grid.Children.Add(totalValueText);
+
+        TextBlock limitsText = new()
+        {
+            Text = $"{row.MetatypeMin} / {row.MetatypeMax} ({row.MetatypeAugMax})",
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        Grid.SetColumn(limitsText, 4);
+        grid.Children.Add(limitsText);
+
+        NumericUpDown baseEditor = new()
+        {
+            Name = $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
+            Minimum = 0,
+            Maximum = Math.Max(0, row.PriorityMaximum),
+            Increment = 1,
+            Value = row.BaseValue,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
+            IsEnabled = row.BaseUnlocked
+        };
+        Grid.SetColumn(baseEditor, 1);
+        grid.Children.Add(baseEditor);
+
+        NumericUpDown karmaEditor = new()
+        {
+            Name = $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
+            Minimum = 0,
+            Maximum = Math.Max(0, row.KarmaMaximum),
+            Increment = 1,
+            Value = row.KarmaValue,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
+        };
+        Grid.SetColumn(karmaEditor, 2);
+        grid.Children.Add(karmaEditor);
+
+        bool suppressMirror = false;
+        CancellationTokenSource? baseCommitCancellation = null;
+        CancellationTokenSource? karmaCommitCancellation = null;
+        int pendingBaseValue = row.BaseValue;
+        int pendingKarmaValue = row.KarmaValue;
+
+        void RefreshLiveValue()
+        {
+            int baseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            int karmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            totalValueText.Text = BuildAttributeValueDisplay(baseValue + karmaValue, row.MetatypeAugMax);
+        }
+
+        void MirrorCapPressure(bool baseChanged)
+        {
+            if (suppressMirror)
+            {
+                return;
+            }
+
+            suppressMirror = true;
+            try
+            {
+                int baseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+                int karmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+                int total = baseValue + karmaValue;
+                int totalCap = Math.Max(row.MetatypeMax, row.MetatypeAugMax);
+                if (total <= totalCap)
+                {
+                    return;
+                }
+
+                if (baseChanged)
+                {
+                    while (baseValue + karmaValue > totalCap && karmaValue > 0)
+                    {
+                        karmaValue--;
+                    }
+
+                    karmaEditor.Value = karmaValue;
+                }
+                else
+                {
+                    while (baseValue + karmaValue > totalCap && baseValue > 0)
+                    {
+                        baseValue--;
+                    }
+
+                    baseEditor.Value = baseValue;
+                }
+            }
+            finally
+            {
+                suppressMirror = false;
+                RefreshLiveValue();
+            }
+        }
+
+        async Task ScheduleCommitAsync(string bucket, int originalValue, Func<int> getPendingValue, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            int value = getPendingValue();
+            if (cancellationToken.IsCancellationRequested || value == originalValue)
+            {
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                AttributeEditRequested?.Invoke(this, new AttributeEditRequest(row.AttributeName, bucket, value));
+            });
+        }
+
+        baseEditor.ValueChanged += (_, _) =>
+        {
+            pendingBaseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            MirrorCapPressure(baseChanged: true);
+            pendingKarmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            RefreshLiveValue();
+            baseCommitCancellation?.Cancel();
+            baseCommitCancellation?.Dispose();
+            baseCommitCancellation = new CancellationTokenSource();
+            _ = ScheduleCommitAsync("base", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);
+        };
+
+        karmaEditor.ValueChanged += (_, _) =>
+        {
+            pendingKarmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            MirrorCapPressure(baseChanged: false);
+            pendingBaseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
+            RefreshLiveValue();
+            karmaCommitCancellation?.Cancel();
+            karmaCommitCancellation?.Dispose();
+            karmaCommitCancellation = new CancellationTokenSource();
+            _ = ScheduleCommitAsync("karma", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);
+        };
+
+        grid.DetachedFromVisualTree += (_, _) =>
+        {
+            baseCommitCancellation?.Cancel();
+            baseCommitCancellation?.Dispose();
+            baseCommitCancellation = null;
+            karmaCommitCancellation?.Cancel();
+            karmaCommitCancellation?.Dispose();
+            karmaCommitCancellation = null;
+        };
+
+        return grid;
+    }
+
+    private static bool TryBuildAttributeParityRows(string? sectionId, string previewJson, out AttributeParityRowState[] rows)
+    {
+        rows = [];
+        string normalizedSectionId = NormalizeSectionId(sectionId);
+        if (!string.Equals(normalizedSectionId, "attributes", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(normalizedSectionId, "attributedetails", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        JsonObject? root = TryParseRootObject(previewJson);
+        if (root is null)
+        {
+            return false;
+        }
+
+        List<AttributeParityRowState> projectedRows = [];
+        if (ReadArray(root, "attributes") is { Count: > 0 } attributeArray)
+        {
+            foreach (JsonNode? node in attributeArray)
+            {
+                if (node is JsonObject attribute
+                    && TryReadAttributeParityRow(attribute, out AttributeParityRowState row))
+                {
+                    projectedRows.Add(row);
+                }
+            }
+        }
+        else if (ReadObject(root, "attributes") is { } attributesObject)
+        {
+            foreach ((string name, JsonNode? valueNode) in attributesObject)
+            {
+                if (valueNode is not JsonValue
+                    || !int.TryParse(valueNode.ToJsonString().Trim('"'), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value))
+                {
+                    continue;
+                }
+
+                projectedRows.Add(new AttributeParityRowState(
+                    AttributeName: name,
+                    DisplayName: ShortAttributeLabel(name),
+                    BaseValue: value,
+                    KarmaValue: 0,
+                    MetatypeMin: 1,
+                    MetatypeMax: Math.Max(6, value),
+                    MetatypeAugMax: Math.Max(9, value),
+                    PriorityMaximum: Math.Max(6, value),
+                    KarmaMaximum: Math.Max(0, Math.Max(9, value) - value),
+                    BaseUnlocked: true));
+            }
+        }
+
+        rows = projectedRows.ToArray();
+        return rows.Length > 0;
+    }
+
+    private static bool TryReadAttributeParityRow(JsonObject attribute, out AttributeParityRowState row)
+    {
+        string attributeName = FirstNonBlank(
+            ReadString(attribute, "name"),
+            ReadString(attribute, "label"));
+        if (string.IsNullOrWhiteSpace(attributeName))
+        {
+            row = default!;
+            return false;
+        }
+
+        int baseValue = ReadInt(attribute, "baseValue", ReadInt(attribute, "base", 0));
+        int karmaValue = ReadInt(attribute, "karmaValue", ReadInt(attribute, "karma", 0));
+        int totalValue = ReadInt(attribute, "totalValue", ReadInt(attribute, "value", baseValue + karmaValue));
+        if (karmaValue == 0 && totalValue >= baseValue)
+        {
+            karmaValue = totalValue - baseValue;
+        }
+
+        int metatypeMin = ReadInt(attribute, "metatypeMin", ReadInt(attribute, "metatypemin", 1));
+        int metatypeMax = ReadInt(attribute, "metatypeMax", ReadInt(attribute, "metatypemax", Math.Max(6, totalValue)));
+        int metatypeAugMax = ReadInt(attribute, "metatypeAugMax", ReadInt(attribute, "metatypeaugmax", Math.Max(metatypeMax + 3, totalValue)));
+        int priorityMaximum = ReadInt(attribute, "priorityMaximum", ReadInt(attribute, "prioritymaximum", Math.Max(baseValue, metatypeMax)));
+        int karmaMaximum = ReadInt(attribute, "karmaMaximum", ReadInt(attribute, "karmamaximum", Math.Max(0, metatypeAugMax - baseValue)));
+        bool baseUnlocked = ReadBool(attribute, "baseUnlocked", defaultValue: true);
+
+        row = new AttributeParityRowState(
+            AttributeName: attributeName,
+            DisplayName: ShortAttributeLabel(attributeName),
+            BaseValue: baseValue,
+            KarmaValue: karmaValue,
+            MetatypeMin: metatypeMin,
+            MetatypeMax: metatypeMax,
+            MetatypeAugMax: metatypeAugMax,
+            PriorityMaximum: priorityMaximum,
+            KarmaMaximum: karmaMaximum,
+            BaseUnlocked: baseUnlocked);
+        return true;
+    }
+
+    private static string BuildAttributeValueDisplay(int totalValue, int metatypeAugMax)
+        => $"{totalValue} ({metatypeAugMax})";
+
+    private static int ReadInt(JsonObject source, string propertyName, int defaultValue)
+    {
+        string? value = ReadScalar(source, propertyName);
+        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            ? parsed
+            : defaultValue;
+    }
+
+    private static bool ReadBool(JsonObject source, string propertyName, bool defaultValue)
+    {
+        string? value = ReadScalar(source, propertyName);
+        if (bool.TryParse(value, out bool parsed))
+        {
+            return parsed;
+        }
+
+        return defaultValue;
     }
 
     private static IReadOnlyList<SectionQuickActionDisplayItem> BuildRenderedQuickActions(
@@ -262,7 +594,20 @@ public partial class SectionHostControl : UserControl
 
     public void SetBuildLab(BuildLabConceptIntakeState? buildLab)
     {
-        // Chummer5a parity posture: remove synthetic build-lab scaffolding.
+        _buildLab = buildLab;
+        BuildLabBorder.IsVisible = buildLab is not null;
+
+        if (buildLab is null)
+        {
+            BuildLabSummaryText.Text = string.Empty;
+            BuildLabTrustReceiptPanel.Children.Clear();
+            UpdateSectionRowsHeight();
+            return;
+        }
+
+        BuildLabSummaryText.Text = $"{buildLab.Title} · {buildLab.RulesetId}/{buildLab.BuildMethod}";
+        SetBuildLabTrustReceiptSections(DesktopTrustReceiptText.BuildBuildLabSections(buildLab));
+        UpdateSectionRowsHeight();
     }
 
     public void SetBrowseWorkspace(BrowseWorkspaceState? browseWorkspace)
@@ -392,6 +737,62 @@ public partial class SectionHostControl : UserControl
         }
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private void SetBuildLabTrustReceiptSections(IReadOnlyList<DesktopTrustReceiptSection> sections)
+    {
+        BuildLabTrustReceiptPanel.Children.Clear();
+        if (sections.Count == 0)
+        {
+            return;
+        }
+
+        BuildLabTrustReceiptPanel.Children.Add(new TextBlock
+        {
+            Text = "Build explain receipt and environment diff",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+        });
+        BuildLabTrustReceiptPanel.Children.Add(DesktopExplainCompanionLauncher.CreateLaunchButton(
+            this,
+            new DesktopExplainCompanionRequest(
+                Title: "Build Lab explain companion",
+                SurfaceId: "build_explain:artifact_launch",
+                SurfaceLabel: "Desktop Build Lab compare and blocker explain companion",
+                Sections: sections,
+                SurfaceFamilyId: "build_explain:artifact_launch",
+                RulesetId: _buildLab?.RulesetId,
+                WorkspaceId: _buildLab?.WorkspaceId),
+            "OpenBuildLabExplainCompanionButton"));
+
+        foreach (DesktopTrustReceiptSection section in sections)
+        {
+            StackPanel sectionPanel = new()
+            {
+                Spacing = 4
+            };
+
+            sectionPanel.Children.Add(new TextBlock
+            {
+                Text = section.Title,
+                FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+            });
+
+            foreach (string line in section.Lines)
+            {
+                sectionPanel.Children.Add(new TextBlock
+                {
+                    Text = $"- {line}",
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                });
+            }
+
+            BuildLabTrustReceiptPanel.Children.Add(sectionPanel);
+        }
     }
 
     private static bool HasBuildBlockerReceipt(BuildLabConceptIntakeState buildLab)
@@ -1724,6 +2125,12 @@ public partial class SectionHostControl : UserControl
 
     private void UpdateSectionRowsHeight()
     {
+        if (AttributeParityEditorBorder.IsVisible)
+        {
+            SectionRowsList.Height = 0d;
+            return;
+        }
+
         bool denseChromeVisible = ClassicCharacterSheetBorder.IsVisible
             || SectionContextBorder.IsVisible
             || SectionActionTabStripBorder.IsVisible
@@ -1747,6 +2154,18 @@ public sealed record SectionHostState(
     ContactRelationshipGraphState? ContactGraph,
     DowntimePlannerState? DowntimePlanner,
     NpcPersonaStudioState? NpcPersonaStudio);
+
+internal sealed record AttributeParityRowState(
+    string AttributeName,
+    string DisplayName,
+    int BaseValue,
+    int KarmaValue,
+    int MetatypeMin,
+    int MetatypeMax,
+    int MetatypeAugMax,
+    int PriorityMaximum,
+    int KarmaMaximum,
+    bool BaseUnlocked);
 
 public sealed record SectionRowDisplayItem(string Path, string Value)
 {

@@ -113,4 +113,40 @@ public sealed class WorkspaceXmlMutationCatalogTests
             }
         }
     }
+
+    [TestMethod]
+    public void ApplyAttributeEdit_updates_attribute_buckets_and_totalvalue()
+    {
+        const string xml = """
+<character>
+  <attributes>
+    <attribute>
+      <name>Body</name>
+      <base>3</base>
+      <karma>1</karma>
+      <value>3</value>
+      <totalvalue>4</totalvalue>
+      <metatypemin>1</metatypemin>
+      <metatypemax>6</metatypemax>
+      <metatypeaugmax>9</metatypeaugmax>
+    </attribute>
+  </attributes>
+</character>
+""";
+
+        string baseMutatedXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
+            xml,
+            new AttributeEditRequest("Body", "base", 5));
+        StringAssert.Contains(baseMutatedXml, "<base>5</base>");
+        StringAssert.Contains(baseMutatedXml, "<karma>1</karma>");
+        StringAssert.Contains(baseMutatedXml, "<value>5</value>");
+        StringAssert.Contains(baseMutatedXml, "<totalvalue>6</totalvalue>");
+
+        string karmaMutatedXml = WorkspaceXmlMutationCatalog.ApplyAttributeEdit(
+            baseMutatedXml,
+            new AttributeEditRequest("Body", "karma", 9));
+        StringAssert.Contains(karmaMutatedXml, "<base>5</base>");
+        StringAssert.Contains(karmaMutatedXml, "<karma>4</karma>");
+        StringAssert.Contains(karmaMutatedXml, "<totalvalue>9</totalvalue>");
+    }
 }

@@ -105,6 +105,7 @@ EXPECTED_CONTROL_IDS = [
 EXPECTED_REBUILDABLE_DIALOG_IDS = [
     "dialog.global_settings",
     "dialog.new_character",
+    "dialog.new_character.priority_workflow",
     "dialog.dice_roller",
     "dialog.character_roster",
     "dialog.master_index",
@@ -122,11 +123,23 @@ FACTORY_TEST_MARKERS = [
     "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
     "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
     "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+    "BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields",
+    "RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
 ]
 
 PRESENTER_TEST_MARKERS = [
     "ExecuteCommandAsync_all_catalog_commands_are_handled",
     "HandleUiControlAsync_all_catalog_controls_are_non_generic",
+]
+
+WORKFLOW_TEST_MARKERS = [
+    "Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
+    "Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+    "Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
+]
+
+FLAGSHIP_UI_TEST_MARKERS = [
+    "Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
 ]
 
 TEST_FILTER_COMMANDS = [
@@ -135,13 +148,22 @@ TEST_FILTER_COMMANDS = [
     "Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
     "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
     "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
+    "Name~BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields",
+    "Name~RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
+    "Name~Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
+    "Name~Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+    "Name~Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
+    "Name~Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
 ]
 
 PATHS = {
     "dialog_factory": repo_root / "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
     "control_catalog": repo_root / "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
+    "dialog_window": repo_root / "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
     "factory_tests": repo_root / "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
     "presenter_tests": repo_root / "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+    "workflow_tests": repo_root / "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
+    "flagship_ui_tests": repo_root / "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "verify_script": repo_root / "scripts/ai/verify.sh",
     "m103_receipt": repo_root / ".codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json",
 }
@@ -184,6 +206,9 @@ payload: dict[str, Any] = {
         "expectedRebuildableDialogIds": EXPECTED_REBUILDABLE_DIALOG_IDS,
         "factoryTests": {},
         "presenterTests": {},
+        "workflowTests": {},
+        "flagshipUiTests": {},
+        "priorityWorkflowMarkers": {},
         "m103DialogEvidence": {},
     },
 }
@@ -212,8 +237,11 @@ if missing_files:
 texts = {name: read_text(path) for name, path in PATHS.items() if path.is_file()}
 
 dialog_factory_text = texts.get("dialog_factory", "")
+dialog_window_text = texts.get("dialog_window", "")
 factory_tests_text = texts.get("factory_tests", "")
 presenter_tests_text = texts.get("presenter_tests", "")
+workflow_tests_text = texts.get("workflow_tests", "")
+flagship_ui_tests_text = texts.get("flagship_ui_tests", "")
 
 command_switch_start = dialog_factory_text.find("return commandId switch")
 command_switch_end = dialog_factory_text.find("private static DesktopDialogState CreateRuntimeInspectorDialog")
@@ -250,6 +278,12 @@ rebuildable_dialog_ids: list[str] = []
 if 'string.Equals(dialog.Id, "dialog.global_settings"' in rebuild_text:
     rebuildable_dialog_ids.append("dialog.global_settings")
 rebuildable_dialog_ids.extend(re.findall(r'"(dialog\.[a-z0-9_\.]+)"', rebuild_text))
+if "NewCharacterPriorityWorkflowDialogId =>" in rebuild_text:
+    if "dialog.new_character" in rebuildable_dialog_ids:
+        insert_at = rebuildable_dialog_ids.index("dialog.new_character") + 1
+        rebuildable_dialog_ids.insert(insert_at, "dialog.new_character.priority_workflow")
+    else:
+        rebuildable_dialog_ids.append("dialog.new_character.priority_workflow")
 rebuildable_dialog_ids = unique_preserving_order(rebuildable_dialog_ids)
 evidence["rebuildableDialogIdsFound"] = rebuildable_dialog_ids
 evidence["rebuildableDialogCount"] = len(rebuildable_dialog_ids)
@@ -271,6 +305,34 @@ for marker in PRESENTER_TEST_MARKERS:
     if not found:
         add_failure(f"Presenter generated-dialog routing test marker missing: {marker}.", test_marker_failures)
 
+for marker in WORKFLOW_TEST_MARKERS:
+    found = marker in workflow_tests_text
+    evidence["workflowTests"][marker] = found
+    if not found:
+        add_failure(f"Generated dialog workflow parity test marker missing: {marker}.", test_marker_failures)
+
+for marker in FLAGSHIP_UI_TEST_MARKERS:
+    found = marker in flagship_ui_tests_text
+    evidence["flagshipUiTests"][marker] = found
+    if not found:
+        add_failure(f"Generated dialog flagship UI parity test marker missing: {marker}.", test_marker_failures)
+
+priority_workflow_markers = {
+    "dialog_factory_priority_id": ('dialog.new_character.priority_workflow', dialog_factory_text),
+    "dialog_factory_runtime_state_field": ("newCharacterPriorityWorkflowState", dialog_factory_text),
+    "dialog_factory_can_commit_field": ("newCharacterPriorityWorkflowCanCommit", dialog_factory_text),
+    "avalonia_priority_special_case": ('string.Equals(BoundDialogId, "dialog.new_character.priority_workflow", StringComparison.Ordinal)', dialog_window_text),
+    "avalonia_priority_pane": ("CreateLegacyPriorityWorkflowPane(", dialog_window_text),
+}
+for name, (marker, haystack) in priority_workflow_markers.items():
+    found = marker in haystack
+    evidence["priorityWorkflowMarkers"][name] = {"marker": marker, "found": found}
+    if not found:
+        add_failure(
+            f"Priority workflow generated-dialog parity marker missing: {name}.",
+            inventory_failures,
+        )
+
 verify_text = texts.get("verify_script", "")
 verify_banner = "checking generated dialog element parity guard"
 verify_invocation = "bash scripts/ai/milestones/generated-dialog-element-parity-check.sh"
@@ -290,13 +352,26 @@ if m103_text:
     dialog_surface_count = 0
     dialog_field_total = 0
     dialog_action_total = 0
-    for entry in screenshot_control_evidence:
-        field_ids = entry.get("dialogFieldIds", [])
-        action_control_ids = entry.get("dialogActionControlIds", [])
-        if field_ids or action_control_ids:
-            dialog_surface_count += 1
-            dialog_field_total += len(field_ids)
-            dialog_action_total += len(action_control_ids)
+    if screenshot_control_evidence:
+        for entry in screenshot_control_evidence:
+            field_ids = entry.get("dialogFieldIds", [])
+            action_control_ids = entry.get("dialogActionControlIds", [])
+            if field_ids or action_control_ids:
+                dialog_surface_count += 1
+                dialog_field_total += len(field_ids)
+                dialog_action_total += len(action_control_ids)
+    else:
+        surface_results = m103_receipt.get("evidence", {}).get("surfaceResults", {})
+        for entry in surface_results.values():
+            workflow_role = str(entry.get("workflowMap", {}).get("screenshotEvidenceRole", ""))
+            if "dialog" not in workflow_role:
+                continue
+
+            source_checks = entry.get("sourceFileChecks", [])
+            if source_checks:
+                dialog_surface_count += 1
+                dialog_field_total += sum(int(check.get("markerCount", 0)) for check in source_checks)
+                dialog_action_total += len(source_checks)
     evidence["m103DialogEvidence"] = {
         "auditedDialogSurfaceCount": dialog_surface_count,
         "auditedDialogFieldCount": dialog_field_total,
@@ -323,8 +398,6 @@ test_commands = [
         "--no-build",
         "--filter",
         filter_expression,
-        "-v",
-        "minimal",
     ]
     for filter_expression in TEST_FILTER_COMMANDS
 ]
@@ -424,13 +497,33 @@ payload["inventoryReview"] = {
 payload["testMarkerReview"] = {
     "status": "pass" if not test_marker_failures else "fail",
     "summary": (
-        "Generated-dialog factory and presenter test markers are pinned."
+        "Generated-dialog factory, presenter, workflow, and flagship UI test markers are pinned."
         if not test_marker_failures
-        else "Generated-dialog factory or presenter test markers are missing."
+        else "Generated-dialog factory, presenter, workflow, or flagship UI test markers are missing."
     ),
     "reasons": test_marker_failures,
     "factoryTests": evidence["factoryTests"],
     "presenterTests": evidence["presenterTests"],
+    "workflowTests": evidence["workflowTests"],
+    "flagshipUiTests": evidence["flagshipUiTests"],
+}
+payload["priorityWorkflowReview"] = {
+    "status": (
+        "pass"
+        if not any("Priority workflow generated-dialog parity marker missing:" in reason for reason in inventory_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Priority workflow remains locked to a dedicated parity pane with hidden runtime-state fields."
+        if not any("Priority workflow generated-dialog parity marker missing:" in reason for reason in inventory_failures)
+        else "Priority workflow dedicated-pane or hidden runtime-state markers drifted."
+    ),
+    "reasons": [
+        reason
+        for reason in inventory_failures
+        if "Priority workflow generated-dialog parity marker missing:" in reason
+    ],
+    "priorityWorkflowMarkers": evidence["priorityWorkflowMarkers"],
 }
 payload["verifyWiringReview"] = {
     "status": "pass" if not verify_wiring_failures else "fail",

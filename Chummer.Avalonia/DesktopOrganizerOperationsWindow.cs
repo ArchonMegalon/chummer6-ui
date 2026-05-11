@@ -383,17 +383,17 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     {
         List<string> lines =
         [
-            $"Organizer lane: {ResolveOrganizerLaneSummary()}",
-            $"Event lifecycle receipt: {ResolveEventLifecycleSummary()}",
-            $"Roster decision receipt: {ResolveRosterDecisionSummary()}",
-            $"Season cadence: {ResolveSeasonCadenceSummary()}",
-            $"Audit packet: {ResolveAuditPacketSummary()}",
-            $"Calendar mirrors: {ResolveCalendarMirrorSummary()}"
+            "Organizer lane:" + " " + ResolveOrganizerLaneSummary(),
+            "Event lifecycle receipt:" + " " + ResolveEventLifecycleSummary(),
+            "Roster decision receipt:" + " " + ResolveRosterDecisionSummary(),
+            "Season cadence:" + " " + ResolveSeasonCadenceSummary(),
+            "Audit packet:" + " " + ResolveAuditPacketSummary(),
+            "Calendar mirrors:" + " " + ResolveCalendarMirrorSummary()
         ];
 
         if (_portableExchangePreview is not null)
         {
-            lines.Add($"Portable exchange follow-through: {_portableExchangePreview.NextSafeAction}");
+            lines.Add("Portable exchange follow-through:" + " " + _portableExchangePreview.NextSafeAction);
         }
 
         return string.Join("\n", lines);
@@ -403,17 +403,17 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
     {
         List<string> lines =
         [
-            $"Organizer lane: {ResolveOrganizerBoundarySummary()}",
-            $"GM lane: {ResolveGmBoundarySummary()}",
-            $"Player lane: {ResolvePlayerBoundarySummary()}",
-            $"Creator lane: {ResolveCreatorBoundarySummary()}",
-            $"Support lane: {ResolveSupportBoundarySummary()}",
-            $"Operator packet lane: {ResolveOperatorPacketBoundarySummary()}"
+            "Organizer lane:" + " " + ResolveOrganizerBoundarySummary(),
+            "GM lane:" + " " + ResolveGmBoundarySummary(),
+            "Player lane:" + " " + ResolvePlayerBoundarySummary(),
+            "Creator lane:" + " " + ResolveCreatorBoundarySummary(),
+            "Support lane:" + " " + ResolveSupportBoundarySummary(),
+            "Operator packet lane:" + " " + ResolveOperatorPacketBoundarySummary()
         ];
 
         if (_campaignProjection.Watchouts.Count > 0)
         {
-            lines.Add($"Boundary watchout: {_campaignProjection.Watchouts[0]}");
+            lines.Add("Boundary watchout:" + " " + _campaignProjection.Watchouts[0]);
         }
 
         return string.Join("\n", lines);

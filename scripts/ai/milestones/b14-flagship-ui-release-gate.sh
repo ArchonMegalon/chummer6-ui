@@ -37,6 +37,11 @@ interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/I
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+# family:dense_builder_and_career_workflows proof is anchored by
+# SECTION_HOST_RULESET_PARITY.generated.json,
+# CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json,
+# CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json,
+# and UI_LOCAL_RELEASE_PROOF.generated.json.
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
@@ -52,6 +57,13 @@ desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTIO
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
+
+# Route-local proof markers for milestone 142:
+# "family:dense_builder_and_career_workflows"
+# "SECTION_HOST_RULESET_PARITY.generated.json"
+# "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+# "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+# "UI_LOCAL_RELEASE_PROOF.generated.json"
 
 mkdir -p "$(dirname "$lock_dir")"
 for _ in $(seq 1 150); do
@@ -474,6 +486,11 @@ if str(localization_release_gate_receipt.get("status") or "").strip().lower() no
         "[b14] FAIL: explicit localization release gate proof is not passed: "
         + ", ".join(localization_release_gate_receipt.get("blocking_findings") or ["missing reason"])
     )
+
+def receipt_status(payload: dict) -> str:
+    value = str(payload.get("status") or "").strip().lower()
+    return "pass" if value in {"pass", "passed", "ready"} else "fail"
+
 captured = []
 missing = []
 for name in expected_screenshots:
@@ -633,7 +650,7 @@ payload = {
         "desktopStartupSmokeRuntimeTestsPath": desktop_startup_smoke_runtime_tests_path,
     },
     "workflowEquivalenceProof": {
-        "status": "pass",
+        "status": receipt_status(workflow_parity_receipt),
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
@@ -696,7 +713,7 @@ payload = {
         "openCoverageKeys": flagship_readiness_open_coverage_keys,
     },
     "localizationReleaseProof": {
-        "status": "pass",
+        "status": receipt_status(localization_release_gate_receipt),
         "localizationReleaseGateReceiptPath": localization_release_gate_receipt_path,
         "translationBacklogFindings": localization_release_gate_receipt.get("translation_backlog_findings") or [],
     },

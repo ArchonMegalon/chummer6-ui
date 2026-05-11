@@ -106,20 +106,49 @@ PY
 }
 
 to_native_path() {
+  local input_path="$1"
+
   if command -v cygpath >/dev/null 2>&1; then
-    cygpath -w "$1"
+    cygpath -w "$input_path"
     return
   fi
 
   if command -v winepath >/dev/null 2>&1; then
-    winepath -w "$1" | tr -d '\r'
+    winepath -w "$input_path" | tr -d '\r'
     return
   fi
 
-  echo "$1"
+  if pwd -W >/dev/null 2>&1; then
+    case "$input_path" in
+      [A-Za-z]:[\\/]*)
+        echo "$input_path"
+        return
+        ;;
+      /*)
+        local parent_dir base_name native_parent
+        parent_dir="$(dirname "$input_path")"
+        base_name="$(basename "$input_path")"
+        if pushd "$parent_dir" >/dev/null 2>&1; then
+          native_parent="$(pwd -W | tr -d '\r')"
+          popd >/dev/null 2>&1 || true
+          if [[ -n "$native_parent" ]]; then
+            printf '%s\\%s\n' "$native_parent" "$base_name"
+            return
+          fi
+        fi
+        ;;
+    esac
+  fi
+
+  echo "$input_path"
 }
 
 run_with_optional_xvfb() {
+  if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    "$@"
+    return
+  fi
+
   if command -v xvfb-run >/dev/null 2>&1; then
     xvfb-run -a "$@"
     return
@@ -132,15 +161,58 @@ run_windows_binary() {
   local executable_path="$1"
   shift
 
-  if command -v cygpath >/dev/null 2>&1; then
-    "$executable_path" "$@"
-    return
-  fi
-
   if command -v wine >/dev/null 2>&1; then
     local native_executable_path
     native_executable_path="$(to_native_path "$executable_path")"
     run_with_optional_xvfb wine "$native_executable_path" "$@"
+    return
+  fi
+
+  if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+    local native_executable_path
+    native_executable_path="$(to_native_path "$executable_path")"
+    local powershell_bin="powershell.exe"
+    if command -v pwsh >/dev/null 2>&1; then
+      powershell_bin="pwsh"
+    fi
+    local args_json
+    args_json="$(python3 - "$@" <<'PY'
+import json
+import sys
+
+print(json.dumps(sys.argv[1:]))
+PY
+)"
+    CHUMMER_WINDOWS_BINARY_PATH="$native_executable_path" \
+    CHUMMER_WINDOWS_BINARY_ARGS_JSON="$args_json" \
+    "$powershell_bin" -NoLogo -NoProfile -Command '
+      $exe = $env:CHUMMER_WINDOWS_BINARY_PATH
+      $args = @()
+      if ($env:CHUMMER_WINDOWS_BINARY_ARGS_JSON) {
+        $decoded = ConvertFrom-Json $env:CHUMMER_WINDOWS_BINARY_ARGS_JSON
+        if ($null -ne $decoded) {
+          if ($decoded -is [System.Array]) {
+            $args = @($decoded)
+          }
+          else {
+            $args = @([string]$decoded)
+          }
+        }
+      }
+      & $exe @args
+      exit $LASTEXITCODE
+    '
+    return
+  fi
+
+  if command -v cygpath >/dev/null 2>&1; then
+    local unix_executable_path="$executable_path"
+    case "$executable_path" in
+      [A-Za-z]:[\\/]*)
+        unix_executable_path="$(cygpath -u "$executable_path")"
+        ;;
+    esac
+    "$unix_executable_path" "$@"
     return
   fi
 
@@ -182,6 +254,17 @@ run_head_smoke() {
     RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
   fi
 
+  local bundle_extract_base_dir="$BUNDLE_EXTRACT_ROOT"
+  local runtime_home="$RUNTIME_HOME"
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    receipt_path="$(to_native_path "$receipt_path")"
+    packet_path="$(to_native_path "$packet_path")"
+    bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
+    if ! command -v wine >/dev/null 2>&1; then
+      runtime_home="$(to_native_path "$RUNTIME_HOME")"
+    fi
+  fi
+
   CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
@@ -189,12 +272,12 @@ run_head_smoke() {
   CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$BUNDLE_EXTRACT_ROOT" \
-  HOME="$RUNTIME_HOME" \
-  XDG_CONFIG_HOME="$RUNTIME_HOME/.config" \
-  XDG_DATA_HOME="$RUNTIME_HOME/.local/share" \
-  XDG_STATE_HOME="$RUNTIME_HOME/.local/state" \
-  XDG_CACHE_HOME="$RUNTIME_HOME/.cache" \
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+  HOME="$runtime_home" \
+  XDG_CONFIG_HOME="$runtime_home/.config" \
+  XDG_DATA_HOME="$runtime_home/.local/share" \
+  XDG_STATE_HOME="$runtime_home/.local/state" \
+  XDG_CACHE_HOME="$runtime_home/.cache" \
   run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
 }
 
@@ -221,7 +304,8 @@ run_windows_smoke() {
     fi
   fi
 
-  run_head_smoke "$INSTALL_ROOT/$LAUNCH_TARGET"
+  local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
+  run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
 }
 
 seed_dpkg_admin_dir() {

@@ -3,7 +3,7 @@
              x:Class="Chummer.Avalonia.Controls.CommandDialogPaneControl">
   <Border Classes="shell-card"
           Padding="0">
-    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto"
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto"
           RowSpacing="0">
       <Border Grid.Row="0"
               Background="{DynamicResource ChummerShellDialogHeaderBrush}"
@@ -28,13 +28,28 @@
                    TextWrapping="Wrap" />
       </Border>
 
-      <ScrollViewer Grid.Row="2"
+      <Border Grid.Row="2"
+              x:Name="DialogTrustReceiptBorder"
+              Classes="shell-panel subtle"
+              Padding="6,3"
+              IsVisible="False">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Explain Receipt And Environment Diff"
+                     Classes="shell-section-title" />
+          <TextBlock x:Name="DialogTrustReceiptText"
+                     Classes="shell-caption"
+                     Text="(none)"
+                     TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Grid.Row="3"
                     VerticalScrollBarVisibility="Auto"
                     Padding="6,4">
         <StackPanel x:Name="DialogFieldsHost" Spacing="6" />
       </ScrollViewer>
 
-      <Border Grid.Row="3"
+      <Border Grid.Row="4"
               x:Name="DialogActionsBorder"
               Background="{DynamicResource ChummerShellChromeBrush}"
               BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
@@ -47,7 +62,7 @@
                    ItemHeight="26" />
       </Border>
 
-      <Border Grid.Row="4"
+      <Border Grid.Row="5"
               x:Name="CommandsHostBorder"
               Classes="shell-panel subtle"
               Padding="3,2"

@@ -82,6 +82,10 @@ feedback_sources = [
 ]
 frontier_ids = [3782970110, 2714856833, 1186439541, 4871476959, 1922169755]
 review_jobs = {
+    "dense_workbench_and_initiative": {
+        "routeIds": ["menu:dice_roller_or_workflow:initiative_screenshot"],
+        "screenshots": ["05-dense-section-light.png", "07-loaded-runner-tabs-light.png"],
+    },
     "dense_builder": {
         "frontierId": 3782970110,
         "screenshots": ["05-dense-section-light.png", "06-dense-section-dark.png"],
@@ -123,6 +127,22 @@ review_jobs = {
         "screenshots": ["40-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
         "evidenceKeys": [],
         "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
+    },
+}
+
+route_local_receipts = {
+    "dense_workbench_and_initiative": {
+        "routeIds": [
+            "menu:dice_roller_or_workflow:initiative_screenshot",
+            "dice_roller",
+            "initiative_screenshot",
+        ],
+        "screenshots": [
+            "05-dense-section-light.png",
+            "07-loaded-runner-tabs-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
     },
 }
 
@@ -321,6 +341,26 @@ if older_than_receipt:
 
 review_job_failing = sorted(job_name for job_name, job in job_results.items() if job["status"] != "pass")
 
+dense_workbench_and_initiative = route_local_receipts["dense_workbench_and_initiative"]
+for screenshot in dense_workbench_and_initiative["screenshots"]:
+    if screenshot not in required_screenshots:
+        dense_workbench_and_initiative["reasons"].append(
+            f"{screenshot} is not mandatory in DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE."
+        )
+    if screenshot in missing_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is reported missing.")
+    if screenshot in invalid_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is reported corrupt or unreadable.")
+    if screenshot in undersized_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is below the review resolution floor.")
+    if screenshot_dir is not None and not (screenshot_dir / screenshot).is_file():
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is absent from the screenshot directory.")
+if job_results["dense_builder"]["status"] != "pass":
+    dense_workbench_and_initiative["reasons"].append("dense_builder review job is not passing.")
+if not status_pass(visual_gate.get("status")):
+    dense_workbench_and_initiative["reasons"].append("Desktop visual familiarity gate is not passing.")
+dense_workbench_and_initiative["status"] = "pass" if not dense_workbench_and_initiative["reasons"] else "fail"
+
 payload = {
     "generatedAt": now_iso(),
     "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
@@ -382,6 +422,7 @@ payload = {
     },
     "screenshotDirectory": screenshot_dir_raw,
     "reviewJobs": job_results,
+    "routeLocalReceipts": route_local_receipts,
     "evidence": {
         "feedbackSources": [str(path) for path in feedback_sources],
         "supportingReceipts": {
@@ -400,6 +441,7 @@ payload = {
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
         "reviewedJobs": sorted(review_jobs.keys()),
         "failingJobs": review_job_failing,
+        "routeLocalReceipts": route_local_receipts,
         "reasonCount": len(reasons),
         "failureCount": len(reasons),
     },
