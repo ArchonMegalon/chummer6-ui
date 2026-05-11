@@ -696,6 +696,52 @@ if to_bool "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" && [[ "$materializer_help" == *"-
 fi
 
 python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
+python3 - "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def coverage_is_incomplete(payload: dict) -> bool:
+    coverage = payload.get("desktopTupleCoverage")
+    if not isinstance(coverage, dict):
+        return False
+    for key in (
+        "missingRequiredPlatforms",
+        "missingRequiredHeads",
+        "missingRequiredPlatformHeadPairs",
+        "missingRequiredPlatformHeadRidTuples",
+    ):
+        value = coverage.get(key)
+        if isinstance(value, list) and value:
+            return True
+    return False
+
+
+def apply_honesty_state(path: Path) -> None:
+    if not path.is_file():
+        return
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise SystemExit(f"release manifest must be a JSON object: {path}")
+    if normalize(payload.get("status")) != "published":
+        return
+    if not coverage_is_incomplete(payload):
+        return
+    payload["rolloutState"] = "coverage_incomplete"
+    payload["supportabilityState"] = "review_required"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+for raw_path in sys.argv[1:]:
+    apply_honesty_state(Path(raw_path))
+PY
 python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 from __future__ import annotations
 
