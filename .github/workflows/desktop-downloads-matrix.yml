@@ -421,6 +421,8 @@ jobs:
           if [[ -z "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]] && [[ "${CHUMMER_MAC_SIGNING_REQUIRED:-false}" != "true" ]]; then
             unset CHUMMER_MAC_NOTARY_PROFILE
           fi
+          export CHUMMER_DESKTOP_INSTALLER_TMPDIR="${GITHUB_WORKSPACE}/.tmp/desktop-installer"
+          mkdir -p "${CHUMMER_DESKTOP_INSTALLER_TMPDIR}"
           bash scripts/build-desktop-installer.sh \
             "out/${{ matrix.app }}/${{ matrix.rid }}" \
             "${{ matrix.app }}" \
