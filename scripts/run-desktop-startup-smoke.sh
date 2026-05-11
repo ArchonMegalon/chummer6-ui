@@ -287,13 +287,32 @@ run_windows_smoke() {
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
   run_windows_binary "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
 
+  resolve_windows_installed_relative_path() {
+    local requested_relative_path="$1"
+    if [[ -f "$INSTALL_ROOT/$requested_relative_path" ]]; then
+      printf '%s\n' "$requested_relative_path"
+      return 0
+    fi
+
+    local head_relative_root="$APP_KEY/"
+    if [[ "$requested_relative_path" == "$head_relative_root"* ]]; then
+      local flattened_relative_path="${requested_relative_path#"$head_relative_root"}"
+      if [[ -n "$flattened_relative_path" && -f "$INSTALL_ROOT/$flattened_relative_path" ]]; then
+        printf '%s\n' "$flattened_relative_path"
+        return 0
+      fi
+    fi
+
+    return 1
+  }
+
   local required_paths="${CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS:-}"
   if [[ -n "$required_paths" ]]; then
     local relative_path
     local missing_paths=()
     while IFS= read -r relative_path; do
       [[ -n "$relative_path" ]] || continue
-      if [[ ! -f "$INSTALL_ROOT/$relative_path" ]]; then
+      if ! resolve_windows_installed_relative_path "$relative_path" >/dev/null; then
         missing_paths+=("$relative_path")
       fi
     done < <(printf '%s' "$required_paths" | tr ';' '\n')
@@ -305,6 +324,10 @@ run_windows_smoke() {
   fi
 
   local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
+  local resolved_launch_relative_path
+  if resolved_launch_relative_path="$(resolve_windows_installed_relative_path "$launch_relative_path")"; then
+    launch_relative_path="$resolved_launch_relative_path"
+  fi
   run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
 }
 
