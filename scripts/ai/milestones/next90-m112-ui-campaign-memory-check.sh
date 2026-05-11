@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -L)"
 cd "$repo_root"
 
 registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
@@ -42,8 +42,8 @@ EXPECTED_SURFACES = [
     "campaign_return_loop:desktop",
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "Next90M112CampaignMemoryGuardTests" --no-restore'
-EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "AccessibilitySignoffSmokeTests" --no-restore'
+EXPECTED_TARGETED_TEST_COMMAND = 'scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Next90M112CampaignMemoryGuardTests"'
+EXPECTED_PRESENTATION_TEST_COMMAND = 'scripts/ai/test.sh Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "AccessibilitySignoffSmokeTests"'
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 
 SOURCE_MARKERS = {

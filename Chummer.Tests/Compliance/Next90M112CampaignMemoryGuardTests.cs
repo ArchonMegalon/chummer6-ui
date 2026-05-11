@@ -34,8 +34,8 @@ public sealed class Next90M112CampaignMemoryGuardTests
         StringAssert.Contains(scriptText, "\"campaign_workspace:memory\"");
         StringAssert.Contains(scriptText, "\"campaign_return_loop:desktop\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"Next90M112CampaignMemoryGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter \"Next90M112CampaignMemoryGuardTests\"'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'scripts/ai/test.sh Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\"'");
         StringAssert.Contains(scriptText, "EXPECTED_DESIGN_QUEUE_PATH = \"/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/DesktopHomeWindow.cs\": [");
         StringAssert.Contains(scriptText, "\"BuildCampaignConsequenceEvidenceSummary()\"");

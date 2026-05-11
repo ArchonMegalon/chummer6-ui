@@ -2,7 +2,7 @@
   "headId": "avalonia",
   "version": "run-20260503-163502",
   "releaseVersion": "run-20260503-163502",
-  "channelId": "preview",
+  "channelId": "docker",
   "platform": "linux",
   "arch": "x64",
   "rid": "linux-x64",
@@ -29,5 +29,5 @@
   "artifactSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
   "artifactId": "avalonia-linux-x64-installer",
   "status": "pass",
-  "channel": "preview"
+  "channel": "docker"
 }

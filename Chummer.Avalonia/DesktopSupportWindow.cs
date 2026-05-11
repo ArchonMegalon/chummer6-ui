@@ -221,7 +221,12 @@ internal sealed class DesktopSupportWindow : Window
     }
 
     private string BuildDiagnosticsBody()
-        => DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);
+        => string.Join(
+            "\n\n",
+            [
+                DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),
+                DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)
+            ]);
 
     private string BuildFollowThroughBody()
     {

@@ -9,6 +9,7 @@ using Chummer.Blazor.Components.Pages;
 using Chummer.Blazor.Components.Shared;
 using Chummer.Blazor.Components.Shell;
 using Chummer.Contracts.Characters;
+using Chummer.Contracts.Content;
 using Chummer.Contracts.Journal;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
@@ -291,41 +292,102 @@ public sealed class BlazorShellComponentTests
     }
 
     [TestMethod]
-    public void SummaryHeader_renders_classic_workbench_tabs_and_invokes_selection()
+    public void SummaryHeader_renders_ruleset_specific_heading_and_runtime_inspector_action()
     {
-        string? selectedTabId = null;
-        IReadOnlyList<NavigationTabDefinition> navigationTabs =
-        [
-            new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, RulesetDefaults.Sr5),
-            new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, RulesetDefaults.Sr5),
-            new NavigationTabDefinition("tab-skills", "Skills", "skills", "character", true, true, RulesetDefaults.Sr5)
-        ];
+        bool inspectRequested = false;
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            Profile = new CharacterProfileSection(
+                Name: "Apex",
+                Alias: "Runner",
+                Metatype: "Human",
+                PlayerName: string.Empty,
+                Metavariant: string.Empty,
+                Sex: string.Empty,
+                Age: string.Empty,
+                Height: string.Empty,
+                Weight: string.Empty,
+                Hair: string.Empty,
+                Eyes: string.Empty,
+                Skin: string.Empty,
+                Concept: string.Empty,
+                Description: string.Empty,
+                Background: string.Empty,
+                CreatedVersion: "1.0",
+                AppVersion: "1.0",
+                BuildMethod: "Priority",
+                GameplayOption: "Standard",
+                Created: true,
+                Adept: false,
+                Magician: false,
+                Technomancer: false,
+                AI: false,
+                MainMugshotIndex: 0,
+                MugshotCount: 0),
+            Build = new CharacterBuildSection(
+                BuildMethod: "Priority",
+                PriorityMetatype: "A",
+                PriorityAttributes: "B",
+                PrioritySpecial: "C",
+                PrioritySkills: "D",
+                PriorityResources: "E",
+                PriorityTalent: "Mundane",
+                SumToTen: 10,
+                Special: 0,
+                TotalSpecial: 0,
+                TotalAttributes: 0,
+                ContactPoints: 0,
+                ContactPointsUsed: 0),
+            Progress = new CharacterProgressSection(
+                Karma: 7,
+                Nuyen: 0,
+                StartingNuyen: 0,
+                StreetCred: 3,
+                Notoriety: 0,
+                PublicAwareness: 0,
+                BurntStreetCred: 0,
+                BuildKarma: 0,
+                TotalAttributes: 0,
+                TotalSpecial: 0,
+                PhysicalCmFilled: 0,
+                StunCmFilled: 0,
+                TotalEssence: 6,
+                InitiateGrade: 0,
+                SubmersionGrade: 0,
+                MagEnabled: false,
+                ResEnabled: false,
+                DepEnabled: false)
+        };
+        ShellSurfaceState shellSurface = ShellSurfaceState.Empty with
+        {
+            ActiveRulesetId = RulesetDefaults.Sr5,
+            ActiveRuntime = new ActiveRuntimeStatusProjection(
+                ProfileId: "official.sr5.core",
+                Title: "Official SR5 Core",
+                RulesetId: RulesetDefaults.Sr5,
+                RuntimeFingerprint: "fingerprint-sr5",
+                InstallState: ArtifactInstallStates.Installed,
+                WarningCount: 0)
+        };
 
         using var context = new BunitContext();
         IRenderedComponent<SummaryHeader> cut = context.Render<SummaryHeader>(parameters => parameters
-            .Add(component => component.State, CharacterOverviewState.Empty)
-            .Add(component => component.ShellSurface, ShellSurfaceState.Empty with { ActiveRulesetId = RulesetDefaults.Sr5 })
-            .Add(component => component.ActiveTabId, "tab-info")
-            .Add(component => component.NavigationTabs, navigationTabs)
-            .Add(component => component.IsNavigationTabEnabled,
-                tab => string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
-            .Add(component => component.SelectTabRequested, (Action<string>)(tabId => selectedTabId = tabId)));
+            .Add(component => component.State, state)
+            .Add(component => component.ShellSurface, shellSurface)
+            .Add(component => component.InspectRuntimeRequested, (Action)(() => inspectRequested = true)));
 
-        AngleSharp.Dom.IElement enabledTab = cut.Find(".workbench-tab-strip #tab-info");
-        AngleSharp.Dom.IElement createTab = cut.Find(".workbench-tab-strip #tab-create");
-        AngleSharp.Dom.IElement disabledTab = cut.Find(".workbench-tab-strip #tab-skills");
-        StringAssert.Contains(cut.Find(".workbench-tab-strip").ClassName, "classic-tab-strip");
-        StringAssert.Contains(enabledTab.ClassName, "classic-workbench-tab");
-        Assert.IsFalse(enabledTab.HasAttribute("disabled"));
-        Assert.IsTrue(disabledTab.HasAttribute("disabled"));
-        StringAssert.Contains(enabledTab.ClassName, "active");
-        StringAssert.Contains(cut.Markup, "SR5 Editor Tabs");
-        Assert.AreEqual("Runner", enabledTab.TextContent.Trim());
-        Assert.AreEqual("Character", createTab.TextContent.Trim());
+        StringAssert.Contains(cut.Markup, "Desktop Summary · SR5 Editor");
+        Assert.AreEqual("Apex", cut.Find("#summaryName").GetAttribute("value"));
+        Assert.AreEqual("Runner", cut.Find("#summaryAlias").GetAttribute("value"));
+        Assert.AreEqual("Human", cut.Find("#summaryMetatype").GetAttribute("value"));
+        Assert.AreEqual("Priority", cut.Find("#summaryBuildMethod").GetAttribute("value"));
+        Assert.AreEqual("7", cut.Find("#summaryKarma").GetAttribute("value"));
+        Assert.AreEqual("3", cut.Find("#summaryStreetCred").GetAttribute("value"));
+        StringAssert.Contains(cut.Find("#summaryRuntime").GetAttribute("value"), "sr5");
 
-        enabledTab.Click();
+        cut.Find("#summaryRuntimeInspect").Click();
 
-        Assert.AreEqual("tab-info", selectedTabId);
+        Assert.IsTrue(inspectRequested);
     }
 
     [TestMethod]

@@ -14,6 +14,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+    private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
+    private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
+    private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
+    private const string NewCharacterPrioritySkillChoice1FieldId = "newCharacterPrioritySkillChoice1";
+    private const string NewCharacterPrioritySkillChoice2FieldId = "newCharacterPrioritySkillChoice2";
+    private const string NewCharacterPrioritySkillChoice3FieldId = "newCharacterPrioritySkillChoice3";
+    private const string NewCharacterPriorityWorkflowCanCommitFieldId = "newCharacterPriorityWorkflowCanCommit";
 
     public DesktopDialogState CreateExplainTraceDialog(
         LocalizedRulesetExplainTrace? trace,
@@ -567,26 +574,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string name,
         string alias)
     {
-        string category = "Standard";
-        string metatype = ResolveDefaultMetatype(category);
-        string heritagePriority = "D";
-        string attributesPriority = "B";
-        string talentPriority = "E";
-        string skillsPriority = "C";
-        string resourcesPriority = "A";
-        string talentChoice = "Mundane";
+        PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
+            rulesetId,
+            buildMethod,
+            category: "Standard",
+            metatype: ResolveDefaultMetatype("Standard"),
+            heritagePriority: "D",
+            attributesPriority: "B",
+            talentPriority: "E",
+            skillsPriority: "C",
+            resourcesPriority: "A",
+            talentChoice: "Mundane",
+            metavariant: string.Empty,
+            skillChoice1: string.Empty,
+            skillChoice2: string.Empty,
+            skillChoice3: string.Empty,
+            possessionBased: false,
+            possessionMethod: string.Empty,
+            force: 1,
+            lastChangedFieldId: string.Empty);
         string houseRulesValue = houseRulesEnabled ? "true" : "false";
         string summary = BuildNewCharacterPriorityWorkflowSummary(
             rulesetId,
             buildMethod,
-            category,
-            metatype,
-            heritagePriority,
-            attributesPriority,
-            talentPriority,
-            skillsPriority,
-            resourcesPriority,
-            talentChoice,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.HeritagePriority,
+            resolution.AttributesPriority,
+            resolution.TalentPriority,
+            resolution.SkillsPriority,
+            resolution.ResourcesPriority,
+            resolution.TalentChoice,
             houseRulesEnabled);
 
         return new DesktopDialogState(
@@ -602,67 +620,99 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
                     "Metatype Category",
-                    category,
-                    category,
+                    resolution.Category,
+                    resolution.Category,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: BuildMetatypeCategoryOptions()),
                 new DesktopDialogField(
                     "newCharacterMetatype",
                     "Metatype",
-                    metatype,
-                    metatype,
+                    resolution.Metatype,
+                    resolution.Metatype,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
-                    Options: BuildMetatypeOptions(category)),
+                    Options: resolution.MetatypeOptions),
                 new DesktopDialogField(
                     "newCharacterPriorityHeritage",
                     "Heritage Priority",
-                    heritagePriority,
-                    heritagePriority,
+                    resolution.HeritagePriority,
+                    resolution.HeritagePriority,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: BuildPriorityLetterOptions()),
                 new DesktopDialogField(
                     "newCharacterPriorityAttributes",
                     "Attributes Priority",
-                    attributesPriority,
-                    attributesPriority,
+                    resolution.AttributesPriority,
+                    resolution.AttributesPriority,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
                     Options: BuildPriorityLetterOptions()),
                 new DesktopDialogField(
                     "newCharacterPriorityTalent",
                     "Talent Priority",
-                    talentPriority,
-                    talentPriority,
+                    resolution.TalentPriority,
+                    resolution.TalentPriority,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: BuildPriorityLetterOptions()),
                 new DesktopDialogField(
                     "newCharacterPrioritySkills",
                     "Skills Priority",
-                    skillsPriority,
-                    skillsPriority,
+                    resolution.SkillsPriority,
+                    resolution.SkillsPriority,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
                     Options: BuildPriorityLetterOptions()),
                 new DesktopDialogField(
                     "newCharacterPriorityResources",
                     "Resources Priority",
-                    resourcesPriority,
-                    resourcesPriority,
+                    resolution.ResourcesPriority,
+                    resolution.ResourcesPriority,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                     Options: BuildPriorityLetterOptions()),
                 new DesktopDialogField(
                     "newCharacterPriorityTalentChoice",
                     "Talent Choice",
-                    talentChoice,
-                    talentChoice,
+                    resolution.TalentChoice,
+                    resolution.TalentChoice,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
-                    Options: BuildTalentChoiceOptions()),
+                    Options: resolution.TalentOptions),
+                new DesktopDialogField(
+                    NewCharacterMetavariantFieldId,
+                    "Metavariant",
+                    resolution.Metavariant,
+                    resolution.Metavariant,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.MetavariantOptions),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice1FieldId,
+                    "Skill Choice 1",
+                    resolution.SkillChoice1,
+                    resolution.SkillChoice1,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice1.Options),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice2FieldId,
+                    "Skill Choice 2",
+                    resolution.SkillChoice2,
+                    resolution.SkillChoice2,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice2.Options),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice3FieldId,
+                    "Skill Choice 3",
+                    resolution.SkillChoice3,
+                    resolution.SkillChoice3,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice3.Options),
                 new DesktopDialogField(
                     "newCharacterPriorityWorkflowSummary",
                     "Workflow Summary",
@@ -670,7 +720,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     summary,
                     IsReadOnly: true,
                     IsMultiline: true,
-                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                BuildNewCharacterContextField(NewCharacterPriorityLastChangedFieldId, "Workflow Last Changed Field", string.Empty),
+                BuildNewCharacterContextField(
+                    NewCharacterPriorityWorkflowCanCommitFieldId,
+                    "Workflow Can Commit",
+                    resolution.RuntimeState.CanCommit ? "true" : "false"),
+                BuildNewCharacterContextField(
+                    NewCharacterPriorityWorkflowStateFieldId,
+                    "Workflow Runtime State",
+                    PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState))
             ],
             [
                 new DesktopDialogAction("complete_new_character_workflow", "OK", true),
@@ -784,6 +844,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
     }
 
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetavariantOptions(string metatype)
+    {
+        return metatype.Trim() switch
+        {
+            "Elf" =>
+            [
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dryad", "Dryad")
+            ],
+            "Dwarf" =>
+            [
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Gnome", "Gnome")
+            ],
+            "Ork" =>
+            [
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Hobgoblin", "Hobgoblin")
+            ],
+            "Troll" =>
+            [
+                new DesktopDialogFieldOption("Troll", "Troll"),
+                new DesktopDialogFieldOption("Cyclops", "Cyclops")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Human", "Human")
+            ]
+        };
+    }
+
     private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityLetterOptions()
         => new[]
         {
@@ -794,18 +885,626 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("E", "E")
         };
 
-    private static IReadOnlyList<DesktopDialogFieldOption> BuildTalentChoiceOptions()
-        => new[]
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildTalentChoiceOptions(string priorityLetter, string metatype, string metavariant)
+    {
+        List<DesktopDialogFieldOption> options =
+        [
+            new DesktopDialogFieldOption("Mundane", "Mundane")
+        ];
+
+        switch (priorityLetter.Trim().ToUpperInvariant())
         {
-            new DesktopDialogFieldOption("Mundane", "Mundane"),
-            new DesktopDialogFieldOption("Adept", "Adept"),
-            new DesktopDialogFieldOption("Magician", "Magician"),
-            new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"),
-            new DesktopDialogFieldOption("Technomancer", "Technomancer")
-        };
+            case "A":
+                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
+                options.Add(new DesktopDialogFieldOption("Magician", "Magician"));
+                options.Add(new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"));
+                options.Add(new DesktopDialogFieldOption("Technomancer", "Technomancer"));
+                break;
+            case "B":
+                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
+                options.Add(new DesktopDialogFieldOption("Magician", "Magician"));
+                options.Add(new DesktopDialogFieldOption("Technomancer", "Technomancer"));
+                break;
+            case "C":
+                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
+                break;
+        }
+
+        if (string.Equals(metatype, "Elf", StringComparison.Ordinal)
+            && string.Equals(metavariant, "Dryad", StringComparison.Ordinal))
+        {
+            options.Insert(1, new DesktopDialogFieldOption("Aspected Magician", "Aspected Magician"));
+        }
+
+        return options
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+    }
 
     private static string ResolveDefaultMetatype(string? category)
         => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
+
+    private static PriorityWorkflowResolution ResolvePriorityWorkflowResolution(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        string metavariant,
+        string skillChoice1,
+        string skillChoice2,
+        string skillChoice3,
+        bool possessionBased,
+        string possessionMethod,
+        int force,
+        string lastChangedFieldId)
+    {
+        string normalizedCategory = BuildMetatypeCategoryOptions()
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(option, category, StringComparison.Ordinal))
+            ?? "Standard";
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(normalizedCategory).ToArray();
+        string resolvedMetatype = metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal))
+            ? metatype
+            : metatypeOptions[0].Value;
+
+        Dictionary<string, string> priorities = new(StringComparer.Ordinal)
+        {
+            ["newCharacterPriorityHeritage"] = NormalizePriorityLetter(heritagePriority, "D"),
+            ["newCharacterPriorityAttributes"] = NormalizePriorityLetter(attributesPriority, "B"),
+            ["newCharacterPriorityTalent"] = NormalizePriorityLetter(talentPriority, "E"),
+            ["newCharacterPrioritySkills"] = NormalizePriorityLetter(skillsPriority, "C"),
+            ["newCharacterPriorityResources"] = NormalizePriorityLetter(resourcesPriority, "A"),
+        };
+        ReconcilePriorityLetters(buildMethod, lastChangedFieldId, priorities);
+
+        DesktopDialogFieldOption[] metavariantOptions = BuildMetavariantOptions(resolvedMetatype).ToArray();
+        string resolvedMetavariant = metavariantOptions.Any(option => string.Equals(option.Value, metavariant, StringComparison.Ordinal))
+            ? metavariant
+            : metavariantOptions[0].Value;
+
+        DesktopDialogFieldOption[] talentOptions = BuildTalentChoiceOptions(
+                priorities["newCharacterPriorityTalent"],
+                resolvedMetatype,
+                resolvedMetavariant)
+            .ToArray();
+        string resolvedTalentChoice = talentOptions.Any(option => string.Equals(option.Value, talentChoice, StringComparison.Ordinal))
+            ? talentChoice
+            : talentOptions[0].Value;
+
+        (PriorityWorkflowChoiceState skillState1, PriorityWorkflowChoiceState skillState2, PriorityWorkflowChoiceState skillState3, string resolvedSkillChoice1, string resolvedSkillChoice2, string resolvedSkillChoice3, string skillSelectionLabel) =
+            BuildPrioritySkillChoiceStates(
+                resolvedTalentChoice,
+                skillChoice1,
+                skillChoice2,
+                skillChoice3,
+                lastChangedFieldId);
+
+        PriorityWorkflowDialogRuntimeState runtimeState = BuildPriorityWorkflowRuntimeState(
+            rulesetId,
+            buildMethod,
+            resolvedMetatype,
+            resolvedMetavariant,
+            priorities["newCharacterPriorityHeritage"],
+            priorities["newCharacterPriorityAttributes"],
+            priorities["newCharacterPriorityTalent"],
+            priorities["newCharacterPrioritySkills"],
+            priorities["newCharacterPriorityResources"],
+            resolvedTalentChoice,
+            skillSelectionLabel,
+            skillState1,
+            skillState2,
+            skillState3,
+            possessionBased,
+            possessionMethod,
+            force);
+
+        return new PriorityWorkflowResolution(
+            Category: normalizedCategory,
+            Metatype: resolvedMetatype,
+            HeritagePriority: priorities["newCharacterPriorityHeritage"],
+            AttributesPriority: priorities["newCharacterPriorityAttributes"],
+            TalentPriority: priorities["newCharacterPriorityTalent"],
+            SkillsPriority: priorities["newCharacterPrioritySkills"],
+            ResourcesPriority: priorities["newCharacterPriorityResources"],
+            MetatypeOptions: metatypeOptions,
+            TalentOptions: talentOptions,
+            TalentChoice: resolvedTalentChoice,
+            Metavariant: resolvedMetavariant,
+            SkillChoice1: resolvedSkillChoice1,
+            SkillChoice2: resolvedSkillChoice2,
+            SkillChoice3: resolvedSkillChoice3,
+            RuntimeState: runtimeState);
+    }
+
+    private static string NormalizePriorityLetter(string? value, string fallback)
+    {
+        string normalized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
+        return BuildPriorityLetterOptions().Any(option => string.Equals(option.Value, normalized, StringComparison.Ordinal))
+            ? normalized
+            : fallback;
+    }
+
+    private static void ReconcilePriorityLetters(
+        string buildMethod,
+        string lastChangedFieldId,
+        IDictionary<string, string> priorities)
+    {
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            || !priorities.ContainsKey(lastChangedFieldId))
+        {
+            return;
+        }
+
+        string changedValue = priorities[lastChangedFieldId];
+        string[] legalLetters = BuildPriorityLetterOptions()
+            .Select(option => option.Value)
+            .ToArray();
+
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            string? duplicateKey = priorities
+                .Where(pair => !string.Equals(pair.Key, lastChangedFieldId, StringComparison.Ordinal)
+                    && string.Equals(pair.Value, changedValue, StringComparison.Ordinal))
+                .Select(pair => pair.Key)
+                .FirstOrDefault();
+            if (duplicateKey is null)
+            {
+                break;
+            }
+
+            string missingLetter = legalLetters
+                .FirstOrDefault(letter => !priorities.Values.Contains(letter, StringComparer.Ordinal))
+                ?? changedValue;
+            priorities[duplicateKey] = missingLetter;
+        }
+    }
+
+    private static (
+        PriorityWorkflowChoiceState SkillChoice1,
+        PriorityWorkflowChoiceState SkillChoice2,
+        PriorityWorkflowChoiceState SkillChoice3,
+        string ResolvedSkillChoice1,
+        string ResolvedSkillChoice2,
+        string ResolvedSkillChoice3,
+        string SkillSelectionLabel)
+        BuildPrioritySkillChoiceStates(
+            string talentChoice,
+            string skillChoice1,
+            string skillChoice2,
+            string skillChoice3,
+            string lastChangedFieldId)
+    {
+        DesktopDialogFieldOption[] options = BuildPrioritySkillChoiceOptions(talentChoice).ToArray();
+        if (options.Length == 0)
+        {
+            return (
+                PriorityWorkflowChoiceState.Hidden,
+                PriorityWorkflowChoiceState.Hidden,
+                PriorityWorkflowChoiceState.Hidden,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty);
+        }
+
+        int visibleChoiceCount = talentChoice switch
+        {
+            "Mystic Adept" or "Technomancer" => 3,
+            "Magician" or "Aspected Magician" => 2,
+            _ => 1
+        };
+
+        string[] selections =
+        [
+            ResolvePriorityChoiceValue(skillChoice1, options, Array.Empty<string>()),
+            ResolvePriorityChoiceValue(skillChoice2, options, new[] { skillChoice1 }),
+            ResolvePriorityChoiceValue(skillChoice3, options, new[] { skillChoice1, skillChoice2 })
+        ];
+
+        int changedIndex = lastChangedFieldId switch
+        {
+            NewCharacterPrioritySkillChoice1FieldId => 0,
+            NewCharacterPrioritySkillChoice2FieldId => 1,
+            NewCharacterPrioritySkillChoice3FieldId => 2,
+            _ => -1
+        };
+
+        if (changedIndex >= 0 && changedIndex < visibleChoiceCount)
+        {
+            string changedValue = selections[changedIndex];
+            if (!string.IsNullOrWhiteSpace(changedValue))
+            {
+                for (int index = 0; index < visibleChoiceCount; index++)
+                {
+                    if (index == changedIndex
+                        || !string.Equals(selections[index], changedValue, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    selections[index] = options
+                        .Select(option => option.Value)
+                        .FirstOrDefault(value => !selections
+                            .Where((_, selectionIndex) => selectionIndex != index)
+                            .Contains(value, StringComparer.Ordinal))
+                        ?? string.Empty;
+                }
+            }
+        }
+
+        List<string> usedValues = [];
+        for (int index = 0; index < visibleChoiceCount; index++)
+        {
+            if (!options.Any(option => string.Equals(option.Value, selections[index], StringComparison.Ordinal))
+                || usedValues.Contains(selections[index], StringComparer.Ordinal))
+            {
+                selections[index] = options
+                    .Select(option => option.Value)
+                    .FirstOrDefault(value => !usedValues.Contains(value, StringComparer.Ordinal))
+                    ?? string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(selections[index]))
+            {
+                usedValues.Add(selections[index]);
+            }
+        }
+
+        return (
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 1, selections[0], options),
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 2, selections[1], options),
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 3, selections[2], options),
+            selections[0],
+            selections[1],
+            selections[2],
+            BuildPrioritySkillSelectionLabel(talentChoice));
+    }
+
+    private static string ResolvePriorityChoiceValue(
+        string value,
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        IEnumerable<string> reserved)
+    {
+        if (options.Any(option => string.Equals(option.Value, value, StringComparison.Ordinal))
+            && !reserved.Contains(value, StringComparer.Ordinal))
+        {
+            return value;
+        }
+
+        return options
+            .Select(option => option.Value)
+            .FirstOrDefault(optionValue => !reserved.Contains(optionValue, StringComparer.Ordinal))
+            ?? string.Empty;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPrioritySkillChoiceOptions(string talentChoice)
+    {
+        return talentChoice switch
+        {
+            "Magician" or "Aspected Magician" =>
+            [
+                new DesktopDialogFieldOption("Spellcasting", "Spellcasting"),
+                new DesktopDialogFieldOption("Counterspelling", "Counterspelling"),
+                new DesktopDialogFieldOption("Ritual Spellcasting", "Ritual Spellcasting"),
+                new DesktopDialogFieldOption("Summoning", "Summoning"),
+                new DesktopDialogFieldOption("Binding", "Binding"),
+                new DesktopDialogFieldOption("Banishing", "Banishing")
+            ],
+            "Mystic Adept" =>
+            [
+                new DesktopDialogFieldOption("Spellcasting", "Spellcasting"),
+                new DesktopDialogFieldOption("Counterspelling", "Counterspelling"),
+                new DesktopDialogFieldOption("Assensing", "Assensing"),
+                new DesktopDialogFieldOption("Summoning", "Summoning"),
+                new DesktopDialogFieldOption("Binding", "Binding"),
+                new DesktopDialogFieldOption("Gymnastics", "Gymnastics")
+            ],
+            "Technomancer" =>
+            [
+                new DesktopDialogFieldOption("Compiling", "Compiling"),
+                new DesktopDialogFieldOption("Registering", "Registering"),
+                new DesktopDialogFieldOption("Software", "Software"),
+                new DesktopDialogFieldOption("Electronic Warfare", "Electronic Warfare"),
+                new DesktopDialogFieldOption("Hacking", "Hacking"),
+                new DesktopDialogFieldOption("Cybercombat", "Cybercombat")
+            ],
+            _ => []
+        };
+    }
+
+    private static string BuildPrioritySkillSelectionLabel(string talentChoice)
+        => talentChoice switch
+        {
+            "Technomancer" => "Select the free resonance skills:",
+            "Magician" or "Mystic Adept" or "Aspected Magician" => "Select the free magical skills:",
+            _ => string.Empty
+        };
+
+    private static PriorityWorkflowDialogRuntimeState BuildPriorityWorkflowRuntimeState(
+        string rulesetId,
+        string buildMethod,
+        string metatype,
+        string metavariant,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        string skillSelectionLabel,
+        PriorityWorkflowChoiceState skillChoice1,
+        PriorityWorkflowChoiceState skillChoice2,
+        PriorityWorkflowChoiceState skillChoice3,
+        bool possessionBased,
+        string possessionMethod,
+        int force)
+    {
+        DesktopDialogFieldOption[] possessionMethodOptions =
+        [
+            new DesktopDialogFieldOption("None", "None"),
+            new DesktopDialogFieldOption("Channeling", "Channeling"),
+            new DesktopDialogFieldOption("Direct", "Direct")
+        ];
+        string resolvedPossessionMethod = possessionMethodOptions.Any(option => string.Equals(option.Value, possessionMethod, StringComparison.Ordinal))
+            ? possessionMethod
+            : possessionMethodOptions[0].Value;
+        IReadOnlyList<PriorityWorkflowInspectAttributeState> inspectAttributes = BuildPriorityInspectAttributes(metatype, metavariant);
+        IReadOnlyList<string> qualities = BuildPriorityMetatypeQualities(metatype, metavariant);
+        string sumToTenLabel = string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            ? $"{GetPriorityLetterValue(heritagePriority) + GetPriorityLetterValue(attributesPriority) + GetPriorityLetterValue(talentPriority) + GetPriorityLetterValue(skillsPriority) + GetPriorityLetterValue(resourcesPriority)}/10"
+            : string.Empty;
+
+        return new PriorityWorkflowDialogRuntimeState(
+            Mode: buildMethod,
+            SumToTenLabel: sumToTenLabel,
+            MetavariantOptions: BuildMetavariantOptions(metatype),
+            SelectedMetavariant: metavariant,
+            MetatypeKarma: ResolveMetatypeKarma(metatype, metavariant),
+            SpecialAttributes: ResolveSpecialAttributePool(heritagePriority),
+            Source: ResolveMetatypeSource(rulesetId, metatype, metavariant),
+            InspectAttributes: inspectAttributes,
+            Qualities: qualities,
+            ForceVisible: false,
+            Force: Math.Max(1, force),
+            PossessionVisible: false,
+            PossessionBased: possessionBased,
+            PossessionMethodOptions: possessionMethodOptions,
+            SelectedPossessionMethod: resolvedPossessionMethod,
+            SkillSelectionLabel: skillSelectionLabel,
+            SkillChoice1: skillChoice1,
+            SkillChoice2: skillChoice2,
+            SkillChoice3: skillChoice3,
+            CanCommit: !string.IsNullOrWhiteSpace(metatype)
+                && !string.IsNullOrWhiteSpace(talentChoice)
+                && (!skillChoice1.Visible || !string.IsNullOrWhiteSpace(skillChoice1.Value))
+                && (!skillChoice2.Visible || !string.IsNullOrWhiteSpace(skillChoice2.Value))
+                && (!skillChoice3.Visible || !string.IsNullOrWhiteSpace(skillChoice3.Value))
+                && DistinctVisibleSkillChoices(skillChoice1, skillChoice2, skillChoice3));
+    }
+
+    private static bool DistinctVisibleSkillChoices(params PriorityWorkflowChoiceState[] skillChoices)
+    {
+        string[] visibleValues = skillChoices
+            .Where(choice => choice.Visible && !string.IsNullOrWhiteSpace(choice.Value))
+            .Select(choice => choice.Value)
+            .ToArray();
+        return visibleValues.Length == visibleValues.Distinct(StringComparer.Ordinal).Count();
+    }
+
+    private static IReadOnlyList<PriorityWorkflowInspectAttributeState> BuildPriorityInspectAttributes(string metatype, string metavariant)
+    {
+        IReadOnlyDictionary<string, string> values = (metatype, metavariant) switch
+        {
+            ("Elf", "Dryad") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "5 / 8",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            },
+            ("Elf", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "3 / 8",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            },
+            ("Dwarf", "Gnome") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "2 / 7",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 5",
+                ["STR"] = "2 / 7",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 7",
+                ["LOG"] = "1 / 7",
+                ["WIL"] = "2 / 7"
+            },
+            ("Dwarf", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "3 / 8",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 5",
+                ["STR"] = "3 / 8",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "2 / 7"
+            },
+            ("Ork", "Hobgoblin") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "3 / 8",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "2 / 7",
+                ["CHA"] = "1 / 5",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Ork", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "4 / 9",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 6",
+                ["STR"] = "3 / 8",
+                ["CHA"] = "1 / 5",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Troll", "Cyclops") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "5 / 10",
+                ["AGI"] = "1 / 4",
+                ["REA"] = "1 / 6",
+                ["STR"] = "5 / 10",
+                ["CHA"] = "1 / 4",
+                ["INT"] = "1 / 5",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Troll", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "5 / 10",
+                ["AGI"] = "1 / 5",
+                ["REA"] = "1 / 6",
+                ["STR"] = "5 / 10",
+                ["CHA"] = "1 / 4",
+                ["INT"] = "1 / 5",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            _ => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            }
+        };
+
+        return new[]
+        {
+            new PriorityWorkflowInspectAttributeState("BOD", values["BOD"]),
+            new PriorityWorkflowInspectAttributeState("AGI", values["AGI"]),
+            new PriorityWorkflowInspectAttributeState("REA", values["REA"]),
+            new PriorityWorkflowInspectAttributeState("STR", values["STR"]),
+            new PriorityWorkflowInspectAttributeState("CHA", values["CHA"]),
+            new PriorityWorkflowInspectAttributeState("INT", values["INT"]),
+            new PriorityWorkflowInspectAttributeState("LOG", values["LOG"]),
+            new PriorityWorkflowInspectAttributeState("WIL", values["WIL"])
+        };
+    }
+
+    private static IReadOnlyList<string> BuildPriorityMetatypeQualities(string metatype, string metavariant)
+    {
+        List<string> qualities = metatype switch
+        {
+            "Elf" => ["Low-Light Vision"],
+            "Dwarf" => ["Thermographic Vision", "Toxin Resistance", "Pathogen Resistance"],
+            "Ork" => ["Low-Light Vision"],
+            "Troll" => ["Thermographic Vision", "Reach +1", "Dermal Armor +1"],
+            _ => []
+        };
+
+        if (string.Equals(metavariant, "Dryad", StringComparison.Ordinal))
+        {
+            qualities.Add("Glamour");
+        }
+        else if (string.Equals(metavariant, "Gnome", StringComparison.Ordinal))
+        {
+            qualities.Add("Arcane Arrester");
+        }
+        else if (string.Equals(metavariant, "Cyclops", StringComparison.Ordinal))
+        {
+            qualities.Add("One Eye");
+        }
+
+        return qualities;
+    }
+
+    private static string ResolveMetatypeKarma(string metatype, string metavariant)
+    {
+        return (metatype, metavariant) switch
+        {
+            ("Elf", "Dryad") => "35",
+            ("Elf", _) => "30",
+            ("Dwarf", "Gnome") => "30",
+            ("Dwarf", _) => "25",
+            ("Ork", "Hobgoblin") => "25",
+            ("Ork", _) => "20",
+            ("Troll", "Cyclops") => "45",
+            ("Troll", _) => "40",
+            _ => "0"
+        };
+    }
+
+    private static string ResolveSpecialAttributePool(string heritagePriority)
+    {
+        return heritagePriority switch
+        {
+            "A" => "9",
+            "B" => "7",
+            "C" => "5",
+            "D" => "3",
+            _ => "1"
+        };
+    }
+
+    private static string ResolveMetatypeSource(string rulesetId, string metatype, string metavariant)
+    {
+        string page = metatype switch
+        {
+            "Elf" => "64",
+            "Dwarf" => "65",
+            "Ork" => "66",
+            "Troll" => "67",
+            _ => "64"
+        };
+        if (!string.Equals(metatype, metavariant, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(metavariant))
+        {
+            return $"Run Faster · {metavariant}";
+        }
+
+        return $"{rulesetId.ToUpperInvariant()} Core Rulebook p. {page}";
+    }
+
+    private sealed record PriorityWorkflowResolution(
+        string Category,
+        string Metatype,
+        string HeritagePriority,
+        string AttributesPriority,
+        string TalentPriority,
+        string SkillsPriority,
+        string ResourcesPriority,
+        IReadOnlyList<DesktopDialogFieldOption> MetatypeOptions,
+        IReadOnlyList<DesktopDialogFieldOption> TalentOptions,
+        string TalentChoice,
+        string Metavariant,
+        string SkillChoice1,
+        string SkillChoice2,
+        string SkillChoice3,
+        PriorityWorkflowDialogRuntimeState RuntimeState);
 
     private static string ResolvePreferredBuildMethod(string rulesetId, string? preferredBuildMethod)
     {
@@ -1129,30 +1828,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
         string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Priority";
+        string lastChangedFieldId = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPriorityLastChangedFieldId) ?? string.Empty;
+        PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
+            rulesetId,
+            buildMethod,
+            category: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard",
+            metatype: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? "Human",
+            heritagePriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityHeritage") ?? "D",
+            attributesPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityAttributes") ?? "B",
+            talentPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalent") ?? "E",
+            skillsPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPrioritySkills") ?? "C",
+            resourcesPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityResources") ?? "A",
+            talentChoice: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalentChoice") ?? "Mundane",
+            metavariant: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterMetavariantFieldId) ?? string.Empty,
+            skillChoice1: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice1FieldId) ?? string.Empty,
+            skillChoice2: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice2FieldId) ?? string.Empty,
+            skillChoice3: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice3FieldId) ?? string.Empty,
+            possessionBased: false,
+            possessionMethod: string.Empty,
+            force: 1,
+            lastChangedFieldId: lastChangedFieldId);
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
-        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category).ToArray();
-        string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
-        string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
-            ? currentMetatype
-            : metatypeOptions[0].Value;
-        string heritagePriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityHeritage") ?? "D";
-        string attributesPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityAttributes") ?? "B";
-        string talentPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalent") ?? "E";
-        string skillsPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPrioritySkills") ?? "C";
-        string resourcesPriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityResources") ?? "A";
-        string talentChoice = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalentChoice") ?? "Mundane";
         string summary = BuildNewCharacterPriorityWorkflowSummary(
             rulesetId,
             buildMethod,
-            category,
-            metatype,
-            heritagePriority,
-            attributesPriority,
-            talentPriority,
-            skillsPriority,
-            resourcesPriority,
-            talentChoice,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.HeritagePriority,
+            resolution.AttributesPriority,
+            resolution.TalentPriority,
+            resolution.SkillsPriority,
+            resolution.ResourcesPriority,
+            resolution.TalentChoice,
             houseRulesEnabled);
 
         DesktopDialogField[] updatedFields = dialog.Fields
@@ -1160,20 +1867,90 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             {
                 "newCharacterMetatypeCategory" => field with
                 {
-                    Value = category,
-                    Placeholder = category,
+                    Value = resolution.Category,
+                    Placeholder = resolution.Category,
                     Options = BuildMetatypeCategoryOptions()
                 },
                 "newCharacterMetatype" => field with
                 {
-                    Value = metatype,
-                    Placeholder = metatype,
-                    Options = metatypeOptions
+                    Value = resolution.Metatype,
+                    Placeholder = resolution.Metatype,
+                    Options = resolution.MetatypeOptions
+                },
+                "newCharacterPriorityHeritage" => field with
+                {
+                    Value = resolution.HeritagePriority,
+                    Placeholder = resolution.HeritagePriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityAttributes" => field with
+                {
+                    Value = resolution.AttributesPriority,
+                    Placeholder = resolution.AttributesPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityTalent" => field with
+                {
+                    Value = resolution.TalentPriority,
+                    Placeholder = resolution.TalentPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPrioritySkills" => field with
+                {
+                    Value = resolution.SkillsPriority,
+                    Placeholder = resolution.SkillsPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityResources" => field with
+                {
+                    Value = resolution.ResourcesPriority,
+                    Placeholder = resolution.ResourcesPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityTalentChoice" => field with
+                {
+                    Value = resolution.TalentChoice,
+                    Placeholder = resolution.TalentChoice,
+                    Options = resolution.TalentOptions
+                },
+                NewCharacterMetavariantFieldId => field with
+                {
+                    Value = resolution.Metavariant,
+                    Placeholder = resolution.Metavariant,
+                    Options = resolution.RuntimeState.MetavariantOptions
+                },
+                NewCharacterPrioritySkillChoice1FieldId => field with
+                {
+                    Value = resolution.SkillChoice1,
+                    Placeholder = resolution.SkillChoice1,
+                    Options = resolution.RuntimeState.SkillChoice1.Options
+                },
+                NewCharacterPrioritySkillChoice2FieldId => field with
+                {
+                    Value = resolution.SkillChoice2,
+                    Placeholder = resolution.SkillChoice2,
+                    Options = resolution.RuntimeState.SkillChoice2.Options
+                },
+                NewCharacterPrioritySkillChoice3FieldId => field with
+                {
+                    Value = resolution.SkillChoice3,
+                    Placeholder = resolution.SkillChoice3,
+                    Options = resolution.RuntimeState.SkillChoice3.Options
                 },
                 "newCharacterPriorityWorkflowSummary" => field with
                 {
                     Value = summary,
                     Placeholder = summary
+                },
+                NewCharacterPriorityWorkflowCanCommitFieldId => field with
+                {
+                    Value = resolution.RuntimeState.CanCommit ? "true" : "false",
+                    Placeholder = resolution.RuntimeState.CanCommit ? "true" : "false"
+                },
+                NewCharacterPriorityWorkflowStateFieldId => field with
+                {
+                    Value = PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState),
+                    Placeholder = PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState)
                 },
                 _ => field
             })

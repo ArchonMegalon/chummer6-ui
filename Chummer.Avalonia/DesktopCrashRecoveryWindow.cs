@@ -16,6 +16,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
     private readonly DesktopPreferenceState _preferences;
     private readonly bool _isPreview;
     private readonly TextBlock _statusText;
+    private readonly ContentControl _recoveryTrustPanelHost;
     private bool _closeAcknowledges;
     private bool _isSubmitting;
 
@@ -51,6 +52,11 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 : S("desktop.crash.status.current"),
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
+        };
+
+        _recoveryTrustPanelHost = new ContentControl
+        {
+            Content = BuildRecoveryTrustPanel()
         };
 
         Content = new ScrollViewer
@@ -96,11 +102,13 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                             CreateActionRow(CreateEvidenceActions())),
                         CreateSection(
                             S("desktop.crash.section.recovery"),
-                            new TextBlock
-                            {
-                                Text = BuildRecoveryBody(),
-                                TextWrapping = TextWrapping.Wrap
-                            },
+                            CreateBodyWithTrustPanel(
+                                new TextBlock
+                                {
+                                    Text = BuildRecoveryBody(),
+                                    TextWrapping = TextWrapping.Wrap
+                                },
+                                _recoveryTrustPanelHost),
                             CreateActionRow(CreateRecoveryActions())),
                         new StackPanel
                         {
@@ -221,7 +229,9 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 F("desktop.crash.context.captured", _pending.Report.CapturedAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")),
                 F("desktop.crash.context.os", _pending.Report.OperatingSystem),
                 F("desktop.crash.context.arch", _pending.Report.ProcessArchitecture)
-            });
+            }
+            .Concat(["Runtime crash diagnostics receipt"])
+            .Concat(DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report)));
     }
 
     private string BuildRecoveryBody()
@@ -244,8 +254,15 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             lines.Add(F("desktop.crash.recovery.last_error", _pending.LastSubmissionError));
         }
 
+        lines.Add("Visible crash diagnostics receipt and environment diff stay on screen before upload, support, or local-only recovery.");
+
         return string.Join("\n", lines);
     }
+
+    private Control? BuildRecoveryTrustPanel()
+        => DesktopTrustPanelFactory.CreateCrashDiagnosticsPanel(
+            _pending.Report,
+            DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report));
 
     private IReadOnlyList<Button> CreateEvidenceActions()
         =>
@@ -327,6 +344,25 @@ internal sealed class DesktopCrashRecoveryWindow : Window
         };
     }
 
+    private static Control CreateBodyWithTrustPanel(Control body, ContentControl trustPanelHost)
+    {
+        StackPanel content = new()
+        {
+            Spacing = 10,
+            Children =
+            {
+                body
+            }
+        };
+
+        if (trustPanelHost.Content is not null)
+        {
+            content.Children.Add(trustPanelHost);
+        }
+
+        return content;
+    }
+
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
     {
         StackPanel actionRow = new()
@@ -397,8 +433,32 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             return;
         }
 
-        await Clipboard.SetTextAsync(_pending.SummaryText);
-        SetStatus(S("desktop.crash.status.summary_copied"));
+        await Clipboard.SetTextAsync(BuildCrashDiagnosticsPacketText());
+        SetStatus("Crash diagnostics packet copied with explain receipt and before/after environment diff.");
+    }
+
+    private string BuildCrashDiagnosticsPacketText()
+    {
+        string visibleDiagnosticsReceipt = DesktopTrustReceiptText.BuildReceiptText(
+            DesktopTrustReceiptText.BuildCrashDiagnosticsSections(_pending.Report));
+
+        return string.Join(
+            "\n",
+            new[]
+            {
+                "Chummer crash support diagnostics",
+                BuildSummaryContext(),
+                string.Empty,
+                _pending.SummaryText,
+                string.Empty,
+                "Visible crash diagnostics receipt and environment diff",
+                visibleDiagnosticsReceipt,
+                string.Empty,
+                "Runtime crash diagnostics receipt",
+                string.Join("\n", DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(_pending.Report)),
+                string.Empty,
+                BuildRecoveryBody()
+            });
     }
 
     private Task OpenPathAsync(string path, string successMessage)

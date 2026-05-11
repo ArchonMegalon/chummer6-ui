@@ -44,7 +44,7 @@
 
     <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
       <Border Padding="0">
-      <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="2">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="2">
         <Border Grid.Row="0"
                 x:Name="SectionContextBorder"
                 Classes="shell-panel subtle"
@@ -78,6 +78,43 @@
           </StackPanel>
         </Border>
         <Border Grid.Row="2"
+                x:Name="AttributeParityEditorBorder"
+                Classes="shell-panel"
+                IsVisible="False"
+                Padding="4,3">
+          <Grid RowDefinitions="Auto,*" RowSpacing="4">
+            <Grid x:Name="AttributeParityHeaderGrid"
+                  ColumnDefinitions="*,72,72,88,118"
+                  ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="Attributes" Classes="shell-section-title" />
+              <TextBlock Grid.Column="1" Text="Points" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Text="Karma" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Text="Val (Aug)" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Text="Metatype Limits" Classes="shell-caption" HorizontalAlignment="Right" />
+            </Grid>
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          MinHeight="208">
+              <StackPanel x:Name="AttributeParityRowsHost"
+                          Spacing="2" />
+            </ScrollViewer>
+          </Grid>
+        </Border>
+        <Border Grid.Row="3"
+                x:Name="BuildLabBorder"
+                Classes="shell-panel subtle"
+                IsVisible="False"
+                Padding="4,3">
+          <StackPanel Spacing="4">
+            <TextBlock x:Name="BuildLabSummaryText"
+                       Text="Build Lab intake"
+                       Classes="shell-section-title" />
+            <StackPanel x:Name="BuildLabTrustReceiptPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </Border>
+        <Border Grid.Row="4"
                 x:Name="SectionRowsBorder"
                 Classes="shell-panel"
                 Padding="1,0">
@@ -106,7 +143,7 @@
             </ListBox.ItemsPanel>
           </ListBox>
         </Border>
-        <Expander Grid.Row="3"
+        <Expander Grid.Row="5"
                   x:Name="SectionPayloadExpander"
                   Header="Section Payload"
                   Height="0"
@@ -116,7 +153,7 @@
                   IsHitTestVisible="False"
                   ClipToBounds="True"
                   IsExpanded="False" />
-        <Expander Grid.Row="3"
+        <Expander Grid.Row="5"
                   x:Name="SectionReviewExpander"
                   Header="Section"
                   IsExpanded="True"
@@ -127,7 +164,7 @@
                    IsReadOnly="True"
                    MinHeight="120" />
         </Expander>
-        <Border Grid.Row="4"
+        <Border Grid.Row="6"
                 x:Name="SectionQuickActionsBorder"
                 Classes="shell-panel"
                 Padding="1,0"

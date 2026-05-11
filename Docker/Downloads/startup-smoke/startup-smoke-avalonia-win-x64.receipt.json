@@ -3,7 +3,7 @@
   "headId": "avalonia",
   "version": "run-20260503-163502",
   "releaseVersion": "run-20260503-163502",
-  "channelId": "preview",
+  "channelId": "docker",
   "platform": "windows",
   "arch": "x64",
   "rid": "win-x64",
@@ -23,5 +23,5 @@
   "artifactRelativePath": "files/chummer-avalonia-win-x64-installer.exe",
   "artifactSha256": "da9deba01191f61940d018ded710b867cc1e3d05fd7d76c2d5e5a314c60ed341",
   "artifactId": "avalonia-win-x64-installer",
-  "channel": "preview"
+  "channel": "docker"
 }

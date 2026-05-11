@@ -6,7 +6,23 @@ namespace Chummer.Presentation.Overview;
 
 public sealed partial class CharacterOverviewPresenter
 {
+    public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyAttributeEdit(xml, request),
+            ct);
+    }
+
     private async Task ApplyQuickAddAsync(WorkspaceQuickAddRequest request, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        await ApplyWorkspaceXmlMutationAsync(
+            xml => WorkspaceXmlMutationCatalog.ApplyQuickAdd(xml, request),
+            ct);
+    }
+
+    private async Task ApplyWorkspaceXmlMutationAsync(Func<string, string> mutateXml, CancellationToken ct)
     {
         CharacterWorkspaceId? currentWorkspace = ResolveCurrentWorkspaceId();
         if (currentWorkspace is null)
@@ -26,7 +42,7 @@ public sealed partial class CharacterOverviewPresenter
         string mutatedXml;
         try
         {
-            mutatedXml = WorkspaceXmlMutationCatalog.ApplyQuickAdd(xml, request);
+            mutatedXml = mutateXml(xml);
         }
         catch (Exception ex)
         {

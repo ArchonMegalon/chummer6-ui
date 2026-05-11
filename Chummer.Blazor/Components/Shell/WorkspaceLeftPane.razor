@@ -13,6 +13,28 @@
                        OpenWorkspaceRequested="OpenWorkspaceRequested"
                        CloseWorkspaceRequested="CloseWorkspaceRequested" />
 
+    @if (NavigationTabs.Count > 0)
+    {
+        <section class="panel tabs classic-tab-rail" aria-label="@BuildNavigationTabsHeading()">
+            <h2>@BuildNavigationTabsHeading()</h2>
+            <div class="virtual-list tab-grid">
+                <Virtualize Items="@(NavigationTabs.ToArray())"
+                            Context="tab"
+                            ItemSize="40">
+                    @{
+                        bool enabled = IsNavigationTabEnabled(tab);
+                    }
+                    <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
+                            id="@tab.Id"
+                            disabled="@(!enabled || State.IsBusy)"
+                            @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
+                        @FormatNavigationTabLabel(tab)
+                    </button>
+                </Virtualize>
+            </div>
+        </section>
+    }
+
     @if (ShowSectionActions)
     {
         <section class="panel section-actions classic-action-rail" aria-label="@BuildSectionActionsHeading()">

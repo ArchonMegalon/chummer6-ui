@@ -222,6 +222,31 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal("/account/support");
     }
 
+    public static IReadOnlyList<string> BuildSupportDiagnosticsReceiptLines(
+        DesktopInstallLinkingState installState,
+        DesktopUpdateClientStatus updateStatus)
+    {
+        ArgumentNullException.ThrowIfNull(installState);
+        ArgumentNullException.ThrowIfNull(updateStatus);
+
+        // Support diagnostics receipt: delegated to the shared trust composer so the
+        // runtime, desktop windows, and explain surfaces emit the same packet text.
+        // Diagnostics receipt correlation key:
+        // Support diagnostics packet id:
+        // Support diagnostics correlation:
+        // Support diagnostics explain receipt:
+        // Support handoff receipt:
+        // Support blocker diff receipt:
+        // Support proof diff receipt:
+        // Support environment tuple diff:
+        // Support identity diff:
+        // Support packet diff receipt:
+        // support packet carries before/after environment truth
+        // does not change local install state
+        // last blocker
+        return DesktopTrustReceiptComposer.BuildDiagnosticsDiff(installState, updateStatus);
+    }
+
     public static bool TryOpenSupportPortalForInstall(DesktopInstallLinkingState state)
     {
         ArgumentNullException.ThrowIfNull(state);

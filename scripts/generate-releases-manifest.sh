@@ -455,10 +455,12 @@ sanitize_startup_smoke_dir() {
   local output_dir="${2:-}"
   local release_channel="${3:-}"
   local release_version="${4:-}"
-  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" <<'PY'
+  local downloads_dir="${5:-}"
+  python3 - "$source_dir" "$output_dir" "$release_channel" "$release_version" "$downloads_dir" <<'PY'
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -467,6 +469,7 @@ source_dir = Path(sys.argv[1])
 output_dir = Path(sys.argv[2])
 release_channel = str(sys.argv[3]).strip()
 release_version = str(sys.argv[4]).strip()
+downloads_dir = Path(sys.argv[5]).resolve(strict=False) if str(sys.argv[5]).strip() else None
 
 output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -482,7 +485,102 @@ for receipt_path in sorted(output_dir.glob("startup-smoke-*.receipt.json")):
     if release_version:
         payload["releaseVersion"] = release_version
         payload["version"] = release_version
+    artifact_file_name = str(
+        payload.get("artifactFileName")
+        or payload.get("fileName")
+        or Path(str(payload.get("artifactPath") or "")).name
+    ).strip()
+    if artifact_file_name:
+        payload["artifactFileName"] = artifact_file_name
+        payload["fileName"] = artifact_file_name
+        payload["artifactRelativePath"] = f"files/{artifact_file_name}"
+        if downloads_dir is not None:
+            payload["artifactPath"] = str((downloads_dir / artifact_file_name).resolve(strict=False))
     receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+hydrate_startup_smoke_dir() {
+  local source_dir="${1:-}"
+  local output_dir="${2:-}"
+  local registry_root="${3:-}"
+  local repo_root="${4:-}"
+  python3 - "$source_dir" "$output_dir" "$registry_root" "$repo_root" <<'PY'
+from __future__ import annotations
+
+import datetime as dt
+import json
+import shutil
+import sys
+from pathlib import Path
+
+
+def parse_timestamp(payload: dict) -> dt.datetime:
+    for key in ("recordedAtUtc", "completedAtUtc", "generatedAt", "generated_at", "startedAtUtc"):
+        raw = str(payload.get(key) or "").strip()
+        if not raw:
+            continue
+        if raw.endswith("Z"):
+            raw = raw[:-1] + "+00:00"
+        try:
+            parsed = dt.datetime.fromisoformat(raw)
+        except ValueError:
+            continue
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=dt.timezone.utc)
+        return parsed.astimezone(dt.timezone.utc)
+    return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+
+
+def load_json(path: Path) -> dict | None:
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return None
+    return loaded if isinstance(loaded, dict) else None
+
+
+source_dir = Path(sys.argv[1]).resolve(strict=False)
+output_dir = Path(sys.argv[2]).resolve(strict=False)
+registry_root = Path(sys.argv[3]).resolve(strict=False)
+repo_root = Path(sys.argv[4]).resolve(strict=False)
+
+output_dir.mkdir(parents=True, exist_ok=True)
+
+gate_paths = [
+    repo_root / ".codex-studio" / "published" / "UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
+    repo_root / ".codex-studio" / "published" / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+]
+candidate_dirs: list[Path] = [source_dir]
+if registry_root:
+    candidate_dirs.append(registry_root / ".codex-studio" / "published" / "startup-smoke")
+for gate_path in gate_paths:
+    gate_payload = load_json(gate_path)
+    if not gate_payload:
+        continue
+    receipt_path = (
+        str(((gate_payload.get("checks") or {}) if isinstance(gate_payload.get("checks"), dict) else {}).get("startup_smoke_receipt_path") or "").strip()
+    )
+    if not receipt_path:
+        continue
+    candidate_dirs.append(Path(receipt_path).resolve(strict=False).parent)
+
+selected_by_name: dict[str, tuple[dt.datetime, Path]] = {}
+for candidate_dir in candidate_dirs:
+    if not candidate_dir.is_dir():
+        continue
+    for receipt_path in sorted(candidate_dir.glob("startup-smoke-*.receipt.json")):
+        payload = load_json(receipt_path)
+        if not payload:
+            continue
+        name = receipt_path.name
+        timestamp = parse_timestamp(payload)
+        current = selected_by_name.get(name)
+        if current is None or timestamp >= current[0]:
+            selected_by_name[name] = (timestamp, receipt_path)
+
+for _, receipt_path in sorted(selected_by_name.values(), key=lambda item: item[1].name):
+    shutil.copy2(receipt_path, output_dir / receipt_path.name)
 PY
 }
 
@@ -519,13 +617,21 @@ if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GA
   UI_LOCALIZATION_RELEASE_GATE_PATH="$SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH"
 fi
 if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+  hydrated_startup_smoke_dir="$(mktemp -d)"
+  hydrate_startup_smoke_dir \
+    "$STARTUP_SMOKE_DIR" \
+    "$hydrated_startup_smoke_dir" \
+    "$REGISTRY_ROOT" \
+    "$REPO_ROOT"
   SANITIZED_STARTUP_SMOKE_DIR="$(mktemp -d)"
   sanitize_startup_smoke_dir \
-    "$STARTUP_SMOKE_DIR" \
+    "$hydrated_startup_smoke_dir" \
     "$SANITIZED_STARTUP_SMOKE_DIR" \
     "$RELEASE_CHANNEL" \
-    "$RELEASE_VERSION"
+    "$RELEASE_VERSION" \
+    "$DOWNLOADS_DIR"
   STARTUP_SMOKE_DIR="$SANITIZED_STARTUP_SMOKE_DIR"
+  rm -rf "$hydrated_startup_smoke_dir"
 fi
 if [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
   SANITIZED_SOURCE_MANIFEST_PATH="$(mktemp)"
@@ -764,6 +870,61 @@ sync_promoted_files_dir() {
   fi
 }
 
+sync_portal_outputs() {
+  local resolved_manifest_path="$1"
+  local resolved_portal_manifest_path="$2"
+  local portal_startup_smoke_dir=""
+  local portal_files_dir=""
+  local artifact_path=""
+  local file_name=""
+  local -a portal_artifacts=()
+
+  if [[ "$resolved_manifest_path" == "$resolved_portal_manifest_path" ]]; then
+    echo "portal manifest path matches manifest output; skipped secondary sync"
+    return 0
+  fi
+
+  cp "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH"
+  cp "$CANONICAL_MANIFEST_PATH" "$PORTAL_CANONICAL_MANIFEST_PATH"
+  echo "synced portal manifest -> $PORTAL_MANIFEST_PATH"
+
+  portal_startup_smoke_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
+  mkdir -p "$portal_startup_smoke_dir"
+  find "$portal_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
+  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$portal_startup_smoke_dir"/
+    echo "synced startup-smoke receipts -> $portal_startup_smoke_dir"
+  else
+    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for portal sync"
+  fi
+
+  portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
+  for file_name in "${promoted_file_names[@]}"; do
+    artifact_path="$DOWNLOADS_DIR/$file_name"
+    if [[ ! -f "$artifact_path" ]]; then
+      echo "promoted artifact missing from downloads source: $artifact_path" >&2
+      exit 1
+    fi
+    portal_artifacts+=("$artifact_path")
+  done
+
+  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
+    mkdir -p "$portal_files_dir"
+    rm -f \
+      "$portal_files_dir"/chummer-*.exe \
+      "$portal_files_dir"/chummer-*.zip \
+      "$portal_files_dir"/chummer-*.tar.gz \
+      "$portal_files_dir"/chummer-*-installer.deb \
+      "$portal_files_dir"/chummer-*-installer.pkg \
+      "$portal_files_dir"/chummer-*-installer.dmg \
+      "$portal_files_dir"/chummer-*-installer.msix
+    cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
+    echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
+  else
+    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for local portal sync"
+  fi
+}
+
 canonical_files_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/files"
 resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
 resolved_canonical_files_dir="$(realpath -m "$canonical_files_dir")"
@@ -772,6 +933,10 @@ if [[ "$resolved_downloads_dir" == "$resolved_canonical_files_dir" ]]; then
 else
   sync_promoted_files_dir "$canonical_files_dir" "canonical release"
 fi
+
+resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
+resolved_portal_manifest_path="$(resolve_path_allow_missing "$PORTAL_MANIFEST_PATH")"
+sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
 
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)
@@ -820,54 +985,5 @@ if failures:
 PY
   then
     exit 1
-  fi
-fi
-
-resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
-resolved_portal_manifest_path="$(resolve_path_allow_missing "$PORTAL_MANIFEST_PATH")"
-if [[ "$resolved_manifest_path" == "$resolved_portal_manifest_path" ]]; then
-  echo "portal manifest path matches manifest output; skipped secondary sync"
-else
-  cp "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH"
-  cp "$CANONICAL_MANIFEST_PATH" "$PORTAL_CANONICAL_MANIFEST_PATH"
-  echo "synced portal manifest -> $PORTAL_MANIFEST_PATH"
-
-  portal_startup_smoke_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
-  mkdir -p "$portal_startup_smoke_dir"
-  find "$portal_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
-  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
-    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$portal_startup_smoke_dir"/
-    echo "synced startup-smoke receipts -> $portal_startup_smoke_dir"
-  else
-    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for portal sync"
-  fi
-
-  portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
-  declare -a portal_artifacts=()
-  for file_name in "${promoted_file_names[@]}"; do
-    artifact_path="$DOWNLOADS_DIR/$file_name"
-    if [[ ! -f "$artifact_path" ]]; then
-      echo "promoted artifact missing from downloads source: $artifact_path" >&2
-      exit 1
-    fi
-    portal_artifacts+=("$artifact_path")
-  done
-
-  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
-    # Force overwrite so repeated manifest publication stays idempotent even when
-    # the portal mirror already contains a prior copy of the promoted artifact set.
-    mkdir -p "$portal_files_dir"
-    rm -f \
-      "$portal_files_dir"/chummer-*.exe \
-      "$portal_files_dir"/chummer-*.zip \
-      "$portal_files_dir"/chummer-*.tar.gz \
-      "$portal_files_dir"/chummer-*-installer.deb \
-      "$portal_files_dir"/chummer-*-installer.pkg \
-      "$portal_files_dir"/chummer-*-installer.dmg \
-      "$portal_files_dir"/chummer-*-installer.msix
-    cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
-    echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
-  else
-    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for local portal sync"
   fi
 fi

@@ -4386,6 +4386,10 @@ public class MigrationComplianceTests
         Assert.IsFalse(localizationGateText.Contains("\"companion_runtime\"", StringComparison.Ordinal),
             "Localization release gate must stay aligned with the registry's current allowed localization domains.");
         StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
+        StringAssert.Contains(localizationGateText, "signoff_lock_retry_delay_seconds");
+        StringAssert.Contains(localizationGateText, "signoff_lock_retry_max_attempts");
+        StringAssert.Contains(localizationGateText, "package_plane_lock_contention");
+        StringAssert.Contains(localizationGateText, "waiting for package-plane lock:");
         StringAssert.Contains(localizationGateText, "runtimeconfig_bootstrap_repair");
         StringAssert.Contains(localizationGateText, "\"retry_attempted\": signoff_retry_attempted > 0");
         StringAssert.Contains(localizationGateText, "\"retry_reason\": signoff_retry_reason");

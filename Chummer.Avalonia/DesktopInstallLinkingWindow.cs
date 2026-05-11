@@ -252,7 +252,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private Task OpenAccountAsync()
     {
-        DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state);
+        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
+        }
+        else
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
+        }
+
         return Task.CompletedTask;
     }
 

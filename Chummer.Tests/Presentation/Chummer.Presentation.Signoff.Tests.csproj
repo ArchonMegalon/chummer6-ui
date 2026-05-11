@@ -5,7 +5,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.TestTools.UnitTesting.DoNotParallelizeAttribute" />
+  </ItemGroup>
   <ItemGroup Condition="'$(ChummerUseLocalCompatibilityTree)' == 'true'">
     <ProjectReference Include="$(ChummerLocalCampaignContractsProject)" />
     <ProjectReference Include="$(ChummerLocalContractsProject)" />
@@ -22,5 +29,8 @@
   <ItemGroup>
     <Compile Include="AccessibilitySignoffSmokeTests.cs" />
     <Compile Include="CharacterRosterStructureParityGuardTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>
 </Project>

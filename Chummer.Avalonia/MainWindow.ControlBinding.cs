@@ -1,4 +1,5 @@
 using Chummer.Avalonia.Controls;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia;
@@ -45,6 +46,7 @@ internal static class MainWindowControlBinder
         EventHandler<string> onSectionActionSelected,
         EventHandler<string> onWorkflowSurfaceSelected,
         EventHandler<string> onSectionQuickActionRequested,
+        EventHandler<AttributeEditRequest> onSectionAttributeEditRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
         EventHandler<string> onDialogActionSelected,
@@ -84,6 +86,7 @@ internal static class MainWindowControlBinder
         sectionHost.NavigationTabSelected += onNavigationTabSelected;
         sectionHost.SectionActionSelected += onSectionActionSelected;
         sectionHost.QuickActionRequested += onSectionQuickActionRequested;
+        sectionHost.AttributeEditRequested += onSectionAttributeEditRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;

@@ -220,6 +220,9 @@ internal sealed class DesktopHomeWindow : Window
         };
     }
 
+    public static async Task ShowAsync(Window owner, string headId)
+        => await ShowAsync(owner, headId, portabilityActivity: null).ConfigureAwait(true);
+
     public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
@@ -1442,6 +1445,7 @@ internal sealed class DesktopHomeWindow : Window
             return;
         }
 
+        // DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId)
         DesktopInstallLinkingRuntime.TryOpenWorkspacePortal(workspaceId, fragment: "portable-exchange");
     }
 

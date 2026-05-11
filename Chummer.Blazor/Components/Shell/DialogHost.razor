@@ -132,17 +132,31 @@
                     </label>
                 }
             </div>
-            @if (DialogTrustReceiptText.HasDialogTrustReceipt(dialog))
+            @if (BuildDialogTrustReceiptSections(dialog) is { Count: > 0 } trustSections)
             {
+                string trustReceipt = DialogTrustReceiptText.BuildDialogReceipt(dialog);
                 @* m104: blazor_dialog_surface *@
-                <section class="dialog-note dialog-explain-receipt" data-dialog-explain-receipt>
-                    <dl class="build-lab-decision-grid">
+                <aside class="dialog-trust-receipt" data-dialog-trust-receipt data-dialog-explain-receipt>
+                    <strong>Explain receipt and environment diff</strong>
+                    <p class="dialog-note">@trustReceipt</p>
+                    <dl class="facts compact">
                         <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildDialogBefore(dialog)</dd></div>
-                        <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildDialogAfter(dialog)</dd></div>
                         <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)</dd></div>
                         <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildDialogSupportReuse(dialog)</dd></div>
                     </dl>
-                </section>
+                    @foreach (DialogTrustReceiptSection receiptSection in trustSections)
+                    {
+                        <section class="dialog-trust-receipt-section">
+                            <h4>@receiptSection.Title</h4>
+                            <ul>
+                                @foreach (string line in receiptSection.Lines)
+                                {
+                                    <li>@line</li>
+                                }
+                            </ul>
+                        </section>
+                    }
+                </aside>
             }
             <div id="dialogFooter" class="dialog-footer classic-dialog-footer">
                 @foreach (DesktopDialogAction action in dialog.Actions)
@@ -227,6 +241,9 @@
             || string.Equals(field.Value, "on", StringComparison.OrdinalIgnoreCase)
             || string.Equals(field.Value, "yes", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static IReadOnlyList<DialogTrustReceiptSection> BuildDialogTrustReceiptSections(DesktopDialogState dialog)
+        => DialogTrustReceiptText.BuildDialogReceiptSections(dialog);
 
     private static string BuildDialogFieldLayoutClass(DesktopDialogField field)
     {

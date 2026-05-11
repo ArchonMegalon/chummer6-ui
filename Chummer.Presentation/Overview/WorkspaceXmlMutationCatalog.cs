@@ -77,6 +77,69 @@ internal static class WorkspaceXmlMutationCatalog
         return writer.ToString();
     }
 
+    public static string ApplyAttributeEdit(string xml, AttributeEditRequest request)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(xml);
+        ArgumentNullException.ThrowIfNull(request);
+
+        XDocument document = XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        XElement root = document.Root is { Name.LocalName: "character" }
+            ? document.Root
+            : throw new InvalidOperationException("Workspace XML must use <character> as the root node.");
+
+        XElement attributes = EnsureElement(root, "attributes");
+        XElement attribute = attributes.Elements("attribute")
+            .FirstOrDefault(candidate =>
+                string.Equals(
+                    FirstNonBlank(candidate.Element("name")?.Value),
+                    NormalizeAttributeName(request.AttributeName),
+                    StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Attribute '{request.AttributeName}' was not found in the workspace XML.");
+
+        string normalizedBucket = FirstNonBlank(request.Bucket).ToLowerInvariant();
+        int requestedValue = Math.Max(0, request.Value);
+        XElement baseElement = EnsureElement(attribute, "base");
+        XElement karmaElement = EnsureElement(attribute, "karma");
+        int currentBaseValue = ParseInt(baseElement.Value);
+        int currentKarmaValue = ParseInt(karmaElement.Value);
+        int metatypeMin = Math.Max(0, ParseInt(attribute.Element("metatypemin")?.Value, fallback: 0));
+        int metatypeMax = Math.Max(metatypeMin, ParseInt(attribute.Element("metatypemax")?.Value, fallback: Math.Max(currentBaseValue, requestedValue)));
+        int metatypeAugMax = Math.Max(metatypeMax, ParseInt(attribute.Element("metatypeaugmax")?.Value, fallback: metatypeMax));
+
+        switch (normalizedBucket)
+        {
+            case "base":
+                currentBaseValue = Math.Clamp(requestedValue, metatypeMin, metatypeMax);
+                break;
+            case "karma":
+                currentKarmaValue = Math.Clamp(requestedValue, 0, Math.Max(0, metatypeAugMax - currentBaseValue));
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported attribute edit bucket '{request.Bucket}'.");
+        }
+
+        if (currentBaseValue + currentKarmaValue > metatypeAugMax)
+        {
+            if (string.Equals(normalizedBucket, "base", StringComparison.Ordinal))
+            {
+                currentKarmaValue = Math.Max(0, metatypeAugMax - currentBaseValue);
+            }
+            else
+            {
+                currentBaseValue = Math.Max(metatypeMin, metatypeAugMax - currentKarmaValue);
+            }
+        }
+
+        baseElement.Value = currentBaseValue.ToString(CultureInfo.InvariantCulture);
+        karmaElement.Value = currentKarmaValue.ToString(CultureInfo.InvariantCulture);
+        EnsureElement(attribute, "value").Value = currentBaseValue.ToString(CultureInfo.InvariantCulture);
+        EnsureElement(attribute, "totalvalue").Value = (currentBaseValue + currentKarmaValue).ToString(CultureInfo.InvariantCulture);
+
+        using StringWriter writer = new(CultureInfo.InvariantCulture);
+        document.Save(writer, SaveOptions.DisableFormatting);
+        return writer.ToString();
+    }
+
     private static void AddGear(XElement root, WorkspaceQuickAddRequest request)
     {
         EnsureElement(root, "gears").Add(
@@ -309,6 +372,14 @@ internal static class WorkspaceXmlMutationCatalog
 
     private static string FirstNonBlank(params string?[] values)
         => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value))?.Trim() ?? string.Empty;
+
+    private static string NormalizeAttributeName(string value)
+        => FirstNonBlank(value).Trim();
+
+    private static int ParseInt(string? value, int fallback = 0)
+        => int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+            ? parsed
+            : fallback;
 
     private static string NormalizeToken(string value)
     {
