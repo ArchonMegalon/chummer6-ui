@@ -421,6 +421,10 @@ jobs:
           if [[ -z "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]] && [[ "${CHUMMER_MAC_SIGNING_REQUIRED:-false}" != "true" ]]; then
             unset CHUMMER_MAC_NOTARY_PROFILE
           fi
+          if [[ "${RUNNER_OS:-}" == "macOS" ]]; then
+            rm -rf "$HOME/.nuget/packages" "$HOME/.dotnet/packs" \
+              "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/m" "$GITHUB_WORKSPACE/l"
+          fi
           export CHUMMER_DESKTOP_INSTALLER_TMPDIR="${GITHUB_WORKSPACE}/.tmp/desktop-installer"
           mkdir -p "${CHUMMER_DESKTOP_INSTALLER_TMPDIR}"
           bash scripts/build-desktop-installer.sh \
