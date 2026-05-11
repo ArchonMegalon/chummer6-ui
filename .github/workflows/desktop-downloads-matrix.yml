@@ -551,12 +551,17 @@ jobs:
         run: |
           set -euo pipefail
           RELEASE_PUBLISHED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          REQUIRE_COMPLETE_DESKTOP_COVERAGE=0
+          if [[ "${{ steps.release-context.outputs.public_release }}" == "true" ]]; then
+            REQUIRE_COMPLETE_DESKTOP_COVERAGE=1
+          fi
           DOWNLOADS_DIR="dist/files" \
           MANIFEST_PATH="dist/releases.json" \
           PORTAL_MANIFEST_PATH="dist/releases.json" \
           RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
           CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
+          CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${REQUIRE_COMPLETE_DESKTOP_COVERAGE}" \
           SIGNING_RECEIPTS_DIR="dist/signing" \
           RELEASE_PROOF_PATH="$GITHUB_WORKSPACE/h/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \
           RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT}" \
