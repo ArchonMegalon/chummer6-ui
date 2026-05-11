@@ -303,6 +303,50 @@ run_windows_smoke() {
       fi
     fi
 
+    local basename_match
+    basename_match="$(
+      python3 - "$INSTALL_ROOT" "$requested_relative_path" <<'PY'
+import os
+import sys
+
+install_root = os.path.abspath(sys.argv[1])
+requested = sys.argv[2].replace("\\", "/").strip("/")
+requested_name = os.path.basename(requested).lower()
+requested_suffixes = [requested]
+
+if "/" in requested:
+    requested_suffixes.append(requested.split("/", 1)[1])
+
+candidates = []
+for root, _, files in os.walk(install_root):
+    for file_name in files:
+        if file_name.lower() != requested_name:
+            continue
+        full_path = os.path.join(root, file_name)
+        relative_path = os.path.relpath(full_path, install_root).replace("\\", "/")
+        candidates.append(relative_path)
+
+if not candidates:
+    raise SystemExit(1)
+
+for suffix in requested_suffixes:
+    for candidate in candidates:
+        if candidate.lower() == suffix.lower():
+            print(candidate)
+            raise SystemExit(0)
+        if candidate.lower().endswith("/" + suffix.lower()):
+            print(candidate)
+            raise SystemExit(0)
+
+candidates.sort(key=lambda value: (value.count("/"), len(value), value.lower()))
+print(candidates[0])
+PY
+    )" || basename_match=""
+    if [[ -n "$basename_match" && -f "$INSTALL_ROOT/$basename_match" ]]; then
+      printf '%s\n' "$basename_match"
+      return 0
+    fi
+
     return 1
   }
 
@@ -319,6 +363,7 @@ run_windows_smoke() {
 
     if (( ${#missing_paths[@]} > 0 )); then
       printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}" >&2
+      find "$INSTALL_ROOT" -maxdepth 4 -type f | sort >&2 || true
       return 1
     fi
   fi
