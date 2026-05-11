@@ -418,6 +418,9 @@ jobs:
         run: |
           set -euo pipefail
           release_version="run-${GITHUB_RUN_NUMBER:-local}"
+          if [[ -z "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]] && [[ "${CHUMMER_MAC_SIGNING_REQUIRED:-false}" != "true" ]]; then
+            unset CHUMMER_MAC_NOTARY_PROFILE
+          fi
           bash scripts/build-desktop-installer.sh \
             "out/${{ matrix.app }}/${{ matrix.rid }}" \
             "${{ matrix.app }}" \
