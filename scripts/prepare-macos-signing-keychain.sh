@@ -206,8 +206,14 @@ if [[ -z "$cert_base64" ]]; then
       sign_identity_hint="$(resolve_codesigning_identity "$local_cert_common_name")"
     fi
     if [[ -z "$sign_identity_hint" ]]; then
-      echo "Unable to resolve a local codesigning identity from $keychain_path." >&2
-      exit 1
+      if env_truthy "$required"; then
+        echo "Unable to resolve a local codesigning identity from $keychain_path." >&2
+        exit 1
+      fi
+
+      echo "Unable to resolve a local codesigning identity from $keychain_path; continuing unsigned because macOS signing is not required for this run." >&2
+      write_outputs false ""
+      exit 0
     fi
     store_notary_credentials_if_configured
     write_outputs true "$sign_identity_hint"
