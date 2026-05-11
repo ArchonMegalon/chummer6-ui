@@ -735,7 +735,7 @@ exit_code = int(sys.argv[11])
 
 receipt = {}
 if receipt_path.exists():
-    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
 tail_lines = log_text.strip().splitlines()[-40:]
@@ -878,6 +878,15 @@ main() {
       return 1
       ;;
   esac
+
+  if [[ ! -s "$RECEIPT_PATH" ]]; then
+    for _attempt in 1 2 3 4 5; do
+      sleep 1
+      if [[ -s "$RECEIPT_PATH" ]]; then
+        break
+      fi
+    done
+  fi
 
   if [[ ! -s "$RECEIPT_PATH" ]]; then
     echo "Startup smoke completed without emitting a receipt." >&2
