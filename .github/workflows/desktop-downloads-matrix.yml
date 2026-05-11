@@ -558,7 +558,6 @@ jobs:
           DOWNLOADS_DIR="dist/files" \
           MANIFEST_PATH="dist/releases.json" \
           PORTAL_MANIFEST_PATH="dist/releases.json" \
-          RELEASE_VERSION="run-${GITHUB_RUN_NUMBER:-local}" \
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
           CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
           CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${REQUIRE_COMPLETE_DESKTOP_COVERAGE}" \
