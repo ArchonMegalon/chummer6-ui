@@ -286,6 +286,7 @@ run_windows_smoke() {
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
   run_windows_binary "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
+  sleep 2
 
   resolve_windows_installed_relative_path() {
     local requested_relative_path="$1"
@@ -356,23 +357,36 @@ PY
     local missing_paths=()
     while IFS= read -r relative_path; do
       [[ -n "$relative_path" ]] || continue
-      if ! resolve_windows_installed_relative_path "$relative_path" >/dev/null; then
+      local resolved_required_path=""
+      for _attempt in 1 2 3 4 5; do
+        if resolved_required_path="$(resolve_windows_installed_relative_path "$relative_path")"; then
+          break
+        fi
+        sleep 1
+      done
+      if [[ -z "$resolved_required_path" ]]; then
         missing_paths+=("$relative_path")
       fi
     done < <(printf '%s' "$required_paths" | tr ';' '\n')
 
     if (( ${#missing_paths[@]} > 0 )); then
-      printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}" >&2
-      find "$INSTALL_ROOT" -maxdepth 4 -type f | sort >&2 || true
+      {
+        printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}"
+        find "$INSTALL_ROOT" -maxdepth 6 -type f | sort || true
+      } | tee -a "$LOG_PATH" >&2
       return 1
     fi
   fi
 
   local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
   local resolved_launch_relative_path
-  if resolved_launch_relative_path="$(resolve_windows_installed_relative_path "$launch_relative_path")"; then
-    launch_relative_path="$resolved_launch_relative_path"
-  fi
+  for _attempt in 1 2 3 4 5; do
+    if resolved_launch_relative_path="$(resolve_windows_installed_relative_path "$launch_relative_path")"; then
+      launch_relative_path="$resolved_launch_relative_path"
+      break
+    fi
+    sleep 1
+  done
   run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
 }
 
