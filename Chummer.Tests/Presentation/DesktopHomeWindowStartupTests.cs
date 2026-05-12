@@ -79,6 +79,38 @@ public sealed class DesktopHomeWindowStartupTests
         Assert.IsTrue(shouldShow, "Restore review should still interrupt startup when local work is newer than the server continuity packet.");
     }
 
+    [TestMethod]
+    public void ShouldShowOnStartup_opens_restore_review_when_claimed_install_has_server_continuity_but_no_local_workspace()
+    {
+        bool shouldShow = DesktopHomeWindow.ShouldShowOnStartup(
+            installContext: null,
+            installState: CreateInstallState(status: "claimed"),
+            updateStatus: CreateUpdateStatus(status: "current"),
+            workspaces: [],
+            campaignProjection: CreateCampaignProjection(watchouts: []),
+            campaignServerPlane: new DesktopHomeCampaignServerPlane(
+                WorkspaceId: "runner-restore",
+                SessionReadinessSummary: "Tonight is ready.",
+                RestoreSummary: "Server continuity is available.",
+                PublicationSummary: "Publication posture is grounded.",
+                RosterSummary: "Roster is aligned.",
+                RunboardSummary: "Ops digest is current.",
+                TravelModeSummary: "Travel cache is ready.",
+                TravelPrefetchInventorySummary: "1 packet ready.",
+                CampaignMemorySummary: "Memory aligned.",
+                CampaignMemoryReturnSummary: "Return route is grounded.",
+                FirstPlayableSession: null,
+                NextSafeAction: "Review the restore continuation before opening a fresh workspace.",
+                ReadinessHighlights: [],
+                Watchouts: [],
+                SupportHighlights: [],
+                DecisionNotices: [],
+                GeneratedAtUtc: new DateTimeOffset(2026, 5, 7, 11, 0, 0, TimeSpan.Zero)),
+            supportProjection: CreateSupportProjection(needsAttention: false));
+
+        Assert.IsTrue(shouldShow, "Claimed installs without a restored local workspace should open the native restore continuation flow when server continuity is present.");
+    }
+
     private static DesktopInstallLinkingState CreateInstallState(string status)
         => new(
             InstallationId: "install-123",

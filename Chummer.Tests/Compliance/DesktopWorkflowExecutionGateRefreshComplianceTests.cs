@@ -102,6 +102,18 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
     }
 
     [TestMethod]
+    public void Workflow_execution_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
+        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null");
+    }
+
+    [TestMethod]
     public void Workflow_execution_gate_defers_stale_m141_refresh_failures_once_direct_flagship_proof_is_current()
     {
         string repoRoot = FindRepoRoot();
@@ -177,6 +189,18 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
             scriptText,
             "republish_screenshot_pack_freshness_if_complete \"$screenshot_dir\"",
             "The visual familiarity materializer must republish a complete promoted screenshot pack with current proof freshness before evaluating stale screenshot failures.");
+    }
+
+    [TestMethod]
+    public void Visual_familiarity_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-visual-familiarity-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
+        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null");
     }
 
     private static string FindRepoRoot()

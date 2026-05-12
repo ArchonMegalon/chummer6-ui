@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-08T19:14:09.072364Z",
+  "generatedAt": "2026-05-12T12:26:32.747302Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family verification evidence is incomplete for cyberware-bioware-modular-hierarchies-nested-plugins.",
-  "reasons": [
-    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail; external_blocker=missing_api_surface_contract)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family verification evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
@@ -30,12 +28,10 @@
         "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
       ]
     },
-    "executionReceipts": [],
-    "executionFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    "executionReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/cyberware-bioware-modular-hierarchies-nested-plugins.generated.json"
     ],
-    "executionExternalBlockers": [
-      "missing_api_surface_contract"
-    ]
+    "executionFailures": [],
+    "executionExternalBlockers": []
   }
 }

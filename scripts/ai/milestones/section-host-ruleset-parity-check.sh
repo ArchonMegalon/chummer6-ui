@@ -249,6 +249,7 @@ payload: dict[str, Any] = {
         "directiveTests": {},
         "flagshipUiTests": {},
         "attributeParityMarkers": {},
+        "interactiveSurfaceContracts": {},
     },
 }
 reasons: list[str] = payload["reasons"]
@@ -375,6 +376,11 @@ attribute_parity_markers = {
     "numeric_updown_editor": ("NumericUpDown", section_host_code_text),
     "review_expander_hidden": ("SectionReviewExpander.IsVisible = !showingAttributeParityEditor", section_host_code_text),
     "named_base_editor": ('Name = $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
+    "named_karma_editor": ('Name = $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
+    "base_editor_valuechanged": ("baseEditor.ValueChanged += (_, _) =>", section_host_code_text),
+    "karma_editor_valuechanged": ("karmaEditor.ValueChanged += (_, _) =>", section_host_code_text),
+    "delayed_commit": ("ScheduleCommitAsync(", section_host_code_text),
+    "attribute_edit_request_dispatch": ('new AttributeEditRequest(row.AttributeName, bucket, value)', section_host_code_text),
 }
 for name, (marker, haystack) in attribute_parity_markers.items():
     found = marker in haystack
@@ -385,10 +391,44 @@ for name, (marker, haystack) in attribute_parity_markers.items():
             projector_failures,
         )
 
+interactive_surface_contracts = {
+    "navigation_tabstrip": [
+        "LoadedRunnerTabStrip_OnSelectionChanged(",
+        "_suppressNavigationTabSelectionChanged",
+    ],
+    "section_action_tabstrip": [
+        "SectionActionTabStrip_OnSelectionChanged(",
+        "_suppressSectionActionSelectionChanged",
+    ],
+    "numeric_updown_editors": [
+        "NumericUpDown baseEditor = new()",
+        "NumericUpDown karmaEditor = new()",
+        "baseEditor.ValueChanged += (_, _) =>",
+        "karmaEditor.ValueChanged += (_, _) =>",
+    ],
+    "quick_action_buttons": [
+        "CreateQuickActionButton(",
+        "button.Click += SectionQuickActionButton_OnClick;",
+        "SectionQuickActionButton_OnClick(",
+    ],
+    "lifecycle_cleanup": [
+        "grid.DetachedFromVisualTree += (_, _) =>",
+    ],
+}
+for contract_name, markers in interactive_surface_contracts.items():
+    found_markers = {marker: (marker in section_host_code_text) for marker in markers}
+    evidence["interactiveSurfaceContracts"][contract_name] = found_markers
+    missing = [marker for marker, found in found_markers.items() if not found]
+    if missing:
+        add_failure(
+            f"Section-host interactive surface contract drifted: {contract_name}.",
+            projector_failures,
+        )
+
 projector_text = texts.get("projector", "")
 projector_markers = {
     "section_host_state_projection": "SectionHostState: new SectionHostState(",
-    "quick_action_projection": "QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),",
+    "quick_action_projection": "ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId)",
     "section_action_label_projection": "RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(",
 }
 evidence["projectorMarkers"] = {}
@@ -422,12 +462,16 @@ else:
 
 test_commands = [
     [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         filter_expression,
+        "--verbosity",
+        "minimal",
     ]
     for filter_expression in TEST_FILTER_COMMANDS
 ]
@@ -436,6 +480,8 @@ evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
 
 build_result: subprocess.CompletedProcess[str] | None = None
 test_results: list[dict[str, Any]] = []
+evidence["buildExitCode"] = None
+evidence["testResults"] = test_results
 if not reasons:
     build_command = [
         "bash",
@@ -494,9 +540,6 @@ if not reasons:
                     execution_failures,
                 )
         evidence["testResults"] = test_results
-else:
-    evidence["buildExitCode"] = None
-    evidence["testResults"] = test_results
 
 if not reasons:
     payload["status"] = "pass"
@@ -587,6 +630,24 @@ payload["attributeParityReview"] = {
         if "Section-host attribute parity marker missing:" in reason
     ],
     "attributeParityMarkers": evidence["attributeParityMarkers"],
+}
+payload["interactiveSurfaceReview"] = {
+    "status": (
+        "pass"
+        if not any("Section-host interactive surface contract drifted:" in reason for reason in projector_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Section-host runtime surfaces still preserve their interactive control-class and handler-family contracts."
+        if not any("Section-host interactive surface contract drifted:" in reason for reason in projector_failures)
+        else "Section-host runtime surfaces lost required interactive control-class or handler-family contracts."
+    ),
+    "reasons": [
+        reason
+        for reason in projector_failures
+        if "Section-host interactive surface contract drifted:" in reason
+    ],
+    "interactiveSurfaceContracts": evidence["interactiveSurfaceContracts"],
 }
 payload["verifyWiringReview"] = {
     "status": "pass" if not verify_wiring_failures else "fail",

@@ -108,6 +108,11 @@ run_mstest_runner() {
         ((index += 1))
         continue
         ;;
+      --no-restore)
+        build_args+=("${args[$index]}")
+        ((index += 1))
+        continue
+        ;;
       test)
         ((index += 1))
         continue
@@ -232,6 +237,16 @@ rewrite_mstest_runner_args() {
         continue
         ;;
       --nologo|--disable-build-servers)
+        ((index += 1))
+        continue
+        ;;
+      -v|--verbosity)
+        if (( index + 1 < ${#args[@]} )); then
+          ((index += 2))
+          continue
+        fi
+        ;;
+      -v:*|/v:*|--verbosity=*)
         ((index += 1))
         continue
         ;;

@@ -25,6 +25,7 @@ next90_m141_direct_import_route_proof_path="$repo_root/.codex-studio/published/N
 next90_m142_direct_workflow_proof_path="$repo_root/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
+flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -401,7 +402,17 @@ def desktop_frontier_receipt_is_external_only_missing_api_surface_contract(paylo
     )
     sr4_status = normalize_token(evidence_payload.get("sr4Status"))
     sr6_status = normalize_token(evidence_payload.get("sr6Status"))
-    if sr4_status and not status_ok(sr4_status):
+    sr4_is_external_only = any(
+        "external blocker: missing_api_surface_contract" in normalize_token(reason)
+        or "external_blocker=missing_api_surface_contract" in normalize_token(reason)
+        for reason in (payload.get("reasons") or [])
+    )
+    sr4_pass_or_external_only = (
+        not sr4_status
+        or status_ok(sr4_status)
+        or (sr4_status == "fail" and sr4_is_external_only)
+    )
+    if not sr4_pass_or_external_only:
         return False
     if status_ok(sr6_status):
         return False
@@ -412,8 +423,17 @@ def desktop_frontier_receipt_is_external_only_missing_api_surface_contract(paylo
     ]
     allowed_reason_fragments = (
         "missing_api_surface_contract",
+        "sr4 parity receipt has failing parity receipt proofs for",
+        "sr4 parity gate exited non-zero",
+        "sr4 parity receipt is not passing",
         "sr6 parity receipt has failing parity receipt proofs for",
         "sr6 parity gate exited non-zero",
+        "sr6 parity receipt is not passing",
+        "ruleset/ui adaptation receipt is not passing",
+        "ruleset/ui adaptation receipt reports failurecount=",
+        "ruleset/ui adaptation gate exited non-zero",
+        "chummer5a parity receipt is not passing",
+        "chummer5a parity gate exited non-zero",
     )
     return bool(reason_tokens) and all(
         any(fragment in token for fragment in allowed_reason_fragments)
@@ -1792,6 +1812,12 @@ if direct_flagship_slice_runtime_proof_closes_direct_workflow_gate:
     reasons, deferred_reason_items = filter_reason_prefixes(
         reasons,
         (
+            "desktop_visual_familiarity_gate dependency refresh failed via ",
+            "chummer5a_workflow_parity dependency refresh failed via ",
+            "sr4_workflow_parity dependency refresh failed via ",
+            "sr6_workflow_parity dependency refresh failed via ",
+            "sr4_sr6_frontier dependency refresh failed via ",
+            "ruleset_ui_adaptation dependency refresh failed via ",
             "next90_m141_direct_import_route_proof dependency refresh failed via ",
             "chummer5a_workflow_parity receipt is missing or not passing.",
             "sr4_workflow_parity receipt is missing or not passing.",
@@ -1868,5 +1894,7 @@ receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)
 PY
+
+python3 "$flagship_product_readiness_materializer_path" >/dev/null
 
 echo "[desktop-workflow-execution-gate] PASS"

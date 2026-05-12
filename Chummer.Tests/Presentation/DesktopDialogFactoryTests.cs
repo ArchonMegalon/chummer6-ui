@@ -1920,7 +1920,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.hero_lab_importer", dialog.Id);
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"));
-        Assert.AreEqual("3/4 · 75%", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleCoverage"));
+        Assert.AreEqual("1/1 · 100%", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleCoverage"));
         Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabFixtureCount"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"), "3/4 fixture families covered");
@@ -1929,7 +1929,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"), "partial");
         Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"));
-        Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
+        Assert.AreEqual("Adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
         Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMissingSources"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));
     }

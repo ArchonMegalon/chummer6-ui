@@ -941,6 +941,7 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField searchField = FindRequiredField(fields, "masterIndexSearch");
         DesktopDialogField sourcebookField = FindRequiredField(fields, "masterIndexCurrentSourcebook");
         DesktopDialogField linkedSourceField = FindRequiredField(fields, "masterIndexSelectedSource");
+        DesktopDialogField dataRootField = FindRequiredField(fields, "masterIndexDataRoot");
         DesktopDialogField notesField = FindRequiredField(fields, "masterIndexSnippetPreview");
         DesktopDialogField settingsField = FindRequiredField(fields, "masterIndexSettingsSummary");
         bool sourceAvailable = !string.IsNullOrWhiteSpace(sourcebookField.Value);
@@ -989,7 +990,7 @@ public partial class DesktopDialogWindow : Window
 
         Grid right = new()
         {
-            RowDefinitions = new RowDefinitions("Auto,Auto,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"),
             RowSpacing = 8
         };
         Grid.SetColumn(right, 1);
@@ -1078,6 +1079,31 @@ public partial class DesktopDialogWindow : Window
         Grid.SetRow(sourceRow, 1);
         right.Children.Add(sourceRow);
 
+        Grid dataRootRow = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 8,
+            IsVisible = !string.IsNullOrWhiteSpace(dataRootField.Value)
+        };
+        dataRootRow.Children.Add(new TextBlock
+        {
+            Text = "Data Root:",
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        });
+        TextBlock dataRootValueText = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldInputName(dataRootField.Id),
+            Text = dataRootField.Value,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        ApplyAccessibility(dataRootValueText, dataRootField.AccessibleName, dataRootField.ToolTip, dataRootField.HelpText);
+        Grid.SetColumn(dataRootValueText, 1);
+        dataRootRow.Children.Add(dataRootValueText);
+        Grid.SetRow(dataRootRow, 2);
+        right.Children.Add(dataRootRow);
+
         TextBox notesBox = new()
         {
             Text = notesField.Value,
@@ -1087,7 +1113,7 @@ public partial class DesktopDialogWindow : Window
             MinHeight = 280,
             IsVisible = notesAvailable
         };
-        Grid.SetRow(notesBox, 2);
+        Grid.SetRow(notesBox, 3);
         right.Children.Add(notesBox);
 
         Grid settingsRow = new()

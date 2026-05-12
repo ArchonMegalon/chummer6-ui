@@ -1,0 +1,14 @@
+contractName: chummer6-ui.dense_workbench_budget
+goal: >
+  The flagship desktop workbench must feel premium and expert-dense under heavy use,
+  not like a sparse review shell.
+summary: dense workbench over sparse review shell
+requirements:
+  - no_empty_review_chrome_on_primary_routes
+  - side_by_side_editor_value_limit_posture_when_legacy_relied_on_it
+  - dense_scrollable_editor_surfaces_for_high_frequency_tasks
+  - source_linked_tooltips_and_detail_drawers_for_explainable_truth
+  - ruleset_badges_and_restore_warnings_remain_visible_when_relevant
+  - keyboard_routes_and_default_button_posture_preserved
+  - runtime_created_controls_materialize_inside_the_same_dense_workbench_contract
+releaseBlocker: true

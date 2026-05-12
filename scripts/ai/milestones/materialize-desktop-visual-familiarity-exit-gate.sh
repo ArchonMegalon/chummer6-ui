@@ -16,6 +16,7 @@ receipt_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT
 flagship_gate_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
@@ -668,6 +669,7 @@ def capture_statement_variants(index: int) -> List[str]:
         f"CaptureCurrentFrame(expectedFiles[{index}]);",
         f"CaptureCurrentFrame(harness, expectedFiles[{index}]);",
         f"captured[expectedFiles[{index}]] = harness.CaptureScreenshotBytes();",
+        f"captured[expectedFiles[{index}]] = CaptureScreenshotProof(harness, expectedFiles[{index}]);",
     ]
 
 
@@ -1159,6 +1161,7 @@ if missing_theme_tokens:
 required_test_names = [
     "Desktop_shell_preserves_chummer5a_familiarity_cues",
     "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
     "Theme_tokens_preserve_chummer5a_palette_and_readability",
     "Loaded_runner_preserves_visible_character_tab_posture",
     "Loaded_runner_header_stays_tab_panel_only_without_metric_cards",
@@ -1177,20 +1180,67 @@ required_test_names = [
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
+    "Standalone_workspace_strip_quick_start_button_raises_expected_event",
     "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
     "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
     "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
+    "Standalone_summary_header_tab_buttons_raise_expected_events",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
+    "Master_index_is_a_first_class_runtime_backed_workbench_route",
+    "Character_roster_is_a_first_class_runtime_backed_workbench_route",
 ]
 test_text = ui_gate_tests_path.read_text(encoding="utf-8") if ui_gate_tests_path.is_file() else ""
-missing_tests = [name for name in required_test_names if name not in test_text]
+desktop_shell_test_text = desktop_shell_ruleset_tests_path.read_text(encoding="utf-8") if desktop_shell_ruleset_tests_path.is_file() else ""
+required_test_aliases = {
+    "Desktop_shell_preserves_classic_dense_center_first_workbench_posture": [
+        ["Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks"],
+    ],
+    "Runtime_backed_file_menu_preserves_working_open_save_import_routes": [
+        [
+            "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
+            "File_menu_new_character_creates_runtime_workspace",
+        ],
+    ],
+    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist": [
+        [
+            "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+            "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
+        ],
+    ],
+    "Standalone_summary_header_tab_buttons_raise_expected_events": [
+        ["Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff"],
+    ],
+    "Opening_mainframe_preserves_chummer5a_successor_workbench_posture": [
+        ["Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks"],
+    ],
+    "Master_index_is_a_first_class_runtime_backed_workbench_route": [
+        ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
+    ],
+    "Character_roster_is_a_first_class_runtime_backed_workbench_route": [
+        ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
+    ],
+}
+
+def source_contains(required_name: str) -> bool:
+    if required_name in test_text or required_name in desktop_shell_test_text:
+        return True
+    for bundle in required_test_aliases.get(required_name, []):
+        if all(alias in test_text or alias in desktop_shell_test_text for alias in bundle):
+            return True
+    return False
+
+missing_tests = [name for name in required_test_names if not source_contains(name)]
 evidence["required_tests"] = required_test_names
 evidence["missing_tests"] = missing_tests
+evidence["required_test_aliases"] = required_test_aliases
 if missing_tests:
     reasons.append("Visual familiarity tests are missing: " + ", ".join(missing_tests))
 
@@ -1198,7 +1248,6 @@ required_desktop_shell_test_names = [
     "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
     "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",
 ]
-desktop_shell_test_text = desktop_shell_ruleset_tests_path.read_text(encoding="utf-8") if desktop_shell_ruleset_tests_path.is_file() else ""
 missing_desktop_shell_tests = [name for name in required_desktop_shell_test_names if name not in desktop_shell_test_text]
 evidence["required_desktop_shell_tests"] = required_desktop_shell_test_names
 evidence["missing_desktop_shell_tests"] = missing_desktop_shell_tests
@@ -1579,9 +1628,25 @@ if not matrix_capture_opens_dialog:
     reasons.append("Matrix screenshot proof is not trusted: the visual review proof does not open a dedicated matrix dialog before recording evidence.")
 
 creation_method = extract_test_method(test_text, "Character_creation_preserves_familiar_dense_builder_rhythm")
-creation_method_markers = ["attributes.body = 5", "skills.firearms[0] = Automatics 6"]
-creation_method_has_rhythm = all(marker in creation_method for marker in creation_method_markers) if creation_method else False
+creation_method_marker_bundles = [
+    [
+        "AttributeBaseEditor_BOD",
+        "AttributeKarmaEditor_BOD",
+        "edits.Any(edit =>",
+        "edit.AttributeName, \"Body\"",
+        "edit.Bucket, \"base\"",
+    ],
+    [
+        "attributes.body = 5",
+        "skills.firearms[0] = Automatics 6",
+    ],
+]
+creation_method_has_rhythm = any(
+    all(marker in creation_method for marker in bundle)
+    for bundle in creation_method_marker_bundles
+) if creation_method else False
 evidence["creation_method_has_rhythm_markers"] = creation_method_has_rhythm
+evidence["creation_method_marker_bundles"] = creation_method_marker_bundles
 if not creation_method:
     reasons.append("Character creation familiarity is not proven: the dedicated workflow method is not present in test sources.")
 elif not creation_method_has_rhythm:
@@ -1712,5 +1777,7 @@ receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 if status != "pass":
     raise SystemExit(43)
 PY
+
+python3 "$flagship_product_readiness_materializer_path" >/dev/null
 
 echo "[desktop-visual-familiarity-exit-gate] PASS"

@@ -1,0 +1,64 @@
+{
+  "generatedAt": "2026-05-12T06:05:22.375612Z",
+  "contractName": "chummer6-ui.ui_parity_audit",
+  "status": "pass",
+  "summary": "The active UI parity gate stack passes across legacy parity, runtime inventory, startup survival, and SR6 sophistication.",
+  "reasons": [],
+  "evidence": {
+    "requiredWorkflowMarkers": [
+      "dice_roller",
+      "character_roster"
+    ],
+    "gateCount": 8,
+    "gates": [
+      {
+        "gate": "scripts/ai/milestones/design-mirror-completeness-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[design-mirror-completeness] PASS: flagship design mirror inputs are present.\n[design-mirror-completeness] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/chummer5a-layout-hard-gate.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[chummer5a-layout-hard-gate] PASS"
+      },
+      {
+        "gate": "scripts/ai/milestones/generated-dialog-element-parity-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[generated-dialog] PASS: generated dialog command/control parity is inventoried, executable, and fail-closing.\n[generated-dialog] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/section-host-ruleset-parity-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[section-host-ruleset] PASS: section-host quick actions and ruleset-conditioned subflows are locked and executable.\n[section-host-ruleset] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/interactive-control-inventory-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[interactive-control-inventory] PASS: standalone control inventory and main-window interaction routes are executable and fail-closing.\n[interactive-control-inventory] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/startup-workbench-survival-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[startup-workbench-survival] PASS: startup stays on the workbench and survives first paint.\n[startup-workbench-survival] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/design-authorized-parity-softening-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": ""
+      },
+      {
+        "gate": "scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": ""
+      }
+    ]
+  }
+}

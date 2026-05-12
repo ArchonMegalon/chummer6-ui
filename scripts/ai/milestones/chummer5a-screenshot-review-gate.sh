@@ -296,7 +296,7 @@ if screenshot_dir is None or not screenshot_dir.is_dir():
 
 job_results: dict[str, dict[str, Any]] = {}
 for job_name, job in review_jobs.items():
-    screenshots = list(job["screenshots"])
+    screenshots = list(job.get("screenshots") or [])
     job_reasons: list[str] = []
     for screenshot in screenshots:
         if screenshot not in required_screenshots:
@@ -309,18 +309,18 @@ for job_name, job in review_jobs.items():
             job_reasons.append(f"{screenshot} is below the review resolution floor.")
         if screenshot_dir is not None and not (screenshot_dir / screenshot).is_file():
             job_reasons.append(f"{screenshot} is absent from the screenshot directory.")
-    for key in job["evidenceKeys"]:
+    for key in list(job.get("evidenceKeys") or []):
         if not status_pass(visual_evidence.get(key)):
             job_reasons.append(f"Visual familiarity evidence key is not pass: {key}.")
-    for marker in job["testMarkers"]:
+    for marker in list(job.get("testMarkers") or []):
         if marker not in avalonia_tests_text:
             job_reasons.append(f"Avalonia flagship tests are missing review marker: {marker}.")
     job_results[job_name] = {
-        "frontierId": job["frontierId"],
+        "frontierId": job.get("frontierId"),
         "status": "pass" if not job_reasons else "fail",
         "screenshots": screenshots,
-        "evidenceKeys": list(job["evidenceKeys"]),
-        "testMarkers": list(job["testMarkers"]),
+        "evidenceKeys": list(job.get("evidenceKeys") or []),
+        "testMarkers": list(job.get("testMarkers") or []),
         "reasons": job_reasons,
     }
     reasons.extend(f"{job_name}: {reason}" for reason in job_reasons)

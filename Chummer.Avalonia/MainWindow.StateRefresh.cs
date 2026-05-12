@@ -50,6 +50,13 @@ public partial class MainWindow
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
         bool showRosterPane = !showNavigatorPane;
         bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
+        bool showCommandSurface = !string.IsNullOrWhiteSpace(_shellPresenter.State.OpenMenuId)
+            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
+        bool showRightShell = !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogTitle)
+            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogMessage)
+            || shellFrame.CommandDialogPaneState.Fields.Length > 0
+            || shellFrame.CommandDialogPaneState.Actions.Length > 0
+            || showCommandSurface;
 
         RosterPaneRegion.IsVisible = showRosterPane;
         RosterPaneRegion.IsHitTestVisible = showRosterPane;
@@ -57,10 +64,16 @@ public partial class MainWindow
         LeftNavigatorRegion.IsHitTestVisible = showNavigatorPane;
         SummaryHeaderRegion.IsVisible = showSummaryHeader;
         SummaryHeaderRegion.IsHitTestVisible = showSummaryHeader;
+        RightShellRegion.IsVisible = showRightShell;
+        RightShellRegion.IsHitTestVisible = showRightShell;
+        RightShellRegion.Opacity = showRightShell ? 1 : 0;
 
         if (ContentRegion.ColumnDefinitions.Count >= 3)
         {
             ContentRegion.ColumnDefinitions[0].Width = showRosterPane || showNavigatorPane
+                ? new GridLength(264)
+                : new GridLength(0);
+            ContentRegion.ColumnDefinitions[2].Width = showRightShell
                 ? new GridLength(228)
                 : new GridLength(0);
             ContentRegion.ColumnSpacing = showRosterPane || showNavigatorPane ? 2 : 0;

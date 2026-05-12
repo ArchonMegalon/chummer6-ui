@@ -68,6 +68,20 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
+    public void Project_projects_progress_section_quick_action_into_section_host_state()
+    {
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "progress",
+            activeTabId: "tab-info");
+
+        Assert.AreEqual(1, frame.SectionHostState.QuickActions.Length);
+        Assert.AreEqual("create_entry", frame.SectionHostState.QuickActions[0].ControlId);
+        Assert.AreEqual("Add Entry", frame.SectionHostState.QuickActions[0].Label);
+        Assert.IsTrue(frame.SectionHostState.QuickActions[0].IsPrimary);
+    }
+
+    [TestMethod]
     public void Project_formats_ruleset_conditioned_navigator_section_action_labels()
     {
         foreach ((string rulesetId, WorkspaceSurfaceActionDefinition action, string expectedLabel) in NavigatorLabelExpectations)

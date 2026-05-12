@@ -60,6 +60,30 @@ release_gate_lock_blocked=0
 release_gate_lock_stale_removed=0
 release_gate_lock_stale_reason=""
 
+run_dependency_materializer_with_receipt_restore() {
+  local gate_receipt_path="$1"
+  shift
+
+  local backup_path=""
+  if [[ -f "$gate_receipt_path" ]]; then
+    backup_path="$(mktemp)"
+    cp "$gate_receipt_path" "$backup_path"
+  fi
+
+  if "$@"; then
+    if [[ -n "$backup_path" ]]; then
+      rm -f "$backup_path"
+    fi
+    return 0
+  fi
+
+  if [[ -n "$backup_path" && -f "$backup_path" ]]; then
+    cp "$backup_path" "$gate_receipt_path"
+    rm -f "$backup_path"
+  fi
+  return 1
+}
+
 prune_release_gate_lock_if_stale() {
   if [[ ! -d "$release_gate_lock_dir" ]]; then
     return 0
@@ -173,7 +197,10 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           rid_token="${rid_token//-/_}"
           linux_gate_tuple_path="$repo_root/.codex-studio/published/UI_LINUX_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
-        if ! CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel_path" \
+        if ! run_dependency_materializer_with_receipt_restore \
+          "$linux_gate_tuple_path" \
+          env \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel_path" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_tuple_path" \
@@ -191,7 +218,10 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           rid_token="${rid_token//-/_}"
           windows_gate_tuple_path="$repo_root/.codex-studio/published/UI_WINDOWS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
         fi
-        if ! CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+        if ! run_dependency_materializer_with_receipt_restore \
+          "$windows_gate_tuple_path" \
+          env \
+          CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_path" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$windows_gate_tuple_path" \
@@ -205,7 +235,10 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
         rid_token="${rid^^}"
         rid_token="${rid_token//-/_}"
         macos_gate_tuple_path="$repo_root/.codex-studio/published/UI_MACOS_${head_token}_${rid_token}_DESKTOP_EXIT_GATE.generated.json"
-        if ! CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+        if ! run_dependency_materializer_with_receipt_restore \
+          "$macos_gate_tuple_path" \
+          env \
+          CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$release_channel_path" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_gate_tuple_path" \

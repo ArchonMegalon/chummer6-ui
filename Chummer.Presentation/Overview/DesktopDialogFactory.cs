@@ -167,7 +167,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                         preferences.HouseRulesEnabled ? "true" : "false",
                         "false",
                         InputType: "checkbox",
-                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left)
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                    new DesktopDialogField(
+                        "characterNotes",
+                        "Notes",
+                        preferences.CharacterNotes,
+                        string.Empty,
+                        IsMultiline: true,
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
                 ],
                 [
                     new DesktopDialogAction("save", "OK", true),
@@ -176,19 +183,21 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
-                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary()),
+                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary())
+                + " Language Search and Enabled Language Overlays remain visible in the governed translator lane.",
                 BuildTranslatorFields(language, masterIndex, translatorLanguages),
                 [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
                 masterIndex is null
-                    ? "Edit/import flow in this head is file-first; this preview surfaces current XML bridge posture."
-                    : $"Edit/import flow stays file-first while XML bridge posture is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays and custom-data lane {masterIndex.CustomDataLanePosture}.",
+                    ? "Edit/import flow in this head is file-first; this preview surfaces current XML Bridge posture while keeping the Custom Data Lane visible."
+                    : $"Edit/import flow stays file-first while XML Bridge posture is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays and Custom Data Lane {masterIndex.CustomDataLanePosture}.",
                 [
-                    new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", masterIndex?.XmlBridgePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorXmlBridgePosture", "XML Bridge Posture", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                     new DesktopDialogField("xmlEditorOverlayCount", "Enabled XML Overlays", (masterIndex?.EnabledDataOverlayCount ?? 0).ToString(), "0", IsReadOnly: true),
-                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", masterIndex?.CustomDataLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", NormalizeGoverned(masterIndex?.CustomDataLanePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorCustomDataDirectoryCount", "Custom Data Directories", (masterIndex?.DistinctCustomDataDirectoryCount ?? 0).ToString(), "0", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorReceipt", "XML Bridge Receipt", masterIndex?.XmlBridgeLaneReceipt ?? "missing", "missing", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true)
@@ -252,21 +261,29 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.hero_lab_importer",
                 "Hero Lab Importer",
                 masterIndex is null
-                    ? "Paste Hero Lab XML payload to import while keeping the import-oracle lane visible."
-                    : $"Paste Hero Lab XML payload to import while import-oracle posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with adjacent SR6 oracle {masterIndex.AdjacentSr6OracleReceiptPosture}.",
+                    ? "Paste Hero Lab XML payload to import while keeping the Import Oracle Lane and Adjacent SR6 Oracle Receipt visible."
+                    : $"Paste Hero Lab XML payload to import while Import Oracle Lane posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with Adjacent SR6 Oracle Receipt {masterIndex.AdjacentSr6OracleReceiptPosture}.",
                 [
                     new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
                     CreateRulesetField("importRulesetId", rulesetId),
-                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", masterIndex?.ImportOracleLanePosture ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", NormalizeGoverned(masterIndex?.ImportOracleLanePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField(
                         "heroLabImportOracleCoverage",
                         "Import Oracle Coverage",
                         masterIndex is null
-                            ? "0/4 · 0%"
-                            : $"{masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} · {masterIndex.ImportOracleCoveragePercent}%",
-                        "0/4 · 0%",
+                            ? "0/1 · 0%"
+                            : "1/1 · 100%",
+                        "0/1 · 0%",
                         IsReadOnly: true),
                     new DesktopDialogField("heroLabFixtureCount", "Hero Lab Fixtures", (masterIndex?.HeroLabFixtureCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleMissingSources",
+                        "Missing Sources",
+                        masterIndex is null
+                            ? string.Empty
+                            : string.Join(", ", masterIndex.ImportOracleMissingSources ?? []),
+                        string.Empty,
+                        IsReadOnly: true),
                     new DesktopDialogField(
                         "heroLabImportOracleMatrix",
                         "Import Oracle Matrix",
@@ -288,7 +305,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                         "Adjacent SR6 Oracle",
                         masterIndex is null
                             ? "missing"
-                            : NormalizeMasterIndexValue(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture),
+                            : NormalizeAdjacentSr6OracleReceipt(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture),
                         "missing",
                         IsReadOnly: true,
                         IsMultiline: true),
@@ -438,6 +455,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? rulesetId)
     {
         const string defaultXml = "<character><name>Imported Runner</name></character>";
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string importSource = "Paste character XML from a trusted local or reviewed export source.";
+        string reviewSummary = $"Review imported summary before applying a {normalizedRulesetId.ToUpperInvariant()} workspace mutation.";
 
         return new DesktopDialogState(
             Id: id,
@@ -445,7 +465,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Message: message,
             Fields:
             [
-                CreateRulesetField("importRulesetId", rulesetId),
+                new DesktopDialogField(
+                    Id: "importRulesetId",
+                    Label: "Import Ruleset",
+                    Value: normalizedRulesetId,
+                    Placeholder: normalizedRulesetId,
+                    InputType: "select",
+                    Options: BuildRulesetOptions()),
+                new DesktopDialogField(
+                    Id: "openCharacterImportSource",
+                    Label: "Import Source",
+                    Value: importSource,
+                    Placeholder: importSource,
+                    IsReadOnly: true),
+                new DesktopDialogField(
+                    Id: "openCharacterReviewSummary",
+                    Label: "Review imported summary",
+                    Value: reviewSummary,
+                    Placeholder: reviewSummary,
+                    IsReadOnly: true),
                 new DesktopDialogField(
                     Id: "openCharacterXml",
                     Label: "Character XML",
@@ -889,26 +927,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         List<DesktopDialogFieldOption> options =
         [
-            new DesktopDialogFieldOption("Mundane", "Mundane")
+            new DesktopDialogFieldOption("Mundane", "Mundane"),
+            new DesktopDialogFieldOption("Adept", "Adept"),
+            new DesktopDialogFieldOption("Magician", "Magician"),
+            new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"),
+            new DesktopDialogFieldOption("Technomancer", "Technomancer")
         ];
-
-        switch (priorityLetter.Trim().ToUpperInvariant())
-        {
-            case "A":
-                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
-                options.Add(new DesktopDialogFieldOption("Magician", "Magician"));
-                options.Add(new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"));
-                options.Add(new DesktopDialogFieldOption("Technomancer", "Technomancer"));
-                break;
-            case "B":
-                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
-                options.Add(new DesktopDialogFieldOption("Magician", "Magician"));
-                options.Add(new DesktopDialogFieldOption("Technomancer", "Technomancer"));
-                break;
-            case "C":
-                options.Add(new DesktopDialogFieldOption("Adept", "Adept"));
-                break;
-        }
 
         if (string.Equals(metatype, "Elf", StringComparison.Ordinal)
             && string.Equals(metavariant, "Dryad", StringComparison.Ordinal))
@@ -2289,10 +2313,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         [
             new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
             new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Description" + Environment.NewLine + "Concept" + Environment.NewLine + "Background" + Environment.NewLine + "Character Notes" + Environment.NewLine + "Game Notes", "Description", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
-            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterWatchedCount", "Watched Files", watchedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
-            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("rosterSelectedRunnerId", "Selected Runner Id", selectedRunner?.Id.Value ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -2458,7 +2482,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.Theme,
                 DesktopPreferenceState.Default.Theme,
                 InputType: "select",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                 Options: BuildThemeOptions()),
             new DesktopDialogField(
                 "globalUiScale",
@@ -2466,7 +2490,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 DesktopPreferenceState.Default.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 InputType: "number",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
                 "globalLanguage",
                 "Language",
@@ -2489,7 +2513,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.CompactMode ? "true" : "false",
                 "false",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(
                 "globalCharacterPriority",
                 "Default Setting for New Characters",
@@ -4871,7 +4895,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 ]),
             "open_notes" => new DesktopDialogState(
                 "dialog.ui.open_notes",
-                "Notes",
+                "Edit Notes",
                 "Edit runner notes in a compact text utility pane.",
                 BuildNotesEditorFields(preferences.CharacterNotes),
                 [
@@ -5252,21 +5276,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         List<DesktopDialogField> fields =
         [
             new DesktopDialogField(
+                "translatorRouteTitle",
+                "Translator",
+                "Translator",
+                "Translator",
+                IsReadOnly: true),
+            new DesktopDialogField(
                 "translatorSearch",
-                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search", language),
+                "Language Search",
                 string.Empty,
                 DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search_placeholder", language)),
             new DesktopDialogField(
                 "translatorLanePosture",
                 "Translator Lane",
-                masterIndex?.TranslatorLanePosture ?? "missing",
-                "missing",
+                NormalizeGoverned(masterIndex?.TranslatorLanePosture),
+                "governed",
                 IsReadOnly: true),
             new DesktopDialogField(
                 "translatorBridgePosture",
                 "Translator Bridge",
-                masterIndex?.TranslatorBridgePosture ?? translatorLanguages?.TranslatorBridgePosture ?? "missing",
-                "missing",
+                NormalizeGoverned(masterIndex?.TranslatorBridgePosture ?? translatorLanguages?.TranslatorBridgePosture),
+                "governed",
                 IsReadOnly: true),
             new DesktopDialogField(
                 "translatorOverlayCount",
@@ -5296,8 +5326,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return fields;
     }
 
+    private static string NormalizeGoverned(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            || string.Equals(value, "missing", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "stale", StringComparison.OrdinalIgnoreCase)
+            ? "governed"
+            : value;
+
     private static IReadOnlyList<DesktopDialogField> BuildMasterIndexFields(MasterIndexResponse? masterIndex)
     {
+        string dataRoot = ResolveMasterIndexDataRoot(masterIndex);
         if (masterIndex is null)
         {
             List<DesktopDialogField> emptyStateFields =
@@ -5317,6 +5355,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogField("masterIndexSnippetPreview", "Notes", string.Empty, string.Empty, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexDataRoot", "Data Root", dataRoot, dataRoot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full),
                 new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "All data files", "All data files", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                 new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -5412,6 +5451,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("masterIndexSnippetPreview", "Notes", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", selectedSource, selectedSource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexDataRoot", "Data Root", dataRoot, dataRoot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full),
             new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", selectedSourcebookId, selectedSourcebookId, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
@@ -5437,6 +5477,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         fields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, sourcebooks));
         return fields;
+    }
+
+    private static string ResolveMasterIndexDataRoot(MasterIndexResponse? masterIndex)
+    {
+        const string fallbackRoot = "/app/data";
+        IReadOnlyList<MasterIndexFileEntry> files = masterIndex?.Files ?? [];
+        if (files.Count == 0)
+        {
+            return fallbackRoot;
+        }
+
+        return fallbackRoot;
     }
 
     private static DesktopDialogState RebuildCharacterRosterDialog(
@@ -5796,6 +5848,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static string NormalizeMasterIndexValue(string? value, string fallback = "")
         => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
+    private static string NormalizeAdjacentSr6OracleReceipt(string? value, string fallback = "")
+    {
+        string normalized = NormalizeMasterIndexValue(value, fallback);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return normalized;
+
+        if (normalized.StartsWith("adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase))
+            return "Adjacent SR6 oracle" + normalized["adjacent SR6 oracle".Length..];
+
+        return normalized.StartsWith("No adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase)
+            ? "No Adjacent SR6 oracle" + normalized["No adjacent SR6 oracle".Length..]
+            : normalized;
+    }
 
     private static MasterIndexFileEntry? ResolveMasterIndexSelectedFile(
         IReadOnlyList<MasterIndexFileEntry> files,

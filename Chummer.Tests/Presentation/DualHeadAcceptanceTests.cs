@@ -1337,7 +1337,7 @@ public class DualHeadAcceptanceTests
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                state.ActiveSectionJson,
+                NormalizeSectionJson(state.ActiveSectionJson),
                 state.ActiveSectionRows.Count);
         }
 
@@ -1365,7 +1365,7 @@ public class DualHeadAcceptanceTests
                 state.ActiveTabId,
                 state.ActiveActionId,
                 state.ActiveSectionId,
-                state.ActiveSectionJson,
+                NormalizeSectionJson(state.ActiveSectionJson),
                 state.ActiveSectionRows.Count);
         }
 
@@ -1603,6 +1603,18 @@ public class DualHeadAcceptanceTests
         if (string.Equals(fieldId, "workspace", StringComparison.Ordinal))
             return "<workspace>";
 
+        if (string.Equals(fieldId, "rosterActiveWorkspace", StringComparison.Ordinal))
+            return "<workspace>";
+
+        if (string.Equals(fieldId, "rosterSelectedRunnerId", StringComparison.Ordinal))
+            return "<runner>";
+
+        if (string.Equals(fieldId, "rosterSnapshot", StringComparison.Ordinal))
+            return NormalizeRosterSnapshotValue(value);
+
+        if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
+            return Regex.Replace(value, "(?<=File Path \\| )[A-Za-z0-9-]+", "<workspace>", RegexOptions.CultureInvariant);
+
         if (string.Equals(fieldId, "dataExportPreview", StringComparison.Ordinal))
             return WorkspaceTokenRegex.Replace(value, "<workspace>");
 
@@ -1613,6 +1625,120 @@ public class DualHeadAcceptanceTests
         }
 
         return value;
+    }
+
+    private static string NormalizeRosterSnapshotValue(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return value;
+
+        JsonNode? root = JsonNode.Parse(value);
+        if (root is null)
+            return value;
+
+        NormalizeRosterSnapshotNode(root);
+        return root.ToJsonString();
+    }
+
+    private static void NormalizeRosterSnapshotNode(JsonNode node)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach ((string key, JsonNode? child) in obj.ToArray())
+            {
+                if (child is JsonValue)
+                {
+                    if (string.Equals(key, "Id", StringComparison.Ordinal)
+                        || string.Equals(key, "FallbackWorkspace", StringComparison.Ordinal))
+                    {
+                        obj[key] = "<workspace>";
+                        continue;
+                    }
+
+                    if (string.Equals(key, "LastOpenedUtc", StringComparison.Ordinal))
+                    {
+                        obj[key] = "<timestamp>";
+                        continue;
+                    }
+                }
+
+                if (child is not null)
+                {
+                    NormalizeRosterSnapshotNode(child);
+                }
+            }
+
+            return;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (JsonNode? child in array)
+            {
+                if (child is not null)
+                {
+                    NormalizeRosterSnapshotNode(child);
+                }
+            }
+        }
+    }
+
+    private static string? NormalizeSectionJson(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return json;
+
+        JsonNode? root = JsonNode.Parse(json);
+        if (root is null)
+            return json;
+
+        NormalizeSectionJsonNode(root);
+        return root.ToJsonString(new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+    }
+
+    private static void NormalizeSectionJsonNode(JsonNode node)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach ((string key, JsonNode? child) in obj.ToArray())
+            {
+                if (child is JsonValue value)
+                {
+                    if (string.Equals(key, "workspaceId", StringComparison.Ordinal))
+                    {
+                        obj[key] = "<workspace>";
+                        continue;
+                    }
+
+                    if (string.Equals(key, "generatedAt", StringComparison.Ordinal))
+                    {
+                        obj[key] = "<timestamp>";
+                        continue;
+                    }
+                }
+
+                if (child is not null)
+                {
+                    NormalizeSectionJsonNode(child);
+                }
+            }
+
+            return;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (JsonNode? child in array)
+            {
+                if (child is not null)
+                {
+                    NormalizeSectionJsonNode(child);
+                }
+            }
+        }
     }
 
     private static string? NormalizeDownloadFileName(string? fileName)

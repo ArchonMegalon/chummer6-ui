@@ -68,6 +68,16 @@ internal static class MainWindowShellFrameProjector
         string language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Preferences.Language);
         OpenWorkspaceState[] resolvedOpenWorkspaces = ResolveOpenWorkspaces(state, shellSurface);
         ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(state, shellSurface, resolvedOpenWorkspaces);
+        bool hasOpenWorkspace = workspaceContext.ActiveWorkspaceId is not null || workspaceContext.OpenWorkspaceCount > 0;
+        bool hasProjectedSectionSurface =
+            hasOpenWorkspace
+            || !string.IsNullOrWhiteSpace(state.ActiveSectionId)
+            || !string.IsNullOrWhiteSpace(state.ActiveActionId)
+            || !string.IsNullOrWhiteSpace(state.ActiveSectionJson)
+            || state.ActiveSectionRows.Count > 0
+            || state.ActiveBuildLab is not null
+            || state.ActiveBrowseWorkspace is not null
+            || state.ActiveNpcPersonaStudio is not null;
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
@@ -87,7 +97,8 @@ internal static class MainWindowShellFrameProjector
                     ShowOpenForExport: true,
                     ShowGmPrep: true,
                     ShowRosterMovement: true,
-                    ShowCampaignWorkspace: true),
+                    ShowCampaignWorkspace: true,
+                    ShowLoadDemoRunner: true),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
@@ -97,7 +108,7 @@ internal static class MainWindowShellFrameProjector
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
                     BuildWorkspaceStripText(workspaceContext, language),
-                    ShowQuickStartAction: false),
+                    ShowQuickStartAction: !hasOpenWorkspace),
                 SummaryHeader: new SummaryHeaderState(
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
@@ -122,17 +133,21 @@ internal static class MainWindowShellFrameProjector
                     IsBusy = state.IsBusy || shellSurface.IsBusy
                 }),
             SectionHostState: new SectionHostState(
-                SectionId: state.ActiveSectionId,
+                SectionId: hasProjectedSectionSurface ? state.ActiveSectionId : null,
                 NavigationTabs: navigationTabs,
                 ActiveTabId: shellSurface.ActiveTabId,
                 SectionActions: ProjectSectionActions(shellSurface),
                 ActiveActionId: state.ActiveActionId,
                 Notice: BuildSectionNotice(state, shellSurface),
-                PreviewJson: state.ActiveSectionJson ?? string.Empty,
-                Rows: state.ActiveSectionRows
-                    .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
-                    .ToArray(),
-                QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),
+                PreviewJson: hasProjectedSectionSurface ? state.ActiveSectionJson ?? string.Empty : string.Empty,
+                Rows: hasProjectedSectionSurface
+                    ? state.ActiveSectionRows
+                        .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
+                        .ToArray()
+                    : Array.Empty<SectionRowDisplayItem>(),
+                QuickActions: hasProjectedSectionSurface
+                    ? ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId)
+                    : Array.Empty<SectionQuickActionDisplayItem>(),
                 BuildLab: state.ActiveBuildLab,
                 BrowseWorkspace: state.ActiveBrowseWorkspace,
                 ContactGraph: BuildContactGraph(state),
@@ -142,7 +157,7 @@ internal static class MainWindowShellFrameProjector
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
-            ShowNavigatorPane: false,
+            ShowNavigatorPane: true,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
@@ -441,10 +456,10 @@ internal static class MainWindowShellFrameProjector
     private static bool HasRestoreReviewContext(
         ShellSurfaceState shellSurface,
         ActiveWorkspaceContext workspaceContext)
-        => !string.IsNullOrWhiteSpace(shellSurface.Notice)
-            && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase)
-            && (workspaceContext.ActiveWorkspaceId is not null
-                || workspaceContext.OpenWorkspaceCount > 0);
+        => workspaceContext.ActiveWorkspaceId is not null
+            || workspaceContext.OpenWorkspaceCount > 0
+            || (!string.IsNullOrWhiteSpace(shellSurface.Notice)
+                && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase));
 
     private static string LocalizeSaveStatus(string saveStatus, string language)
         => saveStatus switch
@@ -651,34 +666,6 @@ internal static class MainWindowShellFrameProjector
                 Actions: Array.Empty<DialogActionDisplayItem>());
         }
 
-        if (string.Equals(state.ActiveDialog.Id, "dialog.master_index", StringComparison.Ordinal)
-            || string.Equals(state.ActiveDialog.Id, "dialog.switch_ruleset", StringComparison.Ordinal))
-        {
-            return new CommandDialogPaneState(
-                Commands: commands,
-                SelectedCommandId: lastCommandId,
-                DialogTitle: null,
-                DialogMessage: null,
-                DialogTrustReceipt: null,
-                Fields: Array.Empty<DialogFieldDisplayItem>(),
-                Actions: Array.Empty<DialogActionDisplayItem>());
-        }
-
-        if (string.Equals(state.ActiveDialog.Id, "dialog.character_roster", StringComparison.Ordinal))
-        {
-            DialogActionDisplayItem[] rosterActions = state.ActiveDialog.Actions
-                .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))
-                .ToArray();
-            return new CommandDialogPaneState(
-                Commands: commands,
-                SelectedCommandId: lastCommandId,
-                DialogTitle: null,
-                DialogMessage: null,
-                DialogTrustReceipt: null,
-                Fields: Array.Empty<DialogFieldDisplayItem>(),
-                Actions: rosterActions);
-        }
-
         DialogFieldDisplayItem[] fields = state.ActiveDialog.Fields
             .Select(field => new DialogFieldDisplayItem(
                 field.Id,
@@ -779,7 +766,67 @@ internal sealed record MainWindowShellFrame(
     CommandDialogPaneState CommandDialogPaneState,
     bool ShowNavigatorPane,
     NavigatorPaneState NavigatorPaneState,
-    IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> WorkspaceActionsById);
+    IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> WorkspaceActionsById)
+{
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        CommandDialogPaneState commandDialogPaneState,
+        NavigatorPaneState navigatorPaneState,
+        IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            new RosterPaneState(Array.Empty<CharacterRosterNode>(), null),
+            commandDialogPaneState,
+            true,
+            navigatorPaneState,
+            workspaceActionsById)
+    {
+    }
+
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        RosterPaneState rosterPaneState,
+        CommandDialogPaneState commandDialogPaneState,
+        NavigatorPaneState navigatorPaneState,
+        IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            rosterPaneState,
+            commandDialogPaneState,
+            true,
+            navigatorPaneState,
+            workspaceActionsById)
+    {
+    }
+
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        RosterPaneState rosterPaneState,
+        CommandDialogPaneState commandDialogPaneState,
+        bool showNavigatorPane,
+        NavigatorPaneState navigatorPaneState)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            rosterPaneState,
+            commandDialogPaneState,
+            showNavigatorPane,
+            navigatorPaneState,
+            new Dictionary<string, WorkspaceSurfaceActionDefinition>(StringComparer.Ordinal))
+    {
+    }
+}
 
 internal sealed record RosterPaneState(
     CharacterRosterNode[] Items,

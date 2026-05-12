@@ -6,6 +6,8 @@
 
 ## Goal
 
+This is a guided compare-and-apply build simulation lane, not an unguided scratchpad.
+
 Prove that Chummer can let a player compare alternate versions of the same runner without mutating the canonical build until the player explicitly applies a reviewed change set.
 
 The first slice is:

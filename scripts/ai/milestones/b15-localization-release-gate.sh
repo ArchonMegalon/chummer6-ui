@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalog.cs"
 signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
+signoff_dll_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
+signoff_exe_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests"
+signoff_runner_dir="$(cd "$(dirname "$signoff_dll_path")" && pwd -P)"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
 next90_m104_receipt_path="$repo_root/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json"
@@ -32,9 +35,29 @@ signoff_retry_attempted=0
 signoff_retry_reason=""
 signoff_lock_retry_delay_seconds="${CHUMMER_B15_LOCK_RETRY_DELAY_SECONDS:-5}"
 signoff_lock_retry_max_attempts="${CHUMMER_B15_LOCK_RETRY_MAX_ATTEMPTS:-3}"
+signoff_build_command=(dotnet build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet)
+
+prepare_signoff_runner_dir() {
+  rm -f \
+    "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests" \
+    "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests.dll" \
+    "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests.deps.json" \
+    "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests.runtimeconfig.json"
+}
 
 run_signoff_runner() {
-  scripts/ai/with-package-plane.sh run --project "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false
+  if [[ -x "$signoff_exe_path" ]]; then
+    (
+      cd "$signoff_runner_dir"
+      ./Chummer.Presentation.Signoff.Tests
+    )
+    return
+  fi
+
+  (
+    cd "$signoff_runner_dir"
+    dotnet ./Chummer.Presentation.Signoff.Tests.dll
+  )
 }
 
 if ! [[ "$signoff_lock_retry_delay_seconds" =~ ^[0-9]+$ ]] || [[ "$signoff_lock_retry_delay_seconds" -lt 1 ]]; then
@@ -46,8 +69,13 @@ if ! [[ "$signoff_lock_retry_max_attempts" =~ ^[0-9]+$ ]] || [[ "$signoff_lock_r
 fi
 
 set +e
-run_signoff_runner >"$signoff_log" 2>&1
+prepare_signoff_runner_dir
+("${signoff_build_command[@]}") >"$signoff_log" 2>&1
 signoff_status=$?
+if [[ $signoff_status -eq 0 ]]; then
+  run_signoff_runner >>"$signoff_log" 2>&1
+  signoff_status=$?
+fi
 set -e
 
 signoff_attempt=1
@@ -57,8 +85,13 @@ while [[ $signoff_status -ne 0 ]] && rg -q "waiting for package-plane lock:" "$s
   signoff_attempt=$((signoff_attempt + 1))
   sleep "$signoff_lock_retry_delay_seconds"
   set +e
-  run_signoff_runner >>"$signoff_log" 2>&1
+  prepare_signoff_runner_dir
+  ("${signoff_build_command[@]}") >>"$signoff_log" 2>&1
   signoff_status=$?
+  if [[ $signoff_status -eq 0 ]]; then
+    run_signoff_runner >>"$signoff_log" 2>&1
+    signoff_status=$?
+  fi
   set -e
 done
 
@@ -76,7 +109,8 @@ if [[ $signoff_status -ne 0 ]]; then
 
   if [[ $signoff_retry_attempted -eq 1 ]]; then
     set +e
-    scripts/ai/with-package-plane.sh build "$signoff_project_path" --nologo --verbosity quiet --ignore-failed-sources -p:NuGetAudit=false >>"$signoff_log" 2>&1
+    prepare_signoff_runner_dir
+    dotnet build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet >>"$signoff_log" 2>&1
     run_signoff_runner >>"$signoff_log" 2>&1
     signoff_status=$?
     set -e
