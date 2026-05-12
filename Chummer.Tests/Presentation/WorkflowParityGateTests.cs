@@ -38,6 +38,8 @@ public sealed class WorkflowParityGateTests
         LoadDialogSurfaceContracts("CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json");
     private static readonly IReadOnlyDictionary<string, MuscleMemoryDialogSurfaceContract> Sr4DialogSurfaceContracts =
         LoadDialogSurfaceContracts("CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json");
+    private static readonly HashSet<string> DesignAuthorizedDialogFieldIds =
+        LoadDesignAuthorizedDialogFieldIds();
 
     [TestMethod]
     public void Menu_dialog_workflows_are_exhaustively_classified()
@@ -243,6 +245,69 @@ public sealed class WorkflowParityGateTests
         }
     }
 
+    [TestMethod]
+    public async Task Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6()
+    {
+        foreach (string rulesetId in SupportedRulesets)
+        {
+            await AssertNewCharacterRecursiveParityAsync(rulesetId);
+        }
+    }
+
+    [TestMethod]
+    public async Task Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults()
+    {
+        DesktopPreferenceState seededPreferences = DesktopPreferenceState.Default with
+        {
+            CharacterPriority = "Karma",
+            HouseRulesEnabled = true,
+            CharacterNotes = "Carry forward seeded notes."
+        };
+
+        foreach (string rulesetId in SupportedRulesets)
+        {
+            DesktopDialogState settingsDialog = DialogFactory.CreateCommandDialog(
+                "character_settings",
+                CreateProfile(),
+                seededPreferences,
+                BuildSectionJson("profile"),
+                new CharacterWorkspaceId("ws-settings"),
+                rulesetId,
+                runtimeInspector: null,
+                masterIndex: CreateMasterIndexResponse(),
+                translatorLanguages: null,
+                openWorkspaces: [CreateOpenWorkspace(rulesetId)]);
+
+            Assert.AreEqual("dialog.character_settings", settingsDialog.Id);
+            Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterPriority"));
+            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterHouseRulesEnabled"));
+            Assert.AreEqual("Carry forward seeded notes.", DesktopDialogFieldValueParser.GetValue(settingsDialog, "characterNotes"));
+
+            DesktopDialogState newCharacterDialog = DialogFactory.CreateCommandDialog(
+                "new_character",
+                CreateProfile(),
+                seededPreferences,
+                BuildSectionJson("profile"),
+                new CharacterWorkspaceId("ws-new-character"),
+                rulesetId,
+                runtimeInspector: null,
+                masterIndex: CreateMasterIndexResponse(),
+                translatorLanguages: null,
+                openWorkspaces: [CreateOpenWorkspace(rulesetId)]);
+
+            Assert.AreEqual(rulesetId, DesktopDialogFieldValueParser.GetValue(newCharacterDialog, "newCharacterRulesetId"));
+            Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(newCharacterDialog, "newCharacterBuildMethod"));
+            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(newCharacterDialog, "newCharacterHouseRulesEnabled"));
+
+            WorkflowHarness harness = CreateHarness(rulesetId, newCharacterDialog, "tab-info", "profile");
+            await harness.ActAsync("create_character");
+
+            Assert.IsNotNull(harness.State.ActiveDialog, $"'{rulesetId}' must materialize a continuation dialog after Create Character.");
+            Assert.AreEqual("dialog.new_character.karma_workflow", harness.State.ActiveDialog!.Id);
+            Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog, "newCharacterWorkflowHouseRulesEnabled"));
+        }
+    }
+
     private static async Task AssertNewCharacterRecursiveParityAsync(string rulesetId, string buildMethod)
     {
         DesktopDialogState dialog = CreateCommandDialog("new_character", rulesetId);
@@ -345,6 +410,91 @@ public sealed class WorkflowParityGateTests
         Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityHeritage"));
         Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityResources"));
         Assert.AreEqual("13/10", runtimeState.SumToTenLabel);
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field()
+    {
+        string[] fieldIds =
+        [
+            "newCharacterPriorityHeritage",
+            "newCharacterPriorityAttributes",
+            "newCharacterPriorityTalent",
+            "newCharacterPrioritySkills",
+            "newCharacterPriorityResources"
+        ];
+
+        foreach (string fieldId in fieldIds)
+        {
+            DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+            WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+            harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+            harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+            await harness.ActAsync("create_character");
+
+            harness.UpdateDialogField(fieldId, "A");
+
+            Assert.IsNotNull(harness.State.ActiveDialog);
+            DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+            Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(priorityDialog, fieldId), $"{fieldId} must rebuild to the selected value.");
+            Assert.AreEqual(fieldId, DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityLastChangedFieldId"));
+        }
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterMetatypeCategory", "Metahuman");
+        harness.UpdateDialogField("newCharacterMetatype", "Elf");
+        harness.UpdateDialogField("newCharacterMetavariant", "Dryad");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityWorkflowState"));
+
+        CollectionAssert.AreEqual(
+            new[] { "Elf", "Dryad" },
+            runtimeState.MetavariantOptions.Select(option => option.Value).ToArray(),
+            "Metatype selection must repopulate the metavariant combobox.");
+        Assert.AreEqual("Dryad", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterMetavariant"));
+        Assert.AreEqual("35", runtimeState.MetatypeKarma);
+        Assert.AreEqual("Run Faster · Dryad", runtimeState.Source);
+        Assert.AreEqual("5 / 8", runtimeState.InspectAttributes.Single(attribute => string.Equals(attribute.Label, "CHA", StringComparison.Ordinal)).Value);
+        CollectionAssert.Contains(runtimeState.Qualities.ToArray(), "Glamour");
+
+        DesktopDialogField talentChoiceField = priorityDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal));
+        CollectionAssert.Contains(talentChoiceField.Options!.Select(option => option.Value).ToArray(), "Aspected Magician");
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterMetatype", "Elf");
+        harness.UpdateDialogField("newCharacterMetavariant", "Dryad");
+        harness.UpdateDialogField("newCharacterPriorityTalent", "B");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        DesktopDialogField talentChoiceField = priorityDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityTalentChoice", StringComparison.Ordinal));
+
+        CollectionAssert.Contains(talentChoiceField.Options!.Select(option => option.Value).ToArray(), "Aspected Magician");
+        Assert.AreEqual("newCharacterPriorityTalent", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityLastChangedFieldId"));
     }
 
     [TestMethod]
@@ -632,6 +782,13 @@ public sealed class WorkflowParityGateTests
                     ("SumToTen", "Sum To Ten"),
                     ("Karma", "Karma")),
 
+            ("dialog.global_settings", "globalTheme", _) => Create(
+                DesktopPreferenceState.Default.Theme,
+                ("classic", "Classic"),
+                ("steel", "Steel"),
+                ("dark-steel", "Dark Steel"),
+                ("mint", "Mint")),
+
             ("dialog.new_character.priority_workflow", "newCharacterMetatypeCategory", _)
                 or ("dialog.new_character.karma_workflow", "newCharacterMetatypeCategory", _) => Create(
                     "Standard",
@@ -781,7 +938,11 @@ public sealed class WorkflowParityGateTests
             }
             Assert.AreEqual(expectedField.ExpectedInputType, field.InputType, $"'{workflowId}' field '{field.Id}' input type drifted.");
             Assert.AreEqual(expectedField.ExpectedVisualKind, field.VisualKind, $"'{workflowId}' field '{field.Id}' visual kind drifted.");
-            Assert.AreEqual(expectedField.ExpectedLayoutSlot, field.LayoutSlot, $"'{workflowId}' field '{field.Id}' layout slot drifted.");
+            if (!string.Equals(expectedField.ExpectedLayoutSlot, field.LayoutSlot, StringComparison.Ordinal)
+                && !DesignAuthorizedDialogFieldIds.Contains(field.Id))
+            {
+                Assert.AreEqual(expectedField.ExpectedLayoutSlot, field.LayoutSlot, $"'{workflowId}' field '{field.Id}' layout slot drifted.");
+            }
 
             if (string.Equals(expectedField.ExpectedInputType, "select", StringComparison.Ordinal))
             {
@@ -841,6 +1002,7 @@ public sealed class WorkflowParityGateTests
 
         string[] stableFieldIds =
         [
+            "translatorRouteTitle",
             "translatorSearch",
             "translatorLanePosture",
             "translatorBridgePosture",
@@ -932,6 +1094,70 @@ public sealed class WorkflowParityGateTests
         }
 
         return contracts;
+    }
+
+    private static HashSet<string> LoadDesignAuthorizedDialogFieldIds()
+    {
+        string path = Path.Combine(RepoRoot, "docs", "CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json");
+        if (!File.Exists(path))
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        if (!document.RootElement.TryGetProperty("entries", out JsonElement entries)
+            || entries.ValueKind != JsonValueKind.Array)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        HashSet<string> fieldIds = new(StringComparer.Ordinal);
+        foreach (JsonElement entry in entries.EnumerateArray())
+        {
+            if (!entry.TryGetProperty("differences", out JsonElement differences)
+                || differences.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            foreach (JsonElement difference in differences.EnumerateArray())
+            {
+                if (!difference.TryGetProperty("uiElement", out JsonElement uiElementValue)
+                    || uiElementValue.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                string uiElement = uiElementValue.GetString() ?? string.Empty;
+                foreach (string token in ExtractDesignAuthorizedDialogFieldIds(uiElement))
+                {
+                    fieldIds.Add(token);
+                }
+            }
+        }
+
+        return fieldIds;
+    }
+
+    private static IEnumerable<string> ExtractDesignAuthorizedDialogFieldIds(string uiElement)
+    {
+        const string prefix = "DesktopDialogFactory.";
+        int startIndex = uiElement.IndexOf(prefix, StringComparison.Ordinal);
+        if (startIndex < 0)
+        {
+            yield break;
+        }
+
+        string tail = uiElement[(startIndex + prefix.Length)..];
+        foreach (string rawToken in tail.Split(['/', '+', ' ', ',', '(', ')'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (rawToken.Length == 0 || rawToken.Any(static ch => !(char.IsLetterOrDigit(ch) || ch == '_')))
+            {
+                continue;
+            }
+
+            yield return rawToken;
+        }
     }
 
     private static MasterIndexResponse CreateMasterIndexResponse()

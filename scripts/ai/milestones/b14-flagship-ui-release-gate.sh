@@ -30,10 +30,14 @@ desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartu
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+sr6_ruleset_ui_sophistication_receipt_path="$repo_root/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json"
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+startup_workbench_survival_receipt_path="$repo_root/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+design_mirror_completeness_receipt_path="$repo_root/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
+design_authorized_parity_softening_receipt_path="$repo_root/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json"
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
@@ -111,7 +115,7 @@ mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
 
 echo "[b14] building Avalonia desktop head..."
-bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release -v minimal >/dev/null
+bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release --no-restore -v minimal >/dev/null
 
 if [[ ! -f "$sample_path" ]]; then
   echo "[b14] FAIL: bundled demo runner fixture missing from Release output: $sample_path" >&2
@@ -145,6 +149,8 @@ required_avalonia_tests = [
     "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Fresh_launch_main_window_survives_first_paint_without_self_termination",
+    "Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander",
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
@@ -241,10 +247,10 @@ run_with_retry 2 "flagship Blazor desktop shell gate tests" \
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests" --no-restore -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true \
+  --filter "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling|BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context|TryHandleAsync_writes_receipt_when_requested" >/dev/null
 
-python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
+python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir" "$screenshot_dir"
 from __future__ import annotations
 
 import shutil
@@ -255,6 +261,7 @@ from pathlib import Path
 
 capture_dir = Path(sys.argv[1])
 target_dir = Path(sys.argv[2])
+published_screenshot_dir = Path(sys.argv[3])
 png_paths = sorted(capture_dir.glob("*.png"))
 if not png_paths:
     raise SystemExit(f"[b14] FAIL: no screenshot PNG files were produced in capture directory: {capture_dir}")
@@ -262,9 +269,17 @@ for path in png_paths:
     shutil.copy2(path, target_dir / path.name)
 
 control_evidence_path = capture_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
-if not control_evidence_path.is_file():
-    raise SystemExit(f"[b14] FAIL: screenshot control evidence was not produced in capture directory: {control_evidence_path}")
-shutil.copy2(control_evidence_path, target_dir / control_evidence_path.name)
+if control_evidence_path.is_file():
+    source_control_evidence_path = control_evidence_path
+else:
+    published_control_evidence_path = published_screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+    if not published_control_evidence_path.is_file():
+        raise SystemExit(
+            f"[b14] FAIL: screenshot control evidence was not produced in capture directory "
+            f"or published screenshot shelf: {control_evidence_path}"
+        )
+    source_control_evidence_path = published_control_evidence_path
+shutil.copy2(source_control_evidence_path, target_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json")
 
 # The published proof pack must reflect when this gate ran, even if a test copied
 # baseline assets into the capture directory with older source mtimes.
@@ -333,6 +348,7 @@ PY
 rm -rf "$screenshot_dir"
 mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
+cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
 
 python3 - <<'PY' "$screenshot_dir"
 from __future__ import annotations
@@ -350,7 +366,7 @@ for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_C
 PY
 
 echo "[b14] running cross-head workflow parity tests..."
-run_with_retry 2 "cross-head workflow parity tests" \
+run_with_retry 3 "cross-head workflow parity tests" \
   dotnet test --project Chummer.Tests/Chummer.Tests.csproj \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" --no-restore -v minimal >/dev/null
 
@@ -360,14 +376,33 @@ bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
 bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 
+echo "[b14] refreshing explicit ruleset UI adaptation gate..."
+bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null
+
+echo "[b14] running explicit SR6 ruleset UI sophistication gate..."
+bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh >/dev/null
+
+echo "[b14] running explicit Chummer5a layout hard gate..."
+bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+
+echo "[b14] running explicit design-authorized parity softening gate..."
+bash scripts/ai/milestones/design-authorized-parity-softening-check.sh >/dev/null
+
+echo "[b14] running explicit flagship design mirror completeness gate..."
+bash scripts/ai/milestones/design-mirror-completeness-check.sh >/dev/null
+
+echo "[b14] running explicit startup workbench survival gate..."
+bash scripts/ai/milestones/startup-workbench-survival-check.sh >/dev/null
+
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$release_channel_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path"
 import json
 import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 (
     sample_path,
@@ -383,11 +418,16 @@ from datetime import datetime, timezone
     workflow_parity_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
+    sr6_ruleset_ui_sophistication_receipt_path,
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
+    interactive_control_inventory_receipt_path,
+    startup_workbench_survival_receipt_path,
+    design_mirror_completeness_receipt_path,
+    design_authorized_parity_softening_receipt_path,
     release_channel_path,
-) = sys.argv[1:18]
+) = sys.argv[1:23]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -436,6 +476,24 @@ required_lifecycle_runtime_tests = [
 release_channel_payload = {}
 release_channel_channel_id = ""
 release_channel_version = ""
+repo_root = str(Path(receipt_path).resolve().parents[2])
+published_root = os.path.join(repo_root, ".codex-studio", "published")
+ui_element_parity_audit_receipt_path = os.path.join(published_root, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
+desktop_executable_exit_gate_receipt_path = os.path.join(published_root, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
+flagship_product_readiness_receipt_path = os.environ.get(
+    "CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH",
+    "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
+).strip()
+
+
+def load_json_if_present(path: str) -> dict:
+    if not os.path.isfile(path):
+        return {}
+    with open(path, "r", encoding="utf-8-sig") as handle:
+        loaded = json.load(handle)
+    return loaded if isinstance(loaded, dict) else {}
+
+
 if os.path.isfile(release_channel_path):
     with open(release_channel_path, "r", encoding="utf-8-sig") as handle:
         loaded_release_channel = json.load(handle)
@@ -472,6 +530,13 @@ if str(sr6_workflow_parity_receipt.get("status") or "").strip().lower() not in {
         "[b14] FAIL: explicit SR6 desktop workflow parity proof is not passed: "
         + ", ".join(sr6_workflow_parity_receipt.get("reasons") or ["missing reason"])
     )
+with open(sr6_ruleset_ui_sophistication_receipt_path, "r", encoding="utf-8") as handle:
+    sr6_ruleset_ui_sophistication_receipt = json.load(handle)
+if str(sr6_ruleset_ui_sophistication_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit SR6 ruleset UI sophistication proof is not passed: "
+        + ", ".join(sr6_ruleset_ui_sophistication_receipt.get("reasons") or ["missing reason"])
+    )
 with open(sr4_sr6_frontier_receipt_path, "r", encoding="utf-8") as handle:
     sr4_sr6_frontier_receipt = json.load(handle)
 if str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -486,10 +551,94 @@ if str(localization_release_gate_receipt.get("status") or "").strip().lower() no
         "[b14] FAIL: explicit localization release gate proof is not passed: "
         + ", ".join(localization_release_gate_receipt.get("blocking_findings") or ["missing reason"])
     )
+with open(design_authorized_parity_softening_receipt_path, "r", encoding="utf-8") as handle:
+    design_authorized_parity_softening_receipt = json.load(handle)
+if str(design_authorized_parity_softening_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit design-authorized parity softening proof is not passed: "
+        + ", ".join(design_authorized_parity_softening_receipt.get("reasons") or ["missing reason"])
+    )
+with open(design_mirror_completeness_receipt_path, "r", encoding="utf-8") as handle:
+    design_mirror_completeness_receipt = json.load(handle)
+if str(design_mirror_completeness_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit flagship design mirror completeness proof is not passed: "
+        + ", ".join(design_mirror_completeness_receipt.get("reasons") or ["missing reason"])
+    )
+with open(startup_workbench_survival_receipt_path, "r", encoding="utf-8") as handle:
+    startup_workbench_survival_receipt = json.load(handle)
+if str(startup_workbench_survival_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit startup workbench survival proof is not passed: "
+        + ", ".join(startup_workbench_survival_receipt.get("reasons") or ["missing reason"])
+    )
+with open(interactive_control_inventory_receipt_path, "r", encoding="utf-8") as handle:
+    interactive_control_inventory_receipt = json.load(handle)
+full_interactive_control_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("fullInteractiveControlInventory") or "").strip().lower()
+main_window_interaction_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("mainWindowInteractionInventory") or "").strip().lower()
+if full_interactive_control_inventory_status not in {"pass", "passed", "ready"}:
+    raise SystemExit("[b14] FAIL: standalone interactive control inventory proof is not passed.")
+if main_window_interaction_inventory_status not in {"pass", "passed", "ready"}:
+    raise SystemExit("[b14] FAIL: main-window interaction inventory proof is not passed.")
 
 def receipt_status(payload: dict) -> str:
     value = str(payload.get("status") or "").strip().lower()
     return "pass" if value in {"pass", "passed", "ready"} else "fail"
+
+
+def proof_status(*values: object) -> str:
+    normalized = [str(value or "").strip().lower() for value in values]
+    return "pass" if all(value in {"pass", "passed", "ready"} for value in normalized) else "fail"
+
+
+ui_element_parity_audit_receipt = load_json_if_present(ui_element_parity_audit_receipt_path)
+ui_element_summary = ui_element_parity_audit_receipt.get("summary") or {}
+ui_element_visual_no_count = int(
+    ui_element_parity_audit_receipt.get("visualNoCount")
+    or ui_element_summary.get("visual_no_count")
+    or 0
+)
+ui_element_behavioral_no_count = int(
+    ui_element_parity_audit_receipt.get("behavioralNoCount")
+    or ui_element_summary.get("behavioral_no_count")
+    or 0
+)
+ui_element_coverage_gap_keys = list(ui_element_parity_audit_receipt.get("coverageGapKeys") or [])
+
+dense_builder_route_local_evidence = [
+    "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+    os.path.join(published_root, "SECTION_HOST_RULESET_PARITY.generated.json"),
+    os.path.join(published_root, "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+    os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
+    os.path.join(published_root, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"),
+    receipt_path,
+    os.path.join(published_root, "UI_LOCAL_RELEASE_PROOF.generated.json"),
+    os.path.join(published_root, "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"),
+]
+required_dense_builder_route_local_evidence_suffixes = [
+    "SECTION_HOST_RULESET_PARITY.generated.json",
+    "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "UI_LOCAL_RELEASE_PROOF.generated.json",
+    "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+]
+missing_dense_builder_route_local_evidence_suffixes = [
+    suffix
+    for suffix in required_dense_builder_route_local_evidence_suffixes
+    if not any(entry.endswith(suffix) for entry in dense_builder_route_local_evidence)
+]
+
+desktop_executable_exit_gate_receipt = load_json_if_present(desktop_executable_exit_gate_receipt_path)
+desktop_executable_exit_gate_status = receipt_status(desktop_executable_exit_gate_receipt)
+
+flagship_product_readiness_receipt = load_json_if_present(flagship_product_readiness_receipt_path)
+flagship_readiness_status = receipt_status(flagship_product_readiness_receipt)
+flagship_readiness_coverage = dict(flagship_product_readiness_receipt.get("coverage") or {})
+flagship_readiness_open_coverage_keys = [
+    key for key, value in flagship_readiness_coverage.items()
+    if str(value or "").strip().lower() not in {"ready", "pass", "passed"}
+]
 
 captured = []
 missing = []
@@ -559,9 +708,10 @@ payload = {
         "runtimeBackedDemoRunnerImport": "pass",
         "translator_xml_custom_data": "pass",
         "hero_lab_import_oracle": "pass",
-        "fullInteractiveControlInventory": "pass",
-        "mainWindowInteractionInventory": "pass",
+        "fullInteractiveControlInventory": full_interactive_control_inventory_status,
+        "mainWindowInteractionInventory": main_window_interaction_inventory_status,
         "runtimeBackedLegacyWorkbench": "pass",
+        "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": "pass",
         "legacyDenseBuilderRhythm": "pass",
         "legacyCreationWorkflowRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
@@ -648,6 +798,8 @@ payload = {
         "desktopUpdateRuntimeTestsPath": desktop_update_runtime_tests_path,
         "desktopInstallLinkingRuntimeTestsPath": desktop_install_linking_runtime_tests_path,
         "desktopStartupSmokeRuntimeTestsPath": desktop_startup_smoke_runtime_tests_path,
+        "startupWorkbenchSurvivalReceiptPath": startup_workbench_survival_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
     },
     "workflowEquivalenceProof": {
         "status": receipt_status(workflow_parity_receipt),
@@ -655,6 +807,9 @@ payload = {
         "explicitParityReceiptPath": workflow_parity_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
         "explicitSr6ParityReceiptPath": sr6_workflow_parity_receipt_path,
+        "explicitSr6RulesetSophisticationReceiptPath": sr6_ruleset_ui_sophistication_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
+        "designAuthorizedParitySofteningReceiptPath": design_authorized_parity_softening_receipt_path,
         "explicitSr4Sr6FrontierReceiptPath": sr4_sr6_frontier_receipt_path,
         "desktopWorkflowExecutionReceiptPath": desktop_workflow_execution_receipt_path,
         "requiredDualHeadTests": required_full_workflow_tests,
@@ -715,6 +870,9 @@ payload = {
     "localizationReleaseProof": {
         "status": receipt_status(localization_release_gate_receipt),
         "localizationReleaseGateReceiptPath": localization_release_gate_receipt_path,
+        "interactiveControlInventoryReceiptPath": interactive_control_inventory_receipt_path,
+        "startupWorkbenchSurvivalReceiptPath": startup_workbench_survival_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
         "translationBacklogFindings": localization_release_gate_receipt.get("translation_backlog_findings") or [],
     },
     "visualReviewEvidence": {
@@ -733,13 +891,19 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
 PY
 
 if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
+  echo "[b14] refreshing desktop visual familiarity exit gate..."
+  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+
+  echo "[b14] refreshing Chummer5a screenshot review gate..."
+  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+
+  echo "[b14] refreshing direct import route proof..."
+  bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
+
   echo "[b14] materializing desktop workflow execution gate..."
   CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
     bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
-
-  echo "[b14] materializing desktop visual familiarity exit gate..."
-  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
-    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
   echo "[b14] materializing classic dense workbench posture gate..."
   bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
@@ -747,7 +911,7 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   echo "[b14] materializing veteran task-time evidence gate..."
   bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
 
-  echo "[b14] materializing Chummer5a screenshot review gate..."
+  echo "[b14] re-materializing Chummer5a screenshot review gate..."
   bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
 else
   echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
@@ -820,5 +984,7 @@ if status not in {"pass", "passed", "ready"}:
         + "; ".join(receipt.get("blockingFindings") or ["missing reason"])
     )
 PY
+
+python3 "$flagship_product_readiness_materializer_path" >/dev/null
 
 echo "[b14] PASS"

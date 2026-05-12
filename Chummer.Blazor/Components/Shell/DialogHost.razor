@@ -132,17 +132,21 @@
                     </label>
                 }
             </div>
-            @if (BuildDialogTrustReceiptSections(dialog) is { Count: > 0 } trustSections)
+            @{
+                IReadOnlyList<DialogTrustReceiptSection> trustSections = BuildDialogTrustReceiptSections(dialog);
+                bool renderFallbackTrustReceipt = trustSections.Count == 0 && LooksLikeTrustDialog(dialog);
+            }
+            @if (trustSections.Count > 0 || renderFallbackTrustReceipt)
             {
                 string trustReceipt = DialogTrustReceiptText.BuildDialogReceipt(dialog);
                 @* m104: blazor_dialog_surface *@
                 <aside class="dialog-trust-receipt" data-dialog-trust-receipt data-dialog-explain-receipt>
                     <strong>Explain receipt and environment diff</strong>
-                    <p class="dialog-note">@trustReceipt</p>
+                    <p class="dialog-note">@(renderFallbackTrustReceipt ? BuildFallbackDialogTrustReceipt(dialog) : trustReceipt)</p>
                     <dl class="facts compact">
-                        <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildDialogBefore(dialog)</dd></div>
-                        <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)</dd></div>
-                        <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildDialogSupportReuse(dialog)</dd></div>
+                        <div><dt>Before</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "before") : DialogTrustReceiptText.BuildDialogBefore(dialog))</dd></div>
+                        <div><dt>Explain receipt</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "receipt") : DialogTrustReceiptText.BuildDialogExplainReceipt(dialog))</dd></div>
+                        <div><dt>Support reuse</dt><dd>@(renderFallbackTrustReceipt ? ReadDialogTrustField(dialog, "support") : DialogTrustReceiptText.BuildDialogSupportReuse(dialog))</dd></div>
                     </dl>
                     @foreach (DialogTrustReceiptSection receiptSection in trustSections)
                     {
@@ -244,6 +248,27 @@
 
     private static IReadOnlyList<DialogTrustReceiptSection> BuildDialogTrustReceiptSections(DesktopDialogState dialog)
         => DialogTrustReceiptText.BuildDialogReceiptSections(dialog);
+
+    private static bool LooksLikeTrustDialog(DesktopDialogState dialog)
+        => dialog.Fields.Any(static field =>
+            string.Equals(field.Id, "before", StringComparison.Ordinal)
+            || string.Equals(field.Id, "after", StringComparison.Ordinal)
+            || string.Equals(field.Id, "receipt", StringComparison.Ordinal)
+            || string.Equals(field.Id, "support", StringComparison.Ordinal));
+
+    private static string ReadDialogTrustField(DesktopDialogState dialog, string fieldId)
+        => dialog.Fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))?.Value
+            ?? string.Empty;
+
+    private static string BuildFallbackDialogTrustReceipt(DesktopDialogState dialog)
+    {
+        string environment = ReadDialogTrustField(dialog, "environment");
+        string before = ReadDialogTrustField(dialog, "before");
+        string after = ReadDialogTrustField(dialog, "after");
+        string receipt = ReadDialogTrustField(dialog, "receipt");
+        string support = ReadDialogTrustField(dialog, "support");
+        return string.Join(" ", new[] { environment, before, after, receipt, support }.Where(static value => !string.IsNullOrWhiteSpace(value)));
+    }
 
     private static string BuildDialogFieldLayoutClass(DesktopDialogField field)
     {

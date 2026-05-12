@@ -3,6 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3)"
+fi
 
 # Usage:
 # bash scripts/build-desktop-installer.sh <publish_dir> <app_key> <rid> <launch_target> [dist_dir] [version]
@@ -78,7 +82,7 @@ prune_release_symbols() {
 }
 
 abspath() {
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 from pathlib import Path
 import sys
 
@@ -231,7 +235,7 @@ sha256_file() {
     return
   fi
 
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 import hashlib
 import pathlib
 import sys

@@ -1,0 +1,15 @@
+contractName: chummer6-ui.veteran_first_minute_gate
+goal: >
+  A Chummer4/Chummer5a veteran must land on a real workbench in the first minute,
+  recognize the command geography, and reach character creation or runner loading
+  without detouring through synthetic dashboard chrome.
+requirements:
+  - startup_survives_first_paint
+  - workbench_first_paint_is_primary
+  - no_fake_empty_section_expander
+  - menu_bar_toolstrip_navigator_visible
+  - new_character_and_open_character_routes_reachable
+  - legacy_widget_class_parity_for_first_editable_surface
+  - no_summary_only_substitute_for_editable_routes
+  - sr4_sr5_sr6_lane_honesty
+releaseBlocker: true

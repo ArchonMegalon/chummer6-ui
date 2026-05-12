@@ -1,13 +1,9 @@
 {
-  "generatedAt": "2026-05-08T19:14:08.347108Z",
+  "generatedAt": "2026-05-12T12:26:32.699805Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family execution evidence is incomplete for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
-  "reasons": [
-    "dotnet test execution failed (exit 1): [with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock",
-    "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap (external blocker: missing_api_surface_contract).",
-    "Audit tests not present in executed TRX results: Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts, Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections, Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections, Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6, Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm, Legacy_ui_controls_keep_recursive_parity, Quick_action_roots_are_exhaustively_classified"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family execution evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
@@ -36,8 +32,38 @@
       "project": "Chummer.Tests/Chummer.Tests.csproj",
       "configuration": "Release",
       "trxPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/sr6-workflow-family-execution.trx",
-      "exitCode": 1,
-      "attemptCount": 2,
+      "perTestTrxPaths": {
+        "Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/01-Avalonia_and_Blazor_two_workspace_import_switch_save_flow_matches.trx",
+        "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/02-Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts.trx",
+        "Menu_dialog_workflows_keep_recursive_parity": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/03-Menu_dialog_workflows_keep_recursive_parity.trx",
+        "Avalonia_and_Blazor_character_settings_save_updates_shared_state": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/04-Avalonia_and_Blazor_character_settings_save_updates_shared_state.trx",
+        "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/05-Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity.trx",
+        "Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/06-Runtime_backed_new_character_conditional_workflow_matrix_materializes_priority_and_karma_branches_across_sr4_sr5_and_sr6.trx",
+        "Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/07-Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults.trx",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/08-Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections.trx",
+        "Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/09-Avalonia_and_Blazor_attributes_and_skills_workspace_actions_render_matching_sections.trx",
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/10-Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts.trx",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/11-Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6.trx",
+        "Legacy_ui_controls_keep_recursive_parity": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/12-Legacy_ui_controls_keep_recursive_parity.trx",
+        "Quick_action_roots_are_exhaustively_classified": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/13-Quick_action_roots_are_exhaustively_classified.trx",
+        "Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/14-Avalonia_and_Blazor_support_family_workspace_actions_render_matching_sections.trx",
+        "Contacts_diary_and_support_routes_execute_with_public_path_visibility": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/15-Contacts_diary_and_support_routes_execute_with_public_path_visibility.trx",
+        "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/16-Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections.trx",
+        "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/17-Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections.trx",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/18-Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6.trx",
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/19-Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm.trx",
+        "Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/20-Avalonia_and_Blazor_cyberware_workspace_preserves_modular_legacy_fixture_details.trx",
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/21-Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues.trx",
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/22-Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions.trx",
+        "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/23-Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections.trx",
+        "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/24-Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions.trx",
+        "Avalonia_and_Blazor_workspace_action_summary_matches": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/25-Avalonia_and_Blazor_workspace_action_summary_matches.trx",
+        "Avalonia_and_Blazor_metadata_save_roundtrip_match": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/26-Avalonia_and_Blazor_metadata_save_roundtrip_match.trx",
+        "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/27-Avalonia_and_Blazor_tab_selection_loads_same_workspace_section.trx",
+        "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
+      },
+      "exitCode": 0,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {
@@ -45,21 +71,21 @@
       "results": [
         {
           "path": "/api/workspaces",
-          "ok": false,
-          "statusCode": 0,
-          "error": "<urlopen error [Errno 111] Connection refused>"
+          "ok": true,
+          "statusCode": 200,
+          "error": ""
         },
         {
           "path": "/api/shell/bootstrap",
-          "ok": false,
-          "statusCode": 0,
-          "error": "<urlopen error [Errno 111] Connection refused>"
+          "ok": true,
+          "statusCode": 200,
+          "error": ""
         }
-      ]
+      ],
+      "autostarted": false
     },
-    "external_blocker": "missing_api_surface_contract",
-    "matchedPassedTests": [],
-    "missingAuditTests": [
+    "external_blocker": "",
+    "matchedPassedTests": [
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
       "Avalonia_and_Blazor_gear_family_workspace_actions_render_matching_sections",
       "Avalonia_and_Blazor_combat_and_cyberware_workspace_actions_render_matching_sections",
@@ -68,6 +94,7 @@
       "Legacy_ui_controls_keep_recursive_parity",
       "Quick_action_roots_are_exhaustively_classified"
     ],
+    "missingAuditTests": [],
     "failedAuditTests": {}
   }
 }

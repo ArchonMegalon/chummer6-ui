@@ -297,7 +297,7 @@ REQUIRED_SURFACE_EVIDENCE = {
                 "markers": [
                     "VeteranCertificationReviewSteps",
                     'GetVeteranCertificationReviewStep("menu").ScreenshotFileName',
-                    "Click FileMenuButton and capture MenuCommandsHost",
+                    "Click FileMenuButton and capture the visible command list",
                     "Chummer5a ChummerMainForm File/Tools/Windows/Help top menu lineage.",
                 ],
             },

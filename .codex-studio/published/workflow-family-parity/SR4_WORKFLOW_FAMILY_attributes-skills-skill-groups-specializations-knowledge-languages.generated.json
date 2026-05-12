@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-08T19:12:24.775744Z",
+  "generatedAt": "2026-05-12T12:42:12.123048Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
   "status": "fail",
   "summary": "SR4 workflow-family parity evidence is incomplete for attributes-skills-skill-groups-specializations-knowledge-languages.",
   "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
   ],
   "evidence": {
     "edition": "sr4",
@@ -25,10 +25,8 @@
     },
     "verificationReceipts": [],
     "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail; external_blocker=missing_api_surface_contract)"
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr4/attributes-skills-skill-groups-specializations-knowledge-languages.generated.json (fail)"
     ],
-    "verificationExternalBlockers": [
-      "missing_api_surface_contract"
-    ]
+    "verificationExternalBlockers": []
   }
 }

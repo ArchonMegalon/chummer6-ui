@@ -42,7 +42,9 @@
       <ProgressBar x:Name="WorkbenchProgressBar"
                    Width="56"
                    Height="8"
-                   IsVisible="False"
+                   Maximum="100"
+                   Value="100"
+                   IsVisible="True"
                    IsIndeterminate="False" />
     </StackPanel>
   </Grid>

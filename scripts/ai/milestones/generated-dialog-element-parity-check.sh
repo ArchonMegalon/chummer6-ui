@@ -135,6 +135,9 @@ PRESENTER_TEST_MARKERS = [
 WORKFLOW_TEST_MARKERS = [
     "Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
     "Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+    "Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field",
+    "Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state",
+    "Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit",
     "Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
 ]
 
@@ -152,6 +155,9 @@ TEST_FILTER_COMMANDS = [
     "Name~RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
     "Name~Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
     "Name~Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+    "Name~Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field",
+    "Name~Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state",
+    "Name~Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit",
     "Name~Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
     "Name~Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
 ]
@@ -209,6 +215,8 @@ payload: dict[str, Any] = {
         "workflowTests": {},
         "flagshipUiTests": {},
         "priorityWorkflowMarkers": {},
+        "interactiveControlMarkers": {},
+        "interactiveBuilderContracts": {},
         "m103DialogEvidence": {},
     },
 }
@@ -323,6 +331,12 @@ priority_workflow_markers = {
     "dialog_factory_can_commit_field": ("newCharacterPriorityWorkflowCanCommit", dialog_factory_text),
     "avalonia_priority_special_case": ('string.Equals(BoundDialogId, "dialog.new_character.priority_workflow", StringComparison.Ordinal)', dialog_window_text),
     "avalonia_priority_pane": ("CreateLegacyPriorityWorkflowPane(", dialog_window_text),
+    "avalonia_select_combobox_selectionchanged": ("comboBox.SelectionChanged += (_, _) =>", dialog_window_text),
+    "avalonia_select_listbox_selectionchanged": ("listBox.SelectionChanged += (_, _) =>", dialog_window_text),
+    "avalonia_priority_metatype_doubletap_commit": ("metatypeList.DoubleTapped += async (_, _) =>", dialog_window_text),
+    "dialog_factory_priority_last_changed_field": ("newCharacterPriorityLastChangedFieldId", dialog_factory_text),
+    "dialog_factory_priority_reconcile": ("ReconcilePriorityLetters(", dialog_factory_text),
+    "dialog_factory_priority_skill_choices": ("BuildPrioritySkillChoiceStates(", dialog_factory_text),
 }
 for name, (marker, haystack) in priority_workflow_markers.items():
     found = marker in haystack
@@ -330,6 +344,63 @@ for name, (marker, haystack) in priority_workflow_markers.items():
     if not found:
         add_failure(
             f"Priority workflow generated-dialog parity marker missing: {name}.",
+            inventory_failures,
+        )
+
+interactive_control_markers = {
+    "generic_select_widget_class": ("ComboBox comboBox = new()", dialog_window_text),
+    "generic_select_selectionchanged": ("comboBox.SelectionChanged += (_, _) =>", dialog_window_text),
+    "generic_list_widget_class": ("ListBox listBox = new()", dialog_window_text),
+    "generic_list_selectionchanged": ("listBox.SelectionChanged += (_, _) =>", dialog_window_text),
+    "generic_tree_selectionchanged": ("treeView.SelectionChanged += (_, _) =>", dialog_window_text),
+    "generic_checkbox_widget_class": ("CheckBox checkBox = new()", dialog_window_text),
+    "generic_checkbox_checkedchanged": ("checkBox.IsCheckedChanged += (_, _) =>", dialog_window_text),
+    "generic_textbox_widget_class": ("TextBox textBox = new()", dialog_window_text),
+    "generic_textbox_textchanged": ("textBox.TextChanged += (_, _) =>", dialog_window_text),
+}
+for name, (marker, haystack) in interactive_control_markers.items():
+    found = marker in haystack
+    evidence["interactiveControlMarkers"][name] = {"marker": marker, "found": found}
+    if not found:
+        add_failure(
+            f"Generated dialog interactive control parity marker missing: {name}.",
+            inventory_failures,
+        )
+
+interactive_builder_contracts = {
+    "BuildSelectComboBox": [
+        "private ComboBox BuildSelectComboBox(",
+        "ComboBox comboBox = new()",
+        "comboBox.SelectionChanged += (_, _) =>",
+    ],
+    "BuildSelectListBox": [
+        "private ListBox BuildSelectListBox(",
+        "ListBox listBox = new()",
+        "listBox.SelectionChanged += (_, _) =>",
+    ],
+    "BuildRosterTree": [
+        "private TreeView BuildRosterTree(",
+        "TreeView treeView = new()",
+        "treeView.SelectionChanged += (_, _) =>",
+    ],
+    "BuildLegacyInlineCheckBox": [
+        "private CheckBox BuildLegacyInlineCheckBox(",
+        "CheckBox checkBox = new()",
+        "checkBox.IsCheckedChanged += (_, _) =>",
+    ],
+    "BuildLegacyInlineTextBox": [
+        "private TextBox BuildLegacyInlineTextBox(",
+        "TextBox textBox = new()",
+        "textBox.TextChanged += (_, _) =>",
+    ],
+}
+for builder_name, markers in interactive_builder_contracts.items():
+    found_markers = {marker: (marker in dialog_window_text) for marker in markers}
+    evidence["interactiveBuilderContracts"][builder_name] = found_markers
+    missing = [marker for marker, found in found_markers.items() if not found]
+    if missing:
+        add_failure(
+            f"Generated dialog interactive builder contract drifted: {builder_name}.",
             inventory_failures,
         )
 
@@ -392,12 +463,16 @@ else:
 
 test_commands = [
     [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         filter_expression,
+        "--verbosity",
+        "minimal",
     ]
     for filter_expression in TEST_FILTER_COMMANDS
 ]
@@ -406,6 +481,8 @@ evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
 
 build_result: subprocess.CompletedProcess[str] | None = None
 test_results: list[dict[str, Any]] = []
+evidence["buildExitCode"] = None
+evidence["testResults"] = test_results
 if not reasons:
     build_command = [
         "bash",
@@ -464,9 +541,6 @@ if not reasons:
                     execution_failures,
                 )
         evidence["testResults"] = test_results
-else:
-    evidence["buildExitCode"] = None
-    evidence["testResults"] = test_results
 
 if not reasons:
     payload["status"] = "pass"
@@ -524,6 +598,42 @@ payload["priorityWorkflowReview"] = {
         if "Priority workflow generated-dialog parity marker missing:" in reason
     ],
     "priorityWorkflowMarkers": evidence["priorityWorkflowMarkers"],
+}
+payload["interactiveControlReview"] = {
+    "status": (
+        "pass"
+        if not any("Generated dialog interactive control parity marker missing:" in reason for reason in inventory_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Generic generated-dialog control builders still expose the expected widget classes and handler hooks."
+        if not any("Generated dialog interactive control parity marker missing:" in reason for reason in inventory_failures)
+        else "Generic generated-dialog control builders drifted away from the expected widget classes or handler hooks."
+    ),
+    "reasons": [
+        reason
+        for reason in inventory_failures
+        if "Generated dialog interactive control parity marker missing:" in reason
+    ],
+    "interactiveControlMarkers": evidence["interactiveControlMarkers"],
+}
+payload["interactiveBuilderReview"] = {
+    "status": (
+        "pass"
+        if not any("Generated dialog interactive builder contract drifted:" in reason for reason in inventory_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Generated-dialog builder methods still preserve widget class plus event-hook contracts."
+        if not any("Generated dialog interactive builder contract drifted:" in reason for reason in inventory_failures)
+        else "One or more generated-dialog builder methods lost required widget class or event-hook contracts."
+    ),
+    "reasons": [
+        reason
+        for reason in inventory_failures
+        if "Generated dialog interactive builder contract drifted:" in reason
+    ],
+    "interactiveBuilderContracts": evidence["interactiveBuilderContracts"],
 }
 payload["verifyWiringReview"] = {
     "status": "pass" if not verify_wiring_failures else "fail",

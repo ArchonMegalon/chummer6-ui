@@ -53,6 +53,7 @@
 
   <ItemGroup Condition="'$(RunDesktopUpdateTestsOnly)' == 'true'">
     <Compile Remove="**\*.cs" />
+    <Compile Include="GlobalUsings.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopPreferenceRuntimeTests.cs" />
     <Compile Include="DesktopStartupSmokeRuntimeTests.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Presentation\DesktopFileCoordinatorTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
+    <Compile Include="Presentation\DesktopShortcutCatalogTests.cs" />
     <Compile Include="Presentation\DesktopDialogFactoryTests.cs" />
     <Compile Include="Presentation\DesktopShellRulesetCatalogTests.cs" />
     <Compile Include="Presentation\FakeWorkbenchCoachApiClient.cs" />

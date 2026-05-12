@@ -49,7 +49,17 @@ internal static class DialogTrustReceiptText
 
     // m104: blazor_import_rule_environment_receipt
     public static string BuildImportRuleEnvironment(WorkspacePortabilityReceipt receipt)
-        => $"Target {receipt.FormatId} ({receipt.CompatibilityState})";
+    {
+        string exchangeModes = receipt.SupportedExchangeModes.Count == 0
+            ? "review-only"
+            : string.Join(
+                ", ",
+                receipt.SupportedExchangeModes.Select(static mode => mode.Replace('_', '-').ToLowerInvariant()));
+        string payload = string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? "payload unavailable"
+            : $"payload {receipt.PayloadSha256}";
+        return $"{receipt.FormatId}; {receipt.CompatibilityState}; {exchangeModes}; {payload}.";
+    }
 
     public static string BuildImportDiffBefore(WorkspacePortabilityReceipt receipt)
         => string.IsNullOrWhiteSpace(receipt.ContextSummary)

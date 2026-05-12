@@ -124,7 +124,7 @@ public sealed class DesktopHomeWindowTests
     }
 
     [TestMethod]
-    public void ShouldShowOnStartup_returns_false_when_restore_context_has_no_local_conflict()
+    public void ShouldShowOnStartup_returns_true_when_claimed_install_has_restore_continuity_but_no_local_workspace()
     {
         bool shouldShow = InvokeShouldShowOnStartup(
             installContext: null,
@@ -132,10 +132,10 @@ public sealed class DesktopHomeWindowTests
             updateStatus: CreateUpdateStatus(status: "current"),
             workspaces: [],
             campaignProjection: CreateCampaignProjection(leadWorkspaceId: "workspace-restore"),
-            campaignServerPlane: null,
+            campaignServerPlane: CreateCampaignServerPlane(DateTimeOffset.UtcNow),
             supportProjection: CreateSupportProjection(needsAttention: false));
 
-        Assert.IsFalse(shouldShow, "A restore hint without local-vs-server conflict should keep the primary desktop route on the workbench.");
+        Assert.IsTrue(shouldShow, "A claimed install with restore continuity but no local workspace must surface the native restore flow.");
     }
 
     [TestMethod]

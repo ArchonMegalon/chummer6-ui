@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-08T20:45:19.545237Z",
+  "generatedAt": "2026-05-12T12:28:16.111257Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
-  "channelId": "preview",
-  "channel": "preview",
+  "channelId": "docker",
+  "channel": "docker",
   "releaseVersion": "run-20260503-163502",
   "version": "run-20260503-163502",
   "status": "pass",
@@ -83,6 +83,7 @@
     "failingJobs": [],
     "reviewedJobs": [
       "dense_builder",
+      "dense_workbench_and_initiative",
       "hero_lab_importer",
       "master_index",
       "roster",
@@ -97,6 +98,17 @@
   },
   "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
   "reviewJobs": {
+    "dense_workbench_and_initiative": {
+      "frontierId": null,
+      "status": "pass",
+      "screenshots": [
+        "05-dense-section-light.png",
+        "07-loaded-runner-tabs-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [],
+      "reasons": []
+    },
     "dense_builder": {
       "frontierId": 3782970110,
       "status": "pass",
@@ -192,6 +204,21 @@
       "reasons": []
     }
   },
+  "routeLocalReceipts": {
+    "dense_workbench_and_initiative": {
+      "routeIds": [
+        "menu:dice_roller_or_workflow:initiative_screenshot",
+        "dice_roller",
+        "initiative_screenshot"
+      ],
+      "screenshots": [
+        "05-dense-section-light.png",
+        "07-loaded-runner-tabs-light.png"
+      ],
+      "reasons": [],
+      "status": "pass"
+    }
+  },
   "evidence": {
     "feedbackSources": [
       "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
@@ -204,7 +231,7 @@
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelChannelId": "preview",
+    "releaseChannelChannelId": "docker",
     "releaseChannelVersion": "run-20260503-163502",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
@@ -220,6 +247,7 @@
     "flagshipGateRouteLocalOnly": false,
     "reviewedJobs": [
       "dense_builder",
+      "dense_workbench_and_initiative",
       "hero_lab_importer",
       "master_index",
       "roster",
@@ -228,6 +256,21 @@
       "xml_editor"
     ],
     "failingJobs": [],
+    "routeLocalReceipts": {
+      "dense_workbench_and_initiative": {
+        "routeIds": [
+          "menu:dice_roller_or_workflow:initiative_screenshot",
+          "dice_roller",
+          "initiative_screenshot"
+        ],
+        "screenshots": [
+          "05-dense-section-light.png",
+          "07-loaded-runner-tabs-light.png"
+        ],
+        "reasons": [],
+        "status": "pass"
+      }
+    },
     "reasonCount": 0,
     "failureCount": 0
   }

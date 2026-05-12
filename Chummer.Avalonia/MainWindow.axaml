@@ -16,7 +16,7 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Window.Styles>
-  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="0">
     <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="0">
       <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
     </Border>
@@ -25,19 +25,22 @@
       <controls:ToolStripControl x:Name="ToolStripControl" />
     </Border>
 
-    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0">
+    <Border x:Name="WorkspaceStripRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0" HorizontalAlignment="Left">
+      <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
+    </Border>
+
+    <Border x:Name="SummaryHeaderRegion" Grid.Row="3" Classes="shell-panel chrome" Padding="0">
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <!-- Classic shell baseline: ColumnDefinitions="0,*,0" before the roster pane expands the left column. -->
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="2" Margin="1,1,1,0">
+    <Grid x:Name="ContentRegion" Grid.Row="4" ColumnDefinitions="0,*,0" ColumnSpacing="0" Margin="1,1,1,0">
       <!-- Character Roster Pane (left) - Chummer5a treCharacterList equivalent -->
       <Border x:Name="RosterPaneRegion"
               Grid.Column="0"
               Classes="shell-panel"
-              Width="228"
-              MinWidth="180"
-              MaxWidth="300">
+              Width="264"
+              MinWidth="240"
+              MaxWidth="320">
         <controls:CharacterRosterControl x:Name="CharacterRosterControl" />
       </Border>
 
@@ -62,6 +65,7 @@
               MinWidth="0"
               MaxWidth="0"
               Opacity="0"
+              IsVisible="False"
               IsHitTestVisible="False"
               ClipToBounds="True">
         <Grid RowDefinitions="2*,*" RowSpacing="4">
@@ -75,7 +79,7 @@
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,1">
+    <Border x:Name="StatusStripRegion" Grid.Row="5" Classes="shell-panel chrome" Padding="4,1">
       <controls:StatusStripControl x:Name="StatusStripControl" />
     </Border>
   </Grid>

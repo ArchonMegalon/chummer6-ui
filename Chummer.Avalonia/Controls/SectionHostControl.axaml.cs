@@ -125,14 +125,32 @@ public partial class SectionHostControl : UserControl
 
     public void SetNotice(string notice)
     {
-        // Chummer5a parity posture: do not spend persistent workbench height on shell notices.
-        NoticeText.Text = string.Empty;
-        NoticeBorder.IsVisible = false;
+        string normalizedNotice = string.IsNullOrWhiteSpace(notice)
+            ? "Notice: Ready."
+            : notice.Trim();
+        if (!normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedNotice = $"Notice: {normalizedNotice}";
+        }
+
+        NoticeText.Text = normalizedNotice;
+        NoticeBorder.IsVisible = true;
     }
 
     public void SetSectionPreview(string? sectionId, string previewJson, IEnumerable<SectionRowDisplayItem> rows)
     {
         SectionRowDisplayItem[] rowArray = rows.ToArray();
+        if (!HasRenderableSectionSurface(sectionId, previewJson, rowArray))
+        {
+            SectionPreviewBox.Text = string.Empty;
+            SectionReviewExpander.Header = "Section";
+            SectionReviewExpander.IsVisible = false;
+            SectionReviewExpander.IsExpanded = false;
+            SectionRowsList.ItemsSource = null;
+            SectionRowsBorder.IsVisible = false;
+            return;
+        }
+
         string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray);
         SectionPreviewBox.Text = previewText;
         SectionReviewExpander.Header = BuildSectionPreviewHeader(sectionId, previewJson);
@@ -151,6 +169,15 @@ public partial class SectionHostControl : UserControl
         IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
     {
         SectionRowDisplayItem[] rowArray = rows.ToArray();
+        if (!HasRenderableSectionSurface(sectionId, previewJson, rowArray, quickActions))
+        {
+            SectionContextBorder.IsVisible = false;
+            SectionContextTitleText.Text = string.Empty;
+            SectionContextSummaryText.Text = string.Empty;
+            UpdateSectionRowsHeight();
+            return;
+        }
+
         bool showContext = !ClassicCharacterSheetBorder.IsVisible
             && (!string.IsNullOrWhiteSpace(sectionId) || rowArray.Length > 0 || quickActions.Count > 0);
 
@@ -766,6 +793,26 @@ public partial class SectionHostControl : UserControl
                 WorkspaceId: _buildLab?.WorkspaceId),
             "OpenBuildLabExplainCompanionButton"));
 
+        if (_buildLab is not null)
+        {
+            BuildLabTrustReceiptPanel.Children.Add(new TextBlock
+            {
+                Text = $"Build compare companion: {BuildBuildCompareCompanionBadge(_buildLab)}",
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+            });
+
+            if (HasBuildBlockerReceipt(_buildLab))
+            {
+                BuildLabTrustReceiptPanel.Children.Add(new TextBlock
+                {
+                    Text = $"Build blocker receipt: {BuildBuildBlockerBadge(_buildLab)}",
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                });
+            }
+        }
+
         foreach (DesktopTrustReceiptSection section in sections)
         {
             StackPanel sectionPanel = new()
@@ -807,6 +854,15 @@ public partial class SectionHostControl : UserControl
         int warningCount = buildLab.Variants.Sum(static variant => variant.Warnings.Count)
             + (buildLab.Watchouts?.Count ?? 0);
         return warningCount == 0 && buildLab.CanContinue ? "receipt" : $"{warningCount} blocker signal(s)";
+    }
+
+    private static string BuildBuildCompareCompanionBadge(BuildLabConceptIntakeState buildLab)
+    {
+        int variantCount = buildLab.Variants.Count;
+        string leadVariant = buildLab.Variants.FirstOrDefault()?.Label ?? "no variant";
+        return variantCount == 0
+            ? "pending variant comparison"
+            : $"{variantCount} variant lane(s); lead {leadVariant}";
     }
 
     private static string BuildBuildBlockerBefore(BuildLabConceptIntakeState buildLab)
@@ -1623,6 +1679,26 @@ public partial class SectionHostControl : UserControl
         }
 
         return emptySummary;
+    }
+
+    private static bool HasRenderableSectionSurface(
+        string? sectionId,
+        string previewJson,
+        IReadOnlyList<SectionRowDisplayItem> rows,
+        IReadOnlyList<SectionQuickActionDisplayItem>? quickActions = null)
+    {
+        if (!string.IsNullOrWhiteSpace(sectionId) || rows.Count > 0 || (quickActions?.Count ?? 0) > 0)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(previewJson))
+        {
+            return false;
+        }
+
+        JsonObject? root = TryParseRootObject(previewJson);
+        return root is not null && root.Count > 0;
     }
 
     private static string BuildEmptySectionReviewLine(string? sectionId)

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-08T19:12:24.332360Z",
+  "generatedAt": "2026-05-12T12:42:12.063686Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_verification_receipt",
   "status": "fail",
   "summary": "SR4 workflow-family verification evidence is incomplete for recovery-reload-migration-roundtrips.",
   "reasons": [
-    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    "Execution receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/recovery-reload-migration-roundtrips.generated.json (fail)"
   ],
   "evidence": {
     "edition": "sr4",
@@ -24,10 +24,8 @@
     },
     "executionReceipts": [],
     "executionFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/recovery-reload-migration-roundtrips.generated.json (fail; external_blocker=missing_api_surface_contract)"
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr4/recovery-reload-migration-roundtrips.generated.json (fail)"
     ],
-    "executionExternalBlockers": [
-      "missing_api_surface_contract"
-    ]
+    "executionExternalBlockers": []
   }
 }

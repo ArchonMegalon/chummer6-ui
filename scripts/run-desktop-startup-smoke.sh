@@ -3,9 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3)"
+fi
 
 ARTIFACT_PATH="$(
-  python3 - "${1:?artifact path is required}" <<'PY'
+  "$PYTHON_BIN" - "${1:?artifact path is required}" <<'PY'
 import os
 import sys
 
@@ -81,7 +85,7 @@ arch_from_rid() {
 }
 
 sha256_file() {
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 import hashlib
 import pathlib
 import sys
@@ -166,7 +170,7 @@ run_windows_binary() {
       powershell_bin="pwsh"
     fi
     local args_json
-    args_json="$(python3 - "$@" <<'PY'
+    args_json="$("$PYTHON_BIN" - "$@" <<'PY'
 import json
 import sys
 

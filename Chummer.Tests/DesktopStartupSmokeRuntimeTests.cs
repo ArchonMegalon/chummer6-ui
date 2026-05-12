@@ -1,5 +1,13 @@
+#nullable enable
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Text.Json;
 using Chummer.Desktop.Runtime;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests;
 

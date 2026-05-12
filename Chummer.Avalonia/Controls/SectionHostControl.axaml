@@ -48,9 +48,10 @@
         <Border Grid.Row="0"
                 x:Name="SectionContextBorder"
                 Classes="shell-panel subtle"
-                IsVisible="False"
                 Padding="3,2">
           <StackPanel Spacing="1">
+            <TextBlock Text="Section Commands"
+                       Classes="shell-kicker" />
             <TextBlock x:Name="SectionContextTitleText"
                        Classes="shell-section-title"
                        Text="Section" />
@@ -117,31 +118,35 @@
         <Border Grid.Row="4"
                 x:Name="SectionRowsBorder"
                 Classes="shell-panel"
-                Padding="1,0">
-          <ListBox x:Name="SectionRowsList"
-                   Height="176"
-                   BorderThickness="0"
-                   Background="Transparent">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <Grid ColumnDefinitions="92,*" ColumnSpacing="6" Margin="0,0">
-                  <TextBlock Grid.Column="0"
-                             Text="{Binding DisplayPath}"
-                             Classes="shell-caption"
-                             TextTrimming="CharacterEllipsis" />
-                  <TextBlock Grid.Column="1"
-                             Text="{Binding DisplayValue}"
-                             TextWrapping="NoWrap"
-                             TextTrimming="CharacterEllipsis" />
-                </Grid>
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-            <ListBox.ItemsPanel>
-              <ItemsPanelTemplate>
-                <VirtualizingStackPanel />
-              </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-          </ListBox>
+                Padding="3,2">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Reference &amp; Notes"
+                       Classes="shell-kicker" />
+            <ListBox x:Name="SectionRowsList"
+                     Height="176"
+                     BorderThickness="0"
+                     Background="Transparent">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="92,*" ColumnSpacing="6" Margin="0,0">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding DisplayPath}"
+                               Classes="shell-caption"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding DisplayValue}"
+                               TextWrapping="NoWrap"
+                               TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+            </ListBox>
+          </StackPanel>
         </Border>
         <Expander Grid.Row="5"
                   x:Name="SectionPayloadExpander"

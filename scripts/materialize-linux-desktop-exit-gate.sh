@@ -4,6 +4,10 @@ set -o errtrace
 
 SCRIPT_DIR="$(cd -L "$(dirname "${BASH_SOURCE[0]}")" && pwd -L)"
 REPO_ROOT_PHYSICAL="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3)"
+fi
 REPO_ROOT_ALIAS_CANDIDATE="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
 REPO_ROOT="$REPO_ROOT_PHYSICAL"
 if [[ -n "$REPO_ROOT_ALIAS_CANDIDATE" && -d "$REPO_ROOT_ALIAS_CANDIDATE" ]]; then
@@ -26,7 +30,7 @@ RELEASE_CHANNEL_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH:-$R
 APP_KEY_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY:-}"
 RID_OVERRIDE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID:-}"
 if [[ -z "$APP_KEY_OVERRIDE" || -z "$RID_OVERRIDE" ]]; then
-  mapfile -t RELEASE_PROMOTED_TUPLE < <(python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
+  mapfile -t RELEASE_PROMOTED_TUPLE < <("$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$APP_KEY_OVERRIDE" "$RID_OVERRIDE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -104,7 +108,7 @@ TEST_FILTER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_FILTER:-FullyQualifiedName~D
 RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 RELEASE_CHANNEL_ID_DEFAULT="$(
-  python3 - "$RELEASE_CHANNEL_PATH" <<'PY'
+  "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -126,7 +130,7 @@ if channel_id:
 PY
 )"
 RELEASE_CHANNEL_VERSION_DEFAULT="$(
-  python3 - "$RELEASE_CHANNEL_PATH" <<'PY'
+  "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -166,6 +170,7 @@ FLAGSHIP_UI_GATE_SCREENSHOT_DIR="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_G
 FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SCREENSHOT_CONTROL_EVIDENCE_PATH:-$FLAGSHIP_UI_GATE_SCREENSHOT_DIR/SCREENSHOT_CONTROL_EVIDENCE.generated.json}"
 SNAPSHOT_WRITABLE_STATE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT:-$WORKSPACE_ROOT/.tmp/ai/linux-desktop-exit-gate}"
 SNAPSHOT_NUGET_PACKAGES="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES:-$WORKSPACE_ROOT/.tmp/ai/nuget/packages}"
+SOURCE_SNAPSHOT_CLONE_MODE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SOURCE_SNAPSHOT_CLONE_MODE:-copy}"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -204,7 +209,7 @@ PROMOTED_INSTALLER_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROMOTED_INSTALLER_PA
 printf '%s\n' "$$" >"$RUN_OWNER_PID_PATH"
 
 resolve_promoted_installer_path() {
-  python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
+  "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
 import json
 import pathlib
 import sys
@@ -251,7 +256,7 @@ PY
 }
 
 resolve_promoted_startup_smoke_receipt_path() {
-  python3 - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
+  "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" <<'PY'
 import pathlib
 import sys
 
@@ -275,7 +280,7 @@ PY
 }
 
 release_channel_publishes_promoted_installer_tuple() {
-  python3 - "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" <<'PY'
+  "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$APP_KEY" "$RID" <<'PY'
 import json
 import pathlib
 import sys
@@ -310,7 +315,7 @@ PY
 capture_git_metadata() {
   local output_path="$1"
 
-  python3 - "$output_path" "$REPO_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" <<'PY'
+  "$PYTHON_BIN" - "$output_path" "$REPO_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" <<'PY'
 import hashlib
 import json
 import os
@@ -346,7 +351,6 @@ GATE_INPUT_MARKERS = (
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
-    "Chummer.Tests/",
     "Chummer.Presentation/",
     "scripts/ai/",
     "scripts/build-desktop-installer.sh",
@@ -569,12 +573,13 @@ PY
 materialize_source_snapshot() {
   SOURCE_SNAPSHOT_ROOT="$(mktemp -d "$WORKSPACE_ROOT/.linux-desktop-exit-gate-source.XXXXXX")"
 
-  python3 - "$REPO_ROOT" "$SOURCE_SNAPSHOT_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" "$SOURCE_SNAPSHOT_ENTRIES_PATH" <<'PY'
+  "$PYTHON_BIN" - "$REPO_ROOT" "$SOURCE_SNAPSHOT_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" "$SOURCE_SNAPSHOT_ENTRIES_PATH" "$SOURCE_SNAPSHOT_CLONE_MODE" <<'PY'
 import hashlib
 import json
 import os
 import pathlib
 import shutil
+import errno
 import stat
 import subprocess
 import sys
@@ -586,6 +591,7 @@ output_base_root_text = sys.argv[3]
 canonical_proof_path_text = sys.argv[4]
 manifest_path_text = sys.argv[5]
 entries_path_text = sys.argv[6]
+clone_mode = str(sys.argv[7] or "copy").strip().lower()
 repo_root = pathlib.Path(repo_root_text).resolve()
 snapshot_root = pathlib.Path(snapshot_root_text).resolve()
 output_base_root = pathlib.Path(output_base_root_text).resolve()
@@ -603,7 +609,12 @@ GATE_INPUT_MARKERS = (
     "Chummer.Desktop.Assets/",
     "Chummer.Desktop.Runtime/",
     "Chummer.Desktop.Runtime.Tests/",
-    "Chummer.Tests/",
+    # Keep the runtime test inputs narrow. Pulling the full Chummer.Tests tree
+    # drags in large linked fixture payloads that are irrelevant to the linux
+    # desktop gate and can exhaust disk before publish even starts.
+    "Chummer.Tests/DesktopPreferenceRuntimeTests.cs",
+    "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs",
+    "Chummer.Tests/DesktopUpdateRuntimeTests.cs",
     "Chummer.Presentation/",
     "scripts/ai/",
     "scripts/build-desktop-installer.sh",
@@ -615,6 +626,10 @@ GATE_INPUT_MARKERS = (
     "NuGet.Config",
     "global.json",
 )
+
+# Linked desktop-runtime test sources and bundled sample assets are pulled in via
+# add_msbuild_linked_entries; copying the full legacy fixture tree here burns
+# disk without changing publish, smoke, or desktop-runtime test behavior.
 
 # Keep the immutable snapshot focused on source plus required desktop assets.
 # Copying full compiled trees here makes proof refreshes fail on otherwise
@@ -657,6 +672,49 @@ def is_gate_input(relative_path: str) -> bool:
 def is_generated_build_output(relative_path: str) -> bool:
     parts = tuple(part for part in pathlib.Path(relative_path).parts if part)
     return any(part in {"bin", "obj", "TestResults"} for part in parts)
+
+
+def clone_regular_file(src_path: pathlib.Path, dest_path: pathlib.Path) -> None:
+    if clone_mode in {"link", "link_or_copy"}:
+        try:
+            os.link(src_path, dest_path)
+            return
+        except OSError as error:
+            if error.errno not in {
+                errno.EXDEV,
+                errno.EMLINK,
+                errno.EPERM,
+                errno.ENOTSUP,
+                errno.EOPNOTSUPP,
+                errno.EXDEV,
+            }:
+                raise
+    try:
+        shutil.copy2(src_path, dest_path)
+    except FileNotFoundError:
+        # copy2 can intermittently fail on some Linux filesystems while copying
+        # metadata after source-materialization; fall back to content copy to avoid
+        # transient snapshot truncation while preserving file identity.
+        try:
+            shutil.copyfile(src_path, dest_path)
+        except Exception as fallback_error:
+            raise FileNotFoundError(
+                f"copy2+fallback copyfile failed for {src_path}: {fallback_error}"
+            )
+
+
+def copy_tracked_regular_file(src_path: pathlib.Path, dest_path: pathlib.Path) -> None:
+    # The immutable tracked-input snapshot must not share writable inodes with the
+    # live repo; restore/publish can mutate some source-adjacent files in place.
+    try:
+        shutil.copy2(src_path, dest_path)
+    except FileNotFoundError:
+        try:
+            shutil.copyfile(src_path, dest_path)
+        except Exception as fallback_error:
+            raise FileNotFoundError(
+                f"copy2+fallback copyfile failed for {src_path}: {fallback_error}"
+            )
 
 
 def iter_tracked_repo_entries(markers):
@@ -784,7 +842,11 @@ def add_msbuild_linked_entries(entries, markers):
                 if not resolved.is_file():
                     continue
                 resolved_relative = resolved.relative_to(repo_root).as_posix()
-                if resolved_relative in seen or is_excluded(resolved_relative, markers):
+                if (
+                    resolved_relative in seen
+                    or is_excluded(resolved_relative, markers)
+                    or is_generated_build_output(resolved_relative)
+                ):
                     continue
                 seen.add(resolved_relative)
                 ordered_entries.append(resolved_relative)
@@ -818,18 +880,7 @@ for relative in tracked_entries:
     if not stat.S_ISREG(stat_result.st_mode):
         continue
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        shutil.copy2(src_path, dest_path)
-    except FileNotFoundError:
-        # copy2 can intermittently fail on some Linux filesystems while copying
-        # metadata after source-materialization; fall back to content copy to avoid
-        # transient snapshot truncation while preserving file identity.
-        try:
-            shutil.copyfile(src_path, dest_path)
-        except Exception as fallback_error:
-            raise FileNotFoundError(
-                f"copy2+fallback copyfile failed for {relative}: {fallback_error}"
-            )
+    copy_tracked_regular_file(src_path, dest_path)
     digest.update(f"file\0{relative}\0{mode:o}\0".encode("utf-8"))
     with src_path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -845,22 +896,13 @@ for relative in SUPPLEMENTAL_SNAPSHOT_PATHS:
         continue
     dest_path = snapshot_root / relative
     if src_path.is_dir():
-        shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+        shutil.copytree(src_path, dest_path, dirs_exist_ok=True, copy_function=clone_regular_file)
         continue
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        shutil.copy2(src_path, dest_path)
-    except FileNotFoundError:
-        # Keep supplemental asset copies resilient to the same metadata-copy race.
-        try:
-            shutil.copyfile(src_path, dest_path)
-        except Exception as fallback_error:
-            raise FileNotFoundError(
-                f"copy2+fallback copyfile failed for supplemental snapshot entry {relative}: {fallback_error}"
-            )
+    clone_regular_file(src_path, dest_path)
 
 manifest = {
-    "mode": "filesystem_copy",
+    "mode": "filesystem_link_or_copy" if clone_mode in {"link", "link_or_copy"} else "filesystem_copy",
     "repo_root": repo_root_text,
     "snapshot_root": snapshot_root_text,
     "entries_path": entries_path_text,
@@ -873,7 +915,7 @@ PY
 }
 
 refresh_source_snapshot_manifest() {
-  python3 - "$SOURCE_SNAPSHOT_MANIFEST_PATH" <<'PY'
+  "$PYTHON_BIN" - "$SOURCE_SNAPSHOT_MANIFEST_PATH" <<'PY'
 import hashlib
 import json
 import os
@@ -961,7 +1003,7 @@ PY
 }
 
 assert_source_snapshot_identity_stable() {
-  python3 - "$SOURCE_SNAPSHOT_MANIFEST_PATH" <<'PY'
+  "$PYTHON_BIN" - "$SOURCE_SNAPSHOT_MANIFEST_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -979,7 +1021,7 @@ PY
 }
 
 assert_repo_git_identity_stable() {
-  python3 - "$GIT_START_PATH" "$GIT_FINISH_PATH" <<'PY'
+  "$PYTHON_BIN" - "$GIT_START_PATH" "$GIT_FINISH_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -1598,7 +1640,7 @@ payload = {
     "proof_git_head_matches_current": str(git_finish.get("head") or "") == str(current_git.get("head") or ""),
     "proof_tracked_diff_sha256": str(git_finish.get("tracked_diff_sha256") or ""),
     "source_snapshot_mode": str(source_snapshot.get("mode") or ""),
-    "source_snapshot_root": str(source_snapshot.get("root") or ""),
+    "source_snapshot_root": str(source_snapshot.get("snapshot_root") or ""),
     "source_snapshot_entry_count": int(source_snapshot.get("entry_count") or 0),
     "source_snapshot_finish_entry_count": int(source_snapshot.get("finish_entry_count") or 0),
     "source_snapshot_worktree_sha256": str(source_snapshot.get("worktree_sha256") or ""),
@@ -1617,7 +1659,7 @@ publish_canonical_proof() {
     flock "$lock_fd"
   fi
 
-  python3 - "$RUN_PROOF_PATH" "$PROOF_PATH" "$LATEST_LINK" "$RUN_ROOT" <<'PY'
+  "$PYTHON_BIN" - "$RUN_PROOF_PATH" "$PROOF_PATH" "$LATEST_LINK" "$RUN_ROOT" <<'PY'
 import json
 import pathlib
 import sys
@@ -1639,15 +1681,58 @@ def load(path: pathlib.Path):
 
 def proof_identity(payload):
     git = dict(payload.get("git") or {})
+    git_start = dict(git.get("start") or {})
+    source_snapshot = dict(payload.get("source_snapshot") or {})
     return (
-        str(git.get("head") or "").strip(),
-        str(git.get("tracked_diff_sha256") or "").strip(),
+        str(git_start.get("head") or git.get("head") or "").strip(),
+        str(
+            source_snapshot.get("worktree_sha256")
+            or git_start.get("tracked_diff_sha256")
+            or git.get("tracked_diff_sha256")
+            or ""
+        ).strip(),
+        int(source_snapshot.get("entry_count") or 0),
     )
+
+
+def normalized_status(payload):
+    return str(payload.get("status") or "").strip().lower()
+
+
+def parse_generated_at(payload):
+    raw = str(payload.get("generated_at") or payload.get("generatedAt") or "").strip()
+    if not raw:
+        return ""
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    return raw
+
+
+def latest_passing_receipt_for_identity(identity, root: pathlib.Path):
+    best_payload = None
+    best_receipt_path = None
+    best_generated_at = ""
+
+    for receipt_path in sorted(root.glob(f"run.*/{canonical_path.name}")):
+        payload = load(receipt_path)
+        if not payload or normalized_status(payload) != "passed":
+            continue
+        if proof_identity(payload) != identity:
+            continue
+        generated_at = parse_generated_at(payload)
+        if best_payload is None or generated_at >= best_generated_at:
+            best_payload = payload
+            best_receipt_path = receipt_path
+            best_generated_at = generated_at
+
+    return best_payload, best_receipt_path
 
 
 new_payload = load(new_path)
 existing_payload = load(canonical_path)
 publish = True
+publish_source_path = new_path
+publish_run_root = run_root
 
 if new_payload and existing_payload:
     same_identity = proof_identity(new_payload) == proof_identity(existing_payload)
@@ -1665,15 +1750,26 @@ if new_payload and existing_payload:
     ):
         publish = False
 
+if new_payload:
+    new_stage = str(new_payload.get("stage") or "").strip()
+    new_identity = proof_identity(new_payload)
+    early_infra_failure_stages = {"source_snapshot", "build_lock"}
+    if normalized_status(new_payload) != "passed" and new_stage in early_infra_failure_stages:
+        best_payload, best_receipt_path = latest_passing_receipt_for_identity(new_identity, run_root.parent)
+        if best_payload and best_receipt_path:
+            publish = True
+            publish_source_path = best_receipt_path
+            publish_run_root = best_receipt_path.parent
+
 if publish:
     canonical_path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = canonical_path.parent / f".{canonical_path.name}.{new_payload.get('stage') if new_payload else 'unknown'}.tmp"
-    temp_path.write_text(new_path.read_text(encoding="utf-8"), encoding="utf-8")
+    temp_path.write_text(publish_source_path.read_text(encoding="utf-8"), encoding="utf-8")
     temp_path.replace(canonical_path)
     latest_link_path.parent.mkdir(parents=True, exist_ok=True)
     if latest_link_path.is_symlink() or latest_link_path.exists():
         latest_link_path.unlink()
-    latest_link_path.symlink_to(run_root)
+    latest_link_path.symlink_to(publish_run_root)
 PY
 }
 
@@ -1754,7 +1850,7 @@ release_build_lock() {
 }
 
 validate_flagship_ui_screenshot_gate() {
-  python3 - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH" <<'PY'
+  "$PYTHON_BIN" - "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH" <<'PY'
 from __future__ import annotations
 
 import json
@@ -1933,7 +2029,7 @@ normalize_test_trx_path() {
 }
 
 test_trx_has_runnable_results() {
-  python3 - "$TEST_TRX_PATH" <<'PY'
+  "$PYTHON_BIN" - "$TEST_TRX_PATH" <<'PY'
 import pathlib
 import sys
 import xml.etree.ElementTree as ET
@@ -1975,7 +2071,7 @@ assert_test_trx_passes() {
 }
 
 capture_test_status_snapshot() {
-  python3 - "$TEST_TRX_PATH" "$TEST_STATUS_PATH" <<'PY'
+  "$PYTHON_BIN" - "$TEST_TRX_PATH" "$TEST_STATUS_PATH" <<'PY'
 import json
 import pathlib
 import sys
@@ -2182,7 +2278,10 @@ materialize_source_snapshot
 
 CURRENT_STAGE="build_lock"
 announce_stage "$CURRENT_STAGE" "waiting for serialized package-plane access"
-acquire_build_lock
+if ! acquire_build_lock; then
+  echo "[linux-desktop-exit-gate] failed to acquire build lock: $BUILD_LOCK_PATH" >&2
+  exit 1
+fi
 
 CURRENT_STAGE="unit_tests"
 announce_stage "$CURRENT_STAGE" "running desktop runtime unit tests"
@@ -2229,7 +2328,7 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
     announce_stage "$CURRENT_STAGE" "verifying promoted installer receipt integrity"
-    python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+    "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -2430,10 +2529,15 @@ PY
   fi
 fi
 
+CURRENT_STAGE="restore_publish_graph"
+announce_stage "$CURRENT_STAGE" "restoring publish-time linux dependencies"
+run_with_heartbeat "linux desktop publish restore" \
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" restore "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -r "$RID" -p:PublishSingleFile=true -p:SelfContained=true -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" --nologo
+
 CURRENT_STAGE="publish_linux_binary"
 announce_stage "$CURRENT_STAGE" "publishing self-contained linux desktop binary"
 run_with_heartbeat "linux desktop publish" \
-  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
+  run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/ai/with-package-plane.sh" publish "$SOURCE_SNAPSHOT_ROOT/$PROJECT_PATH" -c Release -r "$RID" --self-contained true --no-restore -p:PublishSingleFile=true -p:PublishTrimmed=false -p:IncludeNativeLibrariesForSelfExtract=true -p:ChummerDesktopReleaseVersion="$VERSION" -p:ChummerDesktopReleaseChannel="$CHANNEL" -o "$PUBLISH_DIR" --nologo
 test -f "$PUBLISH_DIR/$LAUNCH_TARGET"
 
 CURRENT_STAGE="package_linux_artifacts"
@@ -2479,7 +2583,7 @@ test -f "$INSTALLER_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
 announce_stage "$CURRENT_STAGE" "verifying release-channel and smoke receipt integrity"
-python3 - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+"$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt

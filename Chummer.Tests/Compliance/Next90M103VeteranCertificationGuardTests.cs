@@ -266,7 +266,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "source_file_markers");
         StringAssert.Contains(scriptText, "sourceFileChecks");
         StringAssert.Contains(scriptText, "VeteranCertificationReviewSteps");
-        StringAssert.Contains(scriptText, "Click FileMenuButton and capture MenuCommandsHost");
+        StringAssert.Contains(scriptText, "Click FileMenuButton and capture the visible command list");
         StringAssert.Contains(scriptText, "Capture initial promoted Avalonia shell after WaitForReady.");
         StringAssert.Contains(scriptText, "Press Ctrl+G and capture the Global Settings dialog.");
         StringAssert.Contains(scriptText, "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.");

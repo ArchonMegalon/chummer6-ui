@@ -113,8 +113,14 @@ bash scripts/ai/sync-ui-design-mirror.sh >/dev/null
 echo "[verify] checking UI design mirror hygiene guard..."
 bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh
 
+echo "[verify] checking flagship design mirror completeness guard..."
+bash scripts/ai/milestones/design-mirror-completeness-check.sh
+
 echo "[verify] checking ruleset-specific workbench adaptation guard..."
 bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh
+
+echo "[verify] checking Chummer5a layout hard gate..."
+bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh
 
 echo "[verify] checking delegate and command-route parity guard..."
 bash scripts/ai/milestones/delegate-command-route-parity-check.sh
@@ -127,6 +133,9 @@ bash scripts/ai/milestones/section-host-ruleset-parity-check.sh
 
 echo "[verify] checking standalone interactive control inventory guard..."
 bash scripts/ai/milestones/interactive-control-inventory-check.sh
+
+echo "[verify] checking startup workbench survival guard..."
+bash scripts/ai/milestones/startup-workbench-survival-check.sh
 
 echo "[verify] checking Chummer5a legacy UI element parity guard..."
 bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh
@@ -219,6 +228,12 @@ bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh
 
 echo "[verify] checking SR6 shared muscle-memory parity gate..."
 bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh
+
+echo "[verify] checking SR6 ruleset UI sophistication gate..."
+bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh
+
+echo "[verify] checking design-authorized parity softening gate..."
+bash scripts/ai/milestones/design-authorized-parity-softening-check.sh
 
 echo "[verify] checking shared legacy-equivalent chrome gate..."
 bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh

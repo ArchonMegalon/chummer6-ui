@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-11T08:43:31Z",
+  "generated_at": "2026-05-12T12:33:12Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -27,7 +27,10 @@
     "retry_attempted": false,
     "retry_reason": "",
     "log_excerpt": [
-      "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock",
+      "    1 Warning(s)",
+      "    0 Error(s)",
+      "",
+      "Time Elapsed 00:00:20.48",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },

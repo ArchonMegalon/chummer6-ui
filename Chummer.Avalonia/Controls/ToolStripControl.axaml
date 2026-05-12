@@ -17,14 +17,14 @@
       <Button x:Name="GmPrepButton" IsVisible="False" Classes="shell-action quiet" Content="GM" MinWidth="42" Margin="0,0,3,0" Click="GmPrepButton_OnClick" />
       <Button x:Name="RosterMovementButton" IsVisible="False" Classes="shell-action quiet" Content="Roster" MinWidth="58" Margin="0,0,3,0" Click="RosterMovementButton_OnClick" />
       <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Classes="shell-action quiet" Content="Rules" MinWidth="54" Margin="0,0,3,0" Click="RuleEnvironmentStudioButton_OnClick" />
-      <Button x:Name="LoadDemoRunnerButton" IsVisible="False" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
+      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Demo" MinWidth="48" Margin="0,0,3,0" Click="LoadDemoRunnerButton_OnClick" />
       <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="XML" MinWidth="42" Margin="0,0,3,0" Click="ImportRawButton_OnClick" />
-      <Button x:Name="SettingsButton" IsVisible="False" Classes="shell-action quiet" Content="Options" MinWidth="62" Click="SettingsButton_OnClick" />
-      <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Content="Campaign" Click="CampaignWorkspaceButton_OnClick" />
-      <Button x:Name="UpdateStatusButton" IsVisible="False" Content="Update" Click="UpdateStatusButton_OnClick" />
-      <Button x:Name="InstallLinkingButton" IsVisible="False" Content="Link" Click="InstallLinkingButton_OnClick" />
-      <Button x:Name="SupportButton" IsVisible="False" Content="Support" Click="SupportButton_OnClick" />
-      <Button x:Name="ReportIssueButton" IsVisible="False" Content="Bug" Click="ReportIssueButton_OnClick" />
+      <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Options" MinWidth="62" Click="SettingsButton_OnClick" />
+      <Button x:Name="CampaignWorkspaceButton" Content="Campaign" Click="CampaignWorkspaceButton_OnClick" />
+      <Button x:Name="UpdateStatusButton" Content="Update" Click="UpdateStatusButton_OnClick" />
+      <Button x:Name="InstallLinkingButton" Content="Link" Click="InstallLinkingButton_OnClick" />
+      <Button x:Name="SupportButton" Content="Support" Click="SupportButton_OnClick" />
+      <Button x:Name="ReportIssueButton" Content="Bug" Click="ReportIssueButton_OnClick" />
     </WrapPanel>
 
     <Border x:Name="StatusTextBorder"

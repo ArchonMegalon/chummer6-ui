@@ -1,0 +1,71 @@
+{
+  "generatedAt": "2026-05-12T12:27:37.239788Z",
+  "contract_name": "chummer6-ui.startup_workbench_survival",
+  "status": "pass",
+  "summary": "Avalonia startup survives first paint and stays on the workbench by default.",
+  "reasons": [],
+  "evidence": {
+    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json",
+    "sourcePaths": {
+      "avaloniaGateTests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "desktopHomeStartupTests": "Chummer.Tests/Presentation/DesktopHomeWindowStartupTests.cs",
+      "app": "Chummer.Avalonia/App.axaml.cs",
+      "projector": "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs"
+    },
+    "testMarkers": {
+      "Fresh_launch_main_window_survives_first_paint_without_self_termination": true,
+      "Avalonia_startup_keeps_the_workbench_as_first_paint_but_still_invokes_restore_continuation_when_needed": true,
+      "Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state": true,
+      "ShouldShowOnStartup_keeps_first_launch_on_real_workbench_when_no_follow_through_is_needed": true,
+      "Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander": true
+    },
+    "sourceMarkers": {
+      "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);": true,
+      "ShowNavigatorPane: true": true,
+      "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);": false
+    },
+    "restoreCommand": [
+      "dotnet",
+      "restore",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--ignore-failed-sources",
+      "-p:NuGetAudit=false"
+    ],
+    "buildCommand": [
+      "dotnet",
+      "build",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "--nologo",
+      "-m:1",
+      "--verbosity",
+      "quiet",
+      "--ignore-failed-sources",
+      "-p:NuGetAudit=false"
+    ],
+    "testCommand": [
+      "dotnet",
+      "test",
+      "--project",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-build",
+      "--no-restore",
+      "--filter",
+      "Name~Fresh_launch_main_window_survives_first_paint_without_self_termination|Name~Avalonia_startup_keeps_the_workbench_as_first_paint_but_still_invokes_restore_continuation_when_needed|Name~Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state|Name~ShouldShowOnStartup_keeps_first_launch_on_real_workbench_when_no_follow_through_is_needed|Name~Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander",
+      "--verbosity",
+      "minimal"
+    ],
+    "restoreExitCode": 0,
+    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 403 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 55 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 77 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 4 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 1 ms).\n  11 of 21 projects are up-to-date for restore.",
+    "buildExitCode": 0,
+    "buildOutputTail": "    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:05.51",
+    "testExitCode": 0,
+    "testOutputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (3s 319ms)\nTest run summary: Passed!\n  total: 5\n  failed: 0\n  succeeded: 5\n  skipped: 0\n  duration: 3s 600ms",
+    "failureCount": 0,
+    "reasonCount": 0
+  }
+}

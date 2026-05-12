@@ -876,6 +876,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
         string priority = DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority") ?? context.State.Preferences.CharacterPriority;
         int karmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "characterKarmaNuyen", context.State.Preferences.KarmaNuyenRatio);
         bool houseRules = DesktopDialogFieldValueParser.ParseBool(dialog, "characterHouseRulesEnabled", context.State.Preferences.HouseRulesEnabled);
+        string notes = DesktopDialogFieldValueParser.GetValue(dialog, "characterNotes") ?? context.State.Preferences.CharacterNotes;
 
         context.Publish(context.State with
         {
@@ -886,7 +887,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
             {
                 CharacterPriority = priority,
                 KarmaNuyenRatio = karmaNuyenRatio,
-                HouseRulesEnabled = houseRules
+                HouseRulesEnabled = houseRules,
+                CharacterNotes = notes
             },
             Notice = DesktopLocalizationCatalog.GetRequiredString(
                 "desktop.dialog.character_settings.notice.updated",

@@ -8,12 +8,14 @@ fi
 
 declare -a dotnet_args=("$@")
 has_produce_reference_assembly_override=0
+has_restore_packages_path_override=0
 test_project_invocation_dir=""
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$script_dir/_env.sh"
 
 repo_root="$(cd "$script_dir/../.." && pwd)"
+cd "$repo_root"
 published_feed_sources="${CHUMMER_PUBLISHED_FEED_SOURCES:-}"
 contracts_version="${CHUMMER_CONTRACTS_PACKAGE_VERSION:-5.225.0.0}"
 campaign_contracts_version="${CHUMMER_CAMPAIGN_CONTRACTS_PACKAGE_VERSION:-0.1.0-preview}"
@@ -95,6 +97,7 @@ else
 fi
 
 restore_args+=(
+  -p:RestorePackagesPath="$NUGET_PACKAGES"
   -p:ChummerContractsPackageVersion="$contracts_version"
   -p:ChummerCampaignContractsPackageVersion="$campaign_contracts_version"
   -p:ChummerRunContractsPackageVersion="$run_contracts_version"
@@ -102,12 +105,19 @@ restore_args+=(
   -p:ChummerUiKitPackageVersion="$ui_kit_version"
 )
 
+if [[ -n "${NUGET_PACKAGES:-}" ]]; then
+  restore_args+=(-p:RestorePackagesPath="$NUGET_PACKAGES")
+fi
+
 prebuild_configuration="${CHUMMER_PACKAGE_PLANE_PREBUILD_CONFIGURATION:-Debug}"
 parse_configuration_override=0
 for arg in "$@"; do
   case "$arg" in
     -p:ProduceReferenceAssembly=*|/p:ProduceReferenceAssembly=*)
       has_produce_reference_assembly_override=1
+      ;;
+    -p:RestorePackagesPath=*|/p:RestorePackagesPath=*)
+      has_restore_packages_path_override=1
       ;;
   esac
 
@@ -129,6 +139,20 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+if [[ "$has_restore_packages_path_override" == "1" ]]; then
+  filtered_restore_args=()
+  for arg in "${restore_args[@]}"; do
+    case "$arg" in
+      -p:RestorePackagesPath=*|/p:RestorePackagesPath=*)
+        ;;
+      *)
+        filtered_restore_args+=("$arg")
+        ;;
+    esac
+  done
+  restore_args=("${filtered_restore_args[@]}")
+fi
 
 ensure_ref_assembly() {
   local project_path="$1"

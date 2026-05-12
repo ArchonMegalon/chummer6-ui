@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-09T10:42:34Z",
+  "generatedAt": "2026-05-12T09:50:14Z",
   "packageId": "next90-m112-ui-campaign-memory",
   "title": "Surface campaign memory and consequences on desktop",
   "task": "Make campaign consequences, stale state, and next-session return actions visible on the promoted desktop route.",
@@ -56,8 +56,8 @@
   },
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh",
-    "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"Next90M112CampaignMemoryGuardTests\" --no-restore",
-    "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+    "targetedTestCommand": "scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter \"Next90M112CampaignMemoryGuardTests\"",
+    "presentationTestCommand": "scripts/ai/test.sh Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\""
   },
   "proofFiles": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M112_UI_CAMPAIGN_MEMORY.generated.json",

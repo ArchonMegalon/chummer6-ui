@@ -70,6 +70,7 @@ public partial class MainWindow : Window
 
         _controls = MainWindowControlBinder.Bind(
             toolStrip: ToolStripControl,
+            workspaceStrip: WorkspaceStripControl,
             summaryHeader: SummaryHeaderControl,
             menuBar: ShellMenuBarControl,
             characterRoster: CharacterRosterControl,

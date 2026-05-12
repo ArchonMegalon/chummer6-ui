@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-08T19:14:10.208071Z",
+  "generatedAt": "2026-05-12T12:26:32.789133Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
-  "status": "fail",
-  "summary": "SR6 workflow-family parity evidence is incomplete for metatype-priorities-karma-entry.",
-  "reasons": [
-    "Verification receipts are missing or not passing: /docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract)"
-  ],
+  "status": "pass",
+  "summary": "SR6 workflow-family parity evidence is explicitly grounded for metatype-priorities-karma-entry.",
+  "reasons": [],
   "evidence": {
     "edition": "sr6",
     "familyId": "metatype-priorities-karma-entry",
@@ -29,12 +27,10 @@
         "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
       ]
     },
-    "verificationReceipts": [],
-    "verificationFailures": [
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json (fail; external_blocker=missing_api_surface_contract)"
+    "verificationReceipts": [
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/sr6/metatype-priorities-karma-entry.generated.json"
     ],
-    "verificationExternalBlockers": [
-      "missing_api_surface_contract"
-    ]
+    "verificationFailures": [],
+    "verificationExternalBlockers": []
   }
 }

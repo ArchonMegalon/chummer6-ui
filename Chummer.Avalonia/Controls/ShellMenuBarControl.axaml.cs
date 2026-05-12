@@ -99,7 +99,7 @@ public partial class ShellMenuBarControl : UserControl
         }
 
         string menuId = GetMenuId(menuItem);
-        if (string.IsNullOrWhiteSpace(menuId) || string.Equals(_openMenuId, menuId, StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(menuId))
         {
             return;
         }

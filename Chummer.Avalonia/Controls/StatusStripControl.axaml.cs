@@ -36,8 +36,9 @@ public partial class StatusStripControl : UserControl
         ServiceStateText.Text = serviceState;
         TimeStateText.Text = timeState;
         ComplianceStateText.Text = complianceState;
-        WorkbenchProgressBar.IsVisible = isBusy;
+        WorkbenchProgressBar.IsVisible = true;
         WorkbenchProgressBar.IsIndeterminate = isBusy;
+        WorkbenchProgressBar.Value = isBusy ? 0d : 100d;
         ToolTip.SetTip(
             this,
             AccessibilityPrimitiveBoundary.BuildStatusAnnouncement(
@@ -69,8 +70,9 @@ public partial class StatusStripControl : UserControl
             language,
             DateTimeOffset.UtcNow.ToString("u"));
         ComplianceStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.compliance_placeholder", language);
-        WorkbenchProgressBar.IsVisible = false;
+        WorkbenchProgressBar.IsVisible = true;
         WorkbenchProgressBar.IsIndeterminate = false;
+        WorkbenchProgressBar.Value = 100d;
     }
 }
 

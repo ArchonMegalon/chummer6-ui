@@ -22,15 +22,21 @@ public sealed class InteractiveControlInventoryComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "INTERACTIVE_CONTROL_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters");
+        StringAssert.Contains(scriptText, "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus");
         StringAssert.Contains(scriptText, "Standalone_toolstrip_buttons_raise_expected_events");
         StringAssert.Contains(scriptText, "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events");
         StringAssert.Contains(scriptText, "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events");
         StringAssert.Contains(scriptText, "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions");
         StringAssert.Contains(scriptText, "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available");
+        StringAssert.Contains(scriptText, "Keyboard_shortcuts_resolve_to_the_same_shell_commands");
+        StringAssert.Contains(scriptText, "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces");
+        StringAssert.Contains(scriptText, "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches");
         StringAssert.Contains(scriptText, "Runtime_backed_file_menu_new_character_opens_creation_dialog");
         StringAssert.Contains(scriptText, "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
         StringAssert.Contains(scriptText, "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
         StringAssert.Contains(scriptText, "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end");
+        StringAssert.Contains(scriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
         StringAssert.Contains(scriptText, "\"delegate_route_receipt\": repo_root / \".codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json\"");
         StringAssert.Contains(scriptText, "\"generated_dialog_receipt\": repo_root / \".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json\"");
         StringAssert.Contains(scriptText, "\"section_host_ruleset_receipt\": repo_root / \".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json\"");
@@ -38,6 +44,8 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(scriptText, "\"sourceArtifactReview\"");
         StringAssert.Contains(scriptText, "\"standaloneControlReview\"");
         StringAssert.Contains(scriptText, "\"mainWindowInteractionReview\"");
+        StringAssert.Contains(scriptText, "\"keyboardAndTooltipReview\"");
+        StringAssert.Contains(scriptText, "\"runtimeRouteInventoryReview\"");
         StringAssert.Contains(scriptText, "\"dependencyReceiptReview\"");
         StringAssert.Contains(scriptText, "\"verifyWiringReview\"");
         StringAssert.Contains(scriptText, "\"b14ConsumptionReview\"");
@@ -85,6 +93,8 @@ public sealed class InteractiveControlInventoryComplianceTests
         Assert.AreEqual("pass", root.GetProperty("sourceArtifactReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("standaloneControlReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("mainWindowInteractionReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("keyboardAndTooltipReview").GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("runtimeRouteInventoryReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("dependencyReceiptReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("verifyWiringReview").GetProperty("status").GetString());
         Assert.AreEqual("pass", root.GetProperty("b14ConsumptionReview").GetProperty("status").GetString());
@@ -92,14 +102,32 @@ public sealed class InteractiveControlInventoryComplianceTests
 
         string receiptText = root.GetRawText();
         StringAssert.Contains(receiptText, "\"Standalone_toolstrip_buttons_raise_expected_events\": true");
+        StringAssert.Contains(receiptText, "\"Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters\": true");
+        StringAssert.Contains(receiptText, "\"Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus\": true");
         StringAssert.Contains(receiptText, "\"Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions\": true");
+        StringAssert.Contains(receiptText, "\"Keyboard_shortcuts_resolve_to_the_same_shell_commands\": true");
+        StringAssert.Contains(receiptText, "\"Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces\": true");
+        StringAssert.Contains(receiptText, "\"Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches\": true");
         StringAssert.Contains(receiptText, "\"Runtime_backed_file_menu_new_character_opens_creation_dialog\": true");
         StringAssert.Contains(receiptText, "\"Runtime_backed_global_settings_visible_selects_and_toggles_remain_live\": true");
         StringAssert.Contains(receiptText, "\"Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end\": true");
+        StringAssert.Contains(receiptText, "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks\": true");
         StringAssert.Contains(receiptText, "\"Name~Standalone_toolstrip_buttons_raise_expected_events");
+        StringAssert.Contains(receiptText, "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters");
+        StringAssert.Contains(receiptText, "|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands");
+        StringAssert.Contains(receiptText, "|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces");
+        StringAssert.Contains(receiptText, "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches");
         StringAssert.Contains(receiptText, "\"Name~Runtime_backed_file_menu_new_character_opens_creation_dialog");
+        StringAssert.Contains(receiptText, "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
         StringAssert.Contains(receiptText, "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
         StringAssert.Contains(receiptText, "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
+        StringAssert.Contains(receiptText, "\"routeFamilies\": [");
+        StringAssert.Contains(receiptText, "\"rulesetLanes\": [");
+        StringAssert.Contains(receiptText, "\"section-attributes-editor\"");
+        StringAssert.Contains(receiptText, "\"dialog-priority-workflow-priority\"");
+        StringAssert.Contains(receiptText, "\"ruleset-sr4-codex-tree\"");
+        StringAssert.Contains(receiptText, "\"ruleset-sr5-codex-tree\"");
+        StringAssert.Contains(receiptText, "\"ruleset-sr6-codex-tree\"");
         StringAssert.Contains(receiptText, "\"exitCode\": 0");
         StringAssert.Contains(receiptText, "\"noMatches\": false");
     }

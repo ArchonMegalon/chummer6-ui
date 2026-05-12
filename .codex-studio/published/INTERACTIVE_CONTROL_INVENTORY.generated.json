@@ -1,13 +1,15 @@
 {
-  "generatedAt": "2026-05-08T14:52:16.836881Z",
+  "generatedAt": "2026-05-12T06:03:38.384372Z",
   "contract_name": "chummer6-ui.interactive_control_inventory",
   "status": "pass",
   "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
     "sourcePaths": {
       "avalonia_gate_tests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor_shell_tests": "Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+      "shortcut_tests": "Chummer.Tests/Presentation/DesktopShortcutCatalogTests.cs",
       "toolstrip_axaml": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
       "toolstrip_codebehind": "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
       "shell_menu_axaml": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
@@ -24,28 +26,48 @@
       "coach_sidecar_codebehind": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml.cs",
       "main_window_axaml": "Chummer.Avalonia/MainWindow.axaml",
       "main_window_codebehind": "Chummer.Avalonia/MainWindow.axaml.cs",
+      "main_window_event_handlers": "Chummer.Avalonia/MainWindow.EventHandlers.cs",
       "main_window_selection_handlers": "Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
+      "blazor_shell_markup": "Chummer.Blazor/Components/Layout/DesktopShell.razor",
+      "blazor_shell_commands": "Chummer.Blazor/Components/Layout/DesktopShell.Commands.cs",
+      "blazor_dialog_host": "Chummer.Blazor/Components/Shell/DialogHost.razor",
+      "desktop_shortcut_catalog": "Chummer.Presentation/Shell/DesktopShortcutCatalog.cs",
       "verify_script": "scripts/ai/verify.sh",
       "b14_script": "scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
       "delegate_route_receipt": ".codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json",
       "generated_dialog_receipt": ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-      "section_host_ruleset_receipt": ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      "section_host_ruleset_receipt": ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+      "runtime_route_inventory_receipt": ".codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json"
     },
     "standaloneControlTests": {
+      "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters": true,
+      "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus": true,
       "Standalone_toolstrip_buttons_raise_expected_events": true,
       "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events": true,
       "Standalone_workspace_strip_quick_start_button_raises_expected_event": true,
       "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff": true,
       "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events": true,
       "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions": true,
-      "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true
+      "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true,
+      "Keyboard_shortcuts_resolve_to_the_same_shell_commands": true,
+      "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces": true,
+      "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches": true
     },
     "mainWindowTests": {
-      "Runtime_backed_file_menu_new_character_opens_creation_dialog": true,
-      "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live": true,
+      "File_menu_new_character_creates_runtime_workspace": true,
+      "Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive": true,
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
-      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
+    },
+    "blazorKeyboardTests": {
+      "SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation": true
+    },
+    "shortcutCatalogTests": {
+      "TryResolveCommandId_maps_known_command_modifier_shortcuts": true,
+      "TryResolveCommandId_maps_f5_without_command_modifier": true,
+      "TryResolveCommandId_rejects_unknown_or_alt_shortcuts": true
     },
     "sourceMarkers": {
       "toolstrip_axaml": {
@@ -58,7 +80,8 @@
         "SaveRequested?.Invoke(this, EventArgs.Empty);": true,
         "ImportFileRequested?.Invoke(this, EventArgs.Empty);": true,
         "DesktopHomeRequested?.Invoke(this, EventArgs.Empty);": true,
-        "SettingsRequested?.Invoke(this, EventArgs.Empty);": true
+        "SettingsRequested?.Invoke(this, EventArgs.Empty);": true,
+        "ToolTip.SetTip(": true
       },
       "shell_menu_axaml": {
         "FileMenuButton": true,
@@ -76,7 +99,8 @@
       },
       "workspace_strip_codebehind": {
         "QuickStartContainer.IsVisible = isVisible;": true,
-        "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);": true
+        "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);": true,
+        "ToolTip.SetTip(": true
       },
       "summary_header_axaml": {
         "x:Name=\"NavigationTabsPanel\"": true,
@@ -84,9 +108,10 @@
         "x:Name=\"RestoreContinuityStatusBorder\"": true
       },
       "summary_header_codebehind": {
-        "bool showNavigation = NavigationTabsPanel.IsVisible;": true,
+        "bool showNavigation = state.HasVisibleContent || NavigationTabsPanel.IsVisible;": true,
         "bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;": true,
-        "Height = IsVisible ? double.NaN : 0d;": true
+        "Height = IsVisible ? double.NaN : 0d;": true,
+        "ToolTip.SetTip(": true
       },
       "navigator_axaml": {
         "NavigatorTree": true,
@@ -107,13 +132,21 @@
       "command_dialog_codebehind": {
         "CommandSelected?.Invoke(this, command.Id);": true,
         "DialogActionSelected?.Invoke(this, actionId);": true,
-        "DialogFieldValueChanged?.Invoke(": true
+        "DialogFieldValueChanged?.Invoke(": true,
+        "ToolTip.SetTip(": true,
+        "ApplyAccessibility(": true
       },
       "coach_sidecar_axaml": {
         "CopyCoachLaunchButton": true
       },
       "coach_sidecar_codebehind": {
         "CopyLaunchRequested?.Invoke(this, EventArgs.Empty);": true
+      },
+      "avalonia_gate_tests": {
+        "CaptureControlInventory(": true,
+        "FlattenInventory(": true,
+        "AssertInventoryContains(": true,
+        "RuntimeControlInventoryNode": true
       },
       "main_window_axaml": {
         "ShellMenuBarControl": true,
@@ -122,7 +155,9 @@
         "NavigatorPaneControl": true,
         "SectionHostControl": true,
         "CommandDialogPaneControl": true,
-        "CoachSidecarControl": true
+        "CoachSidecarControl": true,
+        "MenuBarRegion": true,
+        "KeyDown=\"Window_OnKeyDown\"": true
       },
       "main_window_codebehind": {
         "onSectionQuickActionRequested: SectionHost_OnQuickActionRequested": true,
@@ -138,6 +173,26 @@
         "CommandDialogPane_OnDialogActionSelected": true,
         "CommandDialogPane_OnDialogFieldValueChanged": true,
         "MenuBar_OnMenuCommandSelected": true
+      },
+      "main_window_event_handlers": {
+        "Window_OnKeyDown": true,
+        "DesktopShortcutCatalog.TryResolveCommandId": true
+      },
+      "blazor_shell_markup": {
+        "@onkeydown=\"OnShellKeyDown\"": true
+      },
+      "blazor_shell_commands": {
+        "OnShellKeyDown": true,
+        "DesktopShortcutCatalog.TryResolveCommandId": true
+      },
+      "desktop_shortcut_catalog": {
+        "TryResolveCommandId(": true,
+        "\"save_character\"": true,
+        "\"global_settings\"": true
+      },
+      "blazor_dialog_host": {
+        "title=\"@field.ToolTip\"": true,
+        "title=\"@action.ToolTip\"": true
       }
     },
     "dependencyReceipts": {
@@ -157,7 +212,112 @@
         "contractName": "chummer6-ui.section_host_ruleset_parity"
       }
     },
+    "runtimeRouteInventory": {
+      "path": ".codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
+      "status": "pass",
+      "contractName": "chummer6-ui.interactive_runtime_route_inventory",
+      "routeFamilies": [
+        "dialog",
+        "popup",
+        "ruleset",
+        "section",
+        "shell"
+      ],
+      "rulesetLanes": [
+        "sr4",
+        "sr5",
+        "sr6"
+      ],
+      "routeIds": [
+        "dialog-global-settings",
+        "dialog-new-character",
+        "dialog-priority-workflow-priority",
+        "dialog-priority-workflow-sum-to-ten",
+        "popup-file-menu",
+        "popup-tools-menu",
+        "ruleset-sr4-codex-tree",
+        "ruleset-sr5-codex-tree",
+        "ruleset-sr6-codex-tree",
+        "section-active-surface",
+        "section-attributes-editor",
+        "shell-after-close-window",
+        "shell-loaded-runner",
+        "shell-startup"
+      ]
+    },
+    "buildExitCode": 0,
+    "testResults": {
+      "fullInteractiveControlInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters|Name~Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus|Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 329ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 7s 606ms"
+      },
+      "mainWindowInteractionInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+5/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (6s 283ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 6s 627ms"
+      },
+      "blazorKeyboardInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 273ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 638ms"
+      },
+      "desktopShortcutInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~TryResolveCommandId_maps_known_command_modifier_shortcuts|Name~TryResolveCommandId_maps_f5_without_command_modifier|Name~TryResolveCommandId_rejects_unknown_or_alt_shortcuts",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (616ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 906ms"
+      }
+    },
     "missingFiles": [],
+    "runtimeRouteInventoryTest": true,
     "wiredIntoStandardVerify": true,
     "verifyMarker": "checking standalone interactive control inventory guard",
     "verifyInvocation": "bash scripts/ai/milestones/interactive-control-inventory-check.sh",
@@ -175,30 +335,73 @@
     "b14UsesReceipt": true,
     "testCommands": {
       "fullInteractiveControlInventory": [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
-        "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
-        "-v",
+        "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters|Name~Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus|Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
+        "--verbosity",
         "minimal"
       ],
       "mainWindowInteractionInventory": [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
-        "Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-        "-v",
+        "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+        "--verbosity",
+        "minimal"
+      ],
+      "blazorKeyboardInventory": [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation",
+        "--verbosity",
+        "minimal"
+      ],
+      "desktopShortcutInventory": [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~TryResolveCommandId_maps_known_command_modifier_shortcuts|Name~TryResolveCommandId_maps_f5_without_command_modifier|Name~TryResolveCommandId_rejects_unknown_or_alt_shortcuts",
+        "--verbosity",
         "minimal"
       ]
     },
     "testProject": "Chummer.Tests/Chummer.Tests.csproj",
+    "shortcutDiscoveryCommand": [
+      "dotnet",
+      "test",
+      "--project",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--list-tests"
+    ],
+    "restoreCommand": [
+      "dotnet",
+      "restore",
+      "Chummer.Tests/Chummer.Tests.csproj",
+      "--ignore-failed-sources",
+      "-p:NuGetAudit=false"
+    ],
     "buildCommand": [
-      "bash",
-      "scripts/ai/with-package-plane.sh",
+      "dotnet",
       "build",
       "Chummer.Tests/Chummer.Tests.csproj",
       "--nologo",
@@ -207,40 +410,9 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildExitCode": 0,
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:08.71",
-    "testResults": {
-      "fullInteractiveControlInventory": {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 1 s - Chummer.Tests.dll (net10.0)"
-      },
-      "mainWindowInteractionInventory": {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 4 s - Chummer.Tests.dll (net10.0)"
-      }
-    },
+    "restoreExitCode": 0,
+    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj (in 275 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj (in 19 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Core/Chummer.Core.csproj (in 6 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 6 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj (in 12 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj (in 6 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Chummer.Avalonia.csproj (in 40 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Api/Chummer.Api.csproj (in 9 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 0.9 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj (in 61 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj (in 10 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj (in 29 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 5 ms).",
+    "buildOutputTail": "/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Sr5WorkspaceCodec.cs(107,20): warning CS8602: Dereference of a possibly null reference. [/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj]\nBuild succeeded.\n/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Sr5WorkspaceCodec.cs(107,20): warning CS8602: Dereference of a possibly null reference. [/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj]\n    1 Warning(s)\n    0 Error(s)\nTime Elapsed 00:01:00.55",
     "fullInteractiveControlInventory": "pass",
     "mainWindowInteractionInventory": "pass",
     "failureCount": 0,
@@ -257,13 +429,18 @@
     "summary": "Standalone interactive control surfaces and tests are pinned.",
     "reasons": [],
     "tests": {
+      "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters": true,
+      "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus": true,
       "Standalone_toolstrip_buttons_raise_expected_events": true,
       "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events": true,
       "Standalone_workspace_strip_quick_start_button_raises_expected_event": true,
       "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff": true,
       "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events": true,
       "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions": true,
-      "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true
+      "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available": true,
+      "Keyboard_shortcuts_resolve_to_the_same_shell_commands": true,
+      "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces": true,
+      "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches": true
     }
   },
   "mainWindowInteractionReview": {
@@ -271,11 +448,63 @@
     "summary": "Main-window interaction routes and tests are pinned.",
     "reasons": [],
     "tests": {
-      "Runtime_backed_file_menu_new_character_opens_creation_dialog": true,
-      "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live": true,
+      "File_menu_new_character_creates_runtime_workspace": true,
+      "Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive": true,
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
-      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
+    }
+  },
+  "keyboardAndTooltipReview": {
+    "status": "pass",
+    "summary": "Keyboard shortcut routes and tooltip/accessibility coverage are pinned across desktop heads.",
+    "reasons": [],
+    "blazorKeyboardTests": {
+      "SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation": true
+    },
+    "shortcutCatalogTests": {
+      "TryResolveCommandId_maps_known_command_modifier_shortcuts": true,
+      "TryResolveCommandId_maps_f5_without_command_modifier": true,
+      "TryResolveCommandId_rejects_unknown_or_alt_shortcuts": true
+    }
+  },
+  "runtimeRouteInventoryReview": {
+    "status": "pass",
+    "summary": "Recursive runtime route inventories cover shell, popup, dialog, section, and ruleset-lane branches.",
+    "reasons": [],
+    "runtimeRouteInventory": {
+      "path": ".codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
+      "status": "pass",
+      "contractName": "chummer6-ui.interactive_runtime_route_inventory",
+      "routeFamilies": [
+        "dialog",
+        "popup",
+        "ruleset",
+        "section",
+        "shell"
+      ],
+      "rulesetLanes": [
+        "sr4",
+        "sr5",
+        "sr6"
+      ],
+      "routeIds": [
+        "dialog-global-settings",
+        "dialog-new-character",
+        "dialog-priority-workflow-priority",
+        "dialog-priority-workflow-sum-to-ten",
+        "popup-file-menu",
+        "popup-tools-menu",
+        "ruleset-sr4-codex-tree",
+        "ruleset-sr5-codex-tree",
+        "ruleset-sr6-codex-tree",
+        "section-active-surface",
+        "section-attributes-editor",
+        "shell-after-close-window",
+        "shell-loaded-runner",
+        "shell-startup"
+      ]
     }
   },
   "dependencyReceiptReview": {
@@ -333,33 +562,71 @@
     "testResults": {
       "fullInteractiveControlInventory": {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
-          "Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
-          "-v",
+          "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters|Name~Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus|Name~Standalone_toolstrip_buttons_raise_expected_events|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 1 s - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 329ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 7s 606ms"
       },
       "mainWindowInteractionInventory": {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
-          "Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-          "-v",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 4 s - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+5/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (6s 283ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 6s 627ms"
+      },
+      "blazorKeyboardInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 273ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 638ms"
+      },
+      "desktopShortcutInventory": {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~TryResolveCommandId_maps_known_command_modifier_shortcuts|Name~TryResolveCommandId_maps_f5_without_command_modifier|Name~TryResolveCommandId_rejects_unknown_or_alt_shortcuts",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (616ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 906ms"
       }
     }
   }

@@ -45,7 +45,7 @@ public partial class WorkspaceStripControl : UserControl
         string fullLabel = DesktopLocalizationCatalog.GetRequiredString(
             "desktop.shell.tool.load_demo_runner",
             language);
-        LoadDemoRunnerQuickActionButton.Content = "Demo";
+        LoadDemoRunnerQuickActionButton.Content = fullLabel;
         ToolTip.SetTip(LoadDemoRunnerQuickActionButton, fullLabel);
     }
 

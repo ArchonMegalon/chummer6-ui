@@ -31,6 +31,8 @@ import fcntl
 import os
 import subprocess
 import sys
+import time
+from urllib.parse import urlparse
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -85,6 +87,12 @@ run_exit = 0
 external_blocker = ""
 api_probe: dict[str, object] = {}
 dotnet_attempt_count = 0
+api_server_proc: subprocess.Popen[str] | None = None
+api_server_log_path = run_root / f"{edition}-local-api.log"
+per_test_trx_paths: dict[str, str] = {}
+api_project_override = str(os.environ.get("CHUMMER_API_AUTOSTART_PROJECT") or "").strip()
+default_api_project = repo_root / "Chummer.Api" / "Chummer.Api.csproj"
+api_project_path = Path(api_project_override) if api_project_override else default_api_project
 
 
 def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
@@ -103,6 +111,108 @@ def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
         return False, 0, str(ex)
 
 
+def collect_api_probe(base_url: str) -> tuple[dict[str, object], bool]:
+    api_probe_results = []
+    for probe_path in api_probe_paths:
+        ok, status_code, error = probe_api_surface(base_url, probe_path)
+        api_probe_results.append(
+            {
+                "path": probe_path,
+                "ok": bool(ok),
+                "statusCode": status_code,
+                "error": error,
+            }
+        )
+    return (
+        {
+            "baseUrl": base_url,
+            "results": api_probe_results,
+        },
+        all(bool(item.get("ok")) for item in api_probe_results),
+    )
+
+
+def can_autostart_local_api(base_url: str) -> bool:
+    parsed = urlparse(base_url)
+    return parsed.scheme in {"http", "https"} and parsed.hostname in {"127.0.0.1", "localhost"}
+
+
+def terminate_local_api() -> None:
+    global api_server_proc
+    if api_server_proc is None:
+        return
+    if api_server_proc.poll() is None:
+        api_server_proc.terminate()
+        try:
+            api_server_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            api_server_proc.kill()
+            api_server_proc.wait(timeout=10)
+    api_server_proc = None
+
+
+def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:
+    global api_server_proc
+    initial_probe, initial_ready = collect_api_probe(base_url)
+    if initial_ready:
+        initial_probe["autostarted"] = False
+        return initial_probe, True
+
+    autostart_enabled = str(os.environ.get("CHUMMER_API_AUTOSTART") or "1").strip().lower() not in {"0", "false", "no"}
+    if not autostart_enabled or not can_autostart_local_api(base_url):
+        initial_probe["autostarted"] = False
+        return initial_probe, False
+    if not api_project_path.is_file():
+        initial_probe["autostarted"] = False
+        initial_probe["autostartProjectPath"] = str(api_project_path)
+        initial_probe["autostartFailure"] = "autostart_project_missing"
+        return initial_probe, False
+
+    api_server_log_path.parent.mkdir(parents=True, exist_ok=True)
+    api_log_handle = api_server_log_path.open("w", encoding="utf-8")
+    env = dict(os.environ)
+    env.setdefault("ASPNETCORE_URLS", base_url)
+    api_server_proc = subprocess.Popen(
+        [
+            "dotnet",
+            "run",
+            "--project",
+            str(api_project_path),
+            "--no-restore",
+            "--urls",
+            base_url,
+        ],
+        cwd=repo_root,
+        stdout=api_log_handle,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=env,
+    )
+
+    deadline = time.monotonic() + max(
+        5,
+        int(str(os.environ.get("CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS") or "45").strip() or "45"),
+    )
+    while time.monotonic() < deadline:
+        current_probe, current_ready = collect_api_probe(base_url)
+        if current_ready:
+            current_probe["autostarted"] = True
+            current_probe["autostartLogPath"] = str(api_server_log_path)
+            current_probe["autostartPid"] = api_server_proc.pid if api_server_proc else None
+            return current_probe, True
+        if api_server_proc.poll() is not None:
+            break
+        time.sleep(1)
+
+    current_probe, current_ready = collect_api_probe(base_url)
+    current_probe["autostarted"] = True
+    current_probe["autostartLogPath"] = str(api_server_log_path)
+    current_probe["autostartPid"] = api_server_proc.pid if api_server_proc else None
+    if api_server_proc is not None and api_server_proc.poll() is not None:
+        current_probe["autostartExitCode"] = api_server_proc.returncode
+    return current_probe, current_ready
+
+
 api_base_url = (
     str(
         os.environ.get("CHUMMER_API_BASE_URL")
@@ -112,75 +222,75 @@ api_base_url = (
     .strip()
 )
 api_probe_paths = ["/api/workspaces", "/api/shell/bootstrap"]
-api_probe_results = []
-for probe_path in api_probe_paths:
-    ok, status_code, error = probe_api_surface(api_base_url, probe_path)
-    api_probe_results.append(
-        {
-            "path": probe_path,
-            "ok": bool(ok),
-            "statusCode": status_code,
-            "error": error,
-        }
-    )
-api_probe = {
-    "baseUrl": api_base_url,
-    "results": api_probe_results,
-}
-api_surface_ready = all(bool(item.get("ok")) for item in api_probe_results)
+api_probe, api_surface_ready = ensure_local_api(api_base_url)
 
 if unique_tests:
-    filter_clause = "|".join(f"FullyQualifiedName~{name}" for name in unique_tests)
-    cmd = [
-        "bash",
-        "scripts/ai/test.sh",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--configuration",
-        "Release",
-        "--filter",
-        filter_clause,
-        "--results-directory",
-        str(run_root),
-        "--logger",
-        f"trx;LogFileName={trx_path.name}",
-        "-v",
-        "minimal",
-        "-m:1",
-    ]
     with lock_path.open("w", encoding="utf-8") as lock_handle:
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX)
-        proc = None
-        for attempt in range(1, max_test_attempts + 1):
-            dotnet_attempt_count = attempt
-            if trx_path.exists():
-                trx_path.unlink()
-            proc = subprocess.run(
-                cmd,
-                cwd=repo_root,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                check=False,
-            )
-            if proc.returncode == 0:
-                break
+        observed_attempt_count = 0
+        for index, test_name in enumerate(unique_tests, start=1):
+            safe_name = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in test_name)
+            per_test_trx = run_root / f"{index:02d}-{safe_name}.trx"
+            per_test_trx_paths[test_name] = str(per_test_trx)
+            proc = None
+            for attempt in range(1, max_test_attempts + 1):
+                observed_attempt_count = max(observed_attempt_count, attempt)
+                if per_test_trx.exists():
+                    per_test_trx.unlink()
+                proc = subprocess.run(
+                    [
+                        "dotnet",
+                        "test",
+                        "--project",
+                        "Chummer.Tests/Chummer.Tests.csproj",
+                        "--configuration",
+                        "Release",
+                        "--no-restore",
+                        "--filter",
+                        f"FullyQualifiedName~{test_name}",
+                        "--results-directory",
+                        str(run_root),
+                        "--report-trx",
+                        "--report-trx-filename",
+                        per_test_trx.name,
+                        "--output",
+                        "Normal",
+                    ],
+                    cwd=repo_root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    check=False,
+                )
+                if proc.returncode == 0:
+                    break
+
+            if proc is None:
+                raise SystemExit(f"workflow-family dotnet test process did not start for {test_name}")
+
+            output_lines = (proc.stdout or "").strip().splitlines()
+            if output_lines:
+                run_error = output_lines[-1]
+
+            if proc.returncode != 0 and run_exit == 0:
+                run_exit = int(proc.returncode)
+        dotnet_attempt_count = observed_attempt_count
         fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
-    if proc is None:
-        raise SystemExit("workflow-family dotnet test process did not start")
-    run_exit = int(proc.returncode)
-    if run_exit != 0:
-        output = (proc.stdout or "").strip().splitlines()
-        run_error = output[-1] if output else "dotnet test failed"
+    if run_exit != 0 and not run_error:
+        run_error = "dotnet test failed"
 
 ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
 results_by_name: dict[str, list[str]] = {}
-if trx_path.is_file():
-    root = ET.fromstring(trx_path.read_text(encoding="utf-8"))
+for test_name, trx_candidate in per_test_trx_paths.items():
+    trx_file = Path(trx_candidate)
+    if not trx_file.is_file():
+        continue
+    root = ET.fromstring(trx_file.read_text(encoding="utf-8"))
     for node in root.findall(".//t:UnitTestResult", ns):
-        test_name = (node.attrib.get("testName") or "").strip()
+        observed_test_name = (node.attrib.get("testName") or "").strip()
         outcome = (node.attrib.get("outcome") or "").strip()
-        if test_name:
-            results_by_name.setdefault(test_name, []).append(outcome)
+        if observed_test_name:
+            results_by_name.setdefault(observed_test_name, []).append(outcome)
 
 if not api_surface_ready and not results_by_name:
     external_blocker = "missing_api_surface_contract"
@@ -306,6 +416,7 @@ for family in families:
                 "project": "Chummer.Tests/Chummer.Tests.csproj",
                 "configuration": "Release",
                 "trxPath": str(trx_path),
+                "perTestTrxPaths": per_test_trx_paths,
                 "exitCode": run_exit,
                 "attemptCount": dotnet_attempt_count,
                 "maxAttempts": max_test_attempts,
@@ -334,7 +445,10 @@ for family in families:
         any_fail = True
 
 if any_fail:
+    terminate_local_api()
     raise SystemExit(43)
+
+terminate_local_api()
 PY
 
 echo "[materialize-${edition}-workflow-family-execution-receipts] PASS"

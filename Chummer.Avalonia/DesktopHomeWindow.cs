@@ -342,9 +342,19 @@ internal sealed class DesktopHomeWindow : Window
             return true;
         }
 
-        return DesktopInstallLinkingRuntime.IsClaimed(installState)
-            && workspaces.Count > 0
-            && (campaignServerPlane is null || IsServerContinuityOlderThanLocalWorkspace(workspaces, campaignServerPlane));
+        if (!DesktopInstallLinkingRuntime.IsClaimed(installState))
+        {
+            return false;
+        }
+
+        if (workspaces.Count > 0)
+        {
+            return campaignServerPlane is null || IsServerContinuityOlderThanLocalWorkspace(workspaces, campaignServerPlane);
+        }
+
+        // A claimed install with server continuity but no restored local workspace should
+        // land in the native restore continuation flow instead of an empty workbench shell.
+        return campaignServerPlane is not null || !string.IsNullOrWhiteSpace(campaignProjection.LeadWorkspaceId);
     }
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
@@ -368,7 +378,7 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<WorkspaceListItem> workspaces,
         AccountCampaignSummary? campaignSummary)
     {
-        string? rulesetId = workspaces.Count == 0 ? null : workspaces[0].RulesetId;
+        string? rulesetId = HasWorkspaces(workspaces) ? workspaces[0].RulesetId : null;
         string? effectiveRulesetId = rulesetId;
         ActiveRuntimeStatusProjection? activeRuntime = null;
         RuntimeInspectorProjection? runtimeInspector = null;
@@ -402,7 +412,7 @@ internal sealed class DesktopHomeWindow : Window
             buildPathCandidates = [];
         }
 
-        if (workspaces.Count == 0)
+        if (!HasWorkspaces(workspaces))
         {
             return DesktopHomeBuildExplainProjector.Create(
                 workspaces,
@@ -546,7 +556,7 @@ internal sealed class DesktopHomeWindow : Window
         IReadOnlyList<WorkspaceListItem> workspaces,
         DesktopHomeCampaignServerPlane? campaignServerPlane)
     {
-        if (campaignServerPlane is null || workspaces.Count == 0)
+        if (campaignServerPlane is null || !HasWorkspaces(workspaces))
         {
             return false;
         }
@@ -592,7 +602,7 @@ internal sealed class DesktopHomeWindow : Window
             return [];
         }
 
-        if (workspaces.Count == 0)
+        if (!HasWorkspaces(workspaces))
         {
             return selectedSuggestions
                 .Select(static suggestion => new DesktopBuildPathCandidate(suggestion, Preview: null))

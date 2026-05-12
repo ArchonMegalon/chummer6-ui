@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
+    <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Contracts\Chummer.Contracts.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr4\Chummer.Rulesets.Sr4.csproj" />
+    <ProjectReference Include="..\..\chummer-core-engine\Chummer.Rulesets.Sr6\Chummer.Rulesets.Sr6.csproj" />
+  </ItemGroup>
+</Project>

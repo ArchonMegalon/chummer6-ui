@@ -1,0 +1,18 @@
+contractName: chummer6-ui.flagship_release_acceptance
+releaseBlocker: true
+mustPass:
+  - chummer5a_layout_hard_gate
+  - generated_dialog_element_parity
+  - section_host_ruleset_parity
+  - interactive_control_inventory
+  - interactive_runtime_route_inventory
+  - startup_workbench_survival
+  - design_authorized_parity_softening
+  - sr6_ruleset_ui_sophistication
+  - end_to_end_flagship_user_route
+acceptance:
+  - first_minute_feels_familiar_to_a_veteran
+  - first_editable_surfaces_use_real_editor_controls
+  - runtime_popups_and_secondary_routes_are_proven
+  - startup_and_restore_paths_are_stable
+  - public_release_matches_latest_compliant_sources
