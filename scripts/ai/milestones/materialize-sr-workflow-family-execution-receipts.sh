@@ -361,14 +361,6 @@ for family in families:
                 "releaseGateTests": [str(value).strip() for value in (oracle_entry.get("releaseGateTests") or []) if str(value).strip()],
             }
 
-    if run_exit != 0:
-        reasons.append(f"dotnet test execution failed (exit {run_exit}): {run_error or 'see TRX/log output'}")
-    if external_blocker:
-        reasons.append(
-            "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
-            "(external blocker: missing_api_surface_contract)."
-        )
-
     missing_tests: list[str] = []
     failed_tests: dict[str, list[str]] = {}
     passed_tests: list[str] = []
@@ -392,6 +384,13 @@ for family in families:
         reasons.append(
             "Audit tests did not pass in executed TRX results: "
             + ", ".join(f"{name}={','.join(values)}" for name, values in sorted(failed_tests.items()))
+        )
+    if run_exit != 0 and (missing_tests or failed_tests):
+        reasons.append(f"dotnet test execution failed (exit {run_exit}): {run_error or 'see TRX/log output'}")
+    if external_blocker:
+        reasons.append(
+            "Dual-head workflow execution requires a chummer-api host exposing /api/workspaces and /api/shell/bootstrap "
+            "(external blocker: missing_api_surface_contract)."
         )
 
     payload = {
