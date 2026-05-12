@@ -4441,7 +4441,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildUtilitySectionsField("uiEntrySections", "Entry", "Details", "Notes"),
             new DesktopDialogField("uiEntryContextTree", "Navigation", navigationTree, navigationTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiEntryCommandList", "Command Posture", commandList, commandList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Name", currentValue, currentValue),
+            new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Title", currentValue, currentValue),
             new DesktopDialogField("uiEntryDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiEntryNotes", "Notes", "Entry creation and editing stay compact and preserve list context.", "Entry creation and editing stay compact and preserve list context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];

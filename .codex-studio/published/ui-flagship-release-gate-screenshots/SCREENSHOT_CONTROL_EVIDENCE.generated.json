@@ -33982,7 +33982,7 @@
       "DialogTitle": "Add Entry",
       "DialogMessage": "Add a new entry while keeping the compact list/detail editor posture.",
       "DialogFieldLabels": [
-        "Entry Name",
+        "Entry Title",
         "Command Posture",
         "Navigation",
         "Details",
@@ -34630,7 +34630,7 @@
         {
           "Name": "DialogFieldLabel_uiCreateEntryName",
           "ControlType": "TextBlock",
-          "Text": "Entry Name",
+          "Text": "Entry Title",
           "X": 1178,
           "Y": 2386,
           "Width": 16,
@@ -37762,7 +37762,7 @@
         "[Current List]\n\u251C\u2500 Previous Entry\n\u2514\u2500 New entry",
         "Command Posture",
         "Add entry and keep list focus\nKeep the surrounding list visible\nReturn to the same utility family",
-        "Entry Name",
+        "Entry Title",
         "Details",
         "Operation",
         "Create entry",

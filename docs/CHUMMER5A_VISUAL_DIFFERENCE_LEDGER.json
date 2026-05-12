@@ -418,7 +418,7 @@
       "parityIntent": "Diary and progression-entry work stays compact, list-oriented, and tied to the active runner.",
       "evidenceAnchors": [
         "AvaloniaFlagshipUiGateTests.cs captures 11-diary-dialog-light.png after clicking SectionQuickAction_create_entry in the progress section.",
-        "DialogTitleText must equal Add Entry and the required field label is Entry Name before the screenshot is accepted.",
+        "DialogTitleText must equal Add Entry and the required field label is Entry Title before the screenshot is accepted.",
         "DesktopDialogFactory.BuildEntryEditorFields creates uiEntrySections, uiCreateEntryName, uiEntryDetails, and uiEntryNotes.",
         "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm() requires SectionPreviewBox to contain diary and karma markers."
       ],
@@ -434,7 +434,7 @@
           "uiElement": "DesktopDialogFactory.uiEntrySections/uiCreateEntryName",
           "category": "field_shape",
           "legacyPosture": "The old flow used a standalone form with its own control arrangement for entry naming and details.",
-          "currentPosture": "The current dialog reduces that to an explicit Entry/Details/Notes section model plus a first-class Entry Name field.",
+          "currentPosture": "The current dialog reduces that to an explicit Entry/Details/Notes section model plus a first-class Entry Title field.",
           "whyItDiffers": "The dialog field contract is reused across the desktop shell, so the diary surface inherits that structure."
         },
         {
