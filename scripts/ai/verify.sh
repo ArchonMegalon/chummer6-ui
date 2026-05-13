@@ -45,7 +45,7 @@ bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 echo "[verify] checking desktop runtime resilience regression guard..."
 desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then
@@ -133,6 +133,9 @@ bash scripts/ai/milestones/section-host-ruleset-parity-check.sh
 
 echo "[verify] checking standalone interactive control inventory guard..."
 bash scripts/ai/milestones/interactive-control-inventory-check.sh
+
+echo "[verify] checking recursive UI event exit gate..."
+bash scripts/ai/milestones/recursive-ui-event-exit-gate.sh
 
 echo "[verify] checking startup workbench survival guard..."
 bash scripts/ai/milestones/startup-workbench-survival-check.sh
@@ -1041,6 +1044,9 @@ bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh
 
 echo "[verify] checking next-90 M121 desktop GM Runboard route guard..."
 bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh
+
+echo "[verify] checking next-90 M122 desktop campaign closeout guard..."
+bash scripts/ai/milestones/next90-m122-ui-desktop-campaign-closeout-check.sh
 
 echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
 bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh

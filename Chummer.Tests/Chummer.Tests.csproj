@@ -73,6 +73,7 @@
 	    <Compile Include="Compliance\InteractiveControlInventoryComplianceTests.cs" />
 	    <Compile Include="Compliance\LegacyUiElementParityComplianceTests.cs" />
 	    <Compile Include="Compliance\MigrationComplianceTests.cs" />
+    <Compile Include="Compliance\RecursiveUiEventExitGateComplianceTests.cs" />
     <Compile Include="Compliance\Next90M103VeteranCertificationGuardTests.cs" />
     <Compile Include="Compliance\Next90M104ExplainReceiptsGuardTests.cs" />
     <Compile Include="Compliance\Next90M141DirectImportRouteProofGuardTests.cs" />
@@ -86,6 +87,7 @@
     <Compile Include="Compliance\Next90M118OrganizerOperationsGuardTests.cs" />
     <Compile Include="Compliance\Next90M119FirstSessionFlowGuardTests.cs" />
     <Compile Include="Compliance\Next90M121GmRunboardRouteGuardTests.cs" />
+    <Compile Include="Compliance\Next90M122DesktopCampaignCloseoutGuardTests.cs" />
     <Compile Include="Compliance\Next90M109BuildExplainArtifactsGuardTests.cs" />
     <Compile Include="Compliance\Next90M112CampaignMemoryGuardTests.cs" />
     <Compile Include="Compliance\Next90M113GmPrepRosterSurfaceGuardTests.cs" />
