@@ -36,6 +36,7 @@ sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTO
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+recursive_ui_event_exit_gate_receipt_path="$repo_root/.codex-studio/published/RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"
 startup_workbench_survival_receipt_path="$repo_root/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
 design_mirror_completeness_receipt_path="$repo_root/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
 design_authorized_parity_softening_receipt_path="$repo_root/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json"
@@ -760,6 +761,7 @@ ui_element_coverage_gap_keys = list(ui_element_parity_audit_receipt.get("coverag
 dense_builder_route_local_evidence = [
     "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
     os.path.join(published_root, "SECTION_HOST_RULESET_PARITY.generated.json"),
+    os.path.join(published_root, "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"),
     os.path.join(published_root, "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
     os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
     os.path.join(published_root, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"),
@@ -769,6 +771,7 @@ dense_builder_route_local_evidence = [
 ]
 required_dense_builder_route_local_evidence_suffixes = [
     "SECTION_HOST_RULESET_PARITY.generated.json",
+    "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json",
     "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
     "UI_FLAGSHIP_RELEASE_GATE.generated.json",
