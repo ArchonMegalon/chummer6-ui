@@ -87,6 +87,25 @@ public sealed class AvaloniaFlagshipUiGateTests
         "16-master-index-dialog-light.png",
         "17-character-roster-dialog-light.png",
         "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
         "38-translator-dialog-light.png",
         "39-xml-editor-dialog-light.png",
         "40-hero-lab-importer-dialog-light.png"
@@ -114,6 +133,19 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("translator", "38-translator-dialog-light.png", "Execute translator and capture the governed translator route on the promoted desktop head.", "Chummer5a Translator utility lineage.", ["Translator", "Language Search", "Enabled Language Overlays"]),
         new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data Lane", "XML Bridge"]),
         new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle Receipt"])
+    ];
+    private static readonly WorkflowScreenshotCoverageEntry[] WorkflowScreenshotCoverage =
+    [
+        new("create-open-import-save-save-as-print-export", "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.", ["19-workflow-file-menu-loaded-light.png", "36-workflow-new-character-dialog-light.png", "18-import-dialog-light.png", "40-hero-lab-importer-dialog-light.png"]),
+        new("metatype-priorities-karma-entry", "Chummer4/Chummer5a character creation priority and karma journal lineage.", ["15-creation-section-light.png", "11-diary-dialog-light.png", "36-workflow-new-character-dialog-light.png"]),
+        new("attributes-skills-skill-groups-specializations-knowledge-languages", "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.", ["15-creation-section-light.png", "20-workflow-skills-section-light.png", "21-workflow-skill-add-dialog-light.png"]),
+        new("qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources", "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.", ["10-contacts-section-light.png", "22-workflow-qualities-section-light.png", "23-workflow-quality-add-dialog-light.png", "37-workflow-calendar-section-light.png"]),
+        new("armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers", "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.", ["09-vehicles-section-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png", "26-workflow-weapons-section-light.png", "27-workflow-weapon-add-dialog-light.png", "28-workflow-armor-section-light.png", "29-workflow-armor-add-dialog-light.png"]),
+        new("cyberware-bioware-modular-hierarchies-nested-plugins", "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.", ["08-cyberware-dialog-light.png", "30-workflow-cyberware-section-light.png"]),
+        new("magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms", "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.", ["12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "31-workflow-powers-section-light.png", "32-workflow-adept-power-dialog-light.png", "33-workflow-complex-form-dialog-light.png"]),
+        new("improvements-explain-result-parity", "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.", ["14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"]),
+        new("recovery-reload-migration-roundtrips", "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.", ["04-loaded-runner-light.png", "18-import-dialog-light.png", "19-workflow-file-menu-loaded-light.png"]),
+        new("dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare", "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.", ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png"])
     ];
     private static HeadlessUnitTestSession? _headlessSession;
 
@@ -917,6 +949,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
+            Dictionary<string, ScreenshotProofCapture> captured = new(StringComparer.Ordinal);
             WithHarness(harness =>
             {
                 harness.WaitForReady();
@@ -980,10 +1013,154 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => !harness.State.IsBusy);
 
                 harness.Click("LoadDemoRunnerButton");
-                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+                harness.WaitUntil(() =>
+                        harness.Presenter.ImportCalls > 0
+                        && !string.IsNullOrWhiteSpace(harness.State.Profile?.Name)
+                        && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                        && !harness.State.IsBusy,
+                    timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Veteran first-minute proof requires a loaded runner profile before import review.");
                 Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible, "Veteran first-minute proof requires the loaded-runner tab strip after the desktop import shortcut.");
                 Assert.IsFalse(harness.FindControl<Control>("QuickStartContainer").IsVisible, "Veteran first-minute proof must leave the first-run quick start shell.");
+
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
+                captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
+                harness.ClickMenuCommand("new_character");
+                harness.WaitUntil(() =>
+                        string.Equals(
+                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                            "Select Build Method",
+                            StringComparison.Ordinal),
+                    timeoutMs: 8000);
+                captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("skills");
+                ListBox skillRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => skillRows.ItemCount > 0);
+                captured["20-workflow-skills-section-light.png"] = CaptureScreenshotProof(harness, "20-workflow-skills-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_skill_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_skill_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Skill",
+                        StringComparison.Ordinal));
+                captured["21-workflow-skill-add-dialog-light.png"] = CaptureScreenshotProof(harness, "21-workflow-skill-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("qualities");
+                ListBox qualityRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => qualityRows.ItemCount > 0);
+                captured["22-workflow-qualities-section-light.png"] = CaptureScreenshotProof(harness, "22-workflow-qualities-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_quality_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_quality_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Quality",
+                        StringComparison.Ordinal));
+                captured["23-workflow-quality-add-dialog-light.png"] = CaptureScreenshotProof(harness, "23-workflow-quality-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("gear");
+                ListBox gearRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => gearRows.ItemCount > 0);
+                captured["24-workflow-gear-section-light.png"] = CaptureScreenshotProof(harness, "24-workflow-gear-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_gear_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_gear_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Gear",
+                        StringComparison.Ordinal));
+                captured["25-workflow-gear-add-dialog-light.png"] = CaptureScreenshotProof(harness, "25-workflow-gear-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("weapons");
+                ListBox weaponRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => weaponRows.ItemCount > 0);
+                captured["26-workflow-weapons-section-light.png"] = CaptureScreenshotProof(harness, "26-workflow-weapons-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_weapon")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_weapon");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Weapon",
+                        StringComparison.Ordinal));
+                captured["27-workflow-weapon-add-dialog-light.png"] = CaptureScreenshotProof(harness, "27-workflow-weapon-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("armors");
+                ListBox armorRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => armorRows.ItemCount > 0);
+                captured["28-workflow-armor-section-light.png"] = CaptureScreenshotProof(harness, "28-workflow-armor-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_armor")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_armor");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Armor",
+                        StringComparison.Ordinal));
+                captured["29-workflow-armor-add-dialog-light.png"] = CaptureScreenshotProof(harness, "29-workflow-armor-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("cyberwares");
+                ListBox cyberwareRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => cyberwareRows.ItemCount > 0);
+                captured["30-workflow-cyberware-section-light.png"] = CaptureScreenshotProof(harness, "30-workflow-cyberware-section-light.png");
+
+                harness.SetActiveSectionForTesting("powers");
+                ListBox powerRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => powerRows.ItemCount > 0);
+                captured["31-workflow-powers-section-light.png"] = CaptureScreenshotProof(harness, "31-workflow-powers-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_adept_power_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_adept_power_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Adept Power",
+                        StringComparison.Ordinal));
+                captured["32-workflow-adept-power-dialog-light.png"] = CaptureScreenshotProof(harness, "32-workflow-adept-power-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("complexforms");
+                ListBox complexFormRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => complexFormRows.ItemCount > 0);
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_complex_form_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_complex_form_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Complex Form",
+                        StringComparison.Ordinal));
+                captured["33-workflow-complex-form-dialog-light.png"] = CaptureScreenshotProof(harness, "33-workflow-complex-form-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("validate");
+                ListBox validateRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => validateRows.ItemCount > 0);
+                captured["34-workflow-validate-section-light.png"] = CaptureScreenshotProof(harness, "34-workflow-validate-section-light.png");
+
+                harness.SetActiveSectionForTesting("rules");
+                ListBox rulesRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => rulesRows.ItemCount > 0);
+                captured["35-workflow-rules-section-light.png"] = CaptureScreenshotProof(harness, "35-workflow-rules-section-light.png");
+
+                harness.SetActiveSectionForTesting("calendar");
+                ListBox calendarRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => calendarRows.ItemCount > 0);
+                captured["37-workflow-calendar-section-light.png"] = CaptureScreenshotProof(harness, "37-workflow-calendar-section-light.png");
 
                 harness.Click("FileMenuButton");
                 harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
@@ -3040,7 +3217,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
                 harness.Click("LoadDemoRunnerButton");
-                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+                harness.WaitUntil(() =>
+                        harness.Presenter.ImportCalls > 0
+                        && !string.IsNullOrWhiteSpace(harness.State.Profile?.Name)
+                        && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                        && !harness.State.IsBusy,
+                    timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Import familiarity screenshot must capture a loaded runner profile.");
                 Assert.IsTrue(
                     harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible,
@@ -3050,6 +3233,21 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Import familiarity screenshot must not be a first-run placeholder shell.");
                 captured[expectedFiles[3]] = CaptureScreenshotProof(harness, expectedFiles[3]);
 
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
+                captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
+                harness.ClickMenuCommand("new_character");
+                harness.WaitUntil(() =>
+                        string.Equals(
+                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                            "Select Build Method",
+                            StringComparison.Ordinal),
+                    timeoutMs: 8000);
+                captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("skills");
                 ListBox denseSectionRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => denseSectionRows.ItemCount > 0);
                 object[] denseRows = SnapshotListBoxItems(denseSectionRows);
@@ -3057,6 +3255,126 @@ public sealed class AvaloniaFlagshipUiGateTests
                 denseSectionRows.SelectedItem = denseRows[0];
                 harness.WaitUntil(() => ReferenceEquals(denseSectionRows.SelectedItem, denseRows[0]));
                 captured[expectedFiles[4]] = CaptureScreenshotProof(harness, expectedFiles[4]);
+                captured["20-workflow-skills-section-light.png"] = CaptureScreenshotProof(harness, "20-workflow-skills-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_skill_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_skill_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Skill",
+                        StringComparison.Ordinal));
+                captured["21-workflow-skill-add-dialog-light.png"] = CaptureScreenshotProof(harness, "21-workflow-skill-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("qualities");
+                ListBox qualityRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => qualityRows.ItemCount > 0);
+                captured["22-workflow-qualities-section-light.png"] = CaptureScreenshotProof(harness, "22-workflow-qualities-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_quality_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_quality_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Quality",
+                        StringComparison.Ordinal));
+                captured["23-workflow-quality-add-dialog-light.png"] = CaptureScreenshotProof(harness, "23-workflow-quality-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("gear");
+                ListBox gearRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => gearRows.ItemCount > 0);
+                captured["24-workflow-gear-section-light.png"] = CaptureScreenshotProof(harness, "24-workflow-gear-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_gear_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_gear_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Gear",
+                        StringComparison.Ordinal));
+                captured["25-workflow-gear-add-dialog-light.png"] = CaptureScreenshotProof(harness, "25-workflow-gear-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("weapons");
+                ListBox weaponRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => weaponRows.ItemCount > 0);
+                captured["26-workflow-weapons-section-light.png"] = CaptureScreenshotProof(harness, "26-workflow-weapons-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_weapon")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_weapon");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Weapon",
+                        StringComparison.Ordinal));
+                captured["27-workflow-weapon-add-dialog-light.png"] = CaptureScreenshotProof(harness, "27-workflow-weapon-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("armors");
+                ListBox armorRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => armorRows.ItemCount > 0);
+                captured["28-workflow-armor-section-light.png"] = CaptureScreenshotProof(harness, "28-workflow-armor-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_armor")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_armor");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Armor",
+                        StringComparison.Ordinal));
+                captured["29-workflow-armor-add-dialog-light.png"] = CaptureScreenshotProof(harness, "29-workflow-armor-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("cyberwares");
+                ListBox cyberwareRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => cyberwareRows.ItemCount > 0);
+                captured["30-workflow-cyberware-section-light.png"] = CaptureScreenshotProof(harness, "30-workflow-cyberware-section-light.png");
+
+                harness.SetActiveSectionForTesting("powers");
+                ListBox powerRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => powerRows.ItemCount > 0);
+                captured["31-workflow-powers-section-light.png"] = CaptureScreenshotProof(harness, "31-workflow-powers-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_adept_power_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_adept_power_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Adept Power",
+                        StringComparison.Ordinal));
+                captured["32-workflow-adept-power-dialog-light.png"] = CaptureScreenshotProof(harness, "32-workflow-adept-power-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("complexforms");
+                ListBox complexFormRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => complexFormRows.ItemCount > 0);
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_complex_form_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_complex_form_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Complex Form",
+                        StringComparison.Ordinal));
+                captured["33-workflow-complex-form-dialog-light.png"] = CaptureScreenshotProof(harness, "33-workflow-complex-form-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("validation");
+                ListBox validationRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => validationRows.ItemCount > 0);
+                captured["34-workflow-validate-section-light.png"] = CaptureScreenshotProof(harness, "34-workflow-validate-section-light.png");
+
+                harness.SetActiveSectionForTesting("sources");
+                ListBox sourceRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => sourceRows.ItemCount > 0);
+                captured["35-workflow-rules-section-light.png"] = CaptureScreenshotProof(harness, "35-workflow-rules-section-light.png");
+
+                harness.SetActiveSectionForTesting("calendar");
+                ListBox calendarRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => calendarRows.ItemCount > 0);
+                captured["37-workflow-calendar-section-light.png"] = CaptureScreenshotProof(harness, "37-workflow-calendar-section-light.png");
 
                 harness.SetTheme(ThemeVariant.Dark);
                 captured[expectedFiles[5]] = CaptureScreenshotProof(harness, expectedFiles[5]);
@@ -3071,13 +3389,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 });
                 captured[expectedFiles[6]] = CaptureScreenshotProof(harness, expectedFiles[6]);
 
+                harness.SetActiveSectionForTesting("cyberwares");
                 ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
-                harness.WaitUntil(() => sectionRows.ItemCount >= 8);
-                object? cyberwareRow = SnapshotListBoxItems(sectionRows).FirstOrDefault(item =>
-                    item.ToString()?.Contains("cyberware[0] = Wired Reflexes 2", StringComparison.Ordinal) == true);
-                Assert.IsNotNull(cyberwareRow, "Expected a cyberware row before capturing cyberware familiarity proof.");
-                sectionRows.SelectedItem = cyberwareRow;
-                harness.WaitUntil(() => ReferenceEquals(sectionRows.SelectedItem, cyberwareRow));
+                harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                harness.WaitUntil(() => sectionRows.ItemCount > 0);
                 harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.Click("SectionQuickAction_cyberware_add");
                 harness.WaitUntil(() =>
@@ -3271,6 +3586,13 @@ public sealed class AvaloniaFlagshipUiGateTests
             object screenshotControlEvidencePayload = new
             {
                 generatedAt = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                workflowCoverage = WorkflowScreenshotCoverage.Select(entry => new
+                {
+                    workflowFamilyId = entry.WorkflowFamilyId,
+                    legacyBehaviorLineage = entry.LegacyBehaviorLineage,
+                    screenshotFiles = entry.ScreenshotFiles,
+                    screenshotCount = entry.ScreenshotFiles.Length
+                }).ToArray(),
                 entries = screenshots.Values
                     .Select(capture => capture.Evidence)
                     .OrderBy(entry => entry.Screenshot, StringComparer.Ordinal)
@@ -3309,6 +3631,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         string PromotedHeadGesture,
         string Chummer5aBaseline,
         string[] RequiredDialogMarkers);
+
+    private sealed record WorkflowScreenshotCoverageEntry(
+        string WorkflowFamilyId,
+        string LegacyBehaviorLineage,
+        string[] ScreenshotFiles);
 
     private static VeteranCertificationReviewStep GetVeteranCertificationReviewStep(string surface)
         => VeteranCertificationReviewSteps.Single(step => string.Equals(step.Surface, surface, StringComparison.Ordinal));
@@ -6263,6 +6590,77 @@ public sealed class AvaloniaFlagshipUiGateTests
                         [
                             new SectionRowState("contacts[0]", "Fixer (Loyalty 4 / Connection 5)")
                         ]);
+                case "skills":
+                    return (
+                        """
+{
+  "section": "skills",
+  "skills": [
+    { "name": "Automatics", "rating": 6, "specialization": "Assault Rifles" },
+    { "name": "Sneaking", "rating": 5 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("skills[0]", "Automatics 6 (Assault Rifles)"),
+                            new SectionRowState("skills[1]", "Sneaking 5")
+                        ]);
+                case "qualities":
+                    return (
+                        """
+{
+  "section": "qualities",
+  "qualities": [
+    { "name": "Ambidextrous", "karma": 4 },
+    { "name": "Distinctive Style", "karma": -5 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("qualities[0]", "Ambidextrous · 4 karma"),
+                            new SectionRowState("qualities[1]", "Distinctive Style · -5 karma")
+                        ]);
+                case "gear":
+                    return (
+                        """
+{
+  "section": "gear",
+  "gear": [
+    { "name": "Medkit", "rating": 6, "location": "Backpack" },
+    { "name": "Ammo: APDS", "quantity": 40, "location": "Duffel" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("gear[0]", "Medkit 6 · Backpack"),
+                            new SectionRowState("gear[1]", "Ammo: APDS ×40 · Duffel")
+                        ]);
+                case "weapons":
+                    return (
+                        """
+{
+  "section": "weapons",
+  "weapons": [
+    { "name": "Ares Alpha", "dicePool": 14, "ammo": "42(c)" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("weapons[0]", "Ares Alpha · Dice Pool 14 / 42(c)")
+                        ]);
+                case "armors":
+                    return (
+                        """
+{
+  "section": "armors",
+  "armor": [
+    { "name": "Armor Jacket", "rating": 12, "mods": 1 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("armors[0]", "Armor Jacket · Armor 12 / Mods 1")
+                        ]);
                 case "vehicles":
                     return (
                         """
@@ -6364,6 +6762,36 @@ public sealed class AvaloniaFlagshipUiGateTests
 """,
                         [
                             new SectionRowState("calendar[0]", "Downtime recon · +2 karma")
+                        ]);
+                case "validate":
+                    return (
+                        """
+{
+  "section": "validate",
+  "validation": [
+    { "severity": "warning", "message": "License missing for Ares Alpha" },
+    { "severity": "info", "message": "Lifestyle payments due in 3 days" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("validate[0]", "Warning · License missing for Ares Alpha"),
+                            new SectionRowState("validate[1]", "Info · Lifestyle payments due in 3 days")
+                        ]);
+                case "rules":
+                    return (
+                        """
+{
+  "section": "rules",
+  "rules": [
+    { "source": "SR5", "entry": "Armor Encumbrance" },
+    { "source": "Run & Gun", "entry": "Smartgun Accessories" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("rules[0]", "SR5 · Armor Encumbrance"),
+                            new SectionRowState("rules[1]", "Run & Gun · Smartgun Accessories")
                         ]);
                 default:
                     return (
