@@ -795,6 +795,7 @@ build_macos_installer() {
   local macos_icon_plist_name
   local plist_path="$contents_dir/Info.plist"
   local bundle_identifier
+  local original_publish_dir
   bundle_identifier="$(macos_bundle_identifier)"
   local hdiutil_tmp_root="${CHUMMER_DESKTOP_INSTALLER_TMPDIR:-${TMPDIR:-$DIST_DIR/tmp}}"
   local hdiutil_tmp_work="$hdiutil_tmp_root/hdiutil-$APP_KEY-$RID"
@@ -815,6 +816,7 @@ build_macos_installer() {
     exit 1
   fi
 
+  original_publish_dir="$PUBLISH_DIR"
   mv "$PUBLISH_DIR" "$macos_dir"
   PUBLISH_DIR="$macos_dir"
 
@@ -825,8 +827,10 @@ build_macos_installer() {
   chmod 0755 "$macos_dir/$LAUNCH_TARGET"
 
   macos_icon_runtime_source="$macos_icon_source"
-  if [[ "$macos_icon_source" == "$PUBLISH_DIR/"* ]]; then
-    macos_icon_runtime_source="$macos_dir/${macos_icon_source#"$PUBLISH_DIR/"}"
+  if [[ "$macos_icon_source" == "$original_publish_dir" ]]; then
+    macos_icon_runtime_source="$macos_dir"
+  elif [[ "$macos_icon_source" == "$original_publish_dir/"* ]]; then
+    macos_icon_runtime_source="$macos_dir/${macos_icon_source#"$original_publish_dir/"}"
   fi
 
   macos_icon_name="$(basename "$macos_icon_source")"
