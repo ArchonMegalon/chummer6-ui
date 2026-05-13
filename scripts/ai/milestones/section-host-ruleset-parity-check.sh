@@ -44,6 +44,9 @@ EXPECTED_STANDARD_SECTION_IDS = [
     "contacts",
     "skills",
     "qualities",
+    "progress",
+    "calendar",
+    "diary",
     "profile",
 ]
 

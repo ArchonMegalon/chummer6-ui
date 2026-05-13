@@ -225,7 +225,7 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
-    public async Task ExecuteCommandAsync_new_character_imports_starter_workspace()
+    public async Task ExecuteCommandAsync_new_character_opens_creation_dialog()
     {
         var client = new FakeChummerClient();
         var presenter = new CharacterOverviewPresenter(client);
@@ -233,15 +233,11 @@ public class CharacterOverviewPresenterTests
         await presenter.InitializeAsync(CancellationToken.None);
         await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
 
-        Assert.IsNotNull(client.LastImportedDocument);
-        Assert.AreEqual(RulesetDefaults.Sr5, client.LastImportedDocument!.RulesetId);
-        Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, client.LastImportedDocument.Format);
-        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<gameedition>SR5</gameedition>");
+        Assert.IsNull(client.LastImportedDocument);
         Assert.AreEqual("new_character", presenter.State.LastCommandId);
-        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-        Assert.IsNotNull(presenter.State.Profile);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        Assert.AreEqual("dialog.new_character", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        Assert.IsNull(presenter.State.Profile);
     }
 
     [TestMethod]

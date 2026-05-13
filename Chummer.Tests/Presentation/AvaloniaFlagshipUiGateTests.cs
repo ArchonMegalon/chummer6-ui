@@ -501,10 +501,17 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(button.IsVisible, $"Workbench action '{buttonName}' must stay visible.");
                 Assert.IsTrue(button.IsEnabled, $"Workbench action '{buttonName}' must stay enabled.");
-                Assert.IsInstanceOfType<string>(button.Content, $"Workbench action '{buttonName}' must stay a flat classic toolbar label, not a dashboard tile.");
                 CollectionAssert.Contains(GetButtonTextLines(button), expectedLabel, $"Workbench action '{buttonName}' must keep its classic desktop label.");
                 Assert.AreEqual(1, GetButtonTextLines(button).Length, $"Workbench action '{buttonName}' must not add a secondary caption line.");
                 Assert.IsTrue(button.Bounds.Width > 0d && button.Bounds.Height > 0d, $"Workbench action '{buttonName}' must keep a visible desktop footprint.");
+            }
+
+            foreach (string buttonName in new[] { "SaveButton", "PrintButton", "CopyButton", "DesktopHomeButton", "ImportFileButton", "CloseWorkspaceButton" })
+            {
+                Button button = harness.FindControl<Button>(buttonName);
+                Assert.IsTrue(
+                    button.GetVisualDescendants().OfType<Image>().Any(image => image.IsVisible),
+                    $"Workbench action '{buttonName}' must restore a visible classic toolbar icon.");
             }
 
             Button importRawButton = harness.FindControl<Button>("ImportRawButton");
