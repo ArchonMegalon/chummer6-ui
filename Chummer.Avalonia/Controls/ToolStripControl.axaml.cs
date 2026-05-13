@@ -1,12 +1,29 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Chummer.Presentation.Overview;
 using System;
+using System.Collections.Generic;
 
 namespace Chummer.Avalonia.Controls;
 
 public partial class ToolStripControl : UserControl
 {
+    private static readonly IReadOnlyDictionary<string, string> ButtonIconAssets = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [nameof(SaveButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/disk.png",
+        [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
+        [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
+        [nameof(DesktopHomeButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/user_add.png",
+        [nameof(ImportFileButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_page.png",
+        [nameof(CloseWorkspaceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/cancel.png",
+        [nameof(OpenForPrintingButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_print.png",
+        [nameof(OpenForExportButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
+    };
+    private static readonly Dictionary<string, Bitmap> IconCache = new(StringComparer.Ordinal);
+
     public ToolStripControl()
     {
         InitializeComponent();
@@ -93,9 +110,58 @@ public partial class ToolStripControl : UserControl
 
     private static void SetButtonLabel(Button button, string label, string shortLabel)
     {
-        _ = shortLabel;
-        button.Content = label;
+        if (TryCreateButtonIcon(button.Name, out Image? icon))
+        {
+            Image resolvedIcon = icon!;
+            button.Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 5,
+                Classes = { "tool-button-content" },
+                Children =
+                {
+                    resolvedIcon,
+                    new TextBlock
+                    {
+                        Text = shortLabel,
+                        Classes = { "tool-button-label" },
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            };
+        }
+        else
+        {
+            button.Content = label;
+        }
+
         ToolTip.SetTip(button, label);
+    }
+
+    private static bool TryCreateButtonIcon(string? buttonName, out Image? icon)
+    {
+        icon = null;
+        if (string.IsNullOrWhiteSpace(buttonName)
+            || !ButtonIconAssets.TryGetValue(buttonName, out string? assetPath))
+        {
+            return false;
+        }
+
+        if (!IconCache.TryGetValue(assetPath, out Bitmap? bitmap))
+        {
+            bitmap = new Bitmap(AssetLoader.Open(new Uri(assetPath)));
+            IconCache[assetPath] = bitmap;
+        }
+
+        icon = new Image
+        {
+            Source = bitmap,
+            Width = 16,
+            Height = 16,
+            Classes = { "tool-button-icon" },
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        return true;
     }
 
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)
