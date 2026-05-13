@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T12:27:42.912339Z",
+  "generatedAt": "2026-05-13T18:53:43.997915Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "docker",
   "channel": "docker",
@@ -215,7 +215,7 @@
     ]
   },
   "uiElementParityAuditProof": {
-    "status": "fail",
+    "status": "pass",
     "uiElementParityAuditReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
     "visualNoCount": 0,
     "behavioralNoCount": 0,
@@ -374,6 +374,102 @@
         "name": "17-character-roster-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
         "sizeBytes": 197018
+      }
+    ],
+    "controlEvidencePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
+    "workflowScreenshotCoverageStatus": "pass",
+    "requiredWorkflowFamilyIds": [
+      "create-open-import-save-save-as-print-export",
+      "metatype-priorities-karma-entry",
+      "attributes-skills-skill-groups-specializations-knowledge-languages",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+      "cyberware-bioware-modular-hierarchies-nested-plugins",
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+      "improvements-explain-result-parity",
+      "recovery-reload-migration-roundtrips",
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare"
+    ],
+    "workflowScreenshotCoverage": [
+      {
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "legacyBehaviorLineage": "File menu lineage",
+        "screenshotFiles": [
+          "04-loaded-runner-light.png",
+          "18-import-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "metatype-priorities-karma-entry",
+        "legacyBehaviorLineage": "Creation lineage",
+        "screenshotFiles": [
+          "15-creation-section-light.png",
+          "14-advancement-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "legacyBehaviorLineage": "Skills lineage",
+        "screenshotFiles": [
+          "04-loaded-runner-light.png",
+          "07-loaded-runner-tabs-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "legacyBehaviorLineage": "Contacts lineage",
+        "screenshotFiles": [
+          "10-contacts-section-light.png",
+          "11-diary-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "legacyBehaviorLineage": "Gear lineage",
+        "screenshotFiles": [
+          "04-loaded-runner-light.png",
+          "09-vehicles-section-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "legacyBehaviorLineage": "Cyberware lineage",
+        "screenshotFiles": [
+          "05-dense-section-light.png",
+          "08-cyberware-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "legacyBehaviorLineage": "Magic lineage",
+        "screenshotFiles": [
+          "12-magic-dialog-light.png",
+          "13-matrix-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "legacyBehaviorLineage": "Validation lineage",
+        "screenshotFiles": [
+          "16-master-index-dialog-light.png",
+          "39-xml-editor-dialog-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "recovery-reload-migration-roundtrips",
+        "legacyBehaviorLineage": "Reload lineage",
+        "screenshotFiles": [
+          "01-initial-shell-light.png",
+          "04-loaded-runner-light.png"
+        ]
+      },
+      {
+        "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "legacyBehaviorLineage": "Dense workbench lineage",
+        "screenshotFiles": [
+          "05-dense-section-light.png",
+          "06-dense-section-dark.png"
+        ]
       }
     ]
   },
