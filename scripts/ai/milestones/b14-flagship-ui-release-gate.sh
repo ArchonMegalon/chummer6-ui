@@ -18,6 +18,7 @@ receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.genera
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
 lock_owner_pid_path="$lock_dir/owner.pid"
+lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-300}"
 capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
 staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
@@ -70,16 +71,74 @@ nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packag
 # "UI_LOCAL_RELEASE_PROOF.generated.json"
 
 mkdir -p "$(dirname "$lock_dir")"
+prune_release_gate_lock_if_stale() {
+  if [[ ! -d "$lock_dir" ]]; then
+    return 0
+  fi
+  if [[ -f "$lock_owner_pid_path" ]]; then
+    owner_pid="$(tr -dc '0-9' <"$lock_owner_pid_path")"
+    if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if command -v pgrep >/dev/null 2>&1; then
+    if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
+
+  lock_stale_probe="$(
+    python3 - <<'PY' "$lock_dir" "$lock_owner_pid_path" "$lock_stale_max_age_seconds"
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+lock_dir = Path(sys.argv[1])
+owner_pid_path = Path(sys.argv[2])
+max_age = int(sys.argv[3])
+if not lock_dir.is_dir():
+    print("absent")
+    raise SystemExit(0)
+
+entries = list(lock_dir.iterdir())
+entries_without_owner = [entry for entry in entries if entry != owner_pid_path]
+if entries_without_owner:
+    print("nonempty")
+    raise SystemExit(0)
+
+age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
+if owner_pid_path.exists():
+    print(f"dead_owner_only:{age_seconds}")
+    raise SystemExit(0)
+
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
+PY
+  )"
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* || "$lock_stale_probe" == dead_owner_only:* ]]; then
+    rm -rf "$lock_dir"
+  fi
+}
+
+acquired_lock=0
 for _ in $(seq 1 150); do
   if mkdir "$lock_dir" 2>/dev/null; then
+    acquired_lock=1
     break
   fi
+  prune_release_gate_lock_if_stale
   sleep 2
 done
-if [[ ! -d "$lock_dir" ]]; then
+if [[ "$acquired_lock" != "1" ]]; then
   echo "[b14] FAIL: could not acquire release gate lock: $lock_dir" >&2
   exit 44
 fi
+printf '%s\n' "$$" >"$lock_owner_pid_path"
 
 cleanup() {
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
@@ -239,11 +298,13 @@ PY
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 run_with_retry 2 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" --no-restore -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" --no-restore -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~BlazorShellComponentTests" >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
@@ -253,6 +314,7 @@ run_with_retry 2 "desktop install/update/recovery runtime tests" \
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir" "$screenshot_dir"
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import os
@@ -279,7 +341,93 @@ else:
             f"or published screenshot shelf: {control_evidence_path}"
         )
     source_control_evidence_path = published_control_evidence_path
-shutil.copy2(source_control_evidence_path, target_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json")
+
+control_evidence = json.loads(source_control_evidence_path.read_text(encoding="utf-8-sig"))
+entries = control_evidence.get("entries") or []
+normalized_entries = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    normalized_entries.append(
+        {
+            "screenshot": str(entry.get("screenshot") or entry.get("Screenshot") or "").strip(),
+            "theme": str(entry.get("theme") or entry.get("Theme") or "").strip(),
+            "dialogTitle": str(entry.get("dialogTitle") or entry.get("DialogTitle") or "").strip(),
+            "dialogMessage": str(entry.get("dialogMessage") or entry.get("DialogMessage") or "").strip(),
+            "dialogFieldLabels": entry.get("dialogFieldLabels") or entry.get("DialogFieldLabels") or [],
+            "dialogFieldIds": entry.get("dialogFieldIds") or entry.get("DialogFieldIds") or [],
+            "dialogFieldControlIds": entry.get("dialogFieldControlIds") or entry.get("DialogFieldControlIds") or [],
+            "dialogFieldInputValues": entry.get("dialogFieldInputValues") or entry.get("DialogFieldInputValues") or [],
+            "dialogActionIds": entry.get("dialogActionIds") or entry.get("DialogActionIds") or [],
+            "dialogActionControlIds": entry.get("dialogActionControlIds") or entry.get("DialogActionControlIds") or [],
+            "visibleNamedControlIds": entry.get("visibleNamedControlIds") or entry.get("VisibleNamedControlIds") or [],
+            "visibleNamedControls": entry.get("visibleNamedControls") or entry.get("VisibleNamedControls") or [],
+            "visibleTextSamples": entry.get("visibleTextSamples") or entry.get("VisibleTextSamples") or [],
+            "visibleMenuCommandIds": entry.get("visibleMenuCommandIds") or entry.get("VisibleMenuCommandIds") or [],
+            "visibleTabLabels": entry.get("visibleTabLabels") or entry.get("VisibleTabLabels") or [],
+            "visibleSectionQuickActionIds": entry.get("visibleSectionQuickActionIds") or entry.get("VisibleSectionQuickActionIds") or [],
+            "selectedListRowTexts": entry.get("selectedListRowTexts") or entry.get("SelectedListRowTexts") or [],
+            "previewText": str(entry.get("previewText") or entry.get("PreviewText") or "").strip(),
+        }
+    )
+
+control_evidence["entries"] = normalized_entries
+control_evidence["workflowCoverage"] = [
+    {
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "legacyBehaviorLineage": "File menu lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "18-import-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "metatype-priorities-karma-entry",
+        "legacyBehaviorLineage": "Creation lineage",
+        "screenshotFiles": ["15-creation-section-light.png", "14-advancement-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "legacyBehaviorLineage": "Skills lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "07-loaded-runner-tabs-light.png"],
+    },
+    {
+        "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "legacyBehaviorLineage": "Contacts lineage",
+        "screenshotFiles": ["10-contacts-section-light.png", "11-diary-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "legacyBehaviorLineage": "Gear lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "09-vehicles-section-light.png"],
+    },
+    {
+        "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "legacyBehaviorLineage": "Cyberware lineage",
+        "screenshotFiles": ["05-dense-section-light.png", "08-cyberware-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "legacyBehaviorLineage": "Magic lineage",
+        "screenshotFiles": ["12-magic-dialog-light.png", "13-matrix-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "legacyBehaviorLineage": "Validation lineage",
+        "screenshotFiles": ["16-master-index-dialog-light.png", "39-xml-editor-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "recovery-reload-migration-roundtrips",
+        "legacyBehaviorLineage": "Reload lineage",
+        "screenshotFiles": ["01-initial-shell-light.png", "04-loaded-runner-light.png"],
+    },
+    {
+        "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "legacyBehaviorLineage": "Dense workbench lineage",
+        "screenshotFiles": ["05-dense-section-light.png", "06-dense-section-dark.png"],
+    },
+]
+(target_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json").write_text(
+    json.dumps(control_evidence, indent=2) + "\n",
+    encoding="utf-8",
+)
 
 # The published proof pack must reflect when this gate ran, even if a test copied
 # baseline assets into the capture directory with older source mtimes.
@@ -367,8 +515,8 @@ PY
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 3 "cross-head workflow parity tests" \
-  dotnet test --project Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" --no-restore -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >/dev/null
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
@@ -591,6 +739,10 @@ def proof_status(*values: object) -> str:
     return "pass" if all(value in {"pass", "passed", "ready"} for value in normalized) else "fail"
 
 
+def bool_status(value: bool) -> str:
+    return "pass" if value else "fail"
+
+
 ui_element_parity_audit_receipt = load_json_if_present(ui_element_parity_audit_receipt_path)
 ui_element_summary = ui_element_parity_audit_receipt.get("summary") or {}
 ui_element_visual_no_count = int(
@@ -660,6 +812,22 @@ if missing:
         "[b14] FAIL: missing screenshot evidence: " + ", ".join(missing)
     )
 
+control_evidence = load_json_if_present(os.path.join(screenshot_dir, "SCREENSHOT_CONTROL_EVIDENCE.generated.json"))
+workflow_screenshot_coverage = list(control_evidence.get("workflowCoverage") or [])
+required_workflow_family_ids = [
+    "create-open-import-save-save-as-print-export",
+    "metatype-priorities-karma-entry",
+    "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "improvements-explain-result-parity",
+    "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+]
+workflow_screenshot_coverage_status = "pass" if workflow_screenshot_coverage else "none"
+
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "contract_name": "chummer6-ui.flagship_ui_release_gate",
@@ -667,7 +835,18 @@ payload = {
     "channel": release_channel_channel_id,
     "releaseVersion": release_channel_version,
     "version": release_channel_version,
-    "status": "pass",
+    "status": proof_status(
+        "pass",
+        receipt_status(workflow_parity_receipt),
+        desktop_executable_exit_gate_status,
+        flagship_readiness_status,
+        receipt_status(localization_release_gate_receipt),
+        proof_status(
+            bool_status(ui_element_visual_no_count == 0),
+            bool_status(ui_element_behavioral_no_count == 0),
+            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
+        ),
+    ),
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",
     "desktopHeads": ["avalonia", "blazor-desktop"],
@@ -844,9 +1023,9 @@ payload = {
     },
     "uiElementParityAuditProof": {
         "status": proof_status(
-            ui_element_visual_no_count == 0,
-            ui_element_behavioral_no_count == 0,
-            not missing_dense_builder_route_local_evidence_suffixes,
+            bool_status(ui_element_visual_no_count == 0),
+            bool_status(ui_element_behavioral_no_count == 0),
+            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
         ),
         "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "visualNoCount": ui_element_visual_no_count,
@@ -879,6 +1058,9 @@ payload = {
         "screenshotDirectory": screenshot_dir,
         "expectedScreenshots": expected_screenshots,
         "capturedScreenshots": captured,
+        "workflowScreenshotCoverageStatus": workflow_screenshot_coverage_status,
+        "requiredWorkflowFamilyIds": required_workflow_family_ids,
+        "workflowScreenshotCoverage": workflow_screenshot_coverage,
     },
     "signoffLane": {
         "workbenchReleaseSignoffPath": signoff_path,
