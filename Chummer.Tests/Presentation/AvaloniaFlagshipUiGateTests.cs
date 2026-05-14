@@ -426,6 +426,75 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void File_menu_new_character_completes_into_visible_runtime_workspace()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "new_character"));
+            harness.ClickMenuCommand("new_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && string.Equals(harness.State.LastCommandId, "new_character", StringComparison.Ordinal)
+                && !harness.State.IsBusy);
+
+            harness.InvokeDialogAction("create_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                || string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal));
+
+            harness.InvokeDialogAction("complete_new_character_workflow");
+            harness.WaitUntil(() =>
+                    harness.State.WorkspaceId is not null
+                    && harness.State.Profile is not null
+                    && harness.State.Session.OpenWorkspaces.Count > 0
+                    && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                    && harness.FindControlOrDefault<Control>("SectionHostControl")?.IsVisible == true
+                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                    && harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null
+                    && !harness.State.IsBusy,
+                timeoutMs: 8000,
+                context: "new character completion should hydrate a visible runtime workspace");
+        });
+    }
+
+    [TestMethod]
+    public void Master_index_search_keeps_focus_after_runtime_backed_text_updates()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
+            harness.ClickMenuCommand("master_index");
+            harness.WaitUntil(() =>
+                    string.Equals(harness.State.ActiveDialog?.Id, "dialog.master_index", StringComparison.Ordinal)
+                    && string.Equals(harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text, "Master Index", StringComparison.Ordinal)
+                    && !harness.State.IsBusy,
+                timeoutMs: 8000,
+                context: "master index dialog should be open before editing search");
+
+            string searchFieldName = DesktopDialogAccessibility.BuildFieldInputName("masterIndexSearch");
+            TextBox searchBox = harness.FindControl<TextBox>(searchFieldName);
+            Assert.IsTrue(searchBox.Focus(), "Master Index search box must accept focus before typing.");
+
+            searchBox.Text = "adept";
+            harness.WaitUntil(() =>
+                    string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "masterIndexSearch"),
+                        "adept",
+                        StringComparison.Ordinal),
+                context: "master index search value should round-trip through the runtime-backed dialog update");
+
+            TextBox refreshedSearchBox = harness.FindControl<TextBox>(searchFieldName);
+            Assert.IsTrue(refreshedSearchBox.IsFocused, "Master Index search must keep focus after dialog rebuilds.");
+            Assert.AreEqual("adept", refreshedSearchBox.Text);
+        });
+    }
+
+    [TestMethod]
     public void Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus()
     {
         WithRuntimeHarness(harness =>
