@@ -32,6 +32,7 @@ python3 - <<'PY' "$repo_root" "$receipt_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,9 @@ from typing import Any
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
 release_channel_path = Path(sys.argv[3])
+SKIP_FLAGSHIP_GATE_DEPENDENCY = str(
+    os.environ.get("CHUMMER_SCREENSHOT_REVIEW_SKIP_FLAGSHIP_GATE_DEPENDENCY") or "0"
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def now_iso() -> str:
@@ -61,6 +65,12 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def status_pass(value: Any) -> bool:
     return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
+def normalize_findings(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
 
 
 def append_reason(message: str, reasons: list[str], *buckets: list[str]) -> None:
@@ -179,13 +189,11 @@ release_channel = load_json(release_channel_path) if release_channel_path.is_fil
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
-flagship_gate_blocking_findings = flagship_gate.get("blockingFindings") or []
-if not isinstance(flagship_gate_blocking_findings, list):
-    flagship_gate_blocking_findings = []
+flagship_gate_blocking_findings = normalize_findings(flagship_gate.get("blockingFindings"))
 flagship_gate_route_local_only = (
     bool(flagship_gate_blocking_findings)
     and all(
-        str(finding).strip()
+        finding
         in {
             "Top-level release gate cannot pass while flagship readiness is not passed.",
             "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
@@ -193,6 +201,26 @@ flagship_gate_route_local_only = (
         }
         for finding in flagship_gate_blocking_findings
     )
+)
+desktop_executable_proof = flagship_gate.get("desktopExecutableProof") or {}
+if not isinstance(desktop_executable_proof, dict):
+    desktop_executable_proof = {}
+desktop_executable_local_blocking_findings = normalize_findings(
+    desktop_executable_proof.get("localBlockingFindings")
+)
+flagship_gate_external_desktop_only = (
+    bool(flagship_gate_blocking_findings)
+    and all(
+        finding
+        in {
+            "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+            "Top-level release gate cannot pass while flagship readiness is not passed.",
+            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+        }
+        for finding in flagship_gate_blocking_findings
+    )
+    and not desktop_executable_local_blocking_findings
 )
 control_evidence_path_raw = str(visual_evidence.get("control_evidence_path") or "").strip()
 control_evidence_path = Path(control_evidence_path_raw) if control_evidence_path_raw else None
@@ -250,7 +278,12 @@ for marker in [
 
 if not status_pass(visual_gate.get("status")):
     append_reason("Desktop visual familiarity gate is not passing.", reasons, supporting_receipt_reasons)
-if not status_pass(flagship_gate.get("status")) and not flagship_gate_route_local_only:
+if (
+    not status_pass(flagship_gate.get("status"))
+    and not flagship_gate_route_local_only
+    and not flagship_gate_external_desktop_only
+    and not SKIP_FLAGSHIP_GATE_DEPENDENCY
+):
     append_reason("UI flagship release gate is not passing.", reasons, supporting_receipt_reasons)
 if missing_visual_review_keys:
     append_reason(
@@ -389,7 +422,9 @@ payload = {
             "visualFamiliarityGate": visual_gate.get("status"),
             "flagshipGate": flagship_gate.get("status"),
         },
+        "skipFlagshipGateDependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
+        "flagshipGateExternalDesktopOnly": flagship_gate_external_desktop_only,
         "visualReviewStatuses": {
             key: (
                 visual_reviews.get(key, {}).get("status")
@@ -438,7 +473,10 @@ payload = {
         "missingVisualReviewKeys": missing_visual_review_keys,
         "failingVisualReviewKeys": failing_visual_review_keys,
         "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "skipFlagshipGateDependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
+        "flagshipGateExternalDesktopOnly": flagship_gate_external_desktop_only,
+        "desktopExecutableLocalBlockingFindings": desktop_executable_local_blocking_findings,
         "reviewedJobs": sorted(review_jobs.keys()),
         "failingJobs": review_job_failing,
         "routeLocalReceipts": route_local_receipts,
