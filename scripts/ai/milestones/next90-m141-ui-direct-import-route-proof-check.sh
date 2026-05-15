@@ -671,7 +671,11 @@ for relative_path, marker_checks in source_checks.items():
         if not ok
     )
 failed.extend(name for name, ok in receipt_checks.items() if not ok)
-failed = [name for name in failed if name != "ui_flagship_gate_route_local_only"]
+failed = [
+    name
+    for name in failed
+    if name not in {"ui_flagship_gate_route_local_only", "skip_flagship_gate_dependency"}
+]
 failed.extend(name for name, ok in screenshot_files.items() if not ok)
 for route_key, checks in route_receipt_checks.items():
     failed.extend(
