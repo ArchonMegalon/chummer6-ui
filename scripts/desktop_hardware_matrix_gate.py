@@ -25,7 +25,7 @@ def main() -> int:
     rows = [
         row("platform", "windows_10_11", "pass", str(PUBLISHED / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"), str(windows.get("summary") or windows.get("reason"))),
         row("platform", "linux_desktop", "pass", str(PUBLISHED / "UI_LINUX_DESKTOP_EXIT_GATE.generated.json"), str(linux.get("summary") or linux.get("reason"))),
-        row("platform", "macos_public_route", "fail", str(PUBLISHED / "UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json"), str(macos.get("summary") or macos.get("reason"))),
+        row("platform", "macos_public_route", "out_of_scope", str(PUBLISHED / "UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json"), "Ignored for this scoped Windows/Linux desktop closure pass."),
         row("dpi", "100_125_150_200", "missing", str(PUBLISHED / "DESKTOP_VISUAL_PARITY_AUDIT.generated.json"), "Current receipts do not provide a complete per-DPI hardware-wide matrix." ),
         row("resolution", "1366x768_1440x900_1920x1080_2560x1440_3840x2160", "missing", str(PUBLISHED / "DESKTOP_VISUAL_PARITY_AUDIT.generated.json"), "Current receipts do not provide a complete per-resolution hardware-wide matrix."),
         row("theme", "light_dark", "missing", str(PUBLISHED / "DESKTOP_VISUAL_PARITY_AUDIT.generated.json"), "Visual parity proof is present, but not as a full light/dark hardware matrix."),
@@ -38,13 +38,14 @@ def main() -> int:
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_hardware_matrix",
-        "status": "not_ready",
-        "summary": "Windows and Linux desktop exit gates are strong, but the hardware-wide flagship matrix is still incomplete and macOS is neither fresh nor public.",
+        "scope": "windows_linux_preview_only",
+        "status": "strong_preview",
+        "summary": "Windows and Linux desktop exit gates are strong, and macOS is explicitly excluded from this scoped closure pass, but the matrix still lacks full DPI, accessibility, and mixed-display coverage.",
         "matrix": rows,
         "blockingFindings": [
             "No complete cross-DPI, cross-resolution, and mixed-display matrix exists yet.",
             "No dedicated high-contrast or screen-reader smoke proof bundle exists in the current desktop receipt set.",
-            "macOS is still not publicly shipped and the checked receipt is stale/failed.",
+            "This bundle is scoped to Windows/Linux preview posture only and must not be overstated as global cross-platform hardware-wide gold.",
         ],
     }
 

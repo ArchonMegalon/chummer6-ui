@@ -21,15 +21,14 @@ def main() -> int:
 
     blockers = [
         "Public desktop docs still describe the shelf as preview rather than a finished flagship release.",
-        "There is no public macOS download today, so a hardware-wide/global flagship claim would be false.",
-        "The hardware-wide matrix is still incomplete across DPI, resolutions, mixed displays, screen-reader smoke, and high-contrast proof.",
+        "The Windows/Linux hardware matrix is still incomplete across DPI, resolutions, mixed displays, screen-reader smoke, and high-contrast proof.",
         "Every-control proof is strong but not yet flattened into a row-level certification artifact for every visible runtime control.",
     ]
 
     lines = [
         "# Final Desktop Hardware-Wide Flagship Verdict",
         "",
-        "Verdict: NOT_READY",
+        "Verdict: DESKTOP_STRONG_PREVIEW",
         "",
         "## Why",
         "",

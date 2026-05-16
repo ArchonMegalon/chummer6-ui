@@ -42,7 +42,7 @@ def main() -> int:
         "## Why this is not hardware-wide gold yet",
         "",
         "- The dense Chummer5A-like workbench look is strongly evidenced in current proof receipts.",
-        "- The remaining gap is not the existence of visual receipts, but the absence of a hardware-wide manual review bundle across DPI, resolutions, mixed displays, and public macOS release truth.",
+        "- The remaining gap is not the existence of visual receipts, but the absence of a hardware-wide manual review bundle across DPI, resolutions, mixed displays, and accessibility modes for the Windows/Linux preview shelf.",
         "- Public desktop docs still explicitly describe the shelf as preview rather than a finished flagship release.",
         "",
         "## Honest allowed claim",
