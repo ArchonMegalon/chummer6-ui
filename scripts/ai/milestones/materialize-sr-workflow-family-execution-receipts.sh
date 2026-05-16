@@ -54,6 +54,17 @@ if not oracle_path.is_file():
 ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
 oracle = json.loads(oracle_path.read_text(encoding="utf-8"))
 families = [item for item in (ledger.get("requiredFamilies") or []) if isinstance(item, dict)]
+family_filter_ids = {
+    str(value).strip()
+    for value in (os.environ.get("CHUMMER_WORKFLOW_FAMILY_FILTER_IDS") or "").split(",")
+    if str(value).strip()
+}
+if family_filter_ids:
+    families = [
+        item
+        for item in families
+        if str(item.get("id") or "").strip() in family_filter_ids
+    ]
 
 run_root = repo_root / ".codex-studio" / "out" / "workflow-family-parity" / "executed" / edition
 run_root.mkdir(parents=True, exist_ok=True)
@@ -93,6 +104,9 @@ per_test_trx_paths: dict[str, str] = {}
 api_project_override = str(os.environ.get("CHUMMER_API_AUTOSTART_PROJECT") or "").strip()
 default_api_project = repo_root / "Chummer.Api" / "Chummer.Api.csproj"
 api_project_path = Path(api_project_override) if api_project_override else default_api_project
+default_api_build_output = (
+    api_project_path.parent / "bin" / "Debug" / "net10.0" / f"{api_project_path.stem}.dll"
+)
 
 
 def probe_api_surface(base_url: str, path: str) -> tuple[bool, int, str]:
@@ -130,6 +144,25 @@ def collect_api_probe(base_url: str) -> tuple[dict[str, object], bool]:
         },
         all(bool(item.get("ok")) for item in api_probe_results),
     )
+
+
+def warm_api_surface(base_url: str, attempts: int = 5, delay_seconds: float = 0.5) -> tuple[dict[str, object], bool]:
+    last_probe: dict[str, object] = {}
+    last_ready = False
+    for _ in range(max(1, attempts)):
+        last_probe, last_ready = collect_api_probe(base_url)
+        if last_ready:
+            time.sleep(max(0.0, delay_seconds))
+            confirm_probe, confirm_ready = collect_api_probe(base_url)
+            if confirm_ready:
+                confirm_probe["warmed"] = True
+                return confirm_probe, True
+            last_probe = confirm_probe
+            last_ready = confirm_ready
+        time.sleep(max(0.0, delay_seconds))
+    if last_probe:
+        last_probe["warmed"] = False
+    return last_probe, last_ready
 
 
 def can_autostart_local_api(base_url: str) -> bool:
@@ -172,16 +205,20 @@ def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:
     api_log_handle = api_server_log_path.open("w", encoding="utf-8")
     env = dict(os.environ)
     env.setdefault("ASPNETCORE_URLS", base_url)
+    build_output_override = str(os.environ.get("CHUMMER_API_AUTOSTART_BUILD_OUTPUT") or "").strip()
+    build_output_path = Path(build_output_override) if build_output_override else default_api_build_output
+    run_command = [
+        "dotnet",
+        "run",
+        "--project",
+        str(api_project_path),
+        "--no-restore",
+    ]
+    if build_output_path.is_file():
+        run_command.append("--no-build")
+    run_command.extend(["--urls", base_url])
     api_server_proc = subprocess.Popen(
-        [
-            "dotnet",
-            "run",
-            "--project",
-            str(api_project_path),
-            "--no-restore",
-            "--urls",
-            base_url,
-        ],
+        run_command,
         cwd=repo_root,
         stdout=api_log_handle,
         stderr=subprocess.STDOUT,
@@ -191,7 +228,7 @@ def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:
 
     deadline = time.monotonic() + max(
         5,
-        int(str(os.environ.get("CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS") or "45").strip() or "45"),
+        int(str(os.environ.get("CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS") or "90").strip() or "90"),
     )
     while time.monotonic() < deadline:
         current_probe, current_ready = collect_api_probe(base_url)
@@ -208,6 +245,8 @@ def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:
     current_probe["autostarted"] = True
     current_probe["autostartLogPath"] = str(api_server_log_path)
     current_probe["autostartPid"] = api_server_proc.pid if api_server_proc else None
+    current_probe["autostartBuildOutputPath"] = str(build_output_path)
+    current_probe["autostartUsedNoBuild"] = build_output_path.is_file()
     if api_server_proc is not None and api_server_proc.poll() is not None:
         current_probe["autostartExitCode"] = api_server_proc.returncode
     return current_probe, current_ready
@@ -221,8 +260,13 @@ api_base_url = (
     )
     .strip()
 )
-api_probe_paths = ["/api/workspaces", "/api/shell/bootstrap"]
+api_probe_paths = ["/api/workspaces?maxCount=1", "/api/shell/bootstrap"]
 api_probe, api_surface_ready = ensure_local_api(api_base_url)
+if api_surface_ready:
+    api_probe, api_surface_ready = warm_api_surface(api_base_url)
+test_process_env = dict(os.environ)
+test_process_env["CHUMMER_API_BASE_URL"] = api_base_url
+test_process_env["CHUMMER_WEB_BASE_URL"] = api_base_url
 
 if unique_tests:
     with lock_path.open("w", encoding="utf-8") as lock_handle:
@@ -261,6 +305,7 @@ if unique_tests:
                     stderr=subprocess.STDOUT,
                     text=True,
                     check=False,
+                    env=test_process_env,
                 )
                 if proc.returncode == 0:
                     break
