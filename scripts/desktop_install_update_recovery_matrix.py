@@ -48,14 +48,15 @@ def main() -> int:
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_install_update_recovery_matrix",
+        "scope": "windows_linux_preview_only",
         "status": "strong_preview",
-        "summary": "Install, update, and recovery proof is strong for current Windows/Linux public tuples, but the matrix is not hardware-wide gold because macOS remains unpublished and fallback tuples are still proof-gated.",
+        "summary": "Install, update, and recovery proof is strong for current Windows/Linux public tuples, with macOS explicitly out of scope for this closure pass; fallback tuples remain proof-gated.",
         "journeysPassed": hub_release.get("journeys_passed", []),
         "desktopTuples": tuples,
         "blockingFindings": [
             "Windows and Linux primary installer tuples are proven, but fallback heads remain proof-gated.",
-            "macOS has no public download and therefore cannot satisfy a hardware-wide flagship claim.",
             "Current public posture is preview, not finished flagship release.",
+            "This bundle is intentionally Windows/Linux-scoped and must not be used as a global cross-platform release claim.",
         ],
         "evidence": {
             "releaseChannel": str(ensure_completion_root().parent.parent / "chummer-hub-registry" / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"),

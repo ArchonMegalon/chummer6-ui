@@ -69,8 +69,9 @@ def main() -> int:
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_every_control_runtime_audit",
-        "status": "not_ready",
-        "summary": "Desktop control wiring is strongly proven by inventory and workflow receipts, but hardware-wide gold still lacks a row-level every-control certification artifact.",
+        "scope": "windows_linux_preview_only",
+        "status": "strong_preview",
+        "summary": "Desktop control wiring is strongly proven by inventory and workflow receipts for the active Windows/Linux preview heads, but the bundle still lacks a row-level every-control certification artifact.",
         "controlAuditRows": rows,
         "blockingFindings": blocking_findings,
         "evidence": {
@@ -80,7 +81,7 @@ def main() -> int:
             "inventoryFailureCount": interactive.get("evidence", {}).get("failureCount"),
             "inventoryReasonCount": interactive.get("evidence", {}).get("reasonCount"),
         },
-        "allowedClaim": "Strong desktop control receipts exist.",
+        "allowedClaim": "Strong Windows/Linux desktop control receipts exist.",
         "disallowedClaim": "Every visible control across every runtime state is globally row-level certified.",
     }
 
