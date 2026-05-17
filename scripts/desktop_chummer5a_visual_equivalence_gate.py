@@ -15,12 +15,14 @@ def main() -> int:
 
     remaining = [
         (
-            "mixed_dpi_and_multi_monitor_hardware_lab",
-            "No dedicated hardware-lab review bundle is published yet for mixed-DPI or multi-monitor Windows/Linux desktop topologies."
-        ),
-        (
             "global_all_platform_claim",
             "This equivalence verdict is scoped to Windows/Linux public release heads and does not include macOS."
+        ),
+    ]
+    excluded_frontiers = [
+        (
+            "mixed_dpi_and_multi_monitor_hardware_lab",
+            "No dedicated hardware-lab review bundle is published yet for mixed-DPI or multi-monitor Windows/Linux desktop topologies, so those topologies remain outside the scoped equivalence claim."
         ),
     ]
 
@@ -54,6 +56,14 @@ def main() -> int:
         "",
     ]
     for area, reason in remaining:
+        lines.append(f"- `{area}`: {reason}")
+
+    lines.extend([
+        "",
+        "## Excluded Proof Frontiers",
+        "",
+    ])
+    for area, reason in excluded_frontiers:
         lines.append(f"- `{area}`: {reason}")
 
     lines.extend([
