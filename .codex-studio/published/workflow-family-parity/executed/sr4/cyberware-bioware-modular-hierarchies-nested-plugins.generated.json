@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T15:01:04.544907Z",
+  "generatedAt": "2026-05-16T07:22:44.674131Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for cyberware-bioware-modular-hierarchies-nested-plugins.",
@@ -64,7 +64,7 @@
       "baseUrl": "http://127.0.0.1:8088",
       "results": [
         {
-          "path": "/api/workspaces",
+          "path": "/api/workspaces?maxCount=1",
           "ok": true,
           "statusCode": 200,
           "error": ""
@@ -76,7 +76,7 @@
           "error": ""
         }
       ],
-      "autostarted": false
+      "warmed": true
     },
     "external_blocker": "",
     "matchedPassedTests": [

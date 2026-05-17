@@ -732,10 +732,12 @@ def apply_honesty_state(path: Path) -> None:
         raise SystemExit(f"release manifest must be a JSON object: {path}")
     if normalize(payload.get("status")) != "published":
         return
-    if not coverage_is_incomplete(payload):
-        return
-    payload["rolloutState"] = "coverage_incomplete"
-    payload["supportabilityState"] = "review_required"
+    channel_id = normalize(payload.get("channelId") or payload.get("channel"))
+    if coverage_is_incomplete(payload):
+        payload["rolloutState"] = "coverage_incomplete"
+        payload["supportabilityState"] = "review_required"
+    elif channel_id == "preview" and normalize(payload.get("rolloutState")) == "promoted_preview":
+        payload["supportabilityState"] = "preview_supported"
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 

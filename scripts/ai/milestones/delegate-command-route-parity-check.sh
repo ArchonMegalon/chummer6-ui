@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ EXPECTED_CONTRACT_METHODS = [
     "HandleUiControlAsync",
     "ExecuteWorkspaceActionAsync",
     "UpdateDialogFieldAsync",
+    "ApplyAttributeEditAsync",
     "ExecuteDialogActionAsync",
     "CloseDialogAsync",
     "SelectTabAsync",
@@ -94,7 +96,7 @@ DUAL_HEAD_TEST_MARKERS = [
     "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity",
     "Avalonia_and_Blazor_workspace_action_summary_matches",
     "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
-    "Avalonia_and_Blazor_non_dialog_shared_commands_preserve_matching_state_transitions",
+    "Avalonia_and_Blazor_download_export_and_print_commands_prepare_matching_receipts",
     "Avalonia_and_Blazor_shell_surfaces_expose_identical_ids",
 ]
 
@@ -108,6 +110,7 @@ BRIDGE_FORWARDER_MARKERS = {
     "HandleUiControlAsync": "return _presenter.HandleUiControlAsync(controlId, ct);",
     "ExecuteWorkspaceActionAsync": "return _presenter.ExecuteWorkspaceActionAsync(action, ct);",
     "UpdateDialogFieldAsync": "return _presenter.UpdateDialogFieldAsync(fieldId, value, ct);",
+    "ApplyAttributeEditAsync": "return _presenter.ApplyAttributeEditAsync(request, ct);",
     "ExecuteDialogActionAsync": "return _presenter.ExecuteDialogActionAsync(actionId, ct);",
     "CloseDialogAsync": "return _presenter.CloseDialogAsync(ct);",
     "SelectTabAsync": "return _presenter.SelectTabAsync(tabId, ct);",
@@ -119,20 +122,20 @@ BRIDGE_FORWARDER_MARKERS = {
 
 ADAPTER_FORWARDER_MARKERS = dict(BRIDGE_FORWARDER_MARKERS)
 
-TEST_FILTER_COMMANDS = [
-    "Name~delegates_to_presenter",
-    "Name~State_change_publishes_new_snapshot_to_callback",
-    "Name~Updated_event_is_raised_when_presenter_state_changes",
-    "Name~Dispose_unsubscribes_from_presenter_events",
-    "Name~CoordinateAsync_",
-    "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
-    "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
-    "Name~ExecuteDialogActionAsync_",
-    "Name~ExecuteWorkspaceActionAsync_",
-    "Name~SelectTabAsync_loads_active_section_preview_after_workspace_load",
-    "Name~SwitchWorkspaceAsync_restores_workspace_specific_tab_and_section_context",
-    "Name~CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace",
-    "Name~Avalonia_and_Blazor_",
+TEST_FILTER_PATTERNS = [
+    "delegates_to_presenter",
+    "State_change_publishes_new_snapshot_to_callback",
+    "Updated_event_is_raised_when_presenter_state_changes",
+    "Dispose_unsubscribes_from_presenter_events",
+    "CoordinateAsync_",
+    "ExecuteCommandAsync_all_catalog_commands_are_handled",
+    "HandleUiControlAsync_all_catalog_controls_are_non_generic",
+    "ExecuteDialogActionAsync_",
+    "ExecuteWorkspaceActionAsync_",
+    "SelectTabAsync_loads_active_section_preview_after_workspace_load",
+    "SwitchWorkspaceAsync_restores_workspace_specific_tab_and_section_context",
+    "CloseWorkspaceAsync_closes_active_workspace_and_switches_to_recent_workspace",
+    *DUAL_HEAD_TEST_MARKERS,
 ]
 
 PATHS = {
@@ -174,6 +177,24 @@ def missing_markers(text: str, markers: list[str]) -> list[str]:
 def tail_lines(text: str, count: int = 40) -> str:
     lines = [line.rstrip() for line in text.splitlines() if line.strip()]
     return "\n".join(lines[-count:])
+
+
+def run_with_retries(command: list[str], cwd: Path, attempts: int = 3) -> tuple[subprocess.CompletedProcess[str], int]:
+    last_result: subprocess.CompletedProcess[str] | None = None
+    for attempt in range(1, attempts + 1):
+        last_result = subprocess.run(
+            command,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+        )
+        if last_result.returncode == 0:
+            return last_result, attempt
+        if attempt < attempts:
+            time.sleep(1)
+
+    assert last_result is not None
+    return last_result, attempts
 
 
 payload: dict[str, Any] = {
@@ -322,19 +343,17 @@ evidence["verifyInvocation"] = verify_invocation
 if verify_banner not in verify_text or verify_invocation not in verify_text:
     append_reason("Delegate-route parity guard is not wired into scripts/ai/verify.sh.", verify_wiring_reasons)
 
-test_commands = [
-    [
-        "bash",
-        "scripts/ai/test.sh",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--no-build",
-        "--filter",
-        filter_expression,
-        "-v",
-        "minimal",
-    ]
-    for filter_expression in TEST_FILTER_COMMANDS
-]
+combined_filter = "|".join(f"Name~{pattern}" for pattern in TEST_FILTER_PATTERNS)
+test_commands = [[
+    "bash",
+    "scripts/ai/test.sh",
+    "Chummer.Tests/Chummer.Tests.csproj",
+    "--no-build",
+    "--filter",
+    combined_filter,
+    "-v",
+    "minimal",
+]]
 evidence["testCommands"] = test_commands
 evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
 
@@ -354,12 +373,8 @@ if not reasons:
     ]
     evidence["buildCommand"] = build_command
 
-    build_result = subprocess.run(
-        build_command,
-        cwd=repo_root,
-        text=True,
-        capture_output=True,
-    )
+    build_result, build_attempts = run_with_retries(build_command, repo_root)
+    evidence["buildAttempts"] = build_attempts
     evidence["buildExitCode"] = build_result.returncode
     evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
     if build_result.returncode != 0:
@@ -369,12 +384,7 @@ if not reasons:
         )
     else:
         for test_command in test_commands:
-            test_result = subprocess.run(
-                test_command,
-                cwd=repo_root,
-                text=True,
-                capture_output=True,
-            )
+            test_result, test_attempts = run_with_retries(test_command, repo_root)
             combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
             output_tail = tail_lines(combined_output)
             output_lower = combined_output.lower()
@@ -382,6 +392,7 @@ if not reasons:
             test_results.append(
                 {
                     "command": test_command,
+                    "attempts": test_attempts,
                     "exitCode": test_result.returncode,
                     "noMatches": no_matches,
                     "outputTail": output_tail,

@@ -385,6 +385,13 @@ internal static class AccessibilitySignoffSmokeTests
                 TravelPrefetchInventorySummary: "2 dossiers, 1 campaign, 1 rule environment, and the recap-safe packet stay bounded to the staged travel cache.",
                 CampaignMemorySummary: "The governed memory lane keeps Dockside handoff, the courier objective, and the downtime follow-through attached to the same workspace.",
                 CampaignMemoryReturnSummary: "Return through Dockside handoff so the same workspace reopens the courier chase without a lossy recap jump.",
+                AdoptionSummary: "Start from today keeps the current runners, open debts, and active job packet attached to the same campaign anchor.",
+                AdoptionConfidenceSummary: "playable_with_review because one runner contact map still needs follow-up cleanup before the lane is fully ready.",
+                AdoptionEvidenceSummary: "CampaignAdoptionReceipt adopt-001 keeps the unknown-history markers and cleanup trail visible.",
+                GoalPinSummary: "Ghostwire -> Wired Reflexes Rating 2 (47000 / 149000 nuyen saved)",
+                ResolutionReportSummary: "Run Dockside Courier is approved and ready to feed one WorldTick and one player-safe news item.",
+                BlackLedgerSummary: "ConsequenceReceipt consequence-001 cites adopt-001, resolution_report_openrun_001, heat_tick_001, and news_001 with player-safe spoiler posture.",
+                BlackLedgerProofSummary: "BLACK LEDGER approval keeps the consequence receipt, player-safe news item, and WorldTick closeout bound to the same governed proof chain.",
                 FirstPlayableSession: firstPlayableSession,
                 NextSafeAction: "Server-plane next safe action keeps the follow-through explicit.",
                 ReadinessHighlights: ["Server plane highlight: the roster is current."],
@@ -420,6 +427,13 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.Watchouts), "Digest watchout:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign return:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Current scene:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Campaign adoption:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Adoption confidence:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Adoption proof:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "Goal pins:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "ResolutionReport closeout:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER consequence:");
+        RequireContains(string.Join("\n", projection.ReadinessHighlights), "BLACK LEDGER proof:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Build handoff:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Rules follow-through:");
         RequireContains(string.Join("\n", projection.ReadinessHighlights), "Migration continuity:");
@@ -822,10 +836,20 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
         RequireContains(source, "BuildCampaignReturnActionSummary()");
+        RequireContains(source, "BuildCampaignAdoptionSummary()");
+        RequireContains(source, "BuildCampaignAdoptionConfidenceSummary()");
+        RequireContains(source, "BuildRunnerGoalPinSummary()");
+        RequireContains(source, "BuildResolutionReportCloseoutSummary()");
         RequireContains(source, "ResolveCampaignMemorySummary()");
         RequireContains(source, "ResolveCampaignMemoryReturnSummary()");
         RequireContains(source, "ResolveCampaignMemoryEvidence()");
         RequireContains(source, "ResolveCampaignMemoryNextSafeAction()");
+        RequireContains(source, "Campaign adoption:");
+        RequireContains(source, "Adoption confidence:");
+        RequireContains(source, "Runner goal pins:");
+        RequireContains(source, "ResolutionReport closeout:");
+        RequireContains(source, "BLACK LEDGER consequence proof:");
+        RequireContains(source, "Campaign adoption proof:");
         RequireContains(source, "Campaign consequence summary:");
         RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "Campaign next-session return:");
@@ -918,10 +942,20 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnActionSummary()");
+        RequireContains(source, "BuildCampaignAdoptionSummary()");
+        RequireContains(source, "BuildCampaignAdoptionConfidenceSummary()");
+        RequireContains(source, "BuildRunnerGoalPinSummary()");
+        RequireContains(source, "BuildResolutionReportCloseoutSummary()");
         RequireContains(source, "ResolveCampaignMemorySummary()");
         RequireContains(source, "ResolveCampaignMemoryReturnSummary()");
         RequireContains(source, "ResolveCampaignMemoryEvidence()");
         RequireContains(source, "ResolveCampaignMemoryNextSafeAction()");
+        RequireContains(source, "Campaign adoption:");
+        RequireContains(source, "Adoption confidence:");
+        RequireContains(source, "Runner goal pins:");
+        RequireContains(source, "ResolutionReport closeout:");
+        RequireContains(source, "BLACK LEDGER consequence proof:");
+        RequireContains(source, "Campaign adoption proof:");
         RequireContains(source, "Campaign consequence summary:");
         RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "Campaign next-session return:");

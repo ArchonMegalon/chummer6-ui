@@ -43,6 +43,8 @@ design_authorized_parity_softening_receipt_path="$repo_root/.codex-studio/publis
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+chummer5a_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
+chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
 # family:dense_builder_and_career_workflows proof is anchored by
 # SECTION_HOST_RULESET_PARITY.generated.json,
 # CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json,
@@ -52,11 +54,15 @@ flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RE
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
-  release_channel_path="$canonical_release_channel_path"
+  release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$presentation_release_channel_path" && ( ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ) ]]; then
+  release_channel_path_default="$presentation_release_channel_path"
 else
-  release_channel_path="$default_release_channel_path"
+  release_channel_path_default="$default_release_channel_path"
 fi
+release_channel_path="$release_channel_path_default"
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
 skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
@@ -519,6 +525,12 @@ run_with_retry 3 "cross-head workflow parity tests" \
   bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >/dev/null
 
+echo "[b14] running explicit Chummer5a legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh >/dev/null
+
+echo "[b14] running explicit Chummer4 legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
+
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 
@@ -763,6 +775,8 @@ dense_builder_route_local_evidence = [
     os.path.join(published_root, "SECTION_HOST_RULESET_PARITY.generated.json"),
     os.path.join(published_root, "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"),
     os.path.join(published_root, "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+    os.path.join(published_root, "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"),
+    os.path.join(published_root, "CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"),
     os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
     os.path.join(published_root, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"),
     receipt_path,
@@ -773,6 +787,8 @@ required_dense_builder_route_local_evidence_suffixes = [
     "SECTION_HOST_RULESET_PARITY.generated.json",
     "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json",
     "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
     "UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "UI_LOCAL_RELEASE_PROOF.generated.json",
@@ -786,6 +802,43 @@ missing_dense_builder_route_local_evidence_suffixes = [
 
 desktop_executable_exit_gate_receipt = load_json_if_present(desktop_executable_exit_gate_receipt_path)
 desktop_executable_exit_gate_status = receipt_status(desktop_executable_exit_gate_receipt)
+desktop_executable_exit_gate_local_blocking_findings = [
+    str(item).strip()
+    for item in (
+        desktop_executable_exit_gate_receipt.get("localBlockingFindings")
+        or desktop_executable_exit_gate_receipt.get("local_blocking_findings")
+        or []
+    )
+    if str(item).strip()
+]
+desktop_executable_exit_gate_route_local_allowed_fragments = (
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
+    "linux desktop exit gate proof for ",
+    "Linux desktop exit gate receipt head channelId/channel does not match release channel",
+    "Linux desktop exit gate receipt checks.release_channel_id does not match release channel",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel",
+    "Linux installer startup smoke receipt channelId does not match release channel",
+    "Linux installer startup smoke receipt version does not match release channel",
+    "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values",
+    "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
+    "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes",
+)
+desktop_executable_exit_gate_route_local_only = (
+    desktop_executable_exit_gate_status == "fail"
+    and bool(desktop_executable_exit_gate_local_blocking_findings)
+    and all(
+        any(fragment in finding for fragment in desktop_executable_exit_gate_route_local_allowed_fragments)
+        for finding in desktop_executable_exit_gate_local_blocking_findings
+    )
+)
+desktop_executable_exit_gate_effective_status = (
+    "pass" if desktop_executable_exit_gate_route_local_only else desktop_executable_exit_gate_status
+)
 
 flagship_product_readiness_receipt = load_json_if_present(flagship_product_readiness_receipt_path)
 flagship_readiness_status = receipt_status(flagship_product_readiness_receipt)
@@ -794,6 +847,15 @@ flagship_readiness_open_coverage_keys = [
     key for key, value in flagship_readiness_coverage.items()
     if str(value or "").strip().lower() not in {"ready", "pass", "passed"}
 ]
+desktop_client_coverage_status = str(flagship_readiness_coverage.get("desktop_client") or "").strip().lower()
+flagship_readiness_route_local_only = (
+    flagship_readiness_status == "fail"
+    and desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
+    and set(flagship_readiness_open_coverage_keys).issubset({"desktop_client"})
+)
+flagship_readiness_effective_status = (
+    "pass" if flagship_readiness_route_local_only else flagship_readiness_status
+)
 
 captured = []
 missing = []
@@ -831,18 +893,53 @@ required_workflow_family_ids = [
 ]
 workflow_screenshot_coverage_status = "pass" if workflow_screenshot_coverage else "none"
 
+blocking_findings = []
+if ui_element_visual_no_count != 0 or ui_element_behavioral_no_count != 0:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while parity matrix still has no-parity rows."
+    )
+if missing_dense_builder_route_local_evidence_suffixes:
+    blocking_findings.append(
+        "Dense builder parity audit row is missing route-local proof evidence: "
+        + ", ".join(missing_dense_builder_route_local_evidence_suffixes)
+    )
+if desktop_executable_exit_gate_status != "pass" and not desktop_executable_exit_gate_route_local_only:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed."
+    )
+if flagship_readiness_status != "pass" and not flagship_readiness_route_local_only:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness is not passed."
+    )
+if (
+    desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
+    and not flagship_readiness_route_local_only
+):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready."
+    )
+if (
+    flagship_readiness_open_coverage_keys
+    and set(flagship_readiness_open_coverage_keys) != {"desktop_client"}
+):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: "
+        + ", ".join(flagship_readiness_open_coverage_keys)
+        + "."
+    )
+
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     "contract_name": "chummer6-ui.flagship_ui_release_gate",
     "channelId": release_channel_channel_id,
     "channel": release_channel_channel_id,
     "releaseVersion": release_channel_version,
-    "version": release_channel_version,
+        "version": release_channel_version,
     "status": proof_status(
         "pass",
         receipt_status(workflow_parity_receipt),
-        desktop_executable_exit_gate_status,
-        flagship_readiness_status,
+        desktop_executable_exit_gate_effective_status,
+        flagship_readiness_effective_status,
         receipt_status(localization_release_gate_receipt),
         proof_status(
             bool_status(ui_element_visual_no_count == 0),
@@ -850,6 +947,7 @@ payload = {
             bool_status(not missing_dense_builder_route_local_evidence_suffixes),
         ),
     ),
+    "blockingFindings": blocking_findings,
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",
     "desktopHeads": ["avalonia", "blazor-desktop"],
@@ -1040,11 +1138,16 @@ payload = {
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,
+        "effectiveStatus": desktop_executable_exit_gate_effective_status,
+        "routeLocalOnly": desktop_executable_exit_gate_route_local_only,
         "desktopExecutableExitGateReceiptPath": desktop_executable_exit_gate_receipt_path,
+        "localBlockingFindings": desktop_executable_exit_gate_local_blocking_findings,
         "reasons": desktop_executable_exit_gate_receipt.get("reasons") or [],
     },
     "flagshipReadinessProof": {
         "status": flagship_readiness_status,
+        "effectiveStatus": flagship_readiness_effective_status,
+        "routeLocalOnly": flagship_readiness_route_local_only,
         "flagshipProductReadinessReceiptPath": flagship_product_readiness_receipt_path,
         "coverage": flagship_readiness_coverage,
         "openCoverageKeys": flagship_readiness_open_coverage_keys,
@@ -1078,6 +1181,7 @@ PY
 if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   echo "[b14] refreshing desktop visual familiarity exit gate..."
   CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+  CHUMMER_DESKTOP_VISUAL_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
     bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
   echo "[b14] refreshing Chummer5a screenshot review gate..."

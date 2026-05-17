@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-05-12T12:17:18Z",
+  "generatedAt": "2026-05-15T16:07:13Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
-  "channelId": "docker",
-  "channel": "docker",
-  "releaseVersion": "run-20260503-163502",
-  "version": "run-20260503-163502",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260514-restore-mac-preview",
+  "version": "run-20260514-restore-mac-preview",
   "evidence": {
     "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
     "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
@@ -77,8 +77,8 @@
       "title_present": true,
       "owned_surface_present": true,
       "allowed_paths_exact": true,
-      "repo_local_completion_ready": true,
-      "flagship_product_frontier_active": false,
+      "repo_local_completion_ready": false,
+      "flagship_product_frontier_active": true,
       "worker_safe": true
     },
     "sourceChecks": {
@@ -165,6 +165,7 @@
       "veteran_task_screenshot_jobs_present": true,
       "ui_flagship_gate_pass": true,
       "ui_flagship_gate_route_local_only": false,
+      "skip_flagship_gate_dependency": false,
       "ui_flagship_gate_tokens_present": true
     },
     "routeReceiptChecks": {

@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-12T12:28:16.111257Z",
+  "generatedAt": "2026-05-16T23:11:23.696548Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
-  "channelId": "docker",
-  "channel": "docker",
-  "releaseVersion": "run-20260503-163502",
-  "version": "run-20260503-163502",
+  "channelId": "preview",
+  "channel": "preview",
+  "releaseVersion": "run-20260514-restore-mac-preview",
+  "version": "run-20260514-restore-mac-preview",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -34,7 +34,9 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
+    "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
+    "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
       "flagshipGateReview": "pass",
       "headProofReview": "pass",
@@ -231,8 +233,8 @@
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelChannelId": "docker",
-    "releaseChannelVersion": "run-20260503-163502",
+    "releaseChannelChannelId": "preview",
+    "releaseChannelVersion": "run-20260514-restore-mac-preview",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -244,7 +246,10 @@
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
+    "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
+    "flagshipGateExternalDesktopOnly": false,
+    "desktopExecutableLocalBlockingFindings": [],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",

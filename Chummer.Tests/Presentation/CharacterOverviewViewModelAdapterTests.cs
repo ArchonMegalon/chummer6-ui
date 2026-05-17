@@ -123,6 +123,20 @@ public class CharacterOverviewViewModelAdapterTests
     }
 
     [TestMethod]
+    public async Task ApplyAttributeEditAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+        AttributeEditRequest request = new("Agility", "karma", 7);
+
+        await adapter.ApplyAttributeEditAsync(request, CancellationToken.None);
+
+        Assert.AreEqual("Agility", presenter.AppliedAttributeEdit?.AttributeName);
+        Assert.AreEqual("karma", presenter.AppliedAttributeEdit?.Bucket);
+        Assert.AreEqual(7, presenter.AppliedAttributeEdit?.Value);
+    }
+
+    [TestMethod]
     public async Task ExecuteDialogActionAsync_delegates_to_presenter()
     {
         var presenter = new FakeCharacterOverviewPresenter();

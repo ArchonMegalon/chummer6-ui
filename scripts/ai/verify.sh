@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
 manifest_target="${1:-}"
 
@@ -12,10 +12,6 @@ else
 fi
 
 bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
-#!/usr/bin/env bash
-set -euo pipefail
-
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repo_root"
 
 test -f docs/COMPATIBILITY_CARGO.md
@@ -306,6 +302,14 @@ if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_pat
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+
+echo "[verify] refreshing verified release-channel mirror..."
+python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null
+
+if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 
 if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then

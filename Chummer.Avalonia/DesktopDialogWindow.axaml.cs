@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
@@ -76,7 +77,7 @@ public partial class DesktopDialogWindow : Window
         RefreshDialogVisuals();
         if (IsVisible)
         {
-            FocusPreferredControl();
+            Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
         }
     }
 
@@ -1014,6 +1015,10 @@ public partial class DesktopDialogWindow : Window
             Watermark = string.IsNullOrWhiteSpace(searchField.Placeholder) ? "Search" : searchField.Placeholder
         };
         ApplyAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
+        if (string.Equals(_preferredFocusControlName, searchBox.Name, StringComparison.Ordinal))
+        {
+            searchBox.AttachedToVisualTree += (_, _) => RestorePreferredTextBoxFocus(searchBox);
+        }
         searchBox.TextChanged += (_, _) =>
         {
             string nextValue = searchBox.Text ?? string.Empty;
@@ -2281,9 +2286,11 @@ public partial class DesktopDialogWindow : Window
         if (_adapter is null)
             return;
 
+        CapturePreferredFocusState();
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
+        FocusPreferredControl();
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -2398,6 +2405,28 @@ public partial class DesktopDialogWindow : Window
         }
 
         return focused;
+    }
+
+    private void RestorePreferredTextBoxFocus(TextBox textBox)
+    {
+        if (!string.Equals(_preferredFocusControlName, textBox.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!textBox.IsEnabled)
+            {
+                return;
+            }
+
+            bool focused = textBox.Focus();
+            if (focused && _preferredFocusSelectionStart is int caretIndex)
+            {
+                textBox.CaretIndex = Math.Clamp(caretIndex, 0, textBox.Text?.Length ?? 0);
+            }
+        }, DispatcherPriority.Input);
     }
 }
 

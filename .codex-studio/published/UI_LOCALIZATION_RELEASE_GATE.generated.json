@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-12T12:33:12Z",
+  "generated_at": "2026-05-15T16:06:33Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -30,7 +30,7 @@
       "    1 Warning(s)",
       "    0 Error(s)",
       "",
-      "Time Elapsed 00:00:20.48",
+      "Time Elapsed 00:00:46.03",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-05-07T01:04:47Z",
+    "generated_at": "2026-05-15T14:54:20Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -119,8 +119,8 @@
     ],
     "proof_routes": [
       "/downloads/install/avalonia-linux-x64-installer",
-      "/workspace/access",
-      "/workspace/work",
+      "/home/access",
+      "/home/work",
       "/account/work",
       "/account/support",
       "/contact",
@@ -129,7 +129,7 @@
     ],
     "receipts": [
       {
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": ".codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [

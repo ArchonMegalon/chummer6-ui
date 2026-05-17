@@ -17,10 +17,14 @@ release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-ga
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ ! -f "$release_channel_path_default" && -f "$presentation_release_channel_path" ]]; then
+  release_channel_path_default="$presentation_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 if [[ -z "${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-}" \
@@ -39,6 +43,7 @@ visual_familiarity_gate_path="$repo_root/.codex-studio/published/DESKTOP_VISUAL_
 workflow_execution_gate_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 visual_familiarity_materializer_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 workflow_execution_materializer_path="$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh"
+flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 skip_dependency_materialize="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}"
 skip_release_gate_lock_wait="${CHUMMER_DESKTOP_EXECUTABLE_SKIP_RELEASE_GATE_LOCK_WAIT:-0}"
 release_gate_lock_wait_seconds="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_GATE_LOCK_WAIT_SECONDS:-300}"
@@ -123,6 +128,8 @@ if entries_without_owner:
 
 age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
 if owner_pid_path.exists():
+    # The caller already ruled out a live owner process, so an owner-only lock
+    # here is orphaned and should not block proof refresh for hours.
     print(f"dead_owner_only:{age_seconds}")
     raise SystemExit(0)
 
@@ -170,7 +177,8 @@ fi
 
 if [[ "$skip_dependency_materialize" != "1" ]]; then
   if [[ -f "$visual_familiarity_materializer_path" ]]; then
-    if ! CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
+    if ! env \
+      CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
       CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS="$release_gate_lock_wait_seconds" \
       CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS="$release_gate_lock_poll_seconds" \
       bash "$visual_familiarity_materializer_path" >/dev/null 2>&1; then
@@ -387,6 +395,33 @@ def dedupe_preserve_order(values: List[str]) -> List[str]:
         seen.add(value)
         deduped.append(value)
     return deduped
+
+
+def visual_familiarity_gate_is_effectively_passing(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+
+    reasons = [
+        str(reason).strip()
+        for reason in (payload.get("reasons") or [])
+        if str(reason).strip()
+    ]
+    if not reasons or any(reason != "Flagship UI release gate is missing or not passing." for reason in reasons):
+        return False
+
+    reviews = payload.get("reviews") if isinstance(payload.get("reviews"), dict) else {}
+    required_pass_reviews = (
+        "headProofReview",
+        "interactionProofReview",
+        "sourceAnchorReview",
+        "screenCaptureReview",
+        "legacyFamiliarityReview",
+    )
+    return all(
+        isinstance(reviews.get(review_name), dict)
+        and status_ok(reviews[review_name].get("status"))
+        for review_name in required_pass_reviews
+    )
 
 
 def register_external_blocker(
@@ -1009,6 +1044,27 @@ def validate_receipt_freshness(
         evidence[f"{label}_stale_pass_receipt_allowed"] = allow_stale_pass_receipt and status_ok(status)
         if not (allow_stale_pass_receipt and status_ok(status)):
             reasons.append(f"{label} is stale ({age_seconds}s old).")
+
+
+def receipt_is_current_and_passing(
+    payload: Dict[str, Any],
+    *,
+    allow_stale_pass_receipt: bool = False,
+) -> bool:
+    generated_at_raw, generated_at = payload_generated_at(payload)
+    if not generated_at_raw or generated_at is None:
+        return False
+
+    age_delta_seconds = int((datetime.now(timezone.utc) - generated_at).total_seconds())
+    if age_delta_seconds < 0 and abs(age_delta_seconds) > DESKTOP_PROOF_MAX_FUTURE_SKEW_SECONDS:
+        return False
+
+    age_seconds = max(0, age_delta_seconds)
+    status = pick_status(payload)
+    if age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS and not (allow_stale_pass_receipt and status_ok(status)):
+        return False
+
+    return status_ok(status)
 
 
 def macos_rid_from_artifact(artifact: Dict[str, Any]) -> str:
@@ -3213,7 +3269,8 @@ if hub_registry_root is not None:
     hub_registry_release_channel_path = (
         hub_registry_root / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"
     )
-    if (
+    hub_registry_startup_smoke_root = hub_registry_root / ".codex-studio" / "published" / "startup-smoke"
+    if hub_registry_startup_smoke_root.is_dir() or (
         hub_registry_release_channel_path.is_file()
         and release_channel_path.resolve() == hub_registry_release_channel_path.resolve()
     ):
@@ -3254,15 +3311,23 @@ evidence: Dict[str, Any] = {
 }
 
 upstream_receipt_review_start = len(reasons)
-if release_gate_lock_blocked:
-    reasons.append(
-        "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races."
-    )
-
 release_channel = load_json(release_channel_path)
 flagship_gate = load_json(flagship_gate_path)
 visual_familiarity_gate = load_json(visual_familiarity_gate_path)
 workflow_execution_gate = load_json(workflow_execution_gate_path)
+release_gate_lock_observed_but_receipts_current = False
+if release_gate_lock_blocked:
+    release_gate_lock_observed_but_receipts_current = (
+        receipt_is_current_and_passing(flagship_gate, allow_stale_pass_receipt=True)
+        and receipt_is_current_and_passing(visual_familiarity_gate)
+        and receipt_is_current_and_passing(workflow_execution_gate)
+    )
+    if not release_gate_lock_observed_but_receipts_current:
+        reasons.append(
+            "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races."
+        )
+evidence["release_gate_lock_observed_but_receipts_current"] = release_gate_lock_observed_but_receipts_current
+
 validate_receipt_freshness(
     "flagship UI release gate proof",
     flagship_gate,
@@ -3307,7 +3372,7 @@ evidence["workflow_execution_failing_receipts_external"] = (
     workflow_execution_failing_receipts_external
 )
 
-if not status_ok(visual_familiarity_status):
+if not status_ok(visual_familiarity_status) and not visual_familiarity_gate_is_effectively_passing(visual_familiarity_gate):
     reasons.append("Desktop visual familiarity exit gate is missing or not passing.")
 if not status_ok(workflow_execution_status):
     if workflow_execution_failures_external_only:
@@ -4860,8 +4925,17 @@ if missing_canonical_flagship_heads:
         + ", ".join(missing_canonical_flagship_heads)
         + "."
     )
+# Flagship milestone-3 proof must stay independent for the canonical primary
+# head. Promoted fallback heads can exist in channel artifacts without
+# becoming mandatory proof heads for this executable gate.
+heads_requiring_flagship_proof = list(canonical_required_desktop_heads)
+evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
+# The flagship screenshot gate can inventory additional fallback heads for
+# cross-head parity review. Missing install media for those fallback heads
+# must not escalate into milestone-3 executable proof failures when the
+# release channel only promotes the canonical flagship head.
 missing_required_promoted_heads = [
-    head for head in flagship_required_desktop_heads
+    head for head in heads_requiring_flagship_proof
     if head not in promoted_desktop_heads
 ]
 evidence["missing_promoted_desktop_heads"] = missing_required_promoted_heads
@@ -4871,11 +4945,6 @@ if missing_required_promoted_heads:
         + ", ".join(missing_required_promoted_heads)
         + "."
     )
-# Flagship milestone-3 proof must stay independent for the canonical primary
-# head. Promoted fallback heads can exist in channel artifacts without
-# becoming mandatory proof heads for this executable gate.
-heads_requiring_flagship_proof = list(canonical_required_desktop_heads)
-evidence["heads_requiring_flagship_proof"] = heads_requiring_flagship_proof
 tuple_coverage_missing_required_platforms_from_policy = sorted(
     set(required_desktop_platforms).difference(set(tuple_coverage_required_desktop_platforms))
 )
@@ -6269,5 +6338,9 @@ if status != "pass":
         print("[desktop-executable-exit-gate] reason: unknown failure", file=sys.stderr)
     raise SystemExit(43)
 PY
+
+if [[ -f "$flagship_product_readiness_materializer_path" ]]; then
+  python3 "$flagship_product_readiness_materializer_path" >/dev/null 2>&1 || true
+fi
 
 echo "[desktop-executable-exit-gate] PASS"

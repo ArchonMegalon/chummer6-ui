@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T12:33:12.323603Z",
+  "generatedAt": "2026-05-16T01:52:57.506323Z",
   "contractName": "chummer6-ui.design_mirror_completeness",
   "status": "pass",
   "summary": "Flagship design mirror inputs are present and carry the required product bar markers.",
@@ -19,41 +19,41 @@
       ".codex-design/product/FLAGSHIP_PRODUCT_BAR.md": {
         "exists": true,
         "markers": {
-          "premium expert workbench": true,
-          "startup lands on the real workbench": true,
-          "Build Ghost": true
+          "flagship grade": true,
+          "workbench-first startup instead of decorative landing chrome": true,
+          "Desktop familiarity must still read as Chummer5a": true
         }
       },
       ".codex-design/product/CHUMMER5A_FAMILIARITY_BRIDGE.md": {
         "exists": true,
         "markers": {
-          "widget class": true,
-          "review expanders": true,
-          "Build Ghost compare benches": true
+          "Classic top-level menu posture": true,
+          "Immediate toolstrip under the menu": true,
+          "dense workbench": true
         }
       },
       ".codex-design/product/VETERAN_FIRST_MINUTE_GATE.yaml": {
         "exists": true,
         "markers": {
-          "startup_survives_first_paint": true,
-          "no_fake_empty_section_expander": true,
-          "sr4_sr5_sr6_lane_honesty": true
+          "reach_real_workbench": true,
+          "locate_save_import_settings": true,
+          "locate_master_index_and_roster": true
         }
       },
       ".codex-design/product/DENSE_WORKBENCH_BUDGET.yaml": {
         "exists": true,
         "markers": {
-          "dense workbench": true,
-          "source_linked_tooltips_and_detail_drawers_for_explainable_truth": true,
-          "runtime_created_controls_materialize_inside_the_same_dense_workbench_contract": true
+          "workbench_posture": true,
+          "require_top_menu": true,
+          "center_pane_must_dominate": true
         }
       },
       ".codex-design/product/FLAGSHIP_RELEASE_ACCEPTANCE.yaml": {
         "exists": true,
         "markers": {
-          "interactive_runtime_route_inventory": true,
-          "startup_workbench_survival": true,
-          "end_to_end_flagship_user_route": true
+          "veteran_first_minute_orientation": true,
+          "desktop_familiarity_and_install_continuity": true,
+          "rules_explainability": true
         }
       }
     }
