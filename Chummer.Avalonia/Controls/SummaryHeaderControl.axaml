@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -11,6 +12,8 @@
           Padding="14,10"
           IsVisible="False">
     <StackPanel Spacing="10">
+      <controls:WorkspaceStripControl x:Name="WorkspaceStripControl" />
+
       <StackPanel x:Name="NavigationTabsPanel"
                   Spacing="6">
         <TextBlock x:Name="NavigationTabsHeadingText"

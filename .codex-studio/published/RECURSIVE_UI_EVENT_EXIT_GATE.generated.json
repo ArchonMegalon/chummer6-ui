@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-13T22:30:56Z",
+  "generatedAt": "2026-05-16T01:57:00Z",
   "contract_name": "chummer6-ui.recursive_ui_event_exit_gate",
   "status": "pass",
   "summary": "Recursive UI event exit gate verifies route recursion, screenshot proof, and Chummer5a parity landmarks.",
@@ -60,7 +60,7 @@
       "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": true
     },
     "runtimeRouteInventoryStatus": "pass",
-    "interactiveControlInventoryStatus": "fail",
+    "interactiveControlInventoryStatus": "pass",
     "workflowParityStatus": "pass"
   }
 }

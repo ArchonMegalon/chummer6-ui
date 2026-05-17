@@ -32,8 +32,8 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(scriptText, "Keyboard_shortcuts_resolve_to_the_same_shell_commands");
         StringAssert.Contains(scriptText, "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces");
         StringAssert.Contains(scriptText, "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches");
-        StringAssert.Contains(scriptText, "Runtime_backed_file_menu_new_character_opens_creation_dialog");
-        StringAssert.Contains(scriptText, "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
+        StringAssert.Contains(scriptText, "File_menu_new_character_creates_runtime_workspace");
+        StringAssert.Contains(scriptText, "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome");
         StringAssert.Contains(scriptText, "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
         StringAssert.Contains(scriptText, "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end");
         StringAssert.Contains(scriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
@@ -108,8 +108,8 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(receiptText, "\"Keyboard_shortcuts_resolve_to_the_same_shell_commands\": true");
         StringAssert.Contains(receiptText, "\"Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces\": true");
         StringAssert.Contains(receiptText, "\"Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches\": true");
-        StringAssert.Contains(receiptText, "\"Runtime_backed_file_menu_new_character_opens_creation_dialog\": true");
-        StringAssert.Contains(receiptText, "\"Runtime_backed_global_settings_visible_selects_and_toggles_remain_live\": true");
+        StringAssert.Contains(receiptText, "\"File_menu_new_character_creates_runtime_workspace\": true");
+        StringAssert.Contains(receiptText, "\"Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome\": true");
         StringAssert.Contains(receiptText, "\"Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end\": true");
         StringAssert.Contains(receiptText, "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks\": true");
         StringAssert.Contains(receiptText, "\"Name~Standalone_toolstrip_buttons_raise_expected_events");
@@ -117,9 +117,9 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(receiptText, "|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands");
         StringAssert.Contains(receiptText, "|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces");
         StringAssert.Contains(receiptText, "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches");
-        StringAssert.Contains(receiptText, "\"Name~Runtime_backed_file_menu_new_character_opens_creation_dialog");
+        StringAssert.Contains(receiptText, "\"Name~File_menu_new_character_creates_runtime_workspace");
         StringAssert.Contains(receiptText, "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
-        StringAssert.Contains(receiptText, "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
+        StringAssert.Contains(receiptText, "|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome");
         StringAssert.Contains(receiptText, "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
         StringAssert.Contains(receiptText, "\"routeFamilies\": [");
         StringAssert.Contains(receiptText, "\"rulesetLanes\": [");

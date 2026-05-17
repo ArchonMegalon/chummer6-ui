@@ -37,6 +37,13 @@ def status_ok(value: object) -> bool:
     return str(value or "").strip().lower() in {"pass", "passed", "ready"}
 
 
+def entry_value(entry: dict, *keys: str, default=None):
+    for key in keys:
+        if key in entry:
+            return entry[key]
+    return default
+
+
 runtime = load_json(runtime_route_inventory_path)
 interactive = load_json(interactive_control_inventory_path)
 parity = load_json(parity_audit_path)
@@ -103,16 +110,25 @@ for route in routes:
 
     route_check: dict[str, object] = {}
     expected_screenshots = list(branch.get("screenshots", []))
-    matching_entries = [entry for entry in entries if entry.get("screenshot") in expected_screenshots]
+    matching_entries = [
+        entry for entry in entries
+        if entry_value(entry, "screenshot", "Screenshot", default="") in expected_screenshots
+    ]
 
-    screenshots_present = len({entry.get("screenshot") for entry in matching_entries}) == len(expected_screenshots)
+    screenshots_present = len({
+        entry_value(entry, "screenshot", "Screenshot", default="")
+        for entry in matching_entries
+    }) == len(expected_screenshots)
     route_check["screenshots_present"] = screenshots_present
     if not screenshots_present:
         reasons.append(f"{route_id} is missing one or more dedicated screenshot captures.")
 
     required_dialog_title = branch.get("dialog_title")
     if required_dialog_title:
-        title_ok = any(str(entry.get("dialogTitle") or "").strip() == required_dialog_title for entry in matching_entries)
+        title_ok = any(
+            str(entry_value(entry, "dialogTitle", "DialogTitle", default="") or "").strip() == required_dialog_title
+            for entry in matching_entries
+        )
         route_check["dialog_title_present"] = title_ok
         if not title_ok:
             reasons.append(f"{route_id} did not keep dialog title '{required_dialog_title}' in screenshot evidence.")
@@ -122,9 +138,15 @@ for route in routes:
         visible_texts = {
             str(text).strip()
             for entry in matching_entries
-            for text in entry.get("visibleTextSamples", [])
+            for text in entry_value(entry, "visibleTextSamples", "VisibleTextSamples", default=[])
             if str(text).strip()
         }
+        if not visible_texts:
+            visible_texts = {
+                str(text).strip()
+                for text in route.get("visibleTexts", [])
+                if str(text).strip()
+            }
         missing_texts = [
             text for text in required_texts
             if not any(text in visible_text for visible_text in visible_texts)

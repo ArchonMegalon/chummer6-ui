@@ -98,6 +98,24 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_refreshes_verified_release_channel_mirror_before_desktop_gate_checks()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+        string helperPath = Path.Combine(repoRoot, "scripts", "materialize-verified-release-channel-mirror.py");
+        string helperText = File.ReadAllText(helperPath);
+
+        StringAssert.Contains(verifyScriptText, "refreshing verified release-channel mirror");
+        StringAssert.Contains(verifyScriptText, "python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null");
+        StringAssert.Contains(verifyScriptText, ".tmp/verify-release-channel/RELEASE_CHANNEL.generated.json");
+        StringAssert.Contains(helperText, "verify-releases-manifest.sh");
+        StringAssert.Contains(helperText, "\"generated_at\"] = now");
+        StringAssert.Contains(helperText, "\"generatedAt\"] = now");
+        StringAssert.Contains(helperText, "\"verifiedFromPath\"]");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_unexpected_desktop_install_artifact_keys()
     {
         string repoRoot = FindRepoRoot();
@@ -198,6 +216,19 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_uses_env_wrapped_visual_dependency_invocation()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "if ! env");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_promoted_installer_tuple_row_drift()
     {
         string repoRoot = FindRepoRoot();
@@ -208,6 +239,18 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifyScriptText, "desktop executable gate should reject promotedInstallerTuples artifact metadata drift");
         StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit promotedInstallerTuples metadata drift marker");
         StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata.");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
+        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null 2>&1 || true");
     }
 
     [TestMethod]
@@ -406,6 +449,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "\"release_gate_lock_blocked\": release_gate_lock_blocked");
         StringAssert.Contains(scriptText, "\"release_gate_lock_stale_removed\": release_gate_lock_stale_removed");
         StringAssert.Contains(scriptText, "\"release_gate_lock_stale_reason\": release_gate_lock_stale_reason");
+        StringAssert.Contains(scriptText, "def receipt_is_current_and_passing(");
+        StringAssert.Contains(scriptText, "release_gate_lock_observed_but_receipts_current = (");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(flagship_gate, allow_stale_pass_receipt=True)");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(visual_familiarity_gate)");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(workflow_execution_gate)");
+        StringAssert.Contains(scriptText, "if not release_gate_lock_observed_but_receipts_current:");
+        StringAssert.Contains(scriptText, "evidence[\"release_gate_lock_observed_but_receipts_current\"] = release_gate_lock_observed_but_receipts_current");
         StringAssert.Contains(scriptText, "\"release_gate_lock_dir\": str(repo_root / \".codex-studio\" / \"locks\" / \"b14-flagship-ui-release-gate.lock\")");
         StringAssert.Contains(scriptText, "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races.");
     }
@@ -913,6 +963,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"head\")) == normalize_token(app_key)");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"rid\")) == normalize_token(rid)");
         StringAssert.Contains(scriptText, "INSTALLER_SMOKE_ARTIFACT_PATH=\"$INSTALLER_PATH\"");
+        StringAssert.Contains(scriptText, "receipt.get(\"artifactPath\"),");
+        StringAssert.Contains(scriptText, "receipt.get(\"artifactRelativePath\"),");
+        Assert.IsTrue(
+            scriptText.IndexOf("receipt.get(\"artifactPath\"),", StringComparison.Ordinal)
+            < scriptText.IndexOf("receipt.get(\"artifactRelativePath\"),", StringComparison.Ordinal),
+            "Linux promoted installer receipt resolution must prefer artifactPath before artifactRelativePath so canonical gate-run proof wins over stale repo-root dist copies.");
         StringAssert.Contains(scriptText, "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy.");
         StringAssert.Contains(scriptText, "Linux startup smoke receipt artifactPath is neither the promoted installer shelf bytes nor a canonical gate-run copy.");
         Assert.IsFalse(

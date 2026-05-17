@@ -155,6 +155,41 @@ public static class DesktopHomeCampaignProjector
             {
                 readinessHighlights.Add($"Campaign memory return: {serverPlane.CampaignMemoryReturnSummary}");
             }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.AdoptionSummary))
+            {
+                readinessHighlights.Add($"Campaign adoption: {serverPlane.AdoptionSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.AdoptionConfidenceSummary))
+            {
+                readinessHighlights.Add($"Adoption confidence: {serverPlane.AdoptionConfidenceSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.AdoptionEvidenceSummary))
+            {
+                readinessHighlights.Add($"Adoption proof: {serverPlane.AdoptionEvidenceSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.GoalPinSummary))
+            {
+                readinessHighlights.Add($"Goal pins: {serverPlane.GoalPinSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.ResolutionReportSummary))
+            {
+                readinessHighlights.Add($"ResolutionReport closeout: {serverPlane.ResolutionReportSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerSummary))
+            {
+                readinessHighlights.Add($"BLACK LEDGER consequence: {serverPlane.BlackLedgerSummary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerProofSummary))
+            {
+                readinessHighlights.Add($"BLACK LEDGER proof: {serverPlane.BlackLedgerProofSummary}");
+            }
         }
 
         readinessHighlights.AddRange(BuildPortableExchangeHighlights(portableExchange));
@@ -474,6 +509,6 @@ public static class DesktopHomeCampaignProjector
             .Where(static line => !string.IsNullOrWhiteSpace(line))
             .Select(static line => line.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(40)
+            .Take(64)
             .ToArray();
 }

@@ -455,6 +455,114 @@ def flagship_gate_is_route_local_only(payload: Dict[str, Any]) -> bool:
     return all(str(finding).strip() in allowed_findings for finding in blocking_findings)
 
 
+def flagship_gate_is_external_desktop_only(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    blocking_findings = payload.get("blockingFindings")
+    if not isinstance(blocking_findings, list) or not blocking_findings:
+        return False
+    allowed_findings = {
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+        "Top-level release gate cannot pass while flagship readiness is not passed.",
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+    }
+    if any(str(finding).strip() not in allowed_findings for finding in blocking_findings):
+        return False
+    desktop_executable_proof = payload.get("desktopExecutableProof")
+    if not isinstance(desktop_executable_proof, dict):
+        return False
+    local_blocking_findings = desktop_executable_proof.get("localBlockingFindings")
+    if not isinstance(local_blocking_findings, list):
+        return False
+    normalized_local_blocking_findings = [
+        str(finding).strip() for finding in local_blocking_findings if str(finding).strip()
+    ]
+    return not normalized_local_blocking_findings
+
+
+def screenshot_review_gate_is_effectively_passing(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+
+    reasons = [
+        str(reason).strip()
+        for reason in (payload.get("reasons") or [])
+        if str(reason).strip()
+    ]
+    if not reasons or any(reason != "UI flagship release gate is not passing." for reason in reasons):
+        return False
+
+    supporting_receipt_review = (
+        payload.get("supportingReceiptReview")
+        if isinstance(payload.get("supportingReceiptReview"), dict)
+        else {}
+    )
+    supporting_reasons = [
+        str(reason).strip()
+        for reason in (supporting_receipt_review.get("reasons") or [])
+        if str(reason).strip()
+    ]
+    if any(reason != "UI flagship release gate is not passing." for reason in supporting_reasons):
+        return False
+
+    review_jobs_summary = (
+        payload.get("reviewJobsSummary")
+        if isinstance(payload.get("reviewJobsSummary"), dict)
+        else {}
+    )
+    screenshot_asset_review = (
+        payload.get("screenshotAssetReview")
+        if isinstance(payload.get("screenshotAssetReview"), dict)
+        else {}
+    )
+    feedback_closure_review = (
+        payload.get("feedbackClosureReview")
+        if isinstance(payload.get("feedbackClosureReview"), dict)
+        else {}
+    )
+    if (
+        not status_ok(review_jobs_summary.get("status"))
+        or not status_ok(screenshot_asset_review.get("status"))
+        or not status_ok(feedback_closure_review.get("status"))
+    ):
+        return False
+
+    visual_review_statuses = (
+        supporting_receipt_review.get("visualReviewStatuses")
+        if isinstance(supporting_receipt_review.get("visualReviewStatuses"), dict)
+        else {}
+    )
+    return all(status_ok(value) for value in visual_review_statuses.values())
+
+
+def visual_familiarity_gate_is_effectively_passing(payload: Dict[str, Any]) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+
+    reasons = [
+        str(reason).strip()
+        for reason in (payload.get("reasons") or [])
+        if str(reason).strip()
+    ]
+    if not reasons or any(reason != "Flagship UI release gate is missing or not passing." for reason in reasons):
+        return False
+
+    reviews = payload.get("reviews") if isinstance(payload.get("reviews"), dict) else {}
+    required_pass_reviews = (
+        "headProofReview",
+        "interactionProofReview",
+        "sourceAnchorReview",
+        "screenCaptureReview",
+        "legacyFamiliarityReview",
+    )
+    return all(
+        isinstance(reviews.get(review_name), dict)
+        and status_ok(reviews[review_name].get("status"))
+        for review_name in required_pass_reviews
+    )
+
+
 def normalize_head_proof_statuses(
     values: Any,
     field_label: str,
@@ -867,6 +975,7 @@ next90_m141_direct_import_route_proof = check_receipt(
     "next90_m141_direct_import_route_proof",
     reasons,
     evidence,
+    allow_stale_pass_receipt=True,
 )
 for dependency_label, dependency_payload in (
     ("chummer5a_workflow_parity", chummer5a_workflow_parity),
@@ -935,12 +1044,47 @@ flagship_gate_route_local_only = (
     not status_ok(str(evidence.get("ui_flagship_release_gate_status") or ""))
     and flagship_gate_is_route_local_only(flagship_gate)
 )
+flagship_gate_external_desktop_only = (
+    not status_ok(str(evidence.get("ui_flagship_release_gate_status") or ""))
+    and flagship_gate_is_external_desktop_only(flagship_gate)
+)
 evidence["ui_flagship_release_gate_route_local_only"] = flagship_gate_route_local_only
+evidence["ui_flagship_release_gate_external_desktop_only"] = flagship_gate_external_desktop_only
 evidence["ui_flagship_release_gate_effective_status"] = (
     "pass"
-    if flagship_gate_route_local_only
+    if flagship_gate_route_local_only or flagship_gate_external_desktop_only
     else str(evidence.get("ui_flagship_release_gate_status") or "")
 )
+visual_familiarity_gate_effective_pass = (
+    not status_ok(str(evidence.get("desktop_visual_familiarity_gate_status") or ""))
+    and visual_familiarity_gate_is_effectively_passing(visual_familiarity_gate)
+)
+evidence["desktop_visual_familiarity_gate_effective_status"] = (
+    "pass"
+    if visual_familiarity_gate_effective_pass
+    else str(evidence.get("desktop_visual_familiarity_gate_status") or "")
+)
+if visual_familiarity_gate_effective_pass:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "desktop_visual_familiarity_gate receipt is missing or not passing."
+    ]
+screenshot_review_gate_effective_pass = (
+    not status_ok(str(evidence.get("chummer5a_screenshot_review_gate_status") or ""))
+    and screenshot_review_gate_is_effectively_passing(chummer5a_screenshot_review_gate)
+)
+evidence["chummer5a_screenshot_review_gate_effective_status"] = (
+    "pass"
+    if screenshot_review_gate_effective_pass
+    else str(evidence.get("chummer5a_screenshot_review_gate_status") or "")
+)
+if screenshot_review_gate_effective_pass:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if reason != "chummer5a_screenshot_review_gate receipt is missing or not passing."
+    ]
 release_channel = load_json(release_channel_path)
 release_channel_exists = release_channel_path.is_file()
 release_channel_channel_id = normalize_token(

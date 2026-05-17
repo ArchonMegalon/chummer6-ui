@@ -10,7 +10,7 @@ legacy_ui_parity_script_label="${LEGACY_UI_PARITY_SCRIPT_LABEL:-chummer5a-legacy
 legacy_ui_parity_legacy_roots="${LEGACY_UI_PARITY_LEGACY_ROOTS:-}"
 legacy_ui_parity_verify_banner="${LEGACY_UI_PARITY_VERIFY_BANNER:-checking Chummer5a legacy UI element parity guard}"
 legacy_ui_parity_verify_invocation="${LEGACY_UI_PARITY_VERIFY_INVOCATION:-bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh}"
-legacy_ui_parity_b14_markers="${LEGACY_UI_PARITY_B14_MARKERS:-CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json|chummer5a-legacy-ui-element-parity-check.sh|legacy_ui_element_parity_receipt}"
+legacy_ui_parity_b14_markers="${LEGACY_UI_PARITY_B14_MARKERS:-CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json|chummer5a-legacy-ui-element-parity-check.sh|chummer5a_legacy_ui_element_parity_receipt_path}"
 legacy_ui_parity_contract_name="${LEGACY_UI_PARITY_CONTRACT_NAME:-chummer6-ui.chummer5a_legacy_ui_element_parity}"
 
 receipt_path="${LEGACY_UI_PARITY_RECEIPT_PATH:-${CHUMMER5A_LEGACY_UI_ELEMENT_PARITY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json}}"
@@ -141,11 +141,12 @@ PROOF_TEST_MARKERS = [
     "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
     "Avalonia_and_Blazor_workspace_action_summary_matches",
     "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts",
-    "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts",
-    "Runtime_backed_file_menu_new_character_opens_creation_dialog",
-    "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
-    "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live",
-    "Runtime_generated_dialog_controls_expose_stable_inventory_names",
+    "File_menu_new_character_creates_runtime_workspace",
+    "File_menu_new_character_completes_into_visible_runtime_workspace",
+    "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+    "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+    "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces",
+    "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
 ]
 
@@ -158,18 +159,19 @@ PROOF_FILTER = (
     "|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
     "|Name~Avalonia_and_Blazor_workspace_action_summary_matches"
     "|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
-    "|Name~Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
-    "|Name~Runtime_backed_file_menu_new_character_opens_creation_dialog"
-    "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live"
-    "|Name~Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"
-    "|Name~Runtime_generated_dialog_controls_expose_stable_inventory_names"
+    "|Name~File_menu_new_character_creates_runtime_workspace"
+    "|Name~File_menu_new_character_completes_into_visible_runtime_workspace"
+    "|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
+    "|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+    "|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
+    "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
 )
 
 PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     "file_new": {
         "currentIds": ["command:new_character", "command:new_critter"],
-        "proofMarkers": ["Runtime_backed_file_menu_new_character_opens_creation_dialog", "ExecuteCommandAsync_all_catalog_commands_are_handled"],
+        "proofMarkers": ["File_menu_new_character_creates_runtime_workspace", "ExecuteCommandAsync_all_catalog_commands_are_handled"],
     },
     "file_open": {
         "currentIds": ["command:open_character", "command:open_for_printing", "command:open_for_export"],
@@ -201,7 +203,7 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     },
     "settings_global": {
         "currentIds": ["command:global_settings"],
-        "proofMarkers": ["Runtime_backed_global_settings_visible_selects_and_toggles_remain_live", "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"],
+        "proofMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome", "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"],
     },
     "settings_character": {
         "currentIds": ["command:character_settings"],
@@ -209,7 +211,7 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     },
     "character_creation": {
         "currentIds": ["command:new_character", "action:tab-info.attributes", "action:tab-skills.skills"],
-        "proofMarkers": ["Runtime_backed_file_menu_new_character_opens_creation_dialog", "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"],
+        "proofMarkers": ["File_menu_new_character_completes_into_visible_runtime_workspace", "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"],
     },
     "selection_dialog": {
         "currentIds": ["ui:gear_add", "ui:combat_add_weapon", "ui:combat_add_armor", "ui:cyberware_add"],
@@ -217,7 +219,7 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     },
     "search_filter_category": {
         "currentIds": ["ui:gear_add", "ui:combat_add_weapon", "ui:combat_add_armor", "command:master_index"],
-        "proofMarkers": ["RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions", "Runtime_generated_dialog_controls_expose_stable_inventory_names"],
+        "proofMarkers": ["RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions", "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"],
     },
     "browse_select": {
         "currentIds": ["action:tab-gear.inventory", "action:tab-combat.weapons", "action:tab-contacts.contacts"],
@@ -225,11 +227,11 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     },
     "field_update": {
         "currentIds": ["command:global_settings", "ui:create_entry", "ui:edit_entry"],
-        "proofMarkers": ["Runtime_backed_global_settings_visible_selects_and_toggles_remain_live", "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"],
+        "proofMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome", "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"],
     },
     "toggle_state": {
         "currentIds": ["ui:toggle_free_paid", "command:global_settings"],
-        "proofMarkers": ["CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions", "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live"],
+        "proofMarkers": ["CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions", "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "confirm_submit": {
         "currentIds": ["dialog-action:ok", "dialog-action:apply", "dialog-action:save_global_settings", "dialog-action:create_character"],
@@ -261,7 +263,7 @@ PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
     },
     "inventory_progression": {
         "currentIds": ["ui:gear_add", "ui:gear_edit", "ui:gear_delete", "ui:create_entry", "action:tab-gear.inventory"],
-        "proofMarkers": ["Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections", "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"],
+        "proofMarkers": ["Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections", "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"],
     },
     "combat": {
         "currentIds": ["ui:combat_add_weapon", "ui:combat_add_armor", "ui:combat_reload", "ui:combat_damage_track"],
@@ -759,6 +761,9 @@ payload: dict[str, Any] = {
         "proofMarkers": {},
         "wiredIntoStandardVerify": False,
         "b14ConsumesReceipt": False,
+        "buildExitCode": None,
+        "buildOutputTail": [],
+        "testResult": {},
     },
 }
 reasons: list[str] = payload["reasons"]
@@ -939,8 +944,8 @@ evidence["currentInventoryCounts"] = {key: len(value) for key, value in current_
 
 if legacy_dynamic_elements and not current_dynamic_elements:
     add_reason("Legacy dynamic interactive elements were found, but no current dynamic Avalonia interactive elements were detected.")
-if legacy_dynamic_elements and "Runtime_generated_dialog_controls_expose_stable_inventory_names" not in test_corpus:
-    add_reason("Dynamic generated dialog controls are not pinned by Runtime_generated_dialog_controls_expose_stable_inventory_names.")
+if legacy_dynamic_elements and "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces" not in test_corpus:
+    add_reason("Dynamic generated dialog controls are not pinned by Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces.")
 
 proof_marker_results: dict[str, bool] = {}
 for marker in PROOF_TEST_MARKERS:

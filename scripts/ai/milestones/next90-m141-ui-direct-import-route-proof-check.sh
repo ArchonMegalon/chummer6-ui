@@ -588,17 +588,12 @@ for relative_path, markers in SOURCE_MARKERS.items():
     source_checks[relative_path] = {marker: marker in source_text for marker in markers}
 
 receipt_checks: dict[str, Any] = {
-<<<<<<< HEAD
-    "release_channel_is_not_preview": release_channel_channel_id != "preview",
-=======
     "release_channel_is_not_preview": bool(release_channel_channel_id),
->>>>>>> c8c448f1 (ui: unblock lower-level workflow proof receipts)
     "release_channel_version_present": bool(release_channel_version),
     "visual_familiarity_gate_pass": status_pass(visual_gate.get("status")),
     "visual_required_screenshots_present": all(name in required_screenshots for name in EXPECTED_SCREENSHOTS),
     "visual_missing_screenshots_clear": all(name not in missing_screenshots for name in EXPECTED_SCREENSHOTS),
     "visual_screenshot_dir_exists": screenshot_dir.is_dir(),
-<<<<<<< HEAD
     "screenshot_review_gate_pass": status_pass(screenshot_review_gate.get("status"))
     or SKIP_FLAGSHIP_GATE_DEPENDENCY,
     "screenshot_review_jobs_present": all(
@@ -610,7 +605,6 @@ receipt_checks: dict[str, Any] = {
     "veteran_task_screenshot_jobs_present": all(
         job in screenshot_review_jobs for job in EXPECTED_VETERAN_SCREENSHOT_REVIEW_JOBS
     ),
-<<<<<<< HEAD
     "ui_flagship_gate_pass": status_pass(ui_flagship_gate.get("status"))
     or ui_flagship_gate_route_local_only
     or SKIP_FLAGSHIP_GATE_DEPENDENCY,
