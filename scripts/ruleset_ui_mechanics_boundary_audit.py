@@ -24,7 +24,7 @@ def main() -> int:
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.ruleset_ui_mechanics_boundary_audit",
         "status": "pass",
-        "summary": "Desktop UI strength is explicitly bounded away from mechanics completeness by ruleset readiness labels and governed-preview release posture.",
+        "summary": "Desktop UI strength is explicitly bounded away from mechanics completeness by ruleset readiness labels and the scoped Windows/Linux public-release posture.",
         "desktopUiProof": {
             "flagshipUiReleaseGate": {
                 "status": flagship.get("status"),
@@ -45,11 +45,11 @@ def main() -> int:
             "summary": "Ruleset readiness classifier was not present in this workspace; UI/mechanics boundary proof remains valid, but repo-local mechanics labels were unavailable.",
         },
         "boundaryRules": [
-            "Desktop UI parity receipts do not by themselves upgrade public release posture beyond governed preview.",
+            "Desktop UI parity receipts do not by themselves prove global all-platform release posture or mechanics completeness.",
             "Ruleset readiness must remain explicitly labeled per ruleset instead of inferred from shell polish.",
             "Missing or disabled controls must be explained at the product surface rather than hidden behind visual familiarity.",
         ],
-        "allowedClaim": "Desktop UI and workflow parity are strong for SR4/SR5/SR6 in governed preview posture.",
+        "allowedClaim": "Desktop UI and workflow parity are strong for SR4/SR5/SR6 within the scoped Windows/Linux public-release claim.",
         "disallowedClaim": "Desktop polish alone proves full flagship mechanics closure.",
         "evidence": {
             "rulesetReadinessClassifier": str(classifier_path),
