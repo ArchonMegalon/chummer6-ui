@@ -57,10 +57,6 @@ def main() -> int:
             {
                 "area": "blazor_desktop_windows_linux_fallback_heads",
                 "reason": "Fallback Blazor Desktop tuples remain proof-gated recovery/manual lanes and are not promoted as parity-critical primary public routes."
-            },
-            {
-                "area": "macos_public_release_route",
-                "reason": "macOS remains out of scope for this Windows/Linux-only public release closure."
             }
         ],
         "blockingFindings": [],
