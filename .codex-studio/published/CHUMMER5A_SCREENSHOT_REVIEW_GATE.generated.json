@@ -1,20 +1,16 @@
 {
-  "generatedAt": "2026-05-16T23:11:23.696548Z",
+  "generatedAt": "2026-05-17T20:20:09.968681Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "channel": "preview",
   "releaseVersion": "run-20260514-restore-mac-preview",
   "version": "run-20260514-restore-mac-preview",
-  "status": "pass",
-  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
-  "reasons": [],
-  "frontierIdsClosed": [
-    3782970110,
-    2714856833,
-    1186439541,
-    4871476959,
-    1922169755
+  "status": "fail",
+  "summary": "Chummer5a screenshot-based compare review still has blocking proof gaps.",
+  "reasons": [
+    "UI flagship release gate is not passing."
   ],
+  "frontierIdsClosed": [],
   "feedbackSources": [
     "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
     "/docker/chummercomplete/chummer6-ui/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
@@ -28,11 +24,13 @@
     ]
   },
   "supportingReceiptReview": {
-    "status": "pass",
-    "reasons": [],
+    "status": "fail",
+    "reasons": [
+      "UI flagship release gate is not passing."
+    ],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "pass"
+      "flagshipGate": "fail"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -276,7 +274,7 @@
         "status": "pass"
       }
     },
-    "reasonCount": 0,
-    "failureCount": 0
+    "reasonCount": 1,
+    "failureCount": 1
   }
 }
