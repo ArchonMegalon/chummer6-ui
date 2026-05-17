@@ -30,12 +30,14 @@ public partial class SummaryHeaderControl : UserControl
     private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.";
 
     private readonly Dictionary<string, Button> _navigationTabButtons = new(StringComparer.Ordinal);
+    private WorkspaceStripState _workspaceStripState = new("Workspace: none");
     private SummaryHeaderState _state = new(
         NavigationTabsHeading: string.Empty,
         NavigationTabs: [],
         ActiveTabId: null);
 
     public event EventHandler<string>? NavigationTabSelected;
+    public event EventHandler? LoadDemoRunnerRequested;
     public event EventHandler? KeepLocalWorkRequested;
     public event EventHandler? SaveLocalWorkRequested;
     public event EventHandler? CampaignWorkspaceRequested;
@@ -44,9 +46,18 @@ public partial class SummaryHeaderControl : UserControl
     public SummaryHeaderControl()
     {
         InitializeComponent();
+        WorkspaceStripControl.LoadDemoRunnerRequested += WorkspaceStripControl_OnLoadDemoRunnerRequested;
         BuildRestoreActionButtons();
         ApplyAutomationProperties();
+        SetWorkspaceStripState(_workspaceStripState);
         SetState(_state);
+    }
+
+    public void SetWorkspaceStripState(WorkspaceStripState state)
+    {
+        _workspaceStripState = state;
+        WorkspaceStripControl.SetState(state);
+        UpdateVisibility();
     }
 
     public void SetNavigationTabs(
@@ -76,11 +87,7 @@ public partial class SummaryHeaderControl : UserControl
                 || !string.IsNullOrWhiteSpace(state.RestoreDecisionActionStatus)
                 || !string.IsNullOrWhiteSpace(state.RestoreDecisionSelectionId));
         SetRestoreContinuityStatus(state, hasRecoveryContext);
-        bool showNavigation = state.HasVisibleContent || NavigationTabsPanel.IsVisible;
-        bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;
-        IsVisible = showNavigation || showRestore;
-        Height = IsVisible ? double.NaN : 0d;
-        RootBorder.IsVisible = IsVisible;
+        UpdateVisibility();
     }
 
     private void SetNavigationTabsInternal(
@@ -256,6 +263,20 @@ public partial class SummaryHeaderControl : UserControl
     {
         RestoreContinuityActionStatusText.Text = SavedLocalWorkStatus;
         ClearRestoreActionSelection();
+    }
+
+    private void WorkspaceStripControl_OnLoadDemoRunnerRequested(object? sender, EventArgs e)
+        => LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);
+
+    private void UpdateVisibility()
+    {
+        SummaryHeaderState state = _state;
+        bool showNavigation = state.HasVisibleContent || NavigationTabsPanel.IsVisible;
+        bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;
+        bool showWorkspaceContext = WorkspaceStripControl.IsVisible;
+        IsVisible = showNavigation || showRestore || showWorkspaceContext;
+        Height = IsVisible ? double.NaN : 0d;
+        RootBorder.IsVisible = IsVisible;
     }
 }
 

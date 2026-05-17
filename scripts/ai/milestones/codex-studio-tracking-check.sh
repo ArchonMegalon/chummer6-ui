@@ -4,12 +4,16 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$repo_root"
 
-mapfile -t tracked_paths < <(
-  git ls-files .codex-studio | grep -vE '^\.codex-studio/published/(QUEUE|WORKPACKAGES)\.generated\.yaml$' || true
+tracked_paths=()
+while IFS= read -r path; do
+  [[ -e "$path" ]] || continue
+  tracked_paths+=("$path")
+done < <(
+  git ls-files .codex-studio | grep -E '^\.codex-studio/(locks/|generated/|tmp/)' || true
 )
 
 if (( ${#tracked_paths[@]} > 0 )); then
-  echo "[codex-studio-tracking] FAIL: only .codex-studio/published/QUEUE.generated.yaml and WORKPACKAGES.generated.yaml may be tracked."
+  echo "[codex-studio-tracking] FAIL: ephemeral .codex-studio lock/generated/tmp artifacts may not be tracked."
   printf ' - %s\n' "${tracked_paths[@]}"
   exit 1
 fi

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-04-26T04:16:07.065947Z",
+  "generatedAt": "2026-05-16T01:57:17.089010Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer5a designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacySubject": "Chummer5a",
     "legacySubjectSlug": "chummer5a",
     "sourcePaths": {
@@ -26,8 +26,8 @@
     "legacyDesignerEventHookCount": 1755,
     "legacyRuntimeEventHookCount": 336,
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 43,
-    "currentNamedAxamlInteractiveElementCount": 37,
+    "currentDynamicInteractiveElementCount": 55,
+    "currentNamedAxamlInteractiveElementCount": 44,
     "legacyBehaviorFamilyCounts": {
       "add_create": 13,
       "browse_select": 118,
@@ -86,11 +86,11 @@
     },
     "currentInventoryCounts": {
       "command": 39,
-      "action": 13,
+      "action": 16,
       "ui": 47,
-      "dialog-action": 22,
-      "current-dynamic": 8,
-      "current-named": 37
+      "dialog-action": 23,
+      "current-dynamic": 9,
+      "current-named": 44
     },
     "familyReviews": {
       "add_create": {
@@ -164,7 +164,7 @@
           "action:tab-skills.skills"
         ],
         "proofMarkers": [
-          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "File_menu_new_character_completes_into_visible_runtime_workspace",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
         ],
         "missingProofMarkers": [],
@@ -299,7 +299,7 @@
           "command:new_critter"
         ],
         "proofMarkers": [
-          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "File_menu_new_character_creates_runtime_workspace",
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
         "missingProofMarkers": [],
@@ -406,7 +406,7 @@
         ],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+          "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -490,7 +490,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -562,8 +562,8 @@
           "command:global_settings"
         ],
         "proofMarkers": [
-          "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
-          "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+          "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -684,15 +684,23 @@
       "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections": true,
       "Avalonia_and_Blazor_workspace_action_summary_matches": true,
       "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts": true,
-      "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts": true,
-      "Runtime_backed_file_menu_new_character_opens_creation_dialog": true,
-      "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live": true,
-      "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live": true,
-      "Runtime_generated_dialog_controls_expose_stable_inventory_names": true,
+      "File_menu_new_character_creates_runtime_workspace": true,
+      "File_menu_new_character_completes_into_visible_runtime_workspace": true,
+      "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome": true,
+      "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head": true,
+      "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces": true,
+      "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true
     },
     "wiredIntoStandardVerify": true,
     "b14ConsumesReceipt": true,
+    "buildExitCode": 0,
+    "buildOutputTail": "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock\n/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Sr5WorkspaceCodec.cs(107,20): warning CS8602: Dereference of a possibly null reference. [/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj]\nBuild succeeded.\n/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Sr5WorkspaceCodec.cs(107,20): warning CS8602: Dereference of a possibly null reference. [/docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj]\n    1 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:49.15",
+    "testResult": {
+      "exitCode": 0,
+      "noMatches": false,
+      "outputTail": "  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:13.51\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64) - Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (12s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (15s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64) - Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end (18s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (21s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (90ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 21s 498ms"
+    },
     "missingFiles": [],
     "legacyEventSamples": [
       {
@@ -1223,153 +1231,153 @@
     "currentDynamicElementSamples": [
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 124,
+        "line": 128,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 188,
+        "line": 192,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 261,
+        "line": 265,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 308,
+        "line": 312,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 413,
+        "line": 417,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 671,
+        "line": 287,
+        "type": "NumericUpDown"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "line": 300,
+        "type": "NumericUpDown"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
+        "line": 1202,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml.cs",
-        "line": 137,
+        "line": 139,
         "type": "MenuItem"
       },
       {
+        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs",
+        "line": 104,
+        "type": "Button"
+      },
+      {
         "source": "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
-        "line": 626,
+        "line": 800,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
-        "line": 1053,
+        "line": 1032,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
-        "line": 38,
+        "line": 39,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
-        "line": 348,
+        "line": 384,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+        "line": 771,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
-        "line": 612,
+        "line": 618,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1825,
+        "line": 2177,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 219,
+        "line": 236,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 242,
+        "line": 259,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 277,
+        "line": 294,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 339,
+        "line": 356,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 511,
+        "line": 636,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 704,
+        "line": 817,
+        "type": "ListBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1011,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 776,
+        "line": 1112,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 799,
+        "line": 1135,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 819,
+        "line": 1155,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 943,
+        "line": 1279,
         "type": "TabControl"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 985,
+        "line": 1321,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1062,
+        "line": 1399,
         "type": "ComboBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1160,
-        "type": "TextBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1488,
-        "type": "Button"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1516,
-        "type": "CheckBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1543,
-        "type": "TextBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1627,
-        "type": "Button"
       }
     ],
     "currentNamedAxamlElementSamples": [
@@ -1377,6 +1385,16 @@
         "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
         "type": "MenuItem",
         "name": "FileMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "EditMenuButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
+        "type": "MenuItem",
+        "name": "SpecialMenuButton"
       },
       {
         "source": "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
@@ -1417,6 +1435,11 @@
         "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
         "type": "ListBox",
         "name": "AuditList"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
+        "type": "TreeView",
+        "name": "RosterTree"
       },
       {
         "source": "Chummer.Avalonia/Controls/WorkspaceStripControl.axaml",
@@ -1464,6 +1487,26 @@
         "name": "CommandsList"
       },
       {
+        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+        "type": "Button",
+        "name": "KeepLocalWorkButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+        "type": "Button",
+        "name": "SaveLocalWorkButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+        "type": "Button",
+        "name": "ReviewCampaignWorkspaceButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
+        "type": "Button",
+        "name": "OpenWorkspaceSupportButton"
+      },
+      {
         "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
         "type": "Button",
         "name": "SaveButton"
@@ -1487,41 +1530,6 @@
         "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
         "type": "Button",
         "name": "ImportFileButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "CloseWorkspaceButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "OpenForPrintingButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "OpenForExportButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "LoadDemoRunnerButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "ImportRawButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "SettingsButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "GmPrepButton"
       }
     ],
     "legacyElementDispositionCount": 2856,
@@ -1553,7 +1561,7 @@
         ],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+          "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -1585,7 +1593,7 @@
         ],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+          "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -1617,7 +1625,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -1642,7 +1650,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -1755,7 +1763,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -1874,7 +1882,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2075,7 +2083,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2105,7 +2113,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2134,7 +2142,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2163,7 +2171,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2192,7 +2200,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2221,7 +2229,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2250,7 +2258,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2279,7 +2287,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2308,7 +2316,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2337,7 +2345,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2366,7 +2374,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2395,7 +2403,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2424,7 +2432,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2453,7 +2461,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2482,7 +2490,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2511,7 +2519,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2616,7 +2624,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2727,7 +2735,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -2974,7 +2982,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -3001,7 +3009,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -3028,7 +3036,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -3055,7 +3063,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -3792,7 +3800,7 @@
     "b14Markers": {
       "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json": true,
       "chummer5a-legacy-ui-element-parity-check.sh": true,
-      "legacy_ui_element_parity_receipt": true
+      "chummer5a_legacy_ui_element_parity_receipt_path": true
     },
     "testCommand": [
       "bash",
@@ -3800,11 +3808,11 @@
       "Chummer.Tests/Chummer.Tests.csproj",
       "--no-build",
       "--filter",
-      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts|Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live|Name~Runtime_generated_dialog_controls_expose_stable_inventory_names|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
       "-v",
       "minimal"
     ],
-    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts|Name~Runtime_backed_file_menu_new_character_opens_creation_dialog|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live|Name~Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live|Name~Runtime_generated_dialog_controls_expose_stable_inventory_names|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
     "buildCommand": [
       "bash",
       "scripts/ai/with-package-plane.sh",
@@ -3816,13 +3824,6 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildExitCode": 0,
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:07.18",
-    "testResult": {
-      "exitCode": 0,
-      "noMatches": false,
-      "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 8 s - Chummer.Tests.dll (net10.0)"
-    },
     "observedFamilyCount": 29,
     "observedFamilies": [
       "add_create",
@@ -3944,7 +3945,7 @@
           "action:tab-skills.skills"
         ],
         "proofMarkers": [
-          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "File_menu_new_character_completes_into_visible_runtime_workspace",
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
         ],
         "missingProofMarkers": [],
@@ -4079,7 +4080,7 @@
           "command:new_critter"
         ],
         "proofMarkers": [
-          "Runtime_backed_file_menu_new_character_opens_creation_dialog",
+          "File_menu_new_character_creates_runtime_workspace",
           "ExecuteCommandAsync_all_catalog_commands_are_handled"
         ],
         "missingProofMarkers": [],
@@ -4186,7 +4187,7 @@
         ],
         "proofMarkers": [
           "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
-          "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts"
+          "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -4270,7 +4271,7 @@
         ],
         "proofMarkers": [
           "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "Runtime_generated_dialog_controls_expose_stable_inventory_names"
+          "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -4342,8 +4343,8 @@
           "command:global_settings"
         ],
         "proofMarkers": [
-          "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
-          "Runtime_backed_global_settings_roster_path_browse_and_clear_controls_remain_live"
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+          "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
         ],
         "missingProofMarkers": [],
         "status": "pass"
@@ -4468,8 +4469,8 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 43,
-    "currentNamedAxamlInteractiveElementCount": 37
+    "currentDynamicInteractiveElementCount": 55,
+    "currentNamedAxamlInteractiveElementCount": 44
   },
   "verifyWiringReview": {
     "status": "pass",
@@ -4483,7 +4484,7 @@
     "markers": {
       "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json": true,
       "chummer5a-legacy-ui-element-parity-check.sh": true,
-      "legacy_ui_element_parity_receipt": true
+      "chummer5a_legacy_ui_element_parity_receipt_path": true
     }
   },
   "executionReview": {
@@ -4494,7 +4495,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Test run for /docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 8 s - Chummer.Tests.dll (net10.0)"
+      "outputTail": "  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:13.51\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64) - Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (12s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (15s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64) - Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end (18s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (21s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (90ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 21s 498ms"
     }
   }
 }

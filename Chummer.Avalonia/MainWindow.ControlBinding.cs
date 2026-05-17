@@ -10,7 +10,6 @@ internal static class MainWindowControlBinder
 
     public static MainWindowControls Bind(
         ToolStripControl toolStrip,
-        WorkspaceStripControl workspaceStrip,
         SummaryHeaderControl summaryHeader,
         ShellMenuBarControl menuBar,
         CharacterRosterControl characterRoster,
@@ -73,8 +72,8 @@ internal static class MainWindowControlBinder
         toolStrip.ReportIssueRequested += onReportIssueRequested;
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
-        workspaceStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.NavigationTabSelected += onNavigationTabSelected;
+        summaryHeader.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
@@ -97,7 +96,6 @@ internal static class MainWindowControlBinder
 
         return new MainWindowControls(
             toolStrip,
-            workspaceStrip,
             summaryHeader,
             menuBar,
             characterRoster,
@@ -111,7 +109,6 @@ internal static class MainWindowControlBinder
 
 internal sealed record MainWindowControls(
     ToolStripControl ToolStrip,
-    WorkspaceStripControl WorkspaceStrip,
     SummaryHeaderControl SummaryHeader,
     ShellMenuBarControl MenuBar,
     CharacterRosterControl CharacterRoster,
@@ -127,7 +124,7 @@ internal sealed record MainWindowControls(
     {
         ToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
         MenuBar.SetState(shellFrame.HeaderState.MenuBar);
-        WorkspaceStrip.SetState(shellFrame.ChromeState.WorkspaceStrip);
+        SummaryHeader.SetWorkspaceStripState(shellFrame.ChromeState.WorkspaceStrip);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
         StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
         CharacterRoster.SetState(shellFrame.RosterPaneState);

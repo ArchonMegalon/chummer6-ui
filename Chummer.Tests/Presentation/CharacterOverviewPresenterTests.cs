@@ -879,7 +879,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("sr6", client.LastImportedDocument.RulesetId);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.IsNull(presenter.State.ActiveDialog);
-        Assert.AreEqual("Character imported.", presenter.State.Notice);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
 
         await presenter.ExecuteCommandAsync("open_character", CancellationToken.None);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
@@ -1182,8 +1182,8 @@ public class CharacterOverviewPresenterTests
         await presenter.ExecuteDialogActionAsync("roll", CancellationToken.None);
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
-        Assert.IsNotNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResult", StringComparison.Ordinal)));
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "3d6+2");
+        Assert.IsNotNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResultsSummary", StringComparison.Ordinal)));
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Sum");
     }
 
     [TestMethod]

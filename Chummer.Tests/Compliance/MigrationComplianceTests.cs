@@ -3752,7 +3752,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             executableGateScriptText,
             "canonical_release_channel_path=\"${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "presentation_release_channel_path=\"/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "if [[ ! -f \"$release_channel_path_default\" && -f \"$presentation_release_channel_path\" ]]; then");
         StringAssert.Contains(
             executableGateScriptText,
             "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
@@ -4553,6 +4559,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "muscleMemoryParityReview");
         StringAssert.Contains(screenshotReviewGateText, "flagship_gate_blocking_findings");
         StringAssert.Contains(screenshotReviewGateText, "flagship_gate_route_local_only");
+        StringAssert.Contains(screenshotReviewGateText, "flagship_gate_external_desktop_only");
+        StringAssert.Contains(screenshotReviewGateText, "desktop_executable_local_blocking_findings");
         StringAssert.Contains(screenshotReviewGateText, "missing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "failing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "visual_failure_count");
@@ -4563,6 +4571,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "\"visualReviewStatuses\"");
         StringAssert.Contains(screenshotReviewGateText, "\"visualFailureCount\"");
         StringAssert.Contains(screenshotReviewGateText, "\"flagshipGateRouteLocalOnly\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"flagshipGateExternalDesktopOnly\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"desktopExecutableLocalBlockingFindings\"");
         StringAssert.Contains(screenshotReviewGateText, "\"evidence\": {");
         StringAssert.Contains(screenshotReviewGateText, "\"requiredVisualReviewKeys\"");
         StringAssert.Contains(screenshotReviewGateText, "\"missingVisualReviewKeys\"");
