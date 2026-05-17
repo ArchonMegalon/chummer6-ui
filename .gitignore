@@ -179,6 +179,9 @@ ClientBin/
 *.publishsettings
 node_modules/
 orleans.codegen.cs
+.codex-studio/locks/
+.codex-studio/generated/
+.codex-studio/tmp/
 
 # RIA/Silverlight projects
 Generated_Code/
