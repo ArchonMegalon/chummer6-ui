@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-15T16:06:33Z",
+  "generated_at": "2026-05-17T20:20:06Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -30,7 +30,7 @@
       "    1 Warning(s)",
       "    0 Error(s)",
       "",
-      "Time Elapsed 00:00:46.03",
+      "Time Elapsed 00:00:08.43",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
