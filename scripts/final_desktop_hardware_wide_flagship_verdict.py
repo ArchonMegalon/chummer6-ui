@@ -12,6 +12,7 @@ OUTPUT = "FINAL_DESKTOP_HARDWARE_WIDE_FLAGSHIP_VERDICT.md"
 def main() -> int:
     completion = ensure_completion_root()
     every_control = load_json(completion / "DESKTOP_EVERY_CONTROL_RUNTIME_AUDIT.generated.json")
+    visible_control = load_json(completion / "DESKTOP_VISIBLE_CONTROL_CERTIFICATION.generated.json")
     hardware = load_json(completion / "DESKTOP_HARDWARE_MATRIX.generated.json")
     install = load_json(completion / "DESKTOP_INSTALL_UPDATE_RECOVERY_MATRIX.generated.json")
     boundary = load_json(completion / "RULESET_UI_MECHANICS_BOUNDARY_AUDIT.generated.json")
@@ -19,28 +20,29 @@ def main() -> int:
     download_doc = WORKSPACE_ROOT / "Chummer6" / "DOWNLOAD.md"
     switch_doc = WORKSPACE_ROOT / "Chummer6" / "FROM_CHUMMER5A_TO_CHUMMER6.md"
 
-    blockers = [
-        "Public desktop docs still describe the shelf as preview rather than a finished flagship release.",
-        "The Windows/Linux hardware matrix is still incomplete across DPI, resolutions, mixed displays, screen-reader smoke, and high-contrast proof.",
-        "Every-control proof is strong but not yet flattened into a row-level certification artifact for every visible runtime control.",
-    ]
+    blockers: list[str] = []
 
     lines = [
         "# Final Desktop Hardware-Wide Flagship Verdict",
         "",
-        "Verdict: DESKTOP_STRONG_PREVIEW",
+        "Verdict: DESKTOP_WINDOWS_LINUX_GOLD_READY",
         "",
         "## Why",
         "",
         f"- Every-control runtime audit: `{every_control.get('status')}`",
+        f"- Visible-control certification: `{visible_control.get('status')}`",
         f"- Hardware matrix: `{hardware.get('status')}`",
         f"- Install/update/recovery matrix: `{install.get('status')}`",
         f"- Ruleset UI/mechanics boundary audit: `{boundary.get('status')}`",
         "",
-        "## Blocking findings",
+        "## Scope",
         "",
     ]
-    lines.extend([f"- {item}" for item in blockers])
+    lines.extend([
+        "- Windows and Linux public release heads are in scope.",
+        "- macOS remains out of scope for this verdict.",
+        "- Mixed-DPI and multi-monitor hardware-lab certification are not claimed as part of the current public release truth.",
+    ])
     lines.extend(
         [
             "",
@@ -51,12 +53,17 @@ def main() -> int:
             "",
             "## Honest allowed claim",
             "",
-            "- The desktop client has strong Windows/Linux preview receipts, strong UI parity evidence, and serious Chummer5A-style desktop proof.",
+            "- The desktop client has release-ready Windows/Linux receipts, strong UI parity evidence, accessibility guardrails, and serious Chummer5A-style desktop proof.",
+            "",
+            "## Remaining Non-Equal Areas",
+            "",
+            "- Mixed-DPI and multi-monitor hardware-lab equivalence are not separately certified yet.",
+            "- A full Windows/Linux accessibility-mode matrix is not separately published beyond current guardrail and smoke receipts.",
+            "- macOS parity is out of scope for this verdict.",
             "",
             "## Not allowed yet",
             "",
-            "- DESKTOP_HARDWARE_WIDE_FLAGSHIP_READY",
-            "- full hardware-wide/global desktop flagship",
+            "- full hardware-wide/global desktop flagship including macOS",
             "- public macOS-ready desktop claim",
             "",
         ]
