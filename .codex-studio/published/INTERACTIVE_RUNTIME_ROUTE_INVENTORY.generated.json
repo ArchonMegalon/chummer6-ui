@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-16T20:26:05.9922037\u002B00:00",
+  "generatedAt": "2026-05-17T20:06:30.9864049\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -105,7 +105,7 @@
         "Status: unloaded",
         "Switch Ruleset...",
         "Theme",
-        "Time: 2026-05-16 20:26:01Z",
+        "Time: 2026-05-17 20:06:29Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
@@ -6682,7 +6682,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:29Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -6741,7 +6741,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:01Z",
+                                                "text": "Time: 2026-05-17 20:06:29Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -6961,7 +6961,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=new_character",
         "Status: unloaded",
         "Switch Ruleset...",
-        "Time: 2026-05-16 20:26:00Z",
+        "Time: 2026-05-17 20:06:29Z",
         "Tools",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
         "Update Status",
@@ -12180,7 +12180,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:00Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:29Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -12239,7 +12239,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:00Z",
+                                                "text": "Time: 2026-05-17 20:06:29Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -18391,7 +18391,7 @@
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
         "Status: unloaded",
-        "Time: 2026-05-16 20:25:59Z",
+        "Time: 2026-05-17 20:06:29Z",
         "Tools",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
         "Update Status",
@@ -22693,7 +22693,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:25:59Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:29Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -22752,7 +22752,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:25:59Z",
+                                                "text": "Time: 2026-05-17 20:06:29Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -22917,7 +22917,7 @@
         "Combat",
         "Combat orientated hermetic Mysad who seekes the destruction of the Orgenleggers who killed his mentor and carved him up. He also seeks the beterment of the barrens and acts as sort of a gardiun for a local community center.\\n\\nIntelligent and charming (to a degree), his outward apperance hides a volatile man that yerns for revenge.\\n\\nMore likely to solve problems with intelligance, iginuity and the application of high force magic",
         "Concept",
-        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
         "Contacts",
         "Copy",
         "Copy Coach Link",
@@ -22951,7 +22951,7 @@
         "Metatype Limits",
         "Name",
         "Notes",
-        "Notice: Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Notice: Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Open Character for Export",
         "Open GM Prep Packets",
         "Open Notes",
@@ -22967,7 +22967,7 @@
         "Reference \u0026 Notes",
         "Reference Link",
         "Report Issue",
-        "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+        "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
         "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.",
         "Review Campaign Workspace",
         "Review Roster Movement",
@@ -22989,14 +22989,14 @@
         "Skills",
         "Soma",
         "Special",
-        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
-        "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
+        "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
         "Status: unloaded",
         "SumtoTen",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-16 20:26:03Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Attributes.",
@@ -23006,8 +23006,8 @@
         "Vehicles",
         "Windows",
         "Workspace Support",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
         "XML Editor",
         "runtime inspector",
         "tools",
@@ -24091,7 +24091,7 @@
                                               {
                                                 "name": "StatusText",
                                                 "controlType": "TextBlock",
-                                                "text": "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+                                                "text": "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -24165,7 +24165,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -24712,7 +24712,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24720,7 +24720,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -24728,7 +24728,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -27036,7 +27036,7 @@
                                                       {
                                                         "name": "NoticeText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Notice: Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                        "text": "Notice: Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -29766,7 +29766,7 @@
                                                                           {
                                                                             "name": "CoachWorkspaceText",
                                                                             "controlType": "TextBlock",
-                                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": []
@@ -29808,7 +29808,7 @@
                                                                           {
                                                                             "name": "CoachLaunchUriTextBox",
                                                                             "controlType": "TextBox",
-                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": [
@@ -30538,7 +30538,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-16 20:26:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -30597,7 +30597,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:03Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -30826,7 +30826,7 @@
         "Status: unloaded",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
-        "Time: 2026-05-16 20:26:03Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Import.",
@@ -37357,7 +37357,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:03Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -37416,7 +37416,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:03Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -37642,7 +37642,7 @@
         "Status: unloaded",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
-        "Time: 2026-05-16 20:26:04Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
@@ -44067,7 +44067,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:04Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -44126,7 +44126,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:04Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -44355,7 +44355,7 @@
         "Status: unloaded",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
-        "Time: 2026-05-16 20:26:04Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Create.",
@@ -50886,7 +50886,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:04Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -50945,7 +50945,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:04Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -51109,7 +51109,7 @@
         "Combat",
         "Combat orientated hermetic Mysad who seekes the destruction of the Orgenleggers who killed his mentor and carved him up. He also seeks the beterment of the barrens and acts as sort of a gardiun for a local community center.\\n\\nIntelligent and charming (to a degree), his outward apperance hides a volatile man that yerns for revenge.\\n\\nMore likely to solve problems with intelligance, iginuity and the application of high force magic",
         "Concept",
-        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
         "Contacts",
         "Copy",
         "Copy Coach Link",
@@ -51144,7 +51144,7 @@
         "New Character",
         "New Critter",
         "Notes",
-        "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Open Character for Export",
         "Open GM Prep Packets",
         "Open Notes",
@@ -51167,7 +51167,7 @@
         "Reference \u0026 Notes",
         "Reference Link",
         "Report Issue",
-        "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+        "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
         "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.",
         "Review Campaign Workspace",
         "Review Roster Movement",
@@ -51191,14 +51191,14 @@
         "Skills",
         "Soma",
         "Special",
-        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
-        "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
+        "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
         "Status: unloaded",
         "SumtoTen",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-16 20:26:03Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Attributes.",
@@ -51207,8 +51207,8 @@
         "Vehicles",
         "Windows",
         "Workspace Support",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
         "XML Editor",
         "edit",
         "file",
@@ -52317,7 +52317,7 @@
                                               {
                                                 "name": "StatusText",
                                                 "controlType": "TextBlock",
-                                                "text": "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+                                                "text": "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -52391,7 +52391,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -52938,7 +52938,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -52946,7 +52946,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -52954,7 +52954,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -55262,7 +55262,7 @@
                                                       {
                                                         "name": "NoticeText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                        "text": "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -58200,7 +58200,7 @@
                                                                           {
                                                                             "name": "CoachWorkspaceText",
                                                                             "controlType": "TextBlock",
-                                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": []
@@ -58242,7 +58242,7 @@
                                                                           {
                                                                             "name": "CoachLaunchUriTextBox",
                                                                             "controlType": "TextBox",
-                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": [
@@ -58972,7 +58972,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-16 20:26:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -59031,7 +59031,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:03Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -61295,7 +61295,7 @@
         "Status: unloaded",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
-        "Time: 2026-05-16 20:26:03Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
@@ -67652,7 +67652,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:26:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -67711,7 +67711,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:03Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -67875,7 +67875,7 @@
         "Combat",
         "Combat orientated hermetic Mysad who seekes the destruction of the Orgenleggers who killed his mentor and carved him up. He also seeks the beterment of the barrens and acts as sort of a gardiun for a local community center.\\n\\nIntelligent and charming (to a degree), his outward apperance hides a volatile man that yerns for revenge.\\n\\nMore likely to solve problems with intelligance, iginuity and the application of high force magic",
         "Concept",
-        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+        "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
         "Contacts",
         "Copy",
         "Copy Coach Link",
@@ -67910,7 +67910,7 @@
         "New Character",
         "New Critter",
         "Notes",
-        "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Open Character for Export",
         "Open GM Prep Packets",
         "Open Notes",
@@ -67933,7 +67933,7 @@
         "Reference \u0026 Notes",
         "Reference Link",
         "Report Issue",
-        "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+        "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
         "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.",
         "Review Campaign Workspace",
         "Review Roster Movement",
@@ -67957,14 +67957,14 @@
         "Skills",
         "Soma",
         "Special",
-        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
-        "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+        "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
+        "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
         "Status: unloaded",
         "SumtoTen",
         "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-16 20:26:03Z",
+        "Time: 2026-05-17 20:06:30Z",
         "Tools",
         "Translator",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Attributes.",
@@ -67973,8 +67973,8 @@
         "Vehicles",
         "Windows",
         "Workspace Support",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
-        "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60",
+        "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
         "XML Editor",
         "edit",
         "file",
@@ -69083,7 +69083,7 @@
                                               {
                                                 "name": "StatusText",
                                                 "controlType": "TextBlock",
-                                                "text": "State: ready, workspace=225257fc2a7243a5aff27cd0db08eaa2, open=1, saved=unsaved, last-command=global_settings",
+                                                "text": "State: ready, workspace=5ced5784295a49a8a180db6daed6cf60, open=1, saved=unsaved, last-command=global_settings",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -69157,7 +69157,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2 (open: 1, unsaved)",
+                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -69704,7 +69704,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 225257fc2a7243a5aff27cd0db08eaa2 open before accepting a newer continuity packet. 225257fc2a7243a5aff27cd0db08eaa2 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep 5ced5784295a49a8a180db6daed6cf60 open before accepting a newer continuity packet. 5ced5784295a49a8a180db6daed6cf60 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -69712,7 +69712,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -69720,7 +69720,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 225257fc2a7243a5aff27cd0db08eaa2 was last touched locally at 2026-05-16 20:26 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 5ced5784295a49a8a180db6daed6cf60 was last touched locally at 2026-05-17 20:06 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -72028,7 +72028,7 @@
                                                       {
                                                         "name": "NoticeText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 225257fc2a7243a5aff27cd0db08eaa2 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                        "text": "Notice: Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 5ced5784295a49a8a180db6daed6cf60 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -74966,7 +74966,7 @@
                                                                           {
                                                                             "name": "CoachWorkspaceText",
                                                                             "controlType": "TextBlock",
-                                                                            "text": "Workspace: 225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "Workspace: 5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": []
@@ -75008,7 +75008,7 @@
                                                                           {
                                                                             "name": "CoachLaunchUriTextBox",
                                                                             "controlType": "TextBox",
-                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=225257fc2a7243a5aff27cd0db08eaa2",
+                                                                            "text": "/coach/?routeType=coach\u0026workspaceId=5ced5784295a49a8a180db6daed6cf60",
                                                                             "toolTip": "",
                                                                             "isVisible": true,
                                                                             "children": [
@@ -75738,7 +75738,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-16 20:26:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: loaded | Service: online | Time: 2026-05-17 20:06:30Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -75797,7 +75797,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:26:03Z",
+                                                "text": "Time: 2026-05-17 20:06:30Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
@@ -75981,7 +75981,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Time: 2026-05-16 20:25:59Z",
+        "Time: 2026-05-17 20:06:29Z",
         "Tools",
         "Tree navigator for runners, tabs, actions, and workflow routes. Active tab: Character.",
         "Update Status",
@@ -78648,7 +78648,7 @@
                                 "name": "StatusStripControl",
                                 "controlType": "StatusStripControl",
                                 "text": "",
-                                "toolTip": "Character: none | Service: online | Time: 2026-05-16 20:25:59Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                "toolTip": "Character: none | Service: online | Time: 2026-05-17 20:06:29Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                 "isVisible": true,
                                 "children": [
                                   {
@@ -78707,7 +78707,7 @@
                                               {
                                                 "name": "TimeStateText",
                                                 "controlType": "TextBlock",
-                                                "text": "Time: 2026-05-16 20:25:59Z",
+                                                "text": "Time: 2026-05-17 20:06:29Z",
                                                 "toolTip": "",
                                                 "isVisible": true,
                                                 "children": []
