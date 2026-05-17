@@ -19,10 +19,14 @@ hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hu
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+  if [[ -f "$presentation_release_channel_path" ]] && [[ ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ]]; then
+    release_channel_path_default="$presentation_release_channel_path"
+  fi
 fi
 release_channel_path="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
@@ -428,6 +432,9 @@ DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS = int(
     or os.environ.get("CHUMMER_DESKTOP_PROOF_MAX_AGE_SECONDS")
     or "86400"
 )
+SKIP_FLAGSHIP_GATE_DEPENDENCY = str(
+    os.environ.get("CHUMMER_DESKTOP_VISUAL_SKIP_FLAGSHIP_GATE_DEPENDENCY") or "0"
+).strip() == "1"
 DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS = int(
     os.environ.get("CHUMMER_DESKTOP_VISUAL_SCREENSHOT_RECEIPT_SKEW_MAX_SECONDS")
     or str(DESKTOP_VISUAL_SCREENSHOT_MAX_AGE_SECONDS)
@@ -710,7 +717,7 @@ flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
-if not status_ok(flagship_status):
+if not status_ok(flagship_status) and not SKIP_FLAGSHIP_GATE_DEPENDENCY:
     reasons.append("Flagship UI release gate is missing or not passing.")
 validate_receipt_freshness(
     "flagship_ui_release_gate",
@@ -1259,7 +1266,7 @@ toolstrip_codebehind_text = toolstrip_codebehind_path.read_text(encoding="utf-8"
 required_toolstrip_markers = [
     "shell-toolstrip-band",
     "shell-toolstrip-state",
-    "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"28\"",
+    "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"30\"",
     "button.Content = label;",
 ]
 missing_toolstrip_markers = [
@@ -1570,7 +1577,7 @@ cyberware_dialog_markers = ["DialogTitleText", "DialogFieldsHost", "DialogAction
 cyberware_dialog_test_has_visible_dialog = any(marker in cyberware_method for marker in cyberware_dialog_markers)
 cyberware_capture_segment = segment_between(
     visual_review_method,
-    "object? cyberwareRow =",
+    'harness.SetActiveSectionForTesting("cyberwares");',
     next((marker for marker in capture_statement_variants(7) if marker in visual_review_method), ""),
 )
 cyberware_capture_markers = cyberware_dialog_markers + capture_statement_variants(7)

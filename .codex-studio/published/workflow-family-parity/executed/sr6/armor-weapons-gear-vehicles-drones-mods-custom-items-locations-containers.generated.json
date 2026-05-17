@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-12T12:26:32.699805Z",
+  "generatedAt": "2026-05-16T07:27:19.607587Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers.",
@@ -70,7 +70,7 @@
       "baseUrl": "http://127.0.0.1:8088",
       "results": [
         {
-          "path": "/api/workspaces",
+          "path": "/api/workspaces?maxCount=1",
           "ok": true,
           "statusCode": 200,
           "error": ""
@@ -82,7 +82,7 @@
           "error": ""
         }
       ],
-      "autostarted": false
+      "warmed": true
     },
     "external_blocker": "",
     "matchedPassedTests": [

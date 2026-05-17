@@ -20,11 +20,10 @@
     "screenshotReviewCertified": true,
     "visualFamiliarityCertified": true,
     "visualDifferenceLedgerPresent": true,
-    "visualDifferenceLedgerCoverageComplete": false,
+    "visualDifferenceLedgerCoverageComplete": true,
     "perControlPixelDiffCorpusCertified": false
   },
   "strictFailureReasons": [
-    "Visual difference ledger is missing required screenshot coverage: 38-translator-dialog-light.png, 39-xml-editor-dialog-light.png, 40-hero-lab-importer-dialog-light.png.",
     "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass."
   ],
   "evidenceSources": {

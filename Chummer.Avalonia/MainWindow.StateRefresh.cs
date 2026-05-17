@@ -8,6 +8,11 @@ namespace Chummer.Avalonia;
 
 public partial class MainWindow
 {
+    private const double LeftShellWidth = 264d;
+    private const double LeftShellMinWidth = 240d;
+    private const double LeftShellMaxWidth = 320d;
+    private const double RightShellWidth = 228d;
+
     private void RefreshState()
     {
         CharacterOverviewState state = PrepareStateForRefresh(_adapter.State);
@@ -49,7 +54,7 @@ public partial class MainWindow
     {
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
         bool showRosterPane = !showNavigatorPane;
-        bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
+        bool showSummaryHeader = true;
         bool showCommandSurface = !string.IsNullOrWhiteSpace(_shellPresenter.State.OpenMenuId)
             || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
         bool showRightShell = !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogTitle)
@@ -68,16 +73,38 @@ public partial class MainWindow
         RightShellRegion.IsHitTestVisible = showRightShell;
         RightShellRegion.Opacity = showRightShell ? 1 : 0;
 
+        ApplyPaneWidth(RosterPaneRegion, showRosterPane, LeftShellWidth, LeftShellMinWidth, LeftShellMaxWidth);
+        ApplyPaneWidth(LeftNavigatorRegion, showNavigatorPane, LeftShellWidth, LeftShellMinWidth, LeftShellMaxWidth);
+        ApplyPaneWidth(RightShellRegion, showRightShell, RightShellWidth, 0d, RightShellWidth);
+
         if (ContentRegion.ColumnDefinitions.Count >= 3)
         {
             ContentRegion.ColumnDefinitions[0].Width = showRosterPane || showNavigatorPane
-                ? new GridLength(264)
+                ? new GridLength(LeftShellWidth)
                 : new GridLength(0);
             ContentRegion.ColumnDefinitions[2].Width = showRightShell
                 ? new GridLength(228)
                 : new GridLength(0);
-            ContentRegion.ColumnSpacing = showRosterPane || showNavigatorPane ? 2 : 0;
+            ContentRegion.ColumnSpacing = showRosterPane || showNavigatorPane || showRightShell ? 2 : 0;
         }
+
+        ContentRegion.InvalidateMeasure();
+        ContentRegion.InvalidateArrange();
+    }
+
+    private static void ApplyPaneWidth(Border pane, bool isVisible, double width, double minWidth, double maxWidth)
+    {
+        if (isVisible)
+        {
+            pane.Width = width;
+            pane.MinWidth = minWidth;
+            pane.MaxWidth = maxWidth;
+            return;
+        }
+
+        pane.Width = 0d;
+        pane.MinWidth = 0d;
+        pane.MaxWidth = 0d;
     }
 
     private void ApplyPostRefreshEffects(CharacterOverviewState state)

@@ -108,6 +108,7 @@
     <Compile Include="Presentation\CommandAvailabilityEvaluatorTests.cs" />
     <Compile Include="Presentation\DialogCoordinatorTests.cs" />
     <Compile Include="Presentation\DesktopFileCoordinatorTests.cs" />
+    <Compile Include="Presentation\DesktopHomeCampaignProjectorTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowTests.cs" />
     <Compile Include="Presentation\DesktopHomeWindowStartupTests.cs" />
     <Compile Include="Presentation\DesktopShortcutCatalogTests.cs" />

@@ -6,8 +6,6 @@
 
 ## Goal
 
-This is a guided compare-and-apply build simulation lane, not an unguided scratchpad.
-
 Prove that Chummer can let a player compare alternate versions of the same runner without mutating the canonical build until the player explicitly applies a reviewed change set.
 
 The first slice is:
@@ -139,3 +137,5 @@ If BUILD GHOST works, ALICE stops being vague "build advice" and becomes a concr
 * inspect the tradeoff
 * keep the source safe
 * commit only when the user means it
+
+That same compare bench should also support a guided review posture where the player can step through the delta, explain output, and apply path without surrendering mechanical authority.
