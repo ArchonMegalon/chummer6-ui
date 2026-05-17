@@ -19,10 +19,6 @@ def main() -> int:
             "No dedicated hardware-lab review bundle is published yet for mixed-DPI or multi-monitor Windows/Linux desktop topologies."
         ),
         (
-            "full_accessibility_mode_matrix",
-            "Accessibility guardrails and smoke are present, but a full environment-by-environment equivalence bundle across all Windows/Linux accessibility modes is not separately published."
-        ),
-        (
             "global_all_platform_claim",
             "This equivalence verdict is scoped to Windows/Linux public release heads and does not include macOS."
         ),
