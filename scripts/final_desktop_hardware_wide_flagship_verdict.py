@@ -58,7 +58,6 @@ def main() -> int:
             "## Remaining Non-Equal Areas",
             "",
             "- Mixed-DPI and multi-monitor hardware-lab equivalence are not separately certified yet.",
-            "- A full Windows/Linux accessibility-mode matrix is not separately published beyond current guardrail and smoke receipts.",
             "- macOS parity is out of scope for this verdict.",
             "",
             "## Not allowed yet",
