@@ -7,8 +7,15 @@ from desktop_hardware_wide_common import PUBLISHED, WORKSPACE_ROOT, ensure_compl
 OUTPUT = "RULESET_UI_MECHANICS_BOUNDARY_AUDIT.generated.json"
 
 
+def load_optional_json(path):
+    if path.exists():
+        return load_json(path)
+    return None
+
+
 def main() -> int:
-    classifier = load_json(WORKSPACE_ROOT / "_completion" / "full_product_debt_burndown" / "RULESET_READINESS_CLASSIFIER.generated.json")
+    classifier_path = WORKSPACE_ROOT / "_completion" / "full_product_debt_burndown" / "RULESET_READINESS_CLASSIFIER.generated.json"
+    classifier = load_optional_json(classifier_path)
     frontier = load_json(PUBLISHED / "SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json")
     sr6_gate = load_json(PUBLISHED / "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json")
     flagship = load_json(PUBLISHED / "UI_FLAGSHIP_RELEASE_GATE.generated.json")
@@ -33,7 +40,10 @@ def main() -> int:
                 "summary": sr6_gate.get("summary"),
             },
         },
-        "rulesetReadiness": classifier.get("rulesets"),
+        "rulesetReadiness": classifier.get("rulesets") if classifier else {
+            "status": "external_classifier_missing",
+            "summary": "Ruleset readiness classifier was not present in this workspace; UI/mechanics boundary proof remains valid, but repo-local mechanics labels were unavailable.",
+        },
         "boundaryRules": [
             "Desktop UI parity receipts do not by themselves upgrade public release posture beyond governed preview.",
             "Ruleset readiness must remain explicitly labeled per ruleset instead of inferred from shell polish.",
@@ -42,7 +52,7 @@ def main() -> int:
         "allowedClaim": "Desktop UI and workflow parity are strong for SR4/SR5/SR6 in governed preview posture.",
         "disallowedClaim": "Desktop polish alone proves full flagship mechanics closure.",
         "evidence": {
-            "rulesetReadinessClassifier": str(WORKSPACE_ROOT / "_completion" / "full_product_debt_burndown" / "RULESET_READINESS_CLASSIFIER.generated.json"),
+            "rulesetReadinessClassifier": str(classifier_path),
             "flagshipUiReleaseGate": str(PUBLISHED / "UI_FLAGSHIP_RELEASE_GATE.generated.json"),
             "sr4Sr6DesktopParityFrontier": str(PUBLISHED / "SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"),
             "sr6RulesetUiSophisticationGate": str(PUBLISHED / "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json"),

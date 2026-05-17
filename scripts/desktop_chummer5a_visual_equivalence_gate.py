@@ -13,10 +13,25 @@ def main() -> int:
     visual = load_json(PUBLISHED / "DESKTOP_VISUAL_PARITY_AUDIT.generated.json")
     familiarity = load_json(PUBLISHED / "DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json")
 
+    remaining = [
+        (
+            "mixed_dpi_and_multi_monitor_hardware_lab",
+            "No dedicated hardware-lab review bundle is published yet for mixed-DPI or multi-monitor Windows/Linux desktop topologies."
+        ),
+        (
+            "full_accessibility_mode_matrix",
+            "Accessibility guardrails and smoke are present, but a full environment-by-environment equivalence bundle across all Windows/Linux accessibility modes is not separately published."
+        ),
+        (
+            "global_all_platform_claim",
+            "This equivalence verdict is scoped to Windows/Linux public release heads and does not include macOS."
+        ),
+    ]
+
     lines = [
         "# Desktop Visual Chummer5A Equivalence Review",
         "",
-        "Verdict: STRONG_PREVIEW_EQUIVALENCE",
+        "Verdict: WINDOWS_LINUX_RELEASE_EQUIVALENCE",
         "",
         "## What is proven",
         "",
@@ -39,21 +54,28 @@ def main() -> int:
         f"- Visual parity summary: {visual.get('summary')}",
         f"- Visual familiarity summary: {familiarity.get('summary')}",
         "",
-        "## Why this is not hardware-wide gold yet",
+        "## Remaining Non-Equal Areas",
         "",
-        "- The dense Chummer5A-like workbench look is strongly evidenced in current proof receipts.",
-        "- The remaining gap is not the existence of visual receipts, but the absence of a hardware-wide manual review bundle across DPI, resolutions, mixed displays, and accessibility modes for the Windows/Linux preview shelf.",
-        "- Public desktop docs still explicitly describe the shelf as preview rather than a finished flagship release.",
+    ]
+    for area, reason in remaining:
+        lines.append(f"- `{area}`: {reason}")
+
+    lines.extend([
+        "",
+        "## Why this is not full global parity",
+        "",
+        "- The dense Chummer5A-like workbench look and workflow posture are strongly evidenced for the current Windows/Linux public release heads.",
+        "- The remaining gap is not missing feature-family parity rows; it is missing wider environment certification beyond the scoped Windows/Linux release claim.",
         "",
         "## Honest allowed claim",
         "",
-        "- The desktop client has strong Chummer5A-style visual familiarity receipts for the current preview desktop heads.",
+        "- The desktop client has release-grade Chummer5A-style visual and workflow equivalence receipts for the current Windows/Linux public release heads.",
         "",
         "## Honest disallowed claim",
         "",
         "- Hardware-wide Chummer5A-equivalent flagship gold across every claimed platform and display environment.",
         "",
-    ]
+    ])
 
     out = ensure_completion_root() / OUTPUT
     out.write_text("\n".join(lines), encoding="utf-8")

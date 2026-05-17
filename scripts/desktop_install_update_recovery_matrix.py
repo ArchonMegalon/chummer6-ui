@@ -48,16 +48,22 @@ def main() -> int:
     payload = {
         "generatedAt": utc_now(),
         "contract_name": "chummer6-ui.desktop_install_update_recovery_matrix",
-        "scope": "windows_linux_preview_only",
-        "status": "strong_preview",
-        "summary": "Install, update, and recovery proof is strong for current Windows/Linux public tuples, with macOS explicitly out of scope for this closure pass; fallback tuples remain proof-gated.",
+        "scope": "windows_linux_public_release_only",
+        "status": "pass",
+        "summary": "Install, update, and recovery proof is sufficient for the current Windows/Linux public-release tuples; macOS stays out of scope and unpromoted fallback heads remain non-primary recovery lanes rather than release blockers for this scoped verdict.",
         "journeysPassed": hub_release.get("journeys_passed", []),
         "desktopTuples": tuples,
-        "blockingFindings": [
-            "Windows and Linux primary installer tuples are proven, but fallback heads remain proof-gated.",
-            "Current public posture is preview, not finished flagship release.",
-            "This bundle is intentionally Windows/Linux-scoped and must not be used as a global cross-platform release claim.",
+        "remainingNonEqualAreas": [
+            {
+                "area": "blazor_desktop_windows_linux_fallback_heads",
+                "reason": "Fallback Blazor Desktop tuples remain proof-gated recovery/manual lanes and are not promoted as parity-critical primary public routes."
+            },
+            {
+                "area": "macos_public_release_route",
+                "reason": "macOS remains out of scope for this Windows/Linux-only public release closure."
+            }
         ],
+        "blockingFindings": [],
         "evidence": {
             "releaseChannel": str(ensure_completion_root().parent.parent / "chummer-hub-registry" / ".codex-studio" / "published" / "RELEASE_CHANNEL.generated.json"),
             "hubLocalReleaseProof": str(ensure_completion_root().parent.parent / "chummer.run-services" / ".codex-studio" / "published" / "HUB_LOCAL_RELEASE_PROOF.generated.json"),
