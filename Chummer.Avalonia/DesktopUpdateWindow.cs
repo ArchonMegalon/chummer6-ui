@@ -33,21 +33,23 @@ internal sealed class DesktopUpdateWindow : Window
         _preferences = preferences;
 
         Title = S("desktop.update.title");
-        Width = 840;
-        Height = 620;
-        MinWidth = 720;
-        MinHeight = 520;
+        Width = 760;
+        Height = 560;
+        MinWidth = 680;
+        MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _introText = new TextBlock
         {
             Text = BuildIntro(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _statusText = new TextBlock
         {
             Text = BuildStatusText(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -55,18 +57,21 @@ internal sealed class DesktopUpdateWindow : Window
         _currentText = new TextBlock
         {
             Text = BuildCurrentBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _followThroughText = new TextBlock
         {
             Text = BuildFollowThroughBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _installText = new TextBlock
         {
             Text = BuildInstallBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -81,15 +86,9 @@ internal sealed class DesktopUpdateWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = S("desktop.update.heading"),
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.update.section.current"), _currentText, _currentActionsRow),
@@ -161,33 +160,34 @@ internal sealed class DesktopUpdateWindow : Window
     }
 
     private string BuildCurrentBody()
-        => DesktopLocalizationCatalog.GetRequiredFormattedString(
-            "desktop.home.update_summary",
-            _preferences.Language,
-            _updateStatus.Status,
-            _updateStatus.InstalledVersion,
-            string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion) ? S("desktop.home.value.unknown") : _updateStatus.LastManifestVersion!,
-            _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown"),
-            _updateStatus.ChannelId,
-            _updateStatus.LastCheckedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.never"),
-            _updateStatus.AutoApply,
-            string.IsNullOrWhiteSpace(_updateStatus.RolloutState) ? S("desktop.home.value.unknown") : _updateStatus.RolloutState!,
-            string.IsNullOrWhiteSpace(_updateStatus.RolloutReason) ? S("desktop.home.value.none") : _updateStatus.RolloutReason!,
-            string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState) ? S("desktop.home.value.unknown") : _updateStatus.SupportabilityState!,
-            string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary) ? S("desktop.home.value.no_supportability_summary") : _updateStatus.SupportabilitySummary!,
-            string.IsNullOrWhiteSpace(_updateStatus.ProofStatus) ? S("desktop.home.value.unknown") : _updateStatus.ProofStatus!,
-            _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown"),
-            string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary) ? S("desktop.home.value.none_published") : _updateStatus.KnownIssueSummary!,
-            string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary) ? S("desktop.home.value.no_fix_guidance") : _updateStatus.FixAvailabilitySummary!,
-            _updateStatus.RecommendedAction,
-            string.IsNullOrWhiteSpace(_updateStatus.LastError) ? S("desktop.home.value.none") : _updateStatus.LastError!);
-
-    private string BuildFollowThroughBody()
     {
         List<string> lines =
         [
-            F("desktop.home.next_safe_action", _updateStatus.RecommendedAction)
+            $"State: {_updateStatus.Status} · Installed {_updateStatus.InstalledVersion}",
+            $"Latest: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
         ];
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
+        {
+            lines.Add(_updateStatus.RecommendedAction);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
+        {
+            lines.Add($"Issue: {_updateStatus.LastError}");
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private string BuildFollowThroughBody()
+    {
+        List<string> lines = [];
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
+        {
+            lines.Add(F("desktop.home.next_safe_action", _updateStatus.RecommendedAction));
+        }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.PendingUpdateVersion))
         {
@@ -224,32 +224,18 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
-            F("desktop.home.install_summary.install_id", _installState.InstallationId),
-            F("desktop.home.install_summary.head", _installState.HeadId),
-            F("desktop.home.install_summary.version", _installState.ApplicationVersion),
-            F("desktop.home.install_summary.channel", _installState.ChannelId),
-            F("desktop.home.install_summary.platform", _installState.Platform, _installState.Arch)
+            $"{_installState.HeadId} · {_installState.Platform}/{_installState.Arch}",
+            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}"
         ];
 
-        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
-        {
-            lines.Add(F(
-                "desktop.home.install_summary.linked_status",
-                _installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")));
-        }
-        else
-        {
-            lines.Add(S("desktop.home.install_summary.unlinked_status"));
-        }
-
-        if (!string.IsNullOrWhiteSpace(_installState.LastClaimMessage))
-        {
-            lines.Add(F("desktop.home.install_summary.hub_message", _installState.LastClaimMessage));
-        }
+        lines.Add(
+            DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                ? $"Linked until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
+                : "This copy is not linked yet.");
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add(F("desktop.home.install_summary.claim_error", _installState.LastClaimError));
+            lines.Add($"Claim issue: {_installState.LastClaimError}");
         }
 
         return string.Join("\n", lines);
@@ -258,8 +244,7 @@ internal sealed class DesktopUpdateWindow : Window
     private IReadOnlyList<Button> CreateCurrentActions()
         =>
         [
-            CreateButton(S("desktop.update.button.check_now"), CheckForUpdatesAsync, isPrimary: true),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+            CreateButton(S("desktop.update.button.check_now"), CheckForUpdatesAsync, isPrimary: true)
         ];
 
     private IReadOnlyList<Button> CreateFollowThroughActions()
@@ -267,8 +252,7 @@ internal sealed class DesktopUpdateWindow : Window
         [
             CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
-            CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport),
-            CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
+            CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport)
         ];
 
     private IReadOnlyList<Button> CreateInstallActions()
@@ -277,8 +261,7 @@ internal sealed class DesktopUpdateWindow : Window
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), () => DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_installState))
+                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
         ];
 
         return actions;
@@ -378,20 +361,8 @@ internal sealed class DesktopUpdateWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
-        StackPanel content = new()
-        {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
-        };
+        ToolTip.SetTip(body, title);
+        StackPanel content = new() { Spacing = 0 };
 
         if (actionContent is not null)
         {
@@ -450,7 +421,7 @@ internal sealed class DesktopUpdateWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 104
+            MinWidth = 92
         };
 
         if (isPrimary)

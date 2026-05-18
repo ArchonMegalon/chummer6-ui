@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Chummer.Contracts.Presentation;
+using System.Linq;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -17,10 +18,8 @@ public partial class SummaryHeaderControl : UserControl
     private const string LocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
     private const string ReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
     private const string SupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
-    private const string PrimaryRouteBaseSummary = "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement.";
-    private const string PrimaryRouteAutoReplaceGuard = "Decision gate: Chummer will not replace local work automatically";
-    private const string SaveAvailableDecisionSuffix = "save local work before reviewing a server restore.";
-    private const string SaveUnavailableDecisionSuffix = "keep local work, review Campaign Workspace, or open Workspace Support.";
+    private const string SaveAvailableDecisionSummary = "Review restore before replacing local work. Save first if needed.";
+    private const string SaveUnavailableDecisionSummary = "Review restore before replacing local work. Keep local work or open support.";
     private const string SaveAvailableStatus = "Save local work is available before restore or conflict review changes the desktop state.";
     private const string SaveUnavailableStatus = "Save local work is unavailable because no dirty local workspace is active; keep local work, review Campaign Workspace, or open Workspace Support.";
     private const string KeepLocalStatus = "Kept local work visible; no restore, stale-state refresh, or conflict choice replaced desktop state.";
@@ -127,6 +126,16 @@ public partial class SummaryHeaderControl : UserControl
         RestoreContinuityStatusText.Text = state.RestoreContinuitySummary ?? string.Empty;
         StaleStateStatusText.Text = state.StaleStateSummary ?? string.Empty;
         ConflictChoiceStatusText.Text = state.ConflictChoiceSummary ?? string.Empty;
+        ToolTip.SetTip(
+            RestoreContinuityStatusBorder,
+            string.Join(
+                "\n",
+                new[]
+                {
+                    state.RestoreContinuitySummary,
+                    state.StaleStateSummary,
+                    state.ConflictChoiceSummary
+                }.Where(static text => !string.IsNullOrWhiteSpace(text))));
         RestoreContinuityStatusBorder.IsVisible = false;
         RestoreContinuityStatusBorder.IsVisible = hasRecoveryContext;
 
@@ -155,11 +164,26 @@ public partial class SummaryHeaderControl : UserControl
         RestoreContinuitySupportHandoffText.Text = SupportHandoffSummary;
         RestoreContinuityActionStatusText.Text = state.RestoreDecisionActionStatus
             ?? (state.CanSaveLocalWorkBeforeRestore ? SaveAvailableStatus : SaveUnavailableStatus);
+        ToolTip.SetTip(
+            RestoreContinuityActionPanel,
+            string.Join(
+                "\n",
+                new[]
+                {
+                    RestoreContinuityDecisionText.Text,
+                    RestoreContinuityDecisionOrderText.Text,
+                    RestoreContinuityLocalAuthorityText.Text,
+                    RestoreContinuityReplacementGuardText.Text,
+                    RestoreContinuitySupportHandoffText.Text,
+                    RestoreContinuityActionStatusText.Text
+                }.Where(static text => !string.IsNullOrWhiteSpace(text))));
         ApplyRestoreActionSelection(state.RestoreDecisionSelectionId);
     }
 
     private static string BuildRestoreContinuityDecisionSummary(bool canSaveLocalWorkBeforeRestore)
-        => $"{PrimaryRouteBaseSummary} {PrimaryRouteAutoReplaceGuard}; {(canSaveLocalWorkBeforeRestore ? SaveAvailableDecisionSuffix : SaveUnavailableDecisionSuffix)}";
+        => canSaveLocalWorkBeforeRestore
+            ? SaveAvailableDecisionSummary
+            : SaveUnavailableDecisionSummary;
 
     private void BuildRestoreActionButtons()
     {
@@ -228,6 +252,7 @@ public partial class SummaryHeaderControl : UserControl
     private void KeepLocalWorkButton_OnClick(object? sender, RoutedEventArgs e)
     {
         RestoreContinuityActionStatusText.Text = KeepLocalStatus;
+        ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
         ApplyRestoreActionSelection(KeepLocalWorkSelectionId);
         KeepLocalWorkRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -237,10 +262,12 @@ public partial class SummaryHeaderControl : UserControl
         if (!SaveLocalWorkButton.IsEnabled)
         {
             RestoreContinuityActionStatusText.Text = SaveUnavailableStatus;
+            ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
             return;
         }
 
         RestoreContinuityActionStatusText.Text = SaveRequestedStatus;
+        ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
         ApplyRestoreActionSelection(SaveLocalWorkSelectionId);
         SaveLocalWorkRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -248,6 +275,7 @@ public partial class SummaryHeaderControl : UserControl
     private void ReviewCampaignWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
     {
         RestoreContinuityActionStatusText.Text = ReviewCampaignWorkspaceStatus;
+        ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
         ApplyRestoreActionSelection(ReviewCampaignWorkspaceSelectionId);
         CampaignWorkspaceRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -255,6 +283,7 @@ public partial class SummaryHeaderControl : UserControl
     private void OpenWorkspaceSupportButton_OnClick(object? sender, RoutedEventArgs e)
     {
         RestoreContinuityActionStatusText.Text = OpenWorkspaceSupportStatus;
+        ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
         ApplyRestoreActionSelection(OpenWorkspaceSupportSelectionId);
         WorkspaceSupportRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -262,6 +291,7 @@ public partial class SummaryHeaderControl : UserControl
     internal void ApplySavedLocalWorkState()
     {
         RestoreContinuityActionStatusText.Text = SavedLocalWorkStatus;
+        ToolTip.SetTip(RestoreContinuityActionPanel, RestoreContinuityActionStatusText.Text);
         ClearRestoreActionSelection();
     }
 

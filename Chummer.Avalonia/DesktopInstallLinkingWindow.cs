@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -34,14 +35,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _summaryText = new TextBlock
         {
             Text = BuildSummary(_state, _updateStatus, _language),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _claimCodeBox = new TextBox
         {
-            Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language),
             Text = context.StartupClaimCode ?? string.Empty
         };
+        ToolTip.SetTip(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
+        AutomationProperties.SetName(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
 
         _statusText = new TextBlock
         {
@@ -59,31 +62,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 Spacing = 10,
                 Children =
                 {
-                    new TextBlock
-                    {
-                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading", _language),
-                        FontSize = 18,
-                        FontWeight = FontWeight.SemiBold,
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    new TextBlock
-                    {
-                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary", _language),
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    new TextBlock
-                    {
-                        Text = DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.shipping_locales", _language, DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
-                        FontSize = 11,
-                        Foreground = new SolidColorBrush(Color.Parse("#526173")),
-                        TextWrapping = TextWrapping.Wrap
-                    },
                     _summaryText,
-                    new TextBlock
-                    {
-                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language),
-                        FontWeight = FontWeight.SemiBold
-                    },
                     _claimCodeBox,
                     _statusText,
                     new StackPanel
@@ -318,7 +297,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void SetStatus(string message)
     {
         _statusText.Text = message;
-        _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
+        _statusText.IsVisible = false;
+        ToolTip.SetTip(_statusText, message);
     }
 
     private static string BuildSummary(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus, string language)

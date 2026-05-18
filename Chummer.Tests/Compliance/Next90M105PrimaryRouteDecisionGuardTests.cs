@@ -35,18 +35,18 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(markup, "StaleStateStatusText");
         StringAssert.Contains(markup, "ConflictChoiceStatusText");
         StringAssert.Contains(markup, "RestoreContinuityDecisionOrderText");
-        StringAssert.Contains(markup, "Keep Local Work");
-        StringAssert.Contains(markup, "Save Local Work");
-        StringAssert.Contains(markup, "Review Campaign Workspace");
-        StringAssert.Contains(markup, "Workspace Support");
+        StringAssert.Contains(markup, "Keep Local");
+        StringAssert.Contains(markup, "Save");
+        StringAssert.Contains(markup, "Campaign");
+        StringAssert.Contains(markup, "Support");
 
-        StringAssert.Contains(code, "StaleStateStatusText.Text = staleStateSummary ?? string.Empty;");
-        StringAssert.Contains(code, "ConflictChoiceStatusText.Text = conflictChoiceSummary ?? string.Empty;");
-        StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(staleStateSummary)");
-        StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(conflictChoiceSummary)");
-        StringAssert.Contains(code, "Decision gate: Chummer will not replace local work automatically");
-        StringAssert.Contains(code, "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.");
-        StringAssert.Contains(code, "SaveLocalWorkButton.IsEnabled = canSaveLocalWorkBeforeRestore;");
+        StringAssert.Contains(code, "StaleStateStatusText.Text = state.StaleStateSummary ?? string.Empty;");
+        StringAssert.Contains(code, "ConflictChoiceStatusText.Text = state.ConflictChoiceSummary ?? string.Empty;");
+        StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(state.StaleStateSummary)");
+        StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(state.ConflictChoiceSummary)");
+        StringAssert.Contains(code, "Review restore before replacing local work. Save first if needed.");
+        StringAssert.Contains(code, "Review restore before replacing local work. Keep local work or open support.");
+        StringAssert.Contains(code, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
         StringAssert.Contains(code, "restore-decision-keep-local-work");
         StringAssert.Contains(code, "restore-decision-review-campaign-workspace");
         StringAssert.Contains(code, "restore-decision-open-workspace-support");
@@ -56,9 +56,12 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Restore decision order\")");
         StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open support with restore, stale-state, and conflict-choice context.\")");
 
-        StringAssert.Contains(projector, "RestoreContinuitySummary: BuildRestoreContinuitySummary(shellSurface, workspaceContext, language)");
-        StringAssert.Contains(projector, "StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language)");
-        StringAssert.Contains(projector, "ConflictChoiceSummary: BuildConflictChoiceSummary(shellSurface, workspaceContext, language)");
+        StringAssert.Contains(projector, "string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);");
+        StringAssert.Contains(projector, "string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);");
+        StringAssert.Contains(projector, "string? conflictChoiceSummary = BuildConflictChoiceSummary(shellSurface, workspaceContext, language);");
+        StringAssert.Contains(projector, "RestoreContinuitySummary: restoreContinuitySummary");
+        StringAssert.Contains(projector, "StaleStateSummary: staleStateSummary");
+        StringAssert.Contains(projector, "ConflictChoiceSummary: conflictChoiceSummary");
         StringAssert.Contains(projector, "CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)");
 
         StringAssert.Contains(eventHandlers, "SummaryHeader_OnWorkspaceSupportRequested");

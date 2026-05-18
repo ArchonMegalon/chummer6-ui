@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -33,15 +34,16 @@ internal sealed class DesktopReportIssueWindow : Window
         _preferences = preferences;
 
         Title = S("desktop.report.title");
-        Width = 920;
-        Height = 720;
-        MinWidth = 760;
-        MinHeight = 560;
+        Width = 780;
+        Height = 620;
+        MinWidth = 680;
+        MinHeight = 500;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _statusText = new TextBlock
         {
             Text = S("desktop.report.status.ready"),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -49,16 +51,17 @@ internal sealed class DesktopReportIssueWindow : Window
         _contextText = new TextBlock
         {
             Text = BuildContextBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
-        _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"));
-        _bugExpectedBox = CreateInputBox(S("desktop.report.bug.expected_watermark"), isMultiline: true, minHeight: 80);
-        _bugActualBox = CreateInputBox(S("desktop.report.bug.actual_watermark"), isMultiline: true, minHeight: 80);
-        _bugReproStepsBox = CreateInputBox(S("desktop.report.bug.repro_watermark"), isMultiline: true, minHeight: 100);
-        _bugEvidenceBox = CreateInputBox(S("desktop.report.bug.evidence_watermark"), isMultiline: true, minHeight: 72);
-        _feedbackSummaryBox = CreateInputBox(S("desktop.report.feedback.summary_watermark"));
-        _feedbackDetailBox = CreateInputBox(S("desktop.report.feedback.detail_watermark"), isMultiline: true, minHeight: 120);
+        _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"), S("desktop.report.bug.title_label"));
+        _bugExpectedBox = CreateInputBox(S("desktop.report.bug.expected_watermark"), S("desktop.report.bug.expected_label"), isMultiline: true, minHeight: 64);
+        _bugActualBox = CreateInputBox(S("desktop.report.bug.actual_watermark"), S("desktop.report.bug.actual_label"), isMultiline: true, minHeight: 64);
+        _bugReproStepsBox = CreateInputBox(S("desktop.report.bug.repro_watermark"), S("desktop.report.bug.repro_label"), isMultiline: true, minHeight: 84);
+        _bugEvidenceBox = CreateInputBox(S("desktop.report.bug.evidence_watermark"), S("desktop.report.bug.evidence_label"), isMultiline: true, minHeight: 56);
+        _feedbackSummaryBox = CreateInputBox(S("desktop.report.feedback.summary_watermark"), S("desktop.report.feedback.summary_label"));
+        _feedbackDetailBox = CreateInputBox(S("desktop.report.feedback.detail_watermark"), S("desktop.report.feedback.detail_label"), isMultiline: true, minHeight: 84);
 
         Content = new ScrollViewer
         {
@@ -67,28 +70,10 @@ internal sealed class DesktopReportIssueWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = S("desktop.report.heading"),
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
-                        new TextBlock
-                        {
-                            Text = S("desktop.report.intro"),
-                            TextWrapping = TextWrapping.Wrap
-                        },
-                        new TextBlock
-                        {
-                            Text = S("desktop.report.private_split"),
-                            TextWrapping = TextWrapping.Wrap,
-                            Foreground = Brushes.DarkSlateGray
-                        },
                         _statusText,
-                        CreateSection(S("desktop.report.section.context"), _contextText, null),
                         CreateSection(
                             S("desktop.report.section.bug"),
                             CreateBugBody(),
@@ -146,32 +131,22 @@ internal sealed class DesktopReportIssueWindow : Window
             Spacing = 6,
             Children =
             {
-                new TextBlock
-                {
-                    Text = S("desktop.report.bug.intro"),
-                    TextWrapping = TextWrapping.Wrap
-                },
-                CreateField(S("desktop.report.bug.title_label"), _bugTitleBox),
-                CreateField(S("desktop.report.bug.expected_label"), _bugExpectedBox),
-                CreateField(S("desktop.report.bug.actual_label"), _bugActualBox),
-                CreateField(S("desktop.report.bug.repro_label"), _bugReproStepsBox),
-                CreateField(S("desktop.report.bug.evidence_label"), _bugEvidenceBox)
+                _bugTitleBox,
+                _bugExpectedBox,
+                _bugActualBox,
+                _bugReproStepsBox,
+                _bugEvidenceBox
             }
         };
 
     private Control CreateFeedbackBody()
         => new StackPanel
         {
-            Spacing = 10,
+            Spacing = 6,
             Children =
             {
-                new TextBlock
-                {
-                    Text = S("desktop.report.feedback.intro"),
-                    TextWrapping = TextWrapping.Wrap
-                },
-                CreateField(S("desktop.report.feedback.summary_label"), _feedbackSummaryBox),
-                CreateField(S("desktop.report.feedback.detail_label"), _feedbackDetailBox)
+                _feedbackSummaryBox,
+                _feedbackDetailBox
             }
         };
 
@@ -179,28 +154,14 @@ internal sealed class DesktopReportIssueWindow : Window
     {
         List<string> lines =
         [
-            F("desktop.home.install_summary.install_id", _installState.InstallationId),
-            F("desktop.home.install_summary.head", _installState.HeadId),
-            F("desktop.home.install_summary.version", _installState.ApplicationVersion),
-            F("desktop.home.install_summary.channel", _installState.ChannelId),
-            F("desktop.home.install_summary.platform", _installState.Platform, _installState.Arch),
-            F("desktop.support.context.release_status", _updateStatus.Status),
-            F("desktop.support.context.recommended_action", _updateStatus.RecommendedAction)
+            $"{_installState.HeadId} · {_installState.Platform}/{_installState.Arch}",
+            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}",
+            $"Release: {_updateStatus.Status}"
         ];
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion))
-        {
-            lines.Add(F("desktop.report.context.manifest", _updateStatus.LastManifestVersion));
-        }
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState))
-        {
-            lines.Add(F("desktop.report.context.supportability", _updateStatus.SupportabilityState));
-        }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add(F("desktop.support.context.last_error", _updateStatus.LastError));
+            lines.Add($"Issue: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines);
@@ -305,46 +266,23 @@ internal sealed class DesktopReportIssueWindow : Window
             ? fallback
             : value.Trim();
 
-    private static StackPanel CreateField(string label, Control input)
-        => new()
+    private static TextBox CreateInputBox(string tooltip, string automationName, bool isMultiline = false, double minHeight = 0)
+    {
+        TextBox box = new()
         {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = label,
-                    FontWeight = FontWeight.SemiBold
-                },
-                input
-            }
-        };
-
-    private static TextBox CreateInputBox(string watermark, bool isMultiline = false, double minHeight = 0)
-        => new()
-        {
-            Watermark = watermark,
             AcceptsReturn = isMultiline,
             TextWrapping = isMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
             MinHeight = minHeight
         };
+        ToolTip.SetTip(box, tooltip);
+        AutomationProperties.SetName(box, automationName);
+        return box;
+    }
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
-        StackPanel content = new()
-        {
-            Spacing = 10,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
-        };
+        ToolTip.SetTip(body, title);
+        StackPanel content = new() { Spacing = 0 };
 
         if (actionContent is not null)
         {
@@ -383,7 +321,7 @@ internal sealed class DesktopReportIssueWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 140
+            MinWidth = 96
         };
 
         if (isPrimary)

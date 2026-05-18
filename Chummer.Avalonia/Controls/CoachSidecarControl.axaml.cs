@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -31,6 +32,21 @@ public partial class CoachSidecarControl : UserControl
             : $"Error: {state.ErrorMessage}";
         ProviderHealthList.ItemsSource = state.Providers;
         AuditList.ItemsSource = state.Audits;
+        ToolTip.SetTip(
+            this,
+            string.Join(
+                Environment.NewLine,
+                new[]
+                {
+                    CoachStatusText.Text,
+                    CoachPromptPolicyText.Text,
+                    CoachBudgetText.Text,
+                    CoachWorkspaceText.Text,
+                    CoachRuntimeText.Text,
+                    CoachLaunchStatusText.Text,
+                    CoachErrorText.Text
+                }.Where(static line => !string.IsNullOrWhiteSpace(line) && !string.Equals(line, "(none)", StringComparison.Ordinal))));
+        ToolTip.SetTip(CoachLaunchUriTextBox, state.LaunchUri);
     }
 
     private void CopyCoachLaunchButton_OnClick(object? sender, RoutedEventArgs e)

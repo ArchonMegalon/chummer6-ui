@@ -59,14 +59,16 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         TextBlock introText = new()
         {
             Text = BuildIntro(),
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = false
         };
 
         TextBlock statusText = new()
         {
             Text = BuildStatus(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brushes.DarkSlateGray
+            Foreground = Brushes.DarkSlateGray,
+            IsVisible = false
         };
 
         TextBlock summaryText = new()
@@ -100,6 +102,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
                         new TextBlock
                         {
                             Text = BuildHeading(),
+                            IsVisible = false,
                             FontSize = 20,
                             FontWeight = FontWeight.SemiBold
                         },
@@ -748,14 +751,16 @@ internal sealed class DesktopCampaignArtifactWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
+        ToolTip.SetTip(body, title);
         StackPanel content = new()
         {
-            Spacing = 6,
+            Spacing = 0,
             Children =
             {
                 new TextBlock
                 {
                     Text = title,
+                    IsVisible = false,
                     FontWeight = FontWeight.SemiBold,
                     FontSize = 15
                 },
@@ -774,7 +779,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            Padding = new Thickness(8),
             Child = content
         };
     }

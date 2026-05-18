@@ -36,21 +36,23 @@ internal sealed class DesktopSupportWindow : Window
         _supportProjection = supportProjection;
 
         Title = S("desktop.support.title");
-        Width = 840;
-        Height = 620;
-        MinWidth = 720;
-        MinHeight = 520;
+        Width = 760;
+        Height = 560;
+        MinWidth = 680;
+        MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _introText = new TextBlock
         {
             Text = BuildIntro(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _statusText = new TextBlock
         {
             Text = S("desktop.support.status.current"),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -58,24 +60,28 @@ internal sealed class DesktopSupportWindow : Window
         _caseText = new TextBlock
         {
             Text = BuildCaseBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _releaseText = new TextBlock
         {
             Text = BuildReleaseBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _diagnosticsText = new TextBlock
         {
             Text = BuildDiagnosticsBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _followThroughText = new TextBlock
         {
             Text = BuildFollowThroughBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -93,17 +99,10 @@ internal sealed class DesktopSupportWindow : Window
                     Spacing = 12,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = S("desktop.support.heading"),
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.support.section.case"), _caseText, _caseActionsRow),
                         CreateSection(S("desktop.support.section.release"), _releaseText, _releaseActionsRow),
-                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
                         CreateSection(S("desktop.support.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -176,13 +175,9 @@ internal sealed class DesktopSupportWindow : Window
 
     private string BuildCaseBody()
     {
-        List<string> lines =
-        [
-            F("desktop.home.next_safe_action", _supportProjection.NextSafeAction),
-            _supportProjection.Summary
-        ];
-
-        foreach (string highlight in _supportProjection.Highlights)
+        List<string> lines = [_supportProjection.Summary];
+        string? highlight = _supportProjection.Highlights.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(highlight))
         {
             lines.Add(highlight);
         }
@@ -194,39 +189,21 @@ internal sealed class DesktopSupportWindow : Window
     {
         List<string> lines =
         [
-            F("desktop.support.context.release_status", _updateStatus.Status),
-            F("desktop.support.context.recommended_action", _updateStatus.RecommendedAction),
-            F("desktop.home.install_summary.install_id", _installState.InstallationId),
-            F("desktop.home.install_summary.version", _installState.ApplicationVersion),
-            F("desktop.home.install_summary.channel", _installState.ChannelId),
-            F("desktop.home.install_summary.platform", _installState.Platform, _installState.Arch)
+            $"Release: {_updateStatus.Status}",
+            _updateStatus.RecommendedAction,
+            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}"
         ];
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary))
-        {
-            lines.Add(F("desktop.support.context.known_issues", _updateStatus.KnownIssueSummary));
-        }
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary))
-        {
-            lines.Add(F("desktop.support.context.fix_availability", _updateStatus.FixAvailabilitySummary));
-        }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add(F("desktop.support.context.last_error", _updateStatus.LastError));
+            lines.Add($"Issue: {_updateStatus.LastError}");
         }
 
-        return string.Join("\n", lines);
+        return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
     }
 
     private string BuildDiagnosticsBody()
-        => string.Join(
-            "\n\n",
-            [
-                DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),
-                DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)
-            ]);
+        => DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);
 
     private string BuildFollowThroughBody()
     {
@@ -265,8 +242,7 @@ internal sealed class DesktopSupportWindow : Window
 
         return
         [
-            CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport, isPrimary: true),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+            CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport, isPrimary: true)
         ];
     }
 
@@ -274,8 +250,7 @@ internal sealed class DesktopSupportWindow : Window
         =>
         [
             CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+            CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport)
         ];
 
     private IReadOnlyList<Button> CreateFollowThroughActions()
@@ -285,8 +260,7 @@ internal sealed class DesktopSupportWindow : Window
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
-            CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
-            CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
+            CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
         ];
 
         return actions;
@@ -376,20 +350,8 @@ internal sealed class DesktopSupportWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
-        StackPanel content = new()
-        {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
-        };
+        ToolTip.SetTip(body, title);
+        StackPanel content = new() { Spacing = 0 };
 
         if (actionContent is not null)
         {

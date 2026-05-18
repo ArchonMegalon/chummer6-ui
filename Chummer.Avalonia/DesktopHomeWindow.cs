@@ -70,88 +70,100 @@ internal sealed class DesktopHomeWindow : Window
         _buildExplainProjection = buildExplainProjection;
 
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.home.title", _preferences.Language);
-        Width = 860;
-        Height = 640;
-        MinWidth = 720;
-        MinHeight = 520;
+        Width = 780;
+        Height = 580;
+        MinWidth = 680;
+        MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.Parse("#E5ECF5"));
+        Background = new SolidColorBrush(Color.Parse("#EEF2F7"));
 
         _flagshipEyebrowText = new TextBlock
         {
             Text = BuildFlagshipEyebrow(),
-            FontSize = 12,
+            IsVisible = false,
+            FontSize = 11,
             FontWeight = FontWeight.Bold,
-            Foreground = new SolidColorBrush(Color.Parse("#D8E8FB")),
+            Foreground = new SolidColorBrush(Color.Parse("#4A607A")),
             TextWrapping = TextWrapping.Wrap
         };
 
         _flagshipTitleText = new TextBlock
         {
             Text = BuildFlagshipTitle(),
-            FontSize = 30,
+            IsVisible = false,
+            FontSize = 22,
             FontWeight = FontWeight.SemiBold,
-            Foreground = Brushes.White,
+            Foreground = new SolidColorBrush(Color.Parse("#17324F")),
             TextWrapping = TextWrapping.Wrap
         };
 
         _introText = new TextBlock
         {
             Text = BuildIntro(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            FontSize = 16,
-            Foreground = new SolidColorBrush(Color.Parse("#F8FBFF"))
+            FontSize = 14,
+            Foreground = new SolidColorBrush(Color.Parse("#2A425C"))
         };
 
         _flagshipSpotlightText = new TextBlock
         {
             Text = BuildFlagshipSpotlight(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#D7E7FA"))
+            Foreground = new SolidColorBrush(Color.Parse("#405870"))
         };
 
         _flagshipFactsText = new TextBlock
         {
             Text = BuildFlagshipFacts(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#EEF4FF"))
+            Foreground = new SolidColorBrush(Color.Parse("#4B6278"))
         };
 
         _flagshipHeroBorder = CreateFlagshipHero();
+        _flagshipHeroBorder.IsVisible = false;
 
         _installSummaryText = new TextBlock
         {
             Text = BuildInstallSummary(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _updateSummaryText = new TextBlock
         {
             Text = BuildUpdateSummary(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _campaignText = new TextBlock
         {
             Text = BuildCampaignBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _supportText = new TextBlock
         {
             Text = BuildSupportBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _buildExplainText = new TextBlock
         {
             Text = BuildBuildExplainBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _workspaceSummaryText = new TextBlock
         {
             Text = BuildWorkspaceSummary(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -166,10 +178,10 @@ internal sealed class DesktopHomeWindow : Window
         {
             Content = new Border
             {
-                Padding = new Thickness(22),
+                Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 16,
+                    Spacing = 10,
                     Children =
                     {
                         _flagshipHeroBorder,
@@ -679,87 +691,37 @@ internal sealed class DesktopHomeWindow : Window
         => RulesetUiDirectiveCatalog.BuildDesktopMarqueeTitle(ResolveFlagshipRulesetId());
 
     private string BuildFlagshipSpotlight()
-    {
-        List<string> lines = [BuildIntro()];
-        if (!string.IsNullOrWhiteSpace(_buildExplainProjection.RulesetSpotlight))
-        {
-            lines.Add(_buildExplainProjection.RulesetSpotlight);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_buildExplainProjection.ExplainFocus))
-        {
-            lines.Add(_buildExplainProjection.ExplainFocus);
-        }
-
-        return string.Join(" ", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
-    }
+        => string.IsNullOrWhiteSpace(_buildExplainProjection.ExplainFocus)
+            ? BuildIntro()
+            : $"{BuildIntro()} {_buildExplainProjection.ExplainFocus}";
 
     private string BuildFlagshipFacts()
     {
-        RulesetUiDirective directive = RulesetUiDirectiveCatalog.Resolve(ResolveFlagshipRulesetId());
-        string runtimeSummary = string.IsNullOrWhiteSpace(_buildExplainProjection.RuntimeHealthSummary)
-            ? ShellStatusTextFormatter.BuildActiveRuntimeSummary(null, ResolveFlagshipRulesetId())
-            : _buildExplainProjection.RuntimeHealthSummary;
         string continuity = _recentWorkspaces.Count == 0
-            ? "Continuity: no recent dossier is pinned yet."
-            : $"Continuity: {_recentWorkspaces.Count} recent dossiers; lead {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
-        string watchout = _buildExplainProjection.Watchouts.FirstOrDefault() ?? "No extra flagship watchout is currently published.";
-
-        return string.Join(
-            "\n",
-            new[]
-            {
-                $"Posture: {directive.DisplayName} · {directive.PostureLabel} · {directive.FileExtension}",
-                $"Next safe action: {_buildExplainProjection.NextSafeAction}",
-                $"Runtime: {runtimeSummary}",
-                continuity,
-                $"Watchout: {watchout}"
-            });
+            ? "No recent file open."
+            : $"Lead: {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
+        string watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
+        return string.IsNullOrWhiteSpace(watchout)
+            ? continuity
+            : $"{continuity}\nWatchout: {watchout}";
     }
 
     private string BuildInstallSummary()
     {
         List<string> lines =
         [
-            F("desktop.home.install_summary.install_id", _installState.InstallationId),
-            F("desktop.home.install_summary.head", _installState.HeadId),
-            F("desktop.home.install_summary.version", _installState.ApplicationVersion),
-            F("desktop.home.install_summary.channel", _installState.ChannelId),
-            F("desktop.home.install_summary.platform", _installState.Platform, _installState.Arch)
+            $"{_installState.HeadId} · {_installState.Platform}/{_installState.Arch}",
+            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}"
         ];
 
-        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
-        {
-            lines.Add(F(
-                "desktop.home.install_summary.linked_status",
-                _installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")));
-        }
-        else
-        {
-            lines.Add(S("desktop.home.install_summary.unlinked_status"));
-            if (_installState.LastPromptDismissedAtUtc is not null)
-            {
-                lines.Add(F(
-                    "desktop.home.install_summary.last_guest_defer",
-                    _installState.LastPromptDismissedAtUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
-            }
-        }
-
-        if (_installState.LastClaimAttemptUtc is not null)
-        {
-            lines.Add(F(
-                "desktop.home.install_summary.last_claim_attempt",
-                _installState.LastClaimAttemptUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
-        }
-
-        if (!string.IsNullOrWhiteSpace(_installState.LastClaimMessage))
-        {
-            lines.Add(F("desktop.home.install_summary.hub_message", _installState.LastClaimMessage));
-        }
+        lines.Add(
+            DesktopInstallLinkingRuntime.IsClaimed(_installState)
+                ? $"Linked until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
+                : "This copy is not linked yet.");
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add(F("desktop.home.install_summary.claim_error", _installState.LastClaimError));
+            lines.Add($"Claim issue: {_installState.LastClaimError}");
         }
 
         return string.Join("\n", lines);
@@ -771,51 +733,24 @@ internal sealed class DesktopHomeWindow : Window
         string manifestVersion = string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion)
             ? S("desktop.home.value.unknown")
             : _updateStatus.LastManifestVersion;
-        string manifestPublished = _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
-        string error = string.IsNullOrWhiteSpace(_updateStatus.LastError)
-            ? S("desktop.home.value.none")
-            : _updateStatus.LastError;
-        string supportabilityState = string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState)
-            ? S("desktop.home.value.unknown")
-            : _updateStatus.SupportabilityState;
-        string supportabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary)
-            ? S("desktop.home.value.no_supportability_summary")
-            : _updateStatus.SupportabilitySummary;
-        string proofStatus = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)
-            ? S("desktop.home.value.unknown")
-            : _updateStatus.ProofStatus;
-        string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
-        string rolloutState = string.IsNullOrWhiteSpace(_updateStatus.RolloutState)
-            ? S("desktop.home.value.unknown")
-            : _updateStatus.RolloutState;
-        string rolloutReason = string.IsNullOrWhiteSpace(_updateStatus.RolloutReason)
-            ? S("desktop.home.value.none")
-            : _updateStatus.RolloutReason;
-        string knownIssues = string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary)
-            ? S("desktop.home.value.none_published")
-            : _updateStatus.KnownIssueSummary;
-        string fixAvailability = string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary)
-            ? S("desktop.home.value.no_fix_guidance")
-            : _updateStatus.FixAvailabilitySummary;
-        return F(
-            "desktop.home.update_summary",
-            _updateStatus.Status,
-            _updateStatus.InstalledVersion,
-            manifestVersion,
-            manifestPublished,
-            _updateStatus.ChannelId,
-            lastChecked,
-            _updateStatus.AutoApply,
-            rolloutState,
-            rolloutReason,
-            supportabilityState,
-            supportabilitySummary,
-            proofStatus,
-            proofGenerated,
-            knownIssues,
-            fixAvailability,
-            _updateStatus.RecommendedAction,
-            error);
+
+        List<string> lines =
+        [
+            $"State: {_updateStatus.Status} · Installed {_updateStatus.InstalledVersion}",
+            $"Latest: {manifestVersion} · Checked {lastChecked} UTC"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
+        {
+            lines.Add(_updateStatus.RecommendedAction);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
+        {
+            lines.Add($"Issue: {_updateStatus.LastError}");
+        }
+
+        return string.Join("\n", lines);
     }
 
     private string BuildWorkspaceSummary()
@@ -840,31 +775,18 @@ internal sealed class DesktopHomeWindow : Window
         [
             F("desktop.home.next_safe_action", _campaignProjection.NextSafeAction),
             _campaignProjection.Summary,
-            _campaignProjection.RestoreSummary,
-            _campaignProjection.DeviceRoleSummary,
-            BuildCampaignRestoreContinuitySummary(),
-            BuildCampaignStaleStateVisibilitySummary(),
-            BuildCampaignRestoreDecisionSummary(),
-            BuildCampaignRestoreDecisionOrderSummary(),
-            BuildCampaignRestoreLocalAuthoritySummary(),
-            BuildCampaignRestoreReplacementGuardSummary(),
-            BuildCampaignConflictChoiceSummary(),
-            BuildCampaignRestoreSupportHandoffSummary(),
-            _campaignProjection.SupportClosureSummary,
-            BuildCampaignAdoptionSummary(),
-            BuildCampaignAdoptionConfidenceSummary(),
-            BuildRunnerGoalPinSummary(),
-            BuildResolutionReportCloseoutSummary(),
-            BuildCampaignConsequenceSummary(),
-            BuildCampaignConsequenceEvidenceSummary(),
-            BuildCampaignNextSessionReturnSummary(),
-            BuildCampaignReturnActionSummary(),
-            "Review campaign consequences before opening another restore surface."
+            BuildCampaignRestoreContinuitySummary()
         ];
 
-        foreach (string highlight in _campaignProjection.ReadinessHighlights)
+        string? highlight = _campaignProjection.ReadinessHighlights.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(highlight))
         {
             lines.Add(highlight);
+        }
+
+        if (_campaignProjection.Watchouts.Count > 0)
+        {
+            lines.Add(F("desktop.home.watchout", _campaignProjection.Watchouts[0]));
         }
 
         return string.Join("\n", lines);
@@ -1025,13 +947,9 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildSupportBody()
     {
-        List<string> lines =
-        [
-            F("desktop.home.next_safe_action", _supportProjection.NextSafeAction),
-            _supportProjection.Summary
-        ];
-
-        foreach (string highlight in _supportProjection.Highlights)
+        List<string> lines = [_supportProjection.Summary];
+        string? highlight = _supportProjection.Highlights.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(highlight))
         {
             lines.Add(highlight);
         }
@@ -1043,31 +961,17 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<string> lines =
         [
-            F("desktop.home.next_safe_action", _buildExplainProjection.NextSafeAction),
-            _buildExplainProjection.RulesetSpotlight,
             _buildExplainProjection.Summary,
-            _buildExplainProjection.ExplainFocus,
-            _buildExplainProjection.RuntimeHealthSummary,
-            _buildExplainProjection.ReturnTarget,
-            _buildExplainProjection.RulePosture
+            _buildExplainProjection.ExplainFocus
         ];
 
-        foreach (string receipt in _buildExplainProjection.CompatibilityReceipts)
-        {
-            lines.Add(receipt);
-        }
-
-        foreach (string comparison in _buildExplainProjection.BuildPathComparisons)
-        {
-            lines.Add(comparison);
-        }
-
-        foreach (string watchout in _buildExplainProjection.Watchouts)
+        string? watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(watchout))
         {
             lines.Add(F("desktop.home.watchout", watchout));
         }
 
-        return string.Join("\n", lines);
+        return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
     }
 
     private IReadOnlyList<Button> CreateInstallActions()
@@ -1076,17 +980,14 @@ internal sealed class DesktopHomeWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
-            actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
-            // Keep the explicit "Open My Artifact Shelf" and "Open Campaign Artifact Shelf" phrases in-source for flagship signoff smoke coverage.
-            actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
-            actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
-            actions.Add(CreateButton(S("desktop.home.button.open_published_artifacts"), () => OpenArtifactShelfView("creator")));
+            actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true));
         }
         else
         {
             actions.Add(CreateButton(
                 DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
-                static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal()));
+                static () => DesktopInstallLinkingRuntime.TryOpenAccountPortal(),
+                isPrimary: true));
         }
 
         if (!DesktopInstallLinkingRuntime.IsClaimed(_installState))
@@ -1102,11 +1003,12 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync, isPrimary: true),
-            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal())
+            CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync, isPrimary: true)
         ];
-
-        actions.Add(CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport));
+        if (!string.Equals(_updateStatus.Status, "current", StringComparison.Ordinal))
+        {
+            actions.Add(CreateButton(S("desktop.home.button.open_update_support"), OpenUpdateSupport));
+        }
 
         return actions;
     }
@@ -1129,31 +1031,8 @@ internal sealed class DesktopHomeWindow : Window
         {
             if (HasFirstPlayableSession())
             {
-                actions.Add(CreateButton("Review Starter Lane", OpenStarterLaneReviewAsync));
+                actions.Add(CreateButton("Starter", OpenStarterLaneReviewAsync));
             }
-
-            actions.Add(CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact));
-            actions.Add(CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact));
-            // Keep the explicit "Open My Artifact Shelf" phrase in-source for flagship signoff smoke coverage.
-            actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
-            actions.Add(CreateButton("Open Campaign Artifact Shelf", () => OpenArtifactShelfView("campaign")));
-            actions.Add(CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
-            actions.Add(CreateButton("Open Creator Publication", OpenCreatorPublicationAsync));
-            actions.Add(CreateButton("Open Organizer Operations", OpenOrganizerOperationsAsync));
-            actions.Add(CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
-            actions.Add(CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
-            actions.Add(CreateButton("Review Organizer Roles", OpenOrganizerRolesAsync));
-            actions.Add(CreateButton("Review Campaign Adoption", OpenCampaignAdoptionAsync));
-            actions.Add(CreateButton("Open GM Runboard", OpenGmRunboardAsync));
-            if (HasPortableExchangePreview())
-            {
-                actions.Add(CreateButton("Review Portable Exchange", OpenPortableExchangeAsync));
-                actions.Add(CreateButton("Open Replay After Action", OpenReplayAfterActionAsync));
-            }
-
-            actions.Add(CreateButton("Open GM Prep Packets", OpenGmPrepPacketsAsync));
-            actions.Add(CreateButton("Review Roster Movement", OpenRosterMovementAsync));
-            actions.Add(CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync));
         }
         else
         {
@@ -1187,30 +1066,16 @@ internal sealed class DesktopHomeWindow : Window
         if (_recentWorkspaces.Count > 0)
         {
             actions.Add(CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true));
-            actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, buildFollowThroughLabel, nextActionPrefix), OpenBuildFollowThroughAsync));
         }
         else if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
             actions.Add(CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, buildFollowThroughLabel, nextActionPrefix), OpenBuildFollowThroughAsync, isPrimary: true));
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
         else
         {
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
-            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
         }
-
-        actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));
-        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
-        {
-            // Keep the explicit "Open My Artifact Shelf" and "Open Campaign Artifact Shelf" phrases in-source for flagship signoff smoke coverage.
-            actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), () => OpenArtifactShelfView("personal")));
-            actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), () => OpenArtifactShelfView("campaign")));
-            actions.Add(CreateButton("Open Creator Artifact Shelf", () => OpenArtifactShelfView("creator")));
-            actions.Add(CreateButton("Open Public Proof Shelf", () => OpenArtifactShelfView("public")));
-        }
-
-        actions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
+        actions.Add(CreateButton("Explain", OpenRuleEnvironmentStudioAsync));
         return actions;
     }
 
@@ -1221,11 +1086,7 @@ internal sealed class DesktopHomeWindow : Window
             return
             [
                 CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
-                CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
-                CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport),
-                DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                    ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync)
-                    : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync)
+                CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
             ];
         }
 
@@ -1240,14 +1101,6 @@ internal sealed class DesktopHomeWindow : Window
         }
 
         actions.Add(CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync));
-
-        if (!string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
-            && !string.Equals(_supportProjection.DetailHref, _supportProjection.PrimaryActionHref, StringComparison.OrdinalIgnoreCase))
-        {
-            actions.Add(CreateButton(S("desktop.home.button.open_tracked_case"), OpenTrackedSupportCase));
-        }
-
-        actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
         return actions;
     }
 
@@ -1273,7 +1126,6 @@ internal sealed class DesktopHomeWindow : Window
         return
         [
             CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
-            CreateButton(CreateNextSafeActionButtonLabel(_buildExplainProjection.NextSafeAction, workspaceFollowThroughLabel, nextActionPrefix), OpenWorkspaceFollowThroughAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
     }
@@ -1570,19 +1422,10 @@ internal sealed class DesktopHomeWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
+        ToolTip.SetTip(body, title);
         StackPanel content = new()
         {
-            Spacing = 10,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 18
-                },
-                body
-            }
+            Spacing = 0
         };
 
         if (actionContent is not null)
@@ -1592,11 +1435,11 @@ internal sealed class DesktopHomeWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#CBD7E6")),
+            Background = new SolidColorBrush(Color.Parse("#F8FAFD")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(16),
-            Padding = new Thickness(18),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(8),
             Child = content
         };
     }
@@ -1606,7 +1449,7 @@ internal sealed class DesktopHomeWindow : Window
         StackPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10
+            Spacing = 8
         };
 
         foreach (Button action in actions)
@@ -1642,9 +1485,9 @@ internal sealed class DesktopHomeWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 132,
-            MinHeight = 38,
-            Padding = new Thickness(16, 9),
+            MinWidth = 92,
+            MinHeight = 30,
+            Padding = new Thickness(12, 6),
             HorizontalAlignment = HorizontalAlignment.Left,
             Background = new SolidColorBrush(Color.Parse(isPrimary ? "#163A59" : "#FFFFFF")),
             Foreground = new SolidColorBrush(Color.Parse(isPrimary ? "#F8FBFF" : "#17324F")),
@@ -1674,19 +1517,11 @@ internal sealed class DesktopHomeWindow : Window
             Background = BuildFlagshipHeroBackground(),
             BorderBrush = BuildFlagshipHeroBorderBrush(),
             BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(20),
-            Padding = new Thickness(22),
+            CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(0),
             Child = new StackPanel
             {
-                Spacing = 10,
-                Children =
-                {
-                    _flagshipEyebrowText,
-                    _flagshipTitleText,
-                    _introText,
-                    _flagshipSpotlightText,
-                    _flagshipFactsText
-                }
+                Spacing = 0
             }
         };
     }
@@ -1694,10 +1529,10 @@ internal sealed class DesktopHomeWindow : Window
     private IBrush BuildFlagshipHeroBackground()
         => ResolveFlagshipRulesetId() switch
         {
-            RulesetDefaults.Sr4 => CreateGradientBrush("#1D140E", "#5F3312", "#8C5317"),
-            RulesetDefaults.Sr5 => CreateGradientBrush("#0F172A", "#14304A", "#1A5570"),
-            RulesetDefaults.Sr6 => CreateGradientBrush("#0F172A", "#173548", "#1E6757"),
-            _ => CreateGradientBrush("#0F172A", "#1C3650", "#31536D")
+            RulesetDefaults.Sr4 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            RulesetDefaults.Sr5 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            RulesetDefaults.Sr6 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            _ => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7")
         };
 
     private IBrush BuildFlagshipHeroBorderBrush()

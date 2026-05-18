@@ -35,6 +35,12 @@ public partial class NavigatorPaneControl : UserControl
     {
         CodexHeadingText.Text = BuildCodexHeading(state);
         CodexCaptionText.Text = BuildCodexCaption(state);
+        CodexCaptionText.IsVisible = false;
+        ToolTip.SetTip(
+            NavigatorTree,
+            string.IsNullOrWhiteSpace(CodexCaptionText.Text)
+                ? null
+                : CodexCaptionText.Text);
         _openWorkspacesHeading = state.OpenWorkspacesHeading;
         _navigationTabsHeading = state.NavigationTabsHeading;
         _sectionActionsHeading = state.SectionActionsHeading;
@@ -135,16 +141,12 @@ public partial class NavigatorPaneControl : UserControl
     }
 
     private static string BuildCodexHeading(NavigatorPaneState state)
-        => state.SelectedWorkspaceId is null
-            ? "Codex"
-            : $"Codex · {state.OpenWorkspaces.Length} runner{(state.OpenWorkspaces.Length == 1 ? string.Empty : "s")} open";
+        => state.OpenWorkspaces.Length <= 1
+            ? "Character"
+            : "Characters";
 
     private static string BuildCodexCaption(NavigatorPaneState state)
-    {
-        string tabLabel = state.NavigationTabs.FirstOrDefault(item => string.Equals(item.Id, state.ActiveTabId, StringComparison.Ordinal))?.Label
-            ?? "Pick a runner to restore the workbench";
-        return $"Tree navigator for runners, tabs, actions, and workflow routes. Active tab: {tabLabel}.";
-    }
+        => string.Empty;
 
     private NavigatorTreeItem[] BuildTreeItems()
     {
