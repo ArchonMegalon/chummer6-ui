@@ -9,6 +9,10 @@
 	<Configurations>Debug;Release;Debuggable Release</Configurations>
     <EmbeddedResourceUseDependentUponConvention>true</EmbeddedResourceUseDependentUponConvention>
   </PropertyGroup>
+  <PropertyGroup>
+    <ChummerProjectDir Condition="'$(SolutionDir)' != ''">$(SolutionDir)Chummer\</ChummerProjectDir>
+    <ChummerProjectDir Condition="'$(ChummerProjectDir)' == ''">$(MSBuildThisFileDirectory)..\..\Chummer\</ChummerProjectDir>
+  </PropertyGroup>
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.InteropServices.ComVisible">
       <_Parameter1>False</_Parameter1>
@@ -21,7 +25,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>$(MSBuildProjectDirectory)\bin\$(Configuration)\</OutputPath>
     <StartAction>Program</StartAction>
-    <StartProgram>$(SolutionDir)Chummer\bin\$(Configuration)\Chummer5.exe</StartProgram>
+    <StartProgram>$(ChummerProjectDir)bin\$(Configuration)\Chummer5.exe</StartProgram>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <NoWarn>VSTHRD003;VSTHRD100;VSTHRD103;VSTHRD200</NoWarn>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -29,7 +33,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath>$(MSBuildProjectDirectory)\bin\$(Configuration)\</OutputPath>
     <StartAction>Program</StartAction>
-    <StartProgram>$(SolutionDir)Chummer\bin\$(Configuration)\Chummer5.exe</StartProgram>
+    <StartProgram>$(ChummerProjectDir)bin\$(Configuration)\Chummer5.exe</StartProgram>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <NoWarn>VSTHRD003;VSTHRD100;VSTHRD103;VSTHRD200</NoWarn>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -37,7 +41,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debuggable Release|AnyCPU'">
     <OutputPath>$(MSBuildProjectDirectory)\bin\$(Configuration)\</OutputPath>
     <StartAction>Program</StartAction>
-    <StartProgram>$(SolutionDir)Chummer\bin\$(Configuration)\Chummer5.exe</StartProgram>
+    <StartProgram>$(ChummerProjectDir)bin\$(Configuration)\Chummer5.exe</StartProgram>
     <Optimize>false</Optimize>
     <NoWarn>VSTHRD003;VSTHRD100;VSTHRD103;VSTHRD200</NoWarn>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -91,7 +95,7 @@
     <Service Include="{94E38DFF-614B-4cbd-B67C-F211BB35CE8B}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(SolutionDir)Chummer\Chummer.csproj" />
+    <ProjectReference Include="$(ChummerProjectDir)Chummer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="OpenAPIs\swagger.json">

@@ -21,8 +21,9 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Modes;
@@ -32,6 +33,7 @@ namespace ChummerDataViewer.Model
 {
     public sealed class DownloaderWorker : INotifyThreadStatus, IDisposable
     {
+        private static readonly HttpClient s_httpClient = new HttpClient();
         public event StatusChangedEvent StatusChanged;
 
         public string Name => "DownloaderWorker";
@@ -47,27 +49,29 @@ namespace ChummerDataViewer.Model
             _worker.RunWorkerAsync();
         }
 
-        private async void WorkerEntryPoint(object sender, DoWorkEventArgs e)
+        private void WorkerEntryPoint(object sender, DoWorkEventArgs e)
+        {
+            WorkerEntryPointAsync().GetAwaiter().GetResult();
+        }
+
+        private async Task WorkerEntryPointAsync()
         {
             try
             {
-                using (WebClient client = new WebClient())
+                while (true)
                 {
-                    while (true)
+                    if (_queue.TryTake(out DownloadTask task))
                     {
-                        if (_queue.TryTake(out DownloadTask task))
-                        {
-                            OnStatusChanged(new StatusChangedEventArgs("Downloading " + task.Url + Queue()));
-                            byte[] encrypted = await client.DownloadDataTaskAsync(task.Url);
-                            byte[] buffer = Decrypt(task.Key, encrypted);
-                            WriteAndForget(buffer, task.DestinationPath, task.ReportGuid);
-                        }
+                        OnStatusChanged(new StatusChangedEventArgs("Downloading " + task.Url + Queue()));
+                        byte[] encrypted = await s_httpClient.GetByteArrayAsync(task.Url).ConfigureAwait(false);
+                        byte[] buffer = Decrypt(task.Key, encrypted);
+                        WriteAndForget(buffer, task.DestinationPath, task.ReportGuid);
+                    }
 
-                        if (_queue.IsEmpty)
-                        {
-                            OnStatusChanged(new StatusChangedEventArgs("Idle"));
-                            resetEvent.WaitOne(15000);  //in case i fuck something up
-                        }
+                    if (_queue.IsEmpty)
+                    {
+                        OnStatusChanged(new StatusChangedEventArgs("Idle"));
+                        resetEvent.WaitOne(15000);  //in case i fuck something up
                     }
                 }
             }

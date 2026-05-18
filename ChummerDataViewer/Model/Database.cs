@@ -18,7 +18,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SQLite;
 using System.IO;
 
@@ -117,7 +116,7 @@ namespace ChummerDataViewer.Model
 
         public void SetKey(string key, string value)
         {
-            if (key == null) throw new ArgumentNullException(nameof(key));
+            ArgumentNullException.ThrowIfNull(key);
 
             lock (_syncRoot)
             {
@@ -231,7 +230,7 @@ namespace ChummerDataViewer.Model
             }
         }
 
-        private CrashReport MakeCrashReport(IDataRecord reader)
+        private CrashReport MakeCrashReport(SQLiteDataReader reader)
         {
             Guid g = reader.GetGuid(0); //Guid.Parse(reader.GetString(0)));
             long l = reader.GetInt64(1);

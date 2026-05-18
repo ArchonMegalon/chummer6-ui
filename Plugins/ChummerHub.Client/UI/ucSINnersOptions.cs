@@ -228,7 +228,7 @@ namespace ChummerHub.Client.UI
                     IList<string> roles = GetRolesStatus(this);
                     UpdateDisplay();
                     if (roles.Count == 0)
-                        await SignIn(token); // TODO: Make this synchronous
+                        SignInSync(token);
                     // ReSharper restore MethodHasAsyncOverloadWithCancellation
                 }
                 else
@@ -592,6 +592,11 @@ namespace ChummerHub.Client.UI
 
             ShowResult(result);
             await NextSteps(result, token);
+        }
+
+        private static void SignInSync(CancellationToken token = default)
+        {
+            Chummer.Utils.SafelyRunSynchronously(() => SignIn(token));
         }
 
         private static void ShowResult(LoginResult result)
