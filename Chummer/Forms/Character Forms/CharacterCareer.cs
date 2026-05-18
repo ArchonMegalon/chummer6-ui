@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1845
 
 using System;
 using System.Collections.Concurrent;
@@ -1031,8 +1032,7 @@ namespace Chummer
                                         using (new FetchSafelyFromSafeObjectPool<List<ListItem>>(
                                                    Utils.ListItemListPool, out List<ListItem> lstFireModes))
                                         {
-                                            foreach (FiringMode mode in
-                                                     Enum.GetValues(typeof(FiringMode)))
+                                            foreach (FiringMode mode in Enum.GetValues<FiringMode>())
                                             {
                                                 if (mode == FiringMode.NumFiringModes)
                                                     continue;
@@ -19414,19 +19414,22 @@ namespace Chummer
                     }
                 }
 
-                //TODO: If using a databinding for GroupMember, changing Karma here causes chkJoinGroup to revert to false. Unclear why, lazy fix to resolve it for now.
-                CharacterObject.GroupMember
-                    = await chkJoinGroup.DoThreadSafeFuncAsync(x => x.Checked, GenericToken).ConfigureAwait(false);
-
-                if (!await chkJoinGroup.DoThreadSafeFuncAsync(x => x.Enabled, GenericToken).ConfigureAwait(false))
-                {
-                    await chkInitiationGroup.DoThreadSafeAsync(x => x.Checked = false, GenericToken).ConfigureAwait(false);
-                }
+                await SyncJoinGroupStateAsync().ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
                 //swallow this
             }
+        }
+
+        private async Task SyncJoinGroupStateAsync()
+        {
+            (bool blnChecked, bool blnEnabled) = await chkJoinGroup
+                .DoThreadSafeFuncAsync(x => (x.Checked, x.Enabled), GenericToken)
+                .ConfigureAwait(false);
+            CharacterObject.GroupMember = blnChecked;
+            if (!blnEnabled)
+                await chkInitiationGroup.DoThreadSafeAsync(x => x.Checked = false, GenericToken).ConfigureAwait(false);
         }
 
         private void txtNotes_KeyDown(object sender, KeyEventArgs e)
@@ -29478,3 +29481,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1845

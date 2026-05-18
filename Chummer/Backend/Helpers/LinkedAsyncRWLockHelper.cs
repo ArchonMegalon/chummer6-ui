@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1513
+
 // Uncomment this define to control whether stacktraces should be saved every time a linked semaphore is successfully disposed.
 #if DEBUG
 //#define LINKEDSEMAPHOREDEBUG
@@ -98,30 +100,24 @@ namespace Chummer
                     // The ideal solution *should* be to refactor the entire codebase so that those kinds of situations can't happen in the first place, but that requires monstrous effort, and I'm too tired to fix that properly.
                     if (objParent != null)
                     {
-                        if (objGrandParent != null)
+                        while (IsReservedParentSemaphore(objNewSemaphore))
                         {
-                            while (objNewSemaphore == objParent.PendingWriterSemaphore
-                                   || objNewSemaphore == objParent.ActiveUpgradeableReaderSemaphore
-                                   || objNewSemaphore == objParent.ActiveWriterSemaphore
-                                   || objNewSemaphore == objGrandParent.PendingWriterSemaphore
-                                   || objNewSemaphore == objGrandParent.ActiveUpgradeableReaderSemaphore
-                                   || objNewSemaphore == objGrandParent.ActiveWriterSemaphore)
-                            {
-                                objNewSemaphore = Utils.SemaphorePool.Get();
-                            }
-                        }
-                        else
-                        {
-                            while (objNewSemaphore == objParent.PendingWriterSemaphore
-                                   || objNewSemaphore == objParent.ActiveUpgradeableReaderSemaphore
-                                   || objNewSemaphore == objParent.ActiveWriterSemaphore)
-                            {
-                                objNewSemaphore = Utils.SemaphorePool.Get();
-                            }
+                            objNewSemaphore = Utils.SemaphorePool.Get();
                         }
                     }
 
                     return objNewSemaphore;
+                }
+
+                bool IsReservedParentSemaphore(DebuggableSemaphoreSlim objCandidate)
+                {
+                    return objCandidate == objParent.PendingWriterSemaphore
+                           || objCandidate == objParent.ActiveUpgradeableReaderSemaphore
+                           || objCandidate == objParent.ActiveWriterSemaphore
+                           || objGrandParent != null
+                           && (objCandidate == objGrandParent.PendingWriterSemaphore
+                               || objCandidate == objGrandParent.ActiveUpgradeableReaderSemaphore
+                               || objCandidate == objGrandParent.ActiveWriterSemaphore);
                 }
             }
             else
@@ -1555,3 +1551,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1513

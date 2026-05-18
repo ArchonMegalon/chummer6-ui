@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1512
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -1114,3 +1116,4 @@ namespace Chummer
         public AsyncFriendlyReaderWriterLock LockObject { get; } = new AsyncFriendlyReaderWriterLock();
     }
 }
+#pragma warning restore CA1512

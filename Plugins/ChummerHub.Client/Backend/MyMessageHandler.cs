@@ -35,7 +35,7 @@ namespace ChummerHub.Client.Backend
         private static Logger Log => s_ObjLogger.Value;
         public MyMessageHandler()
         {
-            Proxy = WebRequest.DefaultWebProxy;
+            Proxy = HttpClient.DefaultProxy;
             // new WebProxy("http://localhost:8888"),
             UseProxy = true;
             Credentials = CredentialCache.DefaultCredentials;
@@ -43,14 +43,20 @@ namespace ChummerHub.Client.Backend
             CookieContainer = new CookieContainer();
             UseDefaultCredentials = true;
             Proxy.Credentials = CredentialCache.DefaultCredentials;
+            if (Debugger.IsAttached
+                && Uri.TryCreate(ChummerHub.Client.Properties.Settings.Default.SINnerUrl, UriKind.Absolute,
+                    out Uri sinnerUri)
+                && sinnerUri.IsLoopback)
+            {
+                ServerCertificateCustomValidationCallback = DangerousAcceptAnyServerCertificateValidator;
+            }
         }
 
         private static int requestCounter;
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request);
             int myCounter = ++requestCounter;
             string msg = "Process request " + myCounter + ": " + request.RequestUri;
             Log.Debug<object>(msg);

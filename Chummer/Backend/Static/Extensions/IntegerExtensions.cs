@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1512
+
 using System;
 using System.Runtime.CompilerServices;
 using Chummer.Backend.Enums;
@@ -551,3 +553,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1512

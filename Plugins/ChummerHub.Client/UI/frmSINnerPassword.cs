@@ -27,6 +27,7 @@ using LayoutKind = System.Runtime.InteropServices.LayoutKind;
 
 namespace ChummerHub.Client.UI
 {
+#pragma warning disable CA1069 // Win32 flags intentionally reuse zero-value aliases
     public partial class frmSINnerPassword : Form
     {
         public enum SHSTOCKICONID : uint
@@ -105,7 +106,7 @@ namespace ChummerHub.Client.UI
         {
             InitializeComponent();
             StartPosition = FormStartPosition.CenterScreen;
-            SHSTOCKICONINFO sii = new SHSTOCKICONINFO((uint)Marshal.SizeOf(typeof(SHSTOCKICONINFO)), IntPtr.Zero);
+            SHSTOCKICONINFO sii = new SHSTOCKICONINFO((uint)Marshal.SizeOf<SHSTOCKICONINFO>(), IntPtr.Zero);
 
             Marshal.ThrowExceptionForHR(SHGetStockIconInfo(SHSTOCKICONID.SIID_INFO,
                 SHGSI.SHGSI_ICON | SHGSI.SHGSI_LARGEICON,
@@ -127,4 +128,5 @@ namespace ChummerHub.Client.UI
             Close();
         }
     }
+#pragma warning restore CA1069
 }

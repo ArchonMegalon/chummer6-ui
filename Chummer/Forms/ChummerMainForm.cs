@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1859
 
 using System;
 using System.Collections.Concurrent;
@@ -26,6 +27,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading;
@@ -1221,6 +1223,15 @@ namespace Chummer
         private Task _tskVersionUpdate;
 
         private CancellationTokenSource _objVersionUpdaterCancellationTokenSource;
+        private static readonly HttpClient s_HttpClient = CreateUpdateHttpClient();
+
+        private static HttpClient CreateUpdateHttpClient()
+        {
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Chummer5a/1.0 (update-check)");
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            return client;
+        }
 
         private async Task DoCacheGitVersion(CancellationToken token = default)
         {
@@ -1234,12 +1245,59 @@ namespace Chummer
             try
             {
                 token.ThrowIfCancellationRequested();
-                System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
-                System.Net.HttpWebRequest request;
                 try
                 {
-                    System.Net.WebRequest objTemp = System.Net.WebRequest.Create(UpdateLocation);
-                    request = objTemp as System.Net.HttpWebRequest;
+                    using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, UpdateLocation);
+                    using HttpResponseMessage response = await s_HttpClient.SendAsync(request,
+                        HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
+
+                    await using Stream dataStream
+                        = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+                    using StreamReader objReader = new StreamReader(dataStream, System.Text.Encoding.UTF8, true);
+
+                    token.ThrowIfCancellationRequested();
+
+                    string strVersionLine = null;
+                    for (string strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false);
+                         strLine != null;
+                         strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false))
+                    {
+                        token.ThrowIfCancellationRequested();
+                        if (strLine.Contains("tag_name"))
+                        {
+                            strVersionLine = strLine.Substring(strLine.IndexOf(':') + 1).TrimEnd(',');
+                            break;
+                        }
+                    }
+
+                    token.ThrowIfCancellationRequested();
+
+                    Version verLatestVersion = null;
+                    if (!string.IsNullOrEmpty(strVersionLine))
+                    {
+                        string strVersion = strVersionLine.Substring(strVersionLine.IndexOf(':') + 1);
+                        int intPos = strVersion.IndexOf('}');
+                        if (intPos != -1)
+                            strVersion = strVersion.Substring(0, intPos);
+                        strVersion = strVersion.FastEscape('\"');
+
+                        if (strVersion.Count(x => x == '.') < 2)
+                        {
+                            strVersion += ".0";
+                            if (strVersion.Count(x => x == '.') < 2)
+                                strVersion += ".0";
+                        }
+
+                        token.ThrowIfCancellationRequested();
+
+                        if (!Version.TryParse(strVersion.TrimStartOnce("Nightly-v"), out verLatestVersion))
+                            verLatestVersion = null;
+
+                        token.ThrowIfCancellationRequested();
+                    }
+
+                    Utils.CachedGitVersion = verLatestVersion;
                 }
                 catch (SecurityException ex)
                 {
@@ -1247,97 +1305,12 @@ namespace Chummer
                     Log.Error(ex);
                     return;
                 }
-
-                if (request == null)
+                catch (System.Net.WebException ex)
                 {
                     Utils.CachedGitVersion = null;
-                    return;
+                    Log.Error(ex);
                 }
-
-                token.ThrowIfCancellationRequested();
-
-                request.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-                request.Accept = "application/json";
-
-                try
-                {
-                    // Get the response.
-                    using (System.Net.HttpWebResponse response
-                           = await request.GetResponseAsync() as System.Net.HttpWebResponse)
-                    {
-                        if (response == null)
-                        {
-                            Utils.CachedGitVersion = null;
-                            return;
-                        }
-
-                        token.ThrowIfCancellationRequested();
-
-                        // Get the stream containing content returned by the server.
-                        using (Stream dataStream = response.GetResponseStream())
-                        {
-                            if (dataStream == null)
-                            {
-                                Utils.CachedGitVersion = null;
-                                return;
-                            }
-
-                            token.ThrowIfCancellationRequested();
-
-                            // Open the stream using a StreamReader for easy access.
-                            using (StreamReader objReader = new StreamReader(dataStream, System.Text.Encoding.UTF8, true))
-                            {
-                                token.ThrowIfCancellationRequested();
-
-                                string strVersionLine = null;
-                                // Read the content.
-                                for (string strLine = await objReader.ReadLineAsync().ConfigureAwait(false);
-                                     strLine != null;
-                                     strLine = await objReader.ReadLineAsync().ConfigureAwait(false))
-                                {
-                                    token.ThrowIfCancellationRequested();
-                                    if (strLine.Contains("tag_name"))
-                                    {
-                                        strVersionLine = strLine.Substring(strLine.IndexOf(':') + 1).TrimEnd(',');
-                                        break;
-                                    }
-                                }
-
-                                token.ThrowIfCancellationRequested();
-
-                                Version verLatestVersion = null;
-                                if (!string.IsNullOrEmpty(strVersionLine))
-                                {
-                                    string strVersion = strVersionLine.Substring(strVersionLine.IndexOf(':') + 1);
-                                    int intPos = strVersion.IndexOf('}');
-                                    if (intPos != -1)
-                                        strVersion = strVersion.Substring(0, intPos);
-                                    strVersion = strVersion.FastEscape('\"');
-
-                                    // Adds zeroes if minor and/or build version are missing
-                                    if (strVersion.Count(x => x == '.') < 2)
-                                    {
-                                        strVersion += ".0";
-                                        if (strVersion.Count(x => x == '.') < 2)
-                                        {
-                                            strVersion += ".0";
-                                        }
-                                    }
-
-                                    token.ThrowIfCancellationRequested();
-
-                                    if (!Version.TryParse(strVersion.TrimStartOnce("Nightly-v"), out verLatestVersion))
-                                        verLatestVersion = null;
-
-                                    token.ThrowIfCancellationRequested();
-                                }
-
-                                Utils.CachedGitVersion = verLatestVersion;
-                            }
-                        }
-                    }
-                }
-                catch (System.Net.WebException ex)
+                catch (HttpRequestException ex)
                 {
                     Utils.CachedGitVersion = null;
                     Log.Error(ex);
@@ -4750,3 +4723,4 @@ namespace Chummer
 #endregion Application Properties
     }
 }
+#pragma warning restore CA1859

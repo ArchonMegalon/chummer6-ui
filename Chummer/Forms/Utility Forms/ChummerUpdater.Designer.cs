@@ -16,8 +16,7 @@ namespace Chummer
             if (disposing)
             {
                 _objGenericFormClosingCancellationTokenSource.Dispose();
-                _clientChangelogDownloader.Dispose();
-                _clientDownloader.Dispose();
+                _httpClient.Dispose();
                 _objConnectionLoaderCancellationTokenSource?.Dispose();
                 if (components != null)
                     components.Dispose();

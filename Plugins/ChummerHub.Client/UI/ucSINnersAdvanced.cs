@@ -80,7 +80,6 @@ namespace ChummerHub.Client.UI
         private void MyTagTreeView_VisibleChanged(object sender, EventArgs e)
         {
             MyTagTreeView.Nodes.Clear();
-            TreeNode root = null;
             //if (MySINnersUsercontrol.MyCE?.MySINnerFile?.SiNnerMetaData?.Tags?.Any(a => a.TagName == "Reflection") == false)
             PopulateTags();
             //MySINnersUsercontrol.MyCE.PopulateTree(ref root, null, null);

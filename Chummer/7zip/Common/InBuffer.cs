@@ -18,6 +18,8 @@
  */
 // InBuffer.cs
 
+#pragma warning disable CA1835
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -130,3 +132,4 @@ namespace SevenZip.Buffer
         }
     }
 }
+#pragma warning restore CA1835

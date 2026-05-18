@@ -76,7 +76,7 @@ namespace SimpleHttpServer.RouteHandlers
             return response;
         }
 
-        private HttpResponse Handle_LocalDir(HttpRequest request, string localPath)
+        private static HttpResponse Handle_LocalDir(HttpRequest request, string localPath)
         {
             using (new FetchSafelyFromPool<StringBuilder>(Utils.StringBuilderPool, out StringBuilder output))
             {
@@ -110,11 +110,9 @@ namespace SimpleHttpServer.RouteHandlers
 
         public static string GetMimeType(string extension)
         {
-            if (extension == null) {
-                throw new ArgumentNullException(nameof(extension));
-            }
+            ArgumentNullException.ThrowIfNull(extension);
 
-            if (!extension.StartsWith(".", StringComparison.Ordinal)) {
+            if (extension.Length == 0 || extension[0] != '.') {
                 extension = "." + extension;
             }
 

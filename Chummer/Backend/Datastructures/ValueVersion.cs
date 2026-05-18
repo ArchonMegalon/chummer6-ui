@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1512
+
 using System;
 using System.Buffers;
 using System.Globalization;
@@ -428,8 +430,7 @@ namespace Chummer
         /// <exception cref="T:System.OverflowException">At least one component in <paramref name="input" /> represents a number that is greater than <see cref="F:System.Int32.MaxValue" />.</exception>
         public static ValueVersion Parse(string input)
         {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
             ValueVersionResult result = new ValueVersionResult();
             result.Init(nameof(input), true);
             return TryParseVersion(input, ref result) ? result.m_parsedValueVersion : throw result.GetValueVersionParseException();
@@ -543,8 +544,7 @@ namespace Chummer
         /// <paramref name="v1" /> is <see langword="null" />.</exception>
         public static bool operator <(Version v1, ValueVersion v2)
         {
-            if (v1 == null)
-                throw new ArgumentNullException(nameof(v1));
+            ArgumentNullException.ThrowIfNull(v1);
             return v2.CompareTo(v1) >= 0;
         }
 
@@ -557,8 +557,7 @@ namespace Chummer
         /// <paramref name="v1" /> is <see langword="null" />.</exception>
         public static bool operator <=(Version v1, ValueVersion v2)
         {
-            if (v1 == null)
-                throw new ArgumentNullException(nameof(v1));
+            ArgumentNullException.ThrowIfNull(v1);
             return v2.CompareTo(v1) > 0;
         }
 
@@ -752,3 +751,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1512

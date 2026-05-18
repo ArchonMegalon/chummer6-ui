@@ -19,11 +19,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -53,8 +53,7 @@ namespace Chummer
         private CancellationTokenSource _objUpdatesDownloaderCancellationTokenSource;
         private readonly CancellationTokenSource _objGenericFormClosingCancellationTokenSource = new CancellationTokenSource();
         private readonly CancellationToken _objGenericToken;
-        private readonly WebClient _clientDownloader;
-        private readonly WebClient _clientChangelogDownloader;
+        private readonly HttpClient _httpClient;
         private string _strExceptionString;
 
         public ChummerUpdater()
@@ -68,10 +67,17 @@ namespace Chummer
             CurrentVersion = Utils.CurrentChummerVersion.ToString(3);
             _blnPreferNightly = GlobalSettings.PreferNightlyBuilds;
             _strTempLatestVersionChangelogPath = Path.Combine(Utils.GetTempPath(), "changelog.txt");
-            _clientChangelogDownloader = new WebClient { Proxy = WebRequest.DefaultWebProxy, Encoding = Encoding.UTF8, Credentials = CredentialCache.DefaultNetworkCredentials };
-            _clientDownloader = new WebClient { Proxy = WebRequest.DefaultWebProxy, Encoding = Encoding.UTF8, Credentials = CredentialCache.DefaultNetworkCredentials };
-            _clientDownloader.DownloadFileCompleted += wc_DownloadCompleted;
-            _clientDownloader.DownloadProgressChanged += wc_DownloadProgressChanged;
+            HttpClientHandler objHandler = new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip,
+                DefaultProxyCredentials = CredentialCache.DefaultNetworkCredentials
+            };
+            _httpClient = new HttpClient(objHandler)
+            {
+                Timeout = TimeSpan.FromSeconds(30)
+            };
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; ChummerUpdater)");
+            _httpClient.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         }
 
         private async void ChummerUpdater_Load(object sender, EventArgs e)
@@ -232,8 +238,6 @@ namespace Chummer
                 objTemp.Cancel(false);
                 objTemp.Dispose();
             }
-            _clientDownloader.CancelAsync();
-            _clientChangelogDownloader.CancelAsync();
             Task tskOld = Interlocked.Exchange(ref _tskChangelogDownloader, null);
             if (tskOld != null)
             {
@@ -333,8 +337,7 @@ namespace Chummer
             token.ThrowIfCancellationRequested();
             if (!_blnFormClosing)
             {
-                if (!_clientDownloader.IsBusy)
-                    await cmdUpdate.DoThreadSafeAsync(x => x.Enabled = true, token).ConfigureAwait(false);
+                await cmdUpdate.DoThreadSafeAsync(x => x.Enabled = true, token).ConfigureAwait(false);
                 token.ThrowIfCancellationRequested();
                 if (File.Exists(_strTempLatestVersionChangelogPath))
                 {
@@ -354,11 +357,6 @@ namespace Chummer
 
         private async Task LoadConnection(CancellationToken token = default)
         {
-            while (_clientChangelogDownloader.IsBusy)
-            {
-                token.ThrowIfCancellationRequested();
-                await Utils.SafeSleepAsync(token).ConfigureAwait(false);
-            }
             _blnIsConnected = false;
             token.ThrowIfCancellationRequested();
             bool blnChummerVersionGotten = true;
@@ -369,98 +367,81 @@ namespace Chummer
                 ? "https://api.github.com/repos/chummer5a/chummer5a/releases"
                 : "https://api.github.com/repos/chummer5a/chummer5a/releases/latest");
 
-            HttpWebRequest request = null;
-            try
-            {
-                WebRequest objTemp = WebRequest.Create(uriUpdateLocation);
-                request = objTemp as HttpWebRequest;
-            }
-            catch (System.Security.SecurityException)
-            {
-                blnChummerVersionGotten = false;
-            }
-            if (request == null)
-                blnChummerVersionGotten = false;
             if (blnChummerVersionGotten)
             {
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                request.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-                request.Accept = "application/json";
-                request.Timeout = 5000;
-
-                // Get the response.
-                HttpWebResponse response = null;
                 try
                 {
-                    response = await request.GetResponseAsync().ConfigureAwait(false) as HttpWebResponse;
-
+                    using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uriUpdateLocation);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(
+                        request,
+                        HttpCompletionOption.ResponseHeadersRead,
+                        token).ConfigureAwait(false);
+                    response.EnsureSuccessStatusCode();
                     token.ThrowIfCancellationRequested();
-
-                    // Get the stream containing content returned by the server.
-                    using (Stream dataStream = response?.GetResponseStream())
+                    await using Stream dataStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+                    if (dataStream == null)
                     {
-                        if (dataStream == null)
-                            blnChummerVersionGotten = false;
-                        if (blnChummerVersionGotten)
+                        blnChummerVersionGotten = false;
+                    }
+                    if (blnChummerVersionGotten)
+                    {
+                        token.ThrowIfCancellationRequested();
+
+                        // Open the stream using a StreamReader for easy access.
+                        string responseFromServer;
+                        using (new FetchSafelyFromObjectPool<StringBuilder>(Utils.StringBuilderPool, out StringBuilder sbdReturn))
+                        {
+                            token.ThrowIfCancellationRequested();
+                            using (StreamReader objReader = new StreamReader(dataStream, Encoding.UTF8, true))
+                            {
+                                token.ThrowIfCancellationRequested();
+                                for (string strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false);
+                                     strLine != null;
+                                     strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false))
+                                {
+                                    token.ThrowIfCancellationRequested();
+                                    if (!string.IsNullOrEmpty(strLine))
+                                        sbdReturn.AppendLine(strLine);
+                                }
+                            }
+
+                            responseFromServer = sbdReturn.ToString();
+                        }
+
+                        token.ThrowIfCancellationRequested();
+
+                        bool blnFoundTag = false;
+                        bool blnFoundArchive = false;
+                        foreach (string strLine in responseFromServer.SplitNoAlloc(',', StringSplitOptions.RemoveEmptyEntries))
                         {
                             token.ThrowIfCancellationRequested();
 
-                            // Open the stream using a StreamReader for easy access.
-                            string responseFromServer;
-                            using (new FetchSafelyFromObjectPool<StringBuilder>(Utils.StringBuilderPool, out StringBuilder sbdReturn))
+                            if (!blnFoundTag && strLine.Contains("tag_name"))
                             {
-                                token.ThrowIfCancellationRequested();
-                                using (StreamReader objReader = new StreamReader(dataStream, Encoding.UTF8, true))
-                                {
-                                    token.ThrowIfCancellationRequested();
-                                    for (string strLine = await objReader.ReadLineAsync().ConfigureAwait(false);
-                                         strLine != null;
-                                         strLine = await objReader.ReadLineAsync().ConfigureAwait(false))
-                                    {
-                                        token.ThrowIfCancellationRequested();
-                                        if (!string.IsNullOrEmpty(strLine))
-                                            sbdReturn.AppendLine(strLine);
-                                    }
-                                }
-
-                                responseFromServer = sbdReturn.ToString();
+                                LatestVersion = (_strLatestVersion = strLine.SplitNoAlloc(':').ElementAtOrDefaultBetter(1))
+                                    .SplitNoAlloc('}').FirstOrDefault().FastEscape('\"').Trim();
+                                blnFoundTag = true;
+                                if (blnFoundArchive)
+                                    break;
                             }
 
-                            token.ThrowIfCancellationRequested();
-
-                            bool blnFoundTag = false;
-                            bool blnFoundArchive = false;
-                            foreach (string strLine in responseFromServer.SplitNoAlloc(',', StringSplitOptions.RemoveEmptyEntries))
+                            if (!blnFoundArchive && strLine.Contains("browser_download_url"))
                             {
-                                token.ThrowIfCancellationRequested();
-
-                                if (!blnFoundTag && strLine.Contains("tag_name"))
-                                {
-                                    LatestVersion = (_strLatestVersion = strLine.SplitNoAlloc(':').ElementAtOrDefaultBetter(1))
-                                        .SplitNoAlloc('}').FirstOrDefault().FastEscape('\"').Trim();
-                                    blnFoundTag = true;
-                                    if (blnFoundArchive)
-                                        break;
-                                }
-
-                                if (!blnFoundArchive && strLine.Contains("browser_download_url"))
-                                {
-                                    _strDownloadFile = "https://" +
-                                                       (strLine.SplitNoAlloc(':').ElementAtOrDefaultBetter(2) ?? string.Empty)
-                                                       .Substring(2).SplitNoAlloc('}').FirstOrDefault()
-                                                       .FastEscape('\"');
-                                    blnFoundArchive = true;
-                                    if (blnFoundTag)
-                                        break;
-                                }
+                                _strDownloadFile = "https://" +
+                                                   (strLine.SplitNoAlloc(':').ElementAtOrDefaultBetter(2) ?? string.Empty)
+                                                   .Substring(2).SplitNoAlloc('}').FirstOrDefault()
+                                                   .FastEscape('\"');
+                                blnFoundArchive = true;
+                                if (blnFoundTag)
+                                    break;
                             }
-
-                            if (!blnFoundArchive || !blnFoundTag)
-                                blnChummerVersionGotten = false;
                         }
+
+                        if (!blnFoundArchive || !blnFoundTag)
+                            blnChummerVersionGotten = false;
                     }
                 }
-                catch (WebException ex)
+                catch (HttpRequestException ex)
                 {
                     blnChummerVersionGotten = false;
                     string strException = ex.ToString();
@@ -470,10 +451,6 @@ namespace Chummer
                     if (intNewLineLocation != -1)
                         strException = strException.Substring(0, intNewLineLocation);
                     _strExceptionString = strException;
-                }
-                finally
-                {
-                    response?.Close();
                 }
             }
             if (!blnChummerVersionGotten || LatestVersion == strError)
@@ -514,13 +491,12 @@ namespace Chummer
                 if (!await FileExtensions.SafeDeleteAsync(_strTempLatestVersionChangelogPath + ".tmp", !SilentMode, token: token)
                                          .ConfigureAwait(false))
                     return;
-                await _clientChangelogDownloader
-                      .DownloadFileTaskAsync(uriConnectionAddress, _strTempLatestVersionChangelogPath + ".tmp")
-                      .ConfigureAwait(false);
+                await DownloadFileAsync(uriConnectionAddress, _strTempLatestVersionChangelogPath + ".tmp", null, token)
+                    .ConfigureAwait(false);
                 token.ThrowIfCancellationRequested();
                 File.Move(_strTempLatestVersionChangelogPath + ".tmp", _strTempLatestVersionChangelogPath);
             }
-            catch (WebException ex)
+            catch (HttpRequestException ex)
             {
                 if (File.Exists(_strTempLatestVersionChangelogPath + ".old"))
                     File.Move(_strTempLatestVersionChangelogPath + ".old", _strTempLatestVersionChangelogPath);
@@ -1343,11 +1319,28 @@ namespace Chummer
                 token.ThrowIfCancellationRequested();
                 try
                 {
-                    using (token.RegisterWithoutEC(x => ((WebClient)x).CancelAsync(), _clientDownloader))
-                        await _clientDownloader.DownloadFileTaskAsync(uriDownloadFileAddress, _strTempLatestVersionZipPath).ConfigureAwait(false);
+                    await DownloadFileAsync(
+                        uriDownloadFileAddress,
+                        _strTempLatestVersionZipPath,
+                        async (lngBytesReceived, lngTotalBytes) =>
+                        {
+                            if (lngTotalBytes <= 0)
+                                return;
+                            int intTmp = (int)(lngBytesReceived * 100 / lngTotalBytes);
+                            await pgbOverallProgress.DoThreadSafeAsync(x => x.Value = intTmp, _objGenericToken)
+                                .ConfigureAwait(false);
+                        },
+                        token).ConfigureAwait(false);
+                    await OnDownloadCompletedAsync(false, null).ConfigureAwait(false);
                 }
-                catch (WebException ex)
+                catch (OperationCanceledException)
                 {
+                    await OnDownloadCompletedAsync(true, null).ConfigureAwait(false);
+                    throw;
+                }
+                catch (HttpRequestException ex)
+                {
+                    await OnDownloadCompletedAsync(false, ex).ConfigureAwait(false);
                     string strException = ex.ToString();
                     int intNewLineLocation = strException.IndexOf(Environment.NewLine, StringComparison.Ordinal);
                     if (intNewLineLocation == -1)
@@ -1374,37 +1367,48 @@ namespace Chummer
             }
         }
 
-        #region AsyncDownload Events
-
-        /// <summary>
-        /// Update the download progress for the file.
-        /// </summary>
-        private async void wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
+        private async Task DownloadFileAsync(Uri uriAddress, string strDestinationPath,
+            Func<long, long, Task> funcProgress, CancellationToken token = default)
         {
-            try
+            using HttpResponseMessage response = await _httpClient.GetAsync(
+                uriAddress,
+                HttpCompletionOption.ResponseHeadersRead,
+                token).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            long lngTotalBytes = response.Content.Headers.ContentLength ?? -1;
+            await using Stream contentStream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
+            await using FileStream destinationStream = new FileStream(
+                strDestinationPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                81920,
+                useAsync: true);
+
+            byte[] astrBuffer = new byte[81920];
+            long lngBytesReceived = 0;
+            while (true)
             {
-                if (int.TryParse(
-                        (e.BytesReceived * 100 / e.TotalBytesToReceive).ToString(GlobalSettings.InvariantCultureInfo),
-                        out int intTmp))
-                    await pgbOverallProgress.DoThreadSafeAsync(x => x.Value = intTmp, _objGenericToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-                //Swallow this. Closing the form cancels the download which is a change of download progress so token is already cancelled.
+                int intRead = await contentStream.ReadAsync(astrBuffer.AsMemory(0, astrBuffer.Length), token)
+                    .ConfigureAwait(false);
+                if (intRead == 0)
+                    break;
+
+                await destinationStream.WriteAsync(astrBuffer.AsMemory(0, intRead), token).ConfigureAwait(false);
+                lngBytesReceived += intRead;
+                if (funcProgress != null)
+                    await funcProgress(lngBytesReceived, lngTotalBytes).ConfigureAwait(false);
             }
         }
 
-        /// <summary>
-        /// The EXE file is down downloading, so replace the old file with the new one.
-        /// </summary>
-        private async void wc_DownloadCompleted(object sender, AsyncCompletedEventArgs e)
+        private async Task OnDownloadCompletedAsync(bool blnCancelled, Exception objError)
         {
             Log.Info("wc_DownloadExeFileCompleted enter");
             try
             {
                 if (File.Exists(_strTempLatestVersionZipPath + ".old"))
                 {
-                    if (e.Cancelled || e.Error != null)
+                    if (blnCancelled || objError != null)
                     {
                         await FileExtensions.SafeDeleteAsync(_strTempLatestVersionZipPath, !SilentMode,
                                                         token: _objGenericToken).ConfigureAwait(false);
@@ -1455,7 +1459,5 @@ namespace Chummer
                 //swallow this
             }
         }
-
-        #endregion AsyncDownload Events
     }
 }

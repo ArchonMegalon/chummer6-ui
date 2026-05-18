@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA2249
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -1003,3 +1005,4 @@ namespace Chummer
         public bool IsFinishedLoading => _intIsFinishedLoading > 0;
     }
 }
+#pragma warning restore CA2249

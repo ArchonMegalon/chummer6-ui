@@ -41,8 +41,6 @@ namespace ChummerHub.Client.UI
 
         public SearchTag motherTag { get; private set; }
 
-        private Action<string> GetSelectedObjectCallback;
-
         public string SelectedId { get; private set; }
 
         public ucSINnersSearch()
@@ -56,11 +54,8 @@ namespace ChummerHub.Client.UI
             UpdateDialog();
         }
 
-        private bool _loading;
-
         private Control GetCbOrOInputontrolFromMembers(SearchTag stag)
         {
-            _loading = true;
             try
             {
                 //input can be here any time, regardless of childs!
@@ -96,11 +91,6 @@ namespace ChummerHub.Client.UI
             {
                 Log.Warn(e);
             }
-            finally
-            {
-                _loading = false;
-            }
-
             return null;
         }
 

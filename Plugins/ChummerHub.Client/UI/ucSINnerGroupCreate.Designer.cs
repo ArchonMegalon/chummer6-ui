@@ -220,7 +220,6 @@ namespace ChummerHub.Client.UI
             this.cboLanguage1.Name = "cboLanguage1";
             this.cboLanguage1.Size = new System.Drawing.Size(293, 21);
             this.cboLanguage1.TabIndex = 13;
-            this.cboLanguage1.TooltipText = "";
             this.cboLanguage1.SelectedIndexChanged += new System.EventHandler(this.CboLanguage1_SelectedIndexChanged_1);
             // 
             // imgLanguageFlag

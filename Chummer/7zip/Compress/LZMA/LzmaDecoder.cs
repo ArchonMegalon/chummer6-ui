@@ -18,6 +18,8 @@
  */
 // LzmaDecoder.cs
 
+#pragma warning disable CA1512
+
 using System;
 using System.IO;
 using System.Threading;
@@ -551,3 +553,4 @@ namespace SevenZip.Compression.LZMA
 		*/
     }
 }
+#pragma warning restore CA1512

@@ -464,7 +464,7 @@ namespace Chummer
             {
                 string strDpiScalingMethod = DefaultDpiScalingMethod.ToString();
                 LoadStringFromRegistry(ref strDpiScalingMethod, "dpiscalingmethod");
-                _eDpiScalingMethod = (DpiScalingMethod)Enum.Parse(typeof(DpiScalingMethod), strDpiScalingMethod);
+                _eDpiScalingMethod = Enum.Parse<DpiScalingMethod>(strDpiScalingMethod);
             }
             catch (Exception e)
             {
@@ -489,7 +489,7 @@ namespace Chummer
                         break;
 
                     default:
-                        _eUseLoggingApplicationInsights = (UseAILogging)Enum.Parse(typeof(UseAILogging), useAI);
+                        _eUseLoggingApplicationInsights = Enum.Parse<UseAILogging>(useAI);
                         break;
                 }
             }
@@ -683,7 +683,7 @@ namespace Chummer
             {
                 string strTemp = DefaultChum5lzCompressionLevel.ToString();
                 LoadStringFromRegistry(ref strTemp, "chum5lzcompressionlevel");
-                _eChum5lzCompressionLevel = (LzmaHelper.ChummerCompressionPreset)Enum.Parse(typeof(LzmaHelper.ChummerCompressionPreset), strTemp);
+                _eChum5lzCompressionLevel = Enum.Parse<LzmaHelper.ChummerCompressionPreset>(strTemp);
             }
             catch (Exception e)
             {

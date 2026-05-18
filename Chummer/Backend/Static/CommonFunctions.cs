@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1510, CA1870, CA2249
 
 using System;
 using System.Buffers;
@@ -2880,3 +2881,4 @@ namespace Chummer
         #endregion Equipment Filtering
     }
 }
+#pragma warning restore CA1510

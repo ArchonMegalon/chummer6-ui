@@ -12,7 +12,7 @@ namespace IdentityModel.OidcClient
         [DebuggerStepThrough]
         public static string EnsureTrailingSlash(this string input)
         {
-            if (!input.EndsWith("/", StringComparison.Ordinal))
+            if (input.Length == 0 || input[^1] != '/')
             {
                 return input + "/";
             }

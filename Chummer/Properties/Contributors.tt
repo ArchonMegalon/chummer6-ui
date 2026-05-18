@@ -1,8 +1,10 @@
 <#@ template debug="false" hostspecific="false" language="C#" #>
 <#@ assembly name="System.Core" #>
+<#@ assembly name="System.Net.Http" #>
 <#@ assembly name="System.Web.Extensions" #>
 <#@ import namespace="System.Collections.Generic" #>
-<#@ import namespace="System.Net" #>
+<#@ import namespace="System.Net.Http" #>
+<#@ import namespace="System.Net.Http.Headers" #>
 <#@ import namespace="System.Web.Script.Serialization" #>
 <#@ output extension=".cs" #>/*  This file is part of Chummer5a.
  *
@@ -42,48 +44,34 @@ namespace Chummer.Properties
 #warning No OAuth token specified, so for everyone past the 59th place in the list, only usernames will be fetched
 <#
     }
-    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
     JavaScriptSerializer jss = new JavaScriptSerializer();
-
-    // TODO: Add support for proper pagination if we get more than 200 total contributors
-    string strPerPageString = "per_page=200";
-    HttpWebRequest webRequest = System.Net.WebRequest.Create($"https://api.github.com/repos/chummer5a/chummer5a/contributors?{strPerPageString}") as HttpWebRequest;
-    if (!string.IsNullOrEmpty(strOAuthToken))
+    using (HttpClient client = CreateClient(strOAuthToken))
     {
-        webRequest.Headers.Add("Authorization", "token " + strOAuthToken);
-        webRequest.PreAuthenticate = true;
-    }
-    webRequest.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-    webRequest.Accept = "application/json";
-    webRequest.Timeout = 5000;
-
-    bool blnGenerateList = true;
-    string strRequestReturn = string.Empty;
-    try
-    {
-        using (System.IO.StreamReader responseReader = new System.IO.StreamReader(webRequest.GetResponse().GetResponseStream()))
-            strRequestReturn = responseReader.ReadToEnd();
-    }
-    catch(Exception ex)
-    {
-        if (!string.IsNullOrEmpty(strOAuthToken))
+        // TODO: Add support for proper pagination if we get more than 200 total contributors
+        string strPerPageString = "per_page=200";
+        bool blnGenerateList = true;
+        string strRequestReturn = string.Empty;
+        try
         {
-            // Try again, but this time without the OAuthToken
-            webRequest = System.Net.WebRequest.Create($"https://api.github.com/repos/chummer5a/chummer5a/contributors?{strPerPageString}") as HttpWebRequest;
-            webRequest.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-            webRequest.Accept = "application/json";
-            webRequest.Timeout = 5000;
-            try
+            strRequestReturn = GetString(client, $"https://api.github.com/repos/chummer5a/chummer5a/contributors?{strPerPageString}");
+        }
+        catch(Exception ex)
+        {
+            if (!string.IsNullOrEmpty(strOAuthToken))
             {
-                using (System.IO.StreamReader responseReader = new System.IO.StreamReader(webRequest.GetResponse().GetResponseStream()))
-                    strRequestReturn = responseReader.ReadToEnd();
+                // Try again, but this time without the OAuthToken
+                using (HttpClient anonymousClient = CreateClient(string.Empty))
+                {
+                    try
+                    {
+                        strRequestReturn = GetString(anonymousClient, $"https://api.github.com/repos/chummer5a/chummer5a/contributors?{strPerPageString}");
 
 #>
 #warning An OAuth token was specified, but it failed authentication, so for everyone past the 59th place in the list, only usernames will be fetched
 <#
-            }
-            catch(Exception ex2)
-            {
+                    }
+                    catch(Exception ex2)
+                    {
 #>
 #error Contributors.tt encountered an error that prevented it from fetching data from GitHub (printed in full in comments below): <#= ex.Message #>
         /* "<#= ex2.ToString() #>"
@@ -101,11 +89,12 @@ namespace Chummer.Properties
 #>
         */
 <#
-                blnGenerateList = false;
+                        blnGenerateList = false;
+                    }
+                }
             }
-        }
-        else
-        {
+            else
+            {
 #>
 #error Contributors.tt encountered an error that prevented it from fetching data from GitHub (printed in full in comments below): <#= ex.Message #>
         /* "<#= ex.ToString() #>"
@@ -123,54 +112,69 @@ namespace Chummer.Properties
 #>
         */
 <#
-            blnGenerateList = false;
+                blnGenerateList = false;
+            }
         }
-    }
 
-    if (blnGenerateList)
-    {
-        var json = jss.DeserializeObject(strRequestReturn);
-        object[] parts = (object[]) json;
-        foreach (object part in parts)
+        if (blnGenerateList)
         {
-            Dictionary<string, object> contributer = (Dictionary<string, object>) part;
-            string username = contributer["login"].ToString();
-            string name = string.Empty;
-
-            webRequest = System.Net.WebRequest.Create(contributer["url"].ToString()) as HttpWebRequest;
-            if (!string.IsNullOrEmpty(strOAuthToken))
+            var json = jss.DeserializeObject(strRequestReturn);
+            object[] parts = (object[]) json;
+            foreach (object part in parts)
             {
-                webRequest.Headers.Add("Authorization", "token " + strOAuthToken);
-                webRequest.PreAuthenticate = true;
-            }
-            webRequest.UserAgent = "Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)";
-            webRequest.Accept = "application/json";
-            webRequest.Timeout = 5000;
+                Dictionary<string, object> contributer = (Dictionary<string, object>) part;
+                string username = contributer["login"].ToString();
+                string name = string.Empty;
 
-            try
-            {
-                strRequestReturn = string.Empty;
-                using (System.IO.StreamReader responseReader = new System.IO.StreamReader(webRequest.GetResponse().GetResponseStream()))
-                    strRequestReturn = responseReader.ReadToEnd();
+                try
+                {
+                    strRequestReturn = GetString(client, contributer["url"].ToString());
 
-                var userjson = jss.DeserializeObject(strRequestReturn);
+                    var userjson = jss.DeserializeObject(strRequestReturn);
                     
-                Dictionary<string, object> userdict = (Dictionary<string, object>) userjson;
-                name = userdict["name"]?.ToString();
-            }
-            catch
-            {
-            }
+                    Dictionary<string, object> userdict = (Dictionary<string, object>) userjson;
+                    name = userdict["name"]?.ToString();
+                }
+                catch
+                {
+                }
             
-            string fin = username;
-            if(!string.IsNullOrEmpty(name))
-                fin = $"{name.Replace("\"", "\\\"")}<{username}>";
+                string fin = username;
+                if(!string.IsNullOrEmpty(name))
+                    fin = $"{name.Replace("\"", "\\\"")}<{username}>";
 #>
             "<#= fin #>",
 <#
+            }
         }
     }
 #>
         };
     }
 }
+<#+
+    private static HttpClient CreateClient(string oauthToken)
+    {
+        HttpClient client = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(5)
+        };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("Chummer5a-ContributorsGenerator/1.0");
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (!string.IsNullOrEmpty(oauthToken))
+        {
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("token", oauthToken);
+        }
+
+        return client;
+    }
+
+    private static string GetString(HttpClient client, string uri)
+    {
+        using (HttpResponseMessage response = client.GetAsync(uri).GetAwaiter().GetResult())
+        {
+            response.EnsureSuccessStatusCode();
+            return response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+        }
+    }
+#>

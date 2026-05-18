@@ -18,6 +18,7 @@
  */
 
 using Chummer.Backend.Equipment;
+#pragma warning disable CA1510
 using Chummer.Backend.Skills;
 using NLog;
 using System;
@@ -2269,11 +2270,11 @@ namespace Chummer
                     {
                         x.OnlyGroup = strForcedValue;
                         x.Opacity = 0;
-                    });
+                    }, token: token);
                 }
 
                 if (!string.IsNullOrEmpty(strExclude))
-                    frmPickSkillGroup.MyForm.DoThreadSafe(x => x.ExcludeCategory = strExclude);
+                    frmPickSkillGroup.MyForm.DoThreadSafe(x => x.ExcludeCategory = strExclude, token: token);
 
                 if (frmPickSkillGroup.ShowDialogSafe(objCharacter, token) == DialogResult.Cancel)
                     throw new AbortedException();
@@ -2752,7 +2753,7 @@ namespace Chummer
                                     }
                                 }
 #if DEBUG
-                                catch (Exception e)
+                                catch (Exception)
 #else
                                 catch
 #endif
@@ -2783,7 +2784,7 @@ namespace Chummer
                                     }
                                 }
 #if DEBUG
-                                catch (Exception e)
+                                catch (Exception)
 #else
                                 catch
 #endif
@@ -3542,8 +3543,7 @@ namespace Chummer
                         case Improvement.ImprovementType.SpecialSkills:
                         {
                             SkillsSection.FilterOption eFilterOption
-                                = (SkillsSection.FilterOption) Enum.Parse(
-                                    typeof(SkillsSection.FilterOption), strImprovedName);
+                                = Enum.Parse<SkillsSection.FilterOption>(strImprovedName);
                             if (blnSync)
                             {
                                 foreach (Skill objSkill in objCharacter.SkillsSection.FetchExistingSkillsByFilter(eFilterOption, objImprovement.Target, true, token))
@@ -4248,8 +4248,7 @@ namespace Chummer
                             if (!blnHasDuplicate)
                             {
                                 SkillsSection.FilterOption eFilterOption
-                                    = (SkillsSection.FilterOption) Enum.Parse(
-                                        typeof(SkillsSection.FilterOption), strImprovedName);
+                                    = Enum.Parse<SkillsSection.FilterOption>(strImprovedName);
                                 HashSet<Skill> setSkillsToKeepEnabled = new HashSet<Skill>();
                                 if (blnSync)
                                 {
@@ -4262,8 +4261,7 @@ namespace Chummer
                                         if (objLoopImprovement == objImprovement)
                                             continue;
                                         eFilterOption
-                                            = (SkillsSection.FilterOption)Enum.Parse(
-                                                typeof(SkillsSection.FilterOption), objLoopImprovement.ImprovedName);
+                                            = Enum.Parse<SkillsSection.FilterOption>(objLoopImprovement.ImprovedName);
                                         setSkillsToKeepEnabled.AddRange(objCharacter.SkillsSection.FetchExistingSkillsByFilter(eFilterOption, objLoopImprovement.Target, false, token));
                                     }
                                     foreach (Skill objSkill in objCharacter.SkillsSection.FetchExistingSkillsByFilter(eFilterOption, objImprovement.Target, true, token))
@@ -4282,8 +4280,7 @@ namespace Chummer
                                         if (objLoopImprovement == objImprovement)
                                             continue;
                                         eFilterOption
-                                            = (SkillsSection.FilterOption)Enum.Parse(
-                                                typeof(SkillsSection.FilterOption), objLoopImprovement.ImprovedName);
+                                            = Enum.Parse<SkillsSection.FilterOption>(objLoopImprovement.ImprovedName);
                                         setSkillsToKeepEnabled.AddRange(await objCharacter.SkillsSection.FetchExistingSkillsByFilterAsync(eFilterOption, objLoopImprovement.Target, token).ConfigureAwait(false));
                                     }
                                     foreach (Skill objSkill in await objCharacter.SkillsSection.FetchExistingSkillsByFilterAsync(eFilterOption, objImprovement.Target, token).ConfigureAwait(false))
@@ -5705,13 +5702,11 @@ namespace Chummer
                                 if (blnSync)
                                     // ReSharper disable once MethodHasAsyncOverload
                                     objCharacter.SkillsSection.RemoveSkills(
-                                        (SkillsSection.FilterOption)Enum.Parse(typeof(SkillsSection.FilterOption),
-                                            strImprovedName), objImprovement.Target,
+                                        Enum.Parse<SkillsSection.FilterOption>(strImprovedName), objImprovement.Target,
                                         !blnReapplyImprovements && objCharacter.Created, token: token);
                                 else
                                     await objCharacter.SkillsSection.RemoveSkillsAsync(
-                                            (SkillsSection.FilterOption)Enum.Parse(typeof(SkillsSection.FilterOption),
-                                                strImprovedName), objImprovement.Target,
+                                            Enum.Parse<SkillsSection.FilterOption>(strImprovedName), objImprovement.Target,
                                             !blnReapplyImprovements &&
                                             await objCharacter.GetCreatedAsync(token).ConfigureAwait(false), token)
                                         .ConfigureAwait(false);
@@ -6529,3 +6524,4 @@ namespace Chummer
         #endregion Improvement System
     }
 }
+#pragma warning restore CA1510

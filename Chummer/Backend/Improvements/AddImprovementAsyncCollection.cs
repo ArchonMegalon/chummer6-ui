@@ -23,6 +23,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+#pragma warning disable CA1510
 using System.Windows.Forms;
 using System.Xml;
 using System.Xml.XPath;
@@ -7603,3 +7604,4 @@ public async Task qualitylevel(XmlNode bonusNode, CancellationToken token = defa
         #endregion
     }
 }
+#pragma warning restore CA1510

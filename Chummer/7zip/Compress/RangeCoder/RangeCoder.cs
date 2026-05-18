@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1835
+
 using System.Buffers;
 using System.IO;
 using System.Threading;
@@ -507,3 +509,4 @@ namespace SevenZip.Compression.RangeCoder
         // ulong GetProcessedSize() {return Stream.GetProcessedSize(); }
     }
 }
+#pragma warning restore CA1835

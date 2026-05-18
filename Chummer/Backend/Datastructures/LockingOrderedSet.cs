@@ -907,7 +907,9 @@ namespace Chummer
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             using (LockObject.EnterReadLock())
+#pragma warning disable SYSLIB0051
                 _setData.GetObjectData(info, context);
+#pragma warning restore SYSLIB0051
         }
 
         /// <inheritdoc />

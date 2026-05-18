@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1845
 
 using System;
 using System.Buffers;
@@ -892,3 +893,4 @@ namespace Chummer
         public AsyncFriendlyReaderWriterLock LockObject { get; }
     }
 }
+#pragma warning restore CA1845

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 
 namespace ChummerHub.Client.Sinners
 {
+#pragma warning disable CA1822 // generated partial hook signature is fixed by NSwag
     public partial class SinnersClient
     {
         private readonly List<string> errors = new List<string>();
@@ -62,4 +63,5 @@ namespace ChummerHub.Client.Sinners
     //{
     //    void UpdateJsonSerializerSettings(Newtonsoft.Json.JsonSerializerSettings settings);
     //}
+#pragma warning restore CA1822
 }

@@ -145,7 +145,7 @@ namespace SimpleHttpServer
         {
             try
             {
-                List<Route> routes = _routes.Where(x => x.UrlRegex  == null || Regex.Match(request.Url, x.UrlRegex).Success).ToList();
+                List<Route> routes = _routes.Where(x => x.UrlRegex == null || Regex.IsMatch(request.Url, x.UrlRegex)).ToList();
 
                 if (routes.Count == 0)
                     return HttpBuilder.NotFound();
@@ -191,7 +191,7 @@ namespace SimpleHttpServer
             }
         }
 
-        private HttpRequest GetRequest(Stream inputStream, Stream outputStream)
+        private static HttpRequest GetRequest(Stream inputStream, Stream outputStream)
         {
             //Read Request Line
             string request = Readline(inputStream);
@@ -227,7 +227,7 @@ namespace SimpleHttpServer
                     pos++;
                 }
 
-                string value = line.Substring(pos, line.Length - pos);
+                string value = line[pos..];
                 headers.Add(name, value);
             }
 

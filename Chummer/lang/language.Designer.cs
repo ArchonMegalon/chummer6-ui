@@ -9,6 +9,7 @@
 //------------------------------------------------------------------------------
 
 #pragma warning disable 1591
+#pragma warning disable SYSLIB0051
 
 namespace Chummer.lang {
     
@@ -1528,4 +1529,5 @@ namespace Chummer.lang {
     }
 }
 
+#pragma warning restore SYSLIB0051
 #pragma warning restore 1591

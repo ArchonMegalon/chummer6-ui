@@ -376,6 +376,7 @@ namespace Chummer.Annotations
   /// with <see cref="MeansImplicitUseAttribute"/> or <see cref="UsedImplicitlyAttribute"/>.
   /// </summary>
   [Flags]
+#pragma warning disable CA1069
   public enum ImplicitUseTargetFlags
   {
     Default = Itself,
@@ -385,6 +386,7 @@ namespace Chummer.Annotations
     /// <summary>Entity marked with Attribute and all its members considered used.</summary>
     WithMembers = Itself | Members
   }
+#pragma warning restore CA1069
 
   /// <summary>
   /// This Attribute is intended to mark publicly available API
