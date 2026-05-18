@@ -33,7 +33,7 @@ namespace Chummer
         /// <summary>
         /// The cancellation token registration, if any. This is <c>null</c> if the registration was not necessary.
         /// </summary>
-        private readonly IDisposable _objTokenRegistration;
+        private readonly CancellationTokenRegistration _objTokenRegistration;
 
         /// <summary>
         /// Creates a task for the specified cancellation token, registering with the token if necessary.
@@ -44,7 +44,7 @@ namespace Chummer
             if (token.IsCancellationRequested)
             {
                 Task = System.Threading.Tasks.Task.FromCanceled<T>(token);
-                _objTokenRegistration = null;
+                _objTokenRegistration = default;
                 return;
             }
             TaskCompletionSource<T> objTaskCompletionSource = new TaskCompletionSource<T>();
@@ -62,12 +62,12 @@ namespace Chummer
         /// </summary>
         public void Dispose()
         {
-            _objTokenRegistration?.Dispose();
+            _objTokenRegistration.Dispose();
         }
 
         public bool Equals(CancellationTokenTaskSource<T> other)
         {
-            return ReferenceEquals(_objTokenRegistration, other._objTokenRegistration);
+            return _objTokenRegistration.Equals(other._objTokenRegistration);
         }
 
         public override bool Equals(object obj)
@@ -86,7 +86,7 @@ namespace Chummer
 
         public override int GetHashCode()
         {
-            return _objTokenRegistration?.GetHashCode() ?? 0;
+            return _objTokenRegistration.GetHashCode();
         }
     }
 
@@ -100,7 +100,7 @@ namespace Chummer
         /// <summary>
         /// The cancellation token registration, if any. This is <c>null</c> if the registration was not necessary.
         /// </summary>
-        private readonly IDisposable _objTokenRegistration;
+        private readonly CancellationTokenRegistration _objTokenRegistration;
 
         /// <summary>
         /// Creates a task for the specified cancellation token, registering with the token if necessary.
@@ -111,7 +111,7 @@ namespace Chummer
             if (token.IsCancellationRequested)
             {
                 Task = Task.FromCanceled(token);
-                _objTokenRegistration = null;
+                _objTokenRegistration = default;
                 return;
             }
             TaskCompletionSource<bool> objTaskCompletionSource = new TaskCompletionSource<bool>();
@@ -129,12 +129,12 @@ namespace Chummer
         /// </summary>
         public void Dispose()
         {
-            _objTokenRegistration?.Dispose();
+            _objTokenRegistration.Dispose();
         }
 
         public bool Equals(CancellationTokenTaskSource other)
         {
-            return ReferenceEquals(_objTokenRegistration, other._objTokenRegistration);
+            return _objTokenRegistration.Equals(other._objTokenRegistration);
         }
 
         public override bool Equals(object obj)
@@ -153,7 +153,7 @@ namespace Chummer
 
         public override int GetHashCode()
         {
-            return _objTokenRegistration?.GetHashCode() ?? 0;
+            return _objTokenRegistration.GetHashCode();
         }
     }
 }
