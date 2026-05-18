@@ -40,7 +40,6 @@
                       CornerRadius="2"
                       Margin="0,0,4,0">
                   <TextBlock Text="{Binding Initials}"
-                             IsVisible="False"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
                              FontSize="10"
@@ -54,7 +53,7 @@
                   <TextBlock Classes="shell-caption"
                              Text="{Binding Meta}"
                              FontSize="10"
-                             IsVisible="False" />
+                             IsVisible="{Binding HasMeta}" />
                 </StackPanel>
               </Grid>
             </TreeDataTemplate>

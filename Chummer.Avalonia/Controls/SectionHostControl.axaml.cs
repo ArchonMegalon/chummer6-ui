@@ -131,7 +131,11 @@ public partial class SectionHostControl : UserControl
             || string.Equals(normalizedNotice, "Notice: Ready.", StringComparison.OrdinalIgnoreCase);
         if (hideNotice)
         {
-            NoticeText.Text = string.Empty;
+            NoticeText.Text = string.IsNullOrWhiteSpace(normalizedNotice)
+                ? string.Empty
+                : (normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase)
+                    ? normalizedNotice
+                    : $"Notice: {normalizedNotice}");
             NoticeBorder.IsVisible = false;
             return;
         }
@@ -785,7 +789,6 @@ public partial class SectionHostControl : UserControl
         BuildLabTrustReceiptPanel.Children.Add(new TextBlock
         {
             Text = "Build explain receipt and environment diff",
-            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
@@ -808,8 +811,7 @@ public partial class SectionHostControl : UserControl
             {
                 Text = $"Build compare companion: {BuildBuildCompareCompanionBadge(_buildLab)}",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
-                IsVisible = false
+                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
             });
 
             if (HasBuildBlockerReceipt(_buildLab))
@@ -818,8 +820,7 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"Build blocker receipt: {BuildBuildBlockerBadge(_buildLab)}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
-                    IsVisible = false
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
                 });
             }
         }
@@ -834,7 +835,6 @@ public partial class SectionHostControl : UserControl
             sectionPanel.Children.Add(new TextBlock
             {
                 Text = section.Title,
-                IsVisible = false,
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
@@ -846,8 +846,7 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"- {line}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
-                    IsVisible = false
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
                 });
             }
 

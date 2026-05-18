@@ -5,7 +5,6 @@
     <TextBlock x:Name="WorkspaceText"
                Grid.Row="0"
                Classes="shell-caption"
-               IsVisible="False"
                VerticalAlignment="Center"
                Text="Workspace: none"
                TextTrimming="CharacterEllipsis" />
