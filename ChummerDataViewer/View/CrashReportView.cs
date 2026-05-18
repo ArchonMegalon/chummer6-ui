@@ -28,7 +28,7 @@ namespace ChummerDataViewer
     {
         private readonly CrashReport _objReport;
         private readonly DownloaderWorker _worker;
-        private static readonly string[] separator = { " at " };
+        private static readonly string[] StackFrameSeparator = { " at " };
 
         internal CrashReportView(CrashReport objReport, DownloaderWorker worker)
         {
@@ -43,23 +43,27 @@ namespace ChummerDataViewer
 
             if (objReport.StackTrace != null)
             {
-                lblExceptionGuess.Text = GuessStack(_objReport.StackTrace);
+                lblExceptionGuess.Text = SummarizeStackTrace(_objReport.StackTrace);
                 lblExceptionGuess.Visible = true;
             }
             objReport.ProgressChanged += (s, e) => OnProgressChanged(_objReport.Progress);
             OnProgressChanged(_objReport.Progress);
         }
 
-        //TODO: move this to a better place
-        private static string GuessStack(string stacktrace)
+        private static string SummarizeStackTrace(string stackTrace)
         {
-            string exception = stacktrace.Split(':')[0];
+            if (string.IsNullOrWhiteSpace(stackTrace))
+                return string.Empty;
 
-            string location = stacktrace.Split(separator, StringSplitOptions.None).Skip(1).FirstOrDefault(x => x.StartsWith("Chummer.", StringComparison.Ordinal));
+            string exception = stackTrace.Split(':')[0];
+            string location = stackTrace
+                .Split(StackFrameSeparator, StringSplitOptions.None)
+                .Skip(1)
+                .FirstOrDefault(x => x.StartsWith("Chummer.", StringComparison.Ordinal));
 
-            if (location != null) return exception + " : " + location;
-
-            return exception;
+            return location != null
+                ? exception + " : " + location
+                : exception;
         }
 
         private void OnProgressChanged(CrashReportProcessingProgress progress)
@@ -100,7 +104,7 @@ namespace ChummerDataViewer
 
             if (_objReport.StackTrace != null)
             {
-                lblExceptionGuess.Text = GuessStack(_objReport.StackTrace);
+                lblExceptionGuess.Text = SummarizeStackTrace(_objReport.StackTrace);
                 lblExceptionGuess.Visible = true;
             }
         }
