@@ -29,6 +29,7 @@ SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH:-}}"
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
+RELEASE_PROOF_MAX_AGE_SECONDS="${CHUMMER_RELEASE_PROOF_MAX_AGE_SECONDS:-86400}"
 
 to_bool() {
   local value
@@ -65,14 +66,113 @@ else:
 PY
 }
 
+release_proof_is_fresh() {
+  local path="$1"
+  local max_age_seconds="${2:-86400}"
+  python3 - "$path" "$max_age_seconds" <<'PY'
+import datetime as dt
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+max_age_seconds = int(sys.argv[2])
+
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+
+raw = str(payload.get("generatedAt") or payload.get("generated_at") or "").strip()
+if not raw:
+    raise SystemExit(1)
+if raw.endswith("Z"):
+    raw = raw[:-1] + "+00:00"
+try:
+    generated_at = dt.datetime.fromisoformat(raw)
+except ValueError:
+    raise SystemExit(1)
+if generated_at.tzinfo is None:
+    generated_at = generated_at.replace(tzinfo=dt.timezone.utc)
+generated_at = generated_at.astimezone(dt.timezone.utc)
+age_seconds = int((dt.datetime.now(dt.timezone.utc) - generated_at).total_seconds())
+raise SystemExit(0 if 0 <= age_seconds <= max_age_seconds else 1)
+PY
+}
+
+resolve_hub_release_proof_generator_root() {
+  local -a roots=(
+    "$REPO_ROOT/../.c/hub"
+    "$REPO_ROOT/../chummer6-hub"
+    "$REPO_ROOT/../chummer.run-services"
+    "/docker/chummercomplete/chummer.run-services"
+    "/docker/chummercomplete/chummer6-hub"
+  )
+  local root
+  for root in "${roots[@]}"; do
+    if [[ -f "$root/scripts/materialize_hub_local_release_proof.py" ]]; then
+      printf '%s\n' "$root"
+      return 0
+    fi
+  done
+  printf '%s\n' ""
+}
+
+materialize_fresh_release_proof() {
+  local base_url="${1:-}"
+  local hub_root
+  hub_root="$(resolve_hub_release_proof_generator_root)"
+  if [[ -z "$hub_root" ]]; then
+    return 1
+  fi
+
+  local generated_output
+  generated_output="$(mktemp)"
+  if ! python3 "$hub_root/scripts/materialize_hub_local_release_proof.py" \
+      "$generated_output" \
+      "$base_url" \
+      "docker-compose.yml" \
+      "120" \
+      "true" >/dev/null; then
+    rm -f "$generated_output"
+    return 1
+  fi
+
+  if [[ "$(json_contract_name "$generated_output")" != "chummer6-hub.local_release_proof" ]]; then
+    rm -f "$generated_output"
+    return 1
+  fi
+
+  if ! release_proof_is_fresh "$generated_output" "$RELEASE_PROOF_MAX_AGE_SECONDS"; then
+    rm -f "$generated_output"
+    return 1
+  fi
+
+  printf '%s\n' "$generated_output"
+}
+
 resolve_release_proof_path() {
   local requested="${1:-}"
   local -a candidates=()
   local contract_name=""
+  local freshest_candidate=""
+  local generated_candidate=""
 
   if [[ -n "$requested" && -f "$requested" ]]; then
     contract_name="$(json_contract_name "$requested")"
     if [[ "$contract_name" == "chummer6-hub.local_release_proof" ]]; then
+      if release_proof_is_fresh "$requested" "$RELEASE_PROOF_MAX_AGE_SECONDS"; then
+        printf '%s\n' "$requested"
+        return 0
+      fi
+      generated_candidate="$(materialize_fresh_release_proof "$EXTERNAL_PROOF_BASE_URL" || true)"
+      if [[ -n "$generated_candidate" && -f "$generated_candidate" ]]; then
+        printf '%s\n' "$generated_candidate"
+        return 0
+      fi
       printf '%s\n' "$requested"
       return 0
     fi
@@ -95,7 +195,7 @@ resolve_release_proof_path() {
     "/docker/chummercomplete/chummer6-hub/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
   )
 
-  python3 - "${candidates[@]}" <<'PY'
+  freshest_candidate="$(python3 - "${candidates[@]}" <<'PY'
 import datetime as dt
 import json
 import sys
@@ -145,6 +245,25 @@ for raw_candidate in sys.argv[1:]:
 if best_path is not None:
     print(best_path)
 PY
+)"
+
+  if [[ -n "$freshest_candidate" && -f "$freshest_candidate" ]]; then
+    if release_proof_is_fresh "$freshest_candidate" "$RELEASE_PROOF_MAX_AGE_SECONDS"; then
+      printf '%s\n' "$freshest_candidate"
+      return 0
+    fi
+  fi
+
+  generated_candidate="$(materialize_fresh_release_proof "$EXTERNAL_PROOF_BASE_URL" || true)"
+  if [[ -n "$generated_candidate" && -f "$generated_candidate" ]]; then
+    printf '%s\n' "$generated_candidate"
+    return 0
+  fi
+
+  if [[ -n "$freshest_candidate" ]]; then
+    printf '%s\n' "$freshest_candidate"
+    return 0
+  fi
 
   printf '%s\n' ""
 }
@@ -639,10 +758,14 @@ PY
 
 RELEASE_PROOF_PATH="$(resolve_release_proof_path "$RELEASE_PROOF_PATH")"
 SANITIZED_RELEASE_PROOF_PATH=""
+GENERATED_RELEASE_PROOF_PATH=""
 SANITIZED_UI_LOCALIZATION_RELEASE_GATE_PATH=""
 SANITIZED_STARTUP_SMOKE_DIR=""
 SANITIZED_SOURCE_MANIFEST_PATH=""
 cleanup_generate_release_manifest() {
+  if [[ -n "$GENERATED_RELEASE_PROOF_PATH" && -f "$GENERATED_RELEASE_PROOF_PATH" ]]; then
+    rm -f "$GENERATED_RELEASE_PROOF_PATH"
+  fi
   if [[ -n "$SANITIZED_RELEASE_PROOF_PATH" && -f "$SANITIZED_RELEASE_PROOF_PATH" ]]; then
     rm -f "$SANITIZED_RELEASE_PROOF_PATH"
   fi
@@ -658,6 +781,9 @@ cleanup_generate_release_manifest() {
 }
 trap cleanup_generate_release_manifest EXIT
 if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
+  if [[ "$RELEASE_PROOF_PATH" == /tmp/* ]]; then
+    GENERATED_RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH"
+  fi
   SANITIZED_RELEASE_PROOF_PATH="$(mktemp)"
   sanitize_release_proof_payload "$RELEASE_PROOF_PATH" "$SANITIZED_RELEASE_PROOF_PATH" "$EXTERNAL_PROOF_BASE_URL"
   RELEASE_PROOF_PATH="$SANITIZED_RELEASE_PROOF_PATH"
