@@ -14,6 +14,7 @@ public partial class CommandDialogPaneControl : UserControl
 {
     private bool _suppressCommandSelectionEvent;
     private bool _suppressDialogUpdates;
+    private string _currentDialogTitle = "(none)";
 
     public CommandDialogPaneControl()
     {
@@ -54,7 +55,8 @@ public partial class CommandDialogPaneControl : UserControl
         IEnumerable<DialogFieldDisplayItem> fields,
         IEnumerable<DialogActionDisplayItem> actions)
     {
-        DialogTitleText.Text = string.IsNullOrWhiteSpace(title) ? "(none)" : title;
+        _currentDialogTitle = string.IsNullOrWhiteSpace(title) ? "(none)" : title;
+        DialogTitleText.Text = _currentDialogTitle;
         DialogMessageText.Text = string.IsNullOrWhiteSpace(message) ? "(none)" : message;
         DialogTitleText.IsVisible = false;
         DialogMessageBorder.IsVisible = false;
@@ -101,6 +103,13 @@ public partial class CommandDialogPaneControl : UserControl
     {
         _suppressDialogUpdates = true;
         DialogFieldsHost.Children.Clear();
+
+        if (TryBuildLegacyGlobalSettingsFields(fields))
+        {
+            _suppressDialogUpdates = false;
+            return;
+        }
+
         DialogFieldDisplayItem[] visibleFields = fields
             .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
             .Where(ShouldRenderField)
@@ -122,6 +131,47 @@ public partial class CommandDialogPaneControl : UserControl
         }
 
         _suppressDialogUpdates = false;
+    }
+
+    private bool TryBuildLegacyGlobalSettingsFields(IReadOnlyList<DialogFieldDisplayItem> fields)
+    {
+        if (!string.Equals(_currentDialogTitle, "Global Settings", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        DialogFieldDisplayItem? themeField = FindOptionalField(fields, "globalTheme");
+        DialogFieldDisplayItem? uiScaleField = FindOptionalField(fields, "globalUiScale");
+        DialogFieldDisplayItem? languageField = FindOptionalField(fields, "globalLanguage");
+        DialogFieldDisplayItem? sheetLanguageField = FindOptionalField(fields, "globalSheetLanguage");
+        DialogFieldDisplayItem? compactModeField = FindOptionalField(fields, "globalCompactMode");
+        DialogFieldDisplayItem? characterPriorityField = FindOptionalField(fields, "globalCharacterPriority");
+        DialogFieldDisplayItem? updateCheckField = FindOptionalField(fields, "globalCheckForUpdates");
+        DialogFieldDisplayItem? preferNightlyField = FindOptionalField(fields, "globalPreferNightlyBuilds");
+        DialogFieldDisplayItem? rosterPathField = FindOptionalField(fields, "globalCharacterRosterPath");
+        DialogFieldDisplayItem? hideMasterIndexField = FindOptionalField(fields, "globalHideMasterIndex");
+
+        if (themeField is null
+            || uiScaleField is null
+            || languageField is null
+            || sheetLanguageField is null
+            || compactModeField is null
+            || characterPriorityField is null
+            || updateCheckField is null
+            || preferNightlyField is null
+            || rosterPathField is null
+            || hideMasterIndexField is null)
+        {
+            return false;
+        }
+
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(themeField, uiScaleField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(languageField, sheetLanguageField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(characterPriorityField, compactModeField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(updateCheckField, preferNightlyField));
+        DialogFieldsHost.Children.Add(CreateLegacySettingsPairRow(hideMasterIndexField, null));
+        DialogFieldsHost.Children.Add(CreateStandaloneFieldRow(rosterPathField));
+        return true;
     }
 
     private void RebuildDialogActions(DialogActionDisplayItem[] actions)
@@ -191,6 +241,48 @@ public partial class CommandDialogPaneControl : UserControl
         return row;
     }
 
+    private Control CreateLegacySettingsPairRow(DialogFieldDisplayItem left, DialogFieldDisplayItem? right)
+    {
+        Grid row = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions(right is null ? "156,*" : "156,*,156,*"),
+            ColumnSpacing = 8
+        };
+
+        row.Children.Add(CreateLegacySettingsLabel(left, 0));
+        row.Children.Add(CreateLegacySettingsInput(left, 1));
+        if (right is not null)
+        {
+            row.Children.Add(CreateLegacySettingsLabel(right, 2));
+            row.Children.Add(CreateLegacySettingsInput(right, 3));
+        }
+
+        return row;
+    }
+
+    private Control CreateLegacySettingsLabel(DialogFieldDisplayItem field, int column)
+    {
+        TextBlock label = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
+            Text = field.Label,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
+        Grid.SetColumn(label, column);
+        return label;
+    }
+
+    private Control CreateLegacySettingsInput(DialogFieldDisplayItem field, int column)
+    {
+        Control input = CreateFieldControl(field);
+        input.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
+        ApplyAccessibility(input, field.AccessibleName, field.ToolTip, field.HelpText);
+        Grid.SetColumn(input, column);
+        return input;
+    }
+
     private Control CreateFieldPane(DialogFieldDisplayItem field)
     {
         if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
@@ -198,7 +290,7 @@ public partial class CommandDialogPaneControl : UserControl
             CheckBox checkBox = new()
             {
                 Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
-                Content = string.Empty,
+                Content = field.Label,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
             };
@@ -230,13 +322,12 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel row = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            Spacing = 0
+            Spacing = 4
         };
         TextBlock label = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
-            IsVisible = false,
             FontWeight = FontWeight.SemiBold
         };
         ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
@@ -463,6 +554,17 @@ public partial class CommandDialogPaneControl : UserControl
         ToolTip.SetTip(control, toolTip);
     }
 
+    private static DialogFieldDisplayItem FindRequiredField(IReadOnlyList<DialogFieldDisplayItem> fields, string fieldId)
+    {
+        return fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+            ?? throw new InvalidOperationException($"Dialog field '{fieldId}' was not available.");
+    }
+
+    private static DialogFieldDisplayItem? FindOptionalField(IReadOnlyList<DialogFieldDisplayItem> fields, string fieldId)
+    {
+        return fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal));
+    }
+
     private static Control CreateTabsPanel(string value)
     {
         WrapPanel tabs = new()
@@ -576,7 +678,6 @@ public partial class CommandDialogPaneControl : UserControl
             TextBlock keyText = new()
             {
                 Text = key,
-                IsVisible = false,
                 FontWeight = FontWeight.SemiBold
             };
             TextBlock valueText = new()

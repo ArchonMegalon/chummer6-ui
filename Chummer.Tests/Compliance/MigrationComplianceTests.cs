@@ -6681,6 +6681,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
         StringAssert.Contains(generatorText, "run_materializer \"$CANONICAL_MANIFEST_PATH\"");
         StringAssert.Contains(generatorText, "payload[\"artifactIdentityRegistry\"] = verifier.expected_artifact_identity_registry_rows(payload)");
+        StringAssert.Contains(generatorText, "trust_release_channel = payload.get(\"publicTrustMetrics\", {}).get(\"releaseChannel\", {})");
+        StringAssert.Contains(generatorText, "payload[\"supportabilityState\"] = trust_supportability_state");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");

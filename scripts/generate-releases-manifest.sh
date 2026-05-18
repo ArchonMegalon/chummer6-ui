@@ -860,6 +860,8 @@ import json
 import sys
 from pathlib import Path
 
+def normalized_token(value) -> str:
+    return str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
 
 def load_verifier(path: Path):
     spec = importlib.util.spec_from_file_location("verify_public_release_channel", path)
@@ -888,6 +890,17 @@ for raw_path in sys.argv[2:]:
     payload["artifactIdentityRegistry"] = verifier.expected_artifact_identity_registry_rows(payload)
     payload["artifactPublicationBindings"] = verifier.expected_artifact_publication_binding_rows(payload)
     payload["publicTrustMetrics"] = verifier.expected_public_trust_metrics(payload)
+    trust_release_channel = payload.get("publicTrustMetrics", {}).get("releaseChannel", {})
+    trust_supportability_state = normalized_token(trust_release_channel.get("supportabilityState"))
+    if normalized_token(payload.get("status")) == "published" and trust_supportability_state:
+        payload["supportabilityState"] = trust_supportability_state
+        if trust_supportability_state == "review_required":
+            payload["supportabilitySummary"] = (
+                "Proof freshness is missing or stale on this shelf, so review is still required before this release can be treated as supportable."
+            )
+            payload["knownIssueSummary"] = (
+                "Proof freshness is missing or stale on this shelf, so preview publication is visible but not yet gold-ready."
+            )
     payload["registryBoundaryCoverage"] = verifier.expected_registry_boundary_coverage(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY

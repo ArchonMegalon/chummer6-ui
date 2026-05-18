@@ -200,6 +200,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", NormalizeGoverned(masterIndex?.CustomDataLanePosture), "governed", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorCustomDataDirectoryCount", "Custom Data Directories", (masterIndex?.DistinctCustomDataDirectoryCount ?? 0).ToString(), "0", IsReadOnly: true),
                     new DesktopDialogField("xmlEditorReceipt", "XML Bridge Receipt", masterIndex?.XmlBridgeLaneReceipt ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "xmlEditorCustomDataAuthoringReceipt",
+                        "Custom Data Authoring Receipt",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataLanePosture),
+                        "missing",
+                        IsReadOnly: true,
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField(
+                        "xmlEditorXmlBridgeReceipt",
+                        "XML Bridge Receipt Canonical",
+                        masterIndex?.XmlBridgeLaneReceipt ?? "missing",
+                        "missing",
+                        IsReadOnly: true,
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
                     new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true)
                 ],
                 [
@@ -2482,7 +2498,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.Theme,
                 DesktopPreferenceState.Default.Theme,
                 InputType: "select",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
                 Options: BuildThemeOptions()),
             new DesktopDialogField(
                 "globalUiScale",
@@ -2490,7 +2506,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 DesktopPreferenceState.Default.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 InputType: "number",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
             new DesktopDialogField(
                 "globalLanguage",
                 "Language",

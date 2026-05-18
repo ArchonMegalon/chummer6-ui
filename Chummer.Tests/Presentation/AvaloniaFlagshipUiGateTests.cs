@@ -2998,7 +2998,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
             TextBox preview = harness.FindControl<TextBox>("SectionPreviewBox");
-            TextBlock notice = harness.FindControl<TextBlock>("NoticeText");
+            Border noticeBorder = harness.FindControl<Border>("NoticeBorder");
 
             harness.WaitUntil(() => sectionRows.ItemCount >= 8);
             string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
@@ -3006,7 +3006,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.Contains(rowText, "gear.weapons[0] = Ares Alpha");
             CollectionAssert.Contains(rowText, "gear.armor[0] = Armor Jacket");
             StringAssert.Contains(preview.Text ?? string.Empty, "\"combat\"");
-            StringAssert.Contains(notice.Text ?? string.Empty, "Notice:");
+            Assert.IsFalse(noticeBorder.IsVisible, "Idle ready-state notice chrome should stay hidden in the gear builder.");
         });
     }
 
