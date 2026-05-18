@@ -3272,6 +3272,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(helperScriptText, "Chummer.Run.Contracts");
         StringAssert.Contains(helperScriptText, "Chummer.Hub.Registry.Contracts");
         StringAssert.Contains(helperScriptText, "-p:ChummerUseLocalCompatibilityTree=true");
+        StringAssert.Contains(helperScriptText, "local configuration=\"$3\"");
+        StringAssert.Contains(helperScriptText, "dotnet build \"$project_path\" -c \"$configuration\"");
+        StringAssert.Contains(helperScriptText, "\"$prebuild_configuration\"");
         StringAssert.Contains(desktopRuntimeProjectText, "ProjectReference Include=\"$(ChummerLocalHubRegistryContractsProject)\"");
         StringAssert.Contains(desktopRuntimeProjectText, "PackageReference Include=\"$(ChummerHubRegistryContractsPackageId)\" Version=\"$(ChummerHubRegistryContractsPackageVersion)\"");
         Assert.IsFalse(
@@ -3749,7 +3752,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(
             executableGateScriptText,
             "canonical_release_channel_path=\"${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}\"");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "presentation_release_channel_path=\"/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json\"");
         StringAssert.Contains(executableGateScriptText, "release_channel_path_default");
+        StringAssert.Contains(
+            executableGateScriptText,
+            "if [[ ! -f \"$release_channel_path_default\" && -f \"$presentation_release_channel_path\" ]]; then");
         StringAssert.Contains(
             executableGateScriptText,
             "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
@@ -4383,6 +4392,10 @@ public class MigrationComplianceTests
         Assert.IsFalse(localizationGateText.Contains("\"companion_runtime\"", StringComparison.Ordinal),
             "Localization release gate must stay aligned with the registry's current allowed localization domains.");
         StringAssert.Contains(localizationGateText, "signoff_retry_attempted=0");
+        StringAssert.Contains(localizationGateText, "signoff_lock_retry_delay_seconds");
+        StringAssert.Contains(localizationGateText, "signoff_lock_retry_max_attempts");
+        StringAssert.Contains(localizationGateText, "package_plane_lock_contention");
+        StringAssert.Contains(localizationGateText, "waiting for package-plane lock:");
         StringAssert.Contains(localizationGateText, "runtimeconfig_bootstrap_repair");
         StringAssert.Contains(localizationGateText, "\"retry_attempted\": signoff_retry_attempted > 0");
         StringAssert.Contains(localizationGateText, "\"retry_reason\": signoff_retry_reason");
@@ -4546,6 +4559,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "muscleMemoryParityReview");
         StringAssert.Contains(screenshotReviewGateText, "flagship_gate_blocking_findings");
         StringAssert.Contains(screenshotReviewGateText, "flagship_gate_route_local_only");
+        StringAssert.Contains(screenshotReviewGateText, "flagship_gate_external_desktop_only");
+        StringAssert.Contains(screenshotReviewGateText, "desktop_executable_local_blocking_findings");
         StringAssert.Contains(screenshotReviewGateText, "missing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "failing_visual_review_keys");
         StringAssert.Contains(screenshotReviewGateText, "visual_failure_count");
@@ -4556,6 +4571,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(screenshotReviewGateText, "\"visualReviewStatuses\"");
         StringAssert.Contains(screenshotReviewGateText, "\"visualFailureCount\"");
         StringAssert.Contains(screenshotReviewGateText, "\"flagshipGateRouteLocalOnly\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"flagshipGateExternalDesktopOnly\"");
+        StringAssert.Contains(screenshotReviewGateText, "\"desktopExecutableLocalBlockingFindings\"");
         StringAssert.Contains(screenshotReviewGateText, "\"evidence\": {");
         StringAssert.Contains(screenshotReviewGateText, "\"requiredVisualReviewKeys\"");
         StringAssert.Contains(screenshotReviewGateText, "\"missingVisualReviewKeys\"");
@@ -5086,6 +5103,105 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(verifyText, "checking SR6 shared muscle-memory parity gate");
         StringAssert.Contains(verifyText, "bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh");
+    }
+
+    [TestMethod]
+    public void Sr6_ruleset_ui_sophistication_gate_derives_policy_runtime_receipts_and_release_wiring_subproofs()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "sr6-ruleset-ui-sophistication-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string policyPath = FindPath("docs", "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json");
+        string policyText = File.ReadAllText(policyPath);
+        string designDocPath = FindPath("docs", "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_EXIT_TESTS.md");
+        string designDocText = File.ReadAllText(designDocPath);
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+        string b14Text = File.ReadAllText(FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.chummer_sr6_ruleset_ui_sophistication_gate");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_RULESET_UI_SOPHISTICATION_POLICY.json");
+        StringAssert.Contains(scriptText, "RULESET_UI_ADAPTATION.generated.json");
+        StringAssert.Contains(scriptText, "SR6_DESKTOP_WORKFLOW_PARITY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json");
+        StringAssert.Contains(scriptText, "INTERACTIVE_CONTROL_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json");
+        StringAssert.Contains(scriptText, "\"policyReview\"");
+        StringAssert.Contains(scriptText, "\"receiptReview\"");
+        StringAssert.Contains(scriptText, "\"runtimeReview\"");
+        StringAssert.Contains(scriptText, "\"sourceReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "\"equalSophisticationReview\"");
+        StringAssert.Contains(scriptText, "ruleset-sr5-codex-tree");
+        StringAssert.Contains(scriptText, "ruleset-sr6-codex-tree");
+
+        StringAssert.Contains(policyText, "\"contractName\": \"chummer6-ui.chummer_sr6_ruleset_ui_sophistication_policy\"");
+        StringAssert.Contains(policyText, "\"scopeStrategy\": \"sr6_ruleset_specific_surface_depth_must_match_sr5_editor_grade_richness\"");
+        StringAssert.Contains(policyText, "\"sr5ComparisonContract\": \"chummer6-ui.ruleset_ui_adaptation_frontier\"");
+        StringAssert.Contains(policyText, "\"sr6WorkflowParityContract\": \"chummer6-ui.sr6_desktop_workflow_parity\"");
+        StringAssert.Contains(policyText, "\"sr6SharedMuscleMemoryContract\": \"chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate\"");
+        StringAssert.Contains(policyText, "\"interactiveInventoryContract\": \"chummer6-ui.interactive_control_inventory\"");
+        StringAssert.Contains(policyText, "\"runtimeRouteInventoryContract\": \"chummer6-ui.interactive_runtime_route_inventory\"");
+        StringAssert.Contains(policyText, "\"equalUiSophisticationAgainstSr5InScope\": true");
+        StringAssert.Contains(policyText, "\"noThinSharedShellSubstituteInScope\": true");
+        StringAssert.Contains(policyText, "\"zeroFallbackHostsInScope\": true");
+
+        StringAssert.Contains(designDocText, "equal UI sophistication against SR5");
+        StringAssert.Contains(designDocText, "thin shared-shell substitute");
+        StringAssert.Contains(designDocText, "promoted SR4, SR5, and SR6 lanes");
+        StringAssert.Contains(designDocText, "zero hosts");
+        StringAssert.Contains(designDocText, "ruleset-specific action and workflow labels");
+
+        StringAssert.Contains(verifyText, "checking SR6 ruleset UI sophistication gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh");
+        StringAssert.Contains(b14Text, "running explicit SR6 ruleset UI sophistication gate");
+        StringAssert.Contains(b14Text, "sr6_ruleset_ui_sophistication_receipt_path");
+        StringAssert.Contains(b14Text, "explicitSr6RulesetSophisticationReceiptPath");
+    }
+
+    [TestMethod]
+    public void Design_authorized_parity_softening_gate_requires_explicit_design_backing_for_any_intentional_divergence()
+    {
+        string scriptPath = FindPath("scripts", "ai", "milestones", "design-authorized-parity-softening-check.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+        string implementationScopeText = File.ReadAllText(FindPath(".codex-design", "repo", "IMPLEMENTATION_SCOPE.md"));
+        string reviewContextText = File.ReadAllText(FindPath(".codex-design", "review", "REVIEW_CONTEXT.md"));
+        string productReadmeText = File.ReadAllText(FindPath(".codex-design", "product", "README.md"));
+        string verifyText = File.ReadAllText(FindPath("scripts", "ai", "verify.sh"));
+        string b14Text = File.ReadAllText(FindPath("scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"));
+        string visualLedgerText = File.ReadAllText(FindPath("docs", "CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json"));
+
+        StringAssert.Contains(scriptText, "chummer6-ui.design_authorized_parity_softening");
+        StringAssert.Contains(scriptText, "DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json");
+        StringAssert.Contains(scriptText, "\"designMirrorReview\"");
+        StringAssert.Contains(scriptText, "\"receiptReview\"");
+        StringAssert.Contains(scriptText, "\"differenceLedgerReview\"");
+        StringAssert.Contains(scriptText, "\"wiringReview\"");
+        StringAssert.Contains(scriptText, "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json");
+        StringAssert.Contains(scriptText, "CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json");
+        StringAssert.Contains(scriptText, "RULESET_UI_ADAPTATION.generated.json");
+        StringAssert.Contains(scriptText, "INTERACTIVE_CONTROL_INVENTORY.generated.json");
+
+        StringAssert.Contains(implementationScopeText, "in-app bug/feedback/crash entry points");
+        StringAssert.Contains(implementationScopeText, "source-linked tooltips and detail drawers");
+        StringAssert.Contains(implementationScopeText, "authored SR4, SR5, and SR6 UX where edition differences materially change how builders reason about the character");
+        StringAssert.Contains(implementationScopeText, "dense-data comfort and visual polish");
+
+        StringAssert.Contains(reviewContextText, "Flag rules math or engine authority logic in UI as P1.");
+        StringAssert.Contains(productReadmeText, "CHUMMER5A_FAMILIARITY_BRIDGE.md");
+        StringAssert.Contains(productReadmeText, "LEGACY_CLIENT_AND_ADJACENT_PARITY.md");
+        StringAssert.Contains(productReadmeText, "FLAGSHIP_PARITY_REGISTRY.yaml");
+        StringAssert.Contains(productReadmeText, "FEEDBACK_AND_CRASH_REPORTING_SYSTEM.md");
+        StringAssert.Contains(productReadmeText, "BUILD_GHOST_MVP_001.md");
+
+        StringAssert.Contains(visualLedgerText, "whyItDiffers");
+        StringAssert.Contains(visualLedgerText, "parityIntent");
+        StringAssert.Contains(visualLedgerText, "Dark mode is allowed to improve materially");
+        StringAssert.Contains(visualLedgerText, "Visible runner tabs are required; full legacy window-management chrome is not.");
+
+        StringAssert.Contains(verifyText, "checking design-authorized parity softening gate");
+        StringAssert.Contains(verifyText, "bash scripts/ai/milestones/design-authorized-parity-softening-check.sh");
+        StringAssert.Contains(b14Text, "design_authorized_parity_softening_receipt_path");
+        StringAssert.Contains(b14Text, "designAuthorizedParitySofteningReceiptPath");
     }
 
     [TestMethod]
@@ -6563,6 +6679,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Release channel is missing generated_at/generatedAt at top level; cannot normalize artifact generated_at identity.");
         StringAssert.Contains(generatorText, "artifact[\"generated_at\"] = release_generated_at");
         StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
+        StringAssert.Contains(generatorText, "run_materializer \"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(generatorText, "payload[\"artifactIdentityRegistry\"] = verifier.expected_artifact_identity_registry_rows(payload)");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
@@ -6595,6 +6713,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
+        StringAssert.Contains(s3PublisherText, "generate-releases-manifest.sh");
+        StringAssert.Contains(s3PublisherText, "SOURCE_MANIFEST_PATH=\"$MANIFEST_SOURCE\"");
         StringAssert.Contains(s3PublisherText, "aws s3 cp");
         StringAssert.Contains(s3PublisherText, "verify-releases-manifest.sh");
         StringAssert.Contains(s3PublisherText, "Published ${artifact_count} desktop artifact(s) to object storage target");

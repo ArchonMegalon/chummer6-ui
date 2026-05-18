@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
@@ -20,9 +21,11 @@ public partial class DesktopDialogWindow : Window
     private CharacterOverviewViewModelAdapter? _adapter;
     private readonly TextBlock _dialogTitleText;
     private readonly TextBlock _dialogMessageText;
+    private readonly ContentControl _dialogTrustReceiptPanel;
     private readonly StackPanel _dialogFieldsPanel;
     private readonly Border _dialogActionsBorder;
     private readonly StackPanel _dialogActionsPanel;
+    private IReadOnlyList<DesktopDialogField> _boundDialogFields = Array.Empty<DesktopDialogField>();
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _suppressCloseNotification;
@@ -33,6 +36,7 @@ public partial class DesktopDialogWindow : Window
 
         _dialogTitleText = this.FindControl<TextBlock>("DialogTitleText")!;
         _dialogMessageText = this.FindControl<TextBlock>("DialogMessageText")!;
+        _dialogTrustReceiptPanel = this.FindControl<ContentControl>("DialogTrustReceiptPanel")!;
         _dialogFieldsPanel = this.FindControl<StackPanel>("DialogFieldsPanel")!;
         _dialogActionsBorder = this.FindControl<Border>("DialogActionsBorder")!;
         _dialogActionsPanel = this.FindControl<StackPanel>("DialogActionsPanel")!;
@@ -57,19 +61,23 @@ public partial class DesktopDialogWindow : Window
     {
         CapturePreferredFocusState();
         BoundDialogId = dialog.Id;
+        _boundDialogFields = dialog.Fields;
         ApplyDialogSizing(dialog.Id);
         Title = dialog.Title;
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
         _dialogMessageText.Text = visibleMessage;
         _dialogMessageText.IsVisible = !string.IsNullOrWhiteSpace(visibleMessage);
+        string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
+        _dialogTrustReceiptPanel.Content = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
+        _dialogTrustReceiptPanel.IsVisible = _dialogTrustReceiptPanel.Content is not null;
 
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
         RefreshDialogVisuals();
         if (IsVisible)
         {
-            FocusPreferredControl();
+            Dispatcher.UIThread.Post(FocusPreferredControl, DispatcherPriority.Input);
         }
     }
 
@@ -128,6 +136,12 @@ public partial class DesktopDialogWindow : Window
         if (string.Equals(BoundDialogId, "dialog.new_character", StringComparison.Ordinal))
         {
             _dialogFieldsPanel.Children.Add(CreateLegacyNewCharacterPane(fields));
+            return true;
+        }
+
+        if (string.Equals(BoundDialogId, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
+        {
+            _dialogFieldsPanel.Children.Add(CreateLegacyPriorityWorkflowPane(fields));
             return true;
         }
 
@@ -427,6 +441,295 @@ public partial class DesktopDialogWindow : Window
         return shell;
     }
 
+    private Control CreateLegacyPriorityWorkflowPane(IReadOnlyList<DesktopDialogField> fields)
+    {
+        DesktopDialogField categoryField = FindRequiredField(fields, "newCharacterMetatypeCategory");
+        DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterMetatype");
+        DesktopDialogField heritageField = FindRequiredField(fields, "newCharacterPriorityHeritage");
+        DesktopDialogField attributesField = FindRequiredField(fields, "newCharacterPriorityAttributes");
+        DesktopDialogField talentPriorityField = FindRequiredField(fields, "newCharacterPriorityTalent");
+        DesktopDialogField skillsField = FindRequiredField(fields, "newCharacterPrioritySkills");
+        DesktopDialogField resourcesField = FindRequiredField(fields, "newCharacterPriorityResources");
+        DesktopDialogField talentChoiceField = FindRequiredField(fields, "newCharacterPriorityTalentChoice");
+        DesktopDialogField metavariantField = FindOptionalField(fields, "newCharacterMetavariant")
+            ?? new DesktopDialogField("newCharacterMetavariant", "Metavariant", string.Empty, string.Empty, InputType: "select");
+        DesktopDialogField skillChoice1Field = FindOptionalField(fields, "newCharacterPrioritySkillChoice1")
+            ?? new DesktopDialogField("newCharacterPrioritySkillChoice1", "Skill Choice 1", string.Empty, string.Empty, InputType: "select");
+        DesktopDialogField skillChoice2Field = FindOptionalField(fields, "newCharacterPrioritySkillChoice2")
+            ?? new DesktopDialogField("newCharacterPrioritySkillChoice2", "Skill Choice 2", string.Empty, string.Empty, InputType: "select");
+        DesktopDialogField skillChoice3Field = FindOptionalField(fields, "newCharacterPrioritySkillChoice3")
+            ?? new DesktopDialogField("newCharacterPrioritySkillChoice3", "Skill Choice 3", string.Empty, string.Empty, InputType: "select");
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            FindOptionalField(fields, "newCharacterPriorityWorkflowState")?.Value);
+
+        static TextBlock CreateRowLabel(string text, string? name = null) => new()
+        {
+            Name = name,
+            Text = text,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        ComboBox BuildRuntimeCombo(DesktopDialogField field, double minWidth = 160d)
+        {
+            ComboBox combo = BuildSelectComboBox(field, minWidth);
+            combo.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
+            ApplyAccessibility(combo, field.AccessibleName, field.ToolTip, field.HelpText);
+            return combo;
+        }
+
+        Grid topMatrix = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,132,Auto,132,Auto,160"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto"),
+            ColumnSpacing = 8,
+            RowSpacing = 8
+        };
+        topMatrix.Children.Add(CreateRowLabel("Metatype:", DesktopDialogAccessibility.BuildFieldLabelName(heritageField.Id)));
+        ComboBox heritageCombo = BuildRuntimeCombo(heritageField, 120);
+        Grid.SetColumn(heritageCombo, 1);
+        topMatrix.Children.Add(heritageCombo);
+
+        TextBlock attributesLabel = CreateRowLabel("Attributes:", DesktopDialogAccessibility.BuildFieldLabelName(attributesField.Id));
+        Grid.SetColumn(attributesLabel, 2);
+        topMatrix.Children.Add(attributesLabel);
+        ComboBox attributesCombo = BuildRuntimeCombo(attributesField, 120);
+        Grid.SetColumn(attributesCombo, 3);
+        topMatrix.Children.Add(attributesCombo);
+
+        TextBlock magicLabel = CreateRowLabel("Magic or Resonance:", DesktopDialogAccessibility.BuildFieldLabelName(talentPriorityField.Id));
+        Grid.SetColumn(magicLabel, 4);
+        topMatrix.Children.Add(magicLabel);
+        ComboBox talentPriorityCombo = BuildRuntimeCombo(talentPriorityField, 150);
+        Grid.SetColumn(talentPriorityCombo, 5);
+        topMatrix.Children.Add(talentPriorityCombo);
+
+        TextBlock skillsLabel = CreateRowLabel("Skills:", DesktopDialogAccessibility.BuildFieldLabelName(skillsField.Id));
+        Grid.SetRow(skillsLabel, 1);
+        topMatrix.Children.Add(skillsLabel);
+        ComboBox skillsCombo = BuildRuntimeCombo(skillsField, 120);
+        Grid.SetColumn(skillsCombo, 1);
+        Grid.SetRow(skillsCombo, 1);
+        topMatrix.Children.Add(skillsCombo);
+
+        TextBlock resourcesLabel = CreateRowLabel("Resources:", DesktopDialogAccessibility.BuildFieldLabelName(resourcesField.Id));
+        Grid.SetColumn(resourcesLabel, 2);
+        Grid.SetRow(resourcesLabel, 1);
+        topMatrix.Children.Add(resourcesLabel);
+        ComboBox resourcesCombo = BuildRuntimeCombo(resourcesField, 120);
+        Grid.SetColumn(resourcesCombo, 3);
+        Grid.SetRow(resourcesCombo, 1);
+        topMatrix.Children.Add(resourcesCombo);
+
+        TextBlock talentChoiceLabel = CreateRowLabel("Talent Choice:", DesktopDialogAccessibility.BuildFieldLabelName(talentChoiceField.Id));
+        Grid.SetColumn(talentChoiceLabel, 4);
+        Grid.SetRow(talentChoiceLabel, 1);
+        topMatrix.Children.Add(talentChoiceLabel);
+        ComboBox talentChoiceCombo = BuildRuntimeCombo(talentChoiceField, 150);
+        Grid.SetColumn(talentChoiceCombo, 5);
+        Grid.SetRow(talentChoiceCombo, 1);
+        topMatrix.Children.Add(talentChoiceCombo);
+
+        TextBlock sumToTenLabel = new()
+        {
+            Name = "newCharacterPrioritySumToTenLabel",
+            Text = runtimeState.SumToTenLabel,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brushes.DarkSlateBlue,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            IsVisible = !string.IsNullOrWhiteSpace(runtimeState.SumToTenLabel)
+        };
+        Grid.SetColumn(sumToTenLabel, 5);
+        Grid.SetRow(sumToTenLabel, 2);
+        topMatrix.Children.Add(sumToTenLabel);
+
+        Border topMatrixBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = topMatrix
+        };
+
+        ComboBox categoryCombo = BuildRuntimeCombo(categoryField, 180);
+        ListBox metatypeList = BuildSelectListBox(metatypeField);
+        metatypeList.Name = DesktopDialogAccessibility.BuildFieldInputName(metatypeField.Id);
+        metatypeList.MinHeight = 280;
+        ApplyAccessibility(metatypeList, metatypeField.AccessibleName, metatypeField.ToolTip, metatypeField.HelpText);
+        metatypeList.DoubleTapped += async (_, _) =>
+        {
+            if (_adapter is null)
+            {
+                return;
+            }
+
+            await ExecuteSafeAsync(
+                () => _adapter.ExecuteDialogActionAsync("complete_new_character_workflow", CancellationToken.None),
+                "complete new character workflow");
+        };
+
+        StackPanel browseLane = new()
+        {
+            Spacing = 8,
+            Children =
+            {
+                CreateRowLabel("Category:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)),
+                categoryCombo,
+                CreateRowLabel("Metatypes:", "newCharacterMetatypeListLabel"),
+                metatypeList
+            }
+        };
+
+        Border browseLaneBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = browseLane
+        };
+
+        Grid rightFactsGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto"),
+            ColumnSpacing = 8,
+            RowSpacing = 6
+        };
+        AddLabeledValueRow(
+            rightFactsGrid,
+            0,
+            "Metavariant:",
+            BuildRuntimeCombo(metavariantField with { Options = runtimeState.MetavariantOptions }, 180));
+        AddLabeledValueRow(rightFactsGrid, 1, "Karma:", new TextBlock { Text = runtimeState.MetatypeKarma });
+        AddLabeledValueRow(rightFactsGrid, 2, "Special Attributes:", new TextBlock { Text = runtimeState.SpecialAttributes });
+        AddLabeledValueRow(rightFactsGrid, 3, "Source:", new TextBlock { Text = runtimeState.Source, TextWrapping = TextWrapping.Wrap });
+
+        Grid inspectAttributesGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
+            ColumnSpacing = 8,
+            RowSpacing = 4
+        };
+        for (int index = 0; index < runtimeState.InspectAttributes.Count; index++)
+        {
+            PriorityWorkflowInspectAttributeState attribute = runtimeState.InspectAttributes[index];
+            int row = index / 2;
+            while (inspectAttributesGrid.RowDefinitions.Count <= row)
+            {
+                inspectAttributesGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+            }
+
+            int column = (index % 2) * 2;
+            TextBlock label = CreateRowLabel(attribute.Label);
+            Grid.SetRow(label, row);
+            Grid.SetColumn(label, column);
+            inspectAttributesGrid.Children.Add(label);
+
+            TextBlock value = new()
+            {
+                Text = attribute.Value,
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
+            };
+            Grid.SetRow(value, row);
+            Grid.SetColumn(value, column + 1);
+            inspectAttributesGrid.Children.Add(value);
+        }
+
+        ListBox qualitiesList = new()
+        {
+            Name = "newCharacterPriorityQualitiesList",
+            ItemsSource = runtimeState.Qualities.Count == 0 ? new[] { "No innate qualities" } : runtimeState.Qualities,
+            MinHeight = 96
+        };
+        qualitiesList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
+            new TextBlock
+            {
+                Text = line ?? string.Empty,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+        StackPanel inspectLane = new()
+        {
+            Spacing = 10,
+            Children =
+            {
+                rightFactsGrid,
+                new Border
+                {
+                    Classes = { "shell-panel", "subtle" },
+                    Padding = new Thickness(8),
+                    Child = inspectAttributesGrid
+                },
+                CreateRowLabel("Qualities:"),
+                qualitiesList
+            }
+        };
+
+        Border inspectLaneBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = inspectLane
+        };
+
+        Grid centerGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("300,*"),
+            ColumnSpacing = 12
+        };
+        centerGrid.Children.Add(browseLaneBorder);
+        Grid.SetColumn(inspectLaneBorder, 1);
+        centerGrid.Children.Add(inspectLaneBorder);
+
+        StackPanel skillChoiceLane = new()
+        {
+            Spacing = 6,
+            IsVisible = skillChoice1Field.Options is { Count: > 0 } || skillChoice2Field.Options is { Count: > 0 } || skillChoice3Field.Options is { Count: > 0 }
+        };
+        if (!string.IsNullOrWhiteSpace(runtimeState.SkillSelectionLabel))
+        {
+            skillChoiceLane.Children.Add(CreateRowLabel(runtimeState.SkillSelectionLabel, "newCharacterPrioritySkillSelectionLabel"));
+        }
+
+        if (runtimeState.SkillChoice1.Visible)
+        {
+            skillChoiceLane.Children.Add(BuildRuntimeCombo(skillChoice1Field with { Options = runtimeState.SkillChoice1.Options }, 220));
+        }
+
+        if (runtimeState.SkillChoice2.Visible)
+        {
+            skillChoiceLane.Children.Add(BuildRuntimeCombo(skillChoice2Field with { Options = runtimeState.SkillChoice2.Options }, 220));
+        }
+
+        if (runtimeState.SkillChoice3.Visible)
+        {
+            skillChoiceLane.Children.Add(BuildRuntimeCombo(skillChoice3Field with { Options = runtimeState.SkillChoice3.Options }, 220));
+        }
+
+        Border skillChoiceBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = skillChoiceLane,
+            IsVisible = skillChoiceLane.Children.Count > 0
+        };
+
+        StackPanel shell = new()
+        {
+            Spacing = 12,
+            Children =
+            {
+                topMatrixBorder,
+                centerGrid
+            }
+        };
+
+        if (skillChoiceBorder.IsVisible)
+        {
+            shell.Children.Add(skillChoiceBorder);
+        }
+
+        return shell;
+    }
+
     private Control CreateLegacyCharacterSettingsPane(IReadOnlyList<DesktopDialogField> fields)
     {
         DesktopDialogField priorityField = FindRequiredField(fields, "characterPriority");
@@ -639,6 +942,7 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField searchField = FindRequiredField(fields, "masterIndexSearch");
         DesktopDialogField sourcebookField = FindRequiredField(fields, "masterIndexCurrentSourcebook");
         DesktopDialogField linkedSourceField = FindRequiredField(fields, "masterIndexSelectedSource");
+        DesktopDialogField dataRootField = FindRequiredField(fields, "masterIndexDataRoot");
         DesktopDialogField notesField = FindRequiredField(fields, "masterIndexSnippetPreview");
         DesktopDialogField settingsField = FindRequiredField(fields, "masterIndexSettingsSummary");
         bool sourceAvailable = !string.IsNullOrWhiteSpace(sourcebookField.Value);
@@ -687,7 +991,7 @@ public partial class DesktopDialogWindow : Window
 
         Grid right = new()
         {
-            RowDefinitions = new RowDefinitions("Auto,Auto,*"),
+            RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"),
             RowSpacing = 8
         };
         Grid.SetColumn(right, 1);
@@ -711,6 +1015,10 @@ public partial class DesktopDialogWindow : Window
             Watermark = string.IsNullOrWhiteSpace(searchField.Placeholder) ? "Search" : searchField.Placeholder
         };
         ApplyAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
+        if (string.Equals(_preferredFocusControlName, searchBox.Name, StringComparison.Ordinal))
+        {
+            searchBox.AttachedToVisualTree += (_, _) => RestorePreferredTextBoxFocus(searchBox);
+        }
         searchBox.TextChanged += (_, _) =>
         {
             string nextValue = searchBox.Text ?? string.Empty;
@@ -776,6 +1084,31 @@ public partial class DesktopDialogWindow : Window
         Grid.SetRow(sourceRow, 1);
         right.Children.Add(sourceRow);
 
+        Grid dataRootRow = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
+            ColumnSpacing = 8,
+            IsVisible = !string.IsNullOrWhiteSpace(dataRootField.Value)
+        };
+        dataRootRow.Children.Add(new TextBlock
+        {
+            Text = "Data Root:",
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        });
+        TextBlock dataRootValueText = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldInputName(dataRootField.Id),
+            Text = dataRootField.Value,
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+        ApplyAccessibility(dataRootValueText, dataRootField.AccessibleName, dataRootField.ToolTip, dataRootField.HelpText);
+        Grid.SetColumn(dataRootValueText, 1);
+        dataRootRow.Children.Add(dataRootValueText);
+        Grid.SetRow(dataRootRow, 2);
+        right.Children.Add(dataRootRow);
+
         TextBox notesBox = new()
         {
             Text = notesField.Value,
@@ -785,7 +1118,7 @@ public partial class DesktopDialogWindow : Window
             MinHeight = 280,
             IsVisible = notesAvailable
         };
-        Grid.SetRow(notesBox, 2);
+        Grid.SetRow(notesBox, 3);
         right.Children.Add(notesBox);
 
         Grid settingsRow = new()
@@ -1628,12 +1961,22 @@ public partial class DesktopDialogWindow : Window
 
         foreach (DesktopDialogAction action in visibleActionArray)
         {
+            bool isEnabled = true;
+            if (string.Equals(BoundDialogId, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                && string.Equals(action.Id, "complete_new_character_workflow", StringComparison.Ordinal))
+            {
+                isEnabled = ParseCheckbox(
+                    _boundDialogFields.FirstOrDefault(field => string.Equals(field.Id, "newCharacterPriorityWorkflowCanCommit", StringComparison.Ordinal))?.Value
+                    ?? "true");
+            }
+
             Button button = new()
             {
                 Name = DesktopDialogAccessibility.BuildActionName(action.Id),
                 Content = action.Label,
                 Tag = action.Id,
                 MinWidth = 82,
+                IsEnabled = isEnabled,
                 Classes = { "shell-action", action.IsPrimary ? "primary" : "quiet" }
             };
             ApplyAccessibility(button, action.AccessibleName, action.ToolTip, action.HelpText);
@@ -1659,6 +2002,11 @@ public partial class DesktopDialogWindow : Window
     {
         return fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal))
             ?? throw new InvalidOperationException($"Dialog field '{fieldId}' was not available for '{fieldId}'.");
+    }
+
+    private static DesktopDialogField? FindOptionalField(IReadOnlyList<DesktopDialogField> fields, string fieldId)
+    {
+        return fields.FirstOrDefault(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal));
     }
 
     private ComboBox BuildSelectComboBox(DesktopDialogField field, double minWidth)
@@ -1938,9 +2286,11 @@ public partial class DesktopDialogWindow : Window
         if (_adapter is null)
             return;
 
+        CapturePreferredFocusState();
         await ExecuteSafeAsync(
             () => _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None),
             $"update field '{fieldId}'");
+        FocusPreferredControl();
     }
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
@@ -2055,6 +2405,28 @@ public partial class DesktopDialogWindow : Window
         }
 
         return focused;
+    }
+
+    private void RestorePreferredTextBoxFocus(TextBox textBox)
+    {
+        if (!string.Equals(_preferredFocusControlName, textBox.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!textBox.IsEnabled)
+            {
+                return;
+            }
+
+            bool focused = textBox.Focus();
+            if (focused && _preferredFocusSelectionStart is int caretIndex)
+            {
+                textBox.CaretIndex = Math.Clamp(caretIndex, 0, textBox.Text?.Length ?? 0);
+            }
+        }, DispatcherPriority.Input);
     }
 }
 

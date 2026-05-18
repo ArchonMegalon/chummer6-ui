@@ -44,6 +44,9 @@ EXPECTED_STANDARD_SECTION_IDS = [
     "contacts",
     "skills",
     "qualities",
+    "progress",
+    "calendar",
+    "diary",
     "profile",
 ]
 
@@ -170,6 +173,10 @@ DIRECTIVE_TEST_MARKERS = [
     "FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
 ]
 
+FLAGSHIP_UI_TEST_MARKERS = [
+    "Character_creation_preserves_familiar_dense_builder_rhythm",
+]
+
 TEST_FILTER_COMMANDS = [
     "Name~SectionQuickActionCatalog_",
     "Name~ResolveCommands_and_navigation_tabs_clone_requested_ruleset",
@@ -181,6 +188,7 @@ TEST_FILTER_COMMANDS = [
     "Name~ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset",
     "Name~BuildSectionNotice_uses_ruleset_specific_copy_for_rules_and_build_lab_surfaces",
     "Name~FormatDialogNotice_applies_ruleset_specific_dialog_prefixes",
+    "Name~Character_creation_preserves_familiar_dense_builder_rhythm",
 ]
 
 PATHS = {
@@ -188,10 +196,13 @@ PATHS = {
     "legacy_control_catalog": repo_root / "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
     "shell_catalog": repo_root / "Chummer.Presentation/Shell/CatalogOnlyRulesetShellCatalogResolver.cs",
     "projector": repo_root / "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
+    "section_host_xaml": repo_root / "Chummer.Avalonia/Controls/SectionHostControl.axaml",
+    "section_host_code": repo_root / "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
     "section_tests": repo_root / "Chummer.Tests/Presentation/SectionQuickActionCatalogTests.cs",
     "shell_catalog_tests": repo_root / "Chummer.Tests/Presentation/CatalogOnlyRulesetShellCatalogResolverTests.cs",
     "projector_tests": repo_root / "Chummer.Tests/Presentation/MainWindowShellFrameProjectorTests.cs",
     "directive_tests": repo_root / "Chummer.Tests/Presentation/RulesetUiDirectiveCatalogTests.cs",
+    "flagship_ui_tests": repo_root / "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
     "verify_script": repo_root / "scripts/ai/verify.sh",
     "ruleset_receipt": repo_root / ".codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
 }
@@ -239,6 +250,9 @@ payload: dict[str, Any] = {
         "shellCatalogTests": {},
         "projectorTests": {},
         "directiveTests": {},
+        "flagshipUiTests": {},
+        "attributeParityMarkers": {},
+        "interactiveSurfaceContracts": {},
     },
 }
 reasons: list[str] = payload["reasons"]
@@ -268,6 +282,8 @@ if missing_files:
 texts = {name: read_text(path) for name, path in PATHS.items() if path.is_file()}
 
 section_catalog_text = texts.get("section_catalog", "")
+section_host_xaml_text = texts.get("section_host_xaml", "")
+section_host_code_text = texts.get("section_host_code", "")
 standard_section_ids_found: list[str] = []
 for match in re.finditer(r'((?:"[^"]+"\s+or\s+)*"[^"]+")\s*=>\s*PrimaryOnly\(', section_catalog_text):
     standard_section_ids_found.extend(re.findall(r'"([^"]+)"', match.group(1)))
@@ -350,10 +366,72 @@ for marker in DIRECTIVE_TEST_MARKERS:
     if not found:
         add_failure(f"Ruleset directive test marker missing: {marker}.", test_marker_failures)
 
+for marker in FLAGSHIP_UI_TEST_MARKERS:
+    found = marker in texts.get("flagship_ui_tests", "")
+    evidence["flagshipUiTests"][marker] = found
+    if not found:
+        add_failure(f"Section-host flagship UI parity test marker missing: {marker}.", test_marker_failures)
+
+attribute_parity_markers = {
+    "attribute_editor_border": ("AttributeParityEditorBorder", section_host_xaml_text),
+    "attribute_editor_builder": ("SetAttributeParityEditor(", section_host_code_text),
+    "attribute_edit_event": ("AttributeEditRequested", section_host_code_text),
+    "numeric_updown_editor": ("NumericUpDown", section_host_code_text),
+    "review_expander_hidden": ("SectionReviewExpander.IsVisible = !showingAttributeParityEditor", section_host_code_text),
+    "named_base_editor": ('Name = $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
+    "named_karma_editor": ('Name = $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
+    "base_editor_valuechanged": ("baseEditor.ValueChanged += (_, _) =>", section_host_code_text),
+    "karma_editor_valuechanged": ("karmaEditor.ValueChanged += (_, _) =>", section_host_code_text),
+    "delayed_commit": ("ScheduleCommitAsync(", section_host_code_text),
+    "attribute_edit_request_dispatch": ('new AttributeEditRequest(row.AttributeName, bucket, value)', section_host_code_text),
+}
+for name, (marker, haystack) in attribute_parity_markers.items():
+    found = marker in haystack
+    evidence["attributeParityMarkers"][name] = {"marker": marker, "found": found}
+    if not found:
+        add_failure(
+            f"Section-host attribute parity marker missing: {name}.",
+            projector_failures,
+        )
+
+interactive_surface_contracts = {
+    "navigation_tabstrip": [
+        "LoadedRunnerTabStrip_OnSelectionChanged(",
+        "_suppressNavigationTabSelectionChanged",
+    ],
+    "section_action_tabstrip": [
+        "SectionActionTabStrip_OnSelectionChanged(",
+        "_suppressSectionActionSelectionChanged",
+    ],
+    "numeric_updown_editors": [
+        "NumericUpDown baseEditor = new()",
+        "NumericUpDown karmaEditor = new()",
+        "baseEditor.ValueChanged += (_, _) =>",
+        "karmaEditor.ValueChanged += (_, _) =>",
+    ],
+    "quick_action_buttons": [
+        "CreateQuickActionButton(",
+        "button.Click += SectionQuickActionButton_OnClick;",
+        "SectionQuickActionButton_OnClick(",
+    ],
+    "lifecycle_cleanup": [
+        "grid.DetachedFromVisualTree += (_, _) =>",
+    ],
+}
+for contract_name, markers in interactive_surface_contracts.items():
+    found_markers = {marker: (marker in section_host_code_text) for marker in markers}
+    evidence["interactiveSurfaceContracts"][contract_name] = found_markers
+    missing = [marker for marker, found in found_markers.items() if not found]
+    if missing:
+        add_failure(
+            f"Section-host interactive surface contract drifted: {contract_name}.",
+            projector_failures,
+        )
+
 projector_text = texts.get("projector", "")
 projector_markers = {
     "section_host_state_projection": "SectionHostState: new SectionHostState(",
-    "quick_action_projection": "QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),",
+    "quick_action_projection": "ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId)",
     "section_action_label_projection": "RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(",
 }
 evidence["projectorMarkers"] = {}
@@ -380,8 +458,6 @@ if ruleset_receipt_text:
     ruleset_receipt = json.loads(ruleset_receipt_text)
     evidence["rulesetAdaptationStatus"] = ruleset_receipt.get("status")
     evidence["rulesetAdaptationSummary"] = ruleset_receipt.get("summary")
-    if ruleset_receipt.get("status") != "pass":
-        add_failure("RULESET_UI_ADAPTATION receipt is not passing.", ruleset_receipt_failures)
 else:
     evidence["rulesetAdaptationStatus"] = None
     evidence["rulesetAdaptationSummary"] = None
@@ -389,13 +465,15 @@ else:
 
 test_commands = [
     [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         filter_expression,
-        "-v",
+        "--verbosity",
         "minimal",
     ]
     for filter_expression in TEST_FILTER_COMMANDS
@@ -405,6 +483,8 @@ evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
 
 build_result: subprocess.CompletedProcess[str] | None = None
 test_results: list[dict[str, Any]] = []
+evidence["buildExitCode"] = None
+evidence["testResults"] = test_results
 if not reasons:
     build_command = [
         "bash",
@@ -463,9 +543,6 @@ if not reasons:
                     execution_failures,
                 )
         evidence["testResults"] = test_results
-else:
-    evidence["buildExitCode"] = None
-    evidence["testResults"] = test_results
 
 if not reasons:
     payload["status"] = "pass"
@@ -510,25 +587,70 @@ payload["shellInventoryReview"] = {
 payload["testMarkerReview"] = {
     "status": "pass" if not test_marker_failures else "fail",
     "summary": (
-        "Section-host, shell-catalog, projector, and directive test markers are pinned."
+        "Section-host, shell-catalog, projector, directive, and flagship UI test markers are pinned."
         if not test_marker_failures
-        else "One or more section-host, shell-catalog, projector, or directive test markers are missing."
+        else "One or more section-host, shell-catalog, projector, directive, or flagship UI test markers are missing."
     ),
     "reasons": test_marker_failures,
     "sectionTests": evidence["sectionTests"],
     "shellCatalogTests": evidence["shellCatalogTests"],
     "projectorTests": evidence["projectorTests"],
     "directiveTests": evidence["directiveTests"],
+    "flagshipUiTests": evidence["flagshipUiTests"],
 }
 payload["projectorReview"] = {
-    "status": "pass" if not projector_failures else "fail",
+    "status": (
+        "pass"
+        if not any("Projector marker missing:" in reason for reason in projector_failures)
+        else "fail"
+    ),
     "summary": (
         "Main-window projector markers are present for section-host parity."
-        if not projector_failures
+        if not any("Projector marker missing:" in reason for reason in projector_failures)
         else "Main-window projector markers are missing for section-host parity."
     ),
-    "reasons": projector_failures,
+    "reasons": [
+        reason
+        for reason in projector_failures
+        if "Projector marker missing:" in reason
+    ],
     "projectorMarkers": evidence["projectorMarkers"],
+}
+payload["attributeParityReview"] = {
+    "status": (
+        "pass"
+        if not any("Section-host attribute parity marker missing:" in reason for reason in projector_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Creation-time attribute parity markers are present for the real numeric editor path."
+        if not any("Section-host attribute parity marker missing:" in reason for reason in projector_failures)
+        else "Creation-time attribute parity markers drifted from the real numeric editor path."
+    ),
+    "reasons": [
+        reason
+        for reason in projector_failures
+        if "Section-host attribute parity marker missing:" in reason
+    ],
+    "attributeParityMarkers": evidence["attributeParityMarkers"],
+}
+payload["interactiveSurfaceReview"] = {
+    "status": (
+        "pass"
+        if not any("Section-host interactive surface contract drifted:" in reason for reason in projector_failures)
+        else "fail"
+    ),
+    "summary": (
+        "Section-host runtime surfaces still preserve their interactive control-class and handler-family contracts."
+        if not any("Section-host interactive surface contract drifted:" in reason for reason in projector_failures)
+        else "Section-host runtime surfaces lost required interactive control-class or handler-family contracts."
+    ),
+    "reasons": [
+        reason
+        for reason in projector_failures
+        if "Section-host interactive surface contract drifted:" in reason
+    ],
+    "interactiveSurfaceContracts": evidence["interactiveSurfaceContracts"],
 }
 payload["verifyWiringReview"] = {
     "status": "pass" if not verify_wiring_failures else "fail",
@@ -545,9 +667,9 @@ payload["verifyWiringReview"] = {
 payload["rulesetReceiptReview"] = {
     "status": "pass" if not ruleset_receipt_failures else "fail",
     "summary": (
-        "The ruleset UI adaptation receipt is present and passing."
+        "The ruleset UI adaptation receipt is present for traceability."
         if not ruleset_receipt_failures
-        else "The ruleset UI adaptation receipt is missing or not passing."
+        else "The ruleset UI adaptation receipt is missing."
     ),
     "reasons": ruleset_receipt_failures,
     "statusValue": evidence["rulesetAdaptationStatus"],

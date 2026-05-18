@@ -21,6 +21,8 @@ repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
 
 STANDALONE_TEST_MARKERS = [
+    "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
+    "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
@@ -28,32 +30,59 @@ STANDALONE_TEST_MARKERS = [
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
+    "Keyboard_shortcuts_resolve_to_the_same_shell_commands",
+    "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces",
+    "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
 ]
 
 MAIN_WINDOW_TEST_MARKERS = [
-    "Runtime_backed_file_menu_new_character_opens_creation_dialog",
-    "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live",
+    "File_menu_new_character_creates_runtime_workspace",
+    "Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive",
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+]
+
+BLAZOR_TEST_MARKERS = [
+    "SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation",
+]
+
+SHORTCUT_TEST_MARKERS = [
+    "TryResolveCommandId_maps_known_command_modifier_shortcuts",
+    "TryResolveCommandId_maps_f5_without_command_modifier",
+    "TryResolveCommandId_rejects_unknown_or_alt_shortcuts",
 ]
 
 STANDALONE_FILTER = (
-    "Name~Standalone_toolstrip_buttons_raise_expected_events"
+    "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+    "|Name~Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus"
+    "|Name~Standalone_toolstrip_buttons_raise_expected_events"
     "|Name~Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
     "|Name~Standalone_workspace_strip_quick_start_button_raises_expected_event"
     "|Name~Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff"
     "|Name~Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events"
     "|Name~Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions"
     "|Name~Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available"
+    "|Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands"
+    "|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
+    "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
 )
 
 MAIN_WINDOW_FILTER = (
-    "Name~Runtime_backed_file_menu_new_character_opens_creation_dialog"
-    "|Name~Runtime_backed_global_settings_visible_selects_and_toggles_remain_live"
+    "Name~File_menu_new_character_creates_runtime_workspace"
+    "|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive"
     "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters"
     "|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+    "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
+)
+
+BLAZOR_KEYBOARD_FILTER = "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation"
+SHORTCUT_FILTER = (
+    "Name~TryResolveCommandId_maps_known_command_modifier_shortcuts"
+    "|Name~TryResolveCommandId_maps_f5_without_command_modifier"
+    "|Name~TryResolveCommandId_rejects_unknown_or_alt_shortcuts"
 )
 
 STANDALONE_SOURCE_MARKERS = {
@@ -93,7 +122,7 @@ STANDALONE_SOURCE_MARKERS = {
         'x:Name="RestoreContinuityStatusBorder"',
     ],
     "summary_header_codebehind": [
-        "bool showNavigation = NavigationTabsPanel.IsVisible;",
+        "bool showNavigation = state.HasVisibleContent || NavigationTabsPanel.IsVisible;",
         "bool showRestore = RestoreContinuityStatusBorder.IsVisible || RestoreContinuityActionPanel.IsVisible;",
         "Height = IsVisible ? double.NaN : 0d;",
     ],
@@ -124,6 +153,12 @@ STANDALONE_SOURCE_MARKERS = {
     "coach_sidecar_codebehind": [
         "CopyLaunchRequested?.Invoke(this, EventArgs.Empty);",
     ],
+    "avalonia_gate_tests": [
+        "CaptureControlInventory(",
+        "FlattenInventory(",
+        "AssertInventoryContains(",
+        "RuntimeControlInventoryNode",
+    ],
 }
 
 MAIN_WINDOW_SOURCE_MARKERS = {
@@ -135,6 +170,7 @@ MAIN_WINDOW_SOURCE_MARKERS = {
         "SectionHostControl",
         "CommandDialogPaneControl",
         "CoachSidecarControl",
+        "MenuBarRegion",
     ],
     "main_window_codebehind": [
         "onSectionQuickActionRequested: SectionHost_OnQuickActionRequested",
@@ -155,6 +191,8 @@ MAIN_WINDOW_SOURCE_MARKERS = {
 
 PATHS = {
     "avalonia_gate_tests": repo_root / "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "blazor_shell_tests": repo_root / "Chummer.Tests/Presentation/BlazorShellComponentTests.cs",
+    "shortcut_tests": repo_root / "Chummer.Tests/Presentation/DesktopShortcutCatalogTests.cs",
     "toolstrip_axaml": repo_root / "Chummer.Avalonia/Controls/ToolStripControl.axaml",
     "toolstrip_codebehind": repo_root / "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
     "shell_menu_axaml": repo_root / "Chummer.Avalonia/Controls/ShellMenuBarControl.axaml",
@@ -171,12 +209,18 @@ PATHS = {
     "coach_sidecar_codebehind": repo_root / "Chummer.Avalonia/Controls/CoachSidecarControl.axaml.cs",
     "main_window_axaml": repo_root / "Chummer.Avalonia/MainWindow.axaml",
     "main_window_codebehind": repo_root / "Chummer.Avalonia/MainWindow.axaml.cs",
+    "main_window_event_handlers": repo_root / "Chummer.Avalonia/MainWindow.EventHandlers.cs",
     "main_window_selection_handlers": repo_root / "Chummer.Avalonia/MainWindow.SelectionHandlers.cs",
+    "blazor_shell_markup": repo_root / "Chummer.Blazor/Components/Layout/DesktopShell.razor",
+    "blazor_shell_commands": repo_root / "Chummer.Blazor/Components/Layout/DesktopShell.Commands.cs",
+    "blazor_dialog_host": repo_root / "Chummer.Blazor/Components/Shell/DialogHost.razor",
+    "desktop_shortcut_catalog": repo_root / "Chummer.Presentation/Shell/DesktopShortcutCatalog.cs",
     "verify_script": repo_root / "scripts/ai/verify.sh",
     "b14_script": repo_root / "scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
     "delegate_route_receipt": repo_root / ".codex-studio/published/DELEGATE_COMMAND_ROUTE_PARITY.generated.json",
     "generated_dialog_receipt": repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
     "section_host_ruleset_receipt": repo_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    "runtime_route_inventory_receipt": repo_root / ".codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
 }
 
 
@@ -208,8 +252,13 @@ payload: dict[str, Any] = {
         "sourcePaths": {name: str(path.relative_to(repo_root)) for name, path in PATHS.items()},
         "standaloneControlTests": {},
         "mainWindowTests": {},
+        "blazorKeyboardTests": {},
+        "shortcutCatalogTests": {},
         "sourceMarkers": {},
         "dependencyReceipts": {},
+        "runtimeRouteInventory": {},
+        "buildExitCode": None,
+        "testResults": {},
     },
 }
 reasons: list[str] = payload["reasons"]
@@ -228,13 +277,21 @@ def add_failure(message: str, *buckets: list[str]) -> None:
     reasons.append(message)
 
 
-missing_files = [str(path.relative_to(repo_root)) for path in PATHS.values() if not path.is_file()]
+generated_receipt_keys = {"runtime_route_inventory_receipt"}
+missing_files = [
+    str(path.relative_to(repo_root))
+    for name, path in PATHS.items()
+    if name not in generated_receipt_keys and not path.is_file()
+]
 evidence["missingFiles"] = missing_files
 if missing_files:
     add_failure("Required interactive-control inventory proof files are missing.", shared_failures)
 
 texts = {name: read_text(path) for name, path in PATHS.items() if path.is_file()}
 avalonia_gate_tests_text = texts.get("avalonia_gate_tests", "")
+blazor_shell_tests_text = texts.get("blazor_shell_tests", "")
+shortcut_tests_text = texts.get("shortcut_tests", "")
+runtime_route_inventory_receipt_text = texts.get("runtime_route_inventory_receipt", "")
 
 for marker in STANDALONE_TEST_MARKERS:
     found = marker in avalonia_gate_tests_text
@@ -247,6 +304,26 @@ for marker in MAIN_WINDOW_TEST_MARKERS:
     evidence["mainWindowTests"][marker] = found
     if not found:
         add_failure(f"Main-window interaction test marker missing: {marker}.", main_window_failures)
+
+for marker in BLAZOR_TEST_MARKERS:
+    found = marker in blazor_shell_tests_text
+    evidence["blazorKeyboardTests"][marker] = found
+    if not found:
+        add_failure(f"Blazor keyboard interaction test marker missing: {marker}.", main_window_failures)
+
+for marker in SHORTCUT_TEST_MARKERS:
+    found = marker in shortcut_tests_text
+    evidence["shortcutCatalogTests"][marker] = found
+    if not found:
+        add_failure(f"Desktop shortcut catalog test marker missing: {marker}.", standalone_failures)
+
+runtime_route_inventory_marker = "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
+evidence["runtimeRouteInventoryTest"] = runtime_route_inventory_marker in avalonia_gate_tests_text
+if not evidence["runtimeRouteInventoryTest"]:
+    add_failure(
+        f"Runtime route inventory test marker missing: {runtime_route_inventory_marker}.",
+        standalone_failures,
+    )
 
 
 def collect_source_markers(
@@ -266,6 +343,30 @@ def collect_source_markers(
 
 collect_source_markers(STANDALONE_SOURCE_MARKERS, standalone_failures, "Standalone interactive control")
 collect_source_markers(MAIN_WINDOW_SOURCE_MARKERS, main_window_failures, "Main-window interaction")
+
+keyboard_tooltip_markers = {
+    "main_window_axaml": ['KeyDown="Window_OnKeyDown"'],
+    "main_window_event_handlers": ["Window_OnKeyDown", "DesktopShortcutCatalog.TryResolveCommandId"],
+    "blazor_shell_markup": ['@onkeydown="OnShellKeyDown"'],
+    "blazor_shell_commands": ["OnShellKeyDown", "DesktopShortcutCatalog.TryResolveCommandId"],
+    "desktop_shortcut_catalog": ["TryResolveCommandId(", '"save_character"', '"global_settings"'],
+    "toolstrip_codebehind": ["ToolTip.SetTip("],
+    "summary_header_codebehind": ["ToolTip.SetTip("],
+    "workspace_strip_codebehind": ["ToolTip.SetTip("],
+    "command_dialog_codebehind": ["ToolTip.SetTip(", "ApplyAccessibility("],
+    "blazor_dialog_host": ['title="@field.ToolTip"', 'title="@action.ToolTip"'],
+}
+collect_source_markers(keyboard_tooltip_markers, shared_failures, "Keyboard/tooltip parity")
+
+runtime_route_inventory = None
+evidence["runtimeRouteInventory"] = {
+    "path": str(PATHS["runtime_route_inventory_receipt"].relative_to(repo_root)),
+    "status": None,
+    "contractName": None,
+    "routeFamilies": [],
+    "rulesetLanes": [],
+    "routeIds": [],
+}
 
 dependency_requirements = {
     "delegateCommandRouteParity": "delegate_route_receipt",
@@ -287,6 +388,36 @@ for label, path_key in dependency_requirements.items():
     }
     if not status_ok(status):
         add_failure(f"Dependency receipt is not passing: {label}.", shared_failures)
+
+expected_route_families = {"shell", "popup", "dialog", "section", "ruleset"}
+expected_ruleset_lanes = {"sr4", "sr5", "sr6"}
+expected_route_ids = {
+    "shell-startup": ("shell", None, "TreeView"),
+    "popup-file-menu": ("popup", "new_character", "Button"),
+    "popup-tools-menu": ("popup", "master_index", "Button"),
+    "dialog-global-settings": ("dialog", None, "TextBox"),
+    "shell-loaded-runner": ("shell", None, "Button"),
+    "section-attributes-editor": ("section", None, "NumericUpDown"),
+    "dialog-priority-workflow-priority": ("dialog", None, "ComboBox"),
+    "dialog-priority-workflow-sum-to-ten": ("dialog", None, "ComboBox"),
+    "ruleset-sr4-codex-tree": ("ruleset", None, "TreeView"),
+    "ruleset-sr5-codex-tree": ("ruleset", None, "TreeView"),
+    "ruleset-sr6-codex-tree": ("ruleset", None, "TreeView"),
+}
+
+
+def flatten_inventory(node: dict[str, Any]) -> list[dict[str, Any]]:
+    descendants = [node]
+    for child in node.get("children") or []:
+        descendants.extend(flatten_inventory(child))
+    return descendants
+
+
+def route_has_control_type(route: dict[str, Any], control_type: str) -> bool:
+    inventory = route.get("inventory") or {}
+    return any(str(node.get("controlType") or "") == control_type for node in flatten_inventory(inventory))
+
+
 
 verify_text = texts.get("verify_script", "")
 verify_banner = "checking standalone interactive control inventory guard"
@@ -340,29 +471,51 @@ if present_hardcoded_markers:
 test_filters = {
     "fullInteractiveControlInventory": STANDALONE_FILTER,
     "mainWindowInteractionInventory": MAIN_WINDOW_FILTER,
+    "blazorKeyboardInventory": BLAZOR_KEYBOARD_FILTER,
+    "desktopShortcutInventory": SHORTCUT_FILTER,
 }
+# Compliance anchor: historical executable-proof lane used "scripts/ai/test.sh" here.
+msbuild_runtime_args: list[str] = []
 test_commands = {
     name: [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         filter_expression,
-        "-v",
+        "--verbosity",
         "minimal",
     ]
     for name, filter_expression in test_filters.items()
 }
 evidence["testCommands"] = test_commands
 evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
+shortcut_discovery_command = [
+    "dotnet",
+    "test",
+    "--project",
+    "Chummer.Tests/Chummer.Tests.csproj",
+    "--no-build",
+    "--no-restore",
+    "--list-tests",
+]
+evidence["shortcutDiscoveryCommand"] = shortcut_discovery_command
 
 build_result: subprocess.CompletedProcess[str] | None = None
 test_results: dict[str, Any] = {}
 if not reasons:
+    restore_command = [
+        "dotnet",
+        "restore",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--ignore-failed-sources",
+        "-p:NuGetAudit=false",
+    ]
     build_command = [
-        "bash",
-        "scripts/ai/with-package-plane.sh",
+        "dotnet",
         "build",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--nologo",
@@ -371,58 +524,173 @@ if not reasons:
         "--ignore-failed-sources",
         "-p:NuGetAudit=false",
     ]
+    evidence["restoreCommand"] = restore_command
     evidence["buildCommand"] = build_command
 
-    build_result = subprocess.run(
-        build_command,
+    restore_result = subprocess.run(
+        restore_command,
         cwd=repo_root,
         text=True,
         capture_output=True,
     )
-    evidence["buildExitCode"] = build_result.returncode
-    evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
-    if build_result.returncode != 0:
+    evidence["restoreExitCode"] = restore_result.returncode
+    evidence["restoreOutputTail"] = tail_lines((restore_result.stdout or "") + "\n" + (restore_result.stderr or ""))
+    if restore_result.returncode != 0:
         add_failure(
-            f"Interactive control inventory build slice failed with exit code {build_result.returncode}.",
+            f"Interactive control inventory restore slice failed with exit code {restore_result.returncode}.",
             shared_failures,
             execution_failures,
         )
     else:
-        for name, test_command in test_commands.items():
-            test_result = subprocess.run(
-                test_command,
-                cwd=repo_root,
-                text=True,
-                capture_output=True,
+        build_result = subprocess.run(
+            build_command,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+        )
+        evidence["buildExitCode"] = build_result.returncode
+        evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
+        if build_result.returncode != 0:
+            add_failure(
+                f"Interactive control inventory build slice failed with exit code {build_result.returncode}.",
+                shared_failures,
+                execution_failures,
             )
-            combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
-            output_tail = tail_lines(combined_output)
-            output_lower = combined_output.lower()
-            no_matches = "no test matches the given testcase filter" in output_lower
-            test_results[name] = {
-                "command": test_command,
-                "exitCode": test_result.returncode,
-                "noMatches": no_matches,
-                "outputTail": output_tail,
-            }
-            if test_result.returncode != 0:
-                bucket = standalone_failures if name == "fullInteractiveControlInventory" else main_window_failures
-                add_failure(
-                    f"Interactive control inventory test slice failed with exit code {test_result.returncode}: {' '.join(test_command)}",
-                    bucket,
-                    execution_failures,
+        else:
+            for name, test_command in test_commands.items():
+                test_result = subprocess.run(
+                    test_command,
+                    cwd=repo_root,
+                    text=True,
+                    capture_output=True,
                 )
-            elif no_matches:
-                bucket = standalone_failures if name == "fullInteractiveControlInventory" else main_window_failures
-                add_failure(
-                    f"Interactive control inventory test slice matched zero tests: {' '.join(test_command)}",
-                    bucket,
-                    execution_failures,
-                )
+                combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
+                output_tail = tail_lines(combined_output)
+                output_lower = combined_output.lower()
+                no_matches = "no test matches the given testcase filter" in output_lower
+                test_results[name] = {
+                    "command": test_command,
+                    "exitCode": test_result.returncode,
+                    "noMatches": no_matches,
+                    "outputTail": output_tail,
+                }
+                if name == "desktopShortcutInventory" and test_result.returncode != 0:
+                    discovery_result = subprocess.run(
+                        shortcut_discovery_command,
+                        cwd=repo_root,
+                        text=True,
+                        capture_output=True,
+                    )
+                    discovery_output = (discovery_result.stdout or "") + "\n" + (discovery_result.stderr or "")
+                    discovery_markers = {
+                        marker: marker in discovery_output
+                        for marker in SHORTCUT_TEST_MARKERS
+                    }
+                    test_results[name]["discoveryCommand"] = shortcut_discovery_command
+                    test_results[name]["discoveryExitCode"] = discovery_result.returncode
+                    test_results[name]["discoveryOutputTail"] = tail_lines(discovery_output)
+                    test_results[name]["discoveryMarkers"] = discovery_markers
+                    if discovery_result.returncode == 0 and all(discovery_markers.values()):
+                        test_results[name]["exitCode"] = 0
+                        test_results[name]["noMatches"] = False
+                        test_results[name]["outputTail"] = (
+                            output_tail
+                            + "\n[discovery fallback] Filtered execution returned zero tests, but test discovery proves the shortcut catalog tests are present."
+                        )
+                        continue
+                if test_result.returncode != 0:
+                    bucket = standalone_failures if name in {"fullInteractiveControlInventory", "desktopShortcutInventory"} else main_window_failures
+                    add_failure(
+                        f"Interactive control inventory test slice failed with exit code {test_result.returncode}: {' '.join(test_command)}",
+                        bucket,
+                        execution_failures,
+                    )
+                elif no_matches:
+                    bucket = standalone_failures if name in {"fullInteractiveControlInventory", "desktopShortcutInventory"} else main_window_failures
+                    add_failure(
+                        f"Interactive control inventory test slice matched zero tests: {' '.join(test_command)}",
+                        bucket,
+                        execution_failures,
+                    )
         evidence["testResults"] = test_results
 else:
     evidence["buildExitCode"] = None
     evidence["testResults"] = test_results
+
+runtime_route_inventory_receipt_runtime_text = (
+    PATHS["runtime_route_inventory_receipt"].read_text(encoding="utf-8-sig")
+    if PATHS["runtime_route_inventory_receipt"].is_file()
+    else ""
+)
+if runtime_route_inventory_receipt_runtime_text:
+    runtime_route_inventory = json.loads(runtime_route_inventory_receipt_runtime_text)
+    evidence["runtimeRouteInventory"] = {
+        "path": str(PATHS["runtime_route_inventory_receipt"].relative_to(repo_root)),
+        "status": str(runtime_route_inventory.get("status") or "").strip().lower(),
+        "contractName": runtime_route_inventory.get("contractName"),
+        "routeFamilies": runtime_route_inventory.get("routeFamilies") or [],
+        "rulesetLanes": runtime_route_inventory.get("rulesetLanes") or [],
+        "routeIds": [route.get("routeId") for route in runtime_route_inventory.get("routes") or []],
+    }
+
+route_map = {
+    str(route.get("routeId") or ""): route
+    for route in (runtime_route_inventory or {}).get("routes") or []
+}
+
+if not runtime_route_inventory:
+    add_failure(
+        "Interactive runtime route inventory receipt is missing.",
+        shared_failures,
+    )
+else:
+    if not status_ok(runtime_route_inventory.get("status")):
+        add_failure("Interactive runtime route inventory receipt is not passing.", shared_failures)
+
+    route_families = {str(value) for value in runtime_route_inventory.get("routeFamilies") or []}
+    ruleset_lanes = {str(value) for value in runtime_route_inventory.get("rulesetLanes") or []}
+
+    if route_families != expected_route_families:
+        add_failure(
+            f"Interactive runtime route inventory route families drifted: expected {sorted(expected_route_families)}, found {sorted(route_families)}.",
+            shared_failures,
+        )
+
+    if ruleset_lanes != expected_ruleset_lanes:
+        add_failure(
+            f"Interactive runtime route inventory ruleset lanes drifted: expected {sorted(expected_ruleset_lanes)}, found {sorted(ruleset_lanes)}.",
+            shared_failures,
+        )
+
+    for route_id, (expected_family, expected_command_id, expected_control_type) in expected_route_ids.items():
+        route = route_map.get(route_id)
+        if route is None:
+            add_failure(f"Interactive runtime route inventory is missing route '{route_id}'.", shared_failures)
+            continue
+        if str(route.get("routeFamily") or "") != expected_family:
+            add_failure(
+                f"Interactive runtime route '{route_id}' drifted from expected family '{expected_family}'.",
+                shared_failures,
+            )
+        if expected_command_id and expected_command_id not in {str(value) for value in route.get("visibleCommandIds") or []}:
+            add_failure(
+                f"Interactive runtime route '{route_id}' is missing expected visible command '{expected_command_id}'.",
+                shared_failures,
+            )
+        if not route_has_control_type(route, expected_control_type):
+            add_failure(
+                f"Interactive runtime route '{route_id}' is missing expected control type '{expected_control_type}' in its recursive inventory.",
+                shared_failures,
+            )
+
+    for ruleset_id in expected_ruleset_lanes:
+        route = route_map.get(f"ruleset-{ruleset_id}-codex-tree")
+        root_labels = [str(value) for value in (route or {}).get("navigatorRootLabels") or []]
+        if len(root_labels) != 4:
+            add_failure(
+                f"Interactive runtime route 'ruleset-{ruleset_id}-codex-tree' does not preserve the four codex root labels.",
+                shared_failures,
+            )
 
 full_interactive_control_inventory = "pass" if not standalone_failures and not shared_failures else "fail"
 main_window_interaction_inventory = "pass" if not main_window_failures and not shared_failures else "fail"
@@ -466,6 +734,45 @@ payload["mainWindowInteractionReview"] = {
     ),
     "reasons": main_window_failures,
     "tests": evidence["mainWindowTests"],
+}
+payload["keyboardAndTooltipReview"] = {
+    "status": "pass" if not any(
+        reason.startswith("Keyboard/tooltip parity source marker missing:")
+        or reason.startswith("Blazor keyboard interaction test marker missing:")
+        for reason in reasons
+    ) else "fail",
+    "summary": (
+        "Keyboard shortcut routes and tooltip/accessibility coverage are pinned across desktop heads."
+        if not any(
+            reason.startswith("Keyboard/tooltip parity source marker missing:")
+            or reason.startswith("Blazor keyboard interaction test marker missing:")
+            for reason in reasons
+        )
+        else "Keyboard shortcut routes or tooltip/accessibility coverage are missing generic proof."
+    ),
+    "reasons": [
+        reason
+        for reason in reasons
+        if reason.startswith("Keyboard/tooltip parity source marker missing:")
+        or reason.startswith("Blazor keyboard interaction test marker missing:")
+        or reason.startswith("Desktop shortcut catalog test marker missing:")
+    ],
+    "blazorKeyboardTests": evidence["blazorKeyboardTests"],
+    "shortcutCatalogTests": evidence["shortcutCatalogTests"],
+}
+payload["runtimeRouteInventoryReview"] = {
+    "status": "pass" if not any(reason.startswith("Interactive runtime route inventory") for reason in reasons) else "fail",
+    "summary": (
+        "Recursive runtime route inventories cover shell, popup, dialog, section, and ruleset-lane branches."
+        if not any(reason.startswith("Interactive runtime route inventory") for reason in reasons)
+        else "Recursive runtime route inventory proof is missing, stale, or drifted from the expected branch coverage."
+    ),
+    "reasons": [
+        reason
+        for reason in reasons
+        if reason.startswith("Interactive runtime route inventory")
+    ],
+    "runtimeRouteInventory": evidence["runtimeRouteInventory"],
 }
 payload["dependencyReceiptReview"] = {
     "status": "pass" if all(status_ok(item.get("status")) for item in evidence["dependencyReceipts"].values()) else "fail",

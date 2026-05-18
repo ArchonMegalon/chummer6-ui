@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T14:50:38.576667Z",
+  "generatedAt": "2026-05-17T19:52:27.642392Z",
   "contract_name": "chummer6-ui.generated_dialog_element_parity",
   "status": "pass",
   "summary": "Generated dialog command/control inventories are locked, exhaustively shape-tested, and wired into standard verification.",
@@ -9,8 +9,11 @@
     "sourcePaths": {
       "dialog_factory": "Chummer.Presentation/Overview/DesktopDialogFactory.cs",
       "control_catalog": "Chummer.Presentation/Overview/LegacyUiControlCatalog.cs",
+      "dialog_window": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
       "factory_tests": "Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs",
       "presenter_tests": "Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs",
+      "workflow_tests": "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
+      "flagship_ui_tests": "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
       "verify_script": "scripts/ai/verify.sh",
       "m103_receipt": ".codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json"
     },
@@ -96,6 +99,7 @@
     "expectedRebuildableDialogIds": [
       "dialog.global_settings",
       "dialog.new_character",
+      "dialog.new_character.priority_workflow",
       "dialog.dice_roller",
       "dialog.character_roster",
       "dialog.master_index",
@@ -111,16 +115,140 @@
     "factoryTests": {
       "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions": true,
       "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions": true,
-      "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions": true
+      "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions": true,
+      "BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields": true,
+      "RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices": true
     },
     "presenterTests": {
       "ExecuteCommandAsync_all_catalog_commands_are_handled": true,
       "HandleUiControlAsync_all_catalog_controls_are_non_generic": true
     },
+    "workflowTests": {
+      "Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode": true,
+      "Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total": true,
+      "Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field": true,
+      "Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state": true,
+      "Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit": true,
+      "Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates": true
+    },
+    "flagshipUiTests": {
+      "Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls": true
+    },
+    "priorityWorkflowMarkers": {
+      "dialog_factory_priority_id": {
+        "marker": "dialog.new_character.priority_workflow",
+        "found": true
+      },
+      "dialog_factory_runtime_state_field": {
+        "marker": "newCharacterPriorityWorkflowState",
+        "found": true
+      },
+      "dialog_factory_can_commit_field": {
+        "marker": "newCharacterPriorityWorkflowCanCommit",
+        "found": true
+      },
+      "avalonia_priority_special_case": {
+        "marker": "string.Equals(BoundDialogId, \"dialog.new_character.priority_workflow\", StringComparison.Ordinal)",
+        "found": true
+      },
+      "avalonia_priority_pane": {
+        "marker": "CreateLegacyPriorityWorkflowPane(",
+        "found": true
+      },
+      "avalonia_select_combobox_selectionchanged": {
+        "marker": "comboBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "avalonia_select_listbox_selectionchanged": {
+        "marker": "listBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "avalonia_priority_metatype_doubletap_commit": {
+        "marker": "metatypeList.DoubleTapped += async (_, _) =>",
+        "found": true
+      },
+      "dialog_factory_priority_last_changed_field": {
+        "marker": "newCharacterPriorityLastChangedFieldId",
+        "found": true
+      },
+      "dialog_factory_priority_reconcile": {
+        "marker": "ReconcilePriorityLetters(",
+        "found": true
+      },
+      "dialog_factory_priority_skill_choices": {
+        "marker": "BuildPrioritySkillChoiceStates(",
+        "found": true
+      }
+    },
+    "interactiveControlMarkers": {
+      "generic_select_widget_class": {
+        "marker": "ComboBox comboBox = new()",
+        "found": true
+      },
+      "generic_select_selectionchanged": {
+        "marker": "comboBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_list_widget_class": {
+        "marker": "ListBox listBox = new()",
+        "found": true
+      },
+      "generic_list_selectionchanged": {
+        "marker": "listBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_tree_selectionchanged": {
+        "marker": "treeView.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_checkbox_widget_class": {
+        "marker": "CheckBox checkBox = new()",
+        "found": true
+      },
+      "generic_checkbox_checkedchanged": {
+        "marker": "checkBox.IsCheckedChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_textbox_widget_class": {
+        "marker": "TextBox textBox = new()",
+        "found": true
+      },
+      "generic_textbox_textchanged": {
+        "marker": "textBox.TextChanged += (_, _) =>",
+        "found": true
+      }
+    },
+    "interactiveBuilderContracts": {
+      "BuildSelectComboBox": {
+        "private ComboBox BuildSelectComboBox(": true,
+        "ComboBox comboBox = new()": true,
+        "comboBox.SelectionChanged += (_, _) =>": true
+      },
+      "BuildSelectListBox": {
+        "private ListBox BuildSelectListBox(": true,
+        "ListBox listBox = new()": true,
+        "listBox.SelectionChanged += (_, _) =>": true
+      },
+      "BuildRosterTree": {
+        "private TreeView BuildRosterTree(": true,
+        "TreeView treeView = new()": true,
+        "treeView.SelectionChanged += (_, _) =>": true
+      },
+      "BuildLegacyInlineCheckBox": {
+        "private CheckBox BuildLegacyInlineCheckBox(": true,
+        "CheckBox checkBox = new()": true,
+        "checkBox.IsCheckedChanged += (_, _) =>": true
+      },
+      "BuildLegacyInlineTextBox": {
+        "private TextBox BuildLegacyInlineTextBox(": true,
+        "TextBox textBox = new()": true,
+        "textBox.TextChanged += (_, _) =>": true
+      }
+    },
     "m103DialogEvidence": {
-      "auditedDialogSurfaceCount": 9,
-      "auditedDialogFieldCount": 116,
-      "auditedDialogActionControlCount": 32
+      "auditedDialogSurfaceCount": 3,
+      "auditedDialogFieldCount": 28,
+      "auditedDialogActionControlCount": 7
     },
     "missingFiles": [],
     "commandIdsFound": [
@@ -207,6 +335,7 @@
     "rebuildableDialogIdsFound": [
       "dialog.global_settings",
       "dialog.new_character",
+      "dialog.new_character.priority_workflow",
       "dialog.dice_roller",
       "dialog.character_roster",
       "dialog.master_index",
@@ -219,63 +348,422 @@
       "dialog.ui.gear_edit",
       "dialog.ui.vehicle_edit"
     ],
-    "rebuildableDialogCount": 13,
+    "rebuildableDialogCount": 14,
     "wiredIntoStandardVerify": true,
     "verifyMarker": "checking generated dialog element parity guard",
     "verifyInvocation": "bash scripts/ai/milestones/generated-dialog-element-parity-check.sh",
     "testCommands": [
       [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         "Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
-        "-v",
+        "--verbosity",
         "minimal"
       ],
       [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         "Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
-        "-v",
+        "--verbosity",
         "minimal"
       ],
       [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         "Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-        "-v",
+        "--verbosity",
         "minimal"
       ],
       [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
-        "-v",
+        "--verbosity",
         "minimal"
       ],
       [
-        "bash",
-        "scripts/ai/test.sh",
+        "dotnet",
+        "test",
+        "--project",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--no-build",
+        "--no-restore",
         "--filter",
         "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
-        "-v",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
+        "--verbosity",
+        "minimal"
+      ],
+      [
+        "dotnet",
+        "test",
+        "--project",
+        "Chummer.Tests/Chummer.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "Name~Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
+        "--verbosity",
         "minimal"
       ]
     ],
     "testProject": "Chummer.Tests/Chummer.Tests.csproj",
+    "buildExitCode": 0,
+    "testResults": [
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (770ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 084ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (804ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 131ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (785ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 136ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (747ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 085ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (764ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 146ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (602ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 918ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (846ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 196ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 091ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 502ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 022ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 434ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 037ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 398ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (954ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 307ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (928ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 233ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (925ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 214ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 780ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 091ms"
+      }
+    ],
     "buildCommand": [
       "bash",
       "scripts/ai/with-package-plane.sh",
@@ -287,85 +775,7 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildExitCode": 0,
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:09.03",
-    "testResults": [
-      {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 163 ms - Chummer.Tests.dll (net10.0)"
-      },
-      {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 78 ms - Chummer.Tests.dll (net10.0)"
-      },
-      {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 184 ms - Chummer.Tests.dll (net10.0)"
-      },
-      {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 202 ms - Chummer.Tests.dll (net10.0)"
-      },
-      {
-        "command": [
-          "bash",
-          "scripts/ai/test.sh",
-          "Chummer.Tests/Chummer.Tests.csproj",
-          "--no-build",
-          "--filter",
-          "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
-          "-v",
-          "minimal"
-        ],
-        "exitCode": 0,
-        "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 81 ms - Chummer.Tests.dll (net10.0)"
-      }
-    ],
+    "buildOutputTail": "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:16.21",
     "failureCount": 0,
     "reasonCount": 0
   },
@@ -461,6 +871,7 @@
     "rebuildableDialogIdsFound": [
       "dialog.global_settings",
       "dialog.new_character",
+      "dialog.new_character.priority_workflow",
       "dialog.dice_roller",
       "dialog.character_roster",
       "dialog.master_index",
@@ -476,16 +887,155 @@
   },
   "testMarkerReview": {
     "status": "pass",
-    "summary": "Generated-dialog factory and presenter test markers are pinned.",
+    "summary": "Generated-dialog factory, presenter, workflow, and flagship UI test markers are pinned.",
     "reasons": [],
     "factoryTests": {
       "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions": true,
       "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions": true,
-      "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions": true
+      "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions": true,
+      "BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields": true,
+      "RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices": true
     },
     "presenterTests": {
       "ExecuteCommandAsync_all_catalog_commands_are_handled": true,
       "HandleUiControlAsync_all_catalog_controls_are_non_generic": true
+    },
+    "workflowTests": {
+      "Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode": true,
+      "Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total": true,
+      "Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field": true,
+      "Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state": true,
+      "Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit": true,
+      "Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates": true
+    },
+    "flagshipUiTests": {
+      "Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls": true
+    }
+  },
+  "priorityWorkflowReview": {
+    "status": "pass",
+    "summary": "Priority workflow remains locked to a dedicated parity pane with hidden runtime-state fields.",
+    "reasons": [],
+    "priorityWorkflowMarkers": {
+      "dialog_factory_priority_id": {
+        "marker": "dialog.new_character.priority_workflow",
+        "found": true
+      },
+      "dialog_factory_runtime_state_field": {
+        "marker": "newCharacterPriorityWorkflowState",
+        "found": true
+      },
+      "dialog_factory_can_commit_field": {
+        "marker": "newCharacterPriorityWorkflowCanCommit",
+        "found": true
+      },
+      "avalonia_priority_special_case": {
+        "marker": "string.Equals(BoundDialogId, \"dialog.new_character.priority_workflow\", StringComparison.Ordinal)",
+        "found": true
+      },
+      "avalonia_priority_pane": {
+        "marker": "CreateLegacyPriorityWorkflowPane(",
+        "found": true
+      },
+      "avalonia_select_combobox_selectionchanged": {
+        "marker": "comboBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "avalonia_select_listbox_selectionchanged": {
+        "marker": "listBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "avalonia_priority_metatype_doubletap_commit": {
+        "marker": "metatypeList.DoubleTapped += async (_, _) =>",
+        "found": true
+      },
+      "dialog_factory_priority_last_changed_field": {
+        "marker": "newCharacterPriorityLastChangedFieldId",
+        "found": true
+      },
+      "dialog_factory_priority_reconcile": {
+        "marker": "ReconcilePriorityLetters(",
+        "found": true
+      },
+      "dialog_factory_priority_skill_choices": {
+        "marker": "BuildPrioritySkillChoiceStates(",
+        "found": true
+      }
+    }
+  },
+  "interactiveControlReview": {
+    "status": "pass",
+    "summary": "Generic generated-dialog control builders still expose the expected widget classes and handler hooks.",
+    "reasons": [],
+    "interactiveControlMarkers": {
+      "generic_select_widget_class": {
+        "marker": "ComboBox comboBox = new()",
+        "found": true
+      },
+      "generic_select_selectionchanged": {
+        "marker": "comboBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_list_widget_class": {
+        "marker": "ListBox listBox = new()",
+        "found": true
+      },
+      "generic_list_selectionchanged": {
+        "marker": "listBox.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_tree_selectionchanged": {
+        "marker": "treeView.SelectionChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_checkbox_widget_class": {
+        "marker": "CheckBox checkBox = new()",
+        "found": true
+      },
+      "generic_checkbox_checkedchanged": {
+        "marker": "checkBox.IsCheckedChanged += (_, _) =>",
+        "found": true
+      },
+      "generic_textbox_widget_class": {
+        "marker": "TextBox textBox = new()",
+        "found": true
+      },
+      "generic_textbox_textchanged": {
+        "marker": "textBox.TextChanged += (_, _) =>",
+        "found": true
+      }
+    }
+  },
+  "interactiveBuilderReview": {
+    "status": "pass",
+    "summary": "Generated-dialog builder methods still preserve widget class plus event-hook contracts.",
+    "reasons": [],
+    "interactiveBuilderContracts": {
+      "BuildSelectComboBox": {
+        "private ComboBox BuildSelectComboBox(": true,
+        "ComboBox comboBox = new()": true,
+        "comboBox.SelectionChanged += (_, _) =>": true
+      },
+      "BuildSelectListBox": {
+        "private ListBox BuildSelectListBox(": true,
+        "ListBox listBox = new()": true,
+        "listBox.SelectionChanged += (_, _) =>": true
+      },
+      "BuildRosterTree": {
+        "private TreeView BuildRosterTree(": true,
+        "TreeView treeView = new()": true,
+        "treeView.SelectionChanged += (_, _) =>": true
+      },
+      "BuildLegacyInlineCheckBox": {
+        "private CheckBox BuildLegacyInlineCheckBox(": true,
+        "CheckBox checkBox = new()": true,
+        "checkBox.IsCheckedChanged += (_, _) =>": true
+      },
+      "BuildLegacyInlineTextBox": {
+        "private TextBox BuildLegacyInlineTextBox(": true,
+        "TextBox textBox = new()": true,
+        "textBox.TextChanged += (_, _) =>": true
+      }
     }
   },
   "verifyWiringReview": {
@@ -501,9 +1051,9 @@
     "summary": "M103 screenshot evidence still covers generated dialog fields and actions.",
     "reasons": [],
     "m103DialogEvidence": {
-      "auditedDialogSurfaceCount": 9,
-      "auditedDialogFieldCount": 116,
-      "auditedDialogActionControlCount": 32
+      "auditedDialogSurfaceCount": 3,
+      "auditedDialogFieldCount": 28,
+      "auditedDialogActionControlCount": 7
     }
   },
   "executionReview": {
@@ -514,78 +1064,241 @@
     "testResults": [
       {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
           "Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
-          "-v",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 163 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (770ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 084ms"
       },
       {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
           "Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
-          "-v",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 78 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (804ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 131ms"
       },
       {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
           "Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
-          "-v",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 184 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (785ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 136ms"
       },
       {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
           "Name~ExecuteCommandAsync_all_catalog_commands_are_handled",
-          "-v",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 202 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (747ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 085ms"
       },
       {
         "command": [
-          "bash",
-          "scripts/ai/test.sh",
+          "dotnet",
+          "test",
+          "--project",
           "Chummer.Tests/Chummer.Tests.csproj",
           "--no-build",
+          "--no-restore",
           "--filter",
           "Name~HandleUiControlAsync_all_catalog_controls_are_non_generic",
-          "-v",
+          "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Test run for /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (.NETCoreApp,Version=v10.0)\nA total of 1 test files matched the specified pattern.\nPassed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 81 ms - Chummer.Tests.dll (net10.0)"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (764ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 146ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (602ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 918ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (846ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 196ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_duplicate_priority_selection_auto_reconciles_in_priority_mode",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 091ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 502ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Sum_to_ten_priority_workflow_preserves_duplicates_and_updates_live_total",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 022ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 434ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_each_priority_letter_combobox_selection_change_records_the_changed_field",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 037ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 398ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_category_metatype_and_metavariant_selection_changes_refresh_dependent_state",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (954ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 307ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_talent_priority_selection_rebuilds_talent_choice_options_before_commit",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (928ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 233ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Priority_workflow_talent_selection_materializes_skill_choices_and_repairs_duplicates",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (925ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 214ms"
+      },
+      {
+        "command": [
+          "dotnet",
+          "test",
+          "--project",
+          "Chummer.Tests/Chummer.Tests.csproj",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "Name~Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "noMatches": false,
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 780ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 091ms"
       }
     ]
   }

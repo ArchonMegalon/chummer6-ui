@@ -89,6 +89,9 @@ public sealed class SectionQuickActionCatalogTests
         new("contacts", ["contact_add"], ["Add Contact"]),
         new("skills", ["skill_add"], ["Add Skill"]),
         new("qualities", ["quality_add"], ["Add Quality"]),
+        new("progress", ["create_entry"], ["Add Entry"]),
+        new("calendar", ["create_entry"], ["Add Entry"]),
+        new("diary", ["create_entry"], ["Add Entry"]),
         new("profile", ["open_notes"], ["Open Notes"])
     ];
 
@@ -99,9 +102,7 @@ public sealed class SectionQuickActionCatalogTests
         "metamagics",
         "foci",
         "mentorspirits",
-        "calendar",
         "expenses",
-        "progress",
         "improvements",
         "build-lab",
         "rules",

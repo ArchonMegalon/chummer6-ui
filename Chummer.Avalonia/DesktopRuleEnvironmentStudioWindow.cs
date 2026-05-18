@@ -114,63 +114,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         }
     }
 
-    private string BuildLifecycleBody()
-        => _projection.LifecycleBody;
-
-    private string BuildDiffBody()
-        => _projection.DiffBody;
-
-    private string BuildReceiptBody()
-        => _projection.ReceiptBody;
-
-    private IReadOnlyList<Button> CreateLifecycleActions()
-        => [
-            CreateButton("Open Desktop Home", OpenDesktopHomeAsync, isPrimary: true),
-            CreateButton("Open My Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("personal"))),
-            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
-            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
-            CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
-        ];
-
-    private IReadOnlyList<Button> CreateDiffActions()
-        => string.IsNullOrWhiteSpace(_leadWorkspaceId)
-            ? [
-                CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync, isPrimary: true),
-                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
-                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public")))
-            ]
-            : [
-                CreateButton("Open Workspace", OpenLeadWorkspaceAsync, isPrimary: true),
-                CreateButton("Open Campaign Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("campaign"))),
-                CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
-                CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
-            ];
-
-    private IReadOnlyList<Button> CreateReceiptActions()
-        => [
-            CreateButton("Open Support", OpenSupportAsync, isPrimary: true),
-            CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))),
-            CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))),
-            CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync)
-        ];
-
-    private Task OpenDesktopHomeAsync()
-        => Owner is Window owner
-            ? DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)
-            : Task.CompletedTask;
-
-    private Task OpenSupportAsync()
-        => Owner is Window owner
-            ? DesktopSupportWindow.ShowAsync(owner, _installState.HeadId)
-            : Task.CompletedTask;
-
-    private Task OpenCampaignWorkspaceAsync()
-        // Keep the explicit "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)" anchor in-source for flagship signoff smoke coverage.
-        => Owner is Window owner
-            ? DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)
-            : Task.CompletedTask;
-
-    private async Task OpenLeadWorkspaceAsync()
+    private static async Task<RuleEnvironmentStudioProjection> ReadBuildExplainProjectionAsync(
+        IChummerClient client,
+        IReadOnlyList<WorkspaceListItem> workspaces)
     {
         string? rulesetId = workspaces.FirstOrDefault()?.RulesetId;
         string effectiveRulesetId = rulesetId ?? "unresolved";
@@ -191,7 +137,10 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                 : bootstrap.ActiveRulesetId;
             if (activeRuntime is not null)
             {
-                runtimeInspector = await client.GetRuntimeInspectorProfileAsync(activeRuntime.ProfileId, rulesetId ?? activeRuntime.RulesetId, CancellationToken.None).ConfigureAwait(false);
+                runtimeInspector = await client.GetRuntimeInspectorProfileAsync(
+                    activeRuntime.ProfileId,
+                    rulesetId ?? activeRuntime.RulesetId,
+                    CancellationToken.None).ConfigureAwait(false);
             }
         }
         catch
@@ -207,7 +156,11 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             WorkspaceListItem? workspace = workspaces.FirstOrDefault();
             if (suggestion is not null && workspace is not null)
             {
-                preview = await client.GetBuildPathPreviewAsync(suggestion.BuildKitId, workspace.Id, effectiveRulesetId, CancellationToken.None).ConfigureAwait(false);
+                preview = await client.GetBuildPathPreviewAsync(
+                    suggestion.BuildKitId,
+                    workspace.Id,
+                    effectiveRulesetId,
+                    CancellationToken.None).ConfigureAwait(false);
             }
         }
         catch
@@ -294,7 +247,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             [
                 $"Explain receipts: {_projection.ReceiptSummary}",
                 $"Rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
-                $"Explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(receipt)}",
+                "Explain receipt: " + DesktopTrustReceiptText.BuildImportExplainReceipt(receipt),
                 $"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
             ]);
     }

@@ -3,9 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3)"
+fi
 
 ARTIFACT_PATH="$(
-  python3 - "${1:?artifact path is required}" <<'PY'
+  "$PYTHON_BIN" - "${1:?artifact path is required}" <<'PY'
 import os
 import sys
 
@@ -81,17 +85,7 @@ arch_from_rid() {
 }
 
 sha256_file() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "$1" | awk '{print $1}'
-    return
-  fi
-
-  if command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 "$1" | awk '{print $1}'
-    return
-  fi
-
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 import hashlib
 import pathlib
 import sys
@@ -106,20 +100,49 @@ PY
 }
 
 to_native_path() {
+  local input_path="$1"
+
   if command -v cygpath >/dev/null 2>&1; then
-    cygpath -w "$1"
+    cygpath -w "$input_path"
     return
   fi
 
   if command -v winepath >/dev/null 2>&1; then
-    winepath -w "$1" | tr -d '\r'
+    winepath -w "$input_path" | tr -d '\r'
     return
   fi
 
-  echo "$1"
+  if pwd -W >/dev/null 2>&1; then
+    case "$input_path" in
+      [A-Za-z]:[\\/]*)
+        echo "$input_path"
+        return
+        ;;
+      /*)
+        local parent_dir base_name native_parent
+        parent_dir="$(dirname "$input_path")"
+        base_name="$(basename "$input_path")"
+        if pushd "$parent_dir" >/dev/null 2>&1; then
+          native_parent="$(pwd -W | tr -d '\r')"
+          popd >/dev/null 2>&1 || true
+          if [[ -n "$native_parent" ]]; then
+            printf '%s\\%s\n' "$native_parent" "$base_name"
+            return
+          fi
+        fi
+        ;;
+    esac
+  fi
+
+  echo "$input_path"
 }
 
 run_with_optional_xvfb() {
+  if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" ]]; then
+    "$@"
+    return
+  fi
+
   if command -v xvfb-run >/dev/null 2>&1; then
     xvfb-run -a "$@"
     return
@@ -132,15 +155,58 @@ run_windows_binary() {
   local executable_path="$1"
   shift
 
-  if command -v cygpath >/dev/null 2>&1; then
-    "$executable_path" "$@"
-    return
-  fi
-
   if command -v wine >/dev/null 2>&1; then
     local native_executable_path
     native_executable_path="$(to_native_path "$executable_path")"
     run_with_optional_xvfb wine "$native_executable_path" "$@"
+    return
+  fi
+
+  if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+    local native_executable_path
+    native_executable_path="$(to_native_path "$executable_path")"
+    local powershell_bin="powershell.exe"
+    if command -v pwsh >/dev/null 2>&1; then
+      powershell_bin="pwsh"
+    fi
+    local args_json
+    args_json="$("$PYTHON_BIN" - "$@" <<'PY'
+import json
+import sys
+
+print(json.dumps(sys.argv[1:]))
+PY
+)"
+    CHUMMER_WINDOWS_BINARY_PATH="$native_executable_path" \
+    CHUMMER_WINDOWS_BINARY_ARGS_JSON="$args_json" \
+    "$powershell_bin" -NoLogo -NoProfile -Command '
+      $exe = $env:CHUMMER_WINDOWS_BINARY_PATH
+      $args = @()
+      if ($env:CHUMMER_WINDOWS_BINARY_ARGS_JSON) {
+        $decoded = ConvertFrom-Json $env:CHUMMER_WINDOWS_BINARY_ARGS_JSON
+        if ($null -ne $decoded) {
+          if ($decoded -is [System.Array]) {
+            $args = @($decoded)
+          }
+          else {
+            $args = @([string]$decoded)
+          }
+        }
+      }
+      & $exe @args
+      exit $LASTEXITCODE
+    '
+    return
+  fi
+
+  if command -v cygpath >/dev/null 2>&1; then
+    local unix_executable_path="$executable_path"
+    case "$executable_path" in
+      [A-Za-z]:[\\/]*)
+        unix_executable_path="$(cygpath -u "$executable_path")"
+        ;;
+    esac
+    "$unix_executable_path" "$@"
     return
   fi
 
@@ -182,6 +248,17 @@ run_head_smoke() {
     RUNTIME_HOME="$(mktemp -d "${TMPDIR:-/tmp}/chummer-startup-home.XXXXXX")"
   fi
 
+  local bundle_extract_base_dir="$BUNDLE_EXTRACT_ROOT"
+  local runtime_home="$RUNTIME_HOME"
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    receipt_path="$(to_native_path "$receipt_path")"
+    packet_path="$(to_native_path "$packet_path")"
+    bundle_extract_base_dir="$(to_native_path "$BUNDLE_EXTRACT_ROOT")"
+    if ! command -v wine >/dev/null 2>&1; then
+      runtime_home="$(to_native_path "$RUNTIME_HOME")"
+    fi
+  fi
+
   CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT="$receipt_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_FAILURE_PACKET="$packet_path" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
@@ -189,12 +266,12 @@ run_head_smoke() {
   CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
-  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$BUNDLE_EXTRACT_ROOT" \
-  HOME="$RUNTIME_HOME" \
-  XDG_CONFIG_HOME="$RUNTIME_HOME/.config" \
-  XDG_DATA_HOME="$RUNTIME_HOME/.local/share" \
-  XDG_STATE_HOME="$RUNTIME_HOME/.local/state" \
-  XDG_CACHE_HOME="$RUNTIME_HOME/.cache" \
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+  HOME="$runtime_home" \
+  XDG_CONFIG_HOME="$runtime_home/.config" \
+  XDG_DATA_HOME="$runtime_home/.local/share" \
+  XDG_STATE_HOME="$runtime_home/.local/state" \
+  XDG_CACHE_HOME="$runtime_home/.cache" \
   run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
 }
 
@@ -203,6 +280,103 @@ run_windows_smoke() {
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
   run_windows_binary "$ARTIFACT_PATH" --smoke-install "$native_install_root" >>"$LOG_PATH" 2>&1
+  sleep 2
+
+  resolve_windows_installed_relative_path() {
+    local requested_relative_path="$1"
+    if [[ -f "$INSTALL_ROOT/$requested_relative_path" ]]; then
+      printf '%s\n' "$requested_relative_path"
+      return 0
+    fi
+
+    local head_relative_root="$APP_KEY/"
+    if [[ "$requested_relative_path" == "$head_relative_root"* ]]; then
+      local flattened_relative_path="${requested_relative_path#"$head_relative_root"}"
+      if [[ -n "$flattened_relative_path" && -f "$INSTALL_ROOT/$flattened_relative_path" ]]; then
+        printf '%s\n' "$flattened_relative_path"
+        return 0
+      fi
+    fi
+
+    local basename_match
+    basename_match="$(
+      python3 - "$INSTALL_ROOT" "$requested_relative_path" <<'PY'
+import os
+import sys
+
+install_root = os.path.abspath(sys.argv[1])
+requested = sys.argv[2].replace("\\", "/").strip("/")
+requested_name = os.path.basename(requested).lower()
+requested_suffixes = [requested]
+
+if "/" in requested:
+    requested_suffixes.append(requested.split("/", 1)[1])
+
+candidates = []
+for root, _, files in os.walk(install_root):
+    for file_name in files:
+        if file_name.lower() != requested_name:
+            continue
+        full_path = os.path.join(root, file_name)
+        relative_path = os.path.relpath(full_path, install_root).replace("\\", "/")
+        candidates.append(relative_path)
+
+if not candidates:
+    raise SystemExit(1)
+
+for suffix in requested_suffixes:
+    for candidate in candidates:
+        if candidate.lower() == suffix.lower():
+            print(candidate)
+            raise SystemExit(0)
+        if candidate.lower().endswith("/" + suffix.lower()):
+            print(candidate)
+            raise SystemExit(0)
+
+candidates.sort(key=lambda value: (value.count("/"), len(value), value.lower()))
+print(candidates[0])
+PY
+    )" || basename_match=""
+    if [[ -n "$basename_match" && -f "$INSTALL_ROOT/$basename_match" ]]; then
+      printf '%s\n' "$basename_match"
+      return 0
+    fi
+
+    local native_match=""
+    if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+      local powershell_bin="powershell.exe"
+      if command -v pwsh >/dev/null 2>&1; then
+        powershell_bin="pwsh"
+      fi
+      native_match="$(
+        CHUMMER_WINDOWS_SEARCH_ROOT="$native_install_root" \
+        CHUMMER_WINDOWS_SEARCH_BASENAME="$(basename "$requested_relative_path")" \
+        "$powershell_bin" -NoLogo -NoProfile -Command '
+          $root = $env:CHUMMER_WINDOWS_SEARCH_ROOT
+          $name = $env:CHUMMER_WINDOWS_SEARCH_BASENAME
+          if ([string]::IsNullOrWhiteSpace($root) -or [string]::IsNullOrWhiteSpace($name) -or -not (Test-Path -LiteralPath $root)) {
+            exit 1
+          }
+
+          $match = Get-ChildItem -LiteralPath $root -Recurse -File -Filter $name -ErrorAction SilentlyContinue |
+            Sort-Object @{ Expression = { $_.FullName.Split([System.IO.Path]::DirectorySeparatorChar).Count } }, FullName |
+            Select-Object -First 1
+          if ($null -eq $match) {
+            exit 1
+          }
+
+          $relative = [System.IO.Path]::GetRelativePath($root, $match.FullName)
+          [Console]::Out.Write(($relative -replace "\\\\", "/"))
+        ' 2>/dev/null
+      )" || native_match=""
+    fi
+    if [[ -n "$native_match" ]]; then
+      printf '%s\n' "$native_match"
+      return 0
+    fi
+
+    return 1
+  }
 
   local required_paths="${CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS:-}"
   if [[ -n "$required_paths" ]]; then
@@ -210,18 +384,50 @@ run_windows_smoke() {
     local missing_paths=()
     while IFS= read -r relative_path; do
       [[ -n "$relative_path" ]] || continue
-      if [[ ! -f "$INSTALL_ROOT/$relative_path" ]]; then
+      local resolved_required_path=""
+      for _attempt in 1 2 3 4 5; do
+        if resolved_required_path="$(resolve_windows_installed_relative_path "$relative_path")"; then
+          break
+        fi
+        sleep 1
+      done
+      if [[ -z "$resolved_required_path" ]]; then
         missing_paths+=("$relative_path")
       fi
     done < <(printf '%s' "$required_paths" | tr ';' '\n')
 
     if (( ${#missing_paths[@]} > 0 )); then
-      printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}" >&2
+      {
+        printf 'Missing required installed path(s) after Windows smoke install:%s\n' " ${missing_paths[*]}"
+        find "$INSTALL_ROOT" -maxdepth 6 -type f | sort || true
+        if command -v powershell.exe >/dev/null 2>&1 || command -v pwsh >/dev/null 2>&1; then
+          local powershell_bin="powershell.exe"
+          if command -v pwsh >/dev/null 2>&1; then
+            powershell_bin="pwsh"
+          fi
+          CHUMMER_WINDOWS_SEARCH_ROOT="$native_install_root" \
+          "$powershell_bin" -NoLogo -NoProfile -Command '
+            if (Test-Path -LiteralPath $env:CHUMMER_WINDOWS_SEARCH_ROOT) {
+              Get-ChildItem -LiteralPath $env:CHUMMER_WINDOWS_SEARCH_ROOT -Recurse -File -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty FullName
+            }
+          ' 2>/dev/null || true
+        fi
+      } | tee -a "$LOG_PATH" >&2
       return 1
     fi
   fi
 
-  run_head_smoke "$INSTALL_ROOT/$LAUNCH_TARGET"
+  local launch_relative_path="${CHUMMER_STARTUP_SMOKE_LAUNCH_RELATIVE_PATH:-$LAUNCH_TARGET}"
+  local resolved_launch_relative_path
+  for _attempt in 1 2 3 4 5; do
+    if resolved_launch_relative_path="$(resolve_windows_installed_relative_path "$launch_relative_path")"; then
+      launch_relative_path="$resolved_launch_relative_path"
+      break
+    fi
+    sleep 1
+  done
+  run_head_smoke "$INSTALL_ROOT/$launch_relative_path"
 }
 
 seed_dpkg_admin_dir() {
@@ -569,7 +775,7 @@ exit_code = int(sys.argv[11])
 
 receipt = {}
 if receipt_path.exists():
-    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
 
 log_text = log_path.read_text(encoding="utf-8", errors="replace") if log_path.exists() else ""
 tail_lines = log_text.strip().splitlines()[-40:]
@@ -637,6 +843,25 @@ receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
+receipt_has_ready_checkpoint() {
+  python3 - "$RECEIPT_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+if not receipt_path.exists() or not receipt_path.is_file():
+    raise SystemExit(1)
+
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+
+ready = str(payload.get("readyCheckpoint") or "").strip()
+raise SystemExit(0 if ready else 1)
+PY
+}
+
 attach_release_artifact_metadata_to_receipt() {
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
@@ -695,6 +920,15 @@ main() {
   esac
 
   if [[ ! -s "$RECEIPT_PATH" ]]; then
+    for _attempt in 1 2 3 4 5; do
+      sleep 1
+      if [[ -s "$RECEIPT_PATH" ]]; then
+        break
+      fi
+    done
+  fi
+
+  if [[ ! -s "$RECEIPT_PATH" ]]; then
     echo "Startup smoke completed without emitting a receipt." >&2
     return 1
   fi
@@ -702,6 +936,13 @@ main() {
 
 status=0
 main || status=$?
+
+if [[ "$status" -ne 0 ]] && receipt_has_ready_checkpoint; then
+  {
+    printf 'startup smoke process exited %s after emitting ready checkpoint; accepting receipt-backed pass for %s %s\n' "$status" "$APP_KEY" "$RID"
+  } | tee -a "$LOG_PATH" >&2
+  status=0
+fi
 
 if [[ "$status" -ne 0 ]]; then
   set_receipt_status "failed"

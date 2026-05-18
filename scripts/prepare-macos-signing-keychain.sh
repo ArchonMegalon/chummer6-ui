@@ -87,9 +87,12 @@ prepare_keychain() {
   fi
   security set-keychain-settings -lut 21600 "$keychain_path"
   security unlock-keychain -p "$keychain_password" "$keychain_path"
-  mapfile -t existing_keychains < <(security list-keychains -d user | tr -d '"' | sed '/^[[:space:]]*$/d')
-  local merged_keychains=("$keychain_path")
+  local existing_keychains=()
   local existing_keychain
+  while IFS= read -r existing_keychain; do
+    existing_keychains+=("$existing_keychain")
+  done < <(security list-keychains -d user | tr -d '"' | sed '/^[[:space:]]*$/d')
+  local merged_keychains=("$keychain_path")
   for existing_keychain in "${existing_keychains[@]}"; do
     if [[ "$existing_keychain" != "$keychain_path" ]]; then
       merged_keychains+=("$existing_keychain")
@@ -203,8 +206,14 @@ if [[ -z "$cert_base64" ]]; then
       sign_identity_hint="$(resolve_codesigning_identity "$local_cert_common_name")"
     fi
     if [[ -z "$sign_identity_hint" ]]; then
-      echo "Unable to resolve a local codesigning identity from $keychain_path." >&2
-      exit 1
+      if env_truthy "$required"; then
+        echo "Unable to resolve a local codesigning identity from $keychain_path." >&2
+        exit 1
+      fi
+
+      echo "Unable to resolve a local codesigning identity from $keychain_path; continuing unsigned because macOS signing is not required for this run." >&2
+      write_outputs false ""
+      exit 0
     fi
     store_notary_credentials_if_configured
     write_outputs true "$sign_identity_hint"

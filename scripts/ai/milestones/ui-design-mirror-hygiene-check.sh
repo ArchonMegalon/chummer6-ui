@@ -40,6 +40,17 @@ for group_name in product_groups:
         raise SystemExit(f"[UI-DESIGN-MIRROR] FAIL: product group {group_name!r} is missing or invalid.")
     expected_sources.extend(str(item) for item in group_items)
 
+required_flagship_sources = [
+    "products/chummer/FLAGSHIP_PRODUCT_BAR.md",
+    "products/chummer/CHUMMER5A_FAMILIARITY_BRIDGE.md",
+    "products/chummer/VETERAN_FIRST_MINUTE_GATE.yaml",
+    "products/chummer/DENSE_WORKBENCH_BUDGET.yaml",
+    "products/chummer/FLAGSHIP_RELEASE_ACCEPTANCE.yaml",
+]
+for source_rel in required_flagship_sources:
+    if source_rel not in expected_sources:
+        expected_sources.append(source_rel)
+
 duplicate_basenames = {
     name for name, count in Counter(Path(source).name for source in expected_sources).items() if count > 1
 }

@@ -1,6 +1,7 @@
 @namespace Chummer.Blazor.Components.Shell
 @using Microsoft.AspNetCore.Components.Web
 @using Chummer.Contracts.Presentation
+@using Chummer.Desktop.Runtime
 @using Chummer.Presentation.Overview
 @using Chummer.Presentation.UiKit
 @using System.Text.Json.Nodes
@@ -171,6 +172,21 @@
                     {
                         <p class="note">Source: @buildLab.SourceDocumentId</p>
                     }
+                    <div data-build-lab-trust-receipts>
+                        <strong>Build explain receipt and environment diff</strong>
+                        @foreach (BuildLabTrustReceiptSection receiptSection in BuildBuildLabTrustReceiptSections(buildLab))
+                        {
+                            <section class="dialog-trust-receipt-section" data-build-lab-trust-section="@NormalizeBuildLabReceiptToken(receiptSection.Title)">
+                                <h5>@receiptSection.Title</h5>
+                                <ul class="browse-detail-lines">
+                                    @foreach (string line in receiptSection.Lines)
+                                    {
+                                        <li>@line</li>
+                                    }
+                                </ul>
+                            </section>
+                        }
+                    </div>
                 </section>
             </div>
 
@@ -215,6 +231,7 @@
             @if (HasBuildBlockerReceipt(buildLab))
             {
                 @* m104: blazor_build_blocker_receipts *@
+                @* Build blocker receipt: *@
                 <section class="browse-detail-pane" data-build-blocker-explain-receipt>
                     <div class="coach-card-header">
                         <h4>Build blocker receipt</h4>
@@ -870,6 +887,27 @@
         => string.IsNullOrWhiteSpace(payloadId)
             ? null
             : buildLab.ExportPayloads.FirstOrDefault(payload => string.Equals(payload.PayloadId, payloadId, StringComparison.Ordinal));
+
+    private readonly record struct BuildLabTrustReceiptSection(string Title, IReadOnlyList<string> Lines);
+
+    private static IReadOnlyList<BuildLabTrustReceiptSection> BuildBuildLabTrustReceiptSections(BuildLabConceptIntakeState buildLab)
+        => DesktopTrustReceiptComposer.BuildBuildLabSections(buildLab)
+            .Select(static section => new BuildLabTrustReceiptSection(section.Title, section.Lines))
+            .ToArray();
+
+    private static string NormalizeBuildLabReceiptToken(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "build-receipt";
+        }
+
+        string token = new(value.Trim()
+            .Select(static character => char.IsLetterOrDigit(character) ? char.ToLowerInvariant(character) : '-')
+            .ToArray());
+        token = token.Trim('-');
+        return string.IsNullOrWhiteSpace(token) ? "build-receipt" : token;
+    }
 
     private static bool HasPlannerCoverageSignals(BuildLabConceptIntakeState buildLab)
     {

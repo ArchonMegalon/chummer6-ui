@@ -459,7 +459,12 @@ internal sealed class DesktopSupportCaseWindow : Window
     }
 
     private string BuildDiagnosticsBody()
-        => DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase);
+        => string.Join(
+            "\n\n",
+            [
+                DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),
+                DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase)
+            ]);
 
     private string BuildFollowThroughBody()
     {

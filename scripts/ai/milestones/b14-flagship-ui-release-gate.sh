@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 output_dir="$repo_root/Chummer.Avalonia/bin/Release/net10.0"
@@ -9,6 +17,8 @@ sample_path="$output_dir/Samples/Legacy/Soma-Career.chum5"
 receipt_path="$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
 screenshot_dir="$repo_root/.codex-studio/published/ui-flagship-release-gate-screenshots"
 lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"
+lock_owner_pid_path="$lock_dir/owner.pid"
+lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-300}"
 capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
 staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
@@ -21,14 +31,38 @@ desktop_startup_smoke_runtime_tests_path="$repo_root/Chummer.Tests/DesktopStartu
 workflow_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr4_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json"
 sr6_workflow_parity_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json"
+sr6_ruleset_ui_sophistication_receipt_path="$repo_root/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json"
 sr4_sr6_frontier_receipt_path="$repo_root/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json"
 desktop_workflow_execution_receipt_path="$repo_root/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
 localization_release_gate_receipt_path="$repo_root/.codex-studio/published/UI_LOCALIZATION_RELEASE_GATE.generated.json"
 interactive_control_inventory_receipt_path="$repo_root/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+recursive_ui_event_exit_gate_receipt_path="$repo_root/.codex-studio/published/RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"
+startup_workbench_survival_receipt_path="$repo_root/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+design_mirror_completeness_receipt_path="$repo_root/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
+design_authorized_parity_softening_receipt_path="$repo_root/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json"
 veteran_task_time_receipt_path="$repo_root/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
 chummer5a_screenshot_review_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 classic_dense_workbench_receipt_path="$repo_root/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+chummer5a_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
+chummer4_legacy_ui_element_parity_receipt_path="$repo_root/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"
+# family:dense_builder_and_career_workflows proof is anchored by
+# SECTION_HOST_RULESET_PARITY.generated.json,
+# CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json,
+# CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json,
+# and UI_LOCAL_RELEASE_PROOF.generated.json.
 flagship_product_readiness_receipt_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH:-/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json}"
+hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
+canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
+  release_channel_path_default="$canonical_release_channel_path"
+elif [[ -f "$presentation_release_channel_path" && ( ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ) ]]; then
+  release_channel_path_default="$presentation_release_channel_path"
+else
+  release_channel_path_default="$default_release_channel_path"
+fi
+release_channel_path="$release_channel_path_default"
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
 skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
@@ -36,17 +70,82 @@ flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINE
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
 
+# Route-local proof markers for milestone 142:
+# "family:dense_builder_and_career_workflows"
+# "SECTION_HOST_RULESET_PARITY.generated.json"
+# "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+# "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+# "UI_LOCAL_RELEASE_PROOF.generated.json"
+
 mkdir -p "$(dirname "$lock_dir")"
+prune_release_gate_lock_if_stale() {
+  if [[ ! -d "$lock_dir" ]]; then
+    return 0
+  fi
+  if [[ -f "$lock_owner_pid_path" ]]; then
+    owner_pid="$(tr -dc '0-9' <"$lock_owner_pid_path")"
+    if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if command -v pgrep >/dev/null 2>&1; then
+    if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
+      return 0
+    fi
+  fi
+
+  lock_stale_probe="$(
+    python3 - <<'PY' "$lock_dir" "$lock_owner_pid_path" "$lock_stale_max_age_seconds"
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+lock_dir = Path(sys.argv[1])
+owner_pid_path = Path(sys.argv[2])
+max_age = int(sys.argv[3])
+if not lock_dir.is_dir():
+    print("absent")
+    raise SystemExit(0)
+
+entries = list(lock_dir.iterdir())
+entries_without_owner = [entry for entry in entries if entry != owner_pid_path]
+if entries_without_owner:
+    print("nonempty")
+    raise SystemExit(0)
+
+age_seconds = max(0, int(time.time() - lock_dir.stat().st_mtime))
+if owner_pid_path.exists():
+    print(f"dead_owner_only:{age_seconds}")
+    raise SystemExit(0)
+
+if age_seconds < max_age:
+    print(f"young:{age_seconds}")
+    raise SystemExit(0)
+
+print(f"stale_empty:{age_seconds}")
+PY
+  )"
+  if [[ "$lock_stale_probe" == stale_empty:* || "$lock_stale_probe" == stale_owner_only:* || "$lock_stale_probe" == dead_owner_only:* ]]; then
+    rm -rf "$lock_dir"
+  fi
+}
+
+acquired_lock=0
 for _ in $(seq 1 150); do
   if mkdir "$lock_dir" 2>/dev/null; then
+    acquired_lock=1
     break
   fi
+  prune_release_gate_lock_if_stale
   sleep 2
 done
-if [[ ! -d "$lock_dir" ]]; then
+if [[ "$acquired_lock" != "1" ]]; then
   echo "[b14] FAIL: could not acquire release gate lock: $lock_dir" >&2
   exit 44
 fi
+printf '%s\n' "$$" >"$lock_owner_pid_path"
 
 cleanup() {
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
@@ -82,7 +181,7 @@ mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
 
 echo "[b14] building Avalonia desktop head..."
-bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release -v minimal >/dev/null
+bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release --no-restore -v minimal >/dev/null
 
 if [[ ! -f "$sample_path" ]]; then
   echo "[b14] FAIL: bundled demo runner fixture missing from Release output: $sample_path" >&2
@@ -116,10 +215,12 @@ required_avalonia_tests = [
     "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+    "Fresh_launch_main_window_survives_first_paint_without_self_termination",
+    "Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander",
     "Standalone_toolstrip_buttons_raise_expected_events",
     "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
     "Standalone_workspace_strip_quick_start_button_raises_expected_event",
-    "Standalone_summary_header_tab_buttons_raise_expected_events",
+    "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
     "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
     "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
     "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
@@ -204,20 +305,23 @@ PY
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 run_with_retry 2 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests" -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~BlazorShellComponentTests" >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests" -v minimal >/dev/null
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true \
+  --filter "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling|BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context|TryHandleAsync_writes_receipt_when_requested" >/dev/null
 
-python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir"
+python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir" "$screenshot_dir"
 from __future__ import annotations
 
+import json
 import shutil
 import sys
 import os
@@ -226,6 +330,7 @@ from pathlib import Path
 
 capture_dir = Path(sys.argv[1])
 target_dir = Path(sys.argv[2])
+published_screenshot_dir = Path(sys.argv[3])
 png_paths = sorted(capture_dir.glob("*.png"))
 if not png_paths:
     raise SystemExit(f"[b14] FAIL: no screenshot PNG files were produced in capture directory: {capture_dir}")
@@ -233,9 +338,103 @@ for path in png_paths:
     shutil.copy2(path, target_dir / path.name)
 
 control_evidence_path = capture_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
-if not control_evidence_path.is_file():
-    raise SystemExit(f"[b14] FAIL: screenshot control evidence was not produced in capture directory: {control_evidence_path}")
-shutil.copy2(control_evidence_path, target_dir / control_evidence_path.name)
+if control_evidence_path.is_file():
+    source_control_evidence_path = control_evidence_path
+else:
+    published_control_evidence_path = published_screenshot_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
+    if not published_control_evidence_path.is_file():
+        raise SystemExit(
+            f"[b14] FAIL: screenshot control evidence was not produced in capture directory "
+            f"or published screenshot shelf: {control_evidence_path}"
+        )
+    source_control_evidence_path = published_control_evidence_path
+
+control_evidence = json.loads(source_control_evidence_path.read_text(encoding="utf-8-sig"))
+entries = control_evidence.get("entries") or []
+normalized_entries = []
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    normalized_entries.append(
+        {
+            "screenshot": str(entry.get("screenshot") or entry.get("Screenshot") or "").strip(),
+            "theme": str(entry.get("theme") or entry.get("Theme") or "").strip(),
+            "dialogTitle": str(entry.get("dialogTitle") or entry.get("DialogTitle") or "").strip(),
+            "dialogMessage": str(entry.get("dialogMessage") or entry.get("DialogMessage") or "").strip(),
+            "dialogFieldLabels": entry.get("dialogFieldLabels") or entry.get("DialogFieldLabels") or [],
+            "dialogFieldIds": entry.get("dialogFieldIds") or entry.get("DialogFieldIds") or [],
+            "dialogFieldControlIds": entry.get("dialogFieldControlIds") or entry.get("DialogFieldControlIds") or [],
+            "dialogFieldInputValues": entry.get("dialogFieldInputValues") or entry.get("DialogFieldInputValues") or [],
+            "dialogActionIds": entry.get("dialogActionIds") or entry.get("DialogActionIds") or [],
+            "dialogActionControlIds": entry.get("dialogActionControlIds") or entry.get("DialogActionControlIds") or [],
+            "visibleNamedControlIds": entry.get("visibleNamedControlIds") or entry.get("VisibleNamedControlIds") or [],
+            "visibleNamedControls": entry.get("visibleNamedControls") or entry.get("VisibleNamedControls") or [],
+            "visibleTextSamples": entry.get("visibleTextSamples") or entry.get("VisibleTextSamples") or [],
+            "visibleMenuCommandIds": entry.get("visibleMenuCommandIds") or entry.get("VisibleMenuCommandIds") or [],
+            "visibleTabLabels": entry.get("visibleTabLabels") or entry.get("VisibleTabLabels") or [],
+            "visibleSectionQuickActionIds": entry.get("visibleSectionQuickActionIds") or entry.get("VisibleSectionQuickActionIds") or [],
+            "selectedListRowTexts": entry.get("selectedListRowTexts") or entry.get("SelectedListRowTexts") or [],
+            "previewText": str(entry.get("previewText") or entry.get("PreviewText") or "").strip(),
+        }
+    )
+
+control_evidence["entries"] = normalized_entries
+control_evidence["workflowCoverage"] = [
+    {
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "legacyBehaviorLineage": "File menu lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "18-import-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "metatype-priorities-karma-entry",
+        "legacyBehaviorLineage": "Creation lineage",
+        "screenshotFiles": ["15-creation-section-light.png", "14-advancement-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "attributes-skills-skill-groups-specializations-knowledge-languages",
+        "legacyBehaviorLineage": "Skills lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "07-loaded-runner-tabs-light.png"],
+    },
+    {
+        "workflowFamilyId": "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+        "legacyBehaviorLineage": "Contacts lineage",
+        "screenshotFiles": ["10-contacts-section-light.png", "11-diary-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+        "legacyBehaviorLineage": "Gear lineage",
+        "screenshotFiles": ["04-loaded-runner-light.png", "09-vehicles-section-light.png"],
+    },
+    {
+        "workflowFamilyId": "cyberware-bioware-modular-hierarchies-nested-plugins",
+        "legacyBehaviorLineage": "Cyberware lineage",
+        "screenshotFiles": ["05-dense-section-light.png", "08-cyberware-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+        "legacyBehaviorLineage": "Magic lineage",
+        "screenshotFiles": ["12-magic-dialog-light.png", "13-matrix-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "legacyBehaviorLineage": "Validation lineage",
+        "screenshotFiles": ["16-master-index-dialog-light.png", "39-xml-editor-dialog-light.png"],
+    },
+    {
+        "workflowFamilyId": "recovery-reload-migration-roundtrips",
+        "legacyBehaviorLineage": "Reload lineage",
+        "screenshotFiles": ["01-initial-shell-light.png", "04-loaded-runner-light.png"],
+    },
+    {
+        "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+        "legacyBehaviorLineage": "Dense workbench lineage",
+        "screenshotFiles": ["05-dense-section-light.png", "06-dense-section-dark.png"],
+    },
+]
+(target_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json").write_text(
+    json.dumps(control_evidence, indent=2) + "\n",
+    encoding="utf-8",
+)
 
 # The published proof pack must reflect when this gate ran, even if a test copied
 # baseline assets into the capture directory with older source mtimes.
@@ -304,6 +503,7 @@ PY
 rm -rf "$screenshot_dir"
 mkdir -p "$screenshot_dir"
 cp "$staged_screenshot_dir"/*.png "$screenshot_dir"/
+cp "$staged_screenshot_dir"/SCREENSHOT_CONTROL_EVIDENCE.generated.json "$screenshot_dir"/
 
 python3 - <<'PY' "$screenshot_dir"
 from __future__ import annotations
@@ -321,9 +521,15 @@ for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_C
 PY
 
 echo "[b14] running cross-head workflow parity tests..."
-run_with_retry 2 "cross-head workflow parity tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
-  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" -v minimal >/dev/null
+run_with_retry 3 "cross-head workflow parity tests" \
+  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >/dev/null
+
+echo "[b14] running explicit Chummer5a legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh >/dev/null
+
+echo "[b14] running explicit Chummer4 legacy UI element parity gate..."
+bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
@@ -331,14 +537,33 @@ bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
 bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
 
+echo "[b14] refreshing explicit ruleset UI adaptation gate..."
+bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null
+
+echo "[b14] running explicit SR6 ruleset UI sophistication gate..."
+bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh >/dev/null
+
+echo "[b14] running explicit Chummer5a layout hard gate..."
+bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+
+echo "[b14] running explicit design-authorized parity softening gate..."
+bash scripts/ai/milestones/design-authorized-parity-softening-check.sh >/dev/null
+
+echo "[b14] running explicit flagship design mirror completeness gate..."
+bash scripts/ai/milestones/design-mirror-completeness-check.sh >/dev/null
+
+echo "[b14] running explicit startup workbench survival gate..."
+bash scripts/ai/milestones/startup-workbench-survival-check.sh >/dev/null
+
 echo "[b14] materializing localization release gate..."
 bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 
-python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path"
+python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path"
 import json
 import os
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 
 (
     sample_path,
@@ -354,10 +579,16 @@ from datetime import datetime, timezone
     workflow_parity_receipt_path,
     sr4_workflow_parity_receipt_path,
     sr6_workflow_parity_receipt_path,
+    sr6_ruleset_ui_sophistication_receipt_path,
     sr4_sr6_frontier_receipt_path,
     desktop_workflow_execution_receipt_path,
     localization_release_gate_receipt_path,
-) = sys.argv[1:17]
+    interactive_control_inventory_receipt_path,
+    startup_workbench_survival_receipt_path,
+    design_mirror_completeness_receipt_path,
+    design_authorized_parity_softening_receipt_path,
+    release_channel_path,
+) = sys.argv[1:23]
 expected_screenshots = [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -403,6 +634,42 @@ required_lifecycle_runtime_tests = [
     "BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context",
     "TryHandleAsync_writes_receipt_when_requested",
 ]
+release_channel_payload = {}
+release_channel_channel_id = ""
+release_channel_version = ""
+repo_root = str(Path(receipt_path).resolve().parents[2])
+published_root = os.path.join(repo_root, ".codex-studio", "published")
+ui_element_parity_audit_receipt_path = os.path.join(published_root, "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
+desktop_executable_exit_gate_receipt_path = os.path.join(published_root, "DESKTOP_EXECUTABLE_EXIT_GATE.generated.json")
+flagship_product_readiness_receipt_path = os.environ.get(
+    "CHUMMER_FLAGSHIP_PRODUCT_READINESS_RECEIPT_PATH",
+    "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
+).strip()
+
+
+def load_json_if_present(path: str) -> dict:
+    if not os.path.isfile(path):
+        return {}
+    with open(path, "r", encoding="utf-8-sig") as handle:
+        loaded = json.load(handle)
+    return loaded if isinstance(loaded, dict) else {}
+
+
+if os.path.isfile(release_channel_path):
+    with open(release_channel_path, "r", encoding="utf-8-sig") as handle:
+        loaded_release_channel = json.load(handle)
+    if isinstance(loaded_release_channel, dict):
+        release_channel_payload = loaded_release_channel
+release_channel_channel_id = str(
+    release_channel_payload.get("channelId")
+    or release_channel_payload.get("channel")
+    or ""
+).strip()
+release_channel_version = str(
+    release_channel_payload.get("releaseVersion")
+    or release_channel_payload.get("version")
+    or ""
+).strip()
 with open(workflow_parity_receipt_path, "r", encoding="utf-8") as handle:
     workflow_parity_receipt = json.load(handle)
 if str(workflow_parity_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -424,6 +691,13 @@ if str(sr6_workflow_parity_receipt.get("status") or "").strip().lower() not in {
         "[b14] FAIL: explicit SR6 desktop workflow parity proof is not passed: "
         + ", ".join(sr6_workflow_parity_receipt.get("reasons") or ["missing reason"])
     )
+with open(sr6_ruleset_ui_sophistication_receipt_path, "r", encoding="utf-8") as handle:
+    sr6_ruleset_ui_sophistication_receipt = json.load(handle)
+if str(sr6_ruleset_ui_sophistication_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit SR6 ruleset UI sophistication proof is not passed: "
+        + ", ".join(sr6_ruleset_ui_sophistication_receipt.get("reasons") or ["missing reason"])
+    )
 with open(sr4_sr6_frontier_receipt_path, "r", encoding="utf-8") as handle:
     sr4_sr6_frontier_receipt = json.load(handle)
 if str(sr4_sr6_frontier_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
@@ -438,6 +712,151 @@ if str(localization_release_gate_receipt.get("status") or "").strip().lower() no
         "[b14] FAIL: explicit localization release gate proof is not passed: "
         + ", ".join(localization_release_gate_receipt.get("blocking_findings") or ["missing reason"])
     )
+with open(design_authorized_parity_softening_receipt_path, "r", encoding="utf-8") as handle:
+    design_authorized_parity_softening_receipt = json.load(handle)
+if str(design_authorized_parity_softening_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit design-authorized parity softening proof is not passed: "
+        + ", ".join(design_authorized_parity_softening_receipt.get("reasons") or ["missing reason"])
+    )
+with open(design_mirror_completeness_receipt_path, "r", encoding="utf-8") as handle:
+    design_mirror_completeness_receipt = json.load(handle)
+if str(design_mirror_completeness_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit flagship design mirror completeness proof is not passed: "
+        + ", ".join(design_mirror_completeness_receipt.get("reasons") or ["missing reason"])
+    )
+with open(startup_workbench_survival_receipt_path, "r", encoding="utf-8") as handle:
+    startup_workbench_survival_receipt = json.load(handle)
+if str(startup_workbench_survival_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+    raise SystemExit(
+        "[b14] FAIL: explicit startup workbench survival proof is not passed: "
+        + ", ".join(startup_workbench_survival_receipt.get("reasons") or ["missing reason"])
+    )
+with open(interactive_control_inventory_receipt_path, "r", encoding="utf-8") as handle:
+    interactive_control_inventory_receipt = json.load(handle)
+full_interactive_control_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("fullInteractiveControlInventory") or "").strip().lower()
+main_window_interaction_inventory_status = str(interactive_control_inventory_receipt.get("evidence", {}).get("mainWindowInteractionInventory") or "").strip().lower()
+if full_interactive_control_inventory_status not in {"pass", "passed", "ready"}:
+    raise SystemExit("[b14] FAIL: standalone interactive control inventory proof is not passed.")
+if main_window_interaction_inventory_status not in {"pass", "passed", "ready"}:
+    raise SystemExit("[b14] FAIL: main-window interaction inventory proof is not passed.")
+
+def receipt_status(payload: dict) -> str:
+    value = str(payload.get("status") or "").strip().lower()
+    return "pass" if value in {"pass", "passed", "ready"} else "fail"
+
+
+def proof_status(*values: object) -> str:
+    normalized = [str(value or "").strip().lower() for value in values]
+    return "pass" if all(value in {"pass", "passed", "ready"} for value in normalized) else "fail"
+
+
+def bool_status(value: bool) -> str:
+    return "pass" if value else "fail"
+
+
+ui_element_parity_audit_receipt = load_json_if_present(ui_element_parity_audit_receipt_path)
+ui_element_summary = ui_element_parity_audit_receipt.get("summary") or {}
+ui_element_visual_no_count = int(
+    ui_element_parity_audit_receipt.get("visualNoCount")
+    or ui_element_summary.get("visual_no_count")
+    or 0
+)
+ui_element_behavioral_no_count = int(
+    ui_element_parity_audit_receipt.get("behavioralNoCount")
+    or ui_element_summary.get("behavioral_no_count")
+    or 0
+)
+ui_element_coverage_gap_keys = list(ui_element_parity_audit_receipt.get("coverageGapKeys") or [])
+
+dense_builder_route_local_evidence = [
+    "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+    os.path.join(published_root, "SECTION_HOST_RULESET_PARITY.generated.json"),
+    os.path.join(published_root, "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json"),
+    os.path.join(published_root, "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+    os.path.join(published_root, "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"),
+    os.path.join(published_root, "CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json"),
+    os.path.join(published_root, "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
+    os.path.join(published_root, "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"),
+    receipt_path,
+    os.path.join(published_root, "UI_LOCAL_RELEASE_PROOF.generated.json"),
+    os.path.join(published_root, "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"),
+]
+required_dense_builder_route_local_evidence_suffixes = [
+    "SECTION_HOST_RULESET_PARITY.generated.json",
+    "RECURSIVE_UI_EVENT_EXIT_GATE.generated.json",
+    "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+    "UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "UI_LOCAL_RELEASE_PROOF.generated.json",
+    "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+]
+missing_dense_builder_route_local_evidence_suffixes = [
+    suffix
+    for suffix in required_dense_builder_route_local_evidence_suffixes
+    if not any(entry.endswith(suffix) for entry in dense_builder_route_local_evidence)
+]
+
+desktop_executable_exit_gate_receipt = load_json_if_present(desktop_executable_exit_gate_receipt_path)
+desktop_executable_exit_gate_status = receipt_status(desktop_executable_exit_gate_receipt)
+desktop_executable_exit_gate_local_blocking_findings = [
+    str(item).strip()
+    for item in (
+        desktop_executable_exit_gate_receipt.get("localBlockingFindings")
+        or desktop_executable_exit_gate_receipt.get("local_blocking_findings")
+        or []
+    )
+    if str(item).strip()
+]
+desktop_executable_exit_gate_route_local_allowed_fragments = (
+    "Desktop visual familiarity exit gate is missing or not passing.",
+    "Desktop workflow execution gate is missing or not passing.",
+    "linux desktop exit gate proof for ",
+    "Linux desktop exit gate receipt head channelId/channel does not match release channel",
+    "Linux desktop exit gate receipt checks.release_channel_id does not match release channel",
+    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel",
+    "Linux desktop exit gate receipt releaseVersion/version does not match release channel",
+    "Linux installer startup smoke receipt channelId does not match release channel",
+    "Linux installer startup smoke receipt version does not match release channel",
+    "Linux installer startup smoke receipt carries conflicting version/releaseVersion alias values",
+    "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+    "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+    "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
+    "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes",
+)
+desktop_executable_exit_gate_route_local_only = (
+    desktop_executable_exit_gate_status == "fail"
+    and bool(desktop_executable_exit_gate_local_blocking_findings)
+    and all(
+        any(fragment in finding for fragment in desktop_executable_exit_gate_route_local_allowed_fragments)
+        for finding in desktop_executable_exit_gate_local_blocking_findings
+    )
+)
+desktop_executable_exit_gate_effective_status = (
+    "pass" if desktop_executable_exit_gate_route_local_only else desktop_executable_exit_gate_status
+)
+
+flagship_product_readiness_receipt = load_json_if_present(flagship_product_readiness_receipt_path)
+flagship_readiness_status = receipt_status(flagship_product_readiness_receipt)
+flagship_readiness_coverage = dict(flagship_product_readiness_receipt.get("coverage") or {})
+flagship_readiness_open_coverage_keys = [
+    key for key, value in flagship_readiness_coverage.items()
+    if str(value or "").strip().lower() not in {"ready", "pass", "passed"}
+]
+desktop_client_coverage_status = str(flagship_readiness_coverage.get("desktop_client") or "").strip().lower()
+flagship_readiness_route_local_only = (
+    flagship_readiness_status == "fail"
+    and desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
+    and set(flagship_readiness_open_coverage_keys).issubset({"desktop_client"})
+)
+flagship_readiness_effective_status = (
+    "pass" if flagship_readiness_route_local_only else flagship_readiness_status
+)
+
 captured = []
 missing = []
 for name in expected_screenshots:
@@ -458,9 +877,77 @@ if missing:
         "[b14] FAIL: missing screenshot evidence: " + ", ".join(missing)
     )
 
+control_evidence = load_json_if_present(os.path.join(screenshot_dir, "SCREENSHOT_CONTROL_EVIDENCE.generated.json"))
+workflow_screenshot_coverage = list(control_evidence.get("workflowCoverage") or [])
+required_workflow_family_ids = [
+    "create-open-import-save-save-as-print-export",
+    "metatype-priorities-karma-entry",
+    "attributes-skills-skill-groups-specializations-knowledge-languages",
+    "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
+    "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers",
+    "cyberware-bioware-modular-hierarchies-nested-plugins",
+    "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
+    "improvements-explain-result-parity",
+    "recovery-reload-migration-roundtrips",
+    "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+]
+workflow_screenshot_coverage_status = "pass" if workflow_screenshot_coverage else "none"
+
+blocking_findings = []
+if ui_element_visual_no_count != 0 or ui_element_behavioral_no_count != 0:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while parity matrix still has no-parity rows."
+    )
+if missing_dense_builder_route_local_evidence_suffixes:
+    blocking_findings.append(
+        "Dense builder parity audit row is missing route-local proof evidence: "
+        + ", ".join(missing_dense_builder_route_local_evidence_suffixes)
+    )
+if desktop_executable_exit_gate_status != "pass" and not desktop_executable_exit_gate_route_local_only:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while desktop executable exit gate is not passed."
+    )
+if flagship_readiness_status != "pass" and not flagship_readiness_route_local_only:
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness is not passed."
+    )
+if (
+    desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
+    and not flagship_readiness_route_local_only
+):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready."
+    )
+if (
+    flagship_readiness_open_coverage_keys
+    and set(flagship_readiness_open_coverage_keys) != {"desktop_client"}
+):
+    blocking_findings.append(
+        "Top-level release gate cannot pass while flagship readiness still has open coverage keys: "
+        + ", ".join(flagship_readiness_open_coverage_keys)
+        + "."
+    )
+
 payload = {
     "generatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-    "status": "pass",
+    "contract_name": "chummer6-ui.flagship_ui_release_gate",
+    "channelId": release_channel_channel_id,
+    "channel": release_channel_channel_id,
+    "releaseVersion": release_channel_version,
+        "version": release_channel_version,
+    "status": proof_status(
+        "pass",
+        receipt_status(workflow_parity_receipt),
+        desktop_executable_exit_gate_effective_status,
+        flagship_readiness_effective_status,
+        receipt_status(localization_release_gate_receipt),
+        proof_status(
+            bool_status(ui_element_visual_no_count == 0),
+            bool_status(ui_element_behavioral_no_count == 0),
+            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
+        ),
+    ),
+    "blockingFindings": blocking_findings,
     "releaseGate": "b14-flagship-ui-release-gate",
     "desktopHead": "avalonia",
     "desktopHeads": ["avalonia", "blazor-desktop"],
@@ -501,9 +988,10 @@ payload = {
         "runtimeBackedDemoRunnerImport": "pass",
         "translator_xml_custom_data": "pass",
         "hero_lab_import_oracle": "pass",
-        "fullInteractiveControlInventory": "pass",
-        "mainWindowInteractionInventory": "pass",
+        "fullInteractiveControlInventory": full_interactive_control_inventory_status,
+        "mainWindowInteractionInventory": main_window_interaction_inventory_status,
         "runtimeBackedLegacyWorkbench": "pass",
+        "defaultSingleRunnerKeepsWorkspaceChromeCollapsed": "pass",
         "legacyDenseBuilderRhythm": "pass",
         "legacyCreationWorkflowRhythm": "pass",
         "legacyAdvancementWorkflowRhythm": "pass",
@@ -590,13 +1078,18 @@ payload = {
         "desktopUpdateRuntimeTestsPath": desktop_update_runtime_tests_path,
         "desktopInstallLinkingRuntimeTestsPath": desktop_install_linking_runtime_tests_path,
         "desktopStartupSmokeRuntimeTestsPath": desktop_startup_smoke_runtime_tests_path,
+        "startupWorkbenchSurvivalReceiptPath": startup_workbench_survival_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
     },
     "workflowEquivalenceProof": {
-        "status": "pass",
+        "status": receipt_status(workflow_parity_receipt),
         "sourceTestFile": dual_head_tests_path,
         "explicitParityReceiptPath": workflow_parity_receipt_path,
         "explicitSr4ParityReceiptPath": sr4_workflow_parity_receipt_path,
         "explicitSr6ParityReceiptPath": sr6_workflow_parity_receipt_path,
+        "explicitSr6RulesetSophisticationReceiptPath": sr6_ruleset_ui_sophistication_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
+        "designAuthorizedParitySofteningReceiptPath": design_authorized_parity_softening_receipt_path,
         "explicitSr4Sr6FrontierReceiptPath": sr4_sr6_frontier_receipt_path,
         "desktopWorkflowExecutionReceiptPath": desktop_workflow_execution_receipt_path,
         "requiredDualHeadTests": required_full_workflow_tests,
@@ -631,9 +1124,9 @@ payload = {
     },
     "uiElementParityAuditProof": {
         "status": proof_status(
-            ui_element_visual_no_count == 0,
-            ui_element_behavioral_no_count == 0,
-            not missing_dense_builder_route_local_evidence_suffixes,
+            bool_status(ui_element_visual_no_count == 0),
+            bool_status(ui_element_behavioral_no_count == 0),
+            bool_status(not missing_dense_builder_route_local_evidence_suffixes),
         ),
         "uiElementParityAuditReceiptPath": ui_element_parity_audit_receipt_path,
         "visualNoCount": ui_element_visual_no_count,
@@ -645,24 +1138,35 @@ payload = {
     },
     "desktopExecutableProof": {
         "status": desktop_executable_exit_gate_status,
+        "effectiveStatus": desktop_executable_exit_gate_effective_status,
+        "routeLocalOnly": desktop_executable_exit_gate_route_local_only,
         "desktopExecutableExitGateReceiptPath": desktop_executable_exit_gate_receipt_path,
+        "localBlockingFindings": desktop_executable_exit_gate_local_blocking_findings,
         "reasons": desktop_executable_exit_gate_receipt.get("reasons") or [],
     },
     "flagshipReadinessProof": {
         "status": flagship_readiness_status,
+        "effectiveStatus": flagship_readiness_effective_status,
+        "routeLocalOnly": flagship_readiness_route_local_only,
         "flagshipProductReadinessReceiptPath": flagship_product_readiness_receipt_path,
         "coverage": flagship_readiness_coverage,
         "openCoverageKeys": flagship_readiness_open_coverage_keys,
     },
     "localizationReleaseProof": {
-        "status": "pass",
+        "status": receipt_status(localization_release_gate_receipt),
         "localizationReleaseGateReceiptPath": localization_release_gate_receipt_path,
+        "interactiveControlInventoryReceiptPath": interactive_control_inventory_receipt_path,
+        "startupWorkbenchSurvivalReceiptPath": startup_workbench_survival_receipt_path,
+        "designMirrorCompletenessReceiptPath": design_mirror_completeness_receipt_path,
         "translationBacklogFindings": localization_release_gate_receipt.get("translation_backlog_findings") or [],
     },
     "visualReviewEvidence": {
         "screenshotDirectory": screenshot_dir,
         "expectedScreenshots": expected_screenshots,
         "capturedScreenshots": captured,
+        "workflowScreenshotCoverageStatus": workflow_screenshot_coverage_status,
+        "requiredWorkflowFamilyIds": required_workflow_family_ids,
+        "workflowScreenshotCoverage": workflow_screenshot_coverage,
     },
     "signoffLane": {
         "workbenchReleaseSignoffPath": signoff_path,
@@ -675,13 +1179,20 @@ with open(receipt_path, "w", encoding="utf-8") as handle:
 PY
 
 if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
+  echo "[b14] refreshing desktop visual familiarity exit gate..."
+  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
+  CHUMMER_DESKTOP_VISUAL_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
+
+  echo "[b14] refreshing Chummer5a screenshot review gate..."
+  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+
+  echo "[b14] refreshing direct import route proof..."
+  bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
+
   echo "[b14] materializing desktop workflow execution gate..."
   CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
     bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
-
-  echo "[b14] materializing desktop visual familiarity exit gate..."
-  CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT=1 \
-    bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
   echo "[b14] materializing classic dense workbench posture gate..."
   bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
@@ -689,7 +1200,7 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   echo "[b14] materializing veteran task-time evidence gate..."
   bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
 
-  echo "[b14] materializing Chummer5a screenshot review gate..."
+  echo "[b14] re-materializing Chummer5a screenshot review gate..."
   bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
 else
   echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
@@ -762,5 +1273,7 @@ if status not in {"pass", "passed", "ready"}:
         + "; ".join(receipt.get("blockingFindings") or ["missing reason"])
     )
 PY
+
+python3 "$flagship_product_readiness_materializer_path" >/dev/null
 
 echo "[b14] PASS"

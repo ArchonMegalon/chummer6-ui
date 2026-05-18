@@ -653,6 +653,7 @@ public sealed class DesktopShellRulesetCatalogTests
         public Task HandleUiControlAsync(string controlId, CancellationToken ct) => Task.CompletedTask;
         public Task ExecuteWorkspaceActionAsync(WorkspaceSurfaceActionDefinition action, CancellationToken ct) => Task.CompletedTask;
         public Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct) => Task.CompletedTask;
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct) => Task.CompletedTask;
         public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct) => Task.CompletedTask;
         public Task CloseDialogAsync(CancellationToken ct) => Task.CompletedTask;
         public Task SelectTabAsync(string tabId, CancellationToken ct) => Task.CompletedTask;

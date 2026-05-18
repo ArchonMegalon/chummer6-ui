@@ -83,6 +83,11 @@ internal sealed class MainWindowInteractionCoordinator
         return _adapter.HandleUiControlAsync(controlId, ct);
     }
 
+    public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+    {
+        return _adapter.ApplyAttributeEditAsync(request, ct);
+    }
+
     public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
     {
         return _adapter.ExecuteDialogActionAsync(actionId, ct);

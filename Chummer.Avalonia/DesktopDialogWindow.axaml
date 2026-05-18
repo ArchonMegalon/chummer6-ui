@@ -33,6 +33,9 @@
                      TextWrapping="Wrap"
                      IsVisible="False" />
 
+          <ContentControl Name="DialogTrustReceiptPanel"
+                          IsVisible="False" />
+
           <StackPanel Name="DialogFieldsPanel" Spacing="6" />
         </StackPanel>
       </ScrollViewer>

@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-05-17T20:19:13.874572Z",
+  "contractName": "chummer6-ui.design_mirror_completeness",
+  "status": "pass",
+  "summary": "Flagship design mirror inputs are present and carry the required product bar markers.",
+  "reasons": [],
+  "evidence": {
+    "paths": {
+      ".codex-design/product/README.md": {
+        "exists": true,
+        "markers": {
+          "FLAGSHIP_PRODUCT_BAR.md": true,
+          "CHUMMER5A_FAMILIARITY_BRIDGE.md": true,
+          "VETERAN_FIRST_MINUTE_GATE.yaml": true,
+          "DENSE_WORKBENCH_BUDGET.yaml": true,
+          "FLAGSHIP_RELEASE_ACCEPTANCE.yaml": true
+        }
+      },
+      ".codex-design/product/FLAGSHIP_PRODUCT_BAR.md": {
+        "exists": true,
+        "markers": {
+          "flagship grade": true,
+          "workbench-first startup instead of decorative landing chrome": true,
+          "Desktop familiarity must still read as Chummer5a": true
+        }
+      },
+      ".codex-design/product/CHUMMER5A_FAMILIARITY_BRIDGE.md": {
+        "exists": true,
+        "markers": {
+          "Classic top-level menu posture": true,
+          "Immediate toolstrip under the menu": true,
+          "dense workbench": true
+        }
+      },
+      ".codex-design/product/VETERAN_FIRST_MINUTE_GATE.yaml": {
+        "exists": true,
+        "markers": {
+          "reach_real_workbench": true,
+          "locate_save_import_settings": true,
+          "locate_master_index_and_roster": true
+        }
+      },
+      ".codex-design/product/DENSE_WORKBENCH_BUDGET.yaml": {
+        "exists": true,
+        "markers": {
+          "workbench_posture": true,
+          "require_top_menu": true,
+          "center_pane_must_dominate": true
+        }
+      },
+      ".codex-design/product/FLAGSHIP_RELEASE_ACCEPTANCE.yaml": {
+        "exists": true,
+        "markers": {
+          "veteran_first_minute_orientation": true,
+          "desktop_familiarity_and_install_continuity": true,
+          "rules_explainability": true
+        }
+      }
+    }
+  }
+}

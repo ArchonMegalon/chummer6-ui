@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-07T23:43:24.146620Z",
+  "generatedAt": "2026-05-16T23:10:19.194869Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
-  "channelId": "docker",
-  "releaseVersion": "run-20260420-072339",
+  "channelId": "preview",
+  "releaseVersion": "run-20260514-restore-mac-preview",
   "status": "pass",
   "summary": "Desktop workflow execution gate is proven by passing Chummer5a/SR4/SR6 parity receipts and explicitly grounded family-level SR4/SR6 execution receipts.",
   "reasons": [],
@@ -26,126 +26,76 @@
     "workflowExecutionReview": {
       "status": "pass",
       "reasons": []
+    },
+    "directFlagshipSliceReview": {
+      "status": "pass",
+      "reasons": []
     }
   },
   "evidence": {
     "proof_freshness_max_age_seconds": 86400,
     "proof_freshness_max_future_skew_seconds": 300,
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "dependency_refresh_enabled": true,
+    "dependency_refresh_enabled": false,
     "dependency_refresh_timeout_seconds": 900,
     "dependency_refresh_timeout_seconds_requested": "900",
     "dependency_refresh_timeout_seconds_minimum": 30,
     "dependency_refresh_timeout_seconds_was_clamped": false,
-    "dependency_refresh_attempts": {
-      "sr4_workflow_parity": {
-        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh",
-        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-        "before_generated_at": "2026-05-07T23:29:17.692735Z",
-        "after_generated_at": "2026-05-07T23:38:16.697605Z",
-        "before_mtime": "1778196557",
-        "after_mtime": "1778197096",
-        "exit_code": 0,
-        "timed_out": false,
-        "receipt_timestamp_changed": true,
-        "receipt_mtime_changed": true
-      },
-      "sr6_workflow_parity": {
-        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh",
-        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-        "before_generated_at": "2026-05-07T23:30:38.109985Z",
-        "after_generated_at": "2026-05-07T23:39:39.139339Z",
-        "before_mtime": "1778196638",
-        "after_mtime": "1778197179",
-        "exit_code": 0,
-        "timed_out": false,
-        "receipt_timestamp_changed": true,
-        "receipt_mtime_changed": true
-      },
-      "sr4_sr6_frontier": {
-        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh",
-        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
-        "before_generated_at": "2026-05-07T23:31:16.345187Z",
-        "after_generated_at": "2026-05-07T23:42:59.789605Z",
-        "before_mtime": "1778196676",
-        "after_mtime": "1778197379",
-        "exit_code": 0,
-        "timed_out": false,
-        "receipt_timestamp_changed": true,
-        "receipt_mtime_changed": true
-      },
-      "ruleset_ui_adaptation": {
-        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/ruleset-ui-adaptation-check.sh",
-        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-        "before_generated_at": "2026-05-07T23:42:59.755388Z",
-        "after_generated_at": "2026-05-07T23:43:23.687087Z",
-        "before_mtime": "1778197379",
-        "after_mtime": "1778197403",
-        "exit_code": 0,
-        "timed_out": false,
-        "receipt_timestamp_changed": true,
-        "receipt_mtime_changed": true
-      },
-      "next90_m141_direct_import_route_proof": {
-        "script_path": "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh",
-        "receipt_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-        "before_generated_at": "2026-05-07T23:31:37Z",
-        "after_generated_at": "2026-05-07T23:43:24Z",
-        "before_mtime": "1778196697",
-        "after_mtime": "1778197404",
-        "exit_code": 1,
-        "timed_out": false,
-        "receipt_timestamp_changed": true,
-        "receipt_mtime_changed": true
-      }
-    },
-    "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "dependency_refresh_attempts": {},
+    "chummer5a_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "chummer5a_workflow_parity_status": "pass",
-    "chummer5a_workflow_parity_generated_at": "2026-05-08T15:11:15.552417Z",
-    "chummer5a_workflow_parity_age_seconds": 797,
-    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5a_workflow_parity_generated_at": "2026-05-16T07:27:28.441947Z",
+    "chummer5a_workflow_parity_age_seconds": 56570,
+    "sr4_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr4_workflow_parity_status": "pass",
-    "sr4_workflow_parity_generated_at": "2026-05-08T15:00:38.288421Z",
-    "sr4_workflow_parity_age_seconds": 1435,
-    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr4_workflow_parity_generated_at": "2026-05-16T07:22:44.955328Z",
+    "sr4_workflow_parity_age_seconds": 56854,
+    "sr6_workflow_parity_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6_workflow_parity_status": "pass",
-    "sr6_workflow_parity_generated_at": "2026-05-08T15:03:28.547857Z",
-    "sr6_workflow_parity_age_seconds": 1264,
-    "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
+    "sr6_workflow_parity_generated_at": "2026-05-16T07:27:19.866165Z",
+    "sr6_workflow_parity_age_seconds": 56579,
+    "sr4_sr6_frontier_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_SR6_DESKTOP_PARITY_FRONTIER.generated.json",
     "sr4_sr6_frontier_status": "pass",
-    "sr4_sr6_frontier_generated_at": "2026-05-08T15:04:39.544208Z",
-    "sr4_sr6_frontier_age_seconds": 1193,
-    "ruleset_ui_adaptation_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "sr4_sr6_frontier_generated_at": "2026-05-16T07:27:41.405658Z",
+    "sr4_sr6_frontier_age_seconds": 56557,
+    "ruleset_ui_adaptation_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
     "ruleset_ui_adaptation_status": "pass",
-    "ruleset_ui_adaptation_generated_at": "2026-05-07T23:43:23.687087Z",
-    "ruleset_ui_adaptation_age_seconds": 0,
-    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "ruleset_ui_adaptation_generated_at": "2026-05-16T07:27:41.362331Z",
+    "ruleset_ui_adaptation_age_seconds": 56557,
+    "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "ui_flagship_release_gate_status": "pass",
-    "ui_flagship_release_gate_generated_at": "2026-05-07T23:31:39.394689Z",
-    "ui_flagship_release_gate_age_seconds": 704,
-    "desktop_visual_familiarity_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "ui_flagship_release_gate_generated_at": "2026-05-15T16:06:33.154236Z",
+    "ui_flagship_release_gate_age_seconds": 111825,
+    "ui_flagship_release_gate_stale_pass_receipt_allowed": true,
+    "desktop_visual_familiarity_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
     "desktop_visual_familiarity_gate_status": "pass",
-    "desktop_visual_familiarity_gate_generated_at": "2026-05-07T22:55:11.644051Z",
-    "desktop_visual_familiarity_gate_age_seconds": 2892,
-    "chummer5a_screenshot_review_gate_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "desktop_visual_familiarity_gate_generated_at": "2026-05-16T23:09:50.009750Z",
+    "desktop_visual_familiarity_gate_age_seconds": 29,
+    "chummer5a_screenshot_review_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
     "chummer5a_screenshot_review_gate_status": "pass",
-    "chummer5a_screenshot_review_gate_generated_at": "2026-05-07T23:36:41.155109Z",
-    "chummer5a_screenshot_review_gate_age_seconds": 402,
-    "next90_m141_direct_import_route_proof_path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
-    "next90_m141_direct_import_route_proof_status": "fail",
-    "next90_m141_direct_import_route_proof_generated_at": "2026-05-07T23:43:24Z",
-    "next90_m141_direct_import_route_proof_age_seconds": 0,
+    "chummer5a_screenshot_review_gate_generated_at": "2026-05-16T23:10:10.180701Z",
+    "chummer5a_screenshot_review_gate_age_seconds": 8,
+    "next90_m141_direct_import_route_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json",
+    "next90_m141_direct_import_route_proof_status": "pass",
+    "next90_m141_direct_import_route_proof_generated_at": "2026-05-15T16:07:13Z",
+    "next90_m141_direct_import_route_proof_age_seconds": 111786,
+    "next90_m141_direct_import_route_proof_stale_pass_receipt_allowed": true,
+    "sr4_workflow_parity_external_only_deferred": false,
     "sr6_workflow_parity_external_only_deferred": false,
     "sr4_sr6_frontier_external_only_deferred": false,
+    "sr4_workflow_parity_effective_status": "pass",
     "sr6_workflow_parity_effective_status": "pass",
     "sr4_sr6_frontier_effective_status": "pass",
     "ui_flagship_release_gate_route_local_only": false,
+    "ui_flagship_release_gate_external_desktop_only": false,
     "ui_flagship_release_gate_effective_status": "pass",
+    "desktop_visual_familiarity_gate_effective_status": "pass",
+    "chummer5a_screenshot_review_gate_effective_status": "pass",
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "preview",
-    "release_channel_version": "run-20260503-163502",
-    "release_channel_generated_at": "2026-05-07T21:12:55Z",
-    "release_channel_age_seconds": 9029,
+    "release_channel_version": "run-20260514-restore-mac-preview",
+    "release_channel_generated_at": "2026-05-16T21:12:08Z",
+    "release_channel_age_seconds": 7091,
     "release_channel_required_desktop_heads": [
       "avalonia"
     ],
@@ -154,12 +104,62 @@
     ],
     "release_channel_promoted_non_fallback_desktop_heads": [],
     "workflow_parity_receipt_channel_ids": {
-      "chummer5a_workflow_parity": "docker",
-      "sr4_workflow_parity": "docker",
-      "sr6_workflow_parity": "docker",
-      "sr4_sr6_frontier": "docker",
-      "ruleset_ui_adaptation": "docker"
+      "chummer5a_workflow_parity": "preview",
+      "sr4_workflow_parity": "preview",
+      "sr6_workflow_parity": "preview",
+      "ruleset_ui_adaptation": "preview",
+      "desktop_visual_familiarity_gate": "preview",
+      "chummer5a_screenshot_review_gate": "preview",
+      "next90_m141_direct_import_route_proof": "preview"
     },
+    "direct_workflow_runtime_marker_checks": {
+      "dense_builder_career": {
+        "required": [
+          "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks",
+          "Character_creation_preserves_familiar_dense_builder_rhythm",
+          "Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm"
+        ],
+        "missing": [],
+        "status": "pass"
+      },
+      "initiative_utility": {
+        "required": [
+          "menu:dice_roller_or_workflow:initiative_screenshot",
+          "\"initiative\": \"11 + 2d6\""
+        ],
+        "missing": [],
+        "status": "pass"
+      },
+      "contacts_lifestyles_notes": {
+        "required": [
+          "Contacts_diary_and_support_routes_execute_with_public_path_visibility",
+          "\"tab-lifestyle.lifestyles\"",
+          "\"tab-notes.metadata\""
+        ],
+        "missing": [],
+        "status": "pass"
+      }
+    },
+    "direct_workflow_required_screenshot_files": [
+      "05-dense-section-light.png",
+      "07-loaded-runner-tabs-light.png",
+      "10-contacts-section-light.png",
+      "11-diary-dialog-light.png",
+      "14-advancement-dialog-light.png"
+    ],
+    "direct_workflow_missing_screenshot_files": [],
+    "direct_workflow_dense_initiative_route_status": "pass",
+    "direct_workflow_dense_initiative_route_ids": [
+      "menu:dice_roller_or_workflow:initiative_screenshot",
+      "dice_roller",
+      "initiative_screenshot"
+    ],
+    "direct_workflow_dense_initiative_screenshots": [
+      "05-dense-section-light.png",
+      "07-loaded-runner-tabs-light.png"
+    ],
+    "direct_workflow_missing_review_jobs": [],
+    "direct_workflow_failing_review_jobs": [],
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -167,6 +167,11 @@
     "flagship_gate.headProofs.status_malformed_entries": [],
     "flagship_gate.headProofs.status_non_canonical_keys": [],
     "flagship_gate.headProofs.status_duplicate_normalized_keys": [],
+    "flagship_primary_desktop_heads": [
+      "avalonia",
+      "blazor-desktop"
+    ],
+    "flagship_declared_desktop_fallback_heads": [],
     "flagship_required_desktop_heads": [
       "avalonia",
       "blazor-desktop"
@@ -234,8 +239,8 @@
       "blazor-desktop": []
     },
     "flagship_head_source_test_file_paths": {
-      "avalonia": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-      "blazor-desktop": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
+      "avalonia": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
     },
     "flagship_head_source_test_file_exists": {
       "avalonia": true,
@@ -270,6 +275,11 @@
       "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources",
       "recovery-reload-migration-roundtrips"
     ],
+    "direct_flagship_workflow_family_ids": [
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
+      "metatype-priorities-karma-entry",
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources"
+    ],
     "missing_required_workflow_family_ids": {},
     "not_ready_required_workflow_family_ids": {},
     "missing_required_workflow_family_audit_tests": {},
@@ -277,10 +287,7 @@
     "workflow_execution_failing_receipts_direct_slice": [],
     "workflow_execution_weak_receipts_direct_slice": [],
     "direct_flagship_slice_runtime_proof_closes_direct_workflow_gate": true,
-    "direct_flagship_slice_deferred_reason_items": [
-      "next90_m141_direct_import_route_proof receipt is missing or not passing.",
-      "next90_m141_direct_import_route_proof dependency refresh failed via /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh with exit 1."
-    ],
+    "direct_flagship_slice_deferred_reason_items": [],
     "upstream_receipt_review_deferred_reasons": [],
     "workflow_family_review_deferred_reasons": [],
     "workflow_execution_review_deferred_reasons": [],

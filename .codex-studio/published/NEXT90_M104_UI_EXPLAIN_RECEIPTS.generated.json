@@ -16,68 +16,68 @@
       }
     },
     "designQueueChecks": {
-      "allowed_path_Chummer.Avalonia": true,
-      "allowed_path_Chummer.Blazor": true,
-      "allowed_path_Chummer.Desktop.Runtime": true,
-      "allowed_path_Chummer.Tests": true,
-      "allowed_paths_exact": true,
+      "allowed_path_Chummer.Avalonia": false,
+      "allowed_path_Chummer.Blazor": false,
+      "allowed_path_Chummer.Desktop.Runtime": false,
+      "allowed_path_Chummer.Tests": false,
+      "allowed_paths_exact": false,
       "frontier_matches": true,
       "landed_commit_matches": true,
       "milestone_matches": true,
-      "owned_surface_diagnostics_diff:desktop": true,
-      "owned_surface_explain_receipts:desktop": true,
-      "owned_surfaces_exact": true,
+      "owned_surface_diagnostics_diff:desktop": false,
+      "owned_surface_explain_receipts:desktop": false,
+      "owned_surfaces_exact": false,
       "package_present": true,
-      "proof_1": true,
-      "proof_10": true,
-      "proof_11": true,
-      "proof_12": true,
-      "proof_13": true,
-      "proof_14": true,
-      "proof_15": true,
-      "proof_16": true,
-      "proof_17": true,
-      "proof_18": true,
-      "proof_19": true,
-      "proof_2": true,
-      "proof_20": true,
-      "proof_21": true,
-      "proof_22": true,
-      "proof_23": true,
-      "proof_24": true,
-      "proof_25": true,
-      "proof_26": true,
-      "proof_27": true,
-      "proof_28": true,
-      "proof_29": true,
-      "proof_3": true,
-      "proof_30": true,
-      "proof_31": true,
-      "proof_32": true,
-      "proof_33": true,
-      "proof_34": true,
-      "proof_35": true,
-      "proof_36": true,
-      "proof_37": true,
-      "proof_38": true,
-      "proof_39": true,
-      "proof_4": true,
-      "proof_40": true,
-      "proof_41": true,
-      "proof_42": true,
-      "proof_43": true,
-      "proof_44": true,
-      "proof_45": true,
-      "proof_46": true,
-      "proof_47": true,
-      "proof_48": true,
-      "proof_49": true,
-      "proof_5": true,
-      "proof_50": true,
-      "proof_6": true,
-      "proof_7": true,
-      "proof_8": true,
-      "proof_9": true,
+      "proof_1": false,
+      "proof_10": false,
+      "proof_11": false,
+      "proof_12": false,
+      "proof_13": false,
+      "proof_14": false,
+      "proof_15": false,
+      "proof_16": false,
+      "proof_17": false,
+      "proof_18": false,
+      "proof_19": false,
+      "proof_2": false,
+      "proof_20": false,
+      "proof_21": false,
+      "proof_22": false,
+      "proof_23": false,
+      "proof_24": false,
+      "proof_25": false,
+      "proof_26": false,
+      "proof_27": false,
+      "proof_28": false,
+      "proof_29": false,
+      "proof_3": false,
+      "proof_30": false,
+      "proof_31": false,
+      "proof_32": false,
+      "proof_33": false,
+      "proof_34": false,
+      "proof_35": false,
+      "proof_36": false,
+      "proof_37": false,
+      "proof_38": false,
+      "proof_39": false,
+      "proof_4": false,
+      "proof_40": false,
+      "proof_41": false,
+      "proof_42": false,
+      "proof_43": false,
+      "proof_44": false,
+      "proof_45": false,
+      "proof_46": false,
+      "proof_47": false,
+      "proof_48": false,
+      "proof_49": false,
+      "proof_5": false,
+      "proof_50": false,
+      "proof_6": false,
+      "proof_7": false,
+      "proof_8": false,
+      "proof_9": false,
       "repo_matches": true,
       "status_complete": true,
       "task_matches": true,
@@ -105,7 +105,7 @@
       "operator&#32;telemetry",
       "active&#45;run&#32;helper"
     ],
-    "failureCount": 0,
+    "failureCount": 118,
     "frontierId": 3352869062,
     "landedCommit": "63f57d62",
     "localRepoChecks": {
@@ -227,68 +227,68 @@
       "required_proof_lines_unique": true
     },
     "queueChecks": {
-      "allowed_path_Chummer.Avalonia": true,
-      "allowed_path_Chummer.Blazor": true,
-      "allowed_path_Chummer.Desktop.Runtime": true,
-      "allowed_path_Chummer.Tests": true,
-      "allowed_paths_exact": true,
+      "allowed_path_Chummer.Avalonia": false,
+      "allowed_path_Chummer.Blazor": false,
+      "allowed_path_Chummer.Desktop.Runtime": false,
+      "allowed_path_Chummer.Tests": false,
+      "allowed_paths_exact": false,
       "frontier_matches": true,
       "landed_commit_matches": true,
       "milestone_matches": true,
-      "owned_surface_diagnostics_diff:desktop": true,
-      "owned_surface_explain_receipts:desktop": true,
-      "owned_surfaces_exact": true,
+      "owned_surface_diagnostics_diff:desktop": false,
+      "owned_surface_explain_receipts:desktop": false,
+      "owned_surfaces_exact": false,
       "package_present": true,
-      "proof_1": true,
-      "proof_10": true,
-      "proof_11": true,
-      "proof_12": true,
-      "proof_13": true,
-      "proof_14": true,
-      "proof_15": true,
-      "proof_16": true,
-      "proof_17": true,
-      "proof_18": true,
-      "proof_19": true,
-      "proof_2": true,
-      "proof_20": true,
-      "proof_21": true,
-      "proof_22": true,
-      "proof_23": true,
-      "proof_24": true,
-      "proof_25": true,
-      "proof_26": true,
-      "proof_27": true,
-      "proof_28": true,
-      "proof_29": true,
-      "proof_3": true,
-      "proof_30": true,
-      "proof_31": true,
-      "proof_32": true,
-      "proof_33": true,
-      "proof_34": true,
-      "proof_35": true,
-      "proof_36": true,
-      "proof_37": true,
-      "proof_38": true,
-      "proof_39": true,
-      "proof_4": true,
-      "proof_40": true,
-      "proof_41": true,
-      "proof_42": true,
-      "proof_43": true,
-      "proof_44": true,
-      "proof_45": true,
-      "proof_46": true,
-      "proof_47": true,
-      "proof_48": true,
-      "proof_49": true,
-      "proof_5": true,
-      "proof_50": true,
-      "proof_6": true,
-      "proof_7": true,
-      "proof_8": true,
-      "proof_9": true,
+      "proof_1": false,
+      "proof_10": false,
+      "proof_11": false,
+      "proof_12": false,
+      "proof_13": false,
+      "proof_14": false,
+      "proof_15": false,
+      "proof_16": false,
+      "proof_17": false,
+      "proof_18": false,
+      "proof_19": false,
+      "proof_2": false,
+      "proof_20": false,
+      "proof_21": false,
+      "proof_22": false,
+      "proof_23": false,
+      "proof_24": false,
+      "proof_25": false,
+      "proof_26": false,
+      "proof_27": false,
+      "proof_28": false,
+      "proof_29": false,
+      "proof_3": false,
+      "proof_30": false,
+      "proof_31": false,
+      "proof_32": false,
+      "proof_33": false,
+      "proof_34": false,
+      "proof_35": false,
+      "proof_36": false,
+      "proof_37": false,
+      "proof_38": false,
+      "proof_39": false,
+      "proof_4": false,
+      "proof_40": false,
+      "proof_41": false,
+      "proof_42": false,
+      "proof_43": false,
+      "proof_44": false,
+      "proof_45": false,
+      "proof_46": false,
+      "proof_47": false,
+      "proof_48": false,
+      "proof_49": false,
+      "proof_5": false,
+      "proof_50": false,
+      "proof_6": false,
+      "proof_7": false,
+      "proof_8": false,
+      "proof_9": false,
       "repo_matches": true,
       "status_complete": true,
       "task_matches": true,
@@ -357,7 +357,7 @@
     "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json",
     "registryChecks": {
       "depends_103": true,
-      "milestone_104_in_progress": true,
+      "milestone_104_in_progress": false,
       "milestone_104_present": true,
       "ui_work_task_complete": true,
       "ui_work_task_evidence_1": true,
@@ -402,7 +402,7 @@
       "ui_work_task_evidence_45": true,
       "ui_work_task_evidence_46": true,
       "ui_work_task_evidence_47": true,
-      "ui_work_task_evidence_5": true,
+      "ui_work_task_evidence_5": false,
       "ui_work_task_evidence_6": true,
       "ui_work_task_evidence_7": true,
       "ui_work_task_evidence_8": true,
@@ -479,37 +479,37 @@
         "avalonia_build_blocker_receipts": {
           "markers": [
             {
-              "line": 396,
+              "line": 750,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 398,
+              "line": 752,
               "marker": "Rule environment:",
               "present": true
             },
             {
-              "line": 400,
+              "line": 754,
               "marker": "Before:",
               "present": true
             },
             {
-              "line": 401,
+              "line": 755,
               "marker": "After:",
               "present": true
             },
             {
-              "line": 399,
+              "line": 753,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             },
             {
-              "line": 399,
+              "line": 753,
               "marker": "BuildBuildBlockerAfter(buildLab)",
               "present": true
             },
             {
-              "line": 402,
+              "line": 756,
               "marker": "BuildBuildBlockerSupport(buildLab)",
               "present": true
             }
@@ -522,7 +522,7 @@
         "avalonia_support_case_diagnostics": {
           "markers": [
             {
-              "line": 462,
+              "line": 466,
               "marker": "BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase)",
               "present": true
             }
@@ -535,7 +535,7 @@
         "avalonia_support_diagnostics": {
           "markers": [
             {
-              "line": 224,
+              "line": 228,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             }
@@ -548,47 +548,47 @@
         "diagnostics_environment_diff": {
           "markers": [
             {
-              "line": 57,
+              "line": 76,
               "marker": "Diagnostics environment diff:",
               "present": true
             },
             {
-              "line": 49,
+              "line": 66,
               "marker": "BuildDiagnosticsEnvironmentLine",
               "present": true
             },
             {
-              "line": 60,
+              "line": 80,
               "marker": "BuildDiagnosticsBeforeLine",
               "present": true
             },
             {
-              "line": 73,
+              "line": 94,
               "marker": "BuildDiagnosticsAfterLine",
               "present": true
             },
             {
-              "line": 84,
+              "line": 103,
               "marker": "BuildDiagnosticsExplainReceiptLine",
               "present": true
             },
             {
-              "line": 96,
+              "line": 117,
               "marker": "BuildDiagnosticsSupportReuseLine",
               "present": true
             },
             {
-              "line": 70,
+              "line": 89,
               "marker": "Before:",
               "present": true
             },
             {
-              "line": 81,
+              "line": 99,
               "marker": "After:",
               "present": true
             },
             {
-              "line": 93,
+              "line": 113,
               "marker": "Explain receipt:",
               "present": true
             }
@@ -599,37 +599,37 @@
         "import_rule_environment_receipt": {
           "markers": [
             {
-              "line": 10,
+              "line": 37,
               "marker": "BuildImportDiffBefore",
               "present": true
             },
             {
-              "line": 15,
+              "line": 34,
               "marker": "BuildImportRuleEnvironment",
               "present": true
             },
             {
-              "line": 33,
+              "line": 42,
               "marker": "BuildImportDiffAfter",
               "present": true
             },
             {
-              "line": 44,
+              "line": 60,
               "marker": "BuildImportSupportReuse",
               "present": true
             },
             {
-              "line": 12,
+              "line": 39,
               "marker": "Incoming {receipt.FormatId} payload before workspace merge.",
               "present": true
             },
             {
-              "line": 41,
+              "line": 52,
               "marker": "Diff signal:",
               "present": true
             },
             {
-              "line": 47,
+              "line": 63,
               "marker": "Support can cite payload",
               "present": true
             }
@@ -642,27 +642,27 @@
         "avalonia_import_receipt_surface": {
           "markers": [
             {
-              "line": 114,
+              "line": 203,
               "marker": "Import rule environment:",
               "present": true
             },
             {
-              "line": 115,
+              "line": 207,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 116,
+              "line": 208,
               "marker": "Import environment after:",
               "present": true
             },
             {
-              "line": 117,
+              "line": 212,
               "marker": "Import explain receipt:",
               "present": true
             },
             {
-              "line": 118,
+              "line": 218,
               "marker": "Support reuse:",
               "present": true
             }
@@ -675,17 +675,17 @@
         "blazor_dialog_surface": {
           "markers": [
             {
-              "line": 138,
+              "line": 139,
               "marker": "data-dialog-explain-receipt",
               "present": true
             },
             {
-              "line": 140,
+              "line": 143,
               "marker": "DialogTrustReceiptText.BuildDialogBefore(dialog)",
               "present": true
             },
             {
-              "line": 142,
+              "line": 144,
               "marker": "DialogTrustReceiptText.BuildDialogExplainReceipt(dialog)",
               "present": true
             }
@@ -698,37 +698,37 @@
         "blazor_import_rule_environment_receipt": {
           "markers": [
             {
-              "line": 10,
+              "line": 54,
               "marker": "BuildImportDiffBefore",
               "present": true
             },
             {
-              "line": 15,
+              "line": 51,
               "marker": "BuildImportRuleEnvironment",
               "present": true
             },
             {
-              "line": 33,
+              "line": 59,
               "marker": "BuildImportDiffAfter",
               "present": true
             },
             {
-              "line": 44,
+              "line": 77,
               "marker": "BuildImportSupportReuse",
               "present": true
             },
             {
-              "line": 12,
+              "line": 56,
               "marker": "Incoming {receipt.FormatId} payload before workspace merge.",
               "present": true
             },
             {
-              "line": 41,
+              "line": 69,
               "marker": "Diff signal:",
               "present": true
             },
             {
-              "line": 47,
+              "line": 80,
               "marker": "Support can cite payload",
               "present": true
             }
@@ -741,27 +741,27 @@
         "blazor_build_blocker_receipts": {
           "markers": [
             {
-              "line": 141,
+              "line": 235,
               "marker": "data-build-blocker-explain-receipt",
               "present": true
             },
             {
-              "line": 143,
+              "line": 237,
               "marker": "<h4>Build blocker receipt</h4>",
               "present": true
             },
             {
-              "line": 148,
+              "line": 242,
               "marker": "<div><dt>Rule environment</dt><dd>@BuildBuildBlockerEnvironment(buildLab)</dd></div>",
               "present": true
             },
             {
-              "line": 150,
+              "line": 244,
               "marker": "<div><dt>Before</dt><dd>@BuildBuildBlockerBefore(buildLab)</dd></div>",
               "present": true
             },
             {
-              "line": 151,
+              "line": 245,
               "marker": "<div><dt>After</dt><dd>@BuildBuildBlockerAfter(buildLab)</dd></div>",
               "present": true
             }
@@ -774,7 +774,7 @@
         "m104_guard_project_wiring": {
           "markers": [
             {
-              "line": 69,
+              "line": 76,
               "marker": "Compliance\\Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             }
@@ -1090,27 +1090,27 @@
         "targeted_signoff": {
           "markers": [
             {
-              "line": 1253,
+              "line": 1782,
               "marker": "BuildImportRuleEnvironment(activity.Receipt)",
               "present": true
             },
             {
-              "line": 1262,
+              "line": 1423,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 1272,
+              "line": 74,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 1269,
+              "line": 1569,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             },
             {
-              "line": 1277,
+              "line": 75,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             }
@@ -1123,22 +1123,22 @@
         "blazor_build_receipt_test": {
           "markers": [
             {
-              "line": 854,
+              "line": 958,
               "marker": "Build blocker receipt",
               "present": true
             },
             {
-              "line": 395,
+              "line": 457,
               "marker": "Rule environment",
               "present": true
             },
             {
-              "line": 807,
+              "line": 911,
               "marker": "One quick-action binding still needs review.",
               "present": true
             },
             {
-              "line": 860,
+              "line": 964,
               "marker": "[data-build-blocker-explain-receipt]",
               "present": true
             }
@@ -1149,32 +1149,32 @@
         "blazor_import_receipt_test": {
           "markers": [
             {
-              "line": 363,
+              "line": 425,
               "marker": "ImportPanel_renders_ruleset_specific_copy_and_accepts_all_native_formats",
               "present": true
             },
             {
-              "line": 396,
+              "line": 458,
               "marker": "chummer.portable-dossier.v1; compatible-with-warnings; inspect-only; payload abcdef1234567890.",
               "present": true
             },
             {
-              "line": 375,
+              "line": 437,
               "marker": "Imported Runner Blue into sr4 with a bounded source toggle change.",
               "present": true
             },
             {
-              "line": 379,
+              "line": 441,
               "marker": "Review the before-after environment diff before campaign handoff.",
               "present": true
             },
             {
-              "line": 404,
+              "line": 466,
               "marker": "Support can cite payload abcdef1234567890 with compatible-with-warnings compatibility.",
               "present": true
             },
             {
-              "line": 386,
+              "line": 448,
               "marker": "Street Magic source toggle changed during import.",
               "present": true
             }
@@ -1187,12 +1187,12 @@
         "m104_standard_verify_wiring": {
           "markers": [
             {
-              "line": 952,
+              "line": 1018,
               "marker": "checking next-90 M104 desktop explain receipt guard",
               "present": true
             },
             {
-              "line": 953,
+              "line": 1019,
               "marker": "bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh",
               "present": true
             }
@@ -1204,7 +1204,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-04-21T21:02:56Z",
+  "generatedAt": "2026-05-12T06:19:00Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],
@@ -1215,18 +1215,257 @@
       "status": "pass"
     },
     "queueClosureReview": {
-      "reasons": [],
-      "status": "pass"
+      "reasons": [
+        "fleet:allowed_path_Chummer.Avalonia",
+        "fleet:allowed_path_Chummer.Blazor",
+        "fleet:allowed_path_Chummer.Desktop.Runtime",
+        "fleet:allowed_path_Chummer.Tests",
+        "fleet:owned_surface_explain_receipts:desktop",
+        "fleet:owned_surface_diagnostics_diff:desktop",
+        "fleet:proof_1",
+        "fleet:proof_2",
+        "fleet:proof_3",
+        "fleet:proof_4",
+        "fleet:proof_5",
+        "fleet:proof_6",
+        "fleet:proof_7",
+        "fleet:proof_8",
+        "fleet:proof_9",
+        "fleet:proof_10",
+        "fleet:proof_11",
+        "fleet:proof_12",
+        "fleet:proof_13",
+        "fleet:proof_14",
+        "fleet:proof_15",
+        "fleet:proof_16",
+        "fleet:proof_17",
+        "fleet:proof_18",
+        "fleet:proof_19",
+        "fleet:proof_20",
+        "fleet:proof_21",
+        "fleet:proof_22",
+        "fleet:proof_23",
+        "fleet:proof_24",
+        "fleet:proof_25",
+        "fleet:proof_26",
+        "fleet:proof_27",
+        "fleet:proof_28",
+        "fleet:proof_29",
+        "fleet:proof_30",
+        "fleet:proof_31",
+        "fleet:proof_32",
+        "fleet:proof_33",
+        "fleet:proof_34",
+        "fleet:proof_35",
+        "fleet:proof_36",
+        "fleet:proof_37",
+        "fleet:proof_38",
+        "fleet:proof_39",
+        "fleet:proof_40",
+        "fleet:proof_41",
+        "fleet:proof_42",
+        "fleet:proof_43",
+        "fleet:proof_44",
+        "fleet:proof_45",
+        "fleet:proof_46",
+        "fleet:proof_47",
+        "fleet:proof_48",
+        "fleet:proof_49",
+        "fleet:proof_50",
+        "fleet:allowed_paths_exact",
+        "fleet:owned_surfaces_exact",
+        "design:allowed_path_Chummer.Avalonia",
+        "design:allowed_path_Chummer.Blazor",
+        "design:allowed_path_Chummer.Desktop.Runtime",
+        "design:allowed_path_Chummer.Tests",
+        "design:owned_surface_explain_receipts:desktop",
+        "design:owned_surface_diagnostics_diff:desktop",
+        "design:proof_1",
+        "design:proof_2",
+        "design:proof_3",
+        "design:proof_4",
+        "design:proof_5",
+        "design:proof_6",
+        "design:proof_7",
+        "design:proof_8",
+        "design:proof_9",
+        "design:proof_10",
+        "design:proof_11",
+        "design:proof_12",
+        "design:proof_13",
+        "design:proof_14",
+        "design:proof_15",
+        "design:proof_16",
+        "design:proof_17",
+        "design:proof_18",
+        "design:proof_19",
+        "design:proof_20",
+        "design:proof_21",
+        "design:proof_22",
+        "design:proof_23",
+        "design:proof_24",
+        "design:proof_25",
+        "design:proof_26",
+        "design:proof_27",
+        "design:proof_28",
+        "design:proof_29",
+        "design:proof_30",
+        "design:proof_31",
+        "design:proof_32",
+        "design:proof_33",
+        "design:proof_34",
+        "design:proof_35",
+        "design:proof_36",
+        "design:proof_37",
+        "design:proof_38",
+        "design:proof_39",
+        "design:proof_40",
+        "design:proof_41",
+        "design:proof_42",
+        "design:proof_43",
+        "design:proof_44",
+        "design:proof_45",
+        "design:proof_46",
+        "design:proof_47",
+        "design:proof_48",
+        "design:proof_49",
+        "design:proof_50",
+        "design:allowed_paths_exact",
+        "design:owned_surfaces_exact"
+      ],
+      "status": "fail"
     },
     "registryClosureReview": {
-      "reasons": [],
-      "status": "pass"
+      "reasons": [
+        "milestone_104_in_progress",
+        "ui_work_task_evidence_5"
+      ],
+      "status": "fail"
     },
     "sourceMarkerReview": {
       "reasons": [],
       "status": "pass"
     }
   },
-  "status": "pass",
-  "unresolved": []
+  "status": "fail",
+  "unresolved": [
+    "registry check failed: milestone_104_in_progress",
+    "registry check failed: ui_work_task_evidence_5",
+    "queue check failed: allowed_path_Chummer.Avalonia",
+    "queue check failed: allowed_path_Chummer.Blazor",
+    "queue check failed: allowed_path_Chummer.Desktop.Runtime",
+    "queue check failed: allowed_path_Chummer.Tests",
+    "queue check failed: owned_surface_explain_receipts:desktop",
+    "queue check failed: owned_surface_diagnostics_diff:desktop",
+    "queue check failed: proof_1",
+    "queue check failed: proof_2",
+    "queue check failed: proof_3",
+    "queue check failed: proof_4",
+    "queue check failed: proof_5",
+    "queue check failed: proof_6",
+    "queue check failed: proof_7",
+    "queue check failed: proof_8",
+    "queue check failed: proof_9",
+    "queue check failed: proof_10",
+    "queue check failed: proof_11",
+    "queue check failed: proof_12",
+    "queue check failed: proof_13",
+    "queue check failed: proof_14",
+    "queue check failed: proof_15",
+    "queue check failed: proof_16",
+    "queue check failed: proof_17",
+    "queue check failed: proof_18",
+    "queue check failed: proof_19",
+    "queue check failed: proof_20",
+    "queue check failed: proof_21",
+    "queue check failed: proof_22",
+    "queue check failed: proof_23",
+    "queue check failed: proof_24",
+    "queue check failed: proof_25",
+    "queue check failed: proof_26",
+    "queue check failed: proof_27",
+    "queue check failed: proof_28",
+    "queue check failed: proof_29",
+    "queue check failed: proof_30",
+    "queue check failed: proof_31",
+    "queue check failed: proof_32",
+    "queue check failed: proof_33",
+    "queue check failed: proof_34",
+    "queue check failed: proof_35",
+    "queue check failed: proof_36",
+    "queue check failed: proof_37",
+    "queue check failed: proof_38",
+    "queue check failed: proof_39",
+    "queue check failed: proof_40",
+    "queue check failed: proof_41",
+    "queue check failed: proof_42",
+    "queue check failed: proof_43",
+    "queue check failed: proof_44",
+    "queue check failed: proof_45",
+    "queue check failed: proof_46",
+    "queue check failed: proof_47",
+    "queue check failed: proof_48",
+    "queue check failed: proof_49",
+    "queue check failed: proof_50",
+    "queue check failed: allowed_paths_exact",
+    "queue check failed: owned_surfaces_exact",
+    "design queue check failed: allowed_path_Chummer.Avalonia",
+    "design queue check failed: allowed_path_Chummer.Blazor",
+    "design queue check failed: allowed_path_Chummer.Desktop.Runtime",
+    "design queue check failed: allowed_path_Chummer.Tests",
+    "design queue check failed: owned_surface_explain_receipts:desktop",
+    "design queue check failed: owned_surface_diagnostics_diff:desktop",
+    "design queue check failed: proof_1",
+    "design queue check failed: proof_2",
+    "design queue check failed: proof_3",
+    "design queue check failed: proof_4",
+    "design queue check failed: proof_5",
+    "design queue check failed: proof_6",
+    "design queue check failed: proof_7",
+    "design queue check failed: proof_8",
+    "design queue check failed: proof_9",
+    "design queue check failed: proof_10",
+    "design queue check failed: proof_11",
+    "design queue check failed: proof_12",
+    "design queue check failed: proof_13",
+    "design queue check failed: proof_14",
+    "design queue check failed: proof_15",
+    "design queue check failed: proof_16",
+    "design queue check failed: proof_17",
+    "design queue check failed: proof_18",
+    "design queue check failed: proof_19",
+    "design queue check failed: proof_20",
+    "design queue check failed: proof_21",
+    "design queue check failed: proof_22",
+    "design queue check failed: proof_23",
+    "design queue check failed: proof_24",
+    "design queue check failed: proof_25",
+    "design queue check failed: proof_26",
+    "design queue check failed: proof_27",
+    "design queue check failed: proof_28",
+    "design queue check failed: proof_29",
+    "design queue check failed: proof_30",
+    "design queue check failed: proof_31",
+    "design queue check failed: proof_32",
+    "design queue check failed: proof_33",
+    "design queue check failed: proof_34",
+    "design queue check failed: proof_35",
+    "design queue check failed: proof_36",
+    "design queue check failed: proof_37",
+    "design queue check failed: proof_38",
+    "design queue check failed: proof_39",
+    "design queue check failed: proof_40",
+    "design queue check failed: proof_41",
+    "design queue check failed: proof_42",
+    "design queue check failed: proof_43",
+    "design queue check failed: proof_44",
+    "design queue check failed: proof_45",
+    "design queue check failed: proof_46",
+    "design queue check failed: proof_47",
+    "design queue check failed: proof_48",
+    "design queue check failed: proof_49",
+    "design queue check failed: proof_50",
+    "design queue check failed: allowed_paths_exact",
+    "design queue check failed: owned_surfaces_exact"
+  ]
 }

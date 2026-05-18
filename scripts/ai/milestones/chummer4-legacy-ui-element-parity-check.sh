@@ -13,7 +13,7 @@ LEGACY_UI_PARITY_SCRIPT_LABEL="chummer4-legacy-ui-element-parity" \
 LEGACY_UI_PARITY_LEGACY_ROOTS="$oracle_root" \
 LEGACY_UI_PARITY_VERIFY_BANNER="checking Chummer4 legacy UI element parity guard" \
 LEGACY_UI_PARITY_VERIFY_INVOCATION="bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh" \
-LEGACY_UI_PARITY_B14_MARKERS="CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json|chummer4-legacy-ui-element-parity-check.sh|chummer4_legacy_ui_element_parity_receipt" \
+LEGACY_UI_PARITY_B14_MARKERS="CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json|chummer4-legacy-ui-element-parity-check.sh|chummer4_legacy_ui_element_parity_receipt_path" \
 LEGACY_UI_PARITY_CONTRACT_NAME="chummer6-ui.chummer4_legacy_ui_element_parity" \
 LEGACY_UI_PARITY_RECEIPT_PATH="$receipt_path" \
   bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh

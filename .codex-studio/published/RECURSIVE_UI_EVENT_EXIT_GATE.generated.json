@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-05-17T19:55:33Z",
+  "contract_name": "chummer6-ui.recursive_ui_event_exit_gate",
+  "status": "pass",
+  "summary": "Recursive UI event exit gate verifies route recursion, screenshot proof, and Chummer5a parity landmarks.",
+  "reasons": [],
+  "evidence": {
+    "runtimeRouteInventoryPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json",
+    "interactiveControlInventoryPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+    "uiElementParityAuditPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "screenshotEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
+    "workflowParityPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "routeCount": 14,
+    "workflowFamilyCount": 10,
+    "branchChecks": {
+      "dialog-global-settings": {
+        "screenshots_present": true,
+        "dialog_title_present": true,
+        "missing_parity_rows": []
+      },
+      "dialog-new-character": {
+        "screenshots_present": true
+      },
+      "dialog-priority-workflow-priority": {
+        "screenshots_present": true
+      },
+      "popup-file-menu": {
+        "screenshots_present": true,
+        "missing_texts": [],
+        "missing_commands": [],
+        "missing_parity_rows": []
+      },
+      "section-active-surface": {
+        "screenshots_present": true
+      },
+      "section-attributes-editor": {
+        "screenshots_present": true,
+        "missing_texts": []
+      },
+      "shell-loaded-runner": {
+        "screenshots_present": true,
+        "missing_texts": []
+      },
+      "shell-startup": {
+        "screenshots_present": true,
+        "missing_texts": [],
+        "missing_parity_rows": []
+      }
+    },
+    "workflowChecks": {
+      "create-open-import-save-save-as-print-export": true,
+      "metatype-priorities-karma-entry": true,
+      "attributes-skills-skill-groups-specializations-knowledge-languages": true,
+      "qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources": true,
+      "armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers": true,
+      "cyberware-bioware-modular-hierarchies-nested-plugins": true,
+      "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms": true,
+      "improvements-explain-result-parity": true,
+      "recovery-reload-migration-roundtrips": true,
+      "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare": true
+    },
+    "runtimeRouteInventoryStatus": "pass",
+    "interactiveControlInventoryStatus": "pass",
+    "workflowParityStatus": "pass"
+  }
+}

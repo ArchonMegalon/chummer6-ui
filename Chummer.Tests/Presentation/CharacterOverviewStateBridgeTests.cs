@@ -125,6 +125,20 @@ public class CharacterOverviewStateBridgeTests
     }
 
     [TestMethod]
+    public async Task ApplyAttributeEditAsync_delegates_to_presenter()
+    {
+        var presenter = new FakeCharacterOverviewPresenter();
+        using var bridge = new CharacterOverviewStateBridge(presenter, _ => { });
+        AttributeEditRequest request = new("Body", "base", 5);
+
+        await bridge.ApplyAttributeEditAsync(request, CancellationToken.None);
+
+        Assert.AreEqual("Body", presenter.AppliedAttributeEdit?.AttributeName);
+        Assert.AreEqual("base", presenter.AppliedAttributeEdit?.Bucket);
+        Assert.AreEqual(5, presenter.AppliedAttributeEdit?.Value);
+    }
+
+    [TestMethod]
     public async Task ExecuteDialogActionAsync_delegates_to_presenter()
     {
         var presenter = new FakeCharacterOverviewPresenter();

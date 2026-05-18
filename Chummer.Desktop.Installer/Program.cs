@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Drawing;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
@@ -23,15 +24,28 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        ApplicationConfiguration.Initialize();
+        bool smokeInstall = args.Length > 1
+            && string.Equals(args[0], "--smoke-install", StringComparison.OrdinalIgnoreCase);
+
+        if (!smokeInstall)
+        {
+            ApplicationConfiguration.Initialize();
+        }
 
         if (!OperatingSystem.IsWindows())
         {
-            MessageBox.Show(
-                "This installer only runs on Windows.",
-                "Chummer Installer",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            if (smokeInstall)
+            {
+                Console.Error.WriteLine("This installer only runs on Windows.");
+            }
+            else
+            {
+                MessageBox.Show(
+                    "This installer only runs on Windows.",
+                    "Chummer Installer",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
             return 1;
         }
 
@@ -55,36 +69,48 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
-                ex.Message,
-                "Chummer Installer Failed",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+            if (smokeInstall)
+            {
+                Console.Error.WriteLine(ex.ToString());
+            }
+            else
+            {
+                MessageBox.Show(
+                    ex.Message,
+                    "Chummer Installer Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
             return 1;
         }
     }
 
     private static int Install(InstallerMetadata metadata, string? payloadPathOverride, string? claimCode)
     {
-        string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride);
-        TryDeleteLegacyInstallDirectories(metadata);
-        string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
-        string launchPath = metadata.PrimaryHead.ResolveLaunchPath(targetDir);
-        File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
+        using InstallSplashForm splash = new(metadata.DisplayName);
+        splash.Show();
+        Application.DoEvents();
 
-        if (!string.IsNullOrWhiteSpace(claimCode))
+        IProgress<InstallProgressUpdate> progress = new Progress<InstallProgressUpdate>(splash.ApplyProgress);
+        progress.Report(new InstallProgressUpdate("Preparing installer"));
+
+        Task<string> installTask = Task.Run(() => CompleteInstall(metadata, payloadPathOverride, claimCode, progress));
+        try
         {
-            StagePendingClaimCode(metadata, claimCode);
+            while (!installTask.Wait(50))
+            {
+                Application.DoEvents();
+                Thread.Sleep(15);
+            }
+
+            Application.DoEvents();
+        }
+        finally
+        {
+            splash.Close();
         }
 
-        foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
-        {
-            string headLaunchPath = head.ResolveLaunchPath(targetDir);
-            CreateShortcut(head.StartMenuShortcutPath, headLaunchPath, head.DisplayName);
-            CreateShortcut(head.DesktopShortcutPath, headLaunchPath, head.DisplayName);
-        }
-
-        RegisterUninstall(metadata, installedInstallerPath);
+        string targetDir = installTask.GetAwaiter().GetResult();
 
         DialogResult launch = PromptForInstalledHeadLaunch(metadata, targetDir);
         if (launch is DialogResult.Yes or DialogResult.No)
@@ -93,6 +119,47 @@ internal static class Program
         }
 
         return 0;
+    }
+
+    private static string CompleteInstall(
+        InstallerMetadata metadata,
+        string? payloadPathOverride,
+        string? claimCode,
+        IProgress<InstallProgressUpdate>? progress)
+    {
+        string targetDir = InstallPayload(metadata, metadata.InstallDirectory, payloadPathOverride, progress);
+        progress?.Report(new InstallProgressUpdate("Cleaning previous install layout"));
+        TryDeleteLegacyInstallDirectories(metadata);
+
+        string installedInstallerPath = Path.Combine(targetDir, metadata.InstallerOutputName + ".exe");
+        progress?.Report(new InstallProgressUpdate("Caching installer for uninstall"));
+        File.Copy(Environment.ProcessPath!, installedInstallerPath, overwrite: true);
+
+        if (!string.IsNullOrWhiteSpace(claimCode))
+        {
+            progress?.Report(new InstallProgressUpdate("Preparing first-run sign-in"));
+            StagePendingClaimCode(metadata, claimCode);
+        }
+
+        int totalShortcuts = metadata.InstalledHeads.Count * 2;
+        int createdShortcuts = 0;
+        foreach (InstalledHeadMetadata head in metadata.InstalledHeads)
+        {
+            string headLaunchPath = head.ResolveLaunchPath(targetDir);
+
+            progress?.Report(new InstallProgressUpdate("Creating shortcuts", createdShortcuts, totalShortcuts));
+            CreateShortcut(head.StartMenuShortcutPath, headLaunchPath, head.DisplayName);
+            createdShortcuts++;
+
+            progress?.Report(new InstallProgressUpdate("Creating shortcuts", createdShortcuts, totalShortcuts));
+            CreateShortcut(head.DesktopShortcutPath, headLaunchPath, head.DisplayName);
+            createdShortcuts++;
+        }
+
+        progress?.Report(new InstallProgressUpdate("Registering uninstall entry"));
+        RegisterUninstall(metadata, installedInstallerPath);
+        progress?.Report(new InstallProgressUpdate("Install complete"));
+        return targetDir;
     }
 
     private static int Uninstall(InstallerMetadata metadata)
@@ -144,14 +211,18 @@ internal static class Program
         return 0;
     }
 
-    private static string InstallPayload(InstallerMetadata metadata, string targetDirectory, string? payloadPathOverride)
+    private static string InstallPayload(
+        InstallerMetadata metadata,
+        string targetDirectory,
+        string? payloadPathOverride,
+        IProgress<InstallProgressUpdate>? progress = null)
     {
         string targetDir = Path.GetFullPath(targetDirectory);
         string tempExtractDir = Path.Combine(Path.GetTempPath(), $"chummer-installer-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempExtractDir);
         try
         {
-            ExtractPayload(tempExtractDir, payloadPathOverride);
+            ExtractPayload(tempExtractDir, payloadPathOverride, progress);
 
             if (metadata.UsesBundledLayout)
             {
@@ -159,11 +230,12 @@ internal static class Program
 
                 if (Directory.Exists(targetDir))
                 {
+                    progress?.Report(new InstallProgressUpdate("Replacing existing install"));
                     TryDeleteDirectory(targetDir);
                 }
 
                 Directory.CreateDirectory(targetDir);
-                CopyDirectory(tempExtractDir, targetDir);
+                CopyDirectory(tempExtractDir, targetDir, progress);
                 return targetDir;
             }
 
@@ -172,11 +244,12 @@ internal static class Program
 
             if (Directory.Exists(targetDir))
             {
+                progress?.Report(new InstallProgressUpdate("Replacing existing install"));
                 TryDeleteDirectory(targetDir);
             }
 
             Directory.CreateDirectory(targetDir);
-            CopyDirectory(payloadRoot, targetDir);
+            CopyDirectory(payloadRoot, targetDir, progress);
             return targetDir;
         }
         finally
@@ -185,19 +258,57 @@ internal static class Program
         }
     }
 
-    private static void ExtractPayload(string tempExtractDir, string? payloadPathOverride)
+    private static void ExtractPayload(
+        string tempExtractDir,
+        string? payloadPathOverride,
+        IProgress<InstallProgressUpdate>? progress)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
         string payloadZipPath = Path.Combine(tempExtractDir, "payload.zip");
 
+        progress?.Report(new InstallProgressUpdate("Opening bundled desktop payload"));
         using Stream payload = OpenPayloadStream(assembly, payloadPathOverride);
 
+        progress?.Report(new InstallProgressUpdate("Caching packaged files"));
         using (FileStream zipFile = File.Create(payloadZipPath))
         {
             payload.CopyTo(zipFile);
         }
 
-        ZipFile.ExtractToDirectory(payloadZipPath, tempExtractDir, overwriteFiles: true);
+        using (ZipArchive archive = ZipFile.OpenRead(payloadZipPath))
+        {
+            string extractRoot = EnsureTrailingDirectorySeparator(Path.GetFullPath(tempExtractDir));
+            ZipArchiveEntry[] fileEntries = archive.Entries
+                .Where(static entry => !string.IsNullOrWhiteSpace(entry.Name))
+                .ToArray();
+            int extractedFiles = 0;
+            foreach (ZipArchiveEntry entry in archive.Entries)
+            {
+                string destinationPath = Path.GetFullPath(Path.Combine(tempExtractDir, entry.FullName));
+                if (!destinationPath.StartsWith(extractRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        $"Installer payload entry '{entry.FullName}' would extract outside '{tempExtractDir}'.");
+                }
+
+                if (string.IsNullOrWhiteSpace(entry.Name))
+                {
+                    Directory.CreateDirectory(destinationPath);
+                    continue;
+                }
+
+                string? destinationDirectory = Path.GetDirectoryName(destinationPath);
+                if (!string.IsNullOrWhiteSpace(destinationDirectory))
+                {
+                    Directory.CreateDirectory(destinationDirectory);
+                }
+
+                entry.ExtractToFile(destinationPath, overwrite: true);
+                extractedFiles++;
+                progress?.Report(new InstallProgressUpdate("Extracting application files", extractedFiles, fileEntries.Length));
+            }
+        }
+
         File.Delete(payloadZipPath);
     }
 
@@ -738,23 +849,36 @@ internal static class Program
         return summary.ToString();
     }
 
-    private static void CopyDirectory(string sourceDir, string targetDir)
+    private static void CopyDirectory(
+        string sourceDir,
+        string targetDir,
+        IProgress<InstallProgressUpdate>? progress = null)
     {
         Directory.CreateDirectory(targetDir);
-        foreach (string directory in Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories))
+        string[] directories = Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories);
+        foreach (string directory in directories)
         {
             string relative = Path.GetRelativePath(sourceDir, directory);
             Directory.CreateDirectory(Path.Combine(targetDir, relative));
         }
 
-        foreach (string file in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+        string[] files = Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories);
+        int copiedFiles = 0;
+        foreach (string file in files)
         {
             string relative = Path.GetRelativePath(sourceDir, file);
             string destination = Path.Combine(targetDir, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             File.Copy(file, destination, overwrite: true);
+            copiedFiles++;
+            progress?.Report(new InstallProgressUpdate("Copying application files", copiedFiles, files.Length));
         }
     }
+
+    private static string EnsureTrailingDirectorySeparator(string path)
+        => path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar)
+            ? path
+            : path + Path.DirectorySeparatorChar;
 
     private static void CopyExactBytes(Stream source, Stream destination, long bytesToCopy)
     {
@@ -1208,4 +1332,124 @@ internal static class Program
         string? LaunchExecutable,
         string? ShortcutName,
         string? RelativeRoot);
+
+    private readonly record struct InstallProgressUpdate(
+        string Stage,
+        int? Completed = null,
+        int? Total = null);
+
+    private sealed class InstallSplashForm : Form
+    {
+        private readonly Label _statusLabel;
+        private readonly ProgressBar _progressBar;
+
+        public InstallSplashForm(string displayName)
+        {
+            AutoScaleMode = AutoScaleMode.Dpi;
+            ClientSize = new Size(540, 190);
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            ControlBox = false;
+            ShowIcon = false;
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = $"{displayName} Installer";
+            BackColor = Color.FromArgb(16, 23, 34);
+            ForeColor = Color.White;
+
+            Label titleLabel = new()
+            {
+                AutoSize = false,
+                Text = displayName,
+                Font = new Font("Segoe UI Semibold", 19F, FontStyle.Bold, GraphicsUnit.Point),
+                ForeColor = Color.White,
+                Dock = DockStyle.Top,
+                Height = 48,
+                TextAlign = ContentAlignment.BottomLeft,
+                Margin = new Padding(0, 0, 0, 6)
+            };
+
+            Label copyLabel = new()
+            {
+                AutoSize = false,
+                Text = "Installing desktop files and preparing first launch.",
+                Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(209, 218, 233),
+                Dock = DockStyle.Top,
+                Height = 28,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(0, 0, 0, 14)
+            };
+
+            _statusLabel = new Label
+            {
+                AutoSize = false,
+                Text = "Preparing installer",
+                Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point),
+                ForeColor = Color.White,
+                Dock = DockStyle.Top,
+                Height = 28,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Margin = new Padding(0, 0, 0, 10)
+            };
+
+            _progressBar = new ProgressBar
+            {
+                Dock = DockStyle.Top,
+                Height = 16,
+                Style = ProgressBarStyle.Marquee,
+                MarqueeAnimationSpeed = 32,
+                Margin = new Padding(0, 0, 0, 12)
+            };
+
+            Label hintLabel = new()
+            {
+                AutoSize = false,
+                Text = "This can take a minute while packaged files are unpacked and copied.",
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(160, 174, 192),
+                Dock = DockStyle.Top,
+                Height = 22,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
+            Panel body = new()
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(24, 24, 24, 20)
+            };
+
+            body.Controls.Add(hintLabel);
+            body.Controls.Add(_progressBar);
+            body.Controls.Add(_statusLabel);
+            body.Controls.Add(copyLabel);
+            body.Controls.Add(titleLabel);
+            Controls.Add(body);
+        }
+
+        public void ApplyProgress(InstallProgressUpdate update)
+        {
+            int? total = update.Total is > 0 ? update.Total : null;
+            int? completed = update.Completed;
+            string statusText = update.Stage;
+            if (total.HasValue && completed.HasValue)
+            {
+                statusText = $"{statusText} ({Math.Min(completed.Value, total.Value)}/{total.Value})";
+            }
+
+            _statusLabel.Text = statusText;
+
+            if (total.HasValue)
+            {
+                _progressBar.Style = ProgressBarStyle.Continuous;
+                _progressBar.Maximum = Math.Max(1, total.Value);
+                _progressBar.Value = Math.Max(0, Math.Min(completed ?? 0, _progressBar.Maximum));
+                return;
+            }
+
+            _progressBar.Value = 0;
+            _progressBar.Style = ProgressBarStyle.Marquee;
+            _progressBar.MarqueeAnimationSpeed = 32;
+        }
+    }
 }

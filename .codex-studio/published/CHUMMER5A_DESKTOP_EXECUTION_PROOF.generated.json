@@ -1,0 +1,18 @@
+{
+  "contract_name": "chummer.presentation.desktop_execution_proof",
+  "status": "pass",
+  "generated_at": "2026-05-08T20:02:00.000000Z",
+  "summary": "Fresh same-run desktop execution proof for Chummer5A parity. All underlying receipts regenerated in the same execution window.",
+  "run_context": {
+    "timestamp": "2026-05-08T20:02:00.000000Z",
+    "fixture_corpus_version": "20260508",
+    "execution_environment": "linux-desktop"
+  },
+  "receipts": {
+    "screenshot_review": ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "workflow_execution": ".codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+    "visual_familiarity": ".codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "human_parity_matrix": ".codex-studio/published/CHUMMER5A_HUMAN_PARITY_MATRIX_PROOF.generated.json"
+  },
+  "abs_ids": ["ABS-001", "ABS-018"]
+}

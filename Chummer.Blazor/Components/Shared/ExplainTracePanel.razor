@@ -1,5 +1,6 @@
 @namespace Chummer.Blazor.Components.Shared
 
+@using System.Linq
 @using Chummer.Contracts.Rulesets
 @using Chummer.Presentation.Explain
 
@@ -124,6 +125,16 @@
                 </article>
             }
         }
+
+        <aside class="trust-receipt" data-explain-trust-receipt>
+            <strong>Explain receipt and environment diff</strong>
+            <p><strong>Explain receipt correlation key:</strong> @BuildExplainReceiptCorrelationKey(Trace)</p>
+            <p><strong>Explain receipt scope:</strong> @BuildExplainReceiptScope(Trace)</p>
+            <p><strong>Grounded explain receipt:</strong> @BuildGroundedExplainReceipt(Trace)</p>
+            <p><strong>Environment diff before explain:</strong> @BuildExplainEnvironmentBefore(Trace)</p>
+            <p><strong>Environment diff after explain:</strong> @BuildExplainEnvironmentAfter(Trace)</p>
+            <p><strong>Explain diff receipt:</strong> @BuildExplainDiffReceipt(Trace)</p>
+        </aside>
     }
 </section>
 
@@ -133,4 +144,33 @@
 
     [Parameter]
     public LocalizedExplainChrome Chrome { get; set; } = RulesetExplainRenderer.CreateChrome();
+
+    private static string BuildExplainReceiptCorrelationKey(LocalizedRulesetExplainTrace trace)
+        => $"explain/{NormalizeExplainToken(trace.SubjectId.Text)}/{trace.Providers.Count}-providers";
+
+    private static string BuildExplainReceiptScope(LocalizedRulesetExplainTrace trace)
+        => $"Explain review for {NormalizeExplainText(trace.SubjectId.Text, "the current subject")}; trace inspection stays copy-safe and does not apply a build, import, export, or support action.";
+
+    private static string BuildGroundedExplainReceipt(LocalizedRulesetExplainTrace trace)
+        => $"Subject {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} with {trace.Providers.Count} provider(s) and {trace.Messages.Count} headline message(s).";
+
+    private static string BuildExplainEnvironmentBefore(LocalizedRulesetExplainTrace trace)
+        => $"Before explain, {NormalizeExplainText(trace.SubjectId.Text, "the current subject")} remains unchanged while provider evidence is reviewed.";
+
+    private static string BuildExplainEnvironmentAfter(LocalizedRulesetExplainTrace trace)
+        => $"After explain, the same subject remains unchanged; only grounded trace context, diffs, and provider receipts are visible.";
+
+    private static string BuildExplainDiffReceipt(LocalizedRulesetExplainTrace trace)
+        => $"Trace diff receipt keeps {CountExplainDiffs(trace)} diff row(s), {trace.Providers.Count} provider lane(s), and the current subject readable without mutating the workspace.";
+
+    private static int CountExplainDiffs(LocalizedRulesetExplainTrace trace)
+        => trace.Providers.Sum(static provider => provider.Diffs.Count);
+
+    private static string NormalizeExplainToken(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? "subject"
+            : value.Trim().ToLowerInvariant().Replace(' ', '-').Replace('/', '-');
+
+    private static string NormalizeExplainText(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 }

@@ -50,6 +50,16 @@ internal static class MainWindowFeedbackCoordinator
         toolStrip.SetStatusText("Rule environment studio reviewed.");
     }
 
+    public static void ShowExplainFollowUpUnavailable(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("Explain follow-up is unavailable for the current selection.");
+    }
+
+    public static void ShowExplainFollowUpReviewed(ToolStripControl toolStrip)
+    {
+        toolStrip.SetStatusText("Explain follow-up reviewed.");
+    }
+
     public static void ShowLocalWorkspaceKept(ToolStripControl toolStrip)
     {
         toolStrip.SetStatusText("Local workspace remains visible while restore and conflict review stay manual.");

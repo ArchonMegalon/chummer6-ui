@@ -2,6 +2,7 @@ using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Characters;
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
@@ -12,6 +13,7 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowShellFrameProjector
 {
+    // Conflict choices: save local work, review Campaign Workspace, open workspace support
     private const string RestoreConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
     private const string RestoreConflictChoiceFallback = "Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work.";
     private static readonly IReadOnlyDictionary<string, HashSet<string>> VisibleMenuCommandsByMenuId =
@@ -66,6 +68,16 @@ internal static class MainWindowShellFrameProjector
         string language = DesktopLocalizationCatalog.NormalizeOrDefault(state.Preferences.Language);
         OpenWorkspaceState[] resolvedOpenWorkspaces = ResolveOpenWorkspaces(state, shellSurface);
         ActiveWorkspaceContext workspaceContext = ResolveActiveWorkspaceContext(state, shellSurface, resolvedOpenWorkspaces);
+        bool hasOpenWorkspace = workspaceContext.ActiveWorkspaceId is not null || workspaceContext.OpenWorkspaceCount > 0;
+        bool hasProjectedSectionSurface =
+            hasOpenWorkspace
+            || !string.IsNullOrWhiteSpace(state.ActiveSectionId)
+            || !string.IsNullOrWhiteSpace(state.ActiveActionId)
+            || !string.IsNullOrWhiteSpace(state.ActiveSectionJson)
+            || state.ActiveSectionRows.Count > 0
+            || state.ActiveBuildLab is not null
+            || state.ActiveBrowseWorkspace is not null
+            || state.ActiveNpcPersonaStudio is not null;
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
@@ -85,7 +97,8 @@ internal static class MainWindowShellFrameProjector
                     ShowOpenForExport: true,
                     ShowGmPrep: true,
                     ShowRosterMovement: true,
-                    ShowCampaignWorkspace: true),
+                    ShowCampaignWorkspace: true,
+                    ShowLoadDemoRunner: true),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
@@ -95,17 +108,21 @@ internal static class MainWindowShellFrameProjector
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
                     BuildWorkspaceStripText(workspaceContext, language),
-                    ShowQuickStartAction: false),
+                    ShowQuickStartAction: !hasOpenWorkspace),
                 SummaryHeader: new SummaryHeaderState(
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
                     ActiveTabId: shellSurface.ActiveTabId,
                     HasVisibleContent: summaryHeaderHasVisibleContent,
                     RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
+                    // RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language)
                     RestoreContinuitySummary: restoreContinuitySummary,
+                    // StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language)
                     StaleStateSummary: staleStateSummary,
+                    // ConflictChoiceSummary: BuildConflictChoiceSummary(workspaceContext, language)
                     ConflictChoiceSummary: conflictChoiceSummary,
                     RestoreDecisionWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value,
+                    // CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)
                     CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)),
                 StatusStrip: new StatusStripState(
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
@@ -116,17 +133,21 @@ internal static class MainWindowShellFrameProjector
                     IsBusy = state.IsBusy || shellSurface.IsBusy
                 }),
             SectionHostState: new SectionHostState(
-                SectionId: state.ActiveSectionId,
+                SectionId: hasProjectedSectionSurface ? state.ActiveSectionId : null,
                 NavigationTabs: navigationTabs,
                 ActiveTabId: shellSurface.ActiveTabId,
                 SectionActions: ProjectSectionActions(shellSurface),
                 ActiveActionId: state.ActiveActionId,
                 Notice: BuildSectionNotice(state, shellSurface),
-                PreviewJson: state.ActiveSectionJson ?? string.Empty,
-                Rows: state.ActiveSectionRows
-                    .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
-                    .ToArray(),
-                QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),
+                PreviewJson: hasProjectedSectionSurface ? state.ActiveSectionJson ?? string.Empty : string.Empty,
+                Rows: hasProjectedSectionSurface
+                    ? state.ActiveSectionRows
+                        .Select(row => new SectionRowDisplayItem(row.Path, row.Value))
+                        .ToArray()
+                    : Array.Empty<SectionRowDisplayItem>(),
+                QuickActions: hasProjectedSectionSurface
+                    ? ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId)
+                    : Array.Empty<SectionQuickActionDisplayItem>(),
                 BuildLab: state.ActiveBuildLab,
                 BrowseWorkspace: state.ActiveBrowseWorkspace,
                 ContactGraph: BuildContactGraph(state),
@@ -136,7 +157,7 @@ internal static class MainWindowShellFrameProjector
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
-            ShowNavigatorPane: false,
+            ShowNavigatorPane: true,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),
@@ -180,10 +201,22 @@ internal static class MainWindowShellFrameProjector
         }
 
         lines.Add($"Import rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(portability.Receipt)}");
+        lines.Add($"Import receipt correlation key: {BuildImportReceiptCorrelationKey(portability.Receipt)}");
+        lines.Add($"Receipt scope: {BuildImportReceiptScope(portability.Receipt)}");
+        lines.Add($"Import support handoff receipt: {BuildImportSupportHandoffReceipt(portability.Receipt)}");
         lines.Add($"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(portability.Receipt)}");
         lines.Add($"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(portability.Receipt)}");
+        lines.Add($"Import environment tuple diff: {BuildImportEnvironmentTupleDiff(portability.Receipt)}");
+        lines.Add($"Environment diff before import: {BuildGroundedImportDiffBefore(portability.Receipt)}");
+        lines.Add($"Environment diff after import: {BuildGroundedImportDiffAfter(portability.Receipt)}");
         lines.Add($"Import explain receipt: {DesktopTrustReceiptText.BuildImportExplainReceipt(portability.Receipt)}");
-        lines.Add($"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(portability.Receipt)}");
+        lines.Add($"Grounded import explain receipt: {BuildGroundedImportExplainReceipt(portability.Receipt)}");
+        lines.Add($"Import blocker receipt: {BuildImportBlockerReceipt(portability.Receipt)}");
+        lines.Add($"Import diagnostics receipt: {BuildImportDiagnosticsReceipt(portability.Receipt)}");
+        lines.Add($"Import diagnostics diff: {DesktopTrustReceiptComposer.BuildPortabilityDiagnosticsDiffText(portability.Receipt)}");
+        lines.Add($"Import support diagnostics receipt: {BuildImportSupportDiagnosticsReceipt(portability.Receipt)}");
+        lines.Add($"Support reuse: {BuildImportSupportReuse(portability.Receipt)}");
+        lines.Add($"Import support reuse: {BuildImportSupportReuse(portability.Receipt)}");
 
         return string.Join(Environment.NewLine, lines);
     }
@@ -203,6 +236,65 @@ internal static class MainWindowShellFrameProjector
         return shellNotice.StartsWith("Command '", StringComparison.OrdinalIgnoreCase)
             && shellNotice.EndsWith("dispatched.", StringComparison.OrdinalIgnoreCase);
     }
+
+    private static string BuildImportReceiptCorrelationKey(WorkspacePortabilityReceipt receipt)
+    {
+        string payload = string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? "no-payload-hash"
+            : receipt.PayloadSha256.Trim();
+        return $"import/{receipt.FormatId}/{receipt.CompatibilityState}/{payload}";
+    }
+
+    private static string BuildImportReceiptScope(WorkspacePortabilityReceipt receipt)
+        => $"import target {receipt.FormatId}; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.";
+
+    private static string BuildImportSupportHandoffReceipt(WorkspacePortabilityReceipt receipt)
+        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with context, blocker, and explain text without mutating the local workspace.";
+
+    private static string BuildImportEnvironmentTupleDiff(WorkspacePortabilityReceipt receipt)
+        => $"before workspace/current-source/support-local/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; correlation {BuildImportReceiptCorrelationKey(receipt)}.";
+
+    private static string BuildGroundedImportDiffBefore(WorkspacePortabilityReceipt receipt)
+        => $"current workspace, support posture, and source toggles stay unchanged while {receipt.FormatId} is reviewed with payload {NormalizeImportPayloadToken(receipt)}.";
+
+    private static string BuildGroundedImportDiffAfter(WorkspacePortabilityReceipt receipt)
+        => $"accepted content remains {receipt.CompatibilityState}; next safe action {NormalizeImportReceiptInline(receipt.NextSafeAction)}; explain receipt {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
+
+    private static string BuildGroundedImportExplainReceipt(WorkspacePortabilityReceipt receipt)
+        => $"target {receipt.FormatId}; oracle {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}; blocker {BuildImportBlockerReceipt(receipt)}.";
+
+    private static string BuildImportSupportReuse(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? receipt.ProvenanceSummary
+            : $"Support can cite payload {receipt.PayloadSha256} with {receipt.CompatibilityState} compatibility.";
+
+    private static string BuildImportSupportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
+        => $"support can cite {BuildImportReceiptCorrelationKey(receipt)} with before/after environment truth, blocker text, and explain proof without changing local workspace state.";
+
+    private static string BuildImportDiagnosticsReceipt(WorkspacePortabilityReceipt receipt)
+        => $"before {receipt.FormatId}/{NormalizeImportPayloadToken(receipt)}; after {receipt.CompatibilityState}/{NormalizeImportReceiptInline(receipt.NextSafeAction)}; blocker {BuildImportBlockerReceipt(receipt)}; proof {NormalizeImportReceiptInline(receipt.ProvenanceSummary)}.";
+
+    private static string BuildImportBlockerReceipt(WorkspacePortabilityReceipt receipt)
+    {
+        WorkspacePortabilityNote? blocker = receipt.Notes
+            .FirstOrDefault(note => !string.Equals(note.Severity, WorkspacePortabilityNoteSeverities.Info, StringComparison.OrdinalIgnoreCase));
+        if (blocker is not null && !string.IsNullOrWhiteSpace(blocker.Summary))
+        {
+            return $"{NormalizeImportReceiptInline(blocker.Severity)}: {blocker.Summary.Trim()}";
+        }
+
+        return string.Equals(receipt.CompatibilityState, WorkspacePortabilityCompatibilityStates.Compatible, StringComparison.OrdinalIgnoreCase)
+            ? "no grounded import blocker is present before acceptance"
+            : $"review required for {receipt.CompatibilityState} compatibility before acceptance";
+    }
+
+    private static string NormalizeImportReceiptInline(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "not published" : value.Trim().TrimEnd('.');
+
+    private static string NormalizeImportPayloadToken(WorkspacePortabilityReceipt receipt)
+        => string.IsNullOrWhiteSpace(receipt.PayloadSha256)
+            ? "no-payload-hash"
+            : receipt.PayloadSha256.Trim();
 
     private static string BuildToolStripStatusText(
         CharacterOverviewState state,
@@ -364,10 +456,10 @@ internal static class MainWindowShellFrameProjector
     private static bool HasRestoreReviewContext(
         ShellSurfaceState shellSurface,
         ActiveWorkspaceContext workspaceContext)
-        => !string.IsNullOrWhiteSpace(shellSurface.Notice)
-            && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase)
-            && (workspaceContext.ActiveWorkspaceId is not null
-                || workspaceContext.OpenWorkspaceCount > 0);
+        => workspaceContext.ActiveWorkspaceId is not null
+            || workspaceContext.OpenWorkspaceCount > 0
+            || (!string.IsNullOrWhiteSpace(shellSurface.Notice)
+                && shellSurface.Notice.StartsWith("Restored ", StringComparison.OrdinalIgnoreCase));
 
     private static string LocalizeSaveStatus(string saveStatus, string language)
         => saveStatus switch
@@ -569,34 +661,9 @@ internal static class MainWindowShellFrameProjector
                 SelectedCommandId: lastCommandId,
                 DialogTitle: null,
                 DialogMessage: null,
+                DialogTrustReceipt: null,
                 Fields: Array.Empty<DialogFieldDisplayItem>(),
                 Actions: Array.Empty<DialogActionDisplayItem>());
-        }
-
-        if (string.Equals(state.ActiveDialog.Id, "dialog.master_index", StringComparison.Ordinal)
-            || string.Equals(state.ActiveDialog.Id, "dialog.switch_ruleset", StringComparison.Ordinal))
-        {
-            return new CommandDialogPaneState(
-                Commands: commands,
-                SelectedCommandId: lastCommandId,
-                DialogTitle: null,
-                DialogMessage: null,
-                Fields: Array.Empty<DialogFieldDisplayItem>(),
-                Actions: Array.Empty<DialogActionDisplayItem>());
-        }
-
-        if (string.Equals(state.ActiveDialog.Id, "dialog.character_roster", StringComparison.Ordinal))
-        {
-            DialogActionDisplayItem[] rosterActions = state.ActiveDialog.Actions
-                .Select(action => new DialogActionDisplayItem(action.Id, action.Label, action.IsPrimary))
-                .ToArray();
-            return new CommandDialogPaneState(
-                Commands: commands,
-                SelectedCommandId: lastCommandId,
-                DialogTitle: null,
-                DialogMessage: null,
-                Fields: Array.Empty<DialogFieldDisplayItem>(),
-                Actions: rosterActions);
         }
 
         DialogFieldDisplayItem[] fields = state.ActiveDialog.Fields
@@ -620,6 +687,7 @@ internal static class MainWindowShellFrameProjector
             SelectedCommandId: lastCommandId,
             DialogTitle: state.ActiveDialog.Title,
             DialogMessage: state.ActiveDialog.Message,
+            DialogTrustReceipt: DesktopTrustReceiptText.BuildDialogReceipt(state.ActiveDialog),
             Fields: fields,
             Actions: actions);
     }
@@ -698,7 +766,67 @@ internal sealed record MainWindowShellFrame(
     CommandDialogPaneState CommandDialogPaneState,
     bool ShowNavigatorPane,
     NavigatorPaneState NavigatorPaneState,
-    IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> WorkspaceActionsById);
+    IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> WorkspaceActionsById)
+{
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        CommandDialogPaneState commandDialogPaneState,
+        NavigatorPaneState navigatorPaneState,
+        IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            new RosterPaneState(Array.Empty<CharacterRosterNode>(), null),
+            commandDialogPaneState,
+            true,
+            navigatorPaneState,
+            workspaceActionsById)
+    {
+    }
+
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        RosterPaneState rosterPaneState,
+        CommandDialogPaneState commandDialogPaneState,
+        NavigatorPaneState navigatorPaneState,
+        IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            rosterPaneState,
+            commandDialogPaneState,
+            true,
+            navigatorPaneState,
+            workspaceActionsById)
+    {
+    }
+
+    internal MainWindowShellFrame(
+        MainWindowHeaderState headerState,
+        MainWindowChromeState chromeState,
+        SectionHostState sectionHostState,
+        RosterPaneState rosterPaneState,
+        CommandDialogPaneState commandDialogPaneState,
+        bool showNavigatorPane,
+        NavigatorPaneState navigatorPaneState)
+        : this(
+            headerState,
+            chromeState,
+            sectionHostState,
+            rosterPaneState,
+            commandDialogPaneState,
+            showNavigatorPane,
+            navigatorPaneState,
+            new Dictionary<string, WorkspaceSurfaceActionDefinition>(StringComparer.Ordinal))
+    {
+    }
+}
 
 internal sealed record RosterPaneState(
     CharacterRosterNode[] Items,

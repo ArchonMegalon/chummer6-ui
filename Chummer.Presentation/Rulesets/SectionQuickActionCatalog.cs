@@ -30,6 +30,7 @@ public static class SectionQuickActionCatalog
             "contacts" => PrimaryOnly("contact_add", "Add Contact"),
             "skills" => PrimaryOnly("skill_add", "Add Skill"),
             "qualities" => PrimaryOnly("quality_add", "Add Quality"),
+            "progress" or "calendar" or "diary" => PrimaryOnly("create_entry", "Add Entry"),
             "profile" => PrimaryOnly("open_notes", "Open Notes"),
             _ => Array.Empty<SectionQuickActionDefinition>()
         };

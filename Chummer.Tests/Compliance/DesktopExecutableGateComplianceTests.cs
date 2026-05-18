@@ -98,6 +98,24 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Verify_entrypoint_refreshes_verified_release_channel_mirror_before_desktop_gate_checks()
+    {
+        string repoRoot = FindRepoRoot();
+        string verifyScriptPath = Path.Combine(repoRoot, "scripts", "ai", "verify.sh");
+        string verifyScriptText = File.ReadAllText(verifyScriptPath);
+        string helperPath = Path.Combine(repoRoot, "scripts", "materialize-verified-release-channel-mirror.py");
+        string helperText = File.ReadAllText(helperPath);
+
+        StringAssert.Contains(verifyScriptText, "refreshing verified release-channel mirror");
+        StringAssert.Contains(verifyScriptText, "python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null");
+        StringAssert.Contains(verifyScriptText, ".tmp/verify-release-channel/RELEASE_CHANNEL.generated.json");
+        StringAssert.Contains(helperText, "verify-releases-manifest.sh");
+        StringAssert.Contains(helperText, "\"generated_at\"] = now");
+        StringAssert.Contains(helperText, "\"generatedAt\"] = now");
+        StringAssert.Contains(helperText, "\"verifiedFromPath\"]");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_unexpected_desktop_install_artifact_keys()
     {
         string repoRoot = FindRepoRoot();
@@ -161,9 +179,22 @@ public sealed class DesktopExecutableGateComplianceTests
         string sr6ScriptText = File.ReadAllText(sr6ScriptPath);
 
         StringAssert.Contains(sr4ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr4ScriptText, "bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr4ScriptText, "dotnet test Chummer.Tests/Chummer.Tests.csproj");
         StringAssert.Contains(sr6ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr6ScriptText, "bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr6ScriptText, "dotnet test Chummer.Tests/Chummer.Tests.csproj");
+    }
+
+    [TestMethod]
+    public void Test_wrapper_strips_positional_project_argument_before_invoking_mstest_runner()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "test.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "normalized_project_path");
+        StringAssert.Contains(scriptText, "positional_target");
+        StringAssert.Contains(scriptText, "if [[ -n \"$normalized_project_path\" && \"$positional_target\" == \"$normalized_project_path\" ]]; then");
+        StringAssert.Contains(scriptText, "run_mstest_runner");
     }
 
     [TestMethod]
@@ -185,6 +216,19 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Desktop_executable_gate_uses_env_wrapped_visual_dependency_invocation()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "if ! env");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS");
+    }
+
+    [TestMethod]
     public void Verify_entrypoint_runs_active_mutation_for_promoted_installer_tuple_row_drift()
     {
         string repoRoot = FindRepoRoot();
@@ -195,6 +239,18 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifyScriptText, "desktop executable gate should reject promotedInstallerTuples artifact metadata drift");
         StringAssert.Contains(verifyScriptText, "desktop executable gate mutation did not emit promotedInstallerTuples metadata drift marker");
         StringAssert.Contains(verifyScriptText, "Release channel desktopTupleCoverage.promotedInstallerTuples object rows do not match promoted installer artifact metadata.");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_republishes_fleet_flagship_readiness_after_writing_a_new_ui_receipt()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "flagship_product_readiness_materializer_path=\"${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}\"");
+        StringAssert.Contains(scriptText, "receipt_path.write_text(json.dumps(payload, indent=2) + \"\\n\", encoding=\"utf-8\")");
+        StringAssert.Contains(scriptText, "python3 \"$flagship_product_readiness_materializer_path\" >/dev/null 2>&1 || true");
     }
 
     [TestMethod]
@@ -393,6 +449,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "\"release_gate_lock_blocked\": release_gate_lock_blocked");
         StringAssert.Contains(scriptText, "\"release_gate_lock_stale_removed\": release_gate_lock_stale_removed");
         StringAssert.Contains(scriptText, "\"release_gate_lock_stale_reason\": release_gate_lock_stale_reason");
+        StringAssert.Contains(scriptText, "def receipt_is_current_and_passing(");
+        StringAssert.Contains(scriptText, "release_gate_lock_observed_but_receipts_current = (");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(flagship_gate, allow_stale_pass_receipt=True)");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(visual_familiarity_gate)");
+        StringAssert.Contains(scriptText, "receipt_is_current_and_passing(workflow_execution_gate)");
+        StringAssert.Contains(scriptText, "if not release_gate_lock_observed_but_receipts_current:");
+        StringAssert.Contains(scriptText, "evidence[\"release_gate_lock_observed_but_receipts_current\"] = release_gate_lock_observed_but_receipts_current");
         StringAssert.Contains(scriptText, "\"release_gate_lock_dir\": str(repo_root / \".codex-studio\" / \"locks\" / \"b14-flagship-ui-release-gate.lock\")");
         StringAssert.Contains(scriptText, "Flagship release gate lock remained active after wait window; executable gate skipped dependency rematerialization and fail-closes to prevent partial proof races.");
     }
@@ -900,6 +963,12 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"head\")) == normalize_token(app_key)");
         StringAssert.Contains(scriptText, "normalize_token(artifact.get(\"rid\")) == normalize_token(rid)");
         StringAssert.Contains(scriptText, "INSTALLER_SMOKE_ARTIFACT_PATH=\"$INSTALLER_PATH\"");
+        StringAssert.Contains(scriptText, "receipt.get(\"artifactPath\"),");
+        StringAssert.Contains(scriptText, "receipt.get(\"artifactRelativePath\"),");
+        Assert.IsTrue(
+            scriptText.IndexOf("receipt.get(\"artifactPath\"),", StringComparison.Ordinal)
+            < scriptText.IndexOf("receipt.get(\"artifactRelativePath\"),", StringComparison.Ordinal),
+            "Linux promoted installer receipt resolution must prefer artifactPath before artifactRelativePath so canonical gate-run proof wins over stale repo-root dist copies.");
         StringAssert.Contains(scriptText, "Linux startup smoke installer artifact path is neither the promoted repo-local shelf bytes nor a canonical gate-run copy.");
         StringAssert.Contains(scriptText, "Linux startup smoke receipt artifactPath is neither the promoted installer shelf bytes nor a canonical gate-run copy.");
         Assert.IsFalse(
@@ -922,6 +991,153 @@ public sealed class DesktopExecutableGateComplianceTests
         Assert.IsFalse(
             scriptText.Contains("bash \"$FLAGSHIP_UI_GATE_SCRIPT\"", StringComparison.Ordinal),
             "Linux exit gate must validate screenshot proof directly instead of recursing through b14 and deadlocking on desktop executable coverage.");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_excludes_generated_build_outputs_from_source_snapshot_identity()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def is_generated_build_output(relative_path: str) -> bool:");
+        StringAssert.Contains(scriptText, "return any(part in {\"bin\", \"obj\", \"TestResults\"} for part in parts)");
+        StringAssert.Contains(scriptText, "if is_generated_build_output(relative):");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/bin/\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/obj/\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Desktop.Runtime.Tests/obj/\"");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_source_snapshot_prefers_link_or_copy_materialization_to_avoid_disk_exhaustion()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def clone_regular_file(src_path: pathlib.Path, dest_path: pathlib.Path) -> None:");
+        StringAssert.Contains(scriptText, "os.link(src_path, dest_path)");
+        StringAssert.Contains(scriptText, "shutil.copytree(src_path, dest_path, dirs_exist_ok=True, copy_function=clone_regular_file)");
+        StringAssert.Contains(scriptText, "\"mode\": \"filesystem_link_or_copy\"");
+        StringAssert.Contains(scriptText, "\"source_snapshot_root\": str(source_snapshot.get(\"snapshot_root\") or \"\")");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_copies_tracked_snapshot_inputs_without_shared_inodes()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def copy_tracked_regular_file(src_path: pathlib.Path, dest_path: pathlib.Path) -> None:");
+        StringAssert.Contains(scriptText, "restore/publish can mutate some source-adjacent files in place.");
+        StringAssert.Contains(scriptText, "copy_tracked_regular_file(src_path, dest_path)");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_source_snapshot_defaults_to_copy_isolation()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "SOURCE_SNAPSHOT_CLONE_MODE=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SOURCE_SNAPSHOT_CLONE_MODE:-copy}\"");
+        StringAssert.Contains(scriptText, "if clone_mode in {\"link\", \"link_or_copy\"}:");
+        StringAssert.Contains(scriptText, "\"mode\": \"filesystem_link_or_copy\" if clone_mode in {\"link\", \"link_or_copy\"} else \"filesystem_copy\"");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_publishes_proof_git_identity_from_finish_snapshot_not_current_snapshot()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "\"git\": {");
+        StringAssert.Contains(scriptText, "**git_finish");
+        StringAssert.Contains(scriptText, "\"current\": current_git");
+        Assert.IsFalse(
+            scriptText.Contains("\"git\": {\n        **current_git,", StringComparison.Ordinal),
+            "Linux exit gate proof identity must be anchored to the proof finish snapshot, not the mutable current worktree snapshot.");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_git_metadata_keeps_cross_head_inputs_aligned_with_the_source_snapshot()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical_proof_path_text: str):");
+        StringAssert.Contains(scriptText, "\"Chummer.Blazor/\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Blazor.Desktop/\"");
+        StringAssert.Contains(scriptText, "\"Chummer/chummer.ico\"");
+        StringAssert.Contains(scriptText, "\"Chummer/chummer6-icon-preview.png\"");
+        StringAssert.Contains(scriptText, "\"Chummer/changelog.txt\"");
+        Assert.IsTrue(
+            scriptText.IndexOf("def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical_proof_path_text: str):", StringComparison.Ordinal) < scriptText.LastIndexOf("\"Chummer/changelog.txt\"", StringComparison.Ordinal),
+            "Linux exit gate git metadata must cover the same cross-head desktop inputs as the immutable source snapshot so proof fingerprints cannot drift on untouched code.");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_normalizes_mstest_platform_trx_output_into_canonical_receipt_path()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "normalize_test_trx_path()");
+        StringAssert.Contains(scriptText, "find \"$TEST_RESULTS_DIR\" -maxdepth 1 -type f -name '*.trx'");
+        StringAssert.Contains(scriptText, "cp \"$discovered_trx\" \"$TEST_TRX_PATH\"");
+        StringAssert.Contains(scriptText, "desktop runtime unit tests did not produce a TRX report");
+        StringAssert.Contains(scriptText, "--logger \"trx;LogFileName=$(basename \"$TEST_TRX_PATH\")\"");
+        StringAssert.Contains(scriptText, "dotnet test wrapper did not produce runnable desktop runtime test results; retrying via direct MSTest host");
+        StringAssert.Contains(scriptText, "run_runtime_test_host_direct()");
+        StringAssert.Contains(scriptText, "--report-trx");
+        StringAssert.Contains(scriptText, "--report-trx-filename \"$(basename \"$TEST_TRX_PATH\")\"");
+        StringAssert.Contains(scriptText, "test_trx_has_runnable_results()");
+        StringAssert.Contains(scriptText, "desktop runtime unit tests did not produce any passing runnable test results");
+        StringAssert.Contains(scriptText, "if ! test_trx_has_runnable_results; then");
+        StringAssert.Contains(scriptText, "rm -f \"$TEST_TRX_PATH\"");
+        StringAssert.Contains(scriptText, "assert_test_trx_passes");
+        Assert.IsTrue(
+            scriptText.Contains("normalize_test_trx_path\ntest -f \"$TEST_TRX_PATH\"\nassert_test_trx_passes", StringComparison.Ordinal),
+            "Linux exit gate must normalize MSTest runner TRX output and fail closed unless the canonical receipt path contains runnable passing tests.");
+    }
+
+    [TestMethod]
+    public void Linux_exit_gate_publishes_same_identity_failures_except_for_early_infra_lock_failures()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "git_start = dict(git.get(\"start\") or {})");
+        StringAssert.Contains(scriptText, "source_snapshot = dict(payload.get(\"source_snapshot\") or {})");
+        StringAssert.Contains(scriptText, "source_snapshot.get(\"worktree_sha256\")");
+        StringAssert.Contains(scriptText, "source_snapshot.get(\"entry_count\")");
+        StringAssert.Contains(scriptText, "early_infra_failure_stages = {\"source_snapshot\", \"build_lock\"}");
+        StringAssert.Contains(scriptText, "and same_identity");
+        StringAssert.Contains(scriptText, "and new_stage in early_infra_failure_stages");
+        StringAssert.Contains(scriptText, "publish = False");
+        Assert.IsFalse(
+            scriptText.Contains("if same_identity and str(existing_payload.get(\"status\") or \"\").strip() == \"passed\" and str(new_payload.get(\"status\") or \"\").strip() != \"passed\":", StringComparison.Ordinal),
+            "Linux exit gate must not suppress same-identity substantive failures behind an older passing receipt.");
+    }
+
+    [TestMethod]
+    public void Test_wrapper_preserves_relative_project_paths_for_mstest_runner_projects()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "test.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "detect_mstest_runner");
+        StringAssert.Contains(scriptText, "if [[ \"$use_mstest_runner\" -eq 0 ]]; then");
+        StringAssert.Contains(scriptText, "normalize_projectish_args");
+        Assert.IsTrue(
+            scriptText.IndexOf("detect_mstest_runner", StringComparison.Ordinal) < scriptText.IndexOf("normalize_projectish_args", StringComparison.Ordinal),
+            "The test wrapper must decide MSTest runner mode before normalizing project paths so .NET 10 can keep MSTest project arguments relative.");
     }
 
     [TestMethod]
@@ -1035,11 +1251,29 @@ public sealed class DesktopExecutableGateComplianceTests
         string linuxScriptText = File.ReadAllText(linuxScriptPath);
 
         StringAssert.Contains(linuxScriptText, "BUILD_LOCK_FD=\"8\"");
+        StringAssert.Contains(linuxScriptText, "mkdir -p \"$(dirname \"$BUILD_LOCK_PATH\")\"");
         StringAssert.Contains(linuxScriptText, "eval \"exec ${BUILD_LOCK_FD}>\\\"\\$BUILD_LOCK_PATH\\\"\"");
         StringAssert.Contains(linuxScriptText, "flock \"$BUILD_LOCK_FD\"");
         Assert.IsFalse(
             linuxScriptText.Contains("exec {BUILD_LOCK_FD}>", StringComparison.Ordinal),
             "The Linux gate must not use dynamic fd assignment for the build lock; it has produced build_lock failures in worker shells.");
+    }
+
+    [TestMethod]
+    public void Linux_desktop_exit_gate_preserves_latest_same_identity_pass_when_early_infra_reruns_fail()
+    {
+        string repoRoot = FindRepoRoot();
+        string linuxScriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string linuxScriptText = File.ReadAllText(linuxScriptPath);
+
+        StringAssert.Contains(linuxScriptText, "def latest_passing_receipt_for_identity(identity, root: pathlib.Path):");
+        StringAssert.Contains(linuxScriptText, "for receipt_path in sorted(root.glob(f\"run.*/{canonical_path.name}\")):");
+        StringAssert.Contains(linuxScriptText, "if not payload or normalized_status(payload) != \"passed\":");
+        StringAssert.Contains(linuxScriptText, "if normalized_status(new_payload) != \"passed\" and new_stage in early_infra_failure_stages:");
+        StringAssert.Contains(linuxScriptText, "publish_source_path = best_receipt_path");
+        StringAssert.Contains(linuxScriptText, "publish_run_root = best_receipt_path.parent");
+        StringAssert.Contains(linuxScriptText, "temp_path.write_text(publish_source_path.read_text(encoding=\"utf-8\"), encoding=\"utf-8\")");
+        StringAssert.Contains(linuxScriptText, "latest_link_path.symlink_to(publish_run_root)");
     }
 
     [TestMethod]

@@ -203,7 +203,7 @@ if legacy_tab_count < 19:
     )
 
 menu_headers = re.findall(r'Header="([^"]+)"', menu_bar_text)
-expected_menu_headers = ["File", "Tools", "Windows", "Help"]
+expected_menu_headers = ["File", "Edit", "Special", "Tools", "Windows", "Help"]
 if menu_headers != expected_menu_headers:
     append_reason(
         "Avalonia shell menu order diverges from the classic desktop contract: "
@@ -285,9 +285,9 @@ for token in [
             f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}",
             avalonia_layout_reasons,
         )
-if "ShowNavigatorPane: false" not in avalonia_projector_text:
+if "ShowNavigatorPane: true" not in avalonia_projector_text:
     append_reason(
-        "Avalonia shell projector must keep the extra left navigator pane out of the primary Chummer5a-style workbench.",
+        "Avalonia shell projector must surface the Codex navigator pane as part of the primary Chummer-style workbench.",
         avalonia_layout_reasons,
     )
 if "return [];" not in avalonia_projector_text:
@@ -379,6 +379,19 @@ if raw_xml_index < 0 or 'IsExpanded="False"' not in section_host_text[raw_xml_in
         avalonia_layout_reasons,
     )
 
+required_empty_startup_section_tokens = [
+    "if (!HasRenderableSectionSurface(sectionId, previewJson, rowArray))",
+    "SectionReviewExpander.IsVisible = false;",
+    "SectionRowsBorder.IsVisible = false;",
+    "if (!HasRenderableSectionSurface(sectionId, previewJson, rowArray, quickActions))",
+]
+for token in required_empty_startup_section_tokens:
+    if token not in read_text(section_host_axaml_path.with_suffix(section_host_axaml_path.suffix + '.cs')):
+        append_reason(
+            f"Section host is missing required empty-startup guard token: {token}",
+            avalonia_layout_reasons,
+        )
+
 preferred_order_positions = {
     command: blazor_shell_text.find(f'"{command}"')
     for command in ["save_character", "print_character", "copy", "new_character", "open_character"]
@@ -459,6 +472,14 @@ if required_test_name not in ui_gate_tests_text:
         "Avalonia flagship UI gate tests do not include the Chummer5a layout hard gate wiring proof.",
         release_wiring_reasons,
     )
+for test_name in [
+    "Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander",
+]:
+    if test_name not in ui_gate_tests_text:
+        append_reason(
+            f"Avalonia flagship UI gate tests are missing required empty-startup proof: {test_name}",
+            release_wiring_reasons,
+        )
 for test_name in [
     "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
     "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session",

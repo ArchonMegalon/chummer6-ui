@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "$0")/../.." && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
+manifest_target="${1:-}"
 
 if [[ -f "$proof_file" ]]; then
   python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
@@ -10,11 +11,7 @@ else
   echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
 fi
 
-bash "$repo_root/scripts/verify-releases-manifest.sh"
-#!/usr/bin/env bash
-set -euo pipefail
-
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
 cd "$repo_root"
 
 test -f docs/COMPATIBILITY_CARGO.md
@@ -43,7 +40,8 @@ echo "[verify] checking contract package consumption..."
 bash scripts/ai/milestones/p5-contract-package-boundary-check.sh
 
 echo "[verify] checking desktop runtime resilience regression guard..."
-bash scripts/ai/test.sh Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj -v minimal
+desktop_runtime_test_filter='FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests'
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true --filter "$desktop_runtime_test_filter"
 
 if ! rg -n '<ChummerUseLocalCompatibilityTree Condition="'\''\$\(ChummerUseLocalCompatibilityTree\)'\'' == '\'''\''">false</ChummerUseLocalCompatibilityTree>' \
   Directory.Build.props >/dev/null; then
@@ -111,8 +109,14 @@ bash scripts/ai/sync-ui-design-mirror.sh >/dev/null
 echo "[verify] checking UI design mirror hygiene guard..."
 bash scripts/ai/milestones/ui-design-mirror-hygiene-check.sh
 
+echo "[verify] checking flagship design mirror completeness guard..."
+bash scripts/ai/milestones/design-mirror-completeness-check.sh
+
 echo "[verify] checking ruleset-specific workbench adaptation guard..."
 bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh
+
+echo "[verify] checking Chummer5a layout hard gate..."
+bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh
 
 echo "[verify] checking delegate and command-route parity guard..."
 bash scripts/ai/milestones/delegate-command-route-parity-check.sh
@@ -125,6 +129,12 @@ bash scripts/ai/milestones/section-host-ruleset-parity-check.sh
 
 echo "[verify] checking standalone interactive control inventory guard..."
 bash scripts/ai/milestones/interactive-control-inventory-check.sh
+
+echo "[verify] checking recursive UI event exit gate..."
+bash scripts/ai/milestones/recursive-ui-event-exit-gate.sh
+
+echo "[verify] checking startup workbench survival guard..."
+bash scripts/ai/milestones/startup-workbench-survival-check.sh
 
 echo "[verify] checking Chummer5a legacy UI element parity guard..."
 bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh
@@ -218,6 +228,12 @@ bash scripts/ai/milestones/chummer4-sr4-muscle-memory-parity-gate.sh
 echo "[verify] checking SR6 shared muscle-memory parity gate..."
 bash scripts/ai/milestones/sr6-shared-muscle-memory-gate.sh
 
+echo "[verify] checking SR6 ruleset UI sophistication gate..."
+bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh
+
+echo "[verify] checking design-authorized parity softening gate..."
+bash scripts/ai/milestones/design-authorized-parity-softening-check.sh
+
 echo "[verify] checking shared legacy-equivalent chrome gate..."
 bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
 
@@ -286,6 +302,14 @@ if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_pat
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+
+echo "[verify] refreshing verified release-channel mirror..."
+python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null
+
+if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 
 if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then
@@ -1024,6 +1048,9 @@ bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh
 
 echo "[verify] checking next-90 M121 desktop GM Runboard route guard..."
 bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh
+
+echo "[verify] checking next-90 M122 desktop campaign closeout guard..."
+bash scripts/ai/milestones/next90-m122-ui-desktop-campaign-closeout-check.sh
 
 echo "[verify] checking next-90 M112 campaign memory and return-loop desktop guard..."
 bash scripts/ai/milestones/next90-m112-ui-campaign-memory-check.sh

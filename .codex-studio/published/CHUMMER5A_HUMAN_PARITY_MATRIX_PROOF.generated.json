@@ -1,0 +1,172 @@
+{
+  "contract_name": "chummer6-ui.chummer5a_human_parity_matrix_proof",
+  "status": "pass",
+  "generated_at": "2026-05-08T18:48:44.341451Z",
+  "summary": "The Chummer5A human parity matrix is fully covered by passing family-level UI parity rows and mandatory screenshot-backed review jobs.",
+  "matrix": {
+    "path": "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
+    "row_count": 75,
+    "surface_count": 24,
+    "family_count": 7,
+    "family_ids": [
+      "dense_builder_and_career",
+      "dice_initiative_and_table_utilities",
+      "identity_contacts_lifestyles_history",
+      "legacy_and_adjacent_import_oracles",
+      "sheet_export_print_viewer_exchange",
+      "sr6_supplements_designers_house_rules",
+      "translator_xml_bridge"
+    ]
+  },
+  "ui_audit_summary": {
+    "path": "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "total_elements": 84,
+    "visual_yes_count": 84,
+    "behavioral_yes_count": 84,
+    "visual_no_count": 0,
+    "behavioral_no_count": 0
+  },
+  "family_results": [
+    {
+      "matrix_family_id": "dense_builder_and_career",
+      "audit_row_id": "family:dense_builder_and_career_workflows",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "dice_initiative_and_table_utilities",
+      "audit_row_id": "family:dice_initiative_and_table_utilities",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "identity_contacts_lifestyles_history",
+      "audit_row_id": "family:identity_contacts_lifestyles_history",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "legacy_and_adjacent_import_oracles",
+      "audit_row_id": "family:legacy_and_adjacent_import_oracles",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "sheet_export_print_viewer_exchange",
+      "audit_row_id": "family:sheet_export_print_viewer_and_exchange",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "sr6_supplements_designers_house_rules",
+      "audit_row_id": "family:sr6_supplements_designers_and_house_rules",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    },
+    {
+      "matrix_family_id": "translator_xml_bridge",
+      "audit_row_id": "family:custom_data_xml_and_translator_bridge",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "status": "pass"
+    }
+  ],
+  "screenshot_review": {
+    "path": "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "required_jobs": [
+      "dense_builder",
+      "master_index",
+      "roster",
+      "settings",
+      "translator",
+      "xml_editor",
+      "hero_lab_importer"
+    ],
+    "results": [
+      {
+        "job_id": "dense_builder",
+        "status": "pass",
+        "screenshots": [
+          "05-dense-section-light.png",
+          "06-dense-section-dark.png"
+        ],
+        "test_markers": [
+          "Character_creation_preserves_familiar_dense_builder_rhythm"
+        ]
+      },
+      {
+        "job_id": "master_index",
+        "status": "pass",
+        "screenshots": [
+          "16-master-index-dialog-light.png"
+        ],
+        "test_markers": [
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
+        ]
+      },
+      {
+        "job_id": "roster",
+        "status": "pass",
+        "screenshots": [
+          "17-character-roster-dialog-light.png"
+        ],
+        "test_markers": [
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
+        ]
+      },
+      {
+        "job_id": "settings",
+        "status": "pass",
+        "screenshots": [
+          "03-settings-open-light.png"
+        ],
+        "test_markers": [
+          "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters"
+        ]
+      },
+      {
+        "job_id": "translator",
+        "status": "pass",
+        "screenshots": [
+          "38-translator-dialog-light.png"
+        ],
+        "test_markers": [
+          "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+        ]
+      },
+      {
+        "job_id": "xml_editor",
+        "status": "pass",
+        "screenshots": [
+          "39-xml-editor-dialog-light.png"
+        ],
+        "test_markers": [
+          "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+        ]
+      },
+      {
+        "job_id": "hero_lab_importer",
+        "status": "pass",
+        "screenshots": [
+          "40-hero-lab-importer-dialog-light.png",
+          "18-import-dialog-light.png"
+        ],
+        "test_markers": [
+          "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+        ]
+      }
+    ]
+  },
+  "strict_failure_reasons": [],
+  "evidence_sources": [
+    "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
+    "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+  ]
+}

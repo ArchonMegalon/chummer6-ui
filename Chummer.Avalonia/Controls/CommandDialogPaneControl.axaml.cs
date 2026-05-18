@@ -31,6 +31,7 @@ public partial class CommandDialogPaneControl : UserControl
         SetDialog(
             state.DialogTitle,
             state.DialogMessage,
+            state.DialogTrustReceipt,
             state.Fields,
             state.Actions);
     }
@@ -49,12 +50,15 @@ public partial class CommandDialogPaneControl : UserControl
     public void SetDialog(
         string? title,
         string? message,
+        string? trustReceipt,
         IEnumerable<DialogFieldDisplayItem> fields,
         IEnumerable<DialogActionDisplayItem> actions)
     {
         DialogTitleText.Text = string.IsNullOrWhiteSpace(title) ? "(none)" : title;
         DialogMessageText.Text = string.IsNullOrWhiteSpace(message) ? "(none)" : message;
         DialogMessageBorder.IsVisible = !string.IsNullOrWhiteSpace(message);
+        DialogTrustReceiptText.Text = string.IsNullOrWhiteSpace(trustReceipt) ? "(none)" : trustReceipt;
+        DialogTrustReceiptBorder.IsVisible = !string.IsNullOrWhiteSpace(trustReceipt);
         RebuildDialogFields(fields.ToArray());
         RebuildDialogActions(actions.ToArray());
         RefreshDialogVisuals();
@@ -665,6 +669,7 @@ public sealed record CommandDialogPaneState(
     string? SelectedCommandId,
     string? DialogTitle,
     string? DialogMessage,
+    string? DialogTrustReceipt,
     DialogFieldDisplayItem[] Fields,
     DialogActionDisplayItem[] Actions);
 

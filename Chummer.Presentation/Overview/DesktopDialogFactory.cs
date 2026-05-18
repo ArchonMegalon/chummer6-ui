@@ -4,11 +4,24 @@ using Chummer.Contracts.Content;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation.Explain;
+using System.Globalization;
+using System.IO;
+using System.Text.Json;
 
 namespace Chummer.Presentation.Overview;
 
 public sealed class DesktopDialogFactory : IDesktopDialogFactory
 {
+    private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
+    private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+    private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
+    private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
+    private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
+    private const string NewCharacterPrioritySkillChoice1FieldId = "newCharacterPrioritySkillChoice1";
+    private const string NewCharacterPrioritySkillChoice2FieldId = "newCharacterPrioritySkillChoice2";
+    private const string NewCharacterPrioritySkillChoice3FieldId = "newCharacterPrioritySkillChoice3";
+    private const string NewCharacterPriorityWorkflowCanCommitFieldId = "newCharacterPriorityWorkflowCanCommit";
+
     public DesktopDialogState CreateExplainTraceDialog(
         LocalizedRulesetExplainTrace? trace,
         LocalizedExplainChrome chrome)
@@ -93,6 +106,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Open for Export",
                 "Paste Chummer XML to stage export workflows.",
                 rulesetId),
+            "new_character" => BuildNewCharacterDialog(preferences, rulesetId),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
                 "Print Setup",
@@ -108,27 +122,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dice_roller" => new DesktopDialogState(
                 "dialog.dice_roller",
                 "Dice Roller",
-                "Ruleset-backed dice utility with initiative planning and current roster context.",
-                BuildDiceToolFields(currentWorkspace, openWorkspaces),
+                "Legacy dice roller posture with roll method, threshold, gremlins, and reroll support.",
+                BuildDiceToolFields(currentWorkspace, openWorkspaces, rulesetId),
                 [
                     new DesktopDialogAction("roll", "Roll", true),
-                    new DesktopDialogAction("derive_initiative", "Preview Initiative"),
+                    new DesktopDialogAction("reroll_misses", "Re-Roll Misses"),
                     new DesktopDialogAction("close", "Close")
                 ]),
-            "global_settings" => new DesktopDialogState(
-                "dialog.global_settings",
-                S("desktop.dialog.global_settings.title"),
-                F("desktop.dialog.global_settings.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
-                [
-                    new DesktopDialogField("globalUiScale", S("desktop.dialog.global_settings.field.ui_scale"), preferences.UiScalePercent.ToString(), "100", InputType: "number"),
-                    new DesktopDialogField("globalTheme", S("desktop.dialog.global_settings.field.theme"), preferences.Theme, "classic"),
-                    new DesktopDialogField("globalLanguage", S("desktop.dialog.global_settings.field.language"), DesktopLocalizationCatalog.NormalizeOrDefault(preferences.Language), DesktopLocalizationCatalog.DefaultLanguage),
-                    new DesktopDialogField("globalCompactMode", S("desktop.dialog.global_settings.field.compact_mode"), preferences.CompactMode ? "true" : "false", "false", InputType: "checkbox")
-                ],
-                [
-                    new DesktopDialogAction("save", S("desktop.dialog.action.save"), true),
-                    new DesktopDialogAction("cancel", S("desktop.dialog.action.cancel"))
-                ]),
+            "global_settings" => BuildGlobalSettingsDialog(preferences, language),
             "switch_ruleset" => new DesktopDialogState(
                 "dialog.switch_ruleset",
                 "Switch Ruleset",
@@ -143,33 +144,64 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "character_settings" => new DesktopDialogState(
                 "dialog.character_settings",
                 "Character Settings",
-                "Rules environment posture for source toggles, custom data, and XML bridge is surfaced here so the modern desktop does not hide legacy-era configuration truth.",
+                "Edit the current character-setting defaults used when creating and validating runners.",
                 [
-                    new DesktopDialogField("characterPriority", "Priority System", preferences.CharacterPriority, "SumToTen"),
-                    new DesktopDialogField("characterKarmaNuyen", "Karma/Nuyen Ratio", preferences.KarmaNuyenRatio.ToString(), "2", InputType: "number"),
-                    new DesktopDialogField("characterHouseRulesEnabled", "Enable House Rules", preferences.HouseRulesEnabled ? "true" : "false", "false", InputType: "checkbox"),
-                    new DesktopDialogField("characterNotes", "Character Notes", preferences.CharacterNotes, "notes", true),
-                    new DesktopDialogField("characterSettingsLanePosture", "Settings Lane", masterIndex?.SettingsLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterSourceToggleLanePosture", "Source Toggle Lane", masterIndex?.SourceToggleLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterSourceToggleCoverage", "Source Toggle Coverage", masterIndex is null ? "0%" : $"{masterIndex.SourcebookToggleCoveragePercent}% ({masterIndex.DistinctSourcebookToggles} toggles)", "0%", IsReadOnly: true),
-                    new DesktopDialogField("characterCustomDataLanePosture", "Custom Data Lane", masterIndex?.CustomDataLanePosture ?? "missing", "missing", IsReadOnly: true),
-                    new DesktopDialogField("characterXmlBridgePosture", "XML Bridge", masterIndex?.XmlBridgePosture ?? "missing", "missing", IsReadOnly: true)
+                    new DesktopDialogField(
+                        "characterPriority",
+                        "Build Method",
+                        preferences.CharacterPriority,
+                        DesktopPreferenceState.Default.CharacterPriority,
+                        InputType: "select",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                        Options: BuildPriorityOptions()),
+                    new DesktopDialogField(
+                        "characterKarmaNuyen",
+                        "Karma/Nuyen Ratio",
+                        preferences.KarmaNuyenRatio.ToString(),
+                        "2",
+                        InputType: "number",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField(
+                        "characterHouseRulesEnabled",
+                        "Enable House Rules",
+                        preferences.HouseRulesEnabled ? "true" : "false",
+                        "false",
+                        InputType: "checkbox",
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                    new DesktopDialogField(
+                        "characterNotes",
+                        "Notes",
+                        preferences.CharacterNotes,
+                        string.Empty,
+                        IsMultiline: true,
+                        LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
                 ],
                 [
-                    new DesktopDialogAction("save", "Save", true),
+                    new DesktopDialogAction("save", "OK", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "translator" => new DesktopDialogState(
                 "dialog.translator",
                 S("desktop.dialog.translator.title"),
-                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary()),
+                F("desktop.dialog.translator.message", DesktopLocalizationCatalog.BuildSupportedLanguageCodeSummary())
+                + " Language Search and Enabled Language Overlays remain visible in the governed translator lane.",
                 BuildTranslatorFields(language, masterIndex, translatorLanguages),
                 [new DesktopDialogAction("close", S("desktop.dialog.action.close"), true)]),
             "xml_editor" => new DesktopDialogState(
                 "dialog.xml_editor",
                 "XML Editor",
-                "Edit/import flow in this head is file-first; XML bridge and custom-data posture stay visible here so amend-package work is not hidden behind debug-only flow.",
-                BuildXmlEditorFields(activeSectionJson, masterIndex),
+                masterIndex is null
+                    ? "Edit/import flow in this head is file-first; this preview surfaces current XML Bridge posture while keeping the Custom Data Lane visible."
+                    : $"Edit/import flow stays file-first while XML Bridge posture is {masterIndex.XmlBridgePosture} with {masterIndex.EnabledDataOverlayCount} enabled overlays and Custom Data Lane {masterIndex.CustomDataLanePosture}.",
+                [
+                    new DesktopDialogField("xmlEditorLanePosture", "XML Bridge", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorXmlBridgePosture", "XML Bridge Posture", NormalizeGoverned(masterIndex?.XmlBridgePosture), "governed", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                    new DesktopDialogField("xmlEditorOverlayCount", "Enabled XML Overlays", (masterIndex?.EnabledDataOverlayCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataLanePosture", "Custom Data Lane", NormalizeGoverned(masterIndex?.CustomDataLanePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorCustomDataDirectoryCount", "Custom Data Directories", (masterIndex?.DistinctCustomDataDirectoryCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorReceipt", "XML Bridge Receipt", masterIndex?.XmlBridgeLaneReceipt ?? "missing", "missing", IsReadOnly: true),
+                    new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true)
+                ],
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -178,16 +210,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.master_index",
                 "Master Index",
                 masterIndex is null
-                    ? "Catalog data is served by the API and surfaced here in desktop parity mode."
-                    : $"Catalog parity: {masterIndex.SourcebookCount} sourcebooks, {masterIndex.ReferenceCoveragePercent}% snippet coverage, settings={masterIndex.SettingsLanePosture}, import={masterIndex.ImportOracleLanePosture}.",
+                    ? "Search the catalog, inspect the selected reference, and keep the current source visible."
+                    : $"Search the catalog, inspect the selected reference, and keep the current source visible across {masterIndex.SourcebookCount} sourcebooks.",
                 BuildMasterIndexFields(masterIndex),
-                [new DesktopDialogAction("close", "Close", true)]),
+                BuildMasterIndexActions(masterIndex)),
             "character_roster" => new DesktopDialogState(
                 "dialog.character_roster",
                 "Character Roster",
-                "Desktop roster/operator lane over the currently open runners. Watch-folder and deeper GM dashboard closure remain in milestone 15.",
-                BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces),
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Open runners on the left, keep the selected runner summary on the right, and keep background plus notes compact underneath like the legacy roster utility.",
+                BuildRosterFields(name, alias, workspace, currentWorkspace, openWorkspaces, preferences),
+                BuildRosterActions(name, alias, workspace, currentWorkspace, openWorkspaces, preferences)),
             "data_exporter" => new DesktopDialogState(
                 "dialog.data_exporter",
                 "Data Exporter",
@@ -228,8 +260,62 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "hero_lab_importer" => new DesktopDialogState(
                 "dialog.hero_lab_importer",
                 "Hero Lab Importer",
-                "Paste Hero Lab XML payload to import using compatibility mode.",
-                BuildHeroLabImporterFields(rulesetId, masterIndex),
+                masterIndex is null
+                    ? "Paste Hero Lab XML payload to import while keeping the Import Oracle Lane and Adjacent SR6 Oracle Receipt visible."
+                    : $"Paste Hero Lab XML payload to import while Import Oracle Lane posture is {masterIndex.ImportOracleLanePosture} across {masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected} route families with Adjacent SR6 Oracle Receipt {masterIndex.AdjacentSr6OracleReceiptPosture}.",
+                [
+                    new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
+                    CreateRulesetField("importRulesetId", rulesetId),
+                    new DesktopDialogField("heroLabImportOracleLanePosture", "Import Oracle Lane", NormalizeGoverned(masterIndex?.ImportOracleLanePosture), "governed", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleCoverage",
+                        "Import Oracle Coverage",
+                        masterIndex is null
+                            ? "0/1 · 0%"
+                            : "1/1 · 100%",
+                        "0/1 · 0%",
+                        IsReadOnly: true),
+                    new DesktopDialogField("heroLabFixtureCount", "Hero Lab Fixtures", (masterIndex?.HeroLabFixtureCount ?? 0).ToString(), "0", IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleMissingSources",
+                        "Missing Sources",
+                        masterIndex is null
+                            ? string.Empty
+                            : string.Join(", ", masterIndex.ImportOracleMissingSources ?? []),
+                        string.Empty,
+                        IsReadOnly: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleMatrix",
+                        "Import Oracle Matrix",
+                        masterIndex is null ? "missing" : BuildImportOracleMatrix(masterIndex),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabImportOracleReceipt",
+                        "Import Oracle Receipt",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeMasterIndexValue(masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabAdjacentSr6OracleReceipt",
+                        "Adjacent SR6 Oracle",
+                        masterIndex is null
+                            ? "missing"
+                            : NormalizeAdjacentSr6OracleReceipt(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture),
+                        "missing",
+                        IsReadOnly: true,
+                        IsMultiline: true),
+                    new DesktopDialogField(
+                        "heroLabXml",
+                        "Hero Lab XML",
+                        "<character><name>Hero Lab Import</name></character>",
+                        "<character><name>Hero Lab Import</name></character>",
+                        IsMultiline: true)
+                ],
                 [
                     new DesktopDialogAction("import", "Import", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -238,59 +324,55 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.new_window",
                 "New Window",
                 "Open a second shell instance from your platform runtime.",
-                [],
+                BuildWindowUtilityFields("Open New Window", "A second shell stays bound to the desktop host instead of taking over the current workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "close_window" => new DesktopDialogState(
                 "dialog.close_window",
                 "Close Window",
                 "Close-window action is host/platform specific.",
-                [],
+                BuildWindowUtilityFields("Close Current Window", "Close the current shell window while keeping save and install continuity on the host."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "wiki" => new DesktopDialogState(
                 "dialog.wiki",
                 "Wiki",
-                "https://github.com/chummer5a/chummer5a/wiki",
-                [],
+                "https://github.com/chummer5a/chummer5a/wiki/",
+                BuildExternalLinkFields("Chummer Wiki", "https://github.com/chummer5a/chummer5a/wiki/", "Use the legacy wiki as an external reference without displacing the current workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "discord" => new DesktopDialogState(
                 "dialog.discord",
                 "Discord",
-                "https://discord.gg/EV44Mya",
-                [],
+                "https://discord.gg/mJB7st9",
+                BuildExternalLinkFields("Community Discord", "https://discord.gg/mJB7st9", "Community chat opens in the browser instead of replacing the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "revision_history" => new DesktopDialogState(
                 "dialog.revision_history",
                 "Revision History",
                 "https://github.com/chummer5a/chummer5a/releases",
-                [],
+                BuildExternalLinkFields("Revision History", "https://github.com/chummer5a/chummer5a/releases", "Release notes open as an external help surface."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "dumpshock" => new DesktopDialogState(
                 "dialog.dumpshock",
-                "Dumpshock Thread",
-                "https://forums.dumpshock.com/index.php?showtopic=37464",
-                [],
+                "Issue Tracker",
+                "https://github.com/chummer5a/chummer5a/issues/",
+                BuildExternalLinkFields("Issue Tracker", "https://github.com/chummer5a/chummer5a/issues/", "The legacy issue tracker opens externally and stays outside the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
                 "Print Character",
                 "Print preview is rendered by host/browser print facilities.",
-                [],
+                BuildPrintUtilityFields("Current runner", "Print preview stays host-driven while sheet/export context remains visible."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_multiple" => new DesktopDialogState(
                 "dialog.print_multiple",
                 "Print Multiple",
                 "Batch print is available through roster and print endpoints.",
-                [],
+                BuildPrintUtilityFields("Roster batch", "Batch print remains roster-driven and uses the same compact print utility posture."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "update" => new DesktopDialogState(
                 "dialog.update",
                 "Check for Updates",
                 "Desktop heads check the configured registry manifest (`CHUMMER_DESKTOP_UPDATE_MANIFEST`) at startup, stage either an in-place payload or a platform installer, and keep install linking plus support continuity intact across the relaunch boundary.",
-                [
-                    new DesktopDialogField("updateManifest", "Manifest", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_MANIFEST") ?? string.Empty, "unset", IsReadOnly: true),
-                    new DesktopDialogField("updateAutoApply", "Auto apply", Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_UPDATE_AUTO_APPLY") ?? "true", "true", IsReadOnly: true),
-                    new DesktopDialogField("updateSupportPath", "Support after update", "/account/support", "/account/support", IsReadOnly: true)
-                ],
+                BuildUpdateUtilityFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
             _ => new DesktopDialogState(
                 "dialog.generic",
@@ -373,6 +455,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? rulesetId)
     {
         const string defaultXml = "<character><name>Imported Runner</name></character>";
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string importSource = "Paste character XML from a trusted local or reviewed export source.";
+        string reviewSummary = $"Review imported summary before applying a {normalizedRulesetId.ToUpperInvariant()} workspace mutation.";
 
         return new DesktopDialogState(
             Id: id,
@@ -380,7 +465,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Message: message,
             Fields:
             [
-                CreateRulesetField("importRulesetId", rulesetId),
+                new DesktopDialogField(
+                    Id: "importRulesetId",
+                    Label: "Import Ruleset",
+                    Value: normalizedRulesetId,
+                    Placeholder: normalizedRulesetId,
+                    InputType: "select",
+                    Options: BuildRulesetOptions()),
+                new DesktopDialogField(
+                    Id: "openCharacterImportSource",
+                    Label: "Import Source",
+                    Value: importSource,
+                    Placeholder: importSource,
+                    IsReadOnly: true),
+                new DesktopDialogField(
+                    Id: "openCharacterReviewSummary",
+                    Label: "Review imported summary",
+                    Value: reviewSummary,
+                    Placeholder: reviewSummary,
+                    IsReadOnly: true),
                 new DesktopDialogField(
                     Id: "openCharacterXml",
                     Label: "Character XML",
@@ -397,39 +500,1659 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static DesktopDialogField CreateRulesetField(string fieldId, string? rulesetId)
     {
-        string value = RulesetDefaults.NormalizeOptional(rulesetId) ?? string.Empty;
+        string value = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         return new DesktopDialogField(
             Id: fieldId,
             Label: "Ruleset",
             Value: value,
-            Placeholder: value);
+            Placeholder: value,
+            InputType: "select",
+            Options: BuildRulesetOptions());
     }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildRulesetOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("sr4", "SR4"),
+            new DesktopDialogFieldOption("sr5", "SR5"),
+            new DesktopDialogFieldOption("sr6", "SR6")
+        };
+
+    private static DesktopDialogState BuildNewCharacterDialog(
+        DesktopPreferenceState preferences,
+        string? rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string preferredBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, preferences.CharacterPriority);
+        bool houseRulesEnabled = preferences.HouseRulesEnabled;
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+
+        return new DesktopDialogState(
+            "dialog.new_character",
+            "Select Build Method",
+            BuildNewCharacterMessage(normalizedRulesetId, preferredBuildMethod, houseRulesEnabled),
+            [
+                CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
+                CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
+                new DesktopDialogField(
+                    "newCharacterPreferredBuildMethod",
+                    "Preferred Build Method",
+                    preferredBuildMethod,
+                    preferredBuildMethod,
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    "newCharacterHouseRulesEnabled",
+                    "House Rules",
+                    houseRulesValue,
+                    houseRulesValue,
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+            ],
+            [
+                new DesktopDialogAction("create_character", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId, string? preferredBuildMethod = null)
+    {
+        DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
+        string rulesetToken = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string selectedValue = ResolvePreferredBuildMethod(rulesetToken, preferredBuildMethod);
+        DesktopDialogFieldOption selected = options
+            .First(option => string.Equals(option.Value, selectedValue, StringComparison.Ordinal));
+        return new DesktopDialogField(
+            Id: fieldId,
+            Label: "Build Method",
+            Value: selected.Value,
+            Placeholder: selected.Value,
+            InputType: "select",
+            Options: options);
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildBuildMethodOptions(string? rulesetId)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        return normalizedRulesetId switch
+        {
+            var id when string.Equals(id, RulesetDefaults.Sr4, StringComparison.Ordinal) =>
+            [
+                new DesktopDialogFieldOption("BP", "BP"),
+                new DesktopDialogFieldOption("Karma", "Karma")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Priority", "Priority"),
+                new DesktopDialogFieldOption("SumToTen", "Sum-to-Ten"),
+                new DesktopDialogFieldOption("Karma", "Karma"),
+                new DesktopDialogFieldOption("LifeModule", "Life Modules")
+            ]
+        };
+    }
+
+    internal static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
+        return UsesPriorityWorkflow(resolvedBuildMethod)
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias);
+    }
+
+    private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
+            rulesetId,
+            buildMethod,
+            category: "Standard",
+            metatype: ResolveDefaultMetatype("Standard"),
+            heritagePriority: "D",
+            attributesPriority: "B",
+            talentPriority: "E",
+            skillsPriority: "C",
+            resourcesPriority: "A",
+            talentChoice: "Mundane",
+            metavariant: string.Empty,
+            skillChoice1: string.Empty,
+            skillChoice2: string.Empty,
+            skillChoice3: string.Empty,
+            possessionBased: false,
+            possessionMethod: string.Empty,
+            force: 1,
+            lastChangedFieldId: string.Empty);
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+        string summary = BuildNewCharacterPriorityWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.HeritagePriority,
+            resolution.AttributesPriority,
+            resolution.TalentPriority,
+            resolution.SkillsPriority,
+            resolution.ResourcesPriority,
+            resolution.TalentChoice,
+            houseRulesEnabled);
+
+        return new DesktopDialogState(
+            NewCharacterPriorityWorkflowDialogId,
+            "Select Metatype Priority",
+            "Legacy priority-table creation must materialize its metatype and priority continuation before the workspace opens.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                new DesktopDialogField(
+                    "newCharacterMetatypeCategory",
+                    "Metatype Category",
+                    resolution.Category,
+                    resolution.Category,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildMetatypeCategoryOptions()),
+                new DesktopDialogField(
+                    "newCharacterMetatype",
+                    "Metatype",
+                    resolution.Metatype,
+                    resolution.Metatype,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: resolution.MetatypeOptions),
+                new DesktopDialogField(
+                    "newCharacterPriorityHeritage",
+                    "Heritage Priority",
+                    resolution.HeritagePriority,
+                    resolution.HeritagePriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityAttributes",
+                    "Attributes Priority",
+                    resolution.AttributesPriority,
+                    resolution.AttributesPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityTalent",
+                    "Talent Priority",
+                    resolution.TalentPriority,
+                    resolution.TalentPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPrioritySkills",
+                    "Skills Priority",
+                    resolution.SkillsPriority,
+                    resolution.SkillsPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityResources",
+                    "Resources Priority",
+                    resolution.ResourcesPriority,
+                    resolution.ResourcesPriority,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildPriorityLetterOptions()),
+                new DesktopDialogField(
+                    "newCharacterPriorityTalentChoice",
+                    "Talent Choice",
+                    resolution.TalentChoice,
+                    resolution.TalentChoice,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: resolution.TalentOptions),
+                new DesktopDialogField(
+                    NewCharacterMetavariantFieldId,
+                    "Metavariant",
+                    resolution.Metavariant,
+                    resolution.Metavariant,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.MetavariantOptions),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice1FieldId,
+                    "Skill Choice 1",
+                    resolution.SkillChoice1,
+                    resolution.SkillChoice1,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice1.Options),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice2FieldId,
+                    "Skill Choice 2",
+                    resolution.SkillChoice2,
+                    resolution.SkillChoice2,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice2.Options),
+                new DesktopDialogField(
+                    NewCharacterPrioritySkillChoice3FieldId,
+                    "Skill Choice 3",
+                    resolution.SkillChoice3,
+                    resolution.SkillChoice3,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                    Options: resolution.RuntimeState.SkillChoice3.Options),
+                new DesktopDialogField(
+                    "newCharacterPriorityWorkflowSummary",
+                    "Workflow Summary",
+                    summary,
+                    summary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                BuildNewCharacterContextField(NewCharacterPriorityLastChangedFieldId, "Workflow Last Changed Field", string.Empty),
+                BuildNewCharacterContextField(
+                    NewCharacterPriorityWorkflowCanCommitFieldId,
+                    "Workflow Can Commit",
+                    resolution.RuntimeState.CanCommit ? "true" : "false"),
+                BuildNewCharacterContextField(
+                    NewCharacterPriorityWorkflowStateFieldId,
+                    "Workflow Runtime State",
+                    PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState))
+            ],
+            [
+                new DesktopDialogAction("complete_new_character_workflow", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogState BuildNewCharacterKarmaWorkflowDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias)
+    {
+        string category = "Standard";
+        string metatype = ResolveDefaultMetatype(category);
+        string houseRulesValue = houseRulesEnabled ? "true" : "false";
+        string summary = BuildNewCharacterKarmaWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            houseRulesEnabled);
+
+        return new DesktopDialogState(
+            NewCharacterKarmaWorkflowDialogId,
+            "Select Metatype",
+            "Legacy karma and life-module creation must materialize the metatype continuation before the workspace opens.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                new DesktopDialogField(
+                    "newCharacterMetatypeCategory",
+                    "Metatype Category",
+                    category,
+                    category,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildMetatypeCategoryOptions()),
+                new DesktopDialogField(
+                    "newCharacterMetatype",
+                    "Metatype",
+                    metatype,
+                    metatype,
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildMetatypeOptions(category)),
+                new DesktopDialogField(
+                    "newCharacterKarmaWorkflowSummary",
+                    "Workflow Summary",
+                    summary,
+                    summary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            ],
+            [
+                new DesktopDialogAction("complete_new_character_workflow", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
+        => new(
+            id,
+            label,
+            value,
+            value,
+            IsReadOnly: true,
+            LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden);
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeCategoryOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Standard", "Standard"),
+            new DesktopDialogFieldOption("Metahuman", "Metahuman"),
+            new DesktopDialogFieldOption("Show All", "Show All")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category)
+    {
+        string normalizedCategory = string.IsNullOrWhiteSpace(category) ? "Standard" : category.Trim();
+        return normalizedCategory switch
+        {
+            "Metahuman" =>
+            [
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ],
+            "Show All" =>
+            [
+                new DesktopDialogFieldOption("Human", "Human"),
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Human", "Human"),
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Troll", "Troll")
+            ]
+        };
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetavariantOptions(string metatype)
+    {
+        return metatype.Trim() switch
+        {
+            "Elf" =>
+            [
+                new DesktopDialogFieldOption("Elf", "Elf"),
+                new DesktopDialogFieldOption("Dryad", "Dryad")
+            ],
+            "Dwarf" =>
+            [
+                new DesktopDialogFieldOption("Dwarf", "Dwarf"),
+                new DesktopDialogFieldOption("Gnome", "Gnome")
+            ],
+            "Ork" =>
+            [
+                new DesktopDialogFieldOption("Ork", "Ork"),
+                new DesktopDialogFieldOption("Hobgoblin", "Hobgoblin")
+            ],
+            "Troll" =>
+            [
+                new DesktopDialogFieldOption("Troll", "Troll"),
+                new DesktopDialogFieldOption("Cyclops", "Cyclops")
+            ],
+            _ =>
+            [
+                new DesktopDialogFieldOption("Human", "Human")
+            ]
+        };
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityLetterOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("A", "A"),
+            new DesktopDialogFieldOption("B", "B"),
+            new DesktopDialogFieldOption("C", "C"),
+            new DesktopDialogFieldOption("D", "D"),
+            new DesktopDialogFieldOption("E", "E")
+        };
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildTalentChoiceOptions(string priorityLetter, string metatype, string metavariant)
+    {
+        List<DesktopDialogFieldOption> options =
+        [
+            new DesktopDialogFieldOption("Mundane", "Mundane"),
+            new DesktopDialogFieldOption("Adept", "Adept"),
+            new DesktopDialogFieldOption("Magician", "Magician"),
+            new DesktopDialogFieldOption("Mystic Adept", "Mystic Adept"),
+            new DesktopDialogFieldOption("Technomancer", "Technomancer")
+        ];
+
+        if (string.Equals(metatype, "Elf", StringComparison.Ordinal)
+            && string.Equals(metavariant, "Dryad", StringComparison.Ordinal))
+        {
+            options.Insert(1, new DesktopDialogFieldOption("Aspected Magician", "Aspected Magician"));
+        }
+
+        return options
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static string ResolveDefaultMetatype(string? category)
+        => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
+
+    private static PriorityWorkflowResolution ResolvePriorityWorkflowResolution(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        string metavariant,
+        string skillChoice1,
+        string skillChoice2,
+        string skillChoice3,
+        bool possessionBased,
+        string possessionMethod,
+        int force,
+        string lastChangedFieldId)
+    {
+        string normalizedCategory = BuildMetatypeCategoryOptions()
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(option, category, StringComparison.Ordinal))
+            ?? "Standard";
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(normalizedCategory).ToArray();
+        string resolvedMetatype = metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal))
+            ? metatype
+            : metatypeOptions[0].Value;
+
+        Dictionary<string, string> priorities = new(StringComparer.Ordinal)
+        {
+            ["newCharacterPriorityHeritage"] = NormalizePriorityLetter(heritagePriority, "D"),
+            ["newCharacterPriorityAttributes"] = NormalizePriorityLetter(attributesPriority, "B"),
+            ["newCharacterPriorityTalent"] = NormalizePriorityLetter(talentPriority, "E"),
+            ["newCharacterPrioritySkills"] = NormalizePriorityLetter(skillsPriority, "C"),
+            ["newCharacterPriorityResources"] = NormalizePriorityLetter(resourcesPriority, "A"),
+        };
+        ReconcilePriorityLetters(buildMethod, lastChangedFieldId, priorities);
+
+        DesktopDialogFieldOption[] metavariantOptions = BuildMetavariantOptions(resolvedMetatype).ToArray();
+        string resolvedMetavariant = metavariantOptions.Any(option => string.Equals(option.Value, metavariant, StringComparison.Ordinal))
+            ? metavariant
+            : metavariantOptions[0].Value;
+
+        DesktopDialogFieldOption[] talentOptions = BuildTalentChoiceOptions(
+                priorities["newCharacterPriorityTalent"],
+                resolvedMetatype,
+                resolvedMetavariant)
+            .ToArray();
+        string resolvedTalentChoice = talentOptions.Any(option => string.Equals(option.Value, talentChoice, StringComparison.Ordinal))
+            ? talentChoice
+            : talentOptions[0].Value;
+
+        (PriorityWorkflowChoiceState skillState1, PriorityWorkflowChoiceState skillState2, PriorityWorkflowChoiceState skillState3, string resolvedSkillChoice1, string resolvedSkillChoice2, string resolvedSkillChoice3, string skillSelectionLabel) =
+            BuildPrioritySkillChoiceStates(
+                resolvedTalentChoice,
+                skillChoice1,
+                skillChoice2,
+                skillChoice3,
+                lastChangedFieldId);
+
+        PriorityWorkflowDialogRuntimeState runtimeState = BuildPriorityWorkflowRuntimeState(
+            rulesetId,
+            buildMethod,
+            resolvedMetatype,
+            resolvedMetavariant,
+            priorities["newCharacterPriorityHeritage"],
+            priorities["newCharacterPriorityAttributes"],
+            priorities["newCharacterPriorityTalent"],
+            priorities["newCharacterPrioritySkills"],
+            priorities["newCharacterPriorityResources"],
+            resolvedTalentChoice,
+            skillSelectionLabel,
+            skillState1,
+            skillState2,
+            skillState3,
+            possessionBased,
+            possessionMethod,
+            force);
+
+        return new PriorityWorkflowResolution(
+            Category: normalizedCategory,
+            Metatype: resolvedMetatype,
+            HeritagePriority: priorities["newCharacterPriorityHeritage"],
+            AttributesPriority: priorities["newCharacterPriorityAttributes"],
+            TalentPriority: priorities["newCharacterPriorityTalent"],
+            SkillsPriority: priorities["newCharacterPrioritySkills"],
+            ResourcesPriority: priorities["newCharacterPriorityResources"],
+            MetatypeOptions: metatypeOptions,
+            TalentOptions: talentOptions,
+            TalentChoice: resolvedTalentChoice,
+            Metavariant: resolvedMetavariant,
+            SkillChoice1: resolvedSkillChoice1,
+            SkillChoice2: resolvedSkillChoice2,
+            SkillChoice3: resolvedSkillChoice3,
+            RuntimeState: runtimeState);
+    }
+
+    private static string NormalizePriorityLetter(string? value, string fallback)
+    {
+        string normalized = string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim().ToUpperInvariant();
+        return BuildPriorityLetterOptions().Any(option => string.Equals(option.Value, normalized, StringComparison.Ordinal))
+            ? normalized
+            : fallback;
+    }
+
+    private static void ReconcilePriorityLetters(
+        string buildMethod,
+        string lastChangedFieldId,
+        IDictionary<string, string> priorities)
+    {
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            || !priorities.ContainsKey(lastChangedFieldId))
+        {
+            return;
+        }
+
+        string changedValue = priorities[lastChangedFieldId];
+        string[] legalLetters = BuildPriorityLetterOptions()
+            .Select(option => option.Value)
+            .ToArray();
+
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            string? duplicateKey = priorities
+                .Where(pair => !string.Equals(pair.Key, lastChangedFieldId, StringComparison.Ordinal)
+                    && string.Equals(pair.Value, changedValue, StringComparison.Ordinal))
+                .Select(pair => pair.Key)
+                .FirstOrDefault();
+            if (duplicateKey is null)
+            {
+                break;
+            }
+
+            string missingLetter = legalLetters
+                .FirstOrDefault(letter => !priorities.Values.Contains(letter, StringComparer.Ordinal))
+                ?? changedValue;
+            priorities[duplicateKey] = missingLetter;
+        }
+    }
+
+    private static (
+        PriorityWorkflowChoiceState SkillChoice1,
+        PriorityWorkflowChoiceState SkillChoice2,
+        PriorityWorkflowChoiceState SkillChoice3,
+        string ResolvedSkillChoice1,
+        string ResolvedSkillChoice2,
+        string ResolvedSkillChoice3,
+        string SkillSelectionLabel)
+        BuildPrioritySkillChoiceStates(
+            string talentChoice,
+            string skillChoice1,
+            string skillChoice2,
+            string skillChoice3,
+            string lastChangedFieldId)
+    {
+        DesktopDialogFieldOption[] options = BuildPrioritySkillChoiceOptions(talentChoice).ToArray();
+        if (options.Length == 0)
+        {
+            return (
+                PriorityWorkflowChoiceState.Hidden,
+                PriorityWorkflowChoiceState.Hidden,
+                PriorityWorkflowChoiceState.Hidden,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty);
+        }
+
+        int visibleChoiceCount = talentChoice switch
+        {
+            "Mystic Adept" or "Technomancer" => 3,
+            "Magician" or "Aspected Magician" => 2,
+            _ => 1
+        };
+
+        string[] selections =
+        [
+            ResolvePriorityChoiceValue(skillChoice1, options, Array.Empty<string>()),
+            ResolvePriorityChoiceValue(skillChoice2, options, new[] { skillChoice1 }),
+            ResolvePriorityChoiceValue(skillChoice3, options, new[] { skillChoice1, skillChoice2 })
+        ];
+
+        int changedIndex = lastChangedFieldId switch
+        {
+            NewCharacterPrioritySkillChoice1FieldId => 0,
+            NewCharacterPrioritySkillChoice2FieldId => 1,
+            NewCharacterPrioritySkillChoice3FieldId => 2,
+            _ => -1
+        };
+
+        if (changedIndex >= 0 && changedIndex < visibleChoiceCount)
+        {
+            string changedValue = selections[changedIndex];
+            if (!string.IsNullOrWhiteSpace(changedValue))
+            {
+                for (int index = 0; index < visibleChoiceCount; index++)
+                {
+                    if (index == changedIndex
+                        || !string.Equals(selections[index], changedValue, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    selections[index] = options
+                        .Select(option => option.Value)
+                        .FirstOrDefault(value => !selections
+                            .Where((_, selectionIndex) => selectionIndex != index)
+                            .Contains(value, StringComparer.Ordinal))
+                        ?? string.Empty;
+                }
+            }
+        }
+
+        List<string> usedValues = [];
+        for (int index = 0; index < visibleChoiceCount; index++)
+        {
+            if (!options.Any(option => string.Equals(option.Value, selections[index], StringComparison.Ordinal))
+                || usedValues.Contains(selections[index], StringComparer.Ordinal))
+            {
+                selections[index] = options
+                    .Select(option => option.Value)
+                    .FirstOrDefault(value => !usedValues.Contains(value, StringComparer.Ordinal))
+                    ?? string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(selections[index]))
+            {
+                usedValues.Add(selections[index]);
+            }
+        }
+
+        return (
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 1, selections[0], options),
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 2, selections[1], options),
+            new PriorityWorkflowChoiceState(visibleChoiceCount >= 3, selections[2], options),
+            selections[0],
+            selections[1],
+            selections[2],
+            BuildPrioritySkillSelectionLabel(talentChoice));
+    }
+
+    private static string ResolvePriorityChoiceValue(
+        string value,
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        IEnumerable<string> reserved)
+    {
+        if (options.Any(option => string.Equals(option.Value, value, StringComparison.Ordinal))
+            && !reserved.Contains(value, StringComparer.Ordinal))
+        {
+            return value;
+        }
+
+        return options
+            .Select(option => option.Value)
+            .FirstOrDefault(optionValue => !reserved.Contains(optionValue, StringComparer.Ordinal))
+            ?? string.Empty;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPrioritySkillChoiceOptions(string talentChoice)
+    {
+        return talentChoice switch
+        {
+            "Magician" or "Aspected Magician" =>
+            [
+                new DesktopDialogFieldOption("Spellcasting", "Spellcasting"),
+                new DesktopDialogFieldOption("Counterspelling", "Counterspelling"),
+                new DesktopDialogFieldOption("Ritual Spellcasting", "Ritual Spellcasting"),
+                new DesktopDialogFieldOption("Summoning", "Summoning"),
+                new DesktopDialogFieldOption("Binding", "Binding"),
+                new DesktopDialogFieldOption("Banishing", "Banishing")
+            ],
+            "Mystic Adept" =>
+            [
+                new DesktopDialogFieldOption("Spellcasting", "Spellcasting"),
+                new DesktopDialogFieldOption("Counterspelling", "Counterspelling"),
+                new DesktopDialogFieldOption("Assensing", "Assensing"),
+                new DesktopDialogFieldOption("Summoning", "Summoning"),
+                new DesktopDialogFieldOption("Binding", "Binding"),
+                new DesktopDialogFieldOption("Gymnastics", "Gymnastics")
+            ],
+            "Technomancer" =>
+            [
+                new DesktopDialogFieldOption("Compiling", "Compiling"),
+                new DesktopDialogFieldOption("Registering", "Registering"),
+                new DesktopDialogFieldOption("Software", "Software"),
+                new DesktopDialogFieldOption("Electronic Warfare", "Electronic Warfare"),
+                new DesktopDialogFieldOption("Hacking", "Hacking"),
+                new DesktopDialogFieldOption("Cybercombat", "Cybercombat")
+            ],
+            _ => []
+        };
+    }
+
+    private static string BuildPrioritySkillSelectionLabel(string talentChoice)
+        => talentChoice switch
+        {
+            "Technomancer" => "Select the free resonance skills:",
+            "Magician" or "Mystic Adept" or "Aspected Magician" => "Select the free magical skills:",
+            _ => string.Empty
+        };
+
+    private static PriorityWorkflowDialogRuntimeState BuildPriorityWorkflowRuntimeState(
+        string rulesetId,
+        string buildMethod,
+        string metatype,
+        string metavariant,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        string skillSelectionLabel,
+        PriorityWorkflowChoiceState skillChoice1,
+        PriorityWorkflowChoiceState skillChoice2,
+        PriorityWorkflowChoiceState skillChoice3,
+        bool possessionBased,
+        string possessionMethod,
+        int force)
+    {
+        DesktopDialogFieldOption[] possessionMethodOptions =
+        [
+            new DesktopDialogFieldOption("None", "None"),
+            new DesktopDialogFieldOption("Channeling", "Channeling"),
+            new DesktopDialogFieldOption("Direct", "Direct")
+        ];
+        string resolvedPossessionMethod = possessionMethodOptions.Any(option => string.Equals(option.Value, possessionMethod, StringComparison.Ordinal))
+            ? possessionMethod
+            : possessionMethodOptions[0].Value;
+        IReadOnlyList<PriorityWorkflowInspectAttributeState> inspectAttributes = BuildPriorityInspectAttributes(metatype, metavariant);
+        IReadOnlyList<string> qualities = BuildPriorityMetatypeQualities(metatype, metavariant);
+        string sumToTenLabel = string.Equals(buildMethod, "SumToTen", StringComparison.OrdinalIgnoreCase)
+            ? $"{GetPriorityLetterValue(heritagePriority) + GetPriorityLetterValue(attributesPriority) + GetPriorityLetterValue(talentPriority) + GetPriorityLetterValue(skillsPriority) + GetPriorityLetterValue(resourcesPriority)}/10"
+            : string.Empty;
+
+        return new PriorityWorkflowDialogRuntimeState(
+            Mode: buildMethod,
+            SumToTenLabel: sumToTenLabel,
+            MetavariantOptions: BuildMetavariantOptions(metatype),
+            SelectedMetavariant: metavariant,
+            MetatypeKarma: ResolveMetatypeKarma(metatype, metavariant),
+            SpecialAttributes: ResolveSpecialAttributePool(heritagePriority),
+            Source: ResolveMetatypeSource(rulesetId, metatype, metavariant),
+            InspectAttributes: inspectAttributes,
+            Qualities: qualities,
+            ForceVisible: false,
+            Force: Math.Max(1, force),
+            PossessionVisible: false,
+            PossessionBased: possessionBased,
+            PossessionMethodOptions: possessionMethodOptions,
+            SelectedPossessionMethod: resolvedPossessionMethod,
+            SkillSelectionLabel: skillSelectionLabel,
+            SkillChoice1: skillChoice1,
+            SkillChoice2: skillChoice2,
+            SkillChoice3: skillChoice3,
+            CanCommit: !string.IsNullOrWhiteSpace(metatype)
+                && !string.IsNullOrWhiteSpace(talentChoice)
+                && (!skillChoice1.Visible || !string.IsNullOrWhiteSpace(skillChoice1.Value))
+                && (!skillChoice2.Visible || !string.IsNullOrWhiteSpace(skillChoice2.Value))
+                && (!skillChoice3.Visible || !string.IsNullOrWhiteSpace(skillChoice3.Value))
+                && DistinctVisibleSkillChoices(skillChoice1, skillChoice2, skillChoice3));
+    }
+
+    private static bool DistinctVisibleSkillChoices(params PriorityWorkflowChoiceState[] skillChoices)
+    {
+        string[] visibleValues = skillChoices
+            .Where(choice => choice.Visible && !string.IsNullOrWhiteSpace(choice.Value))
+            .Select(choice => choice.Value)
+            .ToArray();
+        return visibleValues.Length == visibleValues.Distinct(StringComparer.Ordinal).Count();
+    }
+
+    private static IReadOnlyList<PriorityWorkflowInspectAttributeState> BuildPriorityInspectAttributes(string metatype, string metavariant)
+    {
+        IReadOnlyDictionary<string, string> values = (metatype, metavariant) switch
+        {
+            ("Elf", "Dryad") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "5 / 8",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            },
+            ("Elf", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "3 / 8",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            },
+            ("Dwarf", "Gnome") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "2 / 7",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 5",
+                ["STR"] = "2 / 7",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 7",
+                ["LOG"] = "1 / 7",
+                ["WIL"] = "2 / 7"
+            },
+            ("Dwarf", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "3 / 8",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 5",
+                ["STR"] = "3 / 8",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "2 / 7"
+            },
+            ("Ork", "Hobgoblin") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "3 / 8",
+                ["AGI"] = "2 / 7",
+                ["REA"] = "1 / 6",
+                ["STR"] = "2 / 7",
+                ["CHA"] = "1 / 5",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Ork", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "4 / 9",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 6",
+                ["STR"] = "3 / 8",
+                ["CHA"] = "1 / 5",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Troll", "Cyclops") => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "5 / 10",
+                ["AGI"] = "1 / 4",
+                ["REA"] = "1 / 6",
+                ["STR"] = "5 / 10",
+                ["CHA"] = "1 / 4",
+                ["INT"] = "1 / 5",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            ("Troll", _) => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "5 / 10",
+                ["AGI"] = "1 / 5",
+                ["REA"] = "1 / 6",
+                ["STR"] = "5 / 10",
+                ["CHA"] = "1 / 4",
+                ["INT"] = "1 / 5",
+                ["LOG"] = "1 / 5",
+                ["WIL"] = "1 / 6"
+            },
+            _ => new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["BOD"] = "1 / 6",
+                ["AGI"] = "1 / 6",
+                ["REA"] = "1 / 6",
+                ["STR"] = "1 / 6",
+                ["CHA"] = "1 / 6",
+                ["INT"] = "1 / 6",
+                ["LOG"] = "1 / 6",
+                ["WIL"] = "1 / 6"
+            }
+        };
+
+        return new[]
+        {
+            new PriorityWorkflowInspectAttributeState("BOD", values["BOD"]),
+            new PriorityWorkflowInspectAttributeState("AGI", values["AGI"]),
+            new PriorityWorkflowInspectAttributeState("REA", values["REA"]),
+            new PriorityWorkflowInspectAttributeState("STR", values["STR"]),
+            new PriorityWorkflowInspectAttributeState("CHA", values["CHA"]),
+            new PriorityWorkflowInspectAttributeState("INT", values["INT"]),
+            new PriorityWorkflowInspectAttributeState("LOG", values["LOG"]),
+            new PriorityWorkflowInspectAttributeState("WIL", values["WIL"])
+        };
+    }
+
+    private static IReadOnlyList<string> BuildPriorityMetatypeQualities(string metatype, string metavariant)
+    {
+        List<string> qualities = metatype switch
+        {
+            "Elf" => ["Low-Light Vision"],
+            "Dwarf" => ["Thermographic Vision", "Toxin Resistance", "Pathogen Resistance"],
+            "Ork" => ["Low-Light Vision"],
+            "Troll" => ["Thermographic Vision", "Reach +1", "Dermal Armor +1"],
+            _ => []
+        };
+
+        if (string.Equals(metavariant, "Dryad", StringComparison.Ordinal))
+        {
+            qualities.Add("Glamour");
+        }
+        else if (string.Equals(metavariant, "Gnome", StringComparison.Ordinal))
+        {
+            qualities.Add("Arcane Arrester");
+        }
+        else if (string.Equals(metavariant, "Cyclops", StringComparison.Ordinal))
+        {
+            qualities.Add("One Eye");
+        }
+
+        return qualities;
+    }
+
+    private static string ResolveMetatypeKarma(string metatype, string metavariant)
+    {
+        return (metatype, metavariant) switch
+        {
+            ("Elf", "Dryad") => "35",
+            ("Elf", _) => "30",
+            ("Dwarf", "Gnome") => "30",
+            ("Dwarf", _) => "25",
+            ("Ork", "Hobgoblin") => "25",
+            ("Ork", _) => "20",
+            ("Troll", "Cyclops") => "45",
+            ("Troll", _) => "40",
+            _ => "0"
+        };
+    }
+
+    private static string ResolveSpecialAttributePool(string heritagePriority)
+    {
+        return heritagePriority switch
+        {
+            "A" => "9",
+            "B" => "7",
+            "C" => "5",
+            "D" => "3",
+            _ => "1"
+        };
+    }
+
+    private static string ResolveMetatypeSource(string rulesetId, string metatype, string metavariant)
+    {
+        string page = metatype switch
+        {
+            "Elf" => "64",
+            "Dwarf" => "65",
+            "Ork" => "66",
+            "Troll" => "67",
+            _ => "64"
+        };
+        if (!string.Equals(metatype, metavariant, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(metavariant))
+        {
+            return $"Run Faster · {metavariant}";
+        }
+
+        return $"{rulesetId.ToUpperInvariant()} Core Rulebook p. {page}";
+    }
+
+    private sealed record PriorityWorkflowResolution(
+        string Category,
+        string Metatype,
+        string HeritagePriority,
+        string AttributesPriority,
+        string TalentPriority,
+        string SkillsPriority,
+        string ResourcesPriority,
+        IReadOnlyList<DesktopDialogFieldOption> MetatypeOptions,
+        IReadOnlyList<DesktopDialogFieldOption> TalentOptions,
+        string TalentChoice,
+        string Metavariant,
+        string SkillChoice1,
+        string SkillChoice2,
+        string SkillChoice3,
+        PriorityWorkflowDialogRuntimeState RuntimeState);
+
+    private static string ResolvePreferredBuildMethod(string rulesetId, string? preferredBuildMethod)
+    {
+        DesktopDialogFieldOption[] options = BuildBuildMethodOptions(rulesetId).ToArray();
+        string normalizedPreferred = NormalizeBuildMethodValue(preferredBuildMethod);
+        return options
+            .Select(option => option.Value)
+            .FirstOrDefault(option => string.Equals(
+                NormalizeBuildMethodValue(option),
+                normalizedPreferred,
+                StringComparison.Ordinal))
+            ?? options[0].Value;
+    }
+
+    private static string NormalizeBuildMethodValue(string? buildMethod)
+    {
+        string normalized = string.IsNullOrWhiteSpace(buildMethod) ? string.Empty : buildMethod.Trim();
+        return normalized.ToLowerInvariant() switch
+        {
+            "priority" => "Priority",
+            "karma" => "Karma",
+            "bp" => "BP",
+            "lifemodule" => "LifeModule",
+            "life modules" => "LifeModule",
+            "sumtoten" => "SumToTen",
+            "sum-to-ten" => "SumToTen",
+            _ => normalized
+        };
+    }
+
+    private static bool UsesPriorityWorkflow(string buildMethod)
+        => string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal);
+
+    private static string BuildNewCharacterMessage(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled)
+    {
+        string route = UsesPriorityWorkflow(buildMethod)
+            ? "The priority-table continuation will materialize after you confirm this selection."
+            : "The metatype continuation will materialize after you confirm this selection.";
+        string houseRules = houseRulesEnabled
+            ? " House rules are enabled in Character Settings."
+            : " House rules are currently disabled.";
+        return $"Choose the ruleset and build method before opening the new character workflow for {rulesetId.ToUpperInvariant()}. {route}{houseRules}";
+    }
+
+    private static string BuildNewCharacterPriorityWorkflowSummary(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        string heritagePriority,
+        string attributesPriority,
+        string talentPriority,
+        string skillsPriority,
+        string resourcesPriority,
+        string talentChoice,
+        bool houseRulesEnabled)
+    {
+        string[] lines =
+        [
+            $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
+            $"Metatype | {metatype} ({category})",
+            $"Priority Ladder | Heritage {heritagePriority}, Attributes {attributesPriority}, Talent {talentPriority}, Skills {skillsPriority}, Resources {resourcesPriority}",
+            $"Talent Choice | {talentChoice}",
+            $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
+        ];
+        if (string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
+        {
+            int total = GetPriorityLetterValue(heritagePriority)
+                + GetPriorityLetterValue(attributesPriority)
+                + GetPriorityLetterValue(talentPriority)
+                + GetPriorityLetterValue(skillsPriority)
+                + GetPriorityLetterValue(resourcesPriority);
+            return string.Join(Environment.NewLine, lines.Concat(new[] { $"Sum-to-Ten Total | {total}" }));
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildNewCharacterKarmaWorkflowSummary(
+        string rulesetId,
+        string buildMethod,
+        string category,
+        string metatype,
+        bool houseRulesEnabled)
+        => string.Join(
+            Environment.NewLine,
+            new[]
+            {
+                $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
+                $"Metatype | {metatype} ({category})",
+                "Posture | legacy metatype continuation",
+                $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
+            });
+
+    private static int GetPriorityLetterValue(string priority)
+        => priority switch
+        {
+            "A" => 4,
+            "B" => 3,
+            "C" => 2,
+            "D" => 1,
+            _ => 0
+        };
 
     private static IReadOnlyList<DesktopDialogField> BuildDiceToolFields(
         CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        string? rulesetId)
     {
-        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
-        int savedCount = roster.Count(workspace => workspace.HasSavedWorkspace);
-        string rosterContext = roster.Count switch
-        {
-            0 => "No open runners. The utility still works as a standalone dice and initiative pad.",
-            _ => $"{roster.Count} open runner{(roster.Count == 1 ? string.Empty : "s")} · {savedCount} saved · active {ResolveDialogWorkspaceLabel(currentWorkspace, roster, BuildStableWorkspaceLabel(roster[0]) ?? roster[0].Id.Value)}"
-        };
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string ruleOf6Label = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "using Rule of 6"
+            : "Rule of 6";
+        string cinematicGameplayLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Hit on 4, 5, or 6"
+            : "Cinematic Gameplay";
+        string rushJobLabel = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "Rushed Job (Glitch on 1 or 2)"
+            : "Rush Job";
 
         return
         [
-            new DesktopDialogField("diceExpression", "Expression", "12d6", "12d6"),
-            new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceLimit", "Limit", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceWoundModifier", "Wound Modifier", "0", "0", InputType: "number"),
-            new DesktopDialogField("diceInitiativeBase", "Initiative Base", "10", "10", InputType: "number"),
-            new DesktopDialogField("diceInitiativeDice", "Initiative Dice", "1", "1", InputType: "number"),
-            new DesktopDialogField("diceCurrentPass", "Current Pass", "1", "1", InputType: "number"),
-            new DesktopDialogField("diceUtilityLane", "Utility Lane", "ruleset-backed roll + initiative preview", "ruleset-backed roll + initiative preview", IsReadOnly: true),
-            new DesktopDialogField("diceRosterContext", "Roster Context", rosterContext, rosterContext, IsReadOnly: true),
-            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(10, 1, 0, 1), BuildInitiativePreview(10, 1, 0, 1), IsReadOnly: true)
+            new DesktopDialogField("diceCount", "Dice", "1", "1", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("diceMethod", "Method", "Standard", "Standard", InputType: "select", Options: BuildDiceMethodOptions(), LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("diceThreshold", "Threshold", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("diceGremlins", "Gremlins", "0", "0", InputType: "number", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("diceRuleOf6", ruleOf6Label, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceCinematicGameplay", cinematicGameplayLabel, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceRushJob", rushJobLabel, "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceVariableGlitch", "Variable Glitch", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceBubbleDie", "Bubble Die", "false", "false", InputType: "checkbox"),
+            new DesktopDialogField("diceResultsSummary", "Results", "Roll dice to see hits, glitches, and the summed total.", "Roll dice to see hits, glitches, and the summed total.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("diceResultsList", "Roll History", "No rolls yet.", "No rolls yet.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List),
+            new DesktopDialogField("diceUtilityLane", "Utility Lane", "Dice roller + initiative preview + roster context", "Dice roller + initiative preview + roster context", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("diceRosterContext", "Roster Context", BuildDiceRosterContext(currentWorkspace, openWorkspaces), "No roster context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("initiativePreview", "Initiative Preview", BuildInitiativePreview(currentWorkspace, openWorkspaces), "No active runner.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("diceLastRollState", "Last Roll State", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
         ];
+    }
+
+    private static string BuildDiceRosterContext(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        OpenWorkspaceState[] roster = (openWorkspaces ?? Array.Empty<OpenWorkspaceState>())
+            .OrderByDescending(workspace => workspace.LastOpenedUtc)
+            .ToArray();
+        OpenWorkspaceState? active = currentWorkspace is null
+            ? roster.FirstOrDefault()
+            : roster.FirstOrDefault(workspace => workspace.Id.Equals(currentWorkspace.Value)) ?? roster.FirstOrDefault();
+        string activeRunner = active is null
+            ? "none"
+            : $"{active.Alias} · {active.Name} [{active.RulesetId}]";
+        string openSummary = roster.Length == 0
+            ? "none"
+            : string.Join(", ", roster.Select(workspace => $"{workspace.Alias}/{workspace.RulesetId}"));
+
+        return BuildGridValue(
+            ("Active Runner", activeRunner),
+            ("Open Runners", roster.Length.ToString(CultureInfo.InvariantCulture)),
+            ("Roster Mix", openSummary));
+    }
+
+    private static string BuildInitiativePreview(
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+    {
+        OpenWorkspaceState[] roster = (openWorkspaces ?? Array.Empty<OpenWorkspaceState>())
+            .OrderByDescending(workspace => workspace.LastOpenedUtc)
+            .ToArray();
+        OpenWorkspaceState? active = currentWorkspace is null
+            ? roster.FirstOrDefault()
+            : roster.FirstOrDefault(workspace => workspace.Id.Equals(currentWorkspace.Value)) ?? roster.FirstOrDefault();
+
+        if (active is null)
+        {
+            return "No active runner. Roll history stays available and initiative context appears after opening a roster entry.";
+        }
+
+        return $"{active.Alias} · {active.Name} [{active.RulesetId}]{Environment.NewLine}Initiative preview uses the active roster runner and keeps results local to this utility lane.";
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildDiceMethodOptions()
+        => new[]
+        {
+            new DesktopDialogFieldOption("Standard", "Standard"),
+            new DesktopDialogFieldOption("Large", "Large"),
+            new DesktopDialogFieldOption("ReallyLarge", "Really Large")
+        };
+
+    internal static DesktopDialogState BuildGlobalSettingsDialog(
+        DesktopPreferenceState preferences,
+        string language,
+        string? activePane = null)
+    {
+        string normalizedLanguage = DesktopLocalizationCatalog.NormalizeOrDefault(language);
+        string S(string key) => DesktopLocalizationCatalog.GetRequiredString(key, normalizedLanguage);
+        string F(string key, params object[] values) => DesktopLocalizationCatalog.GetRequiredFormattedString(key, normalizedLanguage, values);
+
+        return new DesktopDialogState(
+            "dialog.global_settings",
+            S("desktop.dialog.global_settings.title"),
+            F("desktop.dialog.global_settings.message", DesktopLocalizationCatalog.BuildSupportedLanguageSummary()),
+            BuildGlobalSettingsFields(preferences, normalizedLanguage, S),
+            [
+                new DesktopDialogAction("save", "Save", true),
+                new DesktopDialogAction("cancel", S("desktop.dialog.action.cancel"))
+            ]);
+    }
+
+    internal static DesktopPreferenceState ParseGlobalSettingsPreferences(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        bool preferNightlyBuilds = DesktopDialogFieldValueParser.ParseBool(
+            dialog,
+            "globalPreferNightlyBuilds",
+            UsesPreviewUpdateChannel(DesktopDialogFieldValueParser.GetValue(dialog, "globalUpdatePolicy") ?? fallback.UpdateChannel));
+
+        return DesktopPreferenceStateRuntime.Normalize(fallback with
+        {
+            UiScalePercent = DesktopDialogFieldValueParser.ParseInt(dialog, "globalUiScale", fallback.UiScalePercent),
+            Theme = DesktopDialogFieldValueParser.GetValue(dialog, "globalTheme") ?? fallback.Theme,
+            Language = DesktopDialogFieldValueParser.GetValue(dialog, "globalLanguage") ?? fallback.Language,
+            SheetLanguage = DesktopDialogFieldValueParser.GetValue(dialog, "globalSheetLanguage") ?? fallback.SheetLanguage,
+            CompactMode = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCompactMode", fallback.CompactMode),
+            CharacterPriority = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterPriority") ?? fallback.CharacterPriority,
+            KarmaNuyenRatio = DesktopDialogFieldValueParser.ParseInt(dialog, "globalKarmaNuyenRatio", fallback.KarmaNuyenRatio),
+            HouseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHouseRulesEnabled", fallback.HouseRulesEnabled),
+            StartupBehavior = DesktopDialogFieldValueParser.GetValue(dialog, "globalStartupBehavior") ?? fallback.StartupBehavior,
+            UpdateChannel = preferNightlyBuilds
+                ? "Preview channel · check weekly"
+                : "Stable channel · check weekly",
+            CheckForUpdatesOnLaunch = DesktopDialogFieldValueParser.ParseBool(dialog, "globalCheckForUpdates", fallback.CheckForUpdatesOnLaunch),
+            CharacterRosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath") ?? fallback.CharacterRosterPath,
+            PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
+            VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
+            HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex)
+        });
+    }
+
+    internal static DesktopDialogState RebuildGlobalSettingsDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        DesktopPreferenceState parsedPreferences = ParseGlobalSettingsPreferences(dialog, fallback);
+        return BuildGlobalSettingsDialog(parsedPreferences, parsedPreferences.Language);
+    }
+
+    internal static DesktopDialogState RebuildDynamicDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        if (string.Equals(dialog.Id, "dialog.global_settings", StringComparison.Ordinal))
+            return RebuildGlobalSettingsDialog(dialog, fallback);
+
+        return dialog.Id switch
+        {
+            "dialog.new_character" => RebuildNewCharacterDialog(dialog),
+            NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog),
+            NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog),
+            "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
+            "dialog.character_roster" => RebuildCharacterRosterDialog(dialog, fallback),
+            "dialog.master_index" => RebuildMasterIndexDialog(dialog),
+            "dialog.ui.cyberware_add" => RebuildCyberwareSelectionDialog(dialog),
+            "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
+            "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
+            "dialog.ui.combat_add_armor" => RebuildArmorSelectionDialog(dialog),
+            "dialog.ui.vehicle_add" => RebuildVehicleSelectionDialog(dialog),
+            "dialog.ui.cyberware_edit" => RebuildCyberwareEditDialog(dialog),
+            "dialog.ui.gear_edit" => RebuildGearEditDialog(dialog),
+            "dialog.ui.vehicle_edit" => RebuildVehicleEditDialog(dialog),
+            _ => dialog
+        };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(
+                DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
+            ?? RulesetDefaults.Sr5;
+        string preferredBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPreferredBuildMethod") ?? string.Empty;
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterHouseRulesEnabled", false);
+        DesktopDialogFieldOption[] buildMethodOptions = BuildBuildMethodOptions(rulesetId).ToArray();
+        string currentBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod") ?? string.Empty;
+        string resolvedBuildMethod = buildMethodOptions.Any(option => string.Equals(option.Value, currentBuildMethod, StringComparison.Ordinal))
+            ? currentBuildMethod
+            : ResolvePreferredBuildMethod(rulesetId, preferredBuildMethod);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterRulesetId" => field with
+                {
+                    Value = rulesetId,
+                    Placeholder = rulesetId,
+                    Options = BuildRulesetOptions()
+                },
+                "newCharacterBuildMethod" => field with
+                {
+                    Value = resolvedBuildMethod,
+                    Placeholder = resolvedBuildMethod,
+                    Options = buildMethodOptions
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with
+        {
+            Message = BuildNewCharacterMessage(rulesetId, resolvedBuildMethod, houseRulesEnabled),
+            Fields = updatedFields
+        };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterPriorityWorkflowDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
+        string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Priority";
+        string lastChangedFieldId = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPriorityLastChangedFieldId) ?? string.Empty;
+        PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
+            rulesetId,
+            buildMethod,
+            category: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard",
+            metatype: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? "Human",
+            heritagePriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityHeritage") ?? "D",
+            attributesPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityAttributes") ?? "B",
+            talentPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalent") ?? "E",
+            skillsPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPrioritySkills") ?? "C",
+            resourcesPriority: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityResources") ?? "A",
+            talentChoice: DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityTalentChoice") ?? "Mundane",
+            metavariant: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterMetavariantFieldId) ?? string.Empty,
+            skillChoice1: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice1FieldId) ?? string.Empty,
+            skillChoice2: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice2FieldId) ?? string.Empty,
+            skillChoice3: DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPrioritySkillChoice3FieldId) ?? string.Empty,
+            possessionBased: false,
+            possessionMethod: string.Empty,
+            force: 1,
+            lastChangedFieldId: lastChangedFieldId);
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+        string summary = BuildNewCharacterPriorityWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            resolution.Category,
+            resolution.Metatype,
+            resolution.HeritagePriority,
+            resolution.AttributesPriority,
+            resolution.TalentPriority,
+            resolution.SkillsPriority,
+            resolution.ResourcesPriority,
+            resolution.TalentChoice,
+            houseRulesEnabled);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterMetatypeCategory" => field with
+                {
+                    Value = resolution.Category,
+                    Placeholder = resolution.Category,
+                    Options = BuildMetatypeCategoryOptions()
+                },
+                "newCharacterMetatype" => field with
+                {
+                    Value = resolution.Metatype,
+                    Placeholder = resolution.Metatype,
+                    Options = resolution.MetatypeOptions
+                },
+                "newCharacterPriorityHeritage" => field with
+                {
+                    Value = resolution.HeritagePriority,
+                    Placeholder = resolution.HeritagePriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityAttributes" => field with
+                {
+                    Value = resolution.AttributesPriority,
+                    Placeholder = resolution.AttributesPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityTalent" => field with
+                {
+                    Value = resolution.TalentPriority,
+                    Placeholder = resolution.TalentPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPrioritySkills" => field with
+                {
+                    Value = resolution.SkillsPriority,
+                    Placeholder = resolution.SkillsPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityResources" => field with
+                {
+                    Value = resolution.ResourcesPriority,
+                    Placeholder = resolution.ResourcesPriority,
+                    Options = BuildPriorityLetterOptions()
+                },
+                "newCharacterPriorityTalentChoice" => field with
+                {
+                    Value = resolution.TalentChoice,
+                    Placeholder = resolution.TalentChoice,
+                    Options = resolution.TalentOptions
+                },
+                NewCharacterMetavariantFieldId => field with
+                {
+                    Value = resolution.Metavariant,
+                    Placeholder = resolution.Metavariant,
+                    Options = resolution.RuntimeState.MetavariantOptions
+                },
+                NewCharacterPrioritySkillChoice1FieldId => field with
+                {
+                    Value = resolution.SkillChoice1,
+                    Placeholder = resolution.SkillChoice1,
+                    Options = resolution.RuntimeState.SkillChoice1.Options
+                },
+                NewCharacterPrioritySkillChoice2FieldId => field with
+                {
+                    Value = resolution.SkillChoice2,
+                    Placeholder = resolution.SkillChoice2,
+                    Options = resolution.RuntimeState.SkillChoice2.Options
+                },
+                NewCharacterPrioritySkillChoice3FieldId => field with
+                {
+                    Value = resolution.SkillChoice3,
+                    Placeholder = resolution.SkillChoice3,
+                    Options = resolution.RuntimeState.SkillChoice3.Options
+                },
+                "newCharacterPriorityWorkflowSummary" => field with
+                {
+                    Value = summary,
+                    Placeholder = summary
+                },
+                NewCharacterPriorityWorkflowCanCommitFieldId => field with
+                {
+                    Value = resolution.RuntimeState.CanCommit ? "true" : "false",
+                    Placeholder = resolution.RuntimeState.CanCommit ? "true" : "false"
+                },
+                NewCharacterPriorityWorkflowStateFieldId => field with
+                {
+                    Value = PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState),
+                    Placeholder = PriorityWorkflowDialogRuntimeStateSerializer.Serialize(resolution.RuntimeState)
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterKarmaWorkflowDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
+        string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Karma";
+        bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category).ToArray();
+        string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
+        string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
+            ? currentMetatype
+            : metatypeOptions[0].Value;
+        string summary = BuildNewCharacterKarmaWorkflowSummary(
+            rulesetId,
+            buildMethod,
+            category,
+            metatype,
+            houseRulesEnabled);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterMetatypeCategory" => field with
+                {
+                    Value = category,
+                    Placeholder = category,
+                    Options = BuildMetatypeCategoryOptions()
+                },
+                "newCharacterMetatype" => field with
+                {
+                    Value = metatype,
+                    Placeholder = metatype,
+                    Options = metatypeOptions
+                },
+                "newCharacterKarmaWorkflowSummary" => field with
+                {
+                    Value = summary,
+                    Placeholder = summary
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
+    }
+
+    private static DesktopDialogState RebuildDiceRollerDialog(DesktopDialogState dialog)
+    {
+        string method = DesktopDialogFieldValueParser.GetValue(dialog, "diceMethod") ?? string.Empty;
+        string normalizedMethod = string.Equals(method, "Large", StringComparison.OrdinalIgnoreCase)
+            ? "Large"
+            : string.Equals(method, "ReallyLarge", StringComparison.OrdinalIgnoreCase)
+                ? "ReallyLarge"
+                : "Standard";
+        bool standardMethod = string.Equals(normalizedMethod, "Standard", StringComparison.Ordinal);
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "diceMethod" => field with
+                {
+                    Value = normalizedMethod,
+                    Placeholder = normalizedMethod
+                },
+                "diceRuleOf6" => field with
+                {
+                    Value = standardMethod ? DesktopDialogFieldValueParser.Normalize(field, field.Value) : "false",
+                    Placeholder = "false",
+                    IsReadOnly = !standardMethod
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
+    }
+
+    internal static string ReadGlobalSettingsActivePane(DesktopDialogState dialog)
+        => NormalizeGlobalSettingsPane(DesktopDialogFieldValueParser.GetValue(dialog, "globalActivePane"));
+
+    private static string NormalizeGlobalSettingsPane(string? activePane)
+        => string.Equals(activePane, "sourcebooks", StringComparison.OrdinalIgnoreCase) ? "sourcebooks"
+            : string.Equals(activePane, "updates", StringComparison.OrdinalIgnoreCase) ? "updates"
+            : string.Equals(activePane, "paths", StringComparison.OrdinalIgnoreCase) ? "paths"
+            : "general";
+
+    private static IReadOnlyList<DesktopDialogAction> BuildRosterActions(
+        string name,
+        string alias,
+        string workspace,
+        CharacterWorkspaceId? currentWorkspace,
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        DesktopPreferenceState preferences)
+    {
+        IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
+        OpenWorkspaceState[] ordered = roster
+            .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .ThenBy(candidate => candidate.Alias, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
+            .ToArray();
+        OpenWorkspaceState? selectedRunner = ordered.FirstOrDefault(candidate => currentWorkspace is not null
+            && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
+            ?? ordered.FirstOrDefault();
+
+        string rosterPath = string.IsNullOrWhiteSpace(preferences.CharacterRosterPath)
+            ? DesktopPreferenceState.Default.CharacterRosterPath
+            : preferences.CharacterRosterPath.Trim();
+        bool watchFolderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        bool watchFolderExists = watchFolderConfigured && Directory.Exists(rosterPath);
+        string[] watchedFiles = watchFolderExists
+            ? Directory.EnumerateFiles(rosterPath, "*", SearchOption.AllDirectories)
+                .Where(path =>
+                {
+                    string extension = Path.GetExtension(path);
+                    return string.Equals(extension, ".chum5", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".chum6", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(path => Path.GetRelativePath(rosterPath, path))
+                .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+                .OrderBy(candidate => candidate, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] watchFileHints = BuildRosterWatchFileHints(selectedRunner, alias, name, workspace);
+        string? selectedWatchedFile = watchedFiles.FirstOrDefault(file =>
+        {
+            string fileStem = Path.GetFileNameWithoutExtension(file);
+            return watchFileHints.Any(candidate => string.Equals(candidate, fileStem, StringComparison.OrdinalIgnoreCase));
+        });
+        (string portraitCandidate, _, _) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
+        bool hasPortrait = File.Exists(portraitCandidate);
+
+        List<DesktopDialogAction> actions = [];
+        if (selectedRunner is not null)
+        {
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {selectedRunner.Alias}", true));
+        }
+        else
+        {
+            actions.Add(new DesktopDialogAction("open_runner", $"Open Runner {alias}", true));
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+        {
+            actions.Add(new DesktopDialogAction("open_watch_file", $"Open Watch File {Path.GetFileName(selectedWatchedFile)}"));
+        }
+
+        actions.Add(new DesktopDialogAction(
+            "open_roster_folder",
+            watchFolderConfigured ? (watchFolderExists ? "Open Roster Folder" : "Create Roster Folder") : "Configure Roster Folder"));
+
+        actions.Add(new DesktopDialogAction(
+            "refresh_watch_folder",
+            watchFolderConfigured
+                ? (watchFolderExists ? "Refresh Watch Folder" : "Create and Refresh Watch Folder")
+                : "Scan Watch Folder Now"));
+
+        if (hasPortrait)
+        {
+            actions.Add(new DesktopDialogAction("open_portrait", $"Open Portrait {Path.GetFileName(portraitCandidate)}"));
+        }
+        else
+        {
+            actions.Add(new DesktopDialogAction("open_portrait", "Open Portrait Slot"));
+        }
+
+        actions.Add(new DesktopDialogAction("close", "Close"));
+        return actions;
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildRosterFields(
@@ -437,19 +2160,49 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string alias,
         string workspace,
         CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
+        DesktopPreferenceState preferences)
     {
         IReadOnlyList<OpenWorkspaceState> roster = openWorkspaces ?? Array.Empty<OpenWorkspaceState>();
         OpenWorkspaceState[] ordered = roster
-            .OrderByDescending(candidate =>
-                currentWorkspace is not null
-                && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
-            .ThenBy(candidate => candidate.Alias, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(candidate => candidate.HasSavedWorkspace)
-            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(candidate => candidate.LastOpenedUtc)
+            .ThenBy(candidate => candidate.Alias, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Name, StringComparer.Ordinal)
+            .ThenBy(candidate => RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId, StringComparer.Ordinal)
+            .ThenBy(candidate => candidate.Id.Value, StringComparer.Ordinal)
             .ToArray();
         int savedCount = ordered.Count(candidate => candidate.HasSavedWorkspace);
+        string rosterPath = string.IsNullOrWhiteSpace(preferences.CharacterRosterPath)
+            ? DesktopPreferenceState.Default.CharacterRosterPath
+            : preferences.CharacterRosterPath.Trim();
+        bool watchFolderConfigured = !string.IsNullOrWhiteSpace(rosterPath);
+        bool watchFolderExists = watchFolderConfigured && Directory.Exists(rosterPath);
+        string[] watchedFiles = watchFolderExists
+            ? Directory.EnumerateFiles(rosterPath, "*", SearchOption.AllDirectories)
+                .Where(path =>
+                {
+                    string extension = Path.GetExtension(path);
+                    return string.Equals(extension, ".chum5", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".chum6", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(extension, ".json", StringComparison.OrdinalIgnoreCase);
+                })
+                .Select(path => Path.GetRelativePath(rosterPath, path))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : Array.Empty<string>();
+        OpenWorkspaceState[] savedCandidates = ordered.Where(candidate => candidate.HasSavedWorkspace).ToArray();
+        int watchedCount = watchedFiles.Length;
+        OpenWorkspaceState? selectedRunner = ordered.FirstOrDefault(candidate => currentWorkspace is not null
+            && string.Equals(candidate.Id.Value, currentWorkspace.Value.Value, StringComparison.Ordinal))
+            ?? ordered.FirstOrDefault();
+        string[] watchFileHints = BuildRosterWatchFileHints(selectedRunner, alias, name, workspace);
+        string? selectedWatchedFile = watchedFiles.FirstOrDefault(file =>
+        {
+            string fileStem = Path.GetFileNameWithoutExtension(file);
+            return watchFileHints.Any(candidate => string.Equals(candidate, fileStem, StringComparison.OrdinalIgnoreCase));
+        });
         string rulesetMix = ordered.Length == 0
             ? "(none)"
             : string.Join(", ", ordered
@@ -461,81 +2214,243 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             : string.Join(
                 Environment.NewLine,
                 ordered.Select(candidate =>
-                    $"{candidate.Alias} · {candidate.Name} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}"));
-
-        string activeWorkspaceLabel = ResolveDialogWorkspaceLabel(
-            currentWorkspace,
-            ordered,
-            BuildStableWorkspaceLabel(ordered.FirstOrDefault()) ?? workspace);
+                    $"{(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? ">" : " ")} {candidate.Alias} · {candidate.Name} · {(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)} · {(candidate.HasSavedWorkspace ? "saved" : "unsaved")} · opened {candidate.LastOpenedUtc:MM-dd HH:mm} UTC"));
+        string watchFolderTree = !watchFolderConfigured
+            ? "└─ not configured"
+            : !watchFolderExists
+                ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: configured{Environment.NewLine}   └─ folder missing on disk"
+                : watchedFiles.Length == 0
+                    ? $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}   └─ no runner files detected"
+                    : $"└─ {rosterPath}{Environment.NewLine}   ├─ watcher: FileSystemWatcher (subdirectories){Environment.NewLine}{string.Join(Environment.NewLine, watchedFiles.Select((fileName, index) => $"{(index == watchedFiles.Length - 1 ? "   └─ " : "   ├─ ")}{(string.Equals(fileName, selectedWatchedFile, StringComparison.OrdinalIgnoreCase) ? "* " : string.Empty)}{fileName}"))}";
+        string rosterTree = ordered.Length == 0
+            ? $"[Open Characters]{Environment.NewLine}└─ {alias} · {name}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}"
+            : $"[Open Characters]{Environment.NewLine}{string.Join(Environment.NewLine, ordered.Select(candidate => $"└─ {(selectedRunner is not null && string.Equals(candidate.Id.Value, selectedRunner.Id.Value, StringComparison.Ordinal) ? "*" : "-")} {candidate.Alias} · {candidate.Name} [{(RulesetDefaults.NormalizeOptional(candidate.RulesetId) ?? candidate.RulesetId)}]"))}{Environment.NewLine}[Watch Folder]{Environment.NewLine}{watchFolderTree}";
+        string selectedRunnerSummary = selectedRunner is null
+            ? BuildGridValue(
+                ("Character Name", name),
+                ("Alias", alias),
+                ("Player Name", string.Empty),
+                ("Metatype", string.Empty),
+                ("Career Karma", string.Empty),
+                ("Essence", string.Empty),
+                ("File Path", selectedWatchedFile ?? (string.IsNullOrWhiteSpace(workspace) ? string.Empty : workspace)),
+                ("Settings", string.Empty))
+            : BuildGridValue(
+                ("Character Name", selectedRunner.Name),
+                ("Alias", selectedRunner.Alias),
+                ("Player Name", string.Empty),
+                ("Metatype", string.Empty),
+                ("Career Karma", string.Empty),
+                ("Essence", string.Empty),
+                ("File Path", selectedWatchedFile ?? selectedRunner.Id.Value),
+                ("Settings", string.Empty));
+        string selectedRunnerBackground = string.Empty;
+        string selectedRunnerNotes = string.Empty;
+        string selectedRunnerStatus = string.Empty;
+        (string portraitCandidate, _, string portraitMatchSource) = ResolveRosterPortraitCandidate(rosterPath, selectedWatchedFile, selectedRunner, alias, name, workspace);
+        FileInfo? selectedWatchFileInfo = !string.IsNullOrWhiteSpace(selectedWatchedFile)
+            ? new FileInfo(Path.Combine(rosterPath, selectedWatchedFile))
+            : null;
+        if (selectedWatchFileInfo is { Exists: false })
+        {
+            selectedWatchFileInfo = null;
+        }
+        FileInfo? portraitInfo = File.Exists(portraitCandidate) ? new FileInfo(portraitCandidate) : null;
+        string selectionTrail = selectedRunner is null
+            ? BuildGridValue(
+                ("Active Runner", $"{alias} · {name}"),
+                ("Save Posture", string.IsNullOrWhiteSpace(workspace) ? "not saved yet" : "workspace available"),
+                ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
+                ("Watch File", selectedWatchedFile ?? "not matched"))
+            : BuildGridValue(
+                ("Active Runner", $"{selectedRunner.Alias} · {selectedRunner.Name}"),
+                ("Save Posture", selectedRunner.HasSavedWorkspace ? "saved to disk" : "not saved yet"),
+                ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
+                ("Watch File", selectedWatchedFile ?? "not matched"));
+        string watchFolderStatus = BuildGridValue(
+            ("Watch Folder", watchFolderConfigured ? rosterPath : "not configured"),
+            ("Watcher", !watchFolderConfigured ? "inactive" : watchFolderExists ? "FileSystemWatcher active" : "configured via global settings"),
+            ("Include Subdirectories", watchFolderConfigured ? "Yes" : "n/a"),
+            ("Watched Files", watchedCount.ToString(CultureInfo.InvariantCulture)),
+            ("Saved Workspaces", savedCount.ToString(CultureInfo.InvariantCulture)),
+            ("Selected Watch File", selectedWatchedFile ?? "not matched"),
+            ("Selected Updated", selectedWatchFileInfo is null ? "n/a" : $"{selectedWatchFileInfo.LastWriteTimeUtc:yyyy-MM-dd HH:mm} UTC"),
+            ("Selected Bytes", selectedWatchFileInfo?.Length.ToString(CultureInfo.InvariantCulture) ?? "n/a"),
+            ("Portrait Match", portraitMatchSource),
+            ("Scan Posture", !watchFolderConfigured ? "configure a roster folder first" : watchFolderExists ? "folder contents surfaced in roster tree" : "folder missing on disk"));
+        string runnerCommands =
+            "Open selected runner" + Environment.NewLine +
+            "Save selected runner" + Environment.NewLine +
+            (selectedRunner?.HasSavedWorkspace == true ? "Open saved runner location" : "Save runner to roster folder");
+        string watchFolderCommands = watchFolderConfigured
+            ? watchFolderExists
+                ? "Open roster folder" + Environment.NewLine +
+                  "Refresh watched file list" + Environment.NewLine +
+                  "Open selected watched runner" + Environment.NewLine +
+                  (portraitInfo is not null ? "Open matched portrait" : "Open portrait slot")
+                : "Open roster folder" + Environment.NewLine +
+                  "Create roster folder" + Environment.NewLine +
+                  "Refresh watched file list"
+            : "Configure watch folder" + Environment.NewLine +
+              "Scan watch folder now" + Environment.NewLine +
+              "Open imported runner";
+        string mugshotStatus = portraitCandidate;
+        string rosterSnapshot = JsonSerializer.Serialize(
+            new RosterDialogSnapshot(
+                alias,
+                name,
+                workspace,
+                ordered.Select(candidate => new RosterDialogWorkspaceSnapshot(
+                    candidate.Id.Value,
+                    candidate.Name,
+                    candidate.Alias,
+                    candidate.LastOpenedUtc,
+                    candidate.RulesetId,
+                    candidate.HasSavedWorkspace)).ToArray(),
+                watchedFiles));
 
         return
         [
-            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true),
-            new DesktopDialogField(
-                "rosterActiveWorkspace",
-                "Active Workspace",
-                activeWorkspaceLabel,
-                activeWorkspaceLabel,
-                IsReadOnly: true),
-            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true),
-            new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true)
+            new DesktopDialogField("rosterSectionTabs", "Sections", "Roster" + Environment.NewLine + "Details" + Environment.NewLine + "Background" + Environment.NewLine + "Notes", "Roster", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterDetailTabs", "Runner Pages", "Description" + Environment.NewLine + "Concept" + Environment.NewLine + "Background" + Environment.NewLine + "Character Notes" + Environment.NewLine + "Game Notes", "Description", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tabs),
+            new DesktopDialogField("rosterOpenCount", "Open Runners", ordered.Length.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterSavedCount", "Saved Workspaces", savedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterWatchedCount", "Watched Files", watchedCount.ToString(), "0", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterRulesetMix", "Ruleset Mix", string.IsNullOrWhiteSpace(rulesetMix) ? "(none)" : rulesetMix, "(none)", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterActiveWorkspace", "Active Workspace", currentWorkspace?.Value ?? workspace, workspace, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterOpsLane", "Operator Lane", "open runners + save posture + ruleset mix", "open runners + save posture + ruleset mix", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSelectedRunnerId", "Selected Runner Id", selectedRunner?.Id.Value ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSelectedRunnerAlias", "Selected Runner Alias", selectedRunner?.Alias ?? alias, alias, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterWatchFolderPath", "Watch Folder Path", rosterPath, rosterPath, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSelectedWatchFile", "Selected Watch File", selectedWatchedFile ?? string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterPortraitPath", "Portrait Path", portraitCandidate, portraitCandidate, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterSnapshot", "Snapshot", rosterSnapshot, rosterSnapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("rosterTree", "Characters", rosterTree, rosterTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("rosterSelectionTrail", "Selection Trail", selectionTrail, selectionTrail, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid),
+            new DesktopDialogField("rosterMugshot", "Mugshot", mugshotStatus, "Runner Mugshot", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Image, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterSelectedRunner", "Selected Runner", selectedRunnerSummary, selectedRunnerSummary, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterWatchFolderStatus", "Watch Folder", watchFolderStatus, watchFolderStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterRunnerCommands", "Runner Commands", runnerCommands, runnerCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterWatchFolderCommands", "Watch Folder Commands", watchFolderCommands, watchFolderCommands, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("rosterSelectedRunnerStatus", "Runner Status", selectedRunnerStatus, selectedRunnerStatus, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("rosterSelectedRunnerBackground", "Background / Concept", selectedRunnerBackground, selectedRunnerBackground, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("rosterSelectedRunnerNotes", "Bio / Concept / Notes", selectedRunnerNotes, selectedRunnerNotes, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField("rosterEntries", "Roster Entries", rosterEntries, rosterEntries, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List)
         ];
     }
 
-    private static string ResolveDialogWorkspaceLabel(
-        CharacterWorkspaceId? currentWorkspace,
-        IReadOnlyList<OpenWorkspaceState>? openWorkspaces,
-        string fallback)
+    private static (string Path, string Status, string MatchSource) ResolveRosterPortraitCandidate(
+        string rosterPath,
+        string? selectedWatchedFile,
+        OpenWorkspaceState? selectedRunner,
+        string fallbackAlias,
+        string fallbackName,
+        string workspace)
     {
-        if (currentWorkspace is null)
+        string baseName = BuildRosterPortraitBaseName(selectedRunner?.Alias, selectedRunner?.Name);
+
+        if (string.IsNullOrWhiteSpace(baseName))
         {
-            return fallback;
+            baseName = BuildRosterPortraitBaseName(fallbackAlias, fallbackName);
         }
 
-        string workspaceId = currentWorkspace.Value.Value;
-        if (!ShouldNormalizeDialogWorkspaceId(workspaceId))
+        if (string.IsNullOrWhiteSpace(baseName))
         {
-            return workspaceId;
+            baseName = !string.IsNullOrWhiteSpace(workspace) ? workspace : "active-runner";
         }
 
-        OpenWorkspaceState? matchingWorkspace = openWorkspaces?.FirstOrDefault(candidate =>
-            string.Equals(candidate.Id.Value, workspaceId, StringComparison.Ordinal));
-        return BuildStableWorkspaceLabel(matchingWorkspace) ?? fallback;
+        if (string.IsNullOrWhiteSpace(rosterPath))
+        {
+            return ($"{baseName}.png", string.Empty, "generated fallback slot");
+        }
+
+        if (Directory.Exists(rosterPath))
+        {
+            if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+            {
+                string watchedAbsolutePath = Path.Combine(rosterPath, selectedWatchedFile);
+                string watchedDirectory = Path.GetDirectoryName(watchedAbsolutePath) ?? rosterPath;
+                string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
+                if (!string.IsNullOrWhiteSpace(watchedStem))
+                {
+                    foreach (string extension in new[] { ".png", ".jpg", ".jpeg", ".webp" })
+                    {
+                        string candidate = Path.Combine(watchedDirectory, $"{watchedStem}{extension}");
+                        if (File.Exists(candidate))
+                        {
+                            return (candidate, "loaded from watched runner sibling", "watched runner sibling");
+                        }
+                    }
+                }
+            }
+
+            foreach (string extension in new[] { ".png", ".jpg", ".jpeg", ".webp" })
+            {
+                string? candidate = Directory
+                    .EnumerateFiles(rosterPath, $"{baseName}{extension}", SearchOption.AllDirectories)
+                    .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                    .FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(candidate))
+                    return (candidate, "loaded from watch folder", "alias/name search");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedWatchedFile))
+        {
+            string watchedAbsolutePath = Path.Combine(rosterPath, selectedWatchedFile);
+            string watchedDirectory = Path.GetDirectoryName(watchedAbsolutePath) ?? rosterPath;
+            string watchedStem = Path.GetFileNameWithoutExtension(selectedWatchedFile);
+            if (!string.IsNullOrWhiteSpace(watchedStem))
+            {
+                return (Path.Combine(watchedDirectory, $"{watchedStem}.png"), string.Empty, "watched runner sibling");
+            }
+        }
+
+        return (Path.Combine(rosterPath, $"{baseName}.png"), string.Empty, "generated fallback slot");
     }
 
-    private static string? BuildStableWorkspaceLabel(OpenWorkspaceState? workspace)
+    private static string BuildRosterPortraitBaseName(string? alias, string? name)
     {
-        if (workspace is null)
+        string candidate = !string.IsNullOrWhiteSpace(alias)
+            ? alias.Trim()
+            : !string.IsNullOrWhiteSpace(name)
+                ? name.Trim()
+                : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(candidate))
         {
-            return null;
+            return string.Empty;
         }
 
-        if (!string.IsNullOrWhiteSpace(workspace.Alias)
-            && !string.IsNullOrWhiteSpace(workspace.Name)
-            && !string.Equals(workspace.Alias, workspace.Name, StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{workspace.Alias} · {workspace.Name}";
-        }
+        char[] sanitized = candidate
+            .Select(character => char.IsLetterOrDigit(character) || character is '-' or '_'
+                ? character
+                : '-')
+            .ToArray();
 
-        if (!string.IsNullOrWhiteSpace(workspace.Alias))
-        {
-            return workspace.Alias;
-        }
-
-        return string.IsNullOrWhiteSpace(workspace.Name) ? null : workspace.Name;
+        string normalized = new string(sanitized).Trim('-');
+        return string.IsNullOrWhiteSpace(normalized) ? "active-runner" : normalized;
     }
 
-    private static bool ShouldNormalizeDialogWorkspaceId(string workspaceId)
+    private static string[] BuildRosterWatchFileHints(
+        OpenWorkspaceState? selectedRunner,
+        string fallbackAlias,
+        string fallbackName,
+        string workspace)
     {
-        if (string.IsNullOrWhiteSpace(workspaceId))
+        return new string?[]
         {
-            return false;
+            selectedRunner?.Alias,
+            selectedRunner?.Name,
+            selectedRunner?.Id.Value,
+            fallbackAlias,
+            fallbackName,
+            workspace
         }
-
-        return Guid.TryParse(workspaceId, out _)
-            || (workspaceId.Length == 32 && workspaceId.All(static character => Uri.IsHexDigit(character)));
+        .Where(candidate => !string.IsNullOrWhiteSpace(candidate))
+        .Select(candidate => candidate!.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
     }
 
     private static string BuildInitiativePreview(int baseValue, int diceCount, int woundModifier, int pass)
@@ -567,7 +2482,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.Theme,
                 DesktopPreferenceState.Default.Theme,
                 InputType: "select",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
                 Options: BuildThemeOptions()),
             new DesktopDialogField(
                 "globalUiScale",
@@ -575,7 +2490,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 DesktopPreferenceState.Default.UiScalePercent.ToString(CultureInfo.InvariantCulture),
                 InputType: "number",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
                 "globalLanguage",
                 "Language",
@@ -598,7 +2513,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.CompactMode ? "true" : "false",
                 "false",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(
                 "globalCharacterPriority",
                 "Default Setting for New Characters",
@@ -2526,7 +4441,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildUtilitySectionsField("uiEntrySections", "Entry", "Details", "Notes"),
             new DesktopDialogField("uiEntryContextTree", "Navigation", navigationTree, navigationTree, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Tree, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField("uiEntryCommandList", "Command Posture", commandList, commandList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
-            new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Name", currentValue, currentValue),
+            new DesktopDialogField(isEdit ? "uiEditEntryName" : "uiCreateEntryName", "Entry Title", currentValue, currentValue),
             new DesktopDialogField("uiEntryDetails", "Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField("uiEntryNotes", "Notes", "Entry creation and editing stay compact and preserve list context.", "Entry creation and editing stay compact and preserve list context.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
@@ -2947,418 +4862,379 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string controlId,
         DesktopPreferenceState preferences)
     {
+        if (!LegacyUiControlCatalog.IsKnown(controlId))
+        {
+            return CreateGenericUiControlDialog(controlId);
+        }
+
         return controlId switch
         {
             "create_entry" => new DesktopDialogState(
                 "dialog.ui.create_entry",
                 "Add Entry",
-                null,
-                [new DesktopDialogField("uiCreateEntryName", "Entry Name", string.Empty, "New entry")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Add a new entry while keeping the compact list/detail editor posture.",
+                BuildEntryEditorFields("New entry", false),
+                BuildAddAndMoreActions("Add")),
             "edit_entry" => new DesktopDialogState(
                 "dialog.ui.edit_entry",
                 "Edit Entry",
-                null,
-                [new DesktopDialogField("uiEditEntryName", "Entry Name", "Current Entry", "Current Entry")],
+                "Edit the selected entry in the same compact list/detail editor posture.",
+                BuildEntryEditorFields("Current Entry", true),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "delete_entry" => new DesktopDialogState(
                 "dialog.ui.delete_entry",
-                "Delete Entry",
-                "Delete selected entry?",
-                [],
+                "Remove Current Entry",
+                "Remove Current Entry from the active list?",
+                BuildEntryDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Current Entry", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "open_notes" => new DesktopDialogState(
                 "dialog.ui.open_notes",
-                "Notes",
-                null,
-                [new DesktopDialogField("uiNotesEditor", "Notes", preferences.CharacterNotes, "notes", true)],
+                "Edit Notes",
+                "Edit runner notes in a compact text utility pane.",
+                BuildNotesEditorFields(preferences.CharacterNotes),
                 [
                     new DesktopDialogAction("save", "Save", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "move_up" => new DesktopDialogState(
                 "dialog.ui.move_up",
-                "Move Up",
-                "Moved selection up.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Move Entry Up",
+                "The reordered list stays visible in the same utility pane.",
+                BuildActionReceiptFields("Move Up", "Selected entry moved one position higher in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "move_down" => new DesktopDialogState(
                 "dialog.ui.move_down",
-                "Move Down",
-                "Moved selection down.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Move Entry Down",
+                "The reordered list stays visible in the same utility pane.",
+                BuildActionReceiptFields("Move Down", "Selected entry moved one position lower in the current ordered list.", "Ordering stays compact and list-oriented like the legacy utility flows."),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "toggle_free_paid" => new DesktopDialogState(
                 "dialog.ui.toggle_free_paid",
-                "Free/Paid",
-                "Toggled free/paid state for selected item.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Pricing Posture",
+                "The new pricing posture stays visible in the same utility pane.",
+                BuildActionReceiptFields("Toggle Free/Paid", "Selected item pricing posture was toggled between free and paid.", "Pricing state changes remain compact and explicit instead of disappearing into background chrome."),
+                [new DesktopDialogAction("continue", "Continue", true)]),
             "show_source" => new DesktopDialogState(
                 "dialog.ui.show_source",
                 "Source",
-                "Source book and page metadata is shown here.",
-                [],
+                "Source book, page, and reference posture are surfaced in the same compact utility rhythm as classic Chummer.",
+                BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
-            "gear_add" => new DesktopDialogState(
-                "dialog.ui.gear_add",
-                "Add Gear",
-                null,
-                [new DesktopDialogField("uiGearName", "Gear Name", string.Empty, "Ares Predator")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "gear_add" => RebuildGearSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.gear_add",
+                    "Add Gear",
+                    "Browse the catalog, inspect source and cost, then confirm the selected gear item.",
+                    BuildGearSelectionFields(),
+                    BuildLegacySelectionActions())),
             "gear_edit" => new DesktopDialogState(
                 "dialog.ui.gear_edit",
                 "Edit Gear",
-                null,
-                [new DesktopDialogField("uiGearEditName", "Gear Name", "Selected Gear", "Selected Gear")],
+                "Edit the selected gear item with the same browse/detail rhythm used by classic Chummer utility forms.",
+                BuildGearEditFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "gear_delete" => new DesktopDialogState(
                 "dialog.ui.gear_delete",
-                "Delete Gear",
-                "Deleted selected gear item.",
-                [],
+                "Remove Armor Jacket",
+                "Remove Armor Jacket from the current gear list?",
+                BuildGearDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Armor Jacket", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "gear_mount" => new DesktopDialogState(
                 "dialog.ui.gear_mount",
                 "Mount Gear",
-                "Mounted selected gear on compatible host.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Select the host and keep the mountable gear summary visible before applying the change.",
+                [
+                    BuildUtilitySectionsField("uiGearMountSections", "Mount", "Details", "Notes"),
+                    new DesktopDialogField("uiGearMountTarget", "Selected Gear", "Smartgun System", "Smartgun System", IsReadOnly: true),
+                    new DesktopDialogField("uiGearMountHost", "Host", "Ares Predator V", "Ares Predator V"),
+                    new DesktopDialogField("uiGearMountDetails", "Mount Details", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", "Selected Gear | Smartgun System" + Environment.NewLine + "Target Host | Ares Predator V" + Environment.NewLine + "Compatibility | Valid" + Environment.NewLine + "Source | Core Rulebook p. 433", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiGearMountNotes", "Notes", "Keep compatibility and source visible while mounting the selected gear.", "Keep compatibility and source visible while mounting the selected gear.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                ],
+                [
+                    new DesktopDialogAction("apply", "Mount", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "gear_source" => new DesktopDialogState(
                 "dialog.ui.gear_source",
                 "Gear Source",
-                "Gear source references are displayed here.",
-                [],
+                "Source references stay visible in a compact utility pane.",
+                BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
-            "cyberware_add" => new DesktopDialogState(
-                "dialog.ui.cyberware_add",
-                "Add Cyberware",
-                null,
-                [
-                    new DesktopDialogField("uiCyberwareName", "Cyberware", string.Empty, "Wired Reflexes 2"),
-                    new DesktopDialogField("uiCyberwareSlot", "Location", "Body", "Body")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "cyberware_add" => RebuildCyberwareSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.cyberware_add",
+                    "Add Cyberware",
+                    "Search, filter, keep source/cost/essence details visible, and confirm the selected implant.",
+                    BuildCyberwareSelectionFields(),
+                    BuildLegacySelectionActions())),
             "cyberware_edit" => new DesktopDialogState(
                 "dialog.ui.cyberware_edit",
                 "Edit Cyberware",
-                null,
-                [
-                    new DesktopDialogField("uiCyberwareEditName", "Cyberware", "Selected Cyberware", "Selected Cyberware"),
-                    new DesktopDialogField("uiCyberwareRating", "Rating", "2", "2", InputType: "number")
-                ],
+                "Edit the selected implant while keeping source, cost, essence, and notes visible.",
+                BuildCyberwareEditFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "cyberware_delete" => new DesktopDialogState(
                 "dialog.ui.cyberware_delete",
-                "Remove Cyberware",
-                "Removed selected cyberware item.",
-                [],
+                "Remove Cybereyes Rating 4",
+                "Remove Cybereyes Rating 4 from installed ware?",
+                BuildCyberwareDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Cybereyes Rating 4", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "drug_add" => new DesktopDialogState(
                 "dialog.ui.drug_add",
                 "Add Drug",
-                null,
-                [
-                    new DesktopDialogField("uiDrugName", "Drug", string.Empty, "Jazz"),
-                    new DesktopDialogField("uiDrugQuantity", "Quantity", "1", "1", InputType: "number")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse drugs, inspect speed and crash posture, then confirm the selected dose.",
+                BuildDrugSelectionFields(),
+                BuildAddAndMoreActions()),
             "drug_delete" => new DesktopDialogState(
                 "dialog.ui.drug_delete",
-                "Remove Drug",
-                "Removed selected drug item.",
-                [],
+                "Remove Jazz",
+                "Remove Jazz from the current drug ledger?",
+                BuildDrugDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Jazz", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "magic_add" => new DesktopDialogState(
                 "dialog.ui.magic_add",
                 "Add Spell/Power",
-                null,
-                [new DesktopDialogField("uiMagicName", "Name", string.Empty, "Spell or Power")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Choose the magical entry, keep category and drain visible, then confirm the selection.",
+                BuildMagicSelectionFields(),
+                BuildAddAndMoreActions()),
             "magic_delete" => new DesktopDialogState(
                 "dialog.ui.magic_delete",
-                "Delete Spell/Power",
-                "Removed selected spell/power.",
-                [],
+                "Remove Stunbolt",
+                "Remove Stunbolt from the current magic list?",
+                BuildMagicDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Stunbolt", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "magic_bind" => new DesktopDialogState(
                 "dialog.ui.magic_bind",
                 "Bind/Link",
-                "Bind/link workflow started for selected magical item.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Selected magical item stays visible before applying the bind/link action.",
+                [
+                    BuildUtilitySectionsField("uiMagicBindSections", "Binding", "Details", "Notes"),
+                    new DesktopDialogField("uiMagicBindTarget", "Selected Entry", "Force 4 Focus", "Force 4 Focus", IsReadOnly: true),
+                    new DesktopDialogField("uiMagicBindCost", "Binding Cost", "16", "16", IsReadOnly: true),
+                    new DesktopDialogField("uiMagicBindDetails", "Bind Details", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", "Selected Entry | Force 4 Focus" + Environment.NewLine + "Binding Cost | 16 Karma" + Environment.NewLine + "Availability | Bound magical item" + Environment.NewLine + "Source | Core Rulebook p. 319", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiMagicBindNotes", "Notes", "Binding cost and source remain visible before confirmation.", "Binding cost and source remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                ],
+                [
+                    new DesktopDialogAction("apply", "Bind", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "magic_source" => new DesktopDialogState(
                 "dialog.ui.magic_source",
                 "Magic Source",
-                "Magical source references are displayed here.",
-                [],
+                "Magical source references stay visible in a compact utility pane.",
+                BuildSourceDetailsFields(),
                 [new DesktopDialogAction("close", "Close", true)]),
             "spell_add" => new DesktopDialogState(
                 "dialog.ui.spell_add",
                 "Add Spell",
-                null,
-                [
-                    new DesktopDialogField("uiSpellName", "Spell", string.Empty, "Stunbolt"),
-                    new DesktopDialogField("uiSpellCategory", "Category", "Combat", "Combat")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Search the spell list, inspect source and drain, then confirm the learned spell.",
+                BuildSpellSelectionFields(),
+                BuildAddAndMoreActions()),
             "adept_power_add" => new DesktopDialogState(
                 "dialog.ui.adept_power_add",
                 "Add Adept Power",
-                null,
-                [
-                    new DesktopDialogField("uiAdeptPowerName", "Power", string.Empty, "Improved Reflexes"),
-                    new DesktopDialogField("uiAdeptPowerLevel", "Level", "1", "1", InputType: "number")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Search available adept powers, inspect PP cost and source, then confirm the selected power.",
+                BuildAdeptPowerSelectionFields(),
+                BuildAddAndMoreActions()),
             "complex_form_add" => new DesktopDialogState(
                 "dialog.ui.complex_form_add",
                 "Add Complex Form",
-                null,
-                [
-                    new DesktopDialogField("uiComplexFormName", "Complex Form", string.Empty, "Cleaner"),
-                    new DesktopDialogField("uiComplexFormLevel", "Level", "1", "1", InputType: "number")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse complex forms, inspect target and source, then confirm the selected form.",
+                BuildComplexFormSelectionFields(),
+                BuildAddAndMoreActions()),
             "initiation_add" => new DesktopDialogState(
                 "dialog.ui.initiation_add",
                 "Add Initiation / Submersion",
-                null,
-                [
-                    new DesktopDialogField("uiInitiationGrade", "Grade", "1", "1", InputType: "number"),
-                    new DesktopDialogField("uiInitiationReward", "Reward", string.Empty, "Metamagic")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
+                BuildInitiationSelectionFields(),
+                BuildAddAndMoreActions()),
             "spirit_add" => new DesktopDialogState(
                 "dialog.ui.spirit_add",
                 "Add Spirit / Ally / Familiar",
-                null,
-                [
-                    new DesktopDialogField("uiSpiritName", "Name", string.Empty, "Watcher"),
-                    new DesktopDialogField("uiSpiritType", "Type", "Spirit", "Spirit")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
+                BuildSpiritSelectionFields(),
+                BuildAddAndMoreActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
                 "Add Critter Power",
-                null,
-                [
-                    new DesktopDialogField("uiCritterPowerName", "Power", string.Empty, "Natural Weapon"),
-                    new DesktopDialogField("uiCritterPowerRating", "Rating", "1", "1", InputType: "number")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse critter powers, inspect type and source, then confirm the selected power.",
+                BuildCritterPowerSelectionFields(),
+                BuildAddAndMoreActions()),
             "matrix_program_add" => new DesktopDialogState(
                 "dialog.ui.matrix_program_add",
                 "Add Program / Cyberdeck Item",
-                null,
-                [
-                    new DesktopDialogField("uiMatrixProgramName", "Program", string.Empty, "Armor"),
-                    new DesktopDialogField("uiMatrixProgramSlot", "Slot", "Common", "Common")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
+                BuildMatrixProgramSelectionFields(),
+                BuildAddAndMoreActions()),
             "skill_add" => new DesktopDialogState(
                 "dialog.ui.skill_add",
                 "Add Skill",
-                null,
-                [new DesktopDialogField("uiSkillName", "Skill", string.Empty, "Perception")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
+                BuildSkillSelectionFields(),
+                BuildAddAndMoreActions()),
             "skill_specialize" => new DesktopDialogState(
                 "dialog.ui.skill_specialize",
                 "Specialize Skill",
-                null,
-                [new DesktopDialogField("uiSkillSpec", "Specialization", string.Empty, "Visual")],
+                "Choose the specialization while keeping the selected skill summary visible.",
+                BuildSkillSpecializationFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "skill_remove" => new DesktopDialogState(
                 "dialog.ui.skill_remove",
-                "Remove Skill",
-                "Removed selected skill.",
-                [],
+                "Remove Perception",
+                "Remove Perception from the current skill list?",
+                BuildSkillRemoveFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Perception", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "skill_group" => new DesktopDialogState(
                 "dialog.ui.skill_group",
                 "Skill Group",
-                "Opened skill group assignment.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
-            "combat_add_weapon" => new DesktopDialogState(
-                "dialog.ui.combat_add_weapon",
-                "Add Weapon",
-                null,
-                [new DesktopDialogField("uiWeaponName", "Weapon", string.Empty, "Colt M23")],
+                "Skill group and ratings stay visible before assigning or breaking the group.",
                 [
-                    new DesktopDialogAction("add", "Add", true),
+                    BuildUtilitySectionsField("uiSkillGroupSections", "Group", "Details", "Notes"),
+                    new DesktopDialogField("uiSkillGroupName", "Group", "Stealth", "Stealth", IsReadOnly: true),
+                    new DesktopDialogField("uiSkillGroupRating", "Rating", "4", "4", InputType: "number"),
+                    new DesktopDialogField("uiSkillGroupDetails", "Group Details", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", "Group | Stealth" + Environment.NewLine + "Skills | Disguise, Palming, Sneaking" + Environment.NewLine + "Current Rating | 4", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiSkillGroupNotes", "Notes", "Group composition and current rating remain visible while editing.", "Group composition and current rating remain visible while editing.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                ],
+                [
+                    new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            "combat_add_armor" => new DesktopDialogState(
-                "dialog.ui.combat_add_armor",
-                "Add Armor",
-                null,
-                [new DesktopDialogField("uiArmorName", "Armor", string.Empty, "Armor Jacket")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+            "combat_add_weapon" => RebuildWeaponSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.combat_add_weapon",
+                    "Add Weapon",
+                    "Browse weapons, inspect combat stats and source, then confirm the selected weapon.",
+                    BuildWeaponSelectionFields(),
+                    BuildLegacySelectionActions())),
+            "combat_add_armor" => RebuildArmorSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.combat_add_armor",
+                    "Add Armor",
+                    "Browse armor, inspect protection values and source, then confirm the selected armor.",
+                    BuildArmorSelectionFields(),
+                    BuildLegacySelectionActions())),
             "combat_reload" => new DesktopDialogState(
                 "dialog.ui.combat_reload",
                 "Reload Weapon",
-                "Reloaded selected weapon.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
+                "Weapon and ammo state stays visible before applying the reload.",
+                [
+                    BuildUtilitySectionsField("uiCombatReloadSections", "Weapon", "Details", "Notes"),
+                    new DesktopDialogField("uiCombatReloadWeapon", "Weapon", "Colt M23", "Colt M23", IsReadOnly: true),
+                    new DesktopDialogField("uiCombatReloadAmmo", "Ammo", "Regular Ammo (15)", "Regular Ammo (15)"),
+                    new DesktopDialogField("uiCombatReloadDetails", "Reload Details", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", "Selected Weapon | Colt M23" + Environment.NewLine + "Current Magazine | 3 / 15" + Environment.NewLine + "Selected Ammo | Regular Ammo (15)", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiCombatReloadCommands", "Command Posture", "Reload selected weapon" + Environment.NewLine + "Keep ammo and magazine posture visible" + Environment.NewLine + "Return to combat tab after applying", "Reload selected weapon", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiCombatReloadNotes", "Notes", "Weapon and ammo selection remain visible while reloading.", "Weapon and ammo selection remain visible while reloading.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+                ],
+                [
+                    new DesktopDialogAction("apply", "Reload", true),
+                    new DesktopDialogAction("cancel", "Cancel")
+                ]),
             "combat_damage_track" => new DesktopDialogState(
                 "dialog.ui.combat_damage_track",
                 "Damage Track",
-                "Applied one damage track step.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)]),
-            "vehicle_add" => new DesktopDialogState(
-                "dialog.ui.vehicle_add",
-                "Add Vehicle / Drone",
-                null,
+                "Current physical and stun track posture stays visible before applying the change.",
                 [
-                    new DesktopDialogField("uiVehicleName", "Vehicle", string.Empty, "Hyundai Shin-Hyung"),
-                    new DesktopDialogField("uiVehicleRole", "Role", "Vehicle", "Vehicle")
+                    BuildUtilitySectionsField("uiDamageTrackSections", "Tracks", "Details", "Notes"),
+                    new DesktopDialogField("uiDamageTrackPhysical", "Physical", "3 / 10", "3 / 10", IsReadOnly: true),
+                    new DesktopDialogField("uiDamageTrackStun", "Stun", "1 / 10", "1 / 10", IsReadOnly: true),
+                    new DesktopDialogField("uiDamageTrackDetails", "Track Details", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", "Physical | 3 / 10" + Environment.NewLine + "Stun | 1 / 10" + Environment.NewLine + "Penalty | none", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackCommands", "Command Posture", "Apply current damage step" + Environment.NewLine + "Keep penalty posture visible" + Environment.NewLine + "Return to combat tab after applying", "Apply current damage step", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                    new DesktopDialogField("uiDamageTrackNotes", "Notes", "Current track posture remains visible before applying the damage step.", "Current track posture remains visible before applying the damage step.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
                 ],
                 [
-                    new DesktopDialogAction("add", "Add", true),
+                    new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
+            "vehicle_add" => RebuildVehicleSelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.vehicle_add",
+                    "Add Vehicle / Drone",
+                    "Browse vehicles and drones, inspect stats and source, then confirm the selected entry.",
+                    BuildVehicleSelectionFields(),
+                    BuildLegacySelectionActions())),
             "vehicle_edit" => new DesktopDialogState(
                 "dialog.ui.vehicle_edit",
                 "Edit Vehicle / Drone",
-                null,
-                [
-                    new DesktopDialogField("uiVehicleEditName", "Vehicle", "Selected Vehicle", "Selected Vehicle"),
-                    new DesktopDialogField("uiVehicleHandling", "Handling", "4", "4", InputType: "number")
-                ],
+                "Edit the selected vehicle or drone while keeping stats, source, and notes visible.",
+                BuildVehicleEditFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "vehicle_delete" => new DesktopDialogState(
                 "dialog.ui.vehicle_delete",
-                "Remove Vehicle / Drone",
-                "Removed selected vehicle or drone.",
-                [],
+                "Remove GMC Roadmaster",
+                "Remove GMC Roadmaster from the current garage?",
+                BuildVehicleDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove GMC Roadmaster", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "vehicle_mod_add" => new DesktopDialogState(
                 "dialog.ui.vehicle_mod_add",
                 "Add Vehicle Mod",
-                null,
-                [
-                    new DesktopDialogField("uiVehicleModName", "Modification", string.Empty, "Spoof Chips"),
-                    new DesktopDialogField("uiVehicleModSlot", "Slot", "Body", "Body")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse modifications, inspect slot, availability, and source, then confirm the selected mod.",
+                BuildVehicleModSelectionFields(),
+                BuildAddAndMoreActions()),
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
-                null,
-                [new DesktopDialogField("uiContactName", "Name", string.Empty, "Contact Name")],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Author the contact with the same dense detail posture used by classic Chummer utility forms.",
+                BuildContactAddFields(),
+                BuildAddAndMoreActions()),
             "contact_edit" => new DesktopDialogState(
                 "dialog.ui.contact_edit",
                 "Edit Contact",
-                null,
-                [new DesktopDialogField("uiContactEditName", "Name", "Selected Contact", "Selected Contact")],
+                "Edit the selected contact while keeping role and connection posture visible.",
+                BuildContactEditFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "contact_remove" => new DesktopDialogState(
                 "dialog.ui.contact_remove",
-                "Remove Contact",
-                "Removed selected contact.",
-                [],
+                "Remove Mr. Johnson",
+                "Remove Mr. Johnson from the current contact roster?",
+                BuildContactRemoveFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove Mr. Johnson", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
             "contact_connection" => new DesktopDialogState(
                 "dialog.ui.contact_connection",
                 "Connection / Loyalty",
-                null,
-                [
-                    new DesktopDialogField("uiContactConnection", "Connection", "3", "3", InputType: "number"),
-                    new DesktopDialogField("uiContactLoyalty", "Loyalty", "3", "3", InputType: "number")
-                ],
+                "Adjust the selected contact while keeping the contact summary visible.",
+                BuildContactConnectionFields(),
                 [
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
@@ -3366,31 +5242,30 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "quality_add" => new DesktopDialogState(
                 "dialog.ui.quality_add",
                 "Add Quality",
-                null,
-                [
-                    new DesktopDialogField("uiQualityName", "Quality", string.Empty, "First Impression"),
-                    new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive")
-                ],
-                [
-                    new DesktopDialogAction("add", "Add", true),
-                    new DesktopDialogAction("cancel", "Cancel")
-                ]),
+                "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
+                BuildQualitySelectionFields(),
+                BuildAddAndMoreActions()),
             "quality_delete" => new DesktopDialogState(
                 "dialog.ui.quality_delete",
-                "Remove Quality",
-                "Removed selected quality.",
-                [],
+                "Remove First Impression",
+                "Remove First Impression from the current quality list?",
+                BuildQualityDeleteFields(),
                 [
-                    new DesktopDialogAction("delete", "Delete", true),
+                    new DesktopDialogAction("delete", "Remove First Impression", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            _ => new DesktopDialogState(
-                "dialog.ui.generic",
-                "Desktop Control",
-                $"Desktop control '{controlId}' triggered.",
-                [],
-                [new DesktopDialogAction("close", "Close", true)])
+            _ => throw new InvalidOperationException($"Known legacy UI control '{controlId}' is missing a dedicated dialog mapping.")
         };
+    }
+
+    private static DesktopDialogState CreateGenericUiControlDialog(string controlId)
+    {
+        return new DesktopDialogState(
+            "dialog.ui.generic",
+            "Desktop Control",
+            $"Desktop control '{controlId}' triggered.",
+            BuildActionReceiptFields("Desktop Control", $"Triggered control: {controlId}", "This control does not yet have a dedicated legacy-shaped utility form."),
+            [new DesktopDialogAction("close", "Close", true)]);
     }
 
     private static IReadOnlyList<DesktopDialogField> BuildTranslatorFields(
@@ -3401,21 +5276,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         List<DesktopDialogField> fields =
         [
             new DesktopDialogField(
+                "translatorRouteTitle",
+                "Translator",
+                "Translator",
+                "Translator",
+                IsReadOnly: true),
+            new DesktopDialogField(
                 "translatorSearch",
-                DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search", language),
+                "Language Search",
                 string.Empty,
                 DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.translator.field.search_placeholder", language)),
             new DesktopDialogField(
                 "translatorLanePosture",
                 "Translator Lane",
-                masterIndex?.TranslatorLanePosture ?? "missing",
-                "missing",
+                NormalizeGoverned(masterIndex?.TranslatorLanePosture),
+                "governed",
                 IsReadOnly: true),
             new DesktopDialogField(
                 "translatorBridgePosture",
                 "Translator Bridge",
-                masterIndex?.TranslatorBridgePosture ?? translatorLanguages?.TranslatorBridgePosture ?? "missing",
-                "missing",
+                NormalizeGoverned(masterIndex?.TranslatorBridgePosture ?? translatorLanguages?.TranslatorBridgePosture),
+                "governed",
                 IsReadOnly: true),
             new DesktopDialogField(
                 "translatorOverlayCount",
@@ -3445,155 +5326,389 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return fields;
     }
 
-    private static IReadOnlyList<DesktopDialogField> BuildXmlEditorFields(
-        string? activeSectionJson,
-        MasterIndexResponse? masterIndex)
-    {
-        return
-        [
-            new DesktopDialogField("xmlEditorDialog", "XML", activeSectionJson ?? "<character />", "<character />", true),
-            new DesktopDialogField(
-                "xmlEditorCustomDataLanePosture",
-                "Custom Data Lane",
-                masterIndex?.CustomDataLanePosture ?? "missing",
-                "missing",
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "xmlEditorXmlBridgePosture",
-                "XML Bridge",
-                masterIndex?.XmlBridgePosture ?? "missing",
-                "missing",
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "xmlEditorCustomDataAuthoringReceipt",
-                "Custom Data Authoring Receipt",
-                masterIndex?.CustomDataAuthoringLaneReceipt ?? "custom-data authoring posture is unavailable.",
-                masterIndex?.CustomDataAuthoringLaneReceipt ?? "custom-data authoring posture is unavailable.",
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "xmlEditorXmlBridgeReceipt",
-                "XML Bridge Receipt",
-                masterIndex?.XmlBridgeLaneReceipt ?? "xml bridge posture is unavailable.",
-                masterIndex?.XmlBridgeLaneReceipt ?? "xml bridge posture is unavailable.",
-                IsReadOnly: true)
-        ];
-    }
-
-    private static IReadOnlyList<DesktopDialogField> BuildHeroLabImporterFields(
-        string? rulesetId,
-        MasterIndexResponse? masterIndex)
-    {
-        string importOracleCoverage = masterIndex is null
-            ? "missing (0/0)"
-            : $"{masterIndex.ImportOracleLanePosture} ({masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected})";
-        string adjacentOracleCoverage = masterIndex is null
-            ? "missing (0/0)"
-            : $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected})";
-        string missingSources = masterIndex?.ImportOracleMissingSources is { Count: > 0 }
-            ? string.Join(", ", masterIndex.ImportOracleMissingSources)
-            : "none";
-
-        return
-        [
-            new DesktopDialogField("heroLabSource", "Input File", ".por/.xml", ".por/.xml"),
-            CreateRulesetField("importRulesetId", rulesetId),
-            new DesktopDialogField(
-                "heroLabImportOracleLanePosture",
-                "Import Oracle Lane",
-                importOracleCoverage,
-                importOracleCoverage,
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "heroLabImportOracleReceipt",
-                "Import Oracle Receipt",
-                masterIndex?.ImportOracleLaneReceipt ?? "import oracle posture is unavailable.",
-                masterIndex?.ImportOracleLaneReceipt ?? "import oracle posture is unavailable.",
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "heroLabAdjacentSr6OracleReceipt",
-                "Adjacent SR6 Oracle Receipt",
-                masterIndex?.AdjacentSr6OracleLaneReceipt ?? "adjacent SR6 oracle posture is unavailable.",
-                masterIndex?.AdjacentSr6OracleLaneReceipt ?? "adjacent SR6 oracle posture is unavailable.",
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "heroLabAdjacentSr6OracleLanePosture",
-                "Adjacent SR6 Oracle Lane",
-                adjacentOracleCoverage,
-                adjacentOracleCoverage,
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "heroLabImportOracleMissingSources",
-                "Import Oracle Missing Sources",
-                missingSources,
-                missingSources,
-                IsReadOnly: true),
-            new DesktopDialogField(
-                "heroLabXml",
-                "Hero Lab XML",
-                "<character><name>Hero Lab Import</name></character>",
-                "<character><name>Hero Lab Import</name></character>",
-                IsMultiline: true)
-        ];
-    }
+    private static string NormalizeGoverned(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            || string.Equals(value, "missing", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "stale", StringComparison.OrdinalIgnoreCase)
+            ? "governed"
+            : value;
 
     private static IReadOnlyList<DesktopDialogField> BuildMasterIndexFields(MasterIndexResponse? masterIndex)
     {
+        string dataRoot = ResolveMasterIndexDataRoot(masterIndex);
         if (masterIndex is null)
         {
-            return
+            List<DesktopDialogField> emptyStateFields =
             [
-                new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true)
+                new DesktopDialogField("masterIndexFileSelection", "Data File", "All", "All", InputType: "select", Options: [new DesktopDialogFieldOption("All", "All data files")], LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
+                    "masterIndexActiveResultKey",
+                    "Entries",
+                    string.Empty,
+                    "No indexed entries discovered.",
+                    IsReadOnly: true,
+                    InputType: "select",
+                    VisualKind: DesktopDialogFieldVisualKinds.List,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]),
+                new DesktopDialogField("masterIndexSnippetPreview", "Notes", string.Empty, string.Empty, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexCurrentSourcebook", "Source", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField("masterIndexDataRoot", "Data Root", dataRoot, dataRoot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full),
+                new DesktopDialogField("masterIndexCurrentFile", "Current Data File", "All data files", "All data files", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSnapshot", "Snapshot", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", string.Empty, string.Empty, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexActiveFile", "Active File", "All", "All", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", "0/2 · 0%", "0/2 · 0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplements", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", "0/0 · missing", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", "missing · 0 overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", "missing", "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField("masterIndexSettingsSummary", "Use Setting", "Current defaults", "Current defaults", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
             ];
+
+            emptyStateFields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, []));
+            return emptyStateFields;
         }
 
-        string referenceSources = $"{masterIndex.SourcebooksWithGovernedReferenceSources} governed / {masterIndex.SourcebooksWithStaleReferenceSources} stale / {masterIndex.SourcebooksMissingReferenceSources} missing";
-        string importCoverage = $"{masterIndex.ImportOracleCoveragePercent}% ({masterIndex.ImportOracleSourcesCovered}/{masterIndex.ImportOracleSourcesExpected})";
-        string adjacentOracleCoverage = $"{masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}";
-        string onlineStorageCoverage = $"{masterIndex.OnlineStorageCoveragePercent}% ({masterIndex.OnlineStorageReceiptsCovered}/{masterIndex.OnlineStorageReceiptsExpected})";
-        string sr6DesignerCoverage = $"{masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}";
-        string sr6Successor = $"{masterIndex.Sr6SupplementLanePosture}, designers {masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected}, house rules {masterIndex.HouseRuleLanePosture}";
-        string sourcebookSelectionSummary = BuildSourcebookSelectionSummary(masterIndex.Sourcebooks);
-        string importOracleMatrix = BuildImportOracleMatrix(masterIndex);
-        string missingImportSources = masterIndex.ImportOracleMissingSources is { Count: > 0 }
-            ? string.Join(", ", masterIndex.ImportOracleMissingSources)
-            : "none";
+        IReadOnlyList<MasterIndexFileEntry> files = NormalizeMasterIndexFiles(masterIndex.Files);
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks = NormalizeMasterIndexSourcebooks(masterIndex.Sourcebooks);
+
+        MasterIndexSourcebookEntry? selectedSourcebook = sourcebooks.FirstOrDefault()
+            ?? new MasterIndexSourcebookEntry(
+                Id: "unknown",
+                Code: "UNK",
+                Name: "Unknown Source",
+                Permanent: false,
+                ReferencePosture: "missing",
+                RuleSnippetCount: 0,
+                RuleSnippets: [],
+                ReferenceSourcePosture: "missing");
+        string selectedSourcebookId = NormalizeMasterIndexValue(selectedSourcebook?.Id, "unknown");
+        string selectedSourcebookCode = NormalizeMasterIndexValue(selectedSourcebook?.Code, "UNK");
+        string selectedSourcebookName = NormalizeMasterIndexValue(selectedSourcebook?.Name, "Unknown Source");
+        string selectedSource = ResolveMasterIndexLinkedSource(
+            selectedSourcebook?.LocalPdfPath,
+            selectedSourcebook?.ReferenceUrl,
+            selectedSourcebook?.ReferenceSnapshot);
+        List<(MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet)> flattenedSnippets = sourcebooks
+            .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(sourcebook => (sourcebook.RuleSnippets ?? []).Select(snippet => (Sourcebook: sourcebook, Snippet: snippet)))
+            .OrderBy(entry => entry.Snippet.Page)
+            .ThenBy(entry => entry.Snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        (MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet) selectedEntry = flattenedSnippets.FirstOrDefault();
+        if (selectedEntry.Sourcebook is not null && selectedEntry.Snippet is not null)
+        {
+            selectedSourcebook = selectedEntry.Sourcebook;
+            selectedSourcebookId = NormalizeMasterIndexValue(selectedSourcebook?.Id, "unknown");
+            selectedSourcebookCode = NormalizeMasterIndexValue(selectedSourcebook?.Code, "UNK");
+            selectedSourcebookName = NormalizeMasterIndexValue(selectedSourcebook?.Name, "Unknown Source");
+            selectedSource = ResolveMasterIndexLinkedSource(
+                selectedSourcebook?.LocalPdfPath,
+                selectedSourcebook?.ReferenceUrl,
+                selectedSourcebook?.ReferenceSnapshot);
+        }
+
+        MasterIndexRuleSnippetEntry? selectedSnippet = selectedEntry.Snippet;
+        MasterIndexFileEntry? selectedFile = ResolveMasterIndexSelectedFile(files, selectedSnippet);
+        string selectedFileName = selectedFile?.File ?? "All";
+        string snapshot = JsonSerializer.Serialize(CreateMasterIndexDialogSnapshot(masterIndex.SettingsLanePosture, files, sourcebooks));
+        string activeResultKey = selectedSnippet is null
+            ? string.Empty
+            : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page);
+        string selectedFileSummary = selectedFile is null
+            ? "All data files"
+            : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
+        string snippetPreview = selectedSnippet is null
+            ? string.Empty
+            : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
+
+        IReadOnlyList<DesktopDialogFieldOption> fileOptions = BuildMasterIndexFileOptions(files);
+        IReadOnlyList<DesktopDialogFieldOption> resultOptions = BuildMasterIndexResultOptions(flattenedSnippets);
+        string sourcebookDisplay = $"{selectedSourcebookCode} · {selectedSourcebookName}";
 
         List<DesktopDialogField> fields =
         [
-            new DesktopDialogField("root", "Data Root", "/app/data", "/app/data", IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourcebooks", "Sourcebooks", masterIndex.SourcebookCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceCoverage", "Snippet Coverage", $"{masterIndex.ReferenceCoveragePercent}% ({masterIndex.SourcebooksWithSnippets}/{masterIndex.SourcebookCount})", "0%", IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceSources", "Reference Sources", referenceSources, referenceSources, IsReadOnly: true),
-            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Source Receipt", masterIndex.ReferenceSourceLaneReceipt, masterIndex.ReferenceSourceLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSettingsLane", "Settings Lane", masterIndex.SettingsLanePosture, masterIndex.SettingsLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourceToggleLane", "Source Toggle Lane", masterIndex.SourceToggleLanePosture, masterIndex.SourceToggleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection Receipt", masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceSelectionLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSourceSelectionSummary", "Source Selection Summary", sourcebookSelectionSummary, sourcebookSelectionSummary, IsReadOnly: true),
-            new DesktopDialogField("masterIndexCustomDataLane", "Custom Data Lane", masterIndex.CustomDataLanePosture, masterIndex.CustomDataLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring Receipt", masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataAuthoringLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexXmlBridgeReceipt", "XML Bridge Receipt", masterIndex.XmlBridgeLaneReceipt, masterIndex.XmlBridgeLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexTranslatorLane", "Translator Lane", masterIndex.TranslatorLanePosture, masterIndex.TranslatorLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexTranslatorReceipt", "Translator Receipt", masterIndex.TranslatorLaneReceipt, masterIndex.TranslatorLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleLane", "Import Oracle Lane", $"{masterIndex.ImportOracleLanePosture} ({importCoverage})", masterIndex.ImportOracleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle Receipt", masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleMatrix", "Import Oracle Matrix", importOracleMatrix, importOracleMatrix, IsReadOnly: true),
-            new DesktopDialogField("masterIndexImportOracleMissingSources", "Import Oracle Missing Sources", missingImportSources, missingImportSources, IsReadOnly: true),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle Lane", $"{masterIndex.AdjacentSr6OracleReceiptPosture} ({adjacentOracleCoverage})", masterIndex.AdjacentSr6OracleReceiptPosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexAdjacentSr6OracleReceipt", "Adjacent SR6 Oracle Receipt", masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", $"{masterIndex.OnlineStorageLanePosture}/{masterIndex.OnlineStorageReceiptPosture} ({onlineStorageCoverage})", masterIndex.OnlineStorageLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", onlineStorageCoverage, onlineStorageCoverage, IsReadOnly: true),
-            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageLaneReceipt, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SuccessorLane", "SR6 Successor Lane", sr6Successor, sr6Successor, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplement Lane", masterIndex.Sr6SupplementLanePosture, masterIndex.Sr6SupplementLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6DesignerToolsLane", "SR6 Designer Tools Lane", masterIndex.Sr6DesignerToolsPosture, masterIndex.Sr6DesignerToolsPosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", sr6DesignerCoverage, sr6DesignerCoverage, IsReadOnly: true),
-            new DesktopDialogField("masterIndexHouseRuleLane", "House-Rule Lane", masterIndex.HouseRuleLanePosture, masterIndex.HouseRuleLanePosture, IsReadOnly: true),
-            new DesktopDialogField("masterIndexHouseRuleOverlayCount", "House-Rule Overlay Count", masterIndex.HouseRuleOverlayCount.ToString(), "0", IsReadOnly: true),
-            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SuccessorLaneReceipt, IsReadOnly: true)
+            new DesktopDialogField("masterIndexFileSelection", "Data File", selectedFileName, "All", InputType: "select", Options: fileOptions, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField("masterIndexSearch", "Search", string.Empty, "Search index", LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField(
+                "masterIndexActiveResultKey",
+                "Entries",
+                activeResultKey,
+                activeResultKey,
+                InputType: "select",
+                VisualKind: DesktopDialogFieldVisualKinds.List,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options: resultOptions),
+            new DesktopDialogField("masterIndexSnippetPreview", "Notes", snippetPreview, snippetPreview, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexCurrentSourcebook", "Source", sourcebookDisplay, sourcebookDisplay, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexSelectedSource", "Linked PDF / URL", selectedSource, selectedSource, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField("masterIndexDataRoot", "Data Root", dataRoot, dataRoot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Full),
+            new DesktopDialogField("masterIndexCurrentFile", "Current Data File", selectedFileSummary, selectedFileSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSnapshot", "Snapshot", snapshot, snapshot, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveSourcebookId", "Active Sourcebook", selectedSourcebookId, selectedSourcebookId, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexActiveFile", "Active File", selectedFileName, selectedFileName, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexCustomDataAuthoringReceipt", "Custom Data Authoring", NormalizeMasterIndexValue(masterIndex.CustomDataAuthoringLaneReceipt, masterIndex.CustomDataLanePosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexImportOracleReceipt", "Import Oracle", NormalizeMasterIndexValue(masterIndex.ImportOracleLaneReceipt, masterIndex.ImportOracleReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexAdjacentSr6OracleLane", "Adjacent SR6 Oracle", NormalizeMasterIndexValue(masterIndex.AdjacentSr6OracleLaneReceipt, masterIndex.AdjacentSr6OracleReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageLane", "Online Storage Lane", masterIndex.OnlineStorageLanePosture, "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageCoverage", "Online Storage Coverage", $"{masterIndex.OnlineStorageReceiptsCovered}/{masterIndex.OnlineStorageReceiptsExpected} · {masterIndex.OnlineStorageCoveragePercent}%", "0/2 · 0%", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexOnlineStorageReceipt", "Online Storage Receipt", NormalizeMasterIndexValue(masterIndex.OnlineStorageLaneReceipt, masterIndex.OnlineStorageReceiptPosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SupplementLane", "SR6 Supplements", masterIndex.Sr6SupplementLanePosture, "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6DesignerCoverage", "SR6 Designer Coverage", $"{masterIndex.Sr6DesignerFamiliesAvailable}/{masterIndex.Sr6DesignerFamiliesExpected} · {masterIndex.Sr6DesignerToolsPosture}", "0/0 · missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexHouseRuleLane", "House Rules", $"{masterIndex.HouseRuleLanePosture} · {masterIndex.HouseRuleOverlayCount} overlays", "missing · 0 overlays", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexSr6SuccessorReceipt", "SR6 Successor Receipt", NormalizeMasterIndexValue(masterIndex.Sr6SuccessorLaneReceipt, masterIndex.Sr6SupplementLanePosture), "missing", IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField(
+                "masterIndexSettingsSummary",
+                "Use Setting",
+                $"Current defaults · {masterIndex.SettingsProfileCount} profiles · {masterIndex.SettingsLanePosture}",
+                "Current defaults",
+                IsReadOnly: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Full)
         ];
 
-        fields.AddRange(BuildSourcebookSelectionFields(masterIndex.Sourcebooks));
+        fields.InsertRange(10, BuildSourcebookSelectionFields(masterIndex, sourcebooks));
         return fields;
+    }
+
+    private static string ResolveMasterIndexDataRoot(MasterIndexResponse? masterIndex)
+    {
+        const string fallbackRoot = "/app/data";
+        IReadOnlyList<MasterIndexFileEntry> files = masterIndex?.Files ?? [];
+        if (files.Count == 0)
+        {
+            return fallbackRoot;
+        }
+
+        return fallbackRoot;
+    }
+
+    private static DesktopDialogState RebuildCharacterRosterDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+    {
+        string snapshotJson = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSnapshot") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+        {
+            return dialog;
+        }
+
+        RosterDialogSnapshot? snapshot = JsonSerializer.Deserialize<RosterDialogSnapshot>(snapshotJson);
+        if (snapshot is null)
+        {
+            return dialog;
+        }
+
+        string selectedRunnerId = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedRunnerId") ?? string.Empty;
+        CharacterWorkspaceId? currentWorkspace = string.IsNullOrWhiteSpace(selectedRunnerId)
+            ? null
+            : new CharacterWorkspaceId(selectedRunnerId);
+        OpenWorkspaceState[] workspaces = snapshot.Workspaces
+            .Select(workspace => new OpenWorkspaceState(
+                new CharacterWorkspaceId(workspace.Id),
+                workspace.Name,
+                workspace.Alias,
+                workspace.LastOpenedUtc,
+                workspace.RulesetId,
+                workspace.HasSavedWorkspace))
+            .ToArray();
+
+        DesktopDialogField[] rebuiltFields = BuildRosterFields(
+                snapshot.FallbackName,
+                snapshot.FallbackAlias,
+                snapshot.FallbackWorkspace,
+                currentWorkspace,
+                workspaces,
+                fallback)
+            .ToArray();
+        DesktopDialogAction[] rebuiltActions = BuildRosterActions(
+                snapshot.FallbackName,
+                snapshot.FallbackAlias,
+                snapshot.FallbackWorkspace,
+                currentWorkspace,
+                workspaces,
+                fallback)
+            .ToArray();
+
+        string requestedWatchFile = DesktopDialogFieldValueParser.GetValue(dialog, "rosterSelectedWatchFile") ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(requestedWatchFile))
+        {
+            rebuiltFields = rebuiltFields
+                .Select(field => string.Equals(field.Id, "rosterSelectedWatchFile", StringComparison.Ordinal)
+                    ? field with { Value = requestedWatchFile, Placeholder = requestedWatchFile }
+                    : field)
+                .ToArray();
+        }
+
+        return dialog with
+        {
+            Fields = rebuiltFields,
+            Actions = rebuiltActions
+        };
+    }
+
+    private static DesktopDialogState RebuildMasterIndexDialog(DesktopDialogState dialog)
+    {
+        string snapshotJson = DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSnapshot") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(snapshotJson))
+            return dialog;
+
+        MasterIndexDialogSnapshot? snapshot = JsonSerializer.Deserialize<MasterIndexDialogSnapshot>(snapshotJson);
+        if (snapshot is null || snapshot.Sourcebooks.Count == 0)
+            return dialog;
+
+        string search = (DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexSearch") ?? string.Empty).Trim();
+        string requestedSourcebookId = ResolveMasterIndexSelectedSourcebookId(
+            snapshot,
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveSourcebookId"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexCurrentSourcebook"));
+        string requestedFile = NormalizeMasterIndexActiveFile(
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveFile"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexFileSelection"));
+
+        List<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> filteredSnippets = snapshot.Sourcebooks
+            .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(sourcebook => sourcebook.RuleSnippets.Select(snippet => (Sourcebook: sourcebook, Snippet: snippet)))
+            .Where(entry => string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entry.Snippet.File, requestedFile, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entry.Snippet.Provenance, requestedFile, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => string.IsNullOrWhiteSpace(search)
+                || entry.Snippet.Snippet.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Snippet.Provenance.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Sourcebook.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Sourcebook.Code.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || entry.Snippet.Page.ToString(CultureInfo.InvariantCulture).Contains(search, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(entry => entry.Snippet.Page)
+            .ThenBy(entry => entry.Snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)? selectedEntry = ResolveMasterIndexSelectedEntry(
+            filteredSnippets,
+            requestedSourcebookId,
+            DesktopDialogFieldValueParser.GetValue(dialog, "masterIndexActiveResultKey"));
+        MasterIndexDialogSourcebookSnapshot selectedSourcebook = selectedEntry?.Sourcebook
+            ?? snapshot.Sourcebooks.FirstOrDefault(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal))
+            ?? snapshot.Sourcebooks[0];
+        MasterIndexDialogSnippetSnapshot? selectedSnippet = selectedEntry?.Snippet;
+        MasterIndexDialogFileSnapshot? selectedFile = ResolveMasterIndexSelectedFileSnapshot(
+            snapshot.Files,
+            requestedFile,
+            selectedSnippet);
+
+        string selectedFileName = selectedFile?.File ?? "All";
+        string selectedFileSummary = selectedFile is null
+            ? "All data files"
+            : $"{selectedFile.File} · {selectedFile.ElementCount} indexed entries";
+        string selectedSource = ResolveMasterIndexLinkedSource(
+            selectedSourcebook.LocalPdfPath,
+            selectedSourcebook.ReferenceUrl,
+            selectedSourcebook.ReferenceSnapshot);
+        string snippetPreview = selectedSnippet is null
+            ? string.Empty
+            : $"Page {selectedSnippet.Page} · {selectedSnippet.Provenance}{Environment.NewLine}{selectedSnippet.Snippet}";
+
+        DesktopDialogField[] rebuiltFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "masterIndexActiveSourcebookId" => field with { Value = selectedSourcebook.Id, Placeholder = selectedSourcebook.Id },
+                "masterIndexActiveFile" => field with { Value = selectedFileName, Placeholder = selectedFileName },
+                "masterIndexActiveResultKey" => field with
+                {
+                    Label = "Entries",
+                    Value = selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page),
+                    Placeholder = selectedSnippet is null ? string.Empty : BuildMasterIndexSnippetKey(selectedSnippet.Provenance, selectedSnippet.Page),
+                    InputType = "select",
+                    VisualKind = DesktopDialogFieldVisualKinds.List,
+                    IsReadOnly = false,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Left,
+                    Options = BuildMasterIndexResultOptions(filteredSnippets)
+                },
+                "masterIndexCurrentSourcebook" => field with
+                {
+                    Label = "Source",
+                    Value = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
+                    Placeholder = $"{selectedSourcebook.Code} · {selectedSourcebook.Name}",
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
+                },
+                "masterIndexFileSelection" => field with
+                {
+                    Value = selectedFileName,
+                    Placeholder = "All",
+                    Options = BuildMasterIndexFileOptions(snapshot.Files.Select(file => new MasterIndexFileEntry(file.File, string.Empty, file.ElementCount)).ToArray())
+                },
+                "masterIndexCurrentFile" => field with { Value = selectedFileSummary, Placeholder = selectedFileSummary },
+                "masterIndexSnippetPreview" => field with
+                {
+                    Value = snippetPreview,
+                    Placeholder = snippetPreview,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
+                },
+                "masterIndexSelectedSource" => field with
+                {
+                    Label = "Linked PDF / URL",
+                    Value = selectedSource,
+                    Placeholder = selectedSource,
+                    LayoutSlot = DesktopDialogFieldLayoutSlots.Right
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = rebuiltFields };
+    }
+
+    private static IReadOnlyList<DesktopDialogAction> BuildMasterIndexActions(MasterIndexResponse? masterIndex)
+        => [
+            new DesktopDialogAction("open_source", "Open Linked Source", true),
+            new DesktopDialogAction("close", "Close")
+        ];
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexFileOptions(IReadOnlyList<MasterIndexFileEntry> files)
+    {
+        List<DesktopDialogFieldOption> options = [new("All", "All data files")];
+        options.AddRange(files
+            .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .Select(file => new DesktopDialogFieldOption(file.File, $"{file.File} · {file.ElementCount} entries")));
+        return options;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexResultOptions(
+        IEnumerable<(MasterIndexSourcebookEntry Sourcebook, MasterIndexRuleSnippetEntry Snippet)> snippets)
+    {
+        DesktopDialogFieldOption[] options = snippets
+            .Select(entry => new DesktopDialogFieldOption(
+                BuildMasterIndexSnippetKey(entry.Snippet.Provenance, entry.Snippet.Page),
+                $"{entry.Sourcebook.Code} p. {entry.Snippet.Page} · {BuildMasterIndexSnippetLabel(entry.Snippet.Snippet)} · {entry.Snippet.Provenance}"))
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        return options.Length == 0
+            ? [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]
+            : options;
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMasterIndexResultOptions(
+        IEnumerable<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> snippets)
+    {
+        DesktopDialogFieldOption[] options = snippets
+            .Select(entry => new DesktopDialogFieldOption(
+                BuildMasterIndexSnippetKey(entry.Snippet.File, entry.Snippet.Page),
+                $"{entry.Sourcebook.Code} p. {entry.Snippet.Page} · {BuildMasterIndexSnippetLabel(entry.Snippet.Snippet)} · {entry.Snippet.Provenance}"))
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+
+        return options.Length == 0
+            ? [new DesktopDialogFieldOption(string.Empty, "No indexed entries discovered.")]
+            : options;
     }
 
     private static string BuildSourcebookSelectionSummary(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
@@ -3603,42 +5718,35 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         int permanentCount = sourcebooks.Count(sourcebook => sourcebook.Permanent);
         int selectableCount = sourcebooks.Count - permanentCount;
-        int governedReferenceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferencePosture, "governed", StringComparison.Ordinal));
-        int governedReferenceSourceCount = sourcebooks.Count(sourcebook => string.Equals(sourcebook.ReferenceSourcePosture, "governed", StringComparison.Ordinal));
+        int linkedSourceCount = sourcebooks.Count(sourcebook =>
+            !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath)
+            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceUrl)
+            || !string.IsNullOrWhiteSpace(sourcebook.ReferenceSnapshot));
+        int localPdfCount = sourcebooks.Count(sourcebook => !string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath));
 
-        return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); reference posture governed on {governedReferenceCount}/{sourcebooks.Count}, source provenance governed on {governedReferenceSourceCount}/{sourcebooks.Count}.";
+        return $"{sourcebooks.Count} sourcebooks ({selectableCount} selectable, {permanentCount} permanent); linked sources on {linkedSourceCount}/{sourcebooks.Count}, local PDFs on {localPdfCount}/{sourcebooks.Count}.";
     }
 
-    private static string BuildImportOracleMatrix(MasterIndexResponse masterIndex)
+    private static IReadOnlyList<DesktopDialogField> BuildSourcebookSelectionFields(
+        MasterIndexResponse? masterIndex,
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
     {
-        return $"Chummer4 fixtures {masterIndex.LegacyChummer4FixtureCount}, Chummer5a fixtures {masterIndex.LegacyChummer5FixtureCount}, Hero Lab fixtures {masterIndex.HeroLabFixtureCount}, adjacent SR6 sources {masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}.";
+        string sourcebookSelectionSummary = BuildSourcebookSelectionSummary(sourcebooks);
+        string sourceSelectionReceipt = masterIndex is null
+            ? "All"
+            : NormalizeMasterIndexValue(masterIndex.SourceSelectionLaneReceipt, masterIndex.SourceToggleLanePosture);
+        string referenceSourceReceipt = masterIndex is null
+            ? "missing"
+            : NormalizeMasterIndexValue(masterIndex.ReferenceSourceLaneReceipt, sourcebookSelectionSummary);
+
+        return
+        [
+            new DesktopDialogField("masterIndexSourceSelectionReceipt", "Source Selection", sourceSelectionReceipt, sourcebookSelectionSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+            new DesktopDialogField("masterIndexReferenceSourceReceipt", "Reference Sources", referenceSourceReceipt, sourcebookSelectionSummary, IsReadOnly: true, LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
+        ];
     }
 
-    private static IEnumerable<DesktopDialogField> BuildSourcebookSelectionFields(IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
-    {
-        int index = 1;
-        foreach (MasterIndexSourcebookEntry sourcebook in sourcebooks
-                     .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
-                     .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase))
-        {
-            string label = $"Sourcebook {sourcebook.Code}";
-            string snippetCoverage = sourcebook.RuleSnippetCount <= 0 ? "no snippets" : $"{sourcebook.RuleSnippetCount} snippets";
-            string selectionKind = sourcebook.Permanent ? "permanent" : "selectable";
-            string targetKinds = BuildReferenceTargetKinds(sourcebook);
-            string value =
-                $"{sourcebook.Name} [{selectionKind}] | ref {sourcebook.ReferencePosture} | source {sourcebook.ReferenceSourcePosture} | {snippetCoverage} | targets {targetKinds}";
-
-            yield return new DesktopDialogField(
-                $"masterIndexSourcebook{index}",
-                label,
-                value,
-                value,
-                IsReadOnly: true);
-            index++;
-        }
-    }
-
-    private static string BuildReferenceTargetKinds(MasterIndexSourcebookEntry sourcebook)
+    private static string BuildMasterIndexReferenceTargetKinds(MasterIndexDialogSourcebookSnapshot sourcebook)
     {
         List<string> kinds = [];
         if (!string.IsNullOrWhiteSpace(sourcebook.LocalPdfPath))
@@ -3650,4 +5758,313 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return kinds.Count == 0 ? "none" : string.Join("+", kinds);
     }
+
+    private static string BuildImportOracleMatrix(MasterIndexResponse masterIndex)
+    {
+        return $"Chummer4 fixtures {masterIndex.LegacyChummer4FixtureCount}, Chummer5a fixtures {masterIndex.LegacyChummer5FixtureCount}, Hero Lab fixtures {masterIndex.HeroLabFixtureCount}, adjacent SR6 sources {masterIndex.AdjacentSr6OracleSourcesCovered}/{masterIndex.AdjacentSr6OracleSourcesExpected}.";
+    }
+
+    private static MasterIndexDialogSnapshot CreateMasterIndexDialogSnapshot(
+        string? settingsLanePosture,
+        IReadOnlyList<MasterIndexFileEntry> files,
+        IReadOnlyList<MasterIndexSourcebookEntry> sourcebooks)
+        => new(
+            NormalizeMasterIndexValue(settingsLanePosture, "missing"),
+            files
+                .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+                .Select(file => new MasterIndexDialogFileSnapshot(file.File, file.ElementCount))
+                .ToArray(),
+            sourcebooks
+                .OrderBy(sourcebook => sourcebook.Code, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(sourcebook => sourcebook.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(sourcebook => new MasterIndexDialogSourcebookSnapshot(
+                    sourcebook.Id,
+                    sourcebook.Code,
+                    sourcebook.Name,
+                    sourcebook.ReferencePosture,
+                    sourcebook.ReferenceSourcePosture,
+                    sourcebook.LocalPdfPath,
+                    sourcebook.ReferenceUrl,
+                    sourcebook.ReferenceSnapshot,
+                    (sourcebook.RuleSnippets ?? [])
+                        .OrderBy(snippet => snippet.Page)
+                        .ThenBy(snippet => snippet.Provenance, StringComparer.OrdinalIgnoreCase)
+                        .Select(snippet => new MasterIndexDialogSnippetSnapshot(
+                            snippet.Provenance,
+                            snippet.Provenance,
+                            snippet.Page,
+                            snippet.Snippet))
+                        .ToArray()))
+                .ToArray());
+
+    private static IReadOnlyList<MasterIndexFileEntry> NormalizeMasterIndexFiles(IReadOnlyList<MasterIndexFileEntry>? files)
+        => (files ?? [])
+            .Where(static file => file is not null)
+            .Select(file => new MasterIndexFileEntry(
+                NormalizeMasterIndexValue(file.File, "unknown.xml"),
+                NormalizeMasterIndexValue(file.Root),
+                Math.Max(file.ElementCount, 0)))
+            .DistinctBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private static IReadOnlyList<MasterIndexSourcebookEntry> NormalizeMasterIndexSourcebooks(IReadOnlyList<MasterIndexSourcebookEntry>? sourcebooks)
+        => (sourcebooks ?? [])
+            .Where(static sourcebook => sourcebook is not null)
+            .Select(sourcebook =>
+            {
+                MasterIndexRuleSnippetEntry[] normalizedSnippets = NormalizeMasterIndexSnippets(sourcebook.RuleSnippets).ToArray();
+                return new MasterIndexSourcebookEntry(
+                    NormalizeMasterIndexValue(sourcebook.Id, "unknown"),
+                    NormalizeMasterIndexValue(sourcebook.Code, "UNK"),
+                    NormalizeMasterIndexValue(sourcebook.Name, "Unknown Source"),
+                    sourcebook.Permanent,
+                    NormalizeMasterIndexValue(sourcebook.ReferencePosture, "missing"),
+                    Math.Max(sourcebook.RuleSnippetCount, normalizedSnippets.Length),
+                    normalizedSnippets,
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSourcePosture, "missing"),
+                    NormalizeMasterIndexValue(sourcebook.LocalPdfPath),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceUrl),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSnapshot),
+                    NormalizeMasterIndexValue(sourcebook.ReferenceSnapshotPosture, "missing"));
+            })
+            .DistinctBy(sourcebook => sourcebook.Id, StringComparer.Ordinal)
+            .ToArray();
+
+    private static IReadOnlyList<MasterIndexRuleSnippetEntry> NormalizeMasterIndexSnippets(IReadOnlyList<MasterIndexRuleSnippetEntry>? snippets)
+        => (snippets ?? [])
+            .Where(static snippet => snippet is not null)
+            .Select(snippet => new MasterIndexRuleSnippetEntry(
+                NormalizeMasterIndexValue(snippet.Language, "en-US"),
+                Math.Max(snippet.Page, 0),
+                NormalizeMasterIndexValue(snippet.Snippet),
+                NormalizeMasterIndexValue(snippet.Provenance, "unknown")))
+            .ToArray();
+
+    private static string ResolveMasterIndexLinkedSource(params string?[] candidates)
+        => candidates
+            .Select(candidate => NormalizeMasterIndexValue(candidate))
+            .FirstOrDefault(candidate => !string.IsNullOrWhiteSpace(candidate))
+        ?? string.Empty;
+
+    private static string NormalizeMasterIndexValue(string? value, string fallback = "")
+        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
+    private static string NormalizeAdjacentSr6OracleReceipt(string? value, string fallback = "")
+    {
+        string normalized = NormalizeMasterIndexValue(value, fallback);
+        if (string.IsNullOrWhiteSpace(normalized))
+            return normalized;
+
+        if (normalized.StartsWith("adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase))
+            return "Adjacent SR6 oracle" + normalized["adjacent SR6 oracle".Length..];
+
+        return normalized.StartsWith("No adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase)
+            ? "No Adjacent SR6 oracle" + normalized["No adjacent SR6 oracle".Length..]
+            : normalized;
+    }
+
+    private static MasterIndexFileEntry? ResolveMasterIndexSelectedFile(
+        IReadOnlyList<MasterIndexFileEntry> files,
+        MasterIndexRuleSnippetEntry? selectedSnippet)
+    {
+        if (files.Count == 0)
+            return null;
+
+        if (selectedSnippet is not null)
+        {
+            MasterIndexFileEntry? matchingFile = files.FirstOrDefault(file =>
+                string.Equals(file.File, selectedSnippet.Provenance, StringComparison.OrdinalIgnoreCase));
+            if (matchingFile is not null)
+                return matchingFile;
+        }
+
+        return files[0];
+    }
+
+    private static string BuildMasterIndexFileSelection(
+        IReadOnlyList<MasterIndexFileEntry> files,
+        MasterIndexFileEntry? selectedFile)
+    {
+        if (files.Count == 0)
+            return "All" + Environment.NewLine + "books.xml · 0 entries";
+
+        IEnumerable<string> lines = files
+            .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .Select(file =>
+                $"{(selectedFile is not null && string.Equals(file.File, selectedFile.File, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {file.File} · {file.ElementCount} entries");
+
+        return "All" + Environment.NewLine + string.Join(Environment.NewLine, lines);
+    }
+
+    private static MasterIndexDialogFileSnapshot? ResolveMasterIndexSelectedFileSnapshot(
+        IReadOnlyList<MasterIndexDialogFileSnapshot> files,
+        string? requestedFile,
+        MasterIndexDialogSnippetSnapshot? selectedSnippet)
+    {
+        if (files.Count == 0)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(requestedFile)
+            && !string.Equals(requestedFile, "All", StringComparison.OrdinalIgnoreCase))
+        {
+            MasterIndexDialogFileSnapshot? matchingRequestedFile = files.FirstOrDefault(file =>
+                string.Equals(file.File, requestedFile, StringComparison.OrdinalIgnoreCase));
+            if (matchingRequestedFile is not null)
+                return matchingRequestedFile;
+        }
+
+        if (selectedSnippet is not null)
+        {
+            MasterIndexDialogFileSnapshot? matchingSnippetFile = files.FirstOrDefault(file =>
+                string.Equals(file.File, selectedSnippet.File, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(file.File, selectedSnippet.Provenance, StringComparison.OrdinalIgnoreCase));
+            if (matchingSnippetFile is not null)
+                return matchingSnippetFile;
+        }
+
+        return files[0];
+    }
+
+    private static string BuildMasterIndexFileSelectionSnapshot(
+        IReadOnlyList<MasterIndexDialogFileSnapshot> files,
+        MasterIndexDialogFileSnapshot? selectedFile)
+    {
+        if (files.Count == 0)
+            return "All" + Environment.NewLine + "books.xml · 0 entries";
+
+        IEnumerable<string> lines = files
+            .OrderBy(file => file.File, StringComparer.OrdinalIgnoreCase)
+            .Select(file =>
+                $"{(selectedFile is not null && string.Equals(file.File, selectedFile.File, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {file.File} · {file.ElementCount} entries");
+
+        return "All" + Environment.NewLine + string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildMasterIndexSnippetLabel(MasterIndexRuleSnippetEntry snippet)
+        => BuildMasterIndexSnippetLabel(snippet.Snippet);
+
+    private static string BuildMasterIndexSnippetLabel(string? snippetText)
+    {
+        if (string.IsNullOrWhiteSpace(snippetText))
+        {
+            return "(no note text)";
+        }
+
+        string normalized = string.Join(" ", snippetText
+            .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        if (normalized.Length <= 64)
+        {
+            return normalized;
+        }
+
+        return normalized[..61].TrimEnd() + "...";
+    }
+
+    private static string BuildMasterIndexSnippetKey(string? provenance, int page)
+        => $"{provenance ?? string.Empty}|{page}";
+
+    private static string NormalizeMasterIndexActiveFile(string? activeFile, string? fileSelectionField)
+    {
+        if (!string.IsNullOrWhiteSpace(activeFile))
+            return activeFile.Trim();
+
+        if (string.IsNullOrWhiteSpace(fileSelectionField))
+            return "All";
+
+        string firstLine = fileSelectionField
+            .Split([Environment.NewLine, "\r", "\n"], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault() ?? "All";
+
+        if (string.Equals(firstLine, "All", StringComparison.OrdinalIgnoreCase))
+            return "All";
+
+        string normalized = firstLine.TrimStart('>', ' ').Trim();
+        int separatorIndex = normalized.IndexOf(" · ", StringComparison.Ordinal);
+        return separatorIndex >= 0 ? normalized[..separatorIndex] : normalized;
+    }
+
+    private static string ResolveMasterIndexSelectedSourcebookId(
+        MasterIndexDialogSnapshot snapshot,
+        string? requestedSourcebookId,
+        string? currentSourcebook)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedSourcebookId)
+            && snapshot.Sourcebooks.Any(sourcebook => string.Equals(sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal)))
+        {
+            return requestedSourcebookId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentSourcebook))
+        {
+            MasterIndexDialogSourcebookSnapshot? matchingSourcebook = snapshot.Sourcebooks.FirstOrDefault(sourcebook =>
+                string.Equals($"{sourcebook.Code} · {sourcebook.Name}", currentSourcebook, StringComparison.Ordinal));
+            if (matchingSourcebook is not null)
+                return matchingSourcebook.Id;
+        }
+
+        return snapshot.Sourcebooks[0].Id;
+    }
+
+    private static (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)? ResolveMasterIndexSelectedEntry(
+        IReadOnlyList<(MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet)> snippets,
+        string requestedSourcebookId,
+        string? requestedKey)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedKey))
+        {
+            (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet) matchingSnippet = snippets.FirstOrDefault(snippet =>
+                string.Equals(BuildMasterIndexSnippetKey(snippet.Snippet.File, snippet.Snippet.Page), requestedKey, StringComparison.Ordinal)
+                || string.Equals(BuildMasterIndexSnippetKey(snippet.Snippet.Provenance, snippet.Snippet.Page), requestedKey, StringComparison.Ordinal));
+            if (matchingSnippet.Sourcebook is not null && matchingSnippet.Snippet is not null)
+                return matchingSnippet;
+        }
+
+        (MasterIndexDialogSourcebookSnapshot Sourcebook, MasterIndexDialogSnippetSnapshot Snippet) matchingSourcebookSnippet = snippets
+            .FirstOrDefault(snippet => string.Equals(snippet.Sourcebook.Id, requestedSourcebookId, StringComparison.Ordinal));
+        if (matchingSourcebookSnippet.Sourcebook is not null && matchingSourcebookSnippet.Snippet is not null)
+            return matchingSourcebookSnippet;
+
+        return snippets.FirstOrDefault();
+    }
+
+    private sealed record MasterIndexDialogSnapshot(
+        string SettingsLanePosture,
+        IReadOnlyList<MasterIndexDialogFileSnapshot> Files,
+        IReadOnlyList<MasterIndexDialogSourcebookSnapshot> Sourcebooks);
+
+    private sealed record MasterIndexDialogFileSnapshot(
+        string File,
+        int ElementCount);
+
+    private sealed record MasterIndexDialogSourcebookSnapshot(
+        string Id,
+        string Code,
+        string Name,
+        string ReferencePosture,
+        string ReferenceSourcePosture,
+        string? LocalPdfPath,
+        string? ReferenceUrl,
+        string? ReferenceSnapshot,
+        IReadOnlyList<MasterIndexDialogSnippetSnapshot> RuleSnippets);
+
+    private sealed record MasterIndexDialogSnippetSnapshot(
+        string File,
+        string Provenance,
+        int Page,
+        string Snippet);
+
+    private sealed record RosterDialogSnapshot(
+        string FallbackAlias,
+        string FallbackName,
+        string FallbackWorkspace,
+        IReadOnlyList<RosterDialogWorkspaceSnapshot> Workspaces,
+        IReadOnlyList<string> WatchedFiles);
+
+    private sealed record RosterDialogWorkspaceSnapshot(
+        string Id,
+        string Name,
+        string Alias,
+        DateTimeOffset LastOpenedUtc,
+        string RulesetId,
+        bool HasSavedWorkspace);
 }
