@@ -67,10 +67,16 @@ public partial class DesktopDialogWindow : Window
         _dialogTitleText.Text = dialog.Title;
         string visibleMessage = SuppressDialogBanner(dialog.Id) ? string.Empty : dialog.Message ?? string.Empty;
         _dialogMessageText.Text = visibleMessage;
-        _dialogMessageText.IsVisible = !string.IsNullOrWhiteSpace(visibleMessage);
+        _dialogTitleText.IsVisible = false;
+        _dialogMessageText.IsVisible = false;
         string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
         _dialogTrustReceiptPanel.Content = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
-        _dialogTrustReceiptPanel.IsVisible = _dialogTrustReceiptPanel.Content is not null;
+        _dialogTrustReceiptPanel.IsVisible = false;
+        string dialogContext = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            new[] { dialog.Title, visibleMessage, trustReceiptText }
+                .Where(static segment => !string.IsNullOrWhiteSpace(segment)));
+        ToolTip.SetTip(_dialogFieldsPanel, string.IsNullOrWhiteSpace(dialogContext) ? null : dialogContext);
 
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
@@ -237,7 +243,6 @@ public partial class DesktopDialogWindow : Window
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
             Text = field.Value,
-            Watermark = field.Placeholder,
             IsReadOnly = field.IsReadOnly
         };
         ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
@@ -342,6 +347,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock settingLabel = new()
         {
             Text = "Use Setting:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             Name = DesktopDialogAccessibility.BuildFieldLabelName("newCharacterBuildMethod")
@@ -381,6 +387,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock rulesetLabel = new()
         {
             Text = "Ruleset:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             Name = DesktopDialogAccessibility.BuildFieldLabelName("newCharacterRulesetId")
@@ -400,6 +407,7 @@ public partial class DesktopDialogWindow : Window
         summaryRow.Children.Add(new TextBlock
         {
             Text = "Build Method",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
@@ -416,6 +424,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock rulesetSummaryLabel = new()
         {
             Text = "Ruleset",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
@@ -466,6 +475,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = name,
             Text = text,
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
@@ -781,6 +791,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock rollLabel = new()
         {
             Text = "Roll",
+            IsVisible = false,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         topBar.Children.Add(rollLabel);
@@ -792,6 +803,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock d6Label = new()
         {
             Text = "D6",
+            IsVisible = false,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetColumn(d6Label, 2);
@@ -860,6 +872,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock resultsLabel = new()
         {
             Text = "Results:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold
         };
         resultsPane.Children.Add(resultsLabel);
@@ -913,26 +926,16 @@ public partial class DesktopDialogWindow : Window
             body.Children.Add(child);
         }
 
-        return new Border
+        Border border = new()
         {
             BorderThickness = new Thickness(1),
             BorderBrush = Brushes.Gray,
             Background = Brushes.Transparent,
-            Padding = new Thickness(10),
-            Child = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = title,
-                        FontWeight = FontWeight.SemiBold
-                    },
-                    body
-                }
-            }
+            Padding = new Thickness(8),
+            Child = body
         };
+        ToolTip.SetTip(border, title);
+        return border;
     }
 
     private Control CreateLegacyMasterIndexPane(IReadOnlyList<DesktopDialogField> fields)
@@ -973,6 +976,7 @@ public partial class DesktopDialogWindow : Window
         fileRow.Children.Add(new TextBlock
         {
             Text = "Data File:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
@@ -1005,14 +1009,14 @@ public partial class DesktopDialogWindow : Window
         searchRow.Children.Add(new TextBlock
         {
             Text = "Search:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
         TextBox searchBox = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(searchField.Id),
-            Text = searchField.Value,
-            Watermark = string.IsNullOrWhiteSpace(searchField.Placeholder) ? "Search" : searchField.Placeholder
+            Text = searchField.Value
         };
         ApplyAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
         if (string.Equals(_preferredFocusControlName, searchBox.Name, StringComparison.Ordinal))
@@ -1041,7 +1045,7 @@ public partial class DesktopDialogWindow : Window
             Text = "Source:",
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
-            IsVisible = sourceAvailable
+            IsVisible = false
         });
         TextBlock sourceValueText = new()
         {
@@ -1072,7 +1076,7 @@ public partial class DesktopDialogWindow : Window
             {
                 Text = "<- Click to Open Linked PDF",
                 VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
-                IsVisible = sourceAvailable
+                IsVisible = false
             };
             Grid.SetColumn(sourceReminderText, 2);
             sourceRow.Children.Add(sourceReminderText);
@@ -1093,6 +1097,7 @@ public partial class DesktopDialogWindow : Window
         dataRootRow.Children.Add(new TextBlock
         {
             Text = "Data Root:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
@@ -1129,6 +1134,7 @@ public partial class DesktopDialogWindow : Window
         settingsRow.Children.Add(new TextBlock
         {
             Text = "Use Setting:",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
@@ -1257,7 +1263,7 @@ public partial class DesktopDialogWindow : Window
         {
             Text = statusField.Value,
             TextWrapping = TextWrapping.Wrap,
-            IsVisible = !string.IsNullOrWhiteSpace(statusField.Value)
+            IsVisible = false
         };
         Grid.SetRow(statusText, 1);
         right.Children.Add(statusText);
@@ -1321,7 +1327,7 @@ public partial class DesktopDialogWindow : Window
             CheckBox checkBox = new()
             {
                 Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
-                Content = field.Label,
+                Content = string.Empty,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
@@ -1348,16 +1354,17 @@ public partial class DesktopDialogWindow : Window
         Grid row = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            ColumnDefinitions = new ColumnDefinitions("156,*"),
-            RowDefinitions = field.IsMultiline ? new RowDefinitions("Auto,Auto") : new RowDefinitions("Auto"),
-            ColumnSpacing = 8,
-            RowSpacing = 4
+            ColumnDefinitions = new ColumnDefinitions("*"),
+            RowDefinitions = new RowDefinitions("Auto"),
+            ColumnSpacing = 0,
+            RowSpacing = 0
         };
 
         TextBlock label = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
+            IsVisible = false,
             VerticalAlignment = field.IsMultiline ? global::Avalonia.Layout.VerticalAlignment.Top : global::Avalonia.Layout.VerticalAlignment.Center,
             FontWeight = FontWeight.SemiBold
         };
@@ -1367,12 +1374,8 @@ public partial class DesktopDialogWindow : Window
         Control fieldControl = CreateFieldControl(field);
         fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
         ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
-        Grid.SetColumn(fieldControl, field.IsMultiline ? 0 : 1);
-        if (field.IsMultiline)
-        {
-            Grid.SetColumnSpan(fieldControl, 2);
-            Grid.SetRow(fieldControl, 1);
-        }
+        Grid.SetColumn(fieldControl, 0);
+        Grid.SetRow(fieldControl, 0);
 
         row.Children.Add(fieldControl);
         return row;
@@ -1497,7 +1500,6 @@ public partial class DesktopDialogWindow : Window
         TextBox textBox = new()
         {
             Text = field.Value,
-            Watermark = field.Placeholder,
             IsReadOnly = field.IsReadOnly,
             AcceptsReturn = field.IsMultiline,
             TextWrapping = field.IsMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
@@ -1677,6 +1679,7 @@ public partial class DesktopDialogWindow : Window
             TextBlock keyText = new()
             {
                 Text = key,
+                IsVisible = false,
                 FontWeight = FontWeight.SemiBold
             };
             TextBlock valueText = new()
@@ -1684,6 +1687,7 @@ public partial class DesktopDialogWindow : Window
                 Text = data,
                 TextWrapping = TextWrapping.Wrap
             };
+            ToolTip.SetTip(valueText, key);
             Grid.SetColumn(keyText, 0);
             Grid.SetColumn(valueText, 1);
             row.Children.Add(keyText);
@@ -1790,6 +1794,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock labelText = new()
         {
             Text = label,
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
@@ -1853,7 +1858,7 @@ public partial class DesktopDialogWindow : Window
         CheckBox checkBox = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
-            Content = string.IsNullOrWhiteSpace(textOverride) ? field.Label : textOverride,
+            Content = string.Empty,
             IsChecked = ParseCheckbox(field.Value),
             IsEnabled = !field.IsReadOnly
         };
@@ -1881,7 +1886,6 @@ public partial class DesktopDialogWindow : Window
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
             Text = field.Value,
-            Watermark = field.Placeholder,
             IsReadOnly = field.IsReadOnly,
             Width = width
         };
@@ -1922,12 +1926,14 @@ public partial class DesktopDialogWindow : Window
         TextBlock labelText = new()
         {
             Text = label,
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetRow(labelText, rowIndex);
         Grid.SetColumn(labelText, 0);
         grid.Children.Add(labelText);
+        ToolTip.SetTip(valueControl, label);
 
         Grid.SetRow(valueControl, rowIndex);
         Grid.SetColumn(valueControl, 1);

@@ -50,12 +50,14 @@ internal sealed class DesktopDevicesAccessWindow : Window
         _introText = new TextBlock
         {
             Text = BuildIntro(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _statusText = new TextBlock
         {
             Text = S("desktop.devices.status.current"),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -63,24 +65,28 @@ internal sealed class DesktopDevicesAccessWindow : Window
         _currentText = new TextBlock
         {
             Text = BuildCurrentBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _devicesText = new TextBlock
         {
             Text = BuildDevicesBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _claimsText = new TextBlock
         {
             Text = BuildClaimsBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
         _accessText = new TextBlock
         {
             Text = BuildAccessBody(),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -96,15 +102,9 @@ internal sealed class DesktopDevicesAccessWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = S("desktop.devices.heading"),
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.devices.section.current"), _currentText, _currentActionsRow),
@@ -557,19 +557,10 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
+        ToolTip.SetTip(body, title);
         StackPanel content = new()
         {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
+            Spacing = 0
         };
 
         if (actionContent is not null)
@@ -583,7 +574,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            Padding = new Thickness(8),
             Child = content
         };
     }

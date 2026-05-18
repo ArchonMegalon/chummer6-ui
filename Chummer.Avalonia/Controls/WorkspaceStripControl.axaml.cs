@@ -23,6 +23,7 @@ public partial class WorkspaceStripControl : UserControl
     public void SetWorkspaceText(string text)
     {
         WorkspaceText.Text = text;
+        ToolTip.SetTip(this, text);
     }
 
     public void SetQuickStartVisibility(bool isVisible)
@@ -45,7 +46,7 @@ public partial class WorkspaceStripControl : UserControl
         string fullLabel = DesktopLocalizationCatalog.GetRequiredString(
             "desktop.shell.tool.load_demo_runner",
             language);
-        LoadDemoRunnerQuickActionButton.Content = fullLabel;
+        LoadDemoRunnerQuickActionButton.Content = "Demo";
         ToolTip.SetTip(LoadDemoRunnerQuickActionButton, fullLabel);
     }
 

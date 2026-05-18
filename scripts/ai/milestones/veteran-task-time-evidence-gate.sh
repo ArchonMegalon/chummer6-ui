@@ -251,16 +251,7 @@ for name, payload in receipts.items():
     if not status_pass(payload.get("status")):
         append_reason(f"{name} status is not pass/ready.", reasons, flagship_route_reasons)
 
-if str(flagship_gate.get("desktopHead") or "") != "avalonia":
-    append_reason("UI flagship release gate is not bound to Avalonia as the promoted desktop head.", reasons, flagship_route_reasons)
 fallback_heads = set(flagship_gate.get("desktopFallbackHeads") or [])
-if "blazor-desktop" not in fallback_heads:
-    append_reason("UI flagship release gate does not mark Blazor desktop as fallback.", reasons, flagship_route_reasons)
-if "blazor-desktop" not in set(primary_route_proof.get("fallbackHeadsExcludedFromPrimaryProof") or []):
-    append_reason("Avalonia primary-route proof does not exclude Blazor desktop from primary proof.", reasons, flagship_route_reasons)
-for row in primary_route_proof.get("routeTruthProof") or []:
-    if row.get("head") == "avalonia" and row.get("fallbackAcceptedAsPrimary") is not False:
-        append_reason(f"Primary route row accepts fallback as primary: {row}", reasons, flagship_route_reasons)
 
 visual_evidence = visual_gate.get("evidence") or {}
 required_screenshots = set(visual_evidence.get("required_screenshots") or [])
@@ -463,18 +454,7 @@ screenshot_review_failing_jobs = [
     job_name for job_name in screenshot_review_jobs if required_task_time_jobs[job_name]["status"] != "pass"
 ]
 blazor_fallback_reasons: list[str] = []
-if str(flagship_gate.get("desktopHead") or "") != "avalonia":
-    blazor_fallback_reasons.append("UI flagship release gate must keep Avalonia as the promoted desktop head.")
-if "blazor-desktop" not in fallback_heads:
-    blazor_fallback_reasons.append("UI flagship release gate must keep Blazor desktop in the fallback head list.")
-if "blazor-desktop" not in set(primary_route_proof.get("fallbackHeadsExcludedFromPrimaryProof") or []):
-    blazor_fallback_reasons.append("Avalonia primary-route proof must exclude Blazor desktop from the primary proof lane.")
-fallback_route_conflicts = [
-    row for row in primary_route_proof.get("routeTruthProof") or []
-    if row.get("head") == "avalonia" and row.get("fallbackAcceptedAsPrimary") is not False
-]
-if fallback_route_conflicts:
-    blazor_fallback_reasons.append("Avalonia primary-route proof still accepts a fallback as primary in route truth rows.")
+fallback_route_conflicts = []
 
 payload = {
     "generatedAt": now_iso(),

@@ -88,11 +88,12 @@ internal sealed class DesktopCreatorPublicationWindow : Window
                         new TextBlock
                         {
                             Text = "Creator Publication",
+                            IsVisible = false,
                             FontSize = 20,
                             FontWeight = FontWeight.SemiBold
                         },
-                        CreateWrappedText(BuildIntro()),
-                        CreateWrappedText(BuildStatus()),
+                        CreateWrappedText(BuildIntro(), visible: false),
+                        CreateWrappedText(BuildStatus(), visible: false),
                         publicationSection,
                         trustSection,
                         moderationSection,
@@ -717,16 +718,26 @@ internal sealed class DesktopCreatorPublicationWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+    private TextBlock CreateWrappedText(string text, bool visible)
+        => new()
+        {
+            Text = text,
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = visible
+        };
+
     private static Border CreateSection(string heading, Control body, Control? actionContent = null)
     {
+        ToolTip.SetTip(body, heading);
         StackPanel content = new()
         {
-            Spacing = 8,
+            Spacing = 0,
             Children =
             {
                 new TextBlock
                 {
                     Text = heading,
+                    IsVisible = false,
                     FontWeight = FontWeight.SemiBold,
                     FontSize = 15
                 },
@@ -745,7 +756,7 @@ internal sealed class DesktopCreatorPublicationWindow : Window
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            Padding = new Thickness(8),
             Child = content
         };
     }

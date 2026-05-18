@@ -39,6 +39,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
         TextBox detailsBox = new()
         {
             Text = pending.SummaryText,
+            IsVisible = false,
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
@@ -50,6 +51,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             Text = isPreview
                 ? S("desktop.crash.status.preview")
                 : S("desktop.crash.status.current"),
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -66,20 +68,9 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = S("desktop.crash.heading"),
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
-                        new TextBlock
-                        {
-                            Text = BuildIntro(),
-                            TextWrapping = TextWrapping.Wrap
-                        },
                         _statusText,
                         CreateSection(
                             S("desktop.crash.section.summary"),
@@ -91,6 +82,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                                     new TextBlock
                                     {
                                         Text = BuildSummaryContext(),
+                                        IsVisible = false,
                                         TextWrapping = TextWrapping.Wrap
                                     },
                                     new ScrollViewer
@@ -106,6 +98,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                                 new TextBlock
                                 {
                                     Text = BuildRecoveryBody(),
+                                    IsVisible = false,
                                     TextWrapping = TextWrapping.Wrap
                                 },
                                 _recoveryTrustPanelHost),
@@ -313,19 +306,11 @@ internal sealed class DesktopCrashRecoveryWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
+        ToolTip.SetTip(body, title);
         StackPanel content = new()
         {
-            Spacing = 6,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
+            Spacing = 0,
+            Children = { body }
         };
 
         if (actionContent is not null)
@@ -339,7 +324,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            Padding = new Thickness(8),
             Child = content
         };
     }
@@ -511,7 +496,8 @@ internal sealed class DesktopCrashRecoveryWindow : Window
     private void SetStatus(string message)
     {
         _statusText.Text = message;
-        _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
+        _statusText.IsVisible = false;
+        ToolTip.SetTip(_statusText, message);
     }
 
     private string S(string key)

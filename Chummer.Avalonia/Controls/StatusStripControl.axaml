@@ -9,27 +9,31 @@
       <TextBlock x:Name="CharacterStateText"
                  Classes="shell-caption"
                  Text="Character: none"
+                 IsVisible="False"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" IsVisible="False" />
       <TextBlock x:Name="ServiceStateText"
                  Classes="shell-caption"
                  Text="Service: online"
+                 IsVisible="False"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" IsVisible="False" />
       <TextBlock x:Name="TimeStateText"
                  Classes="shell-caption"
                  Text="Time: loading"
+                 IsVisible="False"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />
-      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" />
+      <TextBlock Classes="shell-caption" Text="|" VerticalAlignment="Center" IsVisible="False" />
       <TextBlock x:Name="ComplianceStateText"
                  Classes="shell-caption"
                  Text="Ruleset: loading"
+                 IsVisible="False"
                  VerticalAlignment="Center"
                  TextWrapping="NoWrap"
                  TextTrimming="CharacterEllipsis" />

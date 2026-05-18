@@ -45,16 +45,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = "Rule Environment Studio",
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold,
-                            TextWrapping = TextWrapping.Wrap
-                        },
                         CreateSection("Amend-package lifecycle", BuildLifecycleBody()),
                         CreateSection("Before-after diffs", BuildDiffBody()),
                         CreateSection("Explain receipts", BuildReceiptBody()),
@@ -291,33 +284,28 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     }
 
     private static Border CreateSection(string title, string body)
-        => new()
+    {
+        TextBlock bodyText = new()
+        {
+            Text = body,
+            IsVisible = false,
+            TextWrapping = TextWrapping.Wrap
+        };
+        ToolTip.SetTip(bodyText, title);
+        return new()
         {
             Background = new SolidColorBrush(Color.Parse("#F8FBFF")),
             BorderBrush = new SolidColorBrush(Color.Parse("#CBD7E6")),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
+            Padding = new Thickness(8),
             Child = new StackPanel
             {
-                Spacing = 6,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = title,
-                        FontWeight = FontWeight.SemiBold,
-                        FontSize = 15,
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    new TextBlock
-                    {
-                        Text = body,
-                        TextWrapping = TextWrapping.Wrap
-                    }
-                }
+                Spacing = 0,
+                Children = { bodyText }
             }
         };
+    }
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
     {

@@ -4,14 +4,13 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Border Padding="0">
       <Grid RowDefinitions="Auto,*" RowSpacing="0">
-        <Grid Grid.Row="0" ColumnDefinitions="*" Margin="2,1,2,2">
+        <Grid Grid.Row="0" ColumnDefinitions="*" Margin="2,1,2,1">
           <StackPanel Spacing="0">
-            <TextBlock Text="Runner Workbench"
-                       Classes="shell-kicker" />
-            <TextBlock x:Name="CodexHeadingText" Classes="shell-section-title" Text="Codex" />
+            <TextBlock x:Name="CodexHeadingText" Classes="shell-section-title" Text="Codex" IsVisible="False" />
             <TextBlock x:Name="CodexCaptionText"
                        Classes="shell-caption"
-                       Text="Tree navigator for runners, tabs, actions, and workflow routes."
+                       IsVisible="False"
+                       Text=""
                        TextTrimming="CharacterEllipsis" />
           </StackPanel>
         </Grid>
@@ -37,6 +36,7 @@
         <TreeView x:Name="NavigatorTree"
                   Grid.Row="1"
                   Margin="0"
+                  ToolTip.Tip="Tree navigator for runners, tabs, actions, and workflow routes."
                   SelectionChanged="NavigatorTree_OnSelectionChanged">
           <TreeView.ItemsPanel>
             <ItemsPanelTemplate>

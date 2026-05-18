@@ -233,8 +233,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
         StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
         StringAssert.Contains(summaryHeaderText, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
-        StringAssert.Contains(summaryHeaderMarkupText, "Keep Local Work");
-        StringAssert.Contains(summaryHeaderMarkupText, "Review Campaign Workspace");
+        StringAssert.Contains(summaryHeaderMarkupText, "Keep Local");
+        StringAssert.Contains(summaryHeaderMarkupText, "Campaign");
     }
 
     [TestMethod]
@@ -552,17 +552,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             (string ButtonName, string ExpectedLabel)[] expectedButtons =
             [
-                ("DesktopHomeButton", "Desktop Home"),
-                ("CampaignWorkspaceButton", "Campaign Workspace"),
-                ("LoadDemoRunnerButton", "Load Demo Runner"),
-                ("ImportFileButton", "Import Character File"),
-                ("SaveButton", "Save Workspace"),
+                ("LoadDemoRunnerButton", "Demo"),
+                ("ImportFileButton", "Open"),
+                ("SaveButton", "Save"),
+                ("PrintButton", "Print"),
+                ("CopyButton", "Copy"),
                 ("SettingsButton", "Settings"),
-                ("UpdateStatusButton", "Update Status"),
-                ("InstallLinkingButton", "Link This Copy"),
-                ("SupportButton", "Open Support"),
-                ("ReportIssueButton", "Report Issue"),
-                ("CloseWorkspaceButton", "Close Active Workspace"),
+                ("CloseWorkspaceButton", "Close"),
             ];
 
             foreach ((string buttonName, string expectedLabel) in expectedButtons)
@@ -575,7 +571,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(button.Bounds.Width > 0d && button.Bounds.Height > 0d, $"Workbench action '{buttonName}' must keep a visible desktop footprint.");
             }
 
-            foreach (string buttonName in new[] { "SaveButton", "PrintButton", "CopyButton", "DesktopHomeButton", "ImportFileButton", "CloseWorkspaceButton" })
+            foreach (string buttonName in new[] { "SaveButton", "PrintButton", "CopyButton", "ImportFileButton", "CloseWorkspaceButton" })
             {
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(
@@ -585,6 +581,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Button importRawButton = harness.FindControl<Button>("ImportRawButton");
             Assert.IsFalse(importRawButton.IsVisible, "Raw XML import must stay off the primary classic toolbar.");
+            foreach (string buttonName in new[] { "DesktopHomeButton", "CampaignWorkspaceButton", "UpdateStatusButton", "InstallLinkingButton", "SupportButton", "ReportIssueButton" })
+            {
+                Assert.IsFalse(harness.FindControl<Button>(buttonName).IsVisible, $"Secondary chrome '{buttonName}' must stay out of the default dense toolbar.");
+            }
         });
     }
 
@@ -612,17 +612,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             double[] toolbarButtonHeights =
             [
-                harness.FindControl<Button>("DesktopHomeButton").Bounds.Height,
-                harness.FindControl<Button>("CampaignWorkspaceButton").Bounds.Height,
                 harness.FindControl<Button>("LoadDemoRunnerButton").Bounds.Height,
                 harness.FindControl<Button>("ImportFileButton").Bounds.Height,
                 harness.FindControl<Button>("SaveButton").Bounds.Height,
+                harness.FindControl<Button>("PrintButton").Bounds.Height,
+                harness.FindControl<Button>("CopyButton").Bounds.Height,
                 harness.FindControl<Button>("SettingsButton").Bounds.Height,
                 harness.FindControl<Button>("ImportRawButton").Bounds.Height,
-                harness.FindControl<Button>("UpdateStatusButton").Bounds.Height,
-                harness.FindControl<Button>("InstallLinkingButton").Bounds.Height,
-                harness.FindControl<Button>("SupportButton").Bounds.Height,
-                harness.FindControl<Button>("ReportIssueButton").Bounds.Height,
                 harness.FindControl<Button>("CloseWorkspaceButton").Bounds.Height,
             ];
             Assert.AreEqual(0, badgeBorders.Length, "Classic toolbar parity forbids dashboard badge tiles in the workbench strip.");
@@ -743,7 +739,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ];
 
             Assert.AreEqual("Codex", codexKicker.Text);
-            StringAssert.Contains(codexHeading.Text ?? string.Empty, "Codex");
+            StringAssert.Contains(codexHeading.Text ?? string.Empty, "Character");
             Assert.IsTrue(
                 rootLabels.SequenceEqual(expectedRootLabels, StringComparer.Ordinal),
                 "The codex tree must keep the classic left-rail group order. Expected: "
@@ -810,9 +806,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Sidecar");
             CollectionAssert.DoesNotContain(visibleTexts, "Coach Launch");
             CollectionAssert.DoesNotContain(visibleTexts, "Recent Coach Guidance");
-            CollectionAssert.Contains(visibleTexts, "Runner Workbench");
-            CollectionAssert.Contains(visibleTexts, "Section Commands");
-            CollectionAssert.Contains(visibleTexts, "Reference & Notes");
+            CollectionAssert.Contains(visibleTexts, "Character");
+            CollectionAssert.DoesNotContain(visibleTexts, "Section Commands");
+            CollectionAssert.DoesNotContain(visibleTexts, "Reference & Notes");
         });
     }
 
@@ -836,16 +832,12 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             string[] actionButtons =
             [
-                "DesktopHomeButton",
-                "CampaignWorkspaceButton",
-                "LoadDemoRunnerButton",
                 "ImportFileButton",
                 "SaveButton",
                 "SettingsButton",
-                "UpdateStatusButton",
-                "InstallLinkingButton",
-                "SupportButton",
-                "ReportIssueButton",
+                "PrintButton",
+                "CopyButton",
+                "CloseWorkspaceButton",
             ];
 
             foreach (string buttonName in menuButtons)
@@ -862,6 +854,20 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(button.IsVisible, $"Runtime-backed runner load must keep '{buttonName}' visible.");
                 Assert.IsTrue(button.IsEnabled, $"Runtime-backed runner load must keep '{buttonName}' enabled.");
                 Assert.IsTrue(GetButtonTextLines(button).Length > 0, $"Runtime-backed runner load must not blank the label for '{buttonName}'.");
+            }
+
+            foreach (string buttonName in new[]
+                     {
+                         "DesktopHomeButton",
+                         "CampaignWorkspaceButton",
+                         "LoadDemoRunnerButton",
+                         "UpdateStatusButton",
+                         "InstallLinkingButton",
+                         "SupportButton",
+                         "ReportIssueButton",
+                     })
+            {
+                Assert.IsFalse(harness.FindControl<Button>(buttonName).IsVisible, $"Runtime-backed runner load must keep secondary chrome '{buttonName}' collapsed.");
             }
 
             harness.Click("FileMenuButton");
@@ -1585,15 +1591,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             PumpStandaloneUi();
 
             Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
-            Assert.AreEqual(
-                "Restore choice: keep ws-1 open before accepting a newer continuity packet.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityStatusText").Text);
-            Assert.AreEqual(
-                "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
-                FindDescendant<TextBlock>(control, "StaleStateStatusText").Text);
-            Assert.AreEqual(
-                "Conflict choices: review before replacing this unsaved desktop state.",
-                FindDescendant<TextBlock>(control, "ConflictChoiceStatusText").Text);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityStatusText").IsVisible);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "StaleStateStatusText").IsVisible);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "ConflictChoiceStatusText").IsVisible);
             Assert.AreEqual(
                 "Restore continuity decision gate",
                 AutomationProperties.GetName(FindDescendant<Control>(control, "RestoreContinuityStatusBorder")));
@@ -1610,9 +1610,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Conflict choice status",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "ConflictChoiceStatusText")));
             Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
-            Assert.AreEqual(
-                "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement. Decision gate: Chummer will not replace local work automatically; save local work before reviewing a server restore.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText").Text);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText").IsVisible);
             Assert.AreEqual(
                 "Restore decision guard",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText")));
@@ -1620,17 +1618,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Chummer will not replace local work automatically; review the restore, stale-state, and conflict-choice posture first.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText")));
             Assert.AreEqual(
-                "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText").Text);
-            Assert.AreEqual(
                 "Restore decision order",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
             Assert.AreEqual(
                 "Use the visible restore choices in order: keep local, save when available, review Campaign Workspace, then open support.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
-            Assert.AreEqual(
-                "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText").Text);
             Assert.AreEqual(
                 "Restore local authority",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
@@ -1638,17 +1630,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "The primary desktop route keeps local work authoritative until the user chooses a review or support action.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
             Assert.AreEqual(
-                "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText").Text);
-            Assert.AreEqual(
                 "Restore replacement guard",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText")));
             Assert.AreEqual(
                 "There is no automatic or one-click restore replacement path on the primary desktop route.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText")));
-            Assert.AreEqual(
-                "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
-                FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText").Text);
             Assert.AreEqual(
                 "Restore support handoff",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText")));
@@ -1664,35 +1650,21 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual("Review campaign workspace restore choices", AutomationProperties.GetName(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton")));
             Assert.AreEqual("restore-decision-open-workspace-support", FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Tag);
             Assert.AreEqual("Open workspace support for restore conflict", AutomationProperties.GetName(FindDescendant<Button>(control, "OpenWorkspaceSupportButton")));
-            Assert.AreEqual(
-                "Save local work is available before restore or conflict review changes the desktop state.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").IsVisible);
             Assert.AreEqual(
                 "Restore decision action status",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText")));
 
             RaiseClick(FindDescendant<Button>(control, "KeepLocalWorkButton"));
-            Assert.AreEqual(
-                "Kept local work visible; no restore, stale-state refresh, or conflict choice replaced desktop state.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsTrue(FindDescendant<Button>(control, "KeepLocalWorkButton").Classes.Contains("selected"));
             Assert.IsFalse(FindDescendant<Button>(control, "SaveLocalWorkButton").Classes.Contains("selected"));
             RaiseClick(FindDescendant<Button>(control, "SaveLocalWorkButton"));
-            Assert.AreEqual(
-                "Save local work requested before any restore or conflict review changes desktop state.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsFalse(FindDescendant<Button>(control, "KeepLocalWorkButton").Classes.Contains("selected"));
             Assert.IsTrue(FindDescendant<Button>(control, "SaveLocalWorkButton").Classes.Contains("selected"));
             RaiseClick(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton"));
-            Assert.AreEqual(
-                "Opening Campaign Workspace to review restore continuation, stale state, and conflict choices before replacing local work.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsFalse(FindDescendant<Button>(control, "SaveLocalWorkButton").Classes.Contains("selected"));
             Assert.IsTrue(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton").Classes.Contains("selected"));
             RaiseClick(FindDescendant<Button>(control, "OpenWorkspaceSupportButton"));
-            Assert.AreEqual(
-                "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsFalse(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton").Classes.Contains("selected"));
             Assert.IsTrue(FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Classes.Contains("selected"));
 
@@ -1730,27 +1702,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual("restore-decision-save-local-work", saveButton.Tag);
             RaiseClick(saveButton);
             Assert.IsFalse(saveButton.Classes.Contains("selected"));
-            Assert.AreEqual(
-                "Save local work is unavailable because no dirty local workspace is active; keep local work, review Campaign Workspace, or open Workspace Support.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
-            Assert.AreEqual(
-                "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement. Decision gate: Chummer will not replace local work automatically; keep local work, review Campaign Workspace, or open Workspace Support.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText").Text);
-            Assert.AreEqual(
-                "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText").Text);
-            Assert.AreEqual(
-                "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText").Text);
-            Assert.AreEqual(
-                "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText").Text);
-            Assert.AreEqual(
-                "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.",
-                FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText").Text);
-            Assert.AreEqual(
-                "Save local work is unavailable because no dirty local workspace is active; keep local work, review Campaign Workspace, or open Workspace Support.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText").IsVisible);
+            Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").IsVisible);
         });
     }
 
@@ -1774,17 +1727,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
             PumpStandaloneUi();
 
-            Assert.AreEqual(
-                "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsTrue(FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Classes.Contains("selected"));
 
             control.SetState(state);
             PumpStandaloneUi();
 
-            Assert.AreEqual(
-                "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.",
-                FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").Text);
             Assert.IsTrue(FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Classes.Contains("selected"));
             Assert.IsFalse(FindDescendant<Button>(control, "KeepLocalWorkButton").Classes.Contains("selected"));
         });

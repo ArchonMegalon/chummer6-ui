@@ -9,7 +9,8 @@
               Background="{DynamicResource ChummerShellDialogHeaderBrush}"
               BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
               BorderThickness="0,0,0,1"
-              Padding="6,3">
+              Padding="0"
+              IsVisible="False">
         <TextBlock x:Name="DialogTitleText"
                    Text="(none)"
                    FontWeight="SemiBold"
@@ -76,7 +77,8 @@
                            Text="{Binding Label}" />
                 <TextBlock Grid.Column="1"
                            Classes="shell-caption"
-                           Text="{Binding Group}" />
+                           Text="{Binding Group}"
+                           IsVisible="False" />
               </Grid>
             </DataTemplate>
           </ListBox.ItemTemplate>

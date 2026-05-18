@@ -27,6 +27,7 @@ internal sealed class DesktopExplainDrawerFollowUpWindow : Window
         _statusText = new TextBlock
         {
             Text = "Follow-up stays text-first, packet-backed, and scoped to the current desktop snapshot.",
+            IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             Foreground = Brushes.DarkSlateGray
         };
@@ -38,20 +39,9 @@ internal sealed class DesktopExplainDrawerFollowUpWindow : Window
                 Padding = new Thickness(16),
                 Child = new StackPanel
                 {
-                    Spacing = 12,
+                    Spacing = 10,
                     Children =
                     {
-                        new TextBlock
-                        {
-                            Text = "Explain Follow-up",
-                            FontSize = 20,
-                            FontWeight = FontWeight.SemiBold
-                        },
-                        new TextBlock
-                        {
-                            Text = "Use the current explain packet, cited source anchor, and stale-state posture before taking the next safe action.",
-                            TextWrapping = TextWrapping.Wrap
-                        },
                         _statusText,
                         CreateSection("Explain packet", _context.ExplainPacket),
                         CreateSection("Source anchor", FirstNonBlank(_context.SourceAnchor, "No source anchor is attached to this packet.")),
@@ -78,26 +68,21 @@ internal sealed class DesktopExplainDrawerFollowUpWindow : Window
 
     private Control CreateSection(string title, string body)
     {
+        TextBlock bodyText = new()
+        {
+            Text = body,
+            IsVisible = false,
+            TextWrapping = TextWrapping.Wrap
+        };
+        ToolTip.SetTip(bodyText, title);
         return new Border
         {
             Classes = { "section-card" },
-            Padding = new Thickness(12),
+            Padding = new Thickness(8),
             Child = new StackPanel
             {
-                Spacing = 6,
-                Children =
-                {
-                    new TextBlock
-                    {
-                        Text = title,
-                        FontWeight = FontWeight.SemiBold
-                    },
-                    new TextBlock
-                    {
-                        Text = body,
-                        TextWrapping = TextWrapping.Wrap
-                    }
-                }
+                Spacing = 0,
+                Children = { bodyText }
             }
         };
     }

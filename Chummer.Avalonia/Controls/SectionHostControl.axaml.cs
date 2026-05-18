@@ -125,9 +125,17 @@ public partial class SectionHostControl : UserControl
 
     public void SetNotice(string notice)
     {
-        string normalizedNotice = string.IsNullOrWhiteSpace(notice)
-            ? "Notice: Ready."
-            : notice.Trim();
+        string normalizedNotice = notice?.Trim() ?? string.Empty;
+        bool hideNotice = string.IsNullOrWhiteSpace(normalizedNotice)
+            || string.Equals(normalizedNotice, "Ready.", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalizedNotice, "Notice: Ready.", StringComparison.OrdinalIgnoreCase);
+        if (hideNotice)
+        {
+            NoticeText.Text = string.Empty;
+            NoticeBorder.IsVisible = false;
+            return;
+        }
+
         if (!normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase))
         {
             normalizedNotice = $"Notice: {normalizedNotice}";
@@ -777,6 +785,7 @@ public partial class SectionHostControl : UserControl
         BuildLabTrustReceiptPanel.Children.Add(new TextBlock
         {
             Text = "Build explain receipt and environment diff",
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
             Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
@@ -799,7 +808,8 @@ public partial class SectionHostControl : UserControl
             {
                 Text = $"Build compare companion: {BuildBuildCompareCompanionBadge(_buildLab)}",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
+                IsVisible = false
             });
 
             if (HasBuildBlockerReceipt(_buildLab))
@@ -808,7 +818,8 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"Build blocker receipt: {BuildBuildBlockerBadge(_buildLab)}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
+                    IsVisible = false
                 });
             }
         }
@@ -823,6 +834,7 @@ public partial class SectionHostControl : UserControl
             sectionPanel.Children.Add(new TextBlock
             {
                 Text = section.Title,
+                IsVisible = false,
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
@@ -834,10 +846,12 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"- {line}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16")),
+                    IsVisible = false
                 });
             }
 
+            ToolTip.SetTip(sectionPanel, string.Join(Environment.NewLine, new[] { section.Title }.Concat(section.Lines)));
             BuildLabTrustReceiptPanel.Children.Add(sectionPanel);
         }
     }
@@ -2184,6 +2198,7 @@ public partial class SectionHostControl : UserControl
         stack.Children.Add(new TextBlock
         {
             Text = fact.Label,
+            IsVisible = false,
             FontSize = emphasizeValue ? 8d : 9d,
             FontWeight = FontWeight.Medium,
             TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
@@ -2196,6 +2211,7 @@ public partial class SectionHostControl : UserControl
             TextAlignment = emphasizeValue ? TextAlignment.Center : TextAlignment.Left
         });
         card.Child = stack;
+        ToolTip.SetTip(card, $"{fact.Label}: {fact.Value}");
         return card;
     }
 

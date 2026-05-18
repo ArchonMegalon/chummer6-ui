@@ -10,7 +10,7 @@
       <Grid RowDefinitions="Auto,*" RowSpacing="2">
         <!-- Roster header matching Chummer5a posture -->
         <Border Grid.Row="0" Classes="shell-section-title" Padding="4,2,4,4">
-          <TextBlock Classes="shell-kicker" Text="Character Roster" />
+          <TextBlock Classes="shell-kicker" Text="Character Roster" IsVisible="False" />
         </Border>
 
         <!-- TreeView matching Chummer5a treCharacterList structure -->
@@ -40,6 +40,7 @@
                       CornerRadius="2"
                       Margin="0,0,4,0">
                   <TextBlock Text="{Binding Initials}"
+                             IsVisible="False"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
                              FontSize="10"
@@ -53,7 +54,7 @@
                   <TextBlock Classes="shell-caption"
                              Text="{Binding Meta}"
                              FontSize="10"
-                             IsVisible="{Binding HasMeta}" />
+                             IsVisible="False" />
                 </StackPanel>
               </Grid>
             </TreeDataTemplate>

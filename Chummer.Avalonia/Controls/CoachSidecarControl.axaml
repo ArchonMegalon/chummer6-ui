@@ -5,21 +5,19 @@
     <StackPanel Spacing="12">
       <Border Classes="shell-card subtle">
         <StackPanel Spacing="6">
-          <!-- Shell reference panel -->
-          <TextBlock Classes="shell-kicker" Text="Reference &amp; Notes" />
-          <TextBlock x:Name="CoachStatusText" Classes="shell-section-title" Text="Status: unloaded" TextWrapping="Wrap" />
-          <TextBlock x:Name="CoachPromptPolicyText" Classes="shell-caption" Text="Prompt Policy: n/a" TextWrapping="Wrap" />
-          <TextBlock x:Name="CoachBudgetText" Classes="shell-caption" Text="Coach Budget: n/a" TextWrapping="Wrap" />
-          <TextBlock x:Name="CoachWorkspaceText" Classes="shell-caption" Text="Workspace: n/a" TextWrapping="Wrap" />
-          <TextBlock x:Name="CoachRuntimeText" Classes="shell-caption" Text="Runtime: n/a" TextWrapping="Wrap" />
+          <TextBlock Classes="shell-kicker" Text="Reference &amp; Notes" IsVisible="False" />
+          <TextBlock x:Name="CoachStatusText" Classes="shell-section-title" Text="Status: unloaded" TextWrapping="Wrap" IsVisible="False" />
+          <TextBlock x:Name="CoachPromptPolicyText" Classes="shell-caption" Text="Prompt Policy: n/a" TextWrapping="Wrap" IsVisible="False" />
+          <TextBlock x:Name="CoachBudgetText" Classes="shell-caption" Text="Coach Budget: n/a" TextWrapping="Wrap" IsVisible="False" />
+          <TextBlock x:Name="CoachWorkspaceText" Classes="shell-caption" Text="Workspace: n/a" TextWrapping="Wrap" IsVisible="False" />
+          <TextBlock x:Name="CoachRuntimeText" Classes="shell-caption" Text="Runtime: n/a" TextWrapping="Wrap" IsVisible="False" />
         </StackPanel>
       </Border>
 
       <Border Classes="shell-card">
         <StackPanel Spacing="8">
-          <!-- Reference link panel -->
-          <TextBlock Classes="shell-section-title" Text="Reference Link" />
-          <TextBox x:Name="CoachLaunchUriTextBox" IsReadOnly="True" Watermark="/coach/" />
+          <TextBlock Classes="shell-section-title" Text="Reference Link" IsVisible="False" />
+          <TextBox x:Name="CoachLaunchUriTextBox" IsReadOnly="True" />
           <Button x:Name="CopyCoachLaunchButton"
                   Classes="shell-action"
                   Content="Copy Coach Link"
@@ -28,17 +26,19 @@
           <TextBlock x:Name="CoachLaunchStatusText"
                      Classes="shell-caption"
                      Text="Launch link unavailable."
-                     TextWrapping="Wrap" />
+                     TextWrapping="Wrap"
+                     IsVisible="False" />
           <TextBlock x:Name="CoachErrorText"
                      Classes="shell-caption"
                      Text="(none)"
-                     TextWrapping="Wrap" />
+                     TextWrapping="Wrap"
+                     IsVisible="False" />
         </StackPanel>
       </Border>
 
-      <Border Classes="shell-card">
+      <Border Classes="shell-card" IsVisible="False">
         <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Provider Health" />
+          <TextBlock Classes="shell-section-title" Text="Provider Health" IsVisible="False" />
           <ListBox x:Name="ProviderHealthList">
             <ListBox.ItemTemplate>
               <DataTemplate>
@@ -49,10 +49,9 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="shell-card">
+      <Border Classes="shell-card" IsVisible="False">
         <StackPanel Spacing="8">
-          <!-- Recent notes panel -->
-          <TextBlock Classes="shell-section-title" Text="Recent Notes" />
+          <TextBlock Classes="shell-section-title" Text="Recent Notes" IsVisible="False" />
           <ListBox x:Name="AuditList">
             <ListBox.ItemTemplate>
               <DataTemplate>

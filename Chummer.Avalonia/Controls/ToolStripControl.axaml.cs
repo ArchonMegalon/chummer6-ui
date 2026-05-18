@@ -63,7 +63,7 @@ public partial class ToolStripControl : UserControl
     public void SetStatusText(string statusText)
     {
         StatusText.Text = statusText;
-        StatusTextBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText);
+        StatusTextBorder.IsVisible = !string.IsNullOrWhiteSpace(statusText) && !IsIdleStatus(statusText);
     }
 
     private static void ApplyVisibility(Control control, bool? isVisible)
@@ -76,16 +76,28 @@ public partial class ToolStripControl : UserControl
         control.IsVisible = isVisible.Value;
     }
 
+    private static bool IsIdleStatus(string? statusText)
+    {
+        if (string.IsNullOrWhiteSpace(statusText))
+        {
+            return true;
+        }
+
+        string normalized = statusText.Trim();
+        return string.Equals(normalized, "State: idle", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "idle", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void ApplyLocalization()
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
-        SetButtonLabel(SaveButton, "Save Workspace");
+        SetButtonLabel(SaveButton, "Save Workspace", "Save");
         SetButtonLabel(PrintButton, "Print Character", "Print");
         SetButtonLabel(CopyButton, "Copy", "Copy");
-        SetButtonLabel(DesktopHomeButton, "Desktop Home");
-        SetButtonLabel(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language));
-        SetButtonLabel(CloseWorkspaceButton, "Close Active Workspace");
+        SetButtonLabel(DesktopHomeButton, "Desktop Home", "Home");
+        SetButtonLabel(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language), "Open");
+        SetButtonLabel(CloseWorkspaceButton, "Close Active Workspace", "Close");
         SetButtonLabel(OpenForPrintingButton, "Open Character for Printing");
         SetButtonLabel(OpenForExportButton, "Open Character for Export");
         SetButtonLabel(GmPrepButton, "Open GM Prep Packets");
@@ -97,10 +109,10 @@ public partial class ToolStripControl : UserControl
         SetButtonLabel(SupportButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language));
         SetButtonLabel(ReportIssueButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language));
         SetButtonLabel(SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language));
-        SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language));
+        SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language), "Demo");
         SetButtonLabel(ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language));
         StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
-        StatusTextBorder.IsVisible = true;
+        StatusTextBorder.IsVisible = false;
     }
 
     private static void SetButtonLabel(Button button, string label)
@@ -132,7 +144,7 @@ public partial class ToolStripControl : UserControl
         }
         else
         {
-            button.Content = label;
+            button.Content = shortLabel;
         }
 
         ToolTip.SetTip(button, label);

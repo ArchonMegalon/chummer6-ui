@@ -97,8 +97,8 @@ internal static class MainWindowShellFrameProjector
                     ShowOpenForExport: true,
                     ShowGmPrep: true,
                     ShowRosterMovement: true,
-                    ShowCampaignWorkspace: true,
-                    ShowLoadDemoRunner: true),
+                    ShowCampaignWorkspace: false,
+                    ShowLoadDemoRunner: !hasOpenWorkspace),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),

@@ -1741,10 +1741,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(summaryHeaderMarkup, "RestoreContinuitySupportHandoffText");
         RequireContains(summaryHeaderMarkup, "RestoreContinuityActionPanel");
         RequireContains(summaryHeaderMarkup, "RestoreContinuityActionStatusText");
-        RequireContains(summaryHeaderMarkup, "Keep Local Work");
-        RequireContains(summaryHeaderMarkup, "Save Local Work");
-        RequireContains(summaryHeaderMarkup, "Review Campaign Workspace");
-        RequireContains(summaryHeaderMarkup, "Workspace Support");
+        RequireContains(summaryHeaderMarkup, "Keep Local");
+        RequireContains(summaryHeaderMarkup, "Save");
+        RequireContains(summaryHeaderMarkup, "Campaign");
+        RequireContains(summaryHeaderMarkup, "Support");
 
         string summaryHeaderCode = ReadSource("Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs");
         RequireContains(summaryHeaderCode, "SetRestoreContinuityStatus(");
@@ -1753,8 +1753,8 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(summaryHeaderCode, "ConflictChoiceSummary");
         RequireContains(summaryHeaderCode, "CanSaveLocalWorkBeforeRestore");
         RequireContains(summaryHeaderCode, "BuildRestoreContinuityDecisionSummary");
-        RequireContains(summaryHeaderCode, "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement");
-        RequireContains(summaryHeaderCode, "Decision gate: Chummer will not replace local work automatically");
+        RequireContains(summaryHeaderCode, "Review restore before replacing local work. Save first if needed.");
+        RequireContains(summaryHeaderCode, "Review restore before replacing local work. Keep local work or open support.");
         RequireContains(summaryHeaderCode, "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.");
         RequireContains(summaryHeaderCode, "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.");
         RequireContains(summaryHeaderCode, "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.");

@@ -56,9 +56,15 @@ public partial class CommandDialogPaneControl : UserControl
     {
         DialogTitleText.Text = string.IsNullOrWhiteSpace(title) ? "(none)" : title;
         DialogMessageText.Text = string.IsNullOrWhiteSpace(message) ? "(none)" : message;
-        DialogMessageBorder.IsVisible = !string.IsNullOrWhiteSpace(message);
+        DialogTitleText.IsVisible = false;
+        DialogMessageBorder.IsVisible = false;
         DialogTrustReceiptText.Text = string.IsNullOrWhiteSpace(trustReceipt) ? "(none)" : trustReceipt;
-        DialogTrustReceiptBorder.IsVisible = !string.IsNullOrWhiteSpace(trustReceipt);
+        DialogTrustReceiptBorder.IsVisible = false;
+        string dialogContext = string.Join(
+            Environment.NewLine + Environment.NewLine,
+            new[] { title, message, trustReceipt }
+                .Where(static segment => !string.IsNullOrWhiteSpace(segment)));
+        ToolTip.SetTip(DialogFieldsHost, string.IsNullOrWhiteSpace(dialogContext) ? null : dialogContext);
         RebuildDialogFields(fields.ToArray());
         RebuildDialogActions(actions.ToArray());
         RefreshDialogVisuals();
@@ -192,7 +198,7 @@ public partial class CommandDialogPaneControl : UserControl
             CheckBox checkBox = new()
             {
                 Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
-                Content = field.Label,
+                Content = string.Empty,
                 IsChecked = ParseCheckbox(field.Value),
                 IsEnabled = !field.IsReadOnly
             };
@@ -224,12 +230,13 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel row = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
-            Spacing = 4
+            Spacing = 0
         };
         TextBlock label = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldLabelName(field.Id),
             Text = field.Label,
+            IsVisible = false,
             FontWeight = FontWeight.SemiBold
         };
         ApplyAccessibility(label, field.AccessibleName, field.ToolTip, field.HelpText);
@@ -417,7 +424,6 @@ public partial class CommandDialogPaneControl : UserControl
         TextBox textBox = new()
         {
             Text = field.Value,
-            Watermark = field.Placeholder,
             IsReadOnly = field.IsReadOnly,
             AcceptsReturn = field.IsMultiline,
             TextWrapping = field.IsMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
@@ -530,7 +536,8 @@ public partial class CommandDialogPaneControl : UserControl
             panel.Children.Add(new TextBlock
             {
                 Text = string.Join(Environment.NewLine, lines.Skip(1)),
-                TextWrapping = TextWrapping.Wrap
+                TextWrapping = TextWrapping.Wrap,
+                IsVisible = false
             });
         }
 
@@ -569,6 +576,7 @@ public partial class CommandDialogPaneControl : UserControl
             TextBlock keyText = new()
             {
                 Text = key,
+                IsVisible = false,
                 FontWeight = FontWeight.SemiBold
             };
             TextBlock valueText = new()
@@ -576,6 +584,7 @@ public partial class CommandDialogPaneControl : UserControl
                 Text = data,
                 TextWrapping = TextWrapping.Wrap
             };
+            ToolTip.SetTip(valueText, key);
             Grid.SetColumn(keyText, 0);
             Grid.SetColumn(valueText, 1);
             row.Children.Add(keyText);
