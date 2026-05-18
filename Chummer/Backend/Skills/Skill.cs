@@ -1108,8 +1108,7 @@ namespace Chummer.Backend.Skills
         public static Skill LoadFromHeroLab(Character objCharacter, XPathNavigator xmlSkillNode, bool blnIsKnowledgeSkill, string strSkillType = "", CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
-            if (xmlSkillNode == null)
-                throw new ArgumentNullException(nameof(xmlSkillNode));
+            ArgumentNullException.ThrowIfNull(xmlSkillNode);
             string strName = xmlSkillNode.SelectSingleNodeAndCacheExpression("@name", token)?.Value ?? string.Empty;
 
             XmlNode xmlSkillDataNode = objCharacter.LoadData("skills.xml", token: token)

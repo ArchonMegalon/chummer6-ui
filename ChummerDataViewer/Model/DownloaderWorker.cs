@@ -22,6 +22,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Org.BouncyCastle.Crypto;
@@ -37,33 +38,32 @@ namespace ChummerDataViewer.Model
         public event StatusChangedEvent StatusChanged;
 
         public string Name => "DownloaderWorker";
-        private readonly BackgroundWorker _worker = new BackgroundWorker();
         private readonly AutoResetEvent resetEvent = new AutoResetEvent(false);
         private readonly ConcurrentBag<DownloadTask> _queue = new ConcurrentBag<DownloadTask>();
+        private readonly CancellationTokenSource _disposeTokenSource = new CancellationTokenSource();
+        private readonly Task _workerTask;
 
         public DownloaderWorker()
         {
-            _worker.WorkerReportsProgress = false;
-            _worker.WorkerSupportsCancellation = false;
-            _worker.DoWork += WorkerEntryPoint;
-            _worker.RunWorkerAsync();
+            _workerTask = Task.Factory
+                .StartNew(
+                    () => WorkerEntryPointAsync(_disposeTokenSource.Token),
+                    _disposeTokenSource.Token,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)
+                .Unwrap();
         }
 
-        private void WorkerEntryPoint(object sender, DoWorkEventArgs e)
-        {
-            WorkerEntryPointAsync().GetAwaiter().GetResult();
-        }
-
-        private async Task WorkerEntryPointAsync()
+        private async Task WorkerEntryPointAsync(CancellationToken token)
         {
             try
             {
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
                     if (_queue.TryTake(out DownloadTask task))
                     {
                         OnStatusChanged(new StatusChangedEventArgs("Downloading " + task.Url + Queue()));
-                        byte[] encrypted = await s_httpClient.GetByteArrayAsync(task.Url).ConfigureAwait(false);
+                        byte[] encrypted = await DownloadEncryptedPayloadAsync(task.Url, token).ConfigureAwait(false);
                         byte[] buffer = Decrypt(task.Key, encrypted);
                         WriteAndForget(buffer, task.DestinationPath, task.ReportGuid);
                     }
@@ -75,6 +75,9 @@ namespace ChummerDataViewer.Model
                     }
                 }
             }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+            }
 #if DEBUG
             catch (StackOverflowException ex)
 #else
@@ -83,6 +86,17 @@ namespace ChummerDataViewer.Model
             {
                 OnStatusChanged(new StatusChangedEventArgs("Crashed", ex));
             }
+        }
+
+        private static async Task<byte[]> DownloadEncryptedPayloadAsync(Uri url, CancellationToken token)
+        {
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
+            using HttpResponseMessage response = await s_httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                token).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadAsByteArrayAsync(token).ConfigureAwait(false);
         }
 
         public static byte[] Decrypt(string key, byte[] encrypted)
@@ -184,7 +198,9 @@ namespace ChummerDataViewer.Model
             {
                 if (disposing)
                 {
+                    _disposeTokenSource.Cancel();
                     resetEvent.Dispose();
+                    _disposeTokenSource.Dispose();
                 }
 
                 disposedValue = true;

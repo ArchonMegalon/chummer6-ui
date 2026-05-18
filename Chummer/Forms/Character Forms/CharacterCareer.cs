@@ -23877,8 +23877,7 @@ namespace Chummer
                                     string strKey = strLoop;
                                     if (strSelectedLocation != strLoopLocation)
                                         strKey += strLoopLocation;
-                                    if (!dicDisallowedMounts.ContainsKey(strKey))
-                                        dicDisallowedMounts.Add(strKey, int.MaxValue);
+                                    dicDisallowedMounts.TryAdd(strKey, int.MaxValue);
                                 }
 
                                 strLoopHasModularMount = strSelectedLocation != strLoopLocation
@@ -23929,25 +23928,23 @@ namespace Chummer
                                     foreach (string strLoop in setLoopDisallowedMounts)
                                     {
                                         string strKey = strLoop + objLoopCyberware.Location;
-                                        if (!dicDisallowedMounts.ContainsKey(strKey))
-                                            dicDisallowedMounts.Add(strKey,
-                                                await objLoopCyberware.GetLimbSlotCountAsync(token)
-                                                    .ConfigureAwait(false));
-                                        else
-                                            dicDisallowedMounts[strKey] += await objLoopCyberware
-                                                .GetLimbSlotCountAsync(token).ConfigureAwait(false);
+                                        int intLimbSlotCount = await objLoopCyberware.GetLimbSlotCountAsync(token)
+                                            .ConfigureAwait(false);
+                                        if (!dicDisallowedMounts.TryAdd(strKey, intLimbSlotCount))
+                                        {
+                                            dicDisallowedMounts[strKey] += intLimbSlotCount;
+                                        }
                                     }
 
                                     foreach (string strLoop in setLoopHasModularMount)
                                     {
                                         string strKey = strLoop + objLoopCyberware.Location;
-                                        if (!dicHasMounts.ContainsKey(strKey))
-                                            dicHasMounts.Add(strKey,
-                                                await objLoopCyberware.GetLimbSlotCountAsync(token)
-                                                    .ConfigureAwait(false));
-                                        else
-                                            dicHasMounts[strKey] += await objLoopCyberware.GetLimbSlotCountAsync(token)
-                                                .ConfigureAwait(false);
+                                        int intLimbSlotCount = await objLoopCyberware.GetLimbSlotCountAsync(token)
+                                            .ConfigureAwait(false);
+                                        if (!dicHasMounts.TryAdd(strKey, intLimbSlotCount))
+                                        {
+                                            dicHasMounts[strKey] += intLimbSlotCount;
+                                        }
                                     }
                                 }, token).ConfigureAwait(false);
                             }

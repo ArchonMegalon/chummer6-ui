@@ -18,10 +18,10 @@
  */
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Amazon;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
@@ -32,36 +32,36 @@ namespace ChummerDataViewer.Model
     {
         private const string DataTable = "ChummerDumpsList";
         private readonly AmazonDynamoDBClient _client;
-        private readonly BackgroundWorker _worker = new BackgroundWorker();
         private readonly WaitDurationProvider _backoff = new WaitDurationProvider();
+        private readonly CancellationTokenSource _disposeTokenSource = new CancellationTokenSource();
+        private readonly Task _workerTask;
 
         public DynamoDbLoader()
         {
             _client = new AmazonDynamoDBClient(PersistentState.AWSCredentials, RegionEndpoint.EUCentral1);
-            _worker.WorkerReportsProgress = false;
-            _worker.WorkerSupportsCancellation = false;
-            _worker.DoWork += WorkerEntryPrt;
-            _worker.RunWorkerAsync();
+            _workerTask = Task.Factory
+                .StartNew(
+                    () => WorkerEntryPointAsync(_disposeTokenSource.Token),
+                    _disposeTokenSource.Token,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)
+                .Unwrap();
         }
 
-        private readonly Stopwatch _objTimeoutStopwatch = Stopwatch.StartNew();
-        private int _intCurrentTimeout;
-
-        private void WorkerEntryPrt(object sender, DoWorkEventArgs e)
+        private async Task WorkerEntryPointAsync(CancellationToken token)
         {
             try
             {
                 OnStatusChanged(new StatusChangedEventArgs("Connecting"));
-                while (true)
+                while (!token.IsCancellationRequested)
                 {
-                    if (_objTimeoutStopwatch.ElapsedMilliseconds < _intCurrentTimeout)
-                        continue;
                     try
                     {
                         //Scan 10 items. If middle of scan, pick up there
-                        ScanResponse response = ScanData(
+                        ScanResponse response = await ScanDataAsync(
                             PersistentState.Database.GetKey("crashdumps_last_timestamp"),
-                            PersistentState.Database.GetKey("crashdumps_last_key")); //Start scanning based on last key in db
+                            PersistentState.Database.GetKey("crashdumps_last_key"),
+                            token).ConfigureAwait(false); //Start scanning based on last key in db
 
                         //Into anon type with a little extra info. DB lookup to see if known, parse guid
                         var newItems = response.Items
@@ -79,8 +79,7 @@ namespace ChummerDataViewer.Model
                             //And sleep for exponential backoff
                             int timeout = _backoff.GetSeconds();
                             OnStatusChanged(new StatusChangedEventArgs($"No data. Retrying in {TimeSpan.FromSeconds(timeout)}."));
-                            _intCurrentTimeout = timeout * 1000;
-                            _objTimeoutStopwatch.Restart();
+                            await Task.Delay(TimeSpan.FromSeconds(timeout), token).ConfigureAwait(false);
                             continue;
                         }
 
@@ -127,17 +126,18 @@ namespace ChummerDataViewer.Model
                     {
                         int timeout = _backoff.GetSeconds();
                         OnStatusChanged(new StatusChangedEventArgs($"Internal server error, retrying in {TimeSpan.FromSeconds(timeout)}."));
-                        _intCurrentTimeout = timeout * 1000;
-                        _objTimeoutStopwatch.Restart();
+                        await Task.Delay(TimeSpan.FromSeconds(timeout), token).ConfigureAwait(false);
                     }
                     catch (ProvisionedThroughputExceededException)
                     {
                         int timeout = _backoff.GetSeconds();
                         OnStatusChanged(new StatusChangedEventArgs($"Too fast,  retrying in {TimeSpan.FromSeconds(timeout)}."));
-                        _intCurrentTimeout = timeout * 1000;
-                        _objTimeoutStopwatch.Restart();
+                        await Task.Delay(TimeSpan.FromSeconds(timeout), token).ConfigureAwait(false);
                     }
                 }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
             }
 #if DEBUG
             catch (StackOverflowException ex)
@@ -150,7 +150,7 @@ namespace ChummerDataViewer.Model
             }
         }
 
-        private static void WriteCrashToDb(IDictionary<string, AttributeValue> attributeValues)
+        private static void WriteCrashToDb(Dictionary<string, AttributeValue> attributeValues)
         {
             Guid guid = Guid.Parse(attributeValues["crash_id"].S);
             if (!Version.TryParse(attributeValues["version"].S, out Version version))
@@ -169,7 +169,7 @@ namespace ChummerDataViewer.Model
                 );
         }
 
-        private ScanResponse ScanData(string lastTimeStamp, string lastKey)
+        private Task<ScanResponse> ScanDataAsync(string lastTimeStamp, string lastKey, CancellationToken token)
         {
             var request = new ScanRequest
             {
@@ -187,7 +187,7 @@ namespace ChummerDataViewer.Model
                 };
             }
 
-            return _client.ScanAsync(request).GetAwaiter().GetResult();
+            return _client.ScanAsync(request, token);
         }
 
         public event StatusChangedEvent StatusChanged;
@@ -209,6 +209,8 @@ namespace ChummerDataViewer.Model
             {
                 if (disposing)
                 {
+                    _disposeTokenSource.Cancel();
+                    _disposeTokenSource.Dispose();
                     _client?.Dispose();
                 }
 
