@@ -26,7 +26,7 @@ PORTAL_CANONICAL_MANIFEST_PATH="${PORTAL_CANONICAL_MANIFEST_PATH:-$(dirname "$PO
 PROMOTION_EVIDENCE_PATH="${PROMOTION_EVIDENCE_PATH:-$(dirname "$MANIFEST_PATH")/release-evidence/public-promotion.json}"
 QUARANTINE_PROMOTION_EVIDENCE_PATH="${QUARANTINE_PROMOTION_EVIDENCE_PATH:-$REPO_ROOT/.codex-studio/published/QUARANTINED_INSTALLER_PROMOTION.generated.json}"
 SOURCE_MANIFEST_PATH="${SOURCE_MANIFEST_PATH:-}"
-RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
+RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH:-}}"
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
 
@@ -80,18 +80,71 @@ resolve_release_proof_path() {
   fi
 
   candidates+=(
+    "$REPO_ROOT/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../.c/hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../.c/hub/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../chummer6-hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../chummer6-hub/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../chummer.run-services/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "$REPO_ROOT/../chummer.run-services/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
     "$REPO_ROOT/../chummer.run-services/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
     "/docker/chummercomplete/chummer.run-services/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "/docker/chummercomplete/chummer6-hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+    "/docker/chummercomplete/chummer6-hub/Chummer.Run.Api/wwwroot/proofs/mac-codex-release/HUB_LOCAL_RELEASE_PROOF.generated.json"
   )
 
-  for candidate in "${candidates[@]}"; do
-    [[ -f "$candidate" ]] || continue
-    contract_name="$(json_contract_name "$candidate")"
-    if [[ "$contract_name" == "chummer6-hub.local_release_proof" ]]; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
+  python3 - "${candidates[@]}" <<'PY'
+import datetime as dt
+import json
+import sys
+from pathlib import Path
+
+UTC = dt.timezone.utc
+
+
+def parse_timestamp(payload: dict) -> dt.datetime:
+    raw = str(payload.get("generatedAt") or payload.get("generated_at") or "").strip()
+    if not raw:
+        return dt.datetime.min.replace(tzinfo=UTC)
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(raw)
+    except ValueError:
+        return dt.datetime.min.replace(tzinfo=UTC)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
+
+
+seen: set[Path] = set()
+best_path: Path | None = None
+best_timestamp = dt.datetime.min.replace(tzinfo=UTC)
+
+for raw_candidate in sys.argv[1:]:
+    candidate = Path(raw_candidate).resolve(strict=False)
+    if candidate in seen or not candidate.is_file():
+        continue
+    seen.add(candidate)
+    try:
+        payload = json.loads(candidate.read_text(encoding="utf-8-sig"))
+    except Exception:
+        continue
+    if not isinstance(payload, dict):
+        continue
+    contract_name = str(payload.get("contract_name") or payload.get("contractName") or "").strip()
+    if contract_name != "chummer6-hub.local_release_proof":
+        continue
+    timestamp = parse_timestamp(payload)
+    if best_path is None or timestamp >= best_timestamp:
+        best_path = candidate
+        best_timestamp = timestamp
+
+if best_path is not None:
+    print(best_path)
+PY
 
   printf '%s\n' ""
 }
