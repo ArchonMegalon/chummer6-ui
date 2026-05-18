@@ -6679,6 +6679,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "Release channel is missing generated_at/generatedAt at top level; cannot normalize artifact generated_at identity.");
         StringAssert.Contains(generatorText, "artifact[\"generated_at\"] = release_generated_at");
         StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
+        StringAssert.Contains(generatorText, "run_materializer \"$CANONICAL_MANIFEST_PATH\"");
+        StringAssert.Contains(generatorText, "payload[\"artifactIdentityRegistry\"] = verifier.expected_artifact_identity_registry_rows(payload)");
         StringAssert.Contains(generatorText, "--compat-output");
         StringAssert.Contains(generatorText, "generate-public-promotion-evidence.py");
         StringAssert.Contains(generatorText, "CHUMMER_RELEASE_REQUIRE_STARTUP_SMOKE_PROOF");
@@ -6711,6 +6713,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
+        StringAssert.Contains(s3PublisherText, "generate-releases-manifest.sh");
+        StringAssert.Contains(s3PublisherText, "SOURCE_MANIFEST_PATH=\"$MANIFEST_SOURCE\"");
         StringAssert.Contains(s3PublisherText, "aws s3 cp");
         StringAssert.Contains(s3PublisherText, "verify-releases-manifest.sh");
         StringAssert.Contains(s3PublisherText, "Published ${artifact_count} desktop artifact(s) to object storage target");

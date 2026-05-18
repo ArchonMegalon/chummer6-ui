@@ -13,22 +13,44 @@ S3_TARGET_URI="${CHUMMER_PORTAL_DOWNLOADS_S3_URI:-}"
 S3_LATEST_URI="${CHUMMER_PORTAL_DOWNLOADS_S3_LATEST_URI:-}"
 S3_ENDPOINT_URL="${CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL:-}"
 VERIFY_URL="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}"
+STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 
 if [[ ! -f "$MANIFEST_SOURCE" || ! -d "$FILES_SOURCE" ]]; then
   echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2
   exit 1
 fi
 
-if [[ ! -f "$CANONICAL_MANIFEST_SOURCE" ]]; then
-  if [[ ! -f "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" ]]; then
-    echo "Missing registry materializer: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py" >&2
-    exit 1
-  fi
-  python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" \
-    --downloads-dir "$FILES_SOURCE" \
-    --output "$CANONICAL_MANIFEST_SOURCE" \
-    --compat-output "$MANIFEST_SOURCE" >/dev/null
+if [[ ! -f "$SCRIPT_DIR/generate-releases-manifest.sh" ]]; then
+  echo "Missing manifest generator: $SCRIPT_DIR/generate-releases-manifest.sh" >&2
+  exit 1
 fi
+
+sync_source_dir="$(mktemp -d)"
+cleanup() {
+  rm -rf "$sync_source_dir"
+}
+trap cleanup EXIT
+
+find "$FILES_SOURCE" -maxdepth 1 -type f \
+  \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o \
+     -name "chummer-avalonia-*.tar.gz" -o -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
+     -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
+     -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*.exe" -o -name "chummer-blazor-desktop-*.zip" -o \
+     -name "chummer-blazor-desktop-*.tar.gz" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
+     -name "chummer-blazor-desktop-*-installer.deb" -o -name "chummer-blazor-desktop-*-installer.pkg" -o \
+     -name "chummer-blazor-desktop-*-installer.dmg" -o -name "chummer-blazor-desktop-*-installer.msix" \) \
+  -exec cp {} "$sync_source_dir/" \;
+
+DOWNLOADS_DIR="$sync_source_dir" \
+MANIFEST_PATH="$MANIFEST_SOURCE" \
+PORTAL_MANIFEST_PATH="$MANIFEST_SOURCE" \
+PORTAL_DOWNLOADS_DIR="$BUNDLE_DIR" \
+SOURCE_MANIFEST_PATH="$MANIFEST_SOURCE" \
+STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
+RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}" \
+CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH="${CHUMMER_UI_LOCALIZATION_RELEASE_GATE_PATH:-}" \
+CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
+bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
 if [[ -z "$S3_TARGET_URI" ]]; then
   echo "Set CHUMMER_PORTAL_DOWNLOADS_S3_URI (for example: s3://bucket/path)." >&2
