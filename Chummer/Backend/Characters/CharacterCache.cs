@@ -62,8 +62,9 @@ namespace Chummer
         private readonly ConcurrentDictionary<string, object> _dicMyPluginData = new ConcurrentDictionary<string, object>();
         private SafeAsyncEventHandler _onMyDoubleClick;
         private SafeAsyncEventHandler _onMyContextMenuDeleteClick;
-        private SafeAsyncEventHandler<TreeViewEventArgs> _onMyAfterSelect;
+        private SafeAsyncEventHandler<TreeViewEventArgs> _onMyAfterSelect = null;
         private SafeAsyncEventHandler<ValueTuple<KeyEventArgs, TreeNode>> _onMyKeyDown;
+        private Task<string> _tskRunningDownloadTask;
 
         public AsyncFriendlyReaderWriterLock LockObject { get; } = new AsyncFriendlyReaderWriterLock();
 
@@ -73,6 +74,11 @@ namespace Chummer
             {
                 using (LockObject.EnterReadLock())
                     return _strFilePath;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _strFilePath = value;
             }
         }
 
@@ -119,6 +125,11 @@ namespace Chummer
             {
                 using (LockObject.EnterReadLock())
                     return _strErrorText;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _strErrorText = value;
             }
         }
 
@@ -350,6 +361,11 @@ namespace Chummer
                 using (LockObject.EnterReadLock())
                     return _strCharacterName;
             }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _strCharacterName = value;
+            }
         }
 
         public async Task<string> GetCharacterNameAsync(CancellationToken token = default)
@@ -373,6 +389,11 @@ namespace Chummer
                 using (LockObject.EnterReadLock())
                     return _strCharacterAlias;
             }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _strCharacterAlias = value;
+            }
         }
 
         public async Task<string> GetCharacterAliasAsync(CancellationToken token = default)
@@ -395,6 +416,11 @@ namespace Chummer
             {
                 using (LockObject.EnterReadLock())
                     return _strBuildMethod;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _strBuildMethod = value;
             }
         }
 
@@ -661,6 +687,11 @@ namespace Chummer
                 using (LockObject.EnterReadLock())
                     return _onMyDoubleClick;
             }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _onMyDoubleClick = value;
+            }
         }
 
         [JsonIgnore]
@@ -672,6 +703,11 @@ namespace Chummer
             {
                 using (LockObject.EnterReadLock())
                     return _onMyContextMenuDeleteClick;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _onMyContextMenuDeleteClick = value;
             }
         }
 
@@ -685,6 +721,11 @@ namespace Chummer
                 using (LockObject.EnterReadLock())
                     return _onMyAfterSelect;
             }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _onMyAfterSelect = value;
+            }
         }
 
         [JsonIgnore]
@@ -696,6 +737,28 @@ namespace Chummer
             {
                 using (LockObject.EnterReadLock())
                     return _onMyKeyDown;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _onMyKeyDown = value;
+            }
+        }
+
+        [JsonIgnore]
+        [XmlIgnore]
+        [IgnoreDataMember]
+        public Task<string> RunningDownloadTask
+        {
+            get
+            {
+                using (LockObject.EnterReadLock())
+                    return _tskRunningDownloadTask;
+            }
+            set
+            {
+                using (LockObject.EnterWriteLock())
+                    _tskRunningDownloadTask = value;
             }
         }
 

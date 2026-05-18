@@ -94,14 +94,6 @@ namespace IdentityModel.OidcClient
                     });
                 }
 
-                if (result.Exception is SecurityTokenUnableToValidateException)
-                {
-                    return Task.FromResult(new IdentityTokenValidationResult
-                    {
-                        Error = "unable_to_validate_token"
-                    });
-                }
-
                 throw result.Exception;
             }
 
@@ -123,7 +115,7 @@ namespace IdentityModel.OidcClient
             });
         }
 
-        private TokenValidationResult ValidateSignature(string identityToken, JsonWebTokenHandler handler, TokenValidationParameters parameters, OidcClientOptions options, Logger logger)
+        private static TokenValidationResult ValidateSignature(string identityToken, JsonWebTokenHandler handler, TokenValidationParameters parameters, OidcClientOptions options, Logger logger)
         {
             if (parameters.RequireSignedTokens)
             {
@@ -178,7 +170,7 @@ namespace IdentityModel.OidcClient
                 parameters.IssuerSigningKeys = keys;
             }
             
-            return handler.ValidateToken(identityToken, parameters);
+            return handler.ValidateTokenAsync(identityToken, parameters).GetAwaiter().GetResult();
         }
 
         private static string CheckRequiredClaim(ClaimsPrincipal user)

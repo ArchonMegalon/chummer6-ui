@@ -329,7 +329,6 @@ namespace ChummerHub.Client.UI
                 {
                     try
                     {
-                        MyCE = MyCE;
                         if (!noupdate)
                             await ProcessGroupSearchVisible(token: token);
                     }

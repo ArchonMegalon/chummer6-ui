@@ -9,7 +9,6 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web;
 using HttpResponse = SimpleHttpServer.Models.HttpResponse;
 
 namespace ChummerHub.Client.OidcClient
@@ -117,7 +116,7 @@ namespace ChummerHub.Client.OidcClient
         private const int DefaultTimeout = 60 * 5; // 5 mins (in seconds)
 
 
-        private string _url;
+        private string _url = string.Empty;
 
         public string Url => _url;
 
@@ -221,26 +220,6 @@ namespace ChummerHub.Client.OidcClient
         //        }
         //    });
         //}
-
-        private async Task SetResultAsync(string value, HttpContext ctx)
-        {
-            _source.TrySetResult(value);
-
-            try
-            {
-                ctx.Response.StatusCode = 200;
-                ctx.Response.ContentType = "text/html";
-                ctx.Response.Write("<h1>You can now return to the application.</h1>");
-                await ctx.Response.FlushAsync();
-            }
-            catch
-            {
-                ctx.Response.StatusCode = 400;
-                ctx.Response.ContentType = "text/html";
-                ctx.Response.Write("<h1>Invalid request.</h1>");
-                await ctx.Response.FlushAsync();
-            }
-        }
 
         public Task<string> WaitForCallbackAsync(int timeoutInSeconds = DefaultTimeout)
         {

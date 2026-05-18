@@ -39,6 +39,7 @@ using Chummer.Backend.Equipment;
 using Chummer.UI.Attributes;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.IO;
 using NLog;
 using OperationCanceledException = System.OperationCanceledException;
@@ -53,7 +54,10 @@ namespace Chummer
     {
         private static readonly Lazy<Logger> s_ObjLogger = new Lazy<Logger>(LogManager.GetCurrentClassLogger);
         private static Logger Log => s_ObjLogger.Value;
-        private static TelemetryClient TelemetryClient { get; } = new TelemetryClient();
+        private static readonly TelemetryClient s_FallbackTelemetryClient =
+            new TelemetryClient(TelemetryConfiguration.CreateDefault());
+        private static TelemetryClient TelemetryClient =>
+            Program.ChummerTelemetryClient.Value ?? s_FallbackTelemetryClient;
         private readonly Character _objCharacter;
         private int _intIsDirty;
         private int _intRefreshingCount;
@@ -7276,7 +7280,7 @@ namespace Chummer
                             switch (objImprovement.ImproveType)
                             {
                                 case Improvement.ImprovementType.LimitModifier:
-                                    intTargetLimit = (int)Enum.Parse(typeof(LimitType), objImprovement.ImprovedName);
+                                    intTargetLimit = (int)Enum.Parse<LimitType>(objImprovement.ImprovedName);
                                     break;
 
                                 case Improvement.ImprovementType.PhysicalLimit:

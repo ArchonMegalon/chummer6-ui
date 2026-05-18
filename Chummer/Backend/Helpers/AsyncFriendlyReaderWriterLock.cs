@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1510, CA1513
+
 #if DEBUG
 // Uncomment this define to control whether stacktraces should be saved every time a read lock is acquired (helpful for debugging cases where a non-read lock is attempted to be acquired inside a read lock)
 //#define READERLOCKSTACKTRACEDEBUG
@@ -1714,3 +1716,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1513

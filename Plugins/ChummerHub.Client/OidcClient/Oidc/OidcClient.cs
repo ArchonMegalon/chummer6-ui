@@ -48,12 +48,12 @@ namespace IdentityModel.OidcClient
         /// <exception cref="System.ArgumentNullException">options</exception>
         public OidcClient(OidcClientOptions options)
         {
-            if (options == null) throw new ArgumentNullException(nameof(options));
+            ArgumentNullException.ThrowIfNull(options);
 
             if (options.ProviderInformation == null)
             {
                 if (options.Authority.IsMissing())
-                    throw new ArgumentException("No authority specified", nameof(Options.Authority));
+                    throw new ArgumentException("No authority specified", nameof(options));
                 _useDiscovery = true;
             }
 

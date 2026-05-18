@@ -25,6 +25,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -926,27 +927,30 @@ namespace Chummer
             data["api_dev_key"] = "7845fd372a1050899f522f2d6bab9666";
             data["api_option"] = "paste";
 
-            using (System.Net.WebClient wb = new System.Net.WebClient())
+            using (HttpClient client = new HttpClient())
             {
-                byte[] bytes;
                 try
                 {
-                    bytes = await wb.UploadValuesTaskAsync("https://pastebin.com/api/api_post.php", data)
-                                    .ConfigureAwait(false);
+                    using FormUrlEncodedContent content = new FormUrlEncodedContent(
+                        data.AllKeys.ToDictionary(x => x, x => data[x]));
+                    byte[] bytes = await (await client.PostAsync("https://pastebin.com/api/api_post.php", content)
+                            .ConfigureAwait(false))
+                        .Content.ReadAsByteArrayAsync()
+                        .ConfigureAwait(false);
+
+                    using (RecyclableMemoryStream objStream = new RecyclableMemoryStream(Utils.MemoryStreamManager, null, bytes.Length))
+                    {
+                        await objStream.WriteAsync(bytes.AsMemory(0, bytes.Length)).ConfigureAwait(false);
+                        using (StreamReader reader = new StreamReader(objStream, Encoding.UTF8, true))
+                        {
+                            string response = await reader.ReadToEndAsync().ConfigureAwait(false);
+                            Clipboard.SetText(response);
+                        }
+                    }
                 }
-                catch (System.Net.WebException)
+                catch (HttpRequestException)
                 {
                     return;
-                }
-
-                using (RecyclableMemoryStream objStream = new RecyclableMemoryStream(Utils.MemoryStreamManager, null, bytes.Length))
-                {
-                    await objStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-                    using (StreamReader reader = new StreamReader(objStream, Encoding.UTF8, true))
-                    {
-                        string response = await reader.ReadToEndAsync().ConfigureAwait(false);
-                        Clipboard.SetText(response);
-                    }
                 }
             }
         }
@@ -1621,7 +1625,7 @@ namespace Chummer
             GlobalSettings.DefaultHasNotesColor = _objSelectedHasNotesColor;
             GlobalSettings.DpiScalingMethodSetting = await cboDpiScalingMethod.DoThreadSafeFuncAsync(
                 x => x.SelectedIndex >= 0
-                    ? (DpiScalingMethod) Enum.Parse(typeof(DpiScalingMethod), x.SelectedValue.ToString())
+                    ? Enum.Parse<DpiScalingMethod>(x.SelectedValue.ToString())
                     : GlobalSettings.DefaultDpiScalingMethod, token).ConfigureAwait(false);
             GlobalSettings.StartupFullscreen = await chkStartupFullscreen.DoThreadSafeFuncAsync(x => x.Checked, token)
                                                                          .ConfigureAwait(false);
@@ -1718,8 +1722,7 @@ namespace Chummer
 
             GlobalSettings.Chum5lzCompressionLevel = await cboChum5lzCompressionLevel.DoThreadSafeFuncAsync(
                 x => x.SelectedIndex >= 0
-                    ? (LzmaHelper.ChummerCompressionPreset) Enum.Parse(typeof(LzmaHelper.ChummerCompressionPreset),
-                                                                       x.SelectedValue.ToString())
+                    ? Enum.Parse<LzmaHelper.ChummerCompressionPreset>(x.SelectedValue.ToString())
                     : GlobalSettings.DefaultChum5lzCompressionLevel, token).ConfigureAwait(false);
             GlobalSettings.CustomDateTimeFormats = await chkCustomDateTimeFormats
                                                          .DoThreadSafeFuncAsync(x => x.Checked, token)
@@ -1840,9 +1843,7 @@ namespace Chummer
                 LzmaHelper.ChummerCompressionPreset eOldSelected
                     = await cboChum5lzCompressionLevel.DoThreadSafeFuncAsync(
                         x => x.SelectedIndex >= 0
-                            ? (LzmaHelper.ChummerCompressionPreset)Enum.Parse(
-                                typeof(LzmaHelper.ChummerCompressionPreset),
-                                x.SelectedValue.ToString())
+                            ? Enum.Parse<LzmaHelper.ChummerCompressionPreset>(x.SelectedValue.ToString())
                             : GlobalSettings.Chum5lzCompressionLevel, token).ConfigureAwait(false);
                 await cboChum5lzCompressionLevel.PopulateWithListItemsAsync(lstChum5lzCompressionLevelOptions, token)
                     .ConfigureAwait(false);
@@ -2004,7 +2005,7 @@ namespace Chummer
             using (new FetchSafelyFromSafeObjectPool<List<ListItem>>(Utils.ListItemListPool,
                                                            out List<ListItem> lstUseAIOptions))
             {
-                foreach (UseAILogging eOption in Enum.GetValues(typeof(UseAILogging)))
+                foreach (UseAILogging eOption in Enum.GetValues<UseAILogging>())
                 {
                     //we don't want to allow the user to set the logging options in stable builds to higher than "not set".
                     if (Utils.IsMilestoneVersion && !Debugger.IsAttached
@@ -2022,7 +2023,7 @@ namespace Chummer
                 await cboUseLoggingApplicationInsights.DoThreadSafeAsync(x =>
                 {
                     if (!string.IsNullOrEmpty(strOldSelected))
-                        x.SelectedValue = Enum.Parse(typeof(UseAILogging), strOldSelected);
+                        x.SelectedValue = Enum.Parse<UseAILogging>(strOldSelected);
                     if (x.SelectedIndex == -1 && lstUseAIOptions.Count > 0)
                         x.SelectedIndex = 0;
                 }, token).ConfigureAwait(false);
@@ -2038,7 +2039,7 @@ namespace Chummer
             using (new FetchSafelyFromSafeObjectPool<List<ListItem>>(Utils.ListItemListPool,
                                                            out List<ListItem> lstColorModes))
             {
-                foreach (ColorMode eLoopColorMode in Enum.GetValues(typeof(ColorMode)))
+                foreach (ColorMode eLoopColorMode in Enum.GetValues<ColorMode>())
                 {
                     lstColorModes.Add(new ListItem(eLoopColorMode,
                                                    await LanguageManager.GetStringAsync(
@@ -2051,7 +2052,7 @@ namespace Chummer
                 await cboColorMode.DoThreadSafeAsync(x =>
                 {
                     if (!string.IsNullOrEmpty(strOldSelected))
-                        x.SelectedValue = Enum.Parse(typeof(ColorMode), strOldSelected);
+                        x.SelectedValue = Enum.Parse<ColorMode>(strOldSelected);
                     if (x.SelectedIndex == -1 && lstColorModes.Count > 0)
                         x.SelectedIndex = 0;
                 }, token).ConfigureAwait(false);
@@ -2069,7 +2070,7 @@ namespace Chummer
             using (new FetchSafelyFromSafeObjectPool<List<ListItem>>(Utils.ListItemListPool,
                                                            out List<ListItem> lstDpiScalingMethods))
             {
-                foreach (DpiScalingMethod eLoopDpiScalingMethod in Enum.GetValues(typeof(DpiScalingMethod)))
+                foreach (DpiScalingMethod eLoopDpiScalingMethod in Enum.GetValues<DpiScalingMethod>())
                 {
                     switch (eLoopDpiScalingMethod)
                     {
@@ -2099,7 +2100,7 @@ namespace Chummer
                 await cboDpiScalingMethod.DoThreadSafeAsync(x =>
                 {
                     if (!string.IsNullOrEmpty(strOldSelected))
-                        x.SelectedValue = Enum.Parse(typeof(DpiScalingMethod), strOldSelected);
+                        x.SelectedValue = Enum.Parse<DpiScalingMethod>(strOldSelected);
                     if (x.SelectedIndex == -1 && lstDpiScalingMethods.Count > 0)
                         x.SelectedIndex = 0;
                 }, token).ConfigureAwait(false);

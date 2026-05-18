@@ -21,7 +21,7 @@ namespace IdentityModel.OidcClient
             //Log = options.LoggerFactory.CreateLogger<CryptoHelper>();
         }
 
-        public HashAlgorithm GetMatchingHashAlgorithm(string signatureAlgorithm)
+        public static HashAlgorithm GetMatchingHashAlgorithm(string signatureAlgorithm)
         {
             Log.Trace("GetMatchingHashAlgorithm");
             Log.Debug("Determining matching hash algorithm for {signatureAlgorithm}", signatureAlgorithm);
@@ -44,7 +44,7 @@ namespace IdentityModel.OidcClient
             }
         }
 
-        public bool ValidateHash(string data, string hashedData, string signatureAlgorithm)
+        public static bool ValidateHash(string data, string hashedData, string signatureAlgorithm)
         {
             Log.Trace("ValidateHash");
 
@@ -75,14 +75,14 @@ namespace IdentityModel.OidcClient
             }
         }
 
-        public string CreateState(int length)
+        public static string CreateState(int length)
         {
             Log.Trace("CreateState");
 
             return CryptoRandom.CreateUniqueId(length);
         }
 
-        public Pkce CreatePkceData()
+        public static Pkce CreatePkceData()
         {
             Log.Trace("CreatePkceData");
 
@@ -91,11 +91,8 @@ namespace IdentityModel.OidcClient
                 CodeVerifier = CryptoRandom.CreateUniqueId()
             };
 
-            using (SHA256 sha256 = SHA256.Create())
-            {
-                byte[] challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(pkce.CodeVerifier));
-                pkce.CodeChallenge = Base64Url.Encode(challengeBytes);
-            }
+            byte[] challengeBytes = SHA256.HashData(Encoding.UTF8.GetBytes(pkce.CodeVerifier));
+            pkce.CodeChallenge = Base64Url.Encode(challengeBytes);
 
             return pkce;
         }

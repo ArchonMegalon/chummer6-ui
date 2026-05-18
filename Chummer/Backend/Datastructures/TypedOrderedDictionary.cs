@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1510
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -632,7 +634,9 @@ namespace Chummer
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
         {
+#pragma warning disable SYSLIB0051
             _dicUnorderedData.GetObjectData(info, context);
+#pragma warning restore SYSLIB0051
         }
 
         public void OnDeserialization(object sender)
@@ -746,3 +750,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1510

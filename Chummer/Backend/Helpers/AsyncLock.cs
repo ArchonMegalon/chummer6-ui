@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1513
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -264,3 +266,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1513

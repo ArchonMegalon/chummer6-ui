@@ -442,8 +442,7 @@ namespace Chummer.Plugins
 
         public string GetSaveToFileElement(Character input)
         {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
             string returnme = string.Empty;
             using (CharacterExtended ce = GetMyCe(input))
             {
@@ -469,8 +468,7 @@ namespace Chummer.Plugins
 
         public static async Task<bool> MyOnSaveUpload(Character input, CancellationToken token = default)
         {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
             if (!Settings.Default.UserModeRegistered)
             {
                 string msg = "Public Mode currently does not save to the SINners Plugin by default, even if \"onlinemode\" is enabled!" + Environment.NewLine;
@@ -1399,10 +1397,8 @@ namespace Chummer.Plugins
 
         public async Task<bool> DoCharacterList_DragDrop(object sender, DragEventArgs dragEventArgs, TreeView treCharacterList, CancellationToken token = default)
         {
-            if (dragEventArgs == null)
-                throw new ArgumentNullException(nameof(dragEventArgs));
-            if (treCharacterList == null)
-                throw new ArgumentNullException(nameof(treCharacterList));
+            ArgumentNullException.ThrowIfNull(dragEventArgs);
+            ArgumentNullException.ThrowIfNull(treCharacterList);
             try
             {
                 // Do not allow the root element to be moved.

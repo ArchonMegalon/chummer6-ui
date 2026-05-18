@@ -44,7 +44,8 @@ namespace ChummerHub.Client.Sinners
         private static Logger Log => s_ObjLogger.Value;
         public CharacterExtended(Character character, CharacterCache myCharacterCache = null, bool blnDoSave = true)
         {
-            MyCharacter = character ?? throw new ArgumentNullException(nameof(character));
+            ArgumentNullException.ThrowIfNull(character);
+            MyCharacter = character;
             MyCharacterCache = myCharacterCache ?? new CharacterCache(MyCharacter.FileName);
             MySINnerFile = new SINner
             {
@@ -97,8 +98,7 @@ namespace ChummerHub.Client.Sinners
 
         public static void SaveFromPluginFile(string strPluginFileElement, Character character, SINner mySINnerLoading = null)
         {
-            if (character == null)
-                throw new ArgumentNullException(nameof(character));
+            ArgumentNullException.ThrowIfNull(character);
             if (string.IsNullOrEmpty(strPluginFileElement))
                 return;
             CharacterExtended objReturn = new CharacterExtended(character, mySINnerLoading, new CharacterCache(), false);

@@ -37,7 +37,6 @@ using IdentityModel.OidcClient;
 using System.Net.Http;
 using System.Text.Json;
 using Newtonsoft.Json;
-using System.Web;
 using System.Diagnostics;
 using System.Net;
 using IdentityModel;
@@ -596,7 +595,7 @@ namespace ChummerHub.Client.UI
 
         private static void SignInSync(CancellationToken token = default)
         {
-            Chummer.Utils.SafelyRunSynchronously(() => SignIn(token));
+            Chummer.Utils.SafelyRunSynchronously(() => SignIn(token), token);
         }
 
         private static void ShowResult(LoginResult result)
@@ -638,40 +637,7 @@ namespace ChummerHub.Client.UI
         private static async Task NextSteps(LoginResult result, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
-            return;
-            string currentAccessToken = result.AccessToken;
-            string currentRefreshToken = result.RefreshToken;
-
-            string menu = "  x...exit  c...call api   ";
-            if (currentRefreshToken != null) menu += "r...refresh token   ";
-
-            while (true)
-            {
-                Console.WriteLine("\n\n");
-
-                Console.Write(menu);
-                ConsoleKeyInfo key = Console.ReadKey();
-
-                if (key.Key == ConsoleKey.X) return;
-                if (key.Key == ConsoleKey.C) await CallApi(token);
-                if (key.Key == ConsoleKey.R)
-                {
-                    RefreshTokenResult refreshResult = await _oidcClient.RefreshTokenAsync(currentRefreshToken, cancellationToken: token);
-                    if (refreshResult.IsError)
-                    {
-                        Console.WriteLine($"Error: {refreshResult.Error}");
-                    }
-                    else
-                    {
-                        currentRefreshToken = refreshResult.RefreshToken;
-                        currentAccessToken = refreshResult.AccessToken;
-
-                        Console.WriteLine("\n\n");
-                        Console.WriteLine($"access token:   {currentAccessToken}");
-                        Console.WriteLine($"refresh token:  {currentRefreshToken ?? "none"}");
-                    }
-                }
-            }
+            await Task.CompletedTask;
         }
 
         private static async Task CallApi(CancellationToken token = default)
@@ -680,7 +646,7 @@ namespace ChummerHub.Client.UI
 
             if (response.IsSuccessStatusCode)
             {
-                JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                JsonDocument json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
                 Console.WriteLine("\n\n");
                 Console.WriteLine(json.RootElement);
             }

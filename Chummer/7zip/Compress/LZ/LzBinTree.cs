@@ -18,6 +18,8 @@
  */
 // LzBinTree.cs
 
+#pragma warning disable CA1512
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -754,3 +756,4 @@ namespace SevenZip.Compression.LZ
         { _cutValue = cutValue; }
     }
 }
+#pragma warning restore CA1512

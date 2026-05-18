@@ -1073,8 +1073,7 @@ namespace Chummer
         public static async Task<bool> Purchase(Character objCharacter, CancellationToken token = default)
         {
             token.ThrowIfCancellationRequested();
-            if (objCharacter == null)
-                throw new ArgumentNullException(nameof(objCharacter));
+            ArgumentNullException.ThrowIfNull(objCharacter);
             IAsyncDisposable objLocker =
                 await objCharacter.LockObject.EnterUpgradeableReadLockAsync(token).ConfigureAwait(false);
             try

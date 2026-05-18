@@ -52,8 +52,7 @@ namespace ChummerHub.Client.Backend
 
         public static Type GetListType(object someList)
         {
-            if (someList == null)
-                throw new ArgumentNullException(nameof(someList));
+            ArgumentNullException.ThrowIfNull(someList);
             Type result;
             Type type = someList.GetType();
 
@@ -74,33 +73,23 @@ namespace ChummerHub.Client.Backend
 
 
         public static readonly Utils MyUtils = new Utils();
+        private static readonly HttpClient s_UrlValidationClient = new HttpClient();
         static StaticUtils()
         {
         }
 
         public static bool UrlIsValid(string url)
         {
-            Stream sStream;
-            HttpWebRequest urlReq;
-            HttpWebResponse urlRes;
-
             try
             {
-                urlReq = (HttpWebRequest)WebRequest.Create(url);
-                urlRes = (HttpWebResponse)urlReq.GetResponse();
-                sStream = urlRes.GetResponseStream();
-                if (sStream == null)
-                    return false;
-                string read = new StreamReader(sStream).ReadToEnd();
-                return true;
-
+                using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Head, url);
+                using HttpResponseMessage response = s_UrlValidationClient.Send(request);
+                return response.IsSuccessStatusCode;
             }
-            catch (Exception ex)
+            catch (HttpRequestException)
             {
-                //Url not valid
                 return false;
             }
-
         }
 
         public static bool IsUnitTest => MyUtils.IsUnitTest;
@@ -214,8 +203,7 @@ namespace ChummerHub.Client.Backend
         /// </summary>
         public static CookieContainer GetUriCookieContainer(Uri uri, string cookieData)
         {
-            if (uri == null)
-                throw new ArgumentNullException(nameof(uri));
+            ArgumentNullException.ThrowIfNull(uri);
             //if (string.IsNullOrEmpty(cookieData))
             //    throw new ArgumentNullException(nameof(cookieData));
             CookieContainer cookies = null;
@@ -269,7 +257,6 @@ namespace ChummerHub.Client.Backend
 
         private static bool? _clientNOTworking;
 
-        private static SinnersClient _clientTask;
         private static SinnersClient _client;
         public static SinnersClient GetClient(bool reset = false)
         {
@@ -277,7 +264,6 @@ namespace ChummerHub.Client.Backend
             {
                 _client = null;
                 _clientNOTworking = false;
-                _clientTask = null;
             }
             if (_client == null && (!_clientNOTworking.HasValue || _clientNOTworking == false))
             {
@@ -315,8 +301,6 @@ namespace ChummerHub.Client.Backend
                 }
                 Log.Info("Connected to " + Settings.Default.SINnerUrl + ".");
 
-                ServicePointManager.ServerCertificateValidationCallback += delegate { return true; };
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
                 Uri baseUri = new Uri(Settings.Default.SINnerUrl);
                 //ServiceClientCredentials mycredentials = null;
                 //try
@@ -378,7 +362,7 @@ namespace ChummerHub.Client.Backend
                     }))
                     {
                         HttpResponseMessage result = await client.PostAsync(uri, content, token);
-                        string resultContent = await result.Content.ReadAsStringAsync();
+                        string resultContent = await result.Content.ReadAsStringAsync(token);
                         Log.Trace("Result from WebCall " + callback + ": " + resultContent);
                     }
                 }
@@ -404,7 +388,7 @@ namespace ChummerHub.Client.Backend
         public bool IsUnitTest { get; set; }
 
         private static List<TreeNode> _myTreeNodeList;
-        private static IList<TreeNode> MyTreeNodeList
+        private static List<TreeNode> MyTreeNodeList
         {
             get => _myTreeNodeList ?? (_myTreeNodeList = new List<TreeNode>());
             set => _myTreeNodeList = new List<TreeNode>(value);
@@ -453,12 +437,13 @@ namespace ChummerHub.Client.Backend
                         ErrorText = "Error is copied to clipboard!" + Environment.NewLine + Environment.NewLine + msg,
                         CharacterAlias = "Error loading SINners"
                     };
-                    errorCache.OnMyAfterSelect += (sender, args) =>
+                    errorCache.OnMyAfterSelect += (sender, args, innerToken) =>
                     {
                         PluginHandler.MainForm.DoThreadSafe(() =>
                         {
                             Clipboard.SetText(msg);
-                        });
+                        }, token: innerToken);
+                        return Task.CompletedTask;
                     };
                     errornode.Tag = errorCache;
                     await PluginHandler.MainForm.DoThreadSafeAsync(() =>
@@ -623,7 +608,7 @@ namespace ChummerHub.Client.Backend
                         TopMost = true
                     };
                     if (rb.ErrorText.Length > 600)
-                        rb.ErrorText = rb.ErrorText.Substring(0, 598) + "...";
+                        rb.ErrorText = string.Concat(rb.ErrorText.AsSpan(0, 598), "...");
                     frmSIN.SINnerResponseUI.Result = rb;
                     Log.Trace("Showing Dialog for frmSINnerResponse()");
                     frmSIN.Show();
@@ -638,7 +623,7 @@ namespace ChummerHub.Client.Backend
                         TopMost = true
                     };
                     if (rb.ErrorText.Length > 600)
-                        rb.ErrorText = rb.ErrorText.Substring(0, 598) + "...";
+                        rb.ErrorText = string.Concat(rb.ErrorText.AsSpan(0, 598), "...");
                     frmSIN.SINnerResponseUI.Result = rb;
                     Log.Trace("Showing Dialog for frmSINnerResponse()");
                     frmSIN.Show();
@@ -928,8 +913,7 @@ namespace ChummerHub.Client.Backend
 
         public static byte[] ReadFully(Stream input)
         {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
+            ArgumentNullException.ThrowIfNull(input);
             byte[] buffer = new byte[16 * 1024];
             using (MemoryStream ms = new MemoryStream())
             {
@@ -979,36 +963,34 @@ namespace ChummerHub.Client.Backend
 
         private static void SetEventHandlers(SINner sinner, CharacterCache objCache)
         {
-            if (sinner == null)
-                throw new ArgumentNullException(nameof(sinner));
-            if (objCache == null)
-                throw new ArgumentNullException(nameof(objCache));
+            ArgumentNullException.ThrowIfNull(sinner);
+            ArgumentNullException.ThrowIfNull(objCache);
             objCache.MyPluginDataDic.TryAdd("SINnerId", sinner.Id);
             objCache.OnMyDoubleClick = null;
             objCache.OnMyDoubleClick += OnObjCacheOnMyDoubleClick;
-            async void OnObjCacheOnMyDoubleClick(object sender, EventArgs e) => await OnMyDoubleClick(sinner, objCache);
+            Task OnObjCacheOnMyDoubleClick(object sender, EventArgs e, CancellationToken token = default) => OnMyDoubleClick(sinner, objCache, token);
             objCache.OnMyAfterSelect = null;
             objCache.OnMyAfterSelect += OnObjCacheOnMyAfterSelect;
-            async void OnObjCacheOnMyAfterSelect(object sender, TreeViewEventArgs treeViewEventArgs) => await OnMyAfterSelect(sinner, objCache, treeViewEventArgs);
+            Task OnObjCacheOnMyAfterSelect(object sender, TreeViewEventArgs treeViewEventArgs, CancellationToken token = default) => OnMyAfterSelect(sinner, objCache, treeViewEventArgs, token);
             objCache.OnMyKeyDown = null;
             objCache.OnMyKeyDown += OnObjCacheOnMyKeyDown;
 
-            async void OnObjCacheOnMyKeyDown(object sender, Tuple<KeyEventArgs, TreeNode> args)
+            async Task OnObjCacheOnMyKeyDown(object sender, ValueTuple<KeyEventArgs, TreeNode> args, CancellationToken token = default)
             {
                 try
                 {
-                    using (await CursorWait.NewAsync(PluginHandler.MainForm, true))
+                    using (await CursorWait.NewAsync(PluginHandler.MainForm, true, token: token))
                     {
                         if (args.Item1.KeyCode == Keys.Delete)
                         {
                             SinnersClient client = StaticUtils.GetClient();
                             if (sinner.Id != null)
                             {
-                                await client.DeleteAsync(sinner.Id.Value).ConfigureAwait(false);
+                                await client.DeleteAsync(sinner.Id.Value, token).ConfigureAwait(false);
                             }
 
                             objCache.ErrorText = "deleted!";
-                            await PluginHandler.MainForm.CharacterRoster.RefreshPluginNodesAsync(PluginHandler.MyPluginHandlerInstance);
+                            await PluginHandler.MainForm.CharacterRoster.RefreshPluginNodesAsync(PluginHandler.MyPluginHandlerInstance, token);
                         }
                     }
                 }
@@ -1028,22 +1010,22 @@ namespace ChummerHub.Client.Backend
             objCache.OnMyContextMenuDeleteClick = null;
             objCache.OnMyContextMenuDeleteClick += OnObjCacheOnMyContextMenuDeleteClick;
 
-            async void OnObjCacheOnMyContextMenuDeleteClick(object sender, EventArgs args)
+            async Task OnObjCacheOnMyContextMenuDeleteClick(object sender, EventArgs args, CancellationToken token = default)
             {
                 try
                 {
                     if (sinner.Id == null)
                         return;
-                    using (await CursorWait.NewAsync(PluginHandler.MainForm, true))
+                    using (await CursorWait.NewAsync(PluginHandler.MainForm, true, token: token))
                     {
                         SinnersClient client = StaticUtils.GetClient();
-                        ConfiguredTaskAwaitable<ResultSinnerDelete> res = client.DeleteAsync(sinner.Id.Value).ConfigureAwait(false);
-                        if (!((await ShowErrorResponseFormAsync(res)) is ResultGroupGetSearchGroups result))
+                        ConfiguredTaskAwaitable<ResultSinnerDelete> res = client.DeleteAsync(sinner.Id.Value, token).ConfigureAwait(false);
+                        if (!((await ShowErrorResponseFormAsync(res, token: token)) is ResultGroupGetSearchGroups result))
                             return;
                         if (result.CallSuccess)
                         {
                             objCache.ErrorText = "deleted!";
-                            await PluginHandler.MainForm.CharacterRoster.RefreshPluginNodesAsync(PluginHandler.MyPluginHandlerInstance);
+                            await PluginHandler.MainForm.CharacterRoster.RefreshPluginNodesAsync(PluginHandler.MyPluginHandlerInstance, token);
                         }
                     }
                 }
@@ -1170,8 +1152,7 @@ namespace ChummerHub.Client.Backend
 
         private static async Task<ResultSinnerPostSIN> PostSINnerCoreAsync(bool blnSync, CharacterExtended ce, CancellationToken token = default)
         {
-            if (ce == null)
-                throw new ArgumentNullException(nameof(ce));
+            ArgumentNullException.ThrowIfNull(ce);
             ResultSinnerPostSIN res = null;
             try
             {
@@ -1259,8 +1240,7 @@ namespace ChummerHub.Client.Backend
 
         private static async Task<ResultSINnerPut> UploadChummerFileCoreAsync(bool blnSync, CharacterExtended ce, CancellationToken token = default)
         {
-            if (ce == null)
-                throw new ArgumentNullException(nameof(ce));
+            ArgumentNullException.ThrowIfNull(ce);
             ResultSINnerPut res = null;
             try
             {
@@ -1331,8 +1311,7 @@ namespace ChummerHub.Client.Backend
 
         public static async Task<string> DownloadFile(SINner sinner, CharacterCache objCache, CancellationToken token = default)
         {
-            if (sinner == null)
-                throw new ArgumentNullException(nameof(sinner));
+            ArgumentNullException.ThrowIfNull(sinner);
             if (!sinner.Id.HasValue)
             {
                 NullReferenceException e = new NullReferenceException("SINner Id is not set!");
@@ -1381,15 +1360,12 @@ namespace ChummerHub.Client.Backend
                         Exception rethrow = null;
                         try
                         {
-                            using (WebClient wc = new WebClient())
-                            {
-                                await wc.DownloadFileTaskAsync(
-                                    // Param1 = Link of file
-                                    new Uri(sinner.DownloadUrl),
-                                    // Param2 = Path to save
-                                    zippedFile
-                                );
-                            }
+                            using HttpClient httpClient = new HttpClient();
+                            await using Stream remoteStream
+                                = await httpClient.GetStreamAsync(new Uri(sinner.DownloadUrl), token).ConfigureAwait(false);
+                            await using FileStream outputStream = new FileStream(zippedFile, FileMode.Create,
+                                FileAccess.Write, FileShare.None);
+                            await remoteStream.CopyToAsync(outputStream, token).ConfigureAwait(false);
                         }
                         catch (Exception e)
                         {
@@ -1421,7 +1397,7 @@ namespace ChummerHub.Client.Backend
                                 DateTime origDateTime = new DateTime(sinner.UploadDateTime.Value.Ticks, DateTimeKind.Unspecified);
                                 File.SetCreationTime(file, origDateTime);
                             }
-                            if (sinner.LastChange != null)
+                            if (sinner.LastChange != default)
                             {
                                 DateTime origDateTime = new DateTime(sinner.LastChange.Ticks, DateTimeKind.Unspecified);
                                 File.SetLastWriteTime(file, origDateTime);
@@ -1455,7 +1431,9 @@ namespace ChummerHub.Client.Backend
             PluginHandler.MainForm.DoThreadSafe(x =>
             {
                 string substring = "Downloading: " + e.ProgressPercentage;
-                x.Text = x.MainTitle + ' ' + substring;
+#pragma warning disable VSTHRD002 // synchronous title lookup is required inside this sync progress callback
+                x.Text = x.GetMainTitleAsync().GetAwaiter().GetResult() + ' ' + substring;
+#pragma warning restore VSTHRD002
             });
         }
 

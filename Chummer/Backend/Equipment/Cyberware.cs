@@ -137,7 +137,7 @@ namespace Chummer.Backend.Equipment
         // I don't like this, but it's easier than making it a specific property of the cyberware.
         // We're using IReadOnlyCollection and IReadOnlyDictionary to make extra-sure that none of these will get changed
 
-        private static readonly IReadOnlyDictionary<string, IReadOnlyCollection<string>>
+        private static readonly Dictionary<string, IReadOnlyCollection<string>>
             s_AttributeCustomizationCyberwares
                 = new Dictionary<string, IReadOnlyCollection<string>>
                 {
@@ -145,7 +145,7 @@ namespace Chummer.Backend.Equipment
                     { "STR", new HashSet<string> { "Customized Strength", "Cyberlimb Customization, Strength (2050)" } }
                 };
 
-        private static readonly IReadOnlyDictionary<string, IReadOnlyCollection<string>>
+        private static readonly Dictionary<string, IReadOnlyCollection<string>>
             s_AttributeEnhancementCyberwares
                 = new Dictionary<string, IReadOnlyCollection<string>>
                 {

@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CS1690
+
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
@@ -399,7 +401,7 @@ namespace Chummer.UI.Table
             }
         }
 
-        private async Task UpdateCell(TableColumn<T> column, TableCell cell, T item, CancellationToken token = default)
+        private static async Task UpdateCell(TableColumn<T> column, TableCell cell, T item, CancellationToken token = default)
         {
             Func<T, CancellationToken, Task<object>> funcExtractor = column.Extractor;
             object objNewValue = funcExtractor == null ? item : await funcExtractor(item, token).ConfigureAwait(false);
@@ -1294,3 +1296,4 @@ namespace Chummer.UI.Table
         }
     }
 }
+#pragma warning restore CS1690

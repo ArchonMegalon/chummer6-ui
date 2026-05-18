@@ -268,8 +268,7 @@ namespace ChummerHub.Client.UI
                 }
                 if (tag == null)
                     continue;
-                if (myUC.MyCE.MySINnerFile.SiNnerMetaData.Tags.Contains(tag))
-                    myUC.MyCE.MySINnerFile.SiNnerMetaData.Tags.Remove(tag);
+                myUC.MyCE.MySINnerFile.SiNnerMetaData.Tags.Remove(tag);
                 if (!cbTag.Checked)
                     continue;
                 if (cbTag.CheckState == CheckState.Checked)

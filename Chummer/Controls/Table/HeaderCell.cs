@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1512
+
 using System;
 using System.Drawing;
 using System.Threading;
@@ -200,3 +202,4 @@ namespace Chummer.UI.Table
         }
     }
 }
+#pragma warning restore CA1512

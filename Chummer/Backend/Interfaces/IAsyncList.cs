@@ -18,6 +18,7 @@
  */
 
 using System;
+#pragma warning disable CA1510, CA1512
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -1430,3 +1431,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1510

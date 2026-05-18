@@ -131,6 +131,7 @@ namespace Chummer
             remove => _setPropertyChangedAsync.Remove(value);
         }
 
+        [SuppressMessage("Design", "CA1070:Do not declare event fields as virtual", Justification = "The collection hierarchy intentionally allows virtual event override points.")]
         protected virtual event MultiplePropertiesChangedEventHandler MultiplePropertiesChanged;
 
         event MultiplePropertiesChangedEventHandler INotifyMultiplePropertiesChanged.MultiplePropertiesChanged

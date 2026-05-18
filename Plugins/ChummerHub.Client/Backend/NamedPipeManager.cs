@@ -160,11 +160,6 @@ namespace ChummerHub.Client.Backend
         {
             if (string.IsNullOrEmpty(NamedPipeName))
                 throw new NullReferenceException(nameof(NamedPipeName));
-            PipeSecurity ps = new PipeSecurity();
-            System.Security.Principal.SecurityIdentifier sid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.WorldSid, null);
-            PipeAccessRule par = new PipeAccessRule(sid, PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow);
-            //PipeAccessRule psRule = new PipeAccessRule(@"Everyone", PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow);
-            ps.AddAccessRule(par);
             while (true)
             {
                 token.ThrowIfCancellationRequested();
@@ -174,10 +169,12 @@ namespace ChummerHub.Client.Backend
                     using (new Chummer.FetchSafelyFromPool<StringBuilder>(Chummer.Utils.StringBuilderPool, out StringBuilder sbdText))
                     {
                         token.ThrowIfCancellationRequested();
-                        using (NamedPipeServerStream objServerStream = new NamedPipeServerStream(NamedPipeName,
-                                   PipeDirection.InOut, 1,
-                                   PipeTransmissionMode.Message, PipeOptions.None,
-                                   4028, 4028, ps))
+                        using (NamedPipeServerStream objServerStream = new NamedPipeServerStream(
+                                   NamedPipeName,
+                                   PipeDirection.InOut,
+                                   1,
+                                   PipeTransmissionMode.Message,
+                                   PipeOptions.None))
                         {
                             await objServerStream.WaitForConnectionAsync(token).ConfigureAwait(false);
 
@@ -186,9 +183,9 @@ namespace ChummerHub.Client.Backend
                             using (StreamReader objReader = new StreamReader(objServerStream))
                             {
                                 token.ThrowIfCancellationRequested();
-                                for (string strLine = await objReader.ReadLineAsync().ConfigureAwait(false);
+                                for (string strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false);
                                      strLine != null;
-                                     strLine = await objReader.ReadLineAsync().ConfigureAwait(false))
+                                     strLine = await objReader.ReadLineAsync(token).ConfigureAwait(false))
                                 {
                                     token.ThrowIfCancellationRequested();
                                     if (!string.IsNullOrEmpty(strLine))

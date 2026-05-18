@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable VSTHRD012
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -2893,3 +2895,4 @@ namespace Chummer
         public static ThreadSafeCachedRandom GlobalRandom { get; } = new ThreadSafeCachedRandom(new XoRoShiRo128starstar(), true);
     }
 }
+#pragma warning restore VSTHRD012

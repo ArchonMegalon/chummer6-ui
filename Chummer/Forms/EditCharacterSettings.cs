@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1846
 
 using System;
 using System.Collections.Concurrent;
@@ -1290,8 +1291,7 @@ namespace Chummer
                             if (string.IsNullOrEmpty(strGuid))
                             {
                                 // For entries without GUID, use the key itself
-                                if (!dicDeduplicatedByGuid.ContainsKey(kvpKeyAndEnabled.Key))
-                                    dicDeduplicatedByGuid.Add(kvpKeyAndEnabled.Key, kvpKeyAndEnabled);
+                                dicDeduplicatedByGuid.TryAdd(kvpKeyAndEnabled.Key, kvpKeyAndEnabled);
                             }
                             else
                             {
@@ -1437,8 +1437,7 @@ namespace Chummer
                             if (string.IsNullOrEmpty(strGuid))
                             {
                                 // For entries without GUID, use the key itself
-                                if (!dicDeduplicatedByGuid.ContainsKey(kvpKeyAndEnabled.Key))
-                                    dicDeduplicatedByGuid.Add(kvpKeyAndEnabled.Key, kvpKeyAndEnabled);
+                                dicDeduplicatedByGuid.TryAdd(kvpKeyAndEnabled.Key, kvpKeyAndEnabled);
                             }
                             else
                             {
@@ -3398,3 +3397,4 @@ namespace Chummer
         #endregion Methods
     }
 }
+#pragma warning restore CA1846

@@ -163,7 +163,7 @@ namespace IdentityModel.OidcClient
                     }
                     else
                     {
-                        if (!_crypto.ValidateHash(response.AccessToken, atHash.Value, validationResult.SignatureAlgorithm))
+                        if (!CryptoHelper.ValidateHash(response.AccessToken, atHash.Value, validationResult.SignatureAlgorithm))
                         {
                             return new TokenResponseValidationResult("Invalid access token hash.");
                         }

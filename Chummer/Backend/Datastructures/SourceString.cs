@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1846
 
 using System;
 using System.Collections.Concurrent;
@@ -355,3 +356,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1846

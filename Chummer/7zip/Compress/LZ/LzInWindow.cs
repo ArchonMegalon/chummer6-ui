@@ -18,6 +18,8 @@
  */
 // LzInWindow.cs
 
+#pragma warning disable CA1512, CA1835
+
 using System;
 using System.IO;
 using System.Threading;
@@ -264,3 +266,4 @@ namespace SevenZip.Compression.LZ
         }
     }
 }
+#pragma warning restore CA1512, CA1835

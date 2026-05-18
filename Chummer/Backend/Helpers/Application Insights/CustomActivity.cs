@@ -22,12 +22,16 @@ using System.Diagnostics;
 using System.Threading;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 
 namespace Chummer
 {
     [CLSCompliant(false)]
     public sealed class CustomActivity : Activity
     {
+        private static readonly TelemetryClient s_FallbackTelemetryClient =
+            new TelemetryClient(TelemetryConfiguration.CreateDefault());
+
         [CLSCompliant(false)]
         //public IOperationHolder<DependencyTelemetry> myOperationDependencyHolder { get; set; }
         //public IOperationHolder<RequestTelemetry> myOperationRequestHolder { get; set; }
@@ -60,7 +64,7 @@ namespace Chummer
                 Start();
                 return;
             }
-            MyTelemetryClient = new TelemetryClient();
+            MyTelemetryClient = Program.ChummerTelemetryClient.Value ?? s_FallbackTelemetryClient;
             Start();
             switch (operationType)
             {

@@ -18,6 +18,8 @@
  */
 // OutBuffer.cs
 
+#pragma warning disable CA1835
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -113,3 +115,4 @@ namespace SevenZip.Buffer
         { return m_ProcessedSize + m_Pos; }
     }
 }
+#pragma warning restore CA1835

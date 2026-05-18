@@ -393,7 +393,7 @@ namespace Codaxy.WkHtmlToPdf
                                                 try
                                                 {
                                                     await stream.BaseStream
-                                                                .WriteAsync(buffer, 0, buffer.Length, objToken)
+                                                                .WriteAsync(buffer.AsMemory(0, buffer.Length), objToken)
                                                                 .ConfigureAwait(false);
                                                     await stream.WriteLineAsync().ConfigureAwait(false);
                                                 }
@@ -479,9 +479,9 @@ namespace Codaxy.WkHtmlToPdf
                             }
                             else
                             {
-                                while ((read = await fs.ReadAsync(buffer, 0, buffer.Length, token)
+                                while ((read = await fs.ReadAsync(buffer.AsMemory(0, buffer.Length), token)
                                                        .ConfigureAwait(false)) > 0)
-                                    await woutput.OutputStream.WriteAsync(buffer, 0, read, token).ConfigureAwait(false);
+                                    await woutput.OutputStream.WriteAsync(buffer.AsMemory(0, read), token).ConfigureAwait(false);
                             }
                         }
                     }

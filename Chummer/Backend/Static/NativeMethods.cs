@@ -516,8 +516,7 @@ namespace Chummer
 
         internal static void ShowProcessWindow(Process objProcess)
         {
-            if (objProcess == null)
-                throw new ArgumentNullException(nameof(objProcess));
+            ArgumentNullException.ThrowIfNull(objProcess);
             if (objProcess.MainWindowHandle == IntPtr.Zero)
             {
                 // the window is hidden so try to restore it before setting focus.

@@ -1510,8 +1510,7 @@ namespace Chummer
 
         public Task RefreshPluginNodesAsync(IPlugin objPluginToRefresh, CancellationToken objToken = default)
         {
-            if (objPluginToRefresh == null)
-                throw new ArgumentNullException(nameof(objPluginToRefresh));
+            ArgumentNullException.ThrowIfNull(objPluginToRefresh);
             return RefreshPluginNodesInner(objToken); // Split up this way so that the parameter check happens synchronously
 
             async Task RefreshPluginNodesInner(CancellationToken token = default)

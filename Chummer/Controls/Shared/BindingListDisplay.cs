@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1859
 
 using System;
 using System.Buffers;
@@ -33,7 +34,7 @@ namespace Chummer.Controls.Shared
 {
     public partial class BindingListDisplay<TType> : UserControl where TType : INotifyPropertyChanged
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger(typeof(BindingListDisplay<TType>));
+        private static readonly Logger Log = LogManager.LogFactory.GetCurrentClassLogger();
         public PropertyChangedEventHandler ChildPropertyChanged { get; set; }
         private readonly ConcurrentHashSet<PropertyChangedAsyncEventHandler> _setChildPropertyChangedAsync =
             new ConcurrentHashSet<PropertyChangedAsyncEventHandler>();
@@ -1370,3 +1371,4 @@ namespace Chummer.Controls.Shared
         }
     }
 }
+#pragma warning restore CA1859

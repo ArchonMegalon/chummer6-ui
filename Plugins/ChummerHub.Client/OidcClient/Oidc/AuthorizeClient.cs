@@ -90,11 +90,11 @@ namespace IdentityModel.OidcClient
         {
             Log.Trace("CreateAuthorizeStateAsync");
 
-            CryptoHelper.Pkce pkce = _crypto.CreatePkceData();
+            CryptoHelper.Pkce pkce = CryptoHelper.CreatePkceData();
 
             AuthorizeState state = new AuthorizeState
             {
-                State = _crypto.CreateState(_options.StateLength),
+                State = CryptoHelper.CreateState(_options.StateLength),
                 RedirectUri = _options.RedirectUri,
                 CodeVerifier = pkce.CodeVerifier,
             };

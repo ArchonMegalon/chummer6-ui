@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA2249
+
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -18984,3 +18986,4 @@ namespace Chummer
         public AsyncFriendlyReaderWriterLock LockObject { get; } = new AsyncFriendlyReaderWriterLock();
     }
 }
+#pragma warning restore CA2249

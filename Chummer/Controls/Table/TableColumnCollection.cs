@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1510
 
 using System;
 using System.Collections;
@@ -92,3 +93,4 @@ namespace Chummer.UI.Table
         }
     }
 }
+#pragma warning restore CA1510

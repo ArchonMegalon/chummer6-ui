@@ -16,6 +16,7 @@
  *  You can obtain the full source code for Chummer5a at
  *  https://github.com/chummer5a/chummer5a
  */
+#pragma warning disable CA1510
 
 using System;
 using System.Collections;
@@ -3759,7 +3760,9 @@ namespace Chummer
         public virtual void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             using (LockObject.EnterReadLock())
+#pragma warning disable SYSLIB0051
                 _dicUnorderedData.GetObjectData(info, context);
+#pragma warning restore SYSLIB0051
         }
 
         public void OnDeserialization(object sender)
@@ -3975,3 +3978,4 @@ namespace Chummer
         }
     }
 }
+#pragma warning restore CA1510

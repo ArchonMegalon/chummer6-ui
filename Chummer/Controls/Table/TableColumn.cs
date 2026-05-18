@@ -17,6 +17,8 @@
  *  https://github.com/chummer5a/chummer5a
  */
 
+#pragma warning disable CA1512
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -230,3 +232,4 @@ namespace Chummer.UI.Table
         #endregion Properties
     }
 }
+#pragma warning restore CA1512
