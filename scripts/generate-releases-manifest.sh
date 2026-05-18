@@ -659,91 +659,50 @@ fi
 
 readarray -t promoted_file_names < <(true)
 
-materialize_args=(
-  --downloads-dir "$DOWNLOADS_DIR"
-  --channel "$RELEASE_CHANNEL"
-  --version "$RELEASE_VERSION"
-  --published-at "$RELEASE_PUBLISHED_AT"
-  --output "$CANONICAL_MANIFEST_PATH"
-  --compat-output "$MANIFEST_PATH"
-)
-
-if [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
-  materialize_args+=(--manifest "$SOURCE_MANIFEST_PATH")
-fi
-
-if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
-  materialize_args+=(--proof "$RELEASE_PROOF_PATH")
-fi
-
-if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
-  materialize_args+=(--ui-localization-release-gate "$UI_LOCALIZATION_RELEASE_GATE_PATH")
-fi
-
 materializer_help="$(python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" --help 2>&1 || true)"
-if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
-  if [[ "$materializer_help" != *"--startup-smoke-dir"* ]]; then
-    echo "Registry materializer CLI mismatch: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py does not support --startup-smoke-dir." >&2
-    exit 1
+run_materializer() {
+  local manifest_override="${1:-}"
+  local -a materialize_args=(
+    --downloads-dir "$DOWNLOADS_DIR"
+    --channel "$RELEASE_CHANNEL"
+    --version "$RELEASE_VERSION"
+    --published-at "$RELEASE_PUBLISHED_AT"
+    --output "$CANONICAL_MANIFEST_PATH"
+    --compat-output "$MANIFEST_PATH"
+  )
+
+  if [[ -n "$manifest_override" && -f "$manifest_override" ]]; then
+    materialize_args+=(--manifest "$manifest_override")
+  elif [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
+    materialize_args+=(--manifest "$SOURCE_MANIFEST_PATH")
   fi
-  materialize_args+=(--startup-smoke-dir "$STARTUP_SMOKE_DIR")
-fi
-if [[ -n "$STARTUP_SMOKE_MAX_AGE_SECONDS" && "$materializer_help" == *"--startup-smoke-max-age-seconds"* ]]; then
-  materialize_args+=(--startup-smoke-max-age-seconds "$STARTUP_SMOKE_MAX_AGE_SECONDS")
-fi
-if to_bool "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" && [[ "$materializer_help" == *"--skip-startup-smoke-filter"* ]]; then
-  materialize_args+=(--skip-startup-smoke-filter)
-fi
 
-python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
-python3 - "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" <<'PY'
-from __future__ import annotations
+  if [[ -n "$RELEASE_PROOF_PATH" && -f "$RELEASE_PROOF_PATH" ]]; then
+    materialize_args+=(--proof "$RELEASE_PROOF_PATH")
+  fi
 
-import json
-import sys
-from pathlib import Path
+  if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GATE_PATH" ]]; then
+    materialize_args+=(--ui-localization-release-gate "$UI_LOCALIZATION_RELEASE_GATE_PATH")
+  fi
 
+  if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+    if [[ "$materializer_help" != *"--startup-smoke-dir"* ]]; then
+      echo "Registry materializer CLI mismatch: $REGISTRY_ROOT/scripts/materialize_public_release_channel.py does not support --startup-smoke-dir." >&2
+      exit 1
+    fi
+    materialize_args+=(--startup-smoke-dir "$STARTUP_SMOKE_DIR")
+  fi
+  if [[ -n "$STARTUP_SMOKE_MAX_AGE_SECONDS" && "$materializer_help" == *"--startup-smoke-max-age-seconds"* ]]; then
+    materialize_args+=(--startup-smoke-max-age-seconds "$STARTUP_SMOKE_MAX_AGE_SECONDS")
+  fi
+  if to_bool "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" && [[ "$materializer_help" == *"--skip-startup-smoke-filter"* ]]; then
+    materialize_args+=(--skip-startup-smoke-filter)
+  fi
 
-def normalize(value: object) -> str:
-    return str(value or "").strip().lower()
+  python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
+}
 
-
-def coverage_is_incomplete(payload: dict) -> bool:
-    coverage = payload.get("desktopTupleCoverage")
-    if not isinstance(coverage, dict):
-        return False
-    for key in (
-        "missingRequiredPlatforms",
-        "missingRequiredHeads",
-        "missingRequiredPlatformHeadPairs",
-        "missingRequiredPlatformHeadRidTuples",
-    ):
-        value = coverage.get(key)
-        if isinstance(value, list) and value:
-            return True
-    return False
-
-
-def apply_honesty_state(path: Path) -> None:
-    if not path.is_file():
-        return
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    if not isinstance(payload, dict):
-        raise SystemExit(f"release manifest must be a JSON object: {path}")
-    if normalize(payload.get("status")) != "published":
-        return
-    channel_id = normalize(payload.get("channelId") or payload.get("channel"))
-    if coverage_is_incomplete(payload):
-        payload["rolloutState"] = "coverage_incomplete"
-        payload["supportabilityState"] = "review_required"
-    elif channel_id == "preview" and normalize(payload.get("rolloutState")) == "promoted_preview":
-        payload["supportabilityState"] = "preview_supported"
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-
-
-for raw_path in sys.argv[1:]:
-    apply_honesty_state(Path(raw_path))
-PY
+run_materializer
 python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 from __future__ import annotations
 
@@ -844,6 +803,94 @@ manifest_path = Path(sys.argv[1]).resolve()
 normalize_release_channel_artifact_identity_fields(manifest_path)
 PY
 normalize_preview_install_access_classes "$CANONICAL_MANIFEST_PATH" "$RELEASE_CHANNEL"
+run_materializer "$CANONICAL_MANIFEST_PATH"
+python3 - "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+
+def normalize(value: object) -> str:
+    return str(value or "").strip().lower()
+
+
+def coverage_is_incomplete(payload: dict) -> bool:
+    coverage = payload.get("desktopTupleCoverage")
+    if not isinstance(coverage, dict):
+        return False
+    for key in (
+        "missingRequiredPlatforms",
+        "missingRequiredHeads",
+        "missingRequiredPlatformHeadPairs",
+        "missingRequiredPlatformHeadRidTuples",
+    ):
+        value = coverage.get(key)
+        if isinstance(value, list) and value:
+            return True
+    return False
+
+
+def apply_honesty_state(path: Path) -> None:
+    if not path.is_file():
+        return
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise SystemExit(f"release manifest must be a JSON object: {path}")
+    if normalize(payload.get("status")) != "published":
+        return
+    channel_id = normalize(payload.get("channelId") or payload.get("channel"))
+    if coverage_is_incomplete(payload):
+        payload["rolloutState"] = "coverage_incomplete"
+        payload["supportabilityState"] = "review_required"
+    elif channel_id == "preview" and normalize(payload.get("rolloutState")) == "promoted_preview":
+        payload["supportabilityState"] = "preview_supported"
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+
+for raw_path in sys.argv[1:]:
+    apply_honesty_state(Path(raw_path))
+PY
+python3 - "$REGISTRY_ROOT/scripts/verify_public_release_channel.py" "$CANONICAL_MANIFEST_PATH" "$MANIFEST_PATH" "$PORTAL_MANIFEST_PATH" <<'PY'
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+
+def load_verifier(path: Path):
+    spec = importlib.util.spec_from_file_location("verify_public_release_channel", path)
+    if spec is None or spec.loader is None:
+        raise SystemExit(f"could not load verifier module from {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+verifier_path = Path(sys.argv[1]).resolve()
+verifier = load_verifier(verifier_path)
+
+for raw_path in sys.argv[2:]:
+    manifest_path = Path(raw_path).resolve()
+    if not manifest_path.is_file():
+        continue
+    payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+    if not isinstance(payload, dict):
+        raise SystemExit(f"release manifest must be a JSON object: {manifest_path}")
+    coverage = payload.get("desktopTupleCoverage")
+    if isinstance(coverage, dict):
+        coverage["desktopRouteTruth"] = verifier.expected_desktop_route_truth_rows(payload)
+    payload["installAwareArtifactRegistry"] = verifier.expected_install_aware_artifact_registry_rows(payload)
+    payload["desktopSurfaceRefs"] = verifier.expected_desktop_surface_ref_rows(payload)
+    payload["artifactIdentityRegistry"] = verifier.expected_artifact_identity_registry_rows(payload)
+    payload["artifactPublicationBindings"] = verifier.expected_artifact_publication_binding_rows(payload)
+    payload["publicTrustMetrics"] = verifier.expected_public_trust_metrics(payload)
+    payload["registryBoundaryCoverage"] = verifier.expected_registry_boundary_coverage(payload)
+    manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
 canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
 if [[ -d "$STARTUP_SMOKE_DIR" ]]; then
   resolved_startup_smoke_dir="$(realpath "$STARTUP_SMOKE_DIR")"
