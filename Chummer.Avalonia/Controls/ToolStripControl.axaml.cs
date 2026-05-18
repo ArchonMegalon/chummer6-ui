@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Chummer.Presentation.Overview;
@@ -10,7 +11,18 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class ToolStripControl : UserControl
 {
-    private static readonly Dictionary<string, Bitmap?> ToolbarIconCache = new(StringComparer.Ordinal);
+    private static readonly IReadOnlyDictionary<string, string> ButtonIconAssets = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [nameof(SaveButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/disk.png",
+        [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
+        [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
+        [nameof(DesktopHomeButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/user_add.png",
+        [nameof(ImportFileButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_page.png",
+        [nameof(CloseWorkspaceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/cancel.png",
+        [nameof(OpenForPrintingButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_print.png",
+        [nameof(OpenForExportButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
+    };
+    private static readonly Dictionary<string, Bitmap> IconCache = new(StringComparer.Ordinal);
 
     public ToolStripControl()
     {
@@ -30,9 +42,6 @@ public partial class ToolStripControl : UserControl
     public event EventHandler? RosterMovementRequested;
     public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CloseWorkspaceRequested;
-    public event EventHandler? GmPrepRequested;
-    public event EventHandler? RosterMovementRequested;
-    public event EventHandler? RuleEnvironmentStudioRequested;
     public event EventHandler? CampaignWorkspaceRequested;
     public event EventHandler? UpdateStatusRequested;
     public event EventHandler? InstallLinkingRequested;
@@ -48,6 +57,7 @@ public partial class ToolStripControl : UserControl
         ApplyVisibility(GmPrepButton, state.ShowGmPrep);
         ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);
         ApplyVisibility(CampaignWorkspaceButton, state.ShowCampaignWorkspace);
+        ApplyVisibility(LoadDemoRunnerButton, state.ShowLoadDemoRunner);
     }
 
     public void SetStatusText(string statusText)
@@ -70,82 +80,88 @@ public partial class ToolStripControl : UserControl
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
-        SetToolbarIconButton(SaveButton, "Save Character", "Assets/chummer5a-icons/disk.png", "Save");
+        SetButtonLabel(SaveButton, "Save Workspace");
         SetButtonLabel(PrintButton, "Print Character", "Print");
-        SetToolbarIconButton(PrintButton, "Print Character", "Assets/chummer5a-icons/printer.png", "Print");
         SetButtonLabel(CopyButton, "Copy", "Copy");
-        SetToolbarIconButton(CopyButton, "Copy", "Assets/chummer5a-icons/page_copy.png", "Copy");
-        SetToolbarIconButton(DesktopHomeButton, "New Character", "Assets/chummer5a-icons/user_add.png", "New");
-        SetToolbarIconButton(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language), "Assets/chummer5a-icons/folder_page.png", "Open");
-        SetToolbarIconButton(CloseWorkspaceButton, "Close", "Assets/chummer5a-icons/cancel.png", "Close");
-        SetToolbarIconButton(OpenForPrintingButton, "Open Character for Printing", "Assets/chummer5a-icons/folder_print.png", "Print");
-        SetToolbarIconButton(OpenForExportButton, "Open Character for Export", "Assets/chummer5a-icons/folder_script_go.png", "Export");
-        SetButtonLabel(GmPrepButton, "Open GM Prep Packets", "GM");
-        SetButtonLabel(RosterMovementButton, "Review Roster Movement", "Roster");
-        SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio", "Rules");
-        SetButtonLabel(CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language), "Campaign");
-        SetButtonLabel(UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language), "Update");
-        SetButtonLabel(InstallLinkingButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language), "Link");
-        SetButtonLabel(SupportButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language), "Support");
-        SetButtonLabel(ReportIssueButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language), "Bug");
-        SetButtonLabel(SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language), "Options");
-        SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language), "Demo");
-        SetButtonLabel(ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language), "XML");
+        SetButtonLabel(DesktopHomeButton, "Desktop Home");
+        SetButtonLabel(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language));
+        SetButtonLabel(CloseWorkspaceButton, "Close Active Workspace");
+        SetButtonLabel(OpenForPrintingButton, "Open Character for Printing");
+        SetButtonLabel(OpenForExportButton, "Open Character for Export");
+        SetButtonLabel(GmPrepButton, "Open GM Prep Packets");
+        SetButtonLabel(RosterMovementButton, "Review Roster Movement");
+        SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio");
+        SetButtonLabel(CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language));
+        SetButtonLabel(UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language));
+        SetButtonLabel(InstallLinkingButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.link_copy", language));
+        SetButtonLabel(SupportButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.open_support", language));
+        SetButtonLabel(ReportIssueButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.report_issue", language));
+        SetButtonLabel(SettingsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.settings", language));
+        SetButtonLabel(LoadDemoRunnerButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.load_demo_runner", language));
+        SetButtonLabel(ImportRawButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_raw_xml", language));
         StatusText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.status_idle", language);
         StatusTextBorder.IsVisible = true;
     }
 
-    private static void SetButtonLabel(Button button, string label, string compactLabel)
+    private static void SetButtonLabel(Button button, string label)
     {
-        // Keep the classic full-label anchor in source for the visual-familiarity proof,
-        // then collapse to the compact toolbar text used by the current shell.
-        button.Content = label;
-        button.Content = compactLabel;
-        ToolTip.SetTip(button, label);
+        SetButtonLabel(button, label, label);
     }
 
-    private static void SetToolbarIconButton(Button button, string label, string assetPath, string fallbackLabel)
+    private static void SetButtonLabel(Button button, string label, string shortLabel)
     {
-        Image? image = TryCreateToolbarImage(assetPath);
-        button.Content = image is null ? fallbackLabel : image;
-        ToolTip.SetTip(button, label);
-    }
-
-    private static Image? TryCreateToolbarImage(string assetPath)
-    {
-        Bitmap? bitmap = GetToolbarBitmap(assetPath);
-        if (bitmap is null)
+        if (TryCreateButtonIcon(button.Name, out Image? icon))
         {
-            return null;
+            Image resolvedIcon = icon!;
+            button.Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 5,
+                Classes = { "tool-button-content" },
+                Children =
+                {
+                    resolvedIcon,
+                    new TextBlock
+                    {
+                        Text = shortLabel,
+                        Classes = { "tool-button-label" },
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            };
+        }
+        else
+        {
+            button.Content = label;
         }
 
-        return new Image
+        ToolTip.SetTip(button, label);
+    }
+
+    private static bool TryCreateButtonIcon(string? buttonName, out Image? icon)
+    {
+        icon = null;
+        if (string.IsNullOrWhiteSpace(buttonName)
+            || !ButtonIconAssets.TryGetValue(buttonName, out string? assetPath))
+        {
+            return false;
+        }
+
+        if (!IconCache.TryGetValue(assetPath, out Bitmap? bitmap))
+        {
+            bitmap = new Bitmap(AssetLoader.Open(new Uri(assetPath)));
+            IconCache[assetPath] = bitmap;
+        }
+
+        icon = new Image
         {
             Source = bitmap,
             Width = 16,
-            Height = 16
+            Height = 16,
+            Classes = { "tool-button-icon" },
+            VerticalAlignment = VerticalAlignment.Center
         };
-    }
-
-    private static Bitmap? GetToolbarBitmap(string assetPath)
-    {
-        if (ToolbarIconCache.TryGetValue(assetPath, out Bitmap? cached))
-        {
-            return cached;
-        }
-
-        try
-        {
-            using var stream = AssetLoader.Open(new Uri($"avares://Chummer.Avalonia/{assetPath}"));
-            Bitmap bitmap = new(stream);
-            ToolbarIconCache[assetPath] = bitmap;
-            return bitmap;
-        }
-        catch
-        {
-            ToolbarIconCache[assetPath] = null;
-            return null;
-        }
+        return true;
     }
 
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)
@@ -203,21 +219,6 @@ public partial class ToolStripControl : UserControl
         OpenForExportRequested?.Invoke(this, EventArgs.Empty);
     }
 
-    private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        GmPrepRequested?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void RosterMovementButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        RosterMovementRequested?.Invoke(this, EventArgs.Empty);
-    }
-
-    private void RuleEnvironmentStudioButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);
-    }
-
     private void CampaignWorkspaceButton_OnClick(object? sender, RoutedEventArgs e)
     {
         CampaignWorkspaceRequested?.Invoke(this, EventArgs.Empty);
@@ -264,4 +265,5 @@ public sealed record ToolStripState(
     bool? ShowOpenForExport = null,
     bool? ShowGmPrep = null,
     bool? ShowRosterMovement = null,
-    bool? ShowCampaignWorkspace = null);
+    bool? ShowCampaignWorkspace = null,
+    bool? ShowLoadDemoRunner = null);

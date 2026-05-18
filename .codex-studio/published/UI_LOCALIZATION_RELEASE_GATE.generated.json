@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-08T15:04:28Z",
+  "generated_at": "2026-05-17T20:20:06Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 383,
+  "default_key_count": 386,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -23,19 +23,23 @@
   ],
   "explicit_fallback_runtime": "pass",
   "signoff_smoke_runner": {
-    "status": "fail",
+    "status": "pass",
     "retry_attempted": false,
     "retry_reason": "",
     "log_excerpt": [
-      "[B13] FAIL: Expected to find 'Before import environment diff' in smoke target source."
+      "    1 Warning(s)",
+      "    0 Error(s)",
+      "",
+      "Time Elapsed 00:00:08.43",
+      "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 383,
-      "minimum_override_count": 383,
-      "default_key_count": 383,
+      "override_count": 386,
+      "minimum_override_count": 386,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -43,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 383,
+      "override_count": 386,
       "minimum_override_count": 40,
-      "default_key_count": 383,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -53,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 383,
+      "override_count": 386,
       "minimum_override_count": 40,
-      "default_key_count": 383,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -63,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 383,
+      "override_count": 386,
       "minimum_override_count": 40,
-      "default_key_count": 383,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -73,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 383,
+      "override_count": 386,
       "minimum_override_count": 40,
-      "default_key_count": 383,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -83,19 +87,19 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 383,
+      "override_count": 386,
       "minimum_override_count": 40,
-      "default_key_count": 383,
+      "default_key_count": 386,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
       "legacy_data_xml_present": true
     }
   ],
-  "legacy_language_root": "/docker/chummercomplete/chummer6-ui-finish/Chummer/lang",
+  "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-05-07T01:04:47Z",
+    "generated_at": "2026-05-15T14:54:20Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -125,7 +129,7 @@
     ],
     "receipts": [
       {
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": ".codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -143,49 +147,51 @@
   "translation_backlog_findings": [],
   "domain_coverage": {
     "app_chrome": "pass",
-    "data_rules_names": "pass",
+    "install_update_support": "pass",
     "explain_receipts": "pass",
-    "generated_artifacts": "pass",
-    "install_update_support": "pass"
+    "data_rules_names": "pass",
+    "generated_artifacts": "pass"
   },
   "locale_domain_coverage": {
     "en-us": {
       "app_chrome": "pass",
-      "data_rules_names": "pass",
+      "install_update_support": "pass",
       "explain_receipts": "pass",
-      "generated_artifacts": "pass",
-      "install_update_support": "pass"
+      "data_rules_names": "pass",
+      "generated_artifacts": "pass"
     },
     "de-de": {
       "app_chrome": "pass",
-      "data_rules_names": "pass",
+      "install_update_support": "pass",
       "explain_receipts": "pass",
-      "generated_artifacts": "pass",
-      "install_update_support": "pass"
+      "data_rules_names": "pass",
+      "generated_artifacts": "pass"
     },
     "fr-fr": {
       "app_chrome": "pass",
-      "data_rules_names": "pass",
+      "install_update_support": "pass",
       "explain_receipts": "pass",
-      "generated_artifacts": "pass",
-      "install_update_support": "pass"
+      "data_rules_names": "pass",
+      "generated_artifacts": "pass"
     },
     "ja-jp": {
       "app_chrome": "pass",
-      "data_rules_names": "pass",
+      "install_update_support": "pass",
       "explain_receipts": "pass",
-      "generated_artifacts": "pass",
-      "install_update_support": "pass"
+      "data_rules_names": "pass",
+      "generated_artifacts": "pass"
     },
     "pt-br": {
       "app_chrome": "pass",
-      "data_rules_names": "pass",
+      "install_update_support": "pass",
       "explain_receipts": "pass",
-      "generated_artifacts": "pass",
-      "install_update_support": "pass"
+      "data_rules_names": "pass",
+      "generated_artifacts": "pass"
     },
     "zh-cn": {
       "app_chrome": "pass",
+      "install_update_support": "pass",
+      "explain_receipts": "pass",
       "data_rules_names": "pass",
       "generated_artifacts": "pass"
     }
@@ -615,11 +621,22 @@
       },
       "required_receipts": {
         "next90_m104_explain_receipts": {
-          "status": "pass",
-          "path": null
+          "status": "fail",
+          "path": null,
+          "effective_status": "pass"
         }
       },
-      "legacy_corpus_domain": false
+      "legacy_corpus_domain": false,
+      "local_source_fallback": {
+        "ready": true,
+        "signoff_smoke_runner_status": "pass",
+        "source_markers": {
+          "desktop_trust_receipts": true,
+          "dialog_receipts": true,
+          "dialog_host": true,
+          "section_pane": true
+        }
+      }
     },
     "data_rules_names": {
       "status": "pass",
@@ -658,7 +675,8 @@
       "required_receipts": {
         "local_release_proof": {
           "status": "passed",
-          "path": null
+          "path": null,
+          "effective_status": "pass"
         }
       },
       "legacy_corpus_domain": false
@@ -674,5 +692,29 @@
     "locale_smoke_updater",
     "locale_smoke_support",
     "non_english_generated_artifact_smoke"
-  ]
+  ],
+  "evidence": {
+    "shipping_locales": [
+      "en-us",
+      "de-de",
+      "fr-fr",
+      "ja-jp",
+      "pt-br",
+      "zh-cn"
+    ],
+    "required_localization_domains": [
+      "app_chrome",
+      "install_update_support",
+      "explain_receipts",
+      "data_rules_names",
+      "generated_artifacts"
+    ],
+    "signoffStatus": 0,
+    "retryAttempted": false,
+    "retryReason": "",
+    "blockingFindingCount": 0,
+    "translationBacklogCount": 0,
+    "reasonCount": 0,
+    "failureCount": 0
+  }
 }

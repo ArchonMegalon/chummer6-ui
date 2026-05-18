@@ -13,6 +13,13 @@ public sealed record DesktopHomeCampaignServerPlane(
     string? TravelPrefetchInventorySummary,
     string? CampaignMemorySummary,
     string? CampaignMemoryReturnSummary,
+    string? AdoptionSummary,
+    string? AdoptionConfidenceSummary,
+    string? AdoptionEvidenceSummary,
+    string? GoalPinSummary,
+    string? ResolutionReportSummary,
+    string? BlackLedgerSummary,
+    string? BlackLedgerProofSummary,
     FirstPlayableSessionProjection? FirstPlayableSession,
     string NextSafeAction,
     IReadOnlyList<string> ReadinessHighlights,
@@ -39,6 +46,10 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
     DesktopHomeTravelModeDto? TravelMode,
     FirstPlayableSessionProjection? FirstPlayableSession,
     DesktopHomeCampaignMemoryDto? CampaignMemory,
+    DesktopHomeCampaignAdoptionDto? Adoption,
+    IReadOnlyList<DesktopHomeRunnerGoalPinDto> GoalPins,
+    DesktopHomeResolutionReportCloseoutDto? ResolutionReport,
+    DesktopHomeBlackLedgerConsequenceDto? BlackLedger,
     DesktopHomeNextSafeActionCueDto NextSafeAction,
     DateTimeOffset GeneratedAtUtc)
 {
@@ -80,6 +91,41 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
         if (!string.IsNullOrWhiteSpace(CampaignMemory?.ReturnSummary))
         {
             readinessHighlights.Add($"Campaign memory return: {CampaignMemory.ReturnSummary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Adoption?.Summary))
+        {
+            readinessHighlights.Add($"Campaign adoption: {Adoption.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(Adoption?.ConfidenceSummary))
+        {
+            readinessHighlights.Add($"Adoption confidence: {Adoption.ConfidenceSummary}");
+        }
+
+        if (Adoption?.EvidenceLines.Count > 0)
+        {
+            readinessHighlights.Add($"Adoption proof: {Adoption.EvidenceLines[0]}");
+        }
+
+        if (GoalPins.Count > 0)
+        {
+            readinessHighlights.Add($"Goal pins: {BuildGoalPinSummary(GoalPins)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(ResolutionReport?.Summary))
+        {
+            readinessHighlights.Add($"ResolutionReport closeout: {ResolutionReport.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(BlackLedger?.Summary))
+        {
+            readinessHighlights.Add($"BLACK LEDGER consequence: {BlackLedger.Summary}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(BlackLedger?.ProofSummary))
+        {
+            readinessHighlights.Add($"BLACK LEDGER proof: {BlackLedger.ProofSummary}");
         }
 
         if (FirstPlayableSession is not null)
@@ -188,6 +234,13 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             TravelPrefetchInventorySummary: NormalizeOptional(TravelMode?.PrefetchInventorySummary),
             CampaignMemorySummary: NormalizeOptional(CampaignMemory?.Summary),
             CampaignMemoryReturnSummary: NormalizeOptional(CampaignMemory?.ReturnSummary),
+            AdoptionSummary: NormalizeOptional(Adoption?.Summary),
+            AdoptionConfidenceSummary: NormalizeOptional(Adoption?.ConfidenceSummary),
+            AdoptionEvidenceSummary: Adoption?.EvidenceLines.Count > 0 ? NormalizeOptional(Adoption.EvidenceLines[0]) : null,
+            GoalPinSummary: GoalPins.Count > 0 ? BuildGoalPinSummary(GoalPins) : null,
+            ResolutionReportSummary: NormalizeOptional(ResolutionReport?.Summary),
+            BlackLedgerSummary: NormalizeOptional(BlackLedger?.Summary),
+            BlackLedgerProofSummary: NormalizeOptional(BlackLedger?.ProofSummary),
             FirstPlayableSession: FirstPlayableSession,
             NextSafeAction: NextSafeAction.Summary,
             ReadinessHighlights: FinalizeLines(readinessHighlights),
@@ -258,6 +311,16 @@ public sealed record DesktopHomeCampaignServerPlaneDto(
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Take(24)
             .ToArray();
+
+    private static string BuildGoalPinSummary(IReadOnlyList<DesktopHomeRunnerGoalPinDto> goalPins)
+        => string.Join(
+            "; ",
+            goalPins
+                .Take(2)
+                .Select(static goalPin =>
+                    string.IsNullOrWhiteSpace(goalPin.ProgressSummary)
+                        ? goalPin.Label
+                        : $"{goalPin.Label} ({goalPin.ProgressSummary})"));
 
     private static string? NormalizeOptional(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -332,6 +395,30 @@ public sealed record DesktopHomeCampaignMemoryDto(
     string Summary,
     string ReturnSummary,
     string NextSafeAction,
+    IReadOnlyList<string> EvidenceLines);
+
+public sealed record DesktopHomeCampaignAdoptionDto(
+    string Summary,
+    string ConfidenceSummary,
+    string? NextSafeAction,
+    IReadOnlyList<string> EvidenceLines);
+
+public sealed record DesktopHomeRunnerGoalPinDto(
+    string RunnerHandle,
+    string Label,
+    string? ProgressSummary,
+    string? NextSafeAction);
+
+public sealed record DesktopHomeResolutionReportCloseoutDto(
+    string Summary,
+    string? NextSafeAction,
+    IReadOnlyList<string> EvidenceLines);
+
+public sealed record DesktopHomeBlackLedgerConsequenceDto(
+    string Summary,
+    string? ProofSummary,
+    string? SpoilerClass,
+    string? NextSafeAction,
     IReadOnlyList<string> EvidenceLines);
 
 public sealed record DesktopHomeNextSafeActionCueDto(string Summary);

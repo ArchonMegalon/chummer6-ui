@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-05-13T08:33:18.168801Z",
+  "contractName": "chummer6-ui.ui_parity_audit",
+  "status": "fail",
+  "summary": "One or more active UI parity gates failed.",
+  "reasons": [
+    "scripts/ai/milestones/section-host-ruleset-parity-check.sh failed with exit code 47.",
+    "scripts/ai/milestones/interactive-control-inventory-check.sh failed with exit code 47.",
+    "scripts/ai/milestones/design-authorized-parity-softening-check.sh failed with exit code 1.",
+    "scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh failed with exit code 1."
+  ],
+  "evidence": {
+    "requiredWorkflowMarkers": [
+      "dice_roller",
+      "character_roster"
+    ],
+    "gateCount": 8,
+    "gates": [
+      {
+        "gate": "scripts/ai/milestones/design-mirror-completeness-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[design-mirror-completeness] PASS: flagship design mirror inputs are present.\n[design-mirror-completeness] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/chummer5a-layout-hard-gate.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[chummer5a-layout-hard-gate] PASS"
+      },
+      {
+        "gate": "scripts/ai/milestones/generated-dialog-element-parity-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[generated-dialog] PASS: generated dialog command/control parity is inventoried, executable, and fail-closing.\n[generated-dialog] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/section-host-ruleset-parity-check.sh",
+        "status": "fail",
+        "exitCode": 47,
+        "outputTail": ""
+      },
+      {
+        "gate": "scripts/ai/milestones/interactive-control-inventory-check.sh",
+        "status": "fail",
+        "exitCode": 47,
+        "outputTail": ""
+      },
+      {
+        "gate": "scripts/ai/milestones/startup-workbench-survival-check.sh",
+        "status": "pass",
+        "exitCode": 0,
+        "outputTail": "[startup-workbench-survival] PASS: startup stays on the workbench and survives first paint.\n[startup-workbench-survival] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+      },
+      {
+        "gate": "scripts/ai/milestones/design-authorized-parity-softening-check.sh",
+        "status": "fail",
+        "exitCode": 1,
+        "outputTail": ""
+      },
+      {
+        "gate": "scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh",
+        "status": "fail",
+        "exitCode": 1,
+        "outputTail": ""
+      }
+    ]
+  }
+}

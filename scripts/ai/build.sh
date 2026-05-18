@@ -8,6 +8,21 @@ declare -a args=("$@")
 is_solution_build=0
 has_parallelism_override=0
 
+normalize_projectish_args() {
+  local index
+  for index in "${!args[@]}"; do
+    case "${args[$index]}" in
+      *.csproj|*.fsproj|*.vbproj|*.sln|*.slnx)
+        if [[ -e "${args[$index]}" ]]; then
+          args[$index]="$(realpath "${args[$index]}")"
+        fi
+        ;;
+    esac
+  done
+}
+
+normalize_projectish_args
+
 for arg in "${args[@]}"; do
   case "$arg" in
     *.sln|*.slnx)

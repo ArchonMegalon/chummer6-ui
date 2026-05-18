@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_root_physical="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd -P)"
+repo_root_alias_candidate="${CHUMMER_UI_REPO_ROOT_ALIAS:-/docker/chummercomplete/chummer6-ui}"
+repo_root="$repo_root_physical"
+if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; then
+  alias_physical="$(cd "$repo_root_alias_candidate" && pwd -P)"
+  if [[ "$alias_physical" == "$repo_root_physical" ]]; then
+    repo_root="$(cd -L "$repo_root_alias_candidate" && pwd -L)"
+  fi
+fi
 cd "$repo_root"
 
 receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
@@ -20,10 +28,11 @@ fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 mkdir -p "$(dirname "$receipt_path")"
 
-python3 - <<'PY' "$repo_root" "$receipt_path"
+python3 - <<'PY' "$repo_root" "$receipt_path" "$release_channel_path"
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +41,10 @@ from typing import Any
 
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
+release_channel_path = Path(sys.argv[3])
+SKIP_FLAGSHIP_GATE_DEPENDENCY = str(
+    os.environ.get("CHUMMER_SCREENSHOT_REVIEW_SKIP_FLAGSHIP_GATE_DEPENDENCY") or "0"
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def now_iso() -> str:
@@ -54,6 +67,12 @@ def status_pass(value: Any) -> bool:
     return str(value or "").strip().lower() in {"pass", "passed", "ready"}
 
 
+def normalize_findings(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
 def append_reason(message: str, reasons: list[str], *buckets: list[str]) -> None:
     reasons.append(message)
     for bucket in buckets:
@@ -73,6 +92,10 @@ feedback_sources = [
 ]
 frontier_ids = [3782970110, 2714856833, 1186439541, 4871476959, 1922169755]
 review_jobs = {
+    "dense_workbench_and_initiative": {
+        "routeIds": ["menu:dice_roller_or_workflow:initiative_screenshot"],
+        "screenshots": ["05-dense-section-light.png", "07-loaded-runner-tabs-light.png"],
+    },
     "dense_builder": {
         "frontierId": 3782970110,
         "screenshots": ["05-dense-section-light.png", "06-dense-section-dark.png"],
@@ -83,13 +106,13 @@ review_jobs = {
         "frontierId": 2714856833,
         "screenshots": ["16-master-index-dialog-light.png"],
         "evidenceKeys": ["runtime_backed_master_index"],
-        "testMarkers": ["Master_index_is_a_first_class_runtime_backed_workbench_route"],
+        "testMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "roster": {
         "frontierId": 1186439541,
         "screenshots": ["17-character-roster-dialog-light.png"],
         "evidenceKeys": ["runtime_backed_character_roster"],
-        "testMarkers": ["Character_roster_is_a_first_class_runtime_backed_workbench_route"],
+        "testMarkers": ["Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"],
     },
     "settings": {
         "frontierId": 4871476959,
@@ -99,21 +122,37 @@ review_jobs = {
     },
     "translator": {
         "frontierId": 1922169755,
-        "screenshots": ["19-translator-dialog-light.png"],
+        "screenshots": ["38-translator-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
     "xml_editor": {
         "frontierId": 1922169755,
-        "screenshots": ["20-xml-editor-dialog-light.png"],
+        "screenshots": ["39-xml-editor-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
     "hero_lab_importer": {
         "frontierId": 1922169755,
-        "screenshots": ["21-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
+        "screenshots": ["40-hero-lab-importer-dialog-light.png", "18-import-dialog-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts"],
+        "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
+    },
+}
+
+route_local_receipts = {
+    "dense_workbench_and_initiative": {
+        "routeIds": [
+            "menu:dice_roller_or_workflow:initiative_screenshot",
+            "dice_roller",
+            "initiative_screenshot",
+        ],
+        "screenshots": [
+            "05-dense-section-light.png",
+            "07-loaded-runner-tabs-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
     },
 }
 
@@ -146,16 +185,15 @@ if missing_paths:
 
 visual_gate = load_json(visual_gate_path)
 flagship_gate = load_json(flagship_gate_path)
+release_channel = load_json(release_channel_path) if release_channel_path.is_file() else {}
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
-flagship_gate_blocking_findings = flagship_gate.get("blockingFindings") or []
-if not isinstance(flagship_gate_blocking_findings, list):
-    flagship_gate_blocking_findings = []
+flagship_gate_blocking_findings = normalize_findings(flagship_gate.get("blockingFindings"))
 flagship_gate_route_local_only = (
     bool(flagship_gate_blocking_findings)
     and all(
-        str(finding).strip()
+        finding
         in {
             "Top-level release gate cannot pass while flagship readiness is not passed.",
             "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
@@ -163,6 +201,26 @@ flagship_gate_route_local_only = (
         }
         for finding in flagship_gate_blocking_findings
     )
+)
+desktop_executable_proof = flagship_gate.get("desktopExecutableProof") or {}
+if not isinstance(desktop_executable_proof, dict):
+    desktop_executable_proof = {}
+desktop_executable_local_blocking_findings = normalize_findings(
+    desktop_executable_proof.get("localBlockingFindings")
+)
+flagship_gate_external_desktop_only = (
+    bool(flagship_gate_blocking_findings)
+    and all(
+        finding
+        in {
+            "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+            "Top-level release gate cannot pass while flagship readiness is not passed.",
+            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+        }
+        for finding in flagship_gate_blocking_findings
+    )
+    and not desktop_executable_local_blocking_findings
 )
 control_evidence_path_raw = str(visual_evidence.get("control_evidence_path") or "").strip()
 control_evidence_path = Path(control_evidence_path_raw) if control_evidence_path_raw else None
@@ -220,7 +278,12 @@ for marker in [
 
 if not status_pass(visual_gate.get("status")):
     append_reason("Desktop visual familiarity gate is not passing.", reasons, supporting_receipt_reasons)
-if not status_pass(flagship_gate.get("status")) and not flagship_gate_route_local_only:
+if (
+    not status_pass(flagship_gate.get("status"))
+    and not flagship_gate_route_local_only
+    and not flagship_gate_external_desktop_only
+    and not SKIP_FLAGSHIP_GATE_DEPENDENCY
+):
     append_reason("UI flagship release gate is not passing.", reasons, supporting_receipt_reasons)
 if missing_visual_review_keys:
     append_reason(
@@ -266,7 +329,7 @@ if screenshot_dir is None or not screenshot_dir.is_dir():
 
 job_results: dict[str, dict[str, Any]] = {}
 for job_name, job in review_jobs.items():
-    screenshots = list(job["screenshots"])
+    screenshots = list(job.get("screenshots") or [])
     job_reasons: list[str] = []
     for screenshot in screenshots:
         if screenshot not in required_screenshots:
@@ -279,18 +342,18 @@ for job_name, job in review_jobs.items():
             job_reasons.append(f"{screenshot} is below the review resolution floor.")
         if screenshot_dir is not None and not (screenshot_dir / screenshot).is_file():
             job_reasons.append(f"{screenshot} is absent from the screenshot directory.")
-    for key in job["evidenceKeys"]:
+    for key in list(job.get("evidenceKeys") or []):
         if not status_pass(visual_evidence.get(key)):
             job_reasons.append(f"Visual familiarity evidence key is not pass: {key}.")
-    for marker in job["testMarkers"]:
+    for marker in list(job.get("testMarkers") or []):
         if marker not in avalonia_tests_text:
             job_reasons.append(f"Avalonia flagship tests are missing review marker: {marker}.")
     job_results[job_name] = {
-        "frontierId": job["frontierId"],
+        "frontierId": job.get("frontierId"),
         "status": "pass" if not job_reasons else "fail",
         "screenshots": screenshots,
-        "evidenceKeys": list(job["evidenceKeys"]),
-        "testMarkers": list(job["testMarkers"]),
+        "evidenceKeys": list(job.get("evidenceKeys") or []),
+        "testMarkers": list(job.get("testMarkers") or []),
         "reasons": job_reasons,
     }
     reasons.extend(f"{job_name}: {reason}" for reason in job_reasons)
@@ -311,9 +374,33 @@ if older_than_receipt:
 
 review_job_failing = sorted(job_name for job_name, job in job_results.items() if job["status"] != "pass")
 
+dense_workbench_and_initiative = route_local_receipts["dense_workbench_and_initiative"]
+for screenshot in dense_workbench_and_initiative["screenshots"]:
+    if screenshot not in required_screenshots:
+        dense_workbench_and_initiative["reasons"].append(
+            f"{screenshot} is not mandatory in DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE."
+        )
+    if screenshot in missing_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is reported missing.")
+    if screenshot in invalid_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is reported corrupt or unreadable.")
+    if screenshot in undersized_screenshots:
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is below the review resolution floor.")
+    if screenshot_dir is not None and not (screenshot_dir / screenshot).is_file():
+        dense_workbench_and_initiative["reasons"].append(f"{screenshot} is absent from the screenshot directory.")
+if job_results["dense_builder"]["status"] != "pass":
+    dense_workbench_and_initiative["reasons"].append("dense_builder review job is not passing.")
+if not status_pass(visual_gate.get("status")):
+    dense_workbench_and_initiative["reasons"].append("Desktop visual familiarity gate is not passing.")
+dense_workbench_and_initiative["status"] = "pass" if not dense_workbench_and_initiative["reasons"] else "fail"
+
 payload = {
     "generatedAt": now_iso(),
     "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
+    "channelId": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+    "channel": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+    "releaseVersion": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
+    "version": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
     "status": "pass" if not reasons else "fail",
     "summary": (
         "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes."
@@ -335,7 +422,9 @@ payload = {
             "visualFamiliarityGate": visual_gate.get("status"),
             "flagshipGate": flagship_gate.get("status"),
         },
+        "skipFlagshipGateDependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
+        "flagshipGateExternalDesktopOnly": flagship_gate_external_desktop_only,
         "visualReviewStatuses": {
             key: (
                 visual_reviews.get(key, {}).get("status")
@@ -368,20 +457,29 @@ payload = {
     },
     "screenshotDirectory": screenshot_dir_raw,
     "reviewJobs": job_results,
+    "routeLocalReceipts": route_local_receipts,
     "evidence": {
         "feedbackSources": [str(path) for path in feedback_sources],
         "supportingReceipts": {
             "visualFamiliarityGate": str(visual_gate_path),
             "flagshipGate": str(flagship_gate_path),
+            "releaseChannel": str(release_channel_path),
         },
         "screenshotDirectory": screenshot_dir_raw,
+        "releaseChannelPath": str(release_channel_path),
+        "releaseChannelChannelId": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
+        "releaseChannelVersion": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
         "requiredVisualReviewKeys": required_visual_review_keys,
         "missingVisualReviewKeys": missing_visual_review_keys,
         "failingVisualReviewKeys": failing_visual_review_keys,
         "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "skipFlagshipGateDependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
+        "flagshipGateExternalDesktopOnly": flagship_gate_external_desktop_only,
+        "desktopExecutableLocalBlockingFindings": desktop_executable_local_blocking_findings,
         "reviewedJobs": sorted(review_jobs.keys()),
         "failingJobs": review_job_failing,
+        "routeLocalReceipts": route_local_receipts,
         "reasonCount": len(reasons),
         "failureCount": len(reasons),
     },

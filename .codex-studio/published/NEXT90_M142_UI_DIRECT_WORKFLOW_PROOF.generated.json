@@ -1,9 +1,11 @@
 {
-  "generatedAt": "2026-05-06T02:29:23.469860Z",
+  "generatedAt": "2026-05-14T18:41:46.325091Z",
   "contract_name": "chummer6-ui.next90_m142_ui_direct_workflow_proof",
-  "status": "pass",
-  "summary": "Milestone 142 direct workflow proof is closed on route-local evidence.",
-  "unresolved": [],
+  "status": "fail",
+  "summary": "Milestone 142 direct workflow proof is incomplete.",
+  "unresolved": [
+    "Route-local receipt check failed: screenshot_review_receipt_pass"
+  ],
   "evidence": {
     "packageId": "next90-m142-ui-close-direct-screenshot-and-runtime-proof-for-dense-builder-and-career-fl",
     "frontierId": 9095697868,
@@ -67,7 +69,7 @@
     },
     "receiptChecks": {
       "audit_receipt_pass": true,
-      "screenshot_review_receipt_pass": true,
+      "screenshot_review_receipt_pass": false,
       "workflow_execution_receipt_pass": true,
       "route_local_dense_initiative_pass": true,
       "route_local_dense_initiative_route_ids_match": true,
@@ -106,19 +108,19 @@
       }
     },
     "proofFiles": [
-      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
-      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
-      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
-      "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-      "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",
+      "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Chummer.Tests.csproj",
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+      "/docker/chummercomplete/chummer6-ui/scripts/ai/verify.sh",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+      "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
     ],
     "proofCommands": [
       "bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",

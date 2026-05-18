@@ -27,6 +27,8 @@ public interface ICharacterOverviewPresenter
 
     Task UpdateDialogFieldAsync(string fieldId, string? value, CancellationToken ct);
 
+    Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct);
+
     Task ExecuteDialogActionAsync(string actionId, CancellationToken ct);
 
     Task CloseDialogAsync(CancellationToken ct);

@@ -1,6 +1,6 @@
 {
   "contractName": "chummer.run.desktop_release_publication",
-  "generatedAt": "2026-05-07T17:45:06Z",
+  "generatedAt": "2026-05-15T16:12:53Z",
   "artifacts": [
     {
       "artifactId": "avalonia-linux-x64-installer",
@@ -9,12 +9,12 @@
       "promotionStatus": "pass",
       "startupSmokeStatus": "pass",
       "startupSmokeReason": "",
-      "startupSmokeReceiptPath": "/tmp/tmp.3wW9b9aIBq/startup-smoke-avalonia-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.iIjOspWiqB/startup-smoke-avalonia-linux-x64.receipt.json",
       "signingReceiptPath": "",
       "signingStatus": null,
       "notarizationStatus": null,
-      "artifactSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
-      "artifactSizeBytes": 35010278,
+      "artifactSha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
+      "artifactSizeBytes": 34999182,
       "kind": "installer"
     },
     {
@@ -24,13 +24,28 @@
       "promotionStatus": "fail",
       "startupSmokeStatus": "pass",
       "startupSmokeReason": "",
-      "startupSmokeReceiptPath": "/tmp/tmp.3wW9b9aIBq/startup-smoke-avalonia-win-x64.receipt.json",
+      "startupSmokeReceiptPath": "/tmp/tmp.iIjOspWiqB/startup-smoke-avalonia-win-x64.receipt.json",
       "signingReceiptPath": "",
       "signingStatus": "fail",
       "notarizationStatus": null,
-      "artifactSha256": "bb9b31fcf3bf1386b6f968029f312ca30681f1a02b2c536b6a4d8cb8fe4109fe",
-      "artifactSizeBytes": 142037086,
+      "artifactSha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+      "artifactSizeBytes": 239554300,
       "kind": "installer"
+    },
+    {
+      "artifactId": "avalonia-linux-x64-archive",
+      "fileName": "chummer-avalonia-linux-x64.tar.gz",
+      "platform": "linux",
+      "promotionStatus": "pass",
+      "startupSmokeStatus": "pass",
+      "startupSmokeReason": "",
+      "startupSmokeReceiptPath": "",
+      "signingReceiptPath": "",
+      "signingStatus": null,
+      "notarizationStatus": null,
+      "artifactSha256": "203635c1bf0b3f7aaa2d278c10cc051785e6739261b43ee627fbd5f1945e676a",
+      "artifactSizeBytes": 43079243,
+      "kind": "archive"
     },
     {
       "artifactId": "avalonia-osx-arm64-archive",
@@ -73,8 +88,8 @@
       "signingReceiptPath": "",
       "signingStatus": "fail",
       "notarizationStatus": null,
-      "artifactSha256": "414ba2c2db61c459920ea3b92aeb28442a0b84dbcdf3cd3725042c42ebc15ee6",
-      "artifactSizeBytes": 433152,
+      "artifactSha256": "43e89f734cc6a4186031fbd88a08086d1374e561762697fc841eec37e508bfc6",
+      "artifactSizeBytes": 108117227,
       "kind": "portable"
     },
     {
@@ -88,8 +103,8 @@
       "signingReceiptPath": "",
       "signingStatus": "fail",
       "notarizationStatus": null,
-      "artifactSha256": "1b9092b1d2a631b29c2edbe7882d835cb3a4337ef8fb2abf224c8c848e061468",
-      "artifactSizeBytes": 45044846,
+      "artifactSha256": "fc091a18e40ae74de4a2f3d5c32adea0510a4586288d70858e2da48f7f3172eb",
+      "artifactSizeBytes": 93841824,
       "kind": "archive"
     }
   ]

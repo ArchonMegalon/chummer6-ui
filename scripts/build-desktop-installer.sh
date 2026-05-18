@@ -3,6 +3,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd -P)"
+PYTHON_BIN="${CHUMMER_PYTHON_BIN:-/usr/bin/python3}"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  PYTHON_BIN="$(command -v python3)"
+fi
 
 # Usage:
 # bash scripts/build-desktop-installer.sh <publish_dir> <app_key> <rid> <launch_target> [dist_dir] [version]
@@ -78,7 +82,7 @@ prune_release_symbols() {
 }
 
 abspath() {
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 from pathlib import Path
 import sys
 
@@ -231,7 +235,7 @@ sha256_file() {
     return
   fi
 
-  python3 - "$1" <<'PY'
+  "$PYTHON_BIN" - "$1" <<'PY'
 import hashlib
 import pathlib
 import sys
@@ -786,10 +790,12 @@ build_macos_installer() {
   local contents_dir="$app_bundle/Contents"
   local macos_dir="$contents_dir/MacOS"
   local macos_icon_source
+  local macos_icon_runtime_source
   local macos_icon_name
   local macos_icon_plist_name
   local plist_path="$contents_dir/Info.plist"
   local bundle_identifier
+  local original_publish_dir
   bundle_identifier="$(macos_bundle_identifier)"
   local hdiutil_tmp_root="${CHUMMER_DESKTOP_INSTALLER_TMPDIR:-${TMPDIR:-$DIST_DIR/tmp}}"
   local hdiutil_tmp_work="$hdiutil_tmp_root/hdiutil-$APP_KEY-$RID"
@@ -802,9 +808,17 @@ build_macos_installer() {
 
   rm -rf "$stage_root"
   rm -rf "$hdiutil_tmp_work"
-  mkdir -p "$macos_dir" "$contents_dir/Resources"
+  mkdir -p "$contents_dir/Resources"
   mkdir -p "$hdiutil_tmp_work"
-  cp -a "$PUBLISH_DIR"/. "$macos_dir"/
+
+  if ! macos_icon_source="$(preflight_macos_packaging_requirements)"; then
+    echo "macOS packaging preflight failed." >&2
+    exit 1
+  fi
+
+  original_publish_dir="$PUBLISH_DIR"
+  mv "$PUBLISH_DIR" "$macos_dir"
+  PUBLISH_DIR="$macos_dir"
 
   if [[ ! -f "$macos_dir/$LAUNCH_TARGET" ]]; then
     echo "Launch target not found in macOS publish directory: $macos_dir/$LAUNCH_TARGET" >&2
@@ -812,14 +826,16 @@ build_macos_installer() {
   fi
   chmod 0755 "$macos_dir/$LAUNCH_TARGET"
 
-  if ! macos_icon_source="$(preflight_macos_packaging_requirements)"; then
-    echo "macOS packaging preflight failed." >&2
-    exit 1
+  macos_icon_runtime_source="$macos_icon_source"
+  if [[ "$macos_icon_source" == "$original_publish_dir" ]]; then
+    macos_icon_runtime_source="$macos_dir"
+  elif [[ "$macos_icon_source" == "$original_publish_dir/"* ]]; then
+    macos_icon_runtime_source="$macos_dir/${macos_icon_source#"$original_publish_dir/"}"
   fi
 
   macos_icon_name="$(basename "$macos_icon_source")"
   macos_icon_plist_name="${macos_icon_name%.icns}"
-  cp "$macos_icon_source" "$contents_dir/Resources/$macos_icon_name"
+  cp "$macos_icon_runtime_source" "$contents_dir/Resources/$macos_icon_name"
 
   echo "Using macOS icon source: $macos_icon_source" >&2
 

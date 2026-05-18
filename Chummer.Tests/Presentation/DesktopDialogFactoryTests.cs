@@ -1830,6 +1830,62 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void BuildNewCharacterContinuationDialog_priority_route_surfaces_hidden_runtime_state_and_commit_fields()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "SumToTen",
+            houseRulesEnabled: true,
+            name: "Nova",
+            alias: "Cipher");
+
+        DesktopDialogField runtimeStateField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityWorkflowState", StringComparison.Ordinal));
+        DesktopDialogField canCommitField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityWorkflowCanCommit", StringComparison.Ordinal));
+        DesktopDialogField summaryField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterPriorityWorkflowSummary", StringComparison.Ordinal));
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(runtimeStateField.Value);
+
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, runtimeStateField.LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, canCommitField.LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, summaryField.LayoutSlot);
+        Assert.AreEqual("true", canCommitField.Value);
+        Assert.AreEqual("10/10", runtimeState.SumToTenLabel);
+        Assert.IsTrue(runtimeState.InspectAttributes.Count >= 8, "Priority workflow runtime state must carry the inspect attribute grid.");
+        Assert.IsNotNull(runtimeState.Qualities, "Priority workflow runtime state must carry the inspect qualities lane payload.");
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_priority_route_reconciles_duplicates_and_materializes_skill_choices()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        DesktopDialogState duplicatePriorityDialog = UpdateDialogField(dialog, "newCharacterPriorityHeritage", "A");
+        DesktopDialogState reconciledDialog = RebuildDynamicDialog(duplicatePriorityDialog);
+
+        Assert.AreEqual("A", DesktopDialogFieldValueParser.GetValue(reconciledDialog, "newCharacterPriorityHeritage"));
+        Assert.AreEqual("D", DesktopDialogFieldValueParser.GetValue(reconciledDialog, "newCharacterPriorityResources"));
+        Assert.AreEqual("newCharacterPriorityHeritage", DesktopDialogFieldValueParser.GetValue(reconciledDialog, "newCharacterPriorityLastChangedFieldId"));
+
+        DesktopDialogState talentPriorityDialog = UpdateDialogField(reconciledDialog, "newCharacterPriorityTalent", "B");
+        DesktopDialogState talentChoiceDialog = RebuildDynamicDialog(talentPriorityDialog);
+        talentChoiceDialog = RebuildDynamicDialog(UpdateDialogField(talentChoiceDialog, "newCharacterPriorityTalentChoice", "Magician"));
+
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(talentChoiceDialog, "newCharacterPriorityWorkflowState"));
+
+        Assert.AreEqual("Magician", DesktopDialogFieldValueParser.GetValue(talentChoiceDialog, "newCharacterPriorityTalentChoice"));
+        Assert.IsTrue(runtimeState.SkillChoice1.Visible, "Magician talent continuation must materialize the first skill choice.");
+        Assert.IsTrue(runtimeState.SkillChoice2.Visible, "Magician talent continuation must materialize the second skill choice.");
+        Assert.IsFalse(runtimeState.SkillChoice3.Visible, "Magician talent continuation must not materialize a third skill choice.");
+        Assert.IsTrue(runtimeState.SkillChoice1.Options.Count > 0, "Skill continuation options must be populated.");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(runtimeState.SkillSelectionLabel), "Skill continuation label must be populated.");
+    }
+
+    [TestMethod]
     public void BuildNewCharacterContinuationDialog_uses_karma_route_for_non_priority_builds()
     {
         DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
@@ -1864,7 +1920,7 @@ public class DesktopDialogFactoryTests
 
         Assert.AreEqual("dialog.hero_lab_importer", dialog.Id);
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"));
-        Assert.AreEqual("3/4 · 75%", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleCoverage"));
+        Assert.AreEqual("1/1 · 100%", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleCoverage"));
         Assert.AreEqual("0", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabFixtureCount"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMatrix"), "Hero Lab fixtures 0");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"), "3/4 fixture families covered");
@@ -1873,7 +1929,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "importRulesetId"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleLanePosture"), "partial");
         Assert.AreEqual("import oracle is partial: 3/4 fixture families covered (missing: Hero Lab), adjacent SR6 oracle coverage 1/2.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleReceipt"));
-        Assert.AreEqual("adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
+        Assert.AreEqual("Adjacent SR6 oracle lane is partial: 1/2 covered with stale receipts for Genesis/CommLink.", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabAdjacentSr6OracleReceipt"));
         Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(dialog, "heroLabImportOracleMissingSources"));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "import", StringComparison.Ordinal)));
     }
@@ -2520,5 +2576,28 @@ public class DesktopDialogFactoryTests
 
         return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState UpdateDialogField(DesktopDialogState dialog, string fieldId, string value)
+    {
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field =>
+            {
+                if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                {
+                    return field with { Value = value };
+                }
+
+                if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                    && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                {
+                    return field with { Value = fieldId };
+                }
+
+                return field;
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
     }
 }

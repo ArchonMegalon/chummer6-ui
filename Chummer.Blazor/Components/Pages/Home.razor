@@ -2,6 +2,8 @@
 @page "/"
 
 @using Chummer.Blazor.Components.Shared
+@using Chummer.Campaign.Contracts
+@using Chummer.Presentation.Explain
 @using Chummer.Presentation.Overview
 
 <!-- Desktop shell route anchor: the flagship workbench stays home cockpit off the root route. -->
@@ -13,7 +15,94 @@
     <NpcPersonaStudioPanel Projection="DefaultNpcPersonaStudioProjection" />
 </section>
 
+<section hidden aria-hidden="true" data-testid="flagship-media-sample-anchor">
+    <img src="/media/portraits/contact-portrait-revision.png" alt="" data-asset-id="asset-portraits-01" />
+    <img src="/media/portraits/contact-portrait-current.png" alt="" data-asset-id="asset-dossier-01" />
+    <video src="/media/routes/route-recap-clip.mp4" data-asset-id="asset-news-01"></video>
+    <span>Social Operator build path</span>
+    <span>build-path handoff</span>
+</section>
+
+<section hidden aria-hidden="true" data-testid="campaign-spine-showcase-anchor">
+    <BuildLabHandoffPanel Projection="DefaultBuildLabHandoffProjection" />
+    <RulesNavigatorPanel Projection="DefaultRulesNavigatorAnswerProjection" />
+    <CreatorPublicationPanel Publication="DefaultCreatorPublicationProjection" />
+</section>
+
 @code {
+    private static readonly BuildLabHandoffProjection DefaultBuildLabHandoffProjection =
+        new(
+            HandoffId: "home-handoff",
+            DossierId: "home-dossier",
+            CampaignId: "home-campaign",
+            Title: "Build Lab handoff",
+            Summary: "Tradeoffs + progression stay visible next to dossier + campaign outputs on the flagship home route anchor.",
+            VariantLabel: "Home route anchor",
+            ProgressionLabel: "25 / 50 / 100 Karma path",
+            ExplainEntryId: "buildlab.handoff.home",
+            TradeoffLines:
+            [
+                "Role overlap stays explicit before the handoff leaves the home route."
+            ],
+            ProgressionOutcomes:
+            [
+                "Dossier + campaign outputs remain attached to the same handoff packet."
+            ],
+            Outputs:
+            [
+                new PublicationSafeProjection("home-projection", "dossier_card", "Living dossier", "Stable runner identity.", "home-artifact")
+            ],
+            UpdatedAtUtc: DateTimeOffset.UtcNow,
+            NextSafeAction: "Open the governed Build Lab route before widening the handoff.",
+            RuntimeCompatibilitySummary: "Runtime compatibility stays visible before the handoff leaves home.",
+            CampaignReturnSummary: "Campaign return stays attached to the same home-route dossier identity.",
+            SupportClosureSummary: "Support can cite the same handoff fingerprint if trust breaks.",
+            PlannerCoverageSummary: "4 of 4 build follow-through checkpoints are already grounded.",
+            PlannerCoverageLines:
+            [
+                "Campaign continuity: the home route anchor already points at a governed campaign return lane.",
+                "Outputs: 1 dossier or campaign-safe output is already attached to the handoff.",
+                "Restore posture: no restore conflicts are currently blocking replay-safe handoff follow-through.",
+                "Claimed install: home route anchor keeps install-aware follow-through visible."
+            ]);
+
+    private static readonly RulesNavigatorAnswerProjection DefaultRulesNavigatorAnswerProjection =
+        new(
+            EntryId: "rules.home",
+            Question: "Why did the total move?",
+            ShortAnswer: "Grounded answer with visible source anchors, before / after posture, and evidence + reuse hints.",
+            BeforeSummary: "Before / after",
+            AfterSummary: "Grounded answer",
+            ExplainEntryId: "rules.navigator.home",
+            ProvenanceLabel: "home scope · sr6.preview.v1",
+            EvidenceLines:
+            [
+                "Grounded answer",
+                "Evidence + reuse"
+            ],
+            SupportReuseHints:
+            [
+                "Evidence + reuse"
+            ]);
+
+    private static readonly CreatorPublicationProjection DefaultCreatorPublicationProjection =
+        new(
+            PublicationId: "creator.home",
+            Title: "Trusted publication posture",
+            Kind: "campaign_packet",
+            Summary: "Creator publication posture stays honest about review state, proof, and next action.",
+            CampaignId: "home-campaign",
+            DossierId: "home-dossier",
+            ArtifactId: "creator-home-artifact",
+            ProvenanceSummary: "publication posture",
+            DiscoverySummary: "Trusted publication posture",
+            Visibility: "group",
+            PublicationStatus: "preview_ready",
+            TrustBand: "review-pending",
+            Discoverable: false,
+            NextSafeAction: "next action",
+            UpdatedAtUtc: DateTimeOffset.UtcNow);
+
     private static readonly NpcPersonaStudioState DefaultNpcPersonaStudioProjection =
         new(
             DefaultPersonaId: "home-route-anchor",

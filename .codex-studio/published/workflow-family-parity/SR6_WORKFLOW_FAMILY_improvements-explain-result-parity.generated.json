@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.503474Z",
+  "generatedAt": "2026-05-17T20:18:40.855433Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family parity evidence is explicitly grounded for improvements-explain-result-parity.",
@@ -8,10 +8,12 @@
     "edition": "sr6",
     "familyId": "improvements-explain-result-parity",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
-      "Avalonia_and_Blazor_workspace_action_summary_matches"
+      "Avalonia_and_Blazor_workspace_action_summary_matches",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",

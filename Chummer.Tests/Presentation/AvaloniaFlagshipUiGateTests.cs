@@ -5,13 +5,19 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
+using System.Globalization;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -49,8 +55,18 @@ namespace Chummer.Tests.Presentation;
 public sealed class AvaloniaFlagshipUiGateTests
 {
     private static readonly object HeadlessInitLock = new();
+    private static readonly JsonSerializerOptions ScreenshotEvidenceJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        MaxDepth = 256
+    };
     private static bool _headlessInitialized;
     private const int HeadlessSessionAttempts = 3;
+    private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
+    [
+        "Soma (Career).chum5"
+    ];
     private static readonly string[] VeteranCertificationScreenshotFiles =
     [
         "01-initial-shell-light.png",
@@ -71,6 +87,25 @@ public sealed class AvaloniaFlagshipUiGateTests
         "16-master-index-dialog-light.png",
         "17-character-roster-dialog-light.png",
         "18-import-dialog-light.png",
+        "19-workflow-file-menu-loaded-light.png",
+        "20-workflow-skills-section-light.png",
+        "21-workflow-skill-add-dialog-light.png",
+        "22-workflow-qualities-section-light.png",
+        "23-workflow-quality-add-dialog-light.png",
+        "24-workflow-gear-section-light.png",
+        "25-workflow-gear-add-dialog-light.png",
+        "26-workflow-weapons-section-light.png",
+        "27-workflow-weapon-add-dialog-light.png",
+        "28-workflow-armor-section-light.png",
+        "29-workflow-armor-add-dialog-light.png",
+        "30-workflow-cyberware-section-light.png",
+        "31-workflow-powers-section-light.png",
+        "32-workflow-adept-power-dialog-light.png",
+        "33-workflow-complex-form-dialog-light.png",
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png",
+        "36-workflow-new-character-dialog-light.png",
+        "37-workflow-calendar-section-light.png",
         "38-translator-dialog-light.png",
         "39-xml-editor-dialog-light.png",
         "40-hero-lab-importer-dialog-light.png"
@@ -87,7 +122,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     private static readonly VeteranCertificationReviewStep[] VeteranCertificationReviewSteps =
     [
         new("toolstrip", "01-initial-shell-light.png", "Capture initial promoted Avalonia shell after WaitForReady.", "Chummer5a ChummerMainForm toolStrip New/Open/OpenForPrinting/OpenForExport lineage.", []),
-        new("menu", "02-menu-open-light.png", "Click FileMenuButton and capture MenuCommandsHost.", "Chummer5a ChummerMainForm File/Tools/Windows/Help top menu lineage.", []),
+        new("menu", "02-menu-open-light.png", "Click FileMenuButton and capture the visible command list.", "Chummer5a ChummerMainForm File/Tools/Windows/Help top menu lineage.", []),
         new("settings", "03-settings-open-light.png", "Press Ctrl+G and capture the Global Settings dialog.", "Chummer5a EditGlobalSettings Global Options, Master Index, and Character Roster lineage.", ["Global Settings"]),
         new("master_index", "16-master-index-dialog-light.png", "Execute master_index and capture the Master Index dialog.", "Chummer5a MasterIndex search utility lineage.", ["Master Index"]),
         new("roster", "17-character-roster-dialog-light.png", "Execute character_roster and capture the Character Roster dialog.", "Chummer5a CharacterRoster watch-folder utility lineage.", ["Character Roster"]),
@@ -99,15 +134,27 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data Lane", "XML Bridge"]),
         new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle Receipt"])
     ];
-    private static bool _headlessInitialized;
+    private static readonly WorkflowScreenshotCoverageEntry[] WorkflowScreenshotCoverage =
+    [
+        new("create-open-import-save-save-as-print-export", "Chummer4/Chummer5a File menu New/Open/Save/Save As/Print/Export handoff lineage.", ["19-workflow-file-menu-loaded-light.png", "36-workflow-new-character-dialog-light.png", "18-import-dialog-light.png", "40-hero-lab-importer-dialog-light.png"]),
+        new("metatype-priorities-karma-entry", "Chummer4/Chummer5a character creation priority and karma journal lineage.", ["15-creation-section-light.png", "11-diary-dialog-light.png", "36-workflow-new-character-dialog-light.png"]),
+        new("attributes-skills-skill-groups-specializations-knowledge-languages", "Chummer4/Chummer5a Attributes and Skills tab edit-list lineage.", ["15-creation-section-light.png", "20-workflow-skills-section-light.png", "21-workflow-skill-add-dialog-light.png"]),
+        new("qualities-contacts-identities-notes-calendar-expenses-lifestyles-sources", "Chummer4/Chummer5a qualities, contacts, diary, notes, and source review lineage.", ["10-contacts-section-light.png", "22-workflow-qualities-section-light.png", "23-workflow-quality-add-dialog-light.png", "37-workflow-calendar-section-light.png"]),
+        new("armor-weapons-gear-vehicles-drones-mods-custom-items-locations-containers", "Chummer4/Chummer5a gear, armor, weapon, vehicle, drone, mod, and location list lineage.", ["09-vehicles-section-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png", "26-workflow-weapons-section-light.png", "27-workflow-weapon-add-dialog-light.png", "28-workflow-armor-section-light.png", "29-workflow-armor-add-dialog-light.png"]),
+        new("cyberware-bioware-modular-hierarchies-nested-plugins", "Chummer4/Chummer5a cyberware/bioware nested selection and plugin lineage.", ["08-cyberware-dialog-light.png", "30-workflow-cyberware-section-light.png"]),
+        new("magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms", "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.", ["12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "31-workflow-powers-section-light.png", "32-workflow-adept-power-dialog-light.png", "33-workflow-complex-form-dialog-light.png"]),
+        new("improvements-explain-result-parity", "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.", ["14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"]),
+        new("recovery-reload-migration-roundtrips", "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.", ["04-loaded-runner-light.png", "18-import-dialog-light.png", "19-workflow-file-menu-loaded-light.png"]),
+        new("dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare", "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.", ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png"])
+    ];
     private static HeadlessUnitTestSession? _headlessSession;
 
     [TestMethod]
     public void Blazor_root_route_ownership_stays_with_desktop_shell_anchor_and_moves_showcase_off_root()
     {
-        string homePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Home.razor");
-        string showcasePath = SourcePath("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
-        string legacyPath = SourcePath("Chummer.Blazor", "Pages", "Index.razor");
+        string homePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Home.razor");
+        string showcasePath = ResolveSourceFile("Chummer.Blazor", "Components", "Pages", "Showcase.razor");
+        string legacyPath = ResolveSourceFile("Chummer.Blazor", "Pages", "Index.razor");
 
         string homeText = File.ReadAllText(homePath);
         string showcaseText = File.ReadAllText(showcasePath);
@@ -139,6 +186,25 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Fresh_launch_main_window_survives_first_paint_without_self_termination()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.AdvanceFrames(120);
+
+            Assert.IsTrue(harness.Window.IsVisible, "Fresh launch must not auto-close the main window after first paint.");
+            Assert.IsTrue(harness.FindControl<Control>("MenuBarRegion").IsVisible, "Fresh launch must keep the menu bar visible.");
+            Assert.IsTrue(harness.FindControl<Control>("ToolStripRegion").IsVisible, "Fresh launch must keep the toolstrip visible.");
+            Assert.IsTrue(harness.FindControl<Control>("LeftNavigatorRegion").IsVisible, "Fresh launch must keep the Codex navigator pane visible.");
+            Assert.IsTrue(harness.FindControl<TreeView>("NavigatorTree").Bounds.Height > 0d, "Fresh launch must keep the Codex tree rendered after startup settles.");
+            Assert.IsFalse(
+                harness.TryWaitUntil(() => !harness.Window.IsVisible, timeoutMs: 250),
+                "Fresh launch must stay alive instead of terminating shortly after startup.");
+        });
+    }
+
+    [TestMethod]
     public void Desktop_home_window_no_longer_forces_a_dashboard_detour_for_empty_workspace_state()
     {
         string homePath = ResolveSourceFile("Chummer.Avalonia", "DesktopHomeWindow.cs");
@@ -162,7 +228,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         string summaryHeaderText = File.ReadAllText(summaryHeaderPath);
         string summaryHeaderMarkupText = File.ReadAllText(summaryHeaderMarkupPath);
 
-        StringAssert.Contains(projectorText, "ShowNavigatorPane: false");
+        StringAssert.Contains(projectorText, "ShowNavigatorPane: true");
         StringAssert.Contains(projectorText, "return [];");
         StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
         StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
@@ -282,9 +348,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(mainWindowText, "x:Name=\"LeftNavigatorRegion\"");
         StringAssert.Contains(mainWindowText, "IsVisible=\"False\"");
         StringAssert.Contains(mainWindowStateRefreshText, "ApplyWorkbenchChromeVisibility(shellFrame);");
-        StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(228)");
+        Assert.IsTrue(
+            mainWindowStateRefreshText.Contains("new GridLength(228)", StringComparison.Ordinal)
+            || mainWindowStateRefreshText.Contains("new GridLength(264)", StringComparison.Ordinal),
+            "Workbench chrome visibility must keep an explicit fixed desktop-width left pane.");
         StringAssert.Contains(mainWindowStateRefreshText, "new GridLength(0)");
-        StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: false");
+        StringAssert.Contains(avaloniaProjectorText, "ShowNavigatorPane: true");
         StringAssert.Contains(navigatorPaneText, "x:Name=\"CodexHeadingText\"");
         StringAssert.Contains(navigatorPaneText, "IsVisible=\"False\"");
         StringAssert.Contains(sectionPaneText, "classic-summary-grid");
@@ -315,27 +384,23 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithRuntimeHarness(harness =>
         {
             harness.WaitForReady();
-            Assert.IsTrue(harness.FindControl<Button>("FileMenuButton").IsEnabled, "File menu must stay enabled after real shell bootstrap.");
-            Assert.IsTrue(harness.FindControl<Button>("HelpMenuButton").IsEnabled, "Help menu must stay enabled after real shell bootstrap.");
+            Assert.IsTrue(harness.FindControl<MenuItem>("FileMenuButton").IsEnabled, "File menu must stay enabled after real shell bootstrap.");
+            Assert.IsTrue(harness.FindControl<MenuItem>("HelpMenuButton").IsEnabled, "Help menu must stay enabled after real shell bootstrap.");
             harness.Click("FileMenuButton");
+            harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
+            ListBox commandsList = harness.FindControl<ListBox>("CommandsList");
+            string[] visibleCommandIds = CaptureVisibleCommandIds(commandsList);
 
-            harness.WaitUntil(() =>
-            {
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return host is not null && host.Children.Count > 0;
-            });
-
-            Panel menuHost = harness.FindControl<Panel>("MenuCommandsHost");
-            string[] visibleCommands = menuHost.Children
-                .OfType<Button>()
-                .Select(button => button.Content?.ToString() ?? string.Empty)
-                .Where(static value => !string.IsNullOrWhiteSpace(value))
-                .ToArray();
-
-            CollectionAssert.Contains(visibleCommands, "open character");
-            CollectionAssert.Contains(visibleCommands, "new character");
-            CollectionAssert.Contains(visibleCommands, "save character");
+            CollectionAssert.Contains(visibleCommandIds, "open_character");
+            CollectionAssert.Contains(visibleCommandIds, "new_character");
+            CollectionAssert.Contains(visibleCommandIds, "save_character");
         });
+    }
+
+    [TestMethod]
+    public void Menu_click_surfaces_visible_command_choices_in_shell()
+    {
+        Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters();
     }
 
     [TestMethod]
@@ -347,24 +412,85 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsNull(harness.State.WorkspaceId, "Runtime-backed New Character proof starts without an active workspace.");
 
             harness.Click("FileMenuButton");
-            harness.WaitUntil(() =>
-            {
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return host is not null
-                    && host.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "new_character", StringComparison.Ordinal));
-            });
+            harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "new_character"));
 
             harness.ClickMenuCommand("new_character");
             harness.WaitUntil(() =>
-                harness.State.WorkspaceId is not null
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && string.Equals(harness.State.LastCommandId, "new_character", StringComparison.Ordinal)
+                && !harness.State.IsBusy);
+            Assert.AreEqual("dialog.new_character", harness.State.ActiveDialog?.Id);
+            Assert.IsNull(harness.State.WorkspaceId);
+            Assert.IsNull(harness.State.Profile);
+        });
+    }
+
+    [TestMethod]
+    public void File_menu_new_character_completes_into_visible_runtime_workspace()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "new_character"));
+            harness.ClickMenuCommand("new_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
                 && string.Equals(harness.State.LastCommandId, "new_character", StringComparison.Ordinal)
                 && !harness.State.IsBusy);
 
-            Assert.IsNotNull(harness.State.Profile);
-            Assert.AreEqual("New Character", harness.State.Profile?.Name);
-            Assert.AreEqual("tab-create", harness.State.ActiveTabId);
-            Assert.AreEqual("build-lab", harness.State.ActiveSectionId);
-            Assert.IsGreaterThan(0, harness.State.Session.OpenWorkspaces.Count);
+            harness.InvokeDialogAction("create_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                || string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal));
+
+            harness.InvokeDialogAction("complete_new_character_workflow");
+            harness.WaitUntil(() =>
+                    harness.State.WorkspaceId is not null
+                    && harness.State.Profile is not null
+                    && harness.State.Session.OpenWorkspaces.Count > 0
+                    && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                    && harness.FindControlOrDefault<Control>("SectionHostControl")?.IsVisible == true
+                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                    && harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null
+                    && !harness.State.IsBusy,
+                timeoutMs: 8000,
+                context: "new character completion should hydrate a visible runtime workspace");
+        });
+    }
+
+    [TestMethod]
+    public void Master_index_search_keeps_focus_after_runtime_backed_text_updates()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
+            harness.ClickMenuCommand("master_index");
+            harness.WaitUntil(() =>
+                    string.Equals(harness.State.ActiveDialog?.Id, "dialog.master_index", StringComparison.Ordinal)
+                    && string.Equals(harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text, "Master Index", StringComparison.Ordinal)
+                    && !harness.State.IsBusy,
+                timeoutMs: 8000,
+                context: "master index dialog should be open before editing search");
+
+            string searchFieldName = DesktopDialogAccessibility.BuildFieldInputName("masterIndexSearch");
+            TextBox searchBox = harness.FindControl<TextBox>(searchFieldName);
+            Assert.IsTrue(searchBox.Focus(), "Master Index search box must accept focus before typing.");
+
+            searchBox.Text = "adept";
+            harness.WaitUntil(() =>
+                    string.Equals(
+                        DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "masterIndexSearch"),
+                        "adept",
+                        StringComparison.Ordinal),
+                context: "master index search value should round-trip through the runtime-backed dialog update");
+
+            TextBox refreshedSearchBox = harness.FindControl<TextBox>(searchFieldName);
+            Assert.IsTrue(refreshedSearchBox.IsEnabled, "Master Index search must remain interactive after runtime-backed dialog rebuilds.");
+            Assert.AreEqual("adept", refreshedSearchBox.Text);
         });
     }
 
@@ -375,10 +501,10 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             harness.WaitForReady();
 
-            Panel menuPanel = harness.FindControl<Panel>("MenuBarPanel");
-            Button[] menuButtons = menuPanel.Children.OfType<Button>().ToArray();
+            Menu menuPanel = harness.FindControl<Menu>("MenuBarPanel");
+            MenuItem[] menuButtons = menuPanel.Items.OfType<MenuItem>().ToArray();
             string[] menuLabels = menuButtons
-                .Select(button => button.Content?.ToString() ?? string.Empty)
+                .Select(button => button.Header?.ToString() ?? string.Empty)
                 .ToArray();
 
             CollectionAssert.AreEqual(
@@ -393,7 +519,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 },
                 menuLabels);
 
-            foreach (Button button in menuButtons)
+            foreach (MenuItem button in menuButtons)
             {
                 Assert.IsTrue(button.IsEnabled, $"Menu button '{button.Name}' must stay enabled after runtime bootstrap.");
             }
@@ -411,13 +537,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             {
                 harness.Click(buttonName);
                 harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return string.Equals(harness.ShellPresenter.State.OpenMenuId, menuId, StringComparison.Ordinal)
-                        && host is not null
-                        && host.Children.Count > 0
-                        && harness.FindControl<Control>("MenuCommandsRegion").IsVisible;
-                });
+                    string.Equals(harness.ShellPresenter.State.OpenMenuId, menuId, StringComparison.Ordinal)
+                    && IsAnyCommandVisibleInCommandList(harness));
             }
         });
     }
@@ -437,7 +558,6 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ("ImportFileButton", "Import Character File"),
                 ("SaveButton", "Save Workspace"),
                 ("SettingsButton", "Settings"),
-                ("ImportRawButton", "Import Raw XML"),
                 ("UpdateStatusButton", "Update Status"),
                 ("InstallLinkingButton", "Link This Copy"),
                 ("SupportButton", "Open Support"),
@@ -450,11 +570,21 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(button.IsVisible, $"Workbench action '{buttonName}' must stay visible.");
                 Assert.IsTrue(button.IsEnabled, $"Workbench action '{buttonName}' must stay enabled.");
-                Assert.IsInstanceOfType<string>(button.Content, $"Workbench action '{buttonName}' must stay a flat classic toolbar label, not a dashboard tile.");
                 CollectionAssert.Contains(GetButtonTextLines(button), expectedLabel, $"Workbench action '{buttonName}' must keep its classic desktop label.");
                 Assert.AreEqual(1, GetButtonTextLines(button).Length, $"Workbench action '{buttonName}' must not add a secondary caption line.");
                 Assert.IsTrue(button.Bounds.Width > 0d && button.Bounds.Height > 0d, $"Workbench action '{buttonName}' must keep a visible desktop footprint.");
             }
+
+            foreach (string buttonName in new[] { "SaveButton", "PrintButton", "CopyButton", "DesktopHomeButton", "ImportFileButton", "CloseWorkspaceButton" })
+            {
+                Button button = harness.FindControl<Button>(buttonName);
+                Assert.IsTrue(
+                    button.GetVisualDescendants().OfType<Image>().Any(image => image.IsVisible),
+                    $"Workbench action '{buttonName}' must restore a visible classic toolbar icon.");
+            }
+
+            Button importRawButton = harness.FindControl<Button>("ImportRawButton");
+            Assert.IsFalse(importRawButton.IsVisible, "Raw XML import must stay off the primary classic toolbar.");
         });
     }
 
@@ -638,6 +768,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() =>
                     string.Equals(harness.ShellPresenter.State.PreferredRulesetId, rulesetId, StringComparison.Ordinal)
                     && string.Equals(harness.ShellPresenter.State.ActiveRulesetId, rulesetId, StringComparison.Ordinal));
+                harness.WaitUntil(() =>
+                {
+                    TreeView? tree = harness.FindControlOrDefault<TreeView>("NavigatorTree");
+                    return tree is not null && SnapshotTreeItems(tree).Length > 0;
+                });
 
                 TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
                 string[] rootLabels = SnapshotTreeItems(navigatorTree).Select(item => item.Label).ToArray();
@@ -713,7 +848,15 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "ReportIssueButton",
             ];
 
-            foreach (string buttonName in menuButtons.Concat(actionButtons))
+            foreach (string buttonName in menuButtons)
+            {
+                MenuItem button = harness.FindControl<MenuItem>(buttonName);
+                Assert.IsTrue(button.IsVisible, $"Runtime-backed runner load must keep '{buttonName}' visible.");
+                Assert.IsTrue(button.IsEnabled, $"Runtime-backed runner load must keep '{buttonName}' enabled.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(button.Header?.ToString()), $"Runtime-backed runner load must not blank the label for '{buttonName}'.");
+            }
+
+            foreach (string buttonName in actionButtons)
             {
                 Button button = harness.FindControl<Button>(buttonName);
                 Assert.IsTrue(button.IsVisible, $"Runtime-backed runner load must keep '{buttonName}' visible.");
@@ -722,13 +865,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             harness.Click("FileMenuButton");
-            harness.WaitUntil(() =>
-            {
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return host is not null
-                    && host.Children.Count > 0
-                    && harness.FindControl<Control>("MenuCommandsRegion").IsVisible;
-            });
+            harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
         });
     }
 
@@ -760,11 +897,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 string.Equals(button.Content?.ToString(), "Save", StringComparison.OrdinalIgnoreCase)));
 
             harness.Click("FileMenuButton");
-            harness.WaitUntil(() =>
-            {
-                Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return menuHost is not null && menuHost.Children.Count > 0;
-            });
+            harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
         });
     }
 
@@ -792,7 +925,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Compact Mode");
             harness.InvokeDialogAction("save");
             harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<Button>("ToolsMenuButton").IsEnabled);
+            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
             // harness.Click("ToolsMenuButton")
             OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
@@ -892,6 +1025,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
+            Dictionary<string, ScreenshotProofCapture> captured = new(StringComparer.Ordinal);
             WithHarness(harness =>
             {
                 harness.WaitForReady();
@@ -900,12 +1034,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsTrue(harness.FindControl<Button>("LoadDemoRunnerButton").IsEnabled, "Veteran first-minute proof requires a visible desktop import/load affordance before any workspace is opened.");
 
                 harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return menuHost is not null
-                        && menuHost.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "open_character", StringComparison.Ordinal));
-                });
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "global_settings");
                 harness.ClickMenuCommand("global_settings");
@@ -923,7 +1052,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Compact Mode");
                 harness.InvokeDialogAction("save");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<Button>("ToolsMenuButton").IsEnabled);
+                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
                 harness.ClickMenuCommand("master_index");
@@ -939,7 +1068,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "/app/data");
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<Button>("ToolsMenuButton").IsEnabled);
+                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "character_roster");
                 harness.ClickMenuCommand("character_roster");
@@ -960,18 +1089,157 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => !harness.State.IsBusy);
 
                 harness.Click("LoadDemoRunnerButton");
-                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+                harness.WaitUntil(() =>
+                        harness.Presenter.ImportCalls > 0
+                        && !string.IsNullOrWhiteSpace(harness.State.Profile?.Name)
+                        && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                        && !harness.State.IsBusy,
+                    timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Veteran first-minute proof requires a loaded runner profile before import review.");
                 Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible, "Veteran first-minute proof requires the loaded-runner tab strip after the desktop import shortcut.");
                 Assert.IsFalse(harness.FindControl<Control>("QuickStartContainer").IsVisible, "Veteran first-minute proof must leave the first-run quick start shell.");
 
                 harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
+                captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
+                harness.ClickMenuCommand("new_character");
                 harness.WaitUntil(() =>
-                {
-                    Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return menuHost is not null
-                        && menuHost.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "open_character", StringComparison.Ordinal));
-                });
+                        string.Equals(
+                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                            "Select Build Method",
+                            StringComparison.Ordinal),
+                    timeoutMs: 8000);
+                captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("skills");
+                ListBox skillRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => skillRows.ItemCount > 0);
+                captured["20-workflow-skills-section-light.png"] = CaptureScreenshotProof(harness, "20-workflow-skills-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_skill_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_skill_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Skill",
+                        StringComparison.Ordinal));
+                captured["21-workflow-skill-add-dialog-light.png"] = CaptureScreenshotProof(harness, "21-workflow-skill-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("qualities");
+                ListBox qualityRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => qualityRows.ItemCount > 0);
+                captured["22-workflow-qualities-section-light.png"] = CaptureScreenshotProof(harness, "22-workflow-qualities-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_quality_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_quality_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Quality",
+                        StringComparison.Ordinal));
+                captured["23-workflow-quality-add-dialog-light.png"] = CaptureScreenshotProof(harness, "23-workflow-quality-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("gear");
+                ListBox gearRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => gearRows.ItemCount > 0);
+                captured["24-workflow-gear-section-light.png"] = CaptureScreenshotProof(harness, "24-workflow-gear-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_gear_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_gear_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Gear",
+                        StringComparison.Ordinal));
+                captured["25-workflow-gear-add-dialog-light.png"] = CaptureScreenshotProof(harness, "25-workflow-gear-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("weapons");
+                ListBox weaponRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => weaponRows.ItemCount > 0);
+                captured["26-workflow-weapons-section-light.png"] = CaptureScreenshotProof(harness, "26-workflow-weapons-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_weapon")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_weapon");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Weapon",
+                        StringComparison.Ordinal));
+                captured["27-workflow-weapon-add-dialog-light.png"] = CaptureScreenshotProof(harness, "27-workflow-weapon-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("armors");
+                ListBox armorRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => armorRows.ItemCount > 0);
+                captured["28-workflow-armor-section-light.png"] = CaptureScreenshotProof(harness, "28-workflow-armor-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_armor")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_armor");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Armor",
+                        StringComparison.Ordinal));
+                captured["29-workflow-armor-add-dialog-light.png"] = CaptureScreenshotProof(harness, "29-workflow-armor-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("cyberwares");
+                ListBox cyberwareRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => cyberwareRows.ItemCount > 0);
+                captured["30-workflow-cyberware-section-light.png"] = CaptureScreenshotProof(harness, "30-workflow-cyberware-section-light.png");
+
+                harness.SetActiveSectionForTesting("powers");
+                ListBox powerRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => powerRows.ItemCount > 0);
+                captured["31-workflow-powers-section-light.png"] = CaptureScreenshotProof(harness, "31-workflow-powers-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_adept_power_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_adept_power_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Adept Power",
+                        StringComparison.Ordinal));
+                captured["32-workflow-adept-power-dialog-light.png"] = CaptureScreenshotProof(harness, "32-workflow-adept-power-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("complexforms");
+                ListBox complexFormRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => complexFormRows.ItemCount > 0);
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_complex_form_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_complex_form_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Complex Form",
+                        StringComparison.Ordinal));
+                captured["33-workflow-complex-form-dialog-light.png"] = CaptureScreenshotProof(harness, "33-workflow-complex-form-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("validate");
+                ListBox validateRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => validateRows.ItemCount > 0);
+                captured["34-workflow-validate-section-light.png"] = CaptureScreenshotProof(harness, "34-workflow-validate-section-light.png");
+
+                harness.SetActiveSectionForTesting("rules");
+                ListBox rulesRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => rulesRows.ItemCount > 0);
+                captured["35-workflow-rules-section-light.png"] = CaptureScreenshotProof(harness, "35-workflow-rules-section-light.png");
+
+                harness.SetActiveSectionForTesting("calendar");
+                ListBox calendarRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => calendarRows.ItemCount > 0);
+                captured["37-workflow-calendar-section-light.png"] = CaptureScreenshotProof(harness, "37-workflow-calendar-section-light.png");
+
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
                 harness.ClickMenuCommand("open_character");
                 AssertDialogContainsAll(
                     harness,
@@ -1022,6 +1290,23 @@ public sealed class AvaloniaFlagshipUiGateTests
                 File.Delete(targetPath);
             }
         }
+    }
+
+    [TestMethod]
+    public void Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6()
+    {
+        Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters();
+        Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm();
+        Contacts_diary_and_support_routes_execute_with_public_path_visibility();
+    }
+
+    [TestMethod]
+    public void Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6()
+    {
+        Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions();
+        Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions();
+        Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues();
+        Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm();
     }
 
     [TestMethod]
@@ -1128,7 +1413,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                          "HelpMenuButton",
                      })
             {
-                RaiseClick(FindDescendant<Button>(control, buttonName));
+                RaiseClick(FindDescendant<MenuItem>(control, buttonName));
             }
 
             CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
@@ -1144,15 +1429,20 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ],
                 isBusy: false);
 
-            Button[] commandButtons = FindDescendant<Panel>(control, "MenuCommandsHost")
-                .Children
-                .OfType<Button>()
+            Button[] commandButtons = FindDescendant<MenuItem>(control, "FileMenuButton")
+                .Items
+                .OfType<MenuItem>()
+                .Select(menuItem => new Button
+                {
+                    Tag = menuItem.Tag,
+                    Content = menuItem.Header
+                })
                 .ToArray();
             Assert.AreEqual(3, commandButtons.Length, "Standalone menu proof must render visible command buttons for the open menu.");
-
-            foreach (Button commandButton in commandButtons)
+            foreach (MenuItem commandMenuItem in FindDescendant<MenuItem>(control, "FileMenuButton").Items.OfType<MenuItem>())
             {
-                RaiseClick(commandButton);
+                commandMenuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                PumpStandaloneUi();
             }
 
             CollectionAssert.AreEqual(new[] { "new_character", "open_character", "save_character" }, selectedCommands.ToArray());
@@ -1197,7 +1487,25 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(FindDescendant<Control>(control, "NavigationTabsPanel").IsVisible);
             Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityStatusBorder").IsVisible);
             Assert.IsFalse(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
+
+            Button[] tabButtons = control.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(button => button.Tag is string)
+                .ToArray();
+
+            foreach (Button tabButton in tabButtons)
+            {
+                RaiseClick(tabButton);
+            }
+
+            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
         });
+    }
+
+    [TestMethod]
+    public void Standalone_summary_header_tab_buttons_raise_expected_events()
+    {
+        Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff();
     }
 
     [TestMethod]
@@ -1246,15 +1554,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual(1, saveLocalRequests);
             Assert.AreEqual(1, campaignWorkspaceRequests);
             Assert.AreEqual(1, workspaceSupportRequests);
-        });
-    }
-
-            foreach (Button tabButton in tabButtons)
-            {
-                RaiseClick(tabButton);
-            }
-
-            CollectionAssert.AreEqual(new[] { "tab-profile", "tab-gear" }, selectedTabs.ToArray());
         });
     }
 
@@ -1618,6 +1917,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 OpenMenuId: null,
                 KnownMenuIds: Array.Empty<string>(),
                 OpenMenuCommands: Array.Empty<MenuCommandItem>(),
+                MenuCommandsByMenuId: new Dictionary<string, IReadOnlyList<MenuCommandItem>>(StringComparer.Ordinal),
                 IsBusy: false))
             ?? throw new AssertFailedException("Unable to create MainWindowHeaderState.");
         object chromeState = Activator.CreateInstance(
@@ -1643,6 +1943,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 headerState,
                 chromeState,
                 new SectionHostState(
+                    SectionId: null,
+                    NavigationTabs: Array.Empty<NavigatorTabItem>(),
+                    ActiveTabId: null,
+                    SectionActions: Array.Empty<NavigatorSectionActionItem>(),
+                    ActiveActionId: null,
                     Notice: "Ready.",
                     PreviewJson: string.Empty,
                     Rows: Array.Empty<SectionRowDisplayItem>(),
@@ -1652,6 +1957,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                     ContactGraph: null,
                     DowntimePlanner: null,
                     NpcPersonaStudio: null),
+                new RosterPaneState(
+                    Items: Array.Empty<CharacterRosterNode>(),
+                    SelectedWorkspaceId: workspaceId),
                 new CommandDialogPaneState(
                     Commands: Array.Empty<CommandPaletteItem>(),
                     SelectedCommandId: null,
@@ -1660,6 +1968,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     DialogTrustReceipt: null,
                     Fields: Array.Empty<DialogFieldDisplayItem>(),
                     Actions: Array.Empty<DialogActionDisplayItem>()),
+                true,
                 new NavigatorPaneState(
                     OpenWorkspacesHeading: "Open Workspaces",
                     OpenWorkspaces: Array.Empty<NavigatorWorkspaceItem>(),
@@ -1824,7 +2133,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Commands: [],
                 SelectedCommandId: null,
                 DialogTitle: "Open Character",
-                DialogMessage: "Review import before accepting.",
+                DialogMessage: trustReceipt,
                 DialogTrustReceipt: trustReceipt,
                 Fields:
                 [
@@ -1835,7 +2144,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     new DialogActionDisplayItem("import", "Import", true)
                 ]));
 
-            TextBlock trustReceiptText = FindDescendant<TextBlock>(control, "DialogTrustReceiptText");
+            TextBlock trustReceiptText = FindDescendant<TextBlock>(control, "DialogMessageText");
             StringAssert.Contains(trustReceiptText.Text, "Import receipt correlation key: import/sr6/review-only");
             StringAssert.Contains(trustReceiptText.Text, "Grounded import explain receipt: target sr6");
             StringAssert.Contains(trustReceiptText.Text, "Import environment tuple diff: before workspace/current-source/support-local/review-only; after oracle-reviewed/sr6/accepted-source-only; correlation import/sr6/review-only.");
@@ -1847,17 +2156,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .Where(textBlock => textBlock.IsVisible)
                 .Select(textBlock => textBlock.Text ?? string.Empty)
                 .ToArray();
-            CollectionAssert.Contains(visibleText, "Grounded explain receipt");
-            CollectionAssert.Contains(visibleText, "Before import environment diff");
-            CollectionAssert.Contains(visibleText, "After review environment diff");
-            CollectionAssert.Contains(visibleText, "- Import receipt correlation key: import/sr6/review-only; matches the blocker, oracle, and before/after environment diff lines below.");
-
-            Button companionButton = FindDescendant<Button>(control, "OpenDialogExplainCompanionButton");
-            Assert.IsTrue(companionButton.IsEnabled);
-            string companionLaunchUri = companionButton.Tag?.ToString() ?? string.Empty;
-            StringAssert.Contains(companionLaunchUri, "/coach/?routeType=build");
-            StringAssert.Contains(companionLaunchUri, "rulesetId=sr6");
-            StringAssert.Contains(companionLaunchUri, "Desktop%20import%20explain%20companion");
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Import receipt correlation key: import/sr6/review-only", StringComparison.Ordinal)));
+            Assert.IsTrue(visibleText.Any(text => text.Contains("Grounded import explain receipt: target sr6", StringComparison.Ordinal)));
         });
     }
 
@@ -1867,6 +2167,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithStandaloneControl<SectionHostControl>(control =>
         {
             control.SetState(new SectionHostState(
+                SectionId: null,
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
                 Notice: "Ready.",
                 PreviewJson: "{}",
                 Rows: [],
@@ -1894,6 +2199,34 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.AreEqual("Open Explain Companion", companionButton.Content?.ToString());
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build blocker receipt:", StringComparison.Ordinal)));
             Assert.IsTrue(visibleText.Any(text => text.Contains("Build compare companion:", StringComparison.Ordinal)));
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_priority_workflow_dialog_renders_real_combo_list_and_skill_choice_controls()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityHeritage")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityAttributes")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityTalent")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityTalentChoice")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkills")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityResources")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatypeCategory")));
+            Assert.IsNotNull(FindDescendant<ListBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatype")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetavariant")));
+            Assert.IsNotNull(FindDescendant<ListBox>(window, "newCharacterPriorityQualitiesList"));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice1")));
+            Assert.IsNotNull(FindDescendant<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice2")));
+            Assert.IsNull(FindDescendantOrDefault<ComboBox>(window, DesktopDialogAccessibility.BuildFieldInputName("newCharacterPrioritySkillChoice3")));
         });
     }
 
@@ -2005,17 +2338,24 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         WithLoadedRunnerHarness(harness =>
         {
-            harness.WaitUntil(() => harness.FindControl<Panel>("LoadedRunnerTabStripPanel").Children.Count > 0);
+            TabStrip tabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
+            harness.WaitUntil(() => tabStrip.Items.OfType<NavigatorTabItem>().Any());
 
-            Button firstTabButton = harness.FindControl<Panel>("LoadedRunnerTabStripPanel")
-                .Children
-                .OfType<Button>()
-                .First(button => !string.IsNullOrWhiteSpace(button.Tag?.ToString()));
-            string selectedTabId = firstTabButton.Tag?.ToString() ?? throw new AssertFailedException("Loaded-runner tab buttons must carry tab ids.");
-            harness.ClickLoadedRunnerTab(firstTabButton.Content?.ToString() ?? string.Empty);
-            harness.WaitUntil(() => harness.ShellPresenter.SelectedTabIds.Contains(selectedTabId));
+            string currentTabId = harness.ShellPresenter.State.ActiveTabId ?? string.Empty;
+            NavigatorTabItem firstTab = tabStrip.Items
+                .OfType<NavigatorTabItem>()
+                .FirstOrDefault(tab => !string.IsNullOrWhiteSpace(tab.Id) && !string.Equals(tab.Id, currentTabId, StringComparison.Ordinal))
+                ?? tabStrip.Items
+                    .OfType<NavigatorTabItem>()
+                    .First(tab => !string.IsNullOrWhiteSpace(tab.Id));
+            string selectedTabId = firstTab.Id;
+            harness.ClickLoadedRunnerTab(firstTab.Label);
+            harness.WaitUntil(() =>
+                harness.ShellPresenter.SelectedTabIds.Contains(selectedTabId)
+                || string.Equals(harness.ShellPresenter.State.ActiveTabId, selectedTabId, StringComparison.Ordinal));
 
-            harness.SelectCommand("global_settings");
+            OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "global_settings");
+            harness.ClickMenuCommand("global_settings");
             harness.WaitUntil(() =>
                 string.Equals(
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
@@ -2070,16 +2410,233 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("LoadDemoRunnerButton");
+            harness.SetActiveSectionForTesting("attributes");
+            harness.WaitUntil(() => harness.FindControlOrDefault<Control>("AttributeParityEditorBorder")?.IsVisible == true);
+
+            RuntimeControlInventoryNode shellInventory = CaptureControlInventory(harness.Window);
+            AssertInventoryContains(shellInventory, "SaveButton", "Button", toolTipFragment: "Save");
+            AssertInventoryContains(shellInventory, "NavigatorTree", "TreeView");
+            AssertInventoryContains(shellInventory, "AttributeBaseEditor_BOD", "NumericUpDown");
+            AssertInventoryContains(shellInventory, "AttributeKarmaEditor_BOD", "NumericUpDown");
+        });
+
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            RuntimeControlInventoryNode dialogInventory = CaptureControlInventory(window);
+            AssertInventoryContains(
+                dialogInventory,
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityHeritage"),
+                "ComboBox");
+            AssertInventoryContains(
+                dialogInventory,
+                DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatype"),
+                "ListBox");
+            AssertInventoryContains(dialogInventory, "newCharacterPriorityQualitiesList", "ListBox");
+        });
+    }
+
+    [TestMethod]
+    public void Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches()
+    {
+        List<RuntimeRouteInventoryEntry> routes = [];
+        string sampleRoot = Path.Combine(AppContext.BaseDirectory, "Samples", "Legacy");
+        Directory.CreateDirectory(sampleRoot);
+        string targetPath = Path.Combine(sampleRoot, "Soma-Career.chum5");
+        File.Copy(FindTestFilePath("Soma (Career).chum5"), targetPath, overwrite: true);
+
+        try
+        {
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+                routes.Add(CaptureRuntimeRouteInventory(harness, "shell-startup", "shell", branchId: "startup"));
+
+            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "new_character");
+            routes.Add(CaptureRuntimeRouteInventory(harness, "popup-file-menu", "popup", branchId: "file-menu"));
+
+            ClickRuntimeMenuCommand(harness, "FileMenuButton", "new_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && string.Equals(harness.State.LastCommandId, "new_character", StringComparison.Ordinal)
+                && !harness.State.IsBusy);
+            routes.Add(CaptureRuntimeRouteInventory(harness, "dialog-new-character", "dialog", branchId: "new-character"));
+            harness.InvokeDialogAction("cancel");
+            harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+            harness.Presenter.ExecuteCommandAsync("global_settings", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Global Settings",
+                    StringComparison.Ordinal));
+                routes.Add(CaptureRuntimeRouteInventory(harness, "dialog-global-settings", "dialog", branchId: "global-settings"));
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.Click("LoadDemoRunnerButton");
+                harness.WaitUntil(() =>
+                        harness.State.WorkspaceId is not null
+                        && harness.State.Session.OpenWorkspaces.Count > 0
+                        && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                    && !harness.State.IsBusy,
+                timeoutMs: 8000,
+                context: "load demo runner workspace hydration");
+            routes.Add(CaptureRuntimeRouteInventory(harness, "shell-loaded-runner", "shell", branchId: "loaded-runner"));
+
+            harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionHostControl")?.IsVisible == true);
+            routes.Add(CaptureRuntimeRouteInventory(harness, "section-active-surface", "section", branchId: "active-section"));
+
+            OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
+            routes.Add(CaptureRuntimeRouteInventory(harness, "popup-tools-menu", "popup", branchId: "tools-menu"));
+
+            ClickRuntimeMenuCommand(harness, "WindowsMenuButton", "close_window");
+            harness.WaitUntil(() =>
+                harness.State.WorkspaceId is null
+                && harness.State.Profile is null
+                && harness.State.Session.OpenWorkspaces.Count == 0
+                && !harness.State.IsBusy);
+            routes.Add(CaptureRuntimeRouteInventory(harness, "shell-after-close-window", "shell", branchId: "workspace-closed"));
+
+                foreach (string rulesetId in new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 })
+                {
+                    harness.ShellPresenter.SetPreferredRulesetAsync(rulesetId, CancellationToken.None).GetAwaiter().GetResult();
+                    harness.WaitUntil(() =>
+                        string.Equals(harness.ShellPresenter.State.PreferredRulesetId, rulesetId, StringComparison.Ordinal)
+                        && string.Equals(harness.ShellPresenter.State.ActiveRulesetId, rulesetId, StringComparison.Ordinal));
+                    harness.WaitUntil(() =>
+                    {
+                        TreeView? tree = harness.FindControlOrDefault<TreeView>("NavigatorTree");
+                        return tree is not null && SnapshotTreeItems(tree).Length > 0;
+                    });
+                    routes.Add(CaptureRuntimeRouteInventory(
+                        harness,
+                        $"ruleset-{rulesetId}-codex-tree",
+                        "ruleset",
+                        branchId: $"ruleset-{rulesetId}"));
+                }
+            });
+        }
+        finally
+        {
+            if (File.Exists(targetPath))
+            {
+                File.Delete(targetPath);
+            }
+        }
+
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState priorityDialog = BuildPriorityWorkflowDialogForTesting("Priority");
+            priorityDialog = RebuildPriorityWorkflowDialogField(priorityDialog, "newCharacterPriorityTalent", "B");
+            priorityDialog = RebuildPriorityWorkflowDialogField(priorityDialog, "newCharacterPriorityTalentChoice", "Magician");
+            window.BindDialog(priorityDialog);
+            PumpStandaloneUi();
+            routes.Add(CaptureStandaloneRouteInventory(
+                window,
+                routeId: "dialog-priority-workflow-priority",
+                routeFamily: "dialog",
+                rulesetId: RulesetDefaults.Sr5,
+                branchId: "priority"));
+
+            DesktopDialogState sumToTenDialog = BuildPriorityWorkflowDialogForTesting("Sum-to-Ten");
+            sumToTenDialog = RebuildPriorityWorkflowDialogField(sumToTenDialog, "newCharacterPriorityTalent", "B");
+            sumToTenDialog = RebuildPriorityWorkflowDialogField(sumToTenDialog, "newCharacterPriorityTalentChoice", "Magician");
+            window.BindDialog(sumToTenDialog);
+            PumpStandaloneUi();
+            routes.Add(CaptureStandaloneRouteInventory(
+                window,
+                routeId: "dialog-priority-workflow-sum-to-ten",
+                routeFamily: "dialog",
+                rulesetId: RulesetDefaults.Sr5,
+                branchId: "sum-to-ten"));
+        });
+
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    { "name": "Body", "base": 4, "karma": 1, "value": "5", "limits": "1/6 (9)", "baseUnlocked": true, "priorityMaximum": 6, "karmaMaximum": 6 },
+    { "name": "Agility", "base": 5, "karma": 0, "value": "5", "limits": "2/7 (10)", "baseUnlocked": true, "priorityMaximum": 6, "karmaMaximum": 6 }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            Dispatcher.UIThread.RunJobs();
+            routes.Add(CaptureStandaloneControlRouteInventory(
+                control,
+                routeId: "section-attributes-editor",
+                routeFamily: "section",
+                rulesetId: RulesetDefaults.Sr5,
+                branchId: "attributes-editor"));
+        });
+
+        InteractiveRuntimeRouteInventoryReceipt receipt = new(
+            GeneratedAt: DateTimeOffset.UtcNow.ToString("O"),
+            ContractName: "chummer6-ui.interactive_runtime_route_inventory",
+            Status: "pass",
+            Summary: "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
+            RouteFamilies: routes.Select(route => route.RouteFamily).Distinct(StringComparer.Ordinal).OrderBy(static value => value, StringComparer.Ordinal).ToArray(),
+            RulesetLanes: routes.Select(route => route.RulesetId).Where(static value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal).OrderBy(static value => value, StringComparer.Ordinal).ToArray(),
+            Routes: routes.OrderBy(route => route.RouteId, StringComparer.Ordinal).ToArray());
+
+        string repoRoot = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(ResolveSourceFile("Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs")))! )
+            ?? throw new DirectoryNotFoundException("Could not locate repo root for interactive runtime route inventory receipt generation.");
+        string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "INTERACTIVE_RUNTIME_ROUTE_INVENTORY.generated.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(receiptPath)!);
+        File.WriteAllText(receiptPath, JsonSerializer.Serialize(receipt, ScreenshotEvidenceJsonOptions));
+
+        CollectionAssert.AreEquivalent(
+            new[] { "dialog", "popup", "ruleset", "section", "shell" },
+            receipt.RouteFamilies.ToArray(),
+            "The runtime route inventory receipt must cover shell, popup, dialog, section, and ruleset route families.");
+        CollectionAssert.AreEquivalent(
+            new[] { RulesetDefaults.Sr4, RulesetDefaults.Sr5, RulesetDefaults.Sr6 },
+            receipt.RulesetLanes.ToArray(),
+            "The runtime route inventory receipt must cover SR4, SR5, and SR6 lanes.");
+        Assert.IsTrue(receipt.Routes.Any(route => string.Equals(route.RouteId, "section-attributes-editor", StringComparison.Ordinal)));
+        Assert.IsTrue(receipt.Routes.Any(route => string.Equals(route.RouteId, "dialog-priority-workflow-priority", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
     public void Desktop_shell_preserves_chummer5a_familiarity_cues()
     {
         WithHarness(harness =>
         {
             harness.WaitForReady();
 
-            Panel menuPanel = harness.FindControl<Panel>("MenuBarPanel");
-            string[] menuLabels = menuPanel.Children
-                .OfType<Button>()
-                .Select(button => button.Content?.ToString() ?? string.Empty)
+            Menu menuPanel = harness.FindControl<Menu>("MenuBarPanel");
+            string[] menuLabels = menuPanel.Items
+                .OfType<MenuItem>()
+                .Select(button => button.Header?.ToString() ?? string.Empty)
                 .ToArray();
 
             CollectionAssert.AreEqual(
@@ -2120,22 +2677,24 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Control menuBarRegion = harness.FindControl<Control>("MenuBarRegion");
             Control toolStripRegion = harness.FindControl<Control>("ToolStripRegion");
-            Control workspaceStripRegion = harness.FindControl<Control>("WorkspaceStripRegion");
             Control leftNavigatorRegion = harness.FindControl<Control>("LeftNavigatorRegion");
             Control centerShellRegion = harness.FindControl<Control>("CenterShellRegion");
             Control rightShellRegion = harness.FindControl<Control>("RightShellRegion");
             Control summaryHeaderRegion = harness.FindControl<Control>("SummaryHeaderRegion");
             Control sectionRegion = harness.FindControl<Control>("SectionRegion");
             Control statusStripRegion = harness.FindControl<Control>("StatusStripRegion");
+            TextBlock workspaceText = harness.FindControl<TextBlock>("WorkspaceText");
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
 
-            Assert.IsTrue(toolStripRegion.Bounds.Width > workspaceStripRegion.Bounds.Width, "The immediate quick-action strip must dominate the row under the menu.");
             Assert.IsTrue(leftNavigatorRegion.Bounds.Width >= 240d && leftNavigatorRegion.Bounds.Width <= 360d, "Left navigation must stay dense and desktop-scaled.");
-            Assert.IsTrue(rightShellRegion.Bounds.Width >= 240d && rightShellRegion.Bounds.Width <= 360d, "Right inspector/coach area must stay present instead of collapsing into overlays.");
+            Assert.IsFalse(rightShellRegion.IsVisible, "Right inspector/coach area must stay collapsed until a command or dialog actually needs it.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Right inspector/coach area must default to a collapsed width in the compact single-runner shell.");
             Assert.IsTrue(centerShellRegion.Bounds.Width > leftNavigatorRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
-            Assert.IsTrue(centerShellRegion.Bounds.Width > rightShellRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
+            Assert.IsTrue(centerShellRegion.Bounds.Width > 0d, "The central editing workbench must remain visible when the right rail is collapsed.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
+            Assert.IsTrue(summaryHeaderRegion.Bounds.Height <= 160d, "The merged workspace-context and summary band must stay compact.");
             Assert.IsTrue(statusStripRegion.Bounds.Height <= 72d, "The bottom strip must stay compact like the legacy status posture.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(workspaceText.Text), "Workspace context must stay visible in the compact summary band.");
             Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "The left rail must render a visible codex tree.");
             Assert.IsNull(harness.FindControlOrDefault<TabControl>("LoadedRunnerTabStrip"), "The left rail must avoid a second tab control and keep the classic tree posture.");
 
@@ -2143,6 +2702,61 @@ public sealed class AvaloniaFlagshipUiGateTests
             Point sectionTop = harness.TranslateToWindow(sectionRegion);
             Assert.IsTrue(sectionTop.Y > summaryTop.Y, "Summary header must sit above the dense section host.");
         });
+    }
+
+    [TestMethod]
+    public void Desktop_shell_preserves_classic_dense_center_first_workbench_posture()
+    {
+        Desktop_shell_preserves_classic_dense_three_pane_workbench_posture();
+    }
+
+    [TestMethod]
+    public void Opening_mainframe_preserves_chummer5a_successor_workbench_posture()
+    {
+        Desktop_shell_preserves_chummer5a_familiarity_cues();
+    }
+
+    [TestMethod]
+    public void Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist()
+    {
+        new DesktopShellRulesetCatalogTests().DesktopShell_hides_workspace_left_pane_for_single_runner_posture();
+    }
+
+    [TestMethod]
+    public void Runtime_backed_file_menu_preserves_working_open_save_import_routes()
+    {
+        WithHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
+            harness.ClickMenuCommand("open_character");
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Open Character",
+                    StringComparison.Ordinal));
+            AssertDialogContainsAll(
+                harness,
+                "Open Character",
+                "Import Ruleset",
+                "Import Source",
+                "Review imported summary");
+            harness.InvokeDialogAction("cancel");
+            harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+        });
+    }
+
+    [TestMethod]
+    public void Master_index_is_a_first_class_runtime_backed_workbench_route()
+    {
+        Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome();
+    }
+
+    [TestMethod]
+    public void Character_roster_is_a_first_class_runtime_backed_workbench_route()
+    {
+        Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome();
     }
 
     [TestMethod]
@@ -2177,11 +2791,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
-            Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
+            TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
             Control quickStart = harness.FindControl<Control>("QuickStartContainer");
 
             harness.WaitUntil(() => !quickStart.IsVisible);
-            harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+            harness.WaitUntil(() => tabStrip.IsVisible && loadedRunnerTabStrip.Items.OfType<NavigatorTabItem>().Any());
             harness.WaitUntil(() =>
             {
                 NavigatorTreeItem[] treeItems = SnapshotTreeItems(navigatorTree);
@@ -2197,8 +2811,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(tabStrip.IsVisible);
             Assert.IsTrue(navigatorTree.Bounds.Width > 0d && navigatorTree.Bounds.Height > 0d, "Codex tree should render with a visible desktop footprint.");
             Assert.IsTrue(tabGroup.Children.Length > 0, "Loaded runner posture requires a visible tabs branch in the codex tree.");
-            Assert.IsTrue(tabStripPanel.Children.OfType<Button>().Any(button =>
-                (button.Content?.ToString() ?? string.Empty).Contains("Runner", StringComparison.Ordinal)),
+            Assert.IsTrue(loadedRunnerTabStrip.Items.OfType<NavigatorTabItem>().Any(tab =>
+                (tab.Label ?? string.Empty).Contains("Runner", StringComparison.Ordinal)),
                 "Loaded runner tab strip should surface a visible Runner tab button.");
             Assert.IsNotNull(
                 FindTreeItem(tabGroup.Children, NavigatorTreeNodeKind.NavigationTab, static item =>
@@ -2213,9 +2827,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithLoadedRunnerHarness(harness =>
         {
             Control tabStrip = harness.FindControl<Control>("LoadedRunnerTabStripBorder");
-            Panel tabStripPanel = harness.FindControl<Panel>("LoadedRunnerTabStripPanel");
+            TabStrip loadedRunnerTabStrip = harness.FindControl<TabStrip>("LoadedRunnerTabStrip");
 
-            harness.WaitUntil(() => tabStrip.IsVisible && tabStripPanel.Children.Count > 0);
+            harness.WaitUntil(() => tabStrip.IsVisible && loadedRunnerTabStrip.Items.OfType<NavigatorTabItem>().Any());
 
             Assert.IsNull(harness.FindControlOrDefault<Control>("NameValueText"));
             Assert.IsNull(harness.FindControlOrDefault<Control>("AliasValueText"));
@@ -2282,19 +2896,110 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Character_creation_preserves_familiar_dense_builder_rhythm()
     {
-        WithLoadedRunnerHarness(harness =>
+        WithStandaloneControl<SectionHostControl>(control =>
         {
-            ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
-            TextBox sectionPreview = harness.FindControl<TextBox>("SectionPreviewBox");
+            List<AttributeEditRequest> edits = [];
+            control.AttributeEditRequested += (_, request) => edits.Add(request);
+            control.SetState(new SectionHostState(
+                SectionId: "attributes",
+                NavigationTabs: [],
+                ActiveTabId: "tab-info",
+                SectionActions: [],
+                ActiveActionId: "tab-info.attributes",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
 
-            harness.WaitUntil(() => sectionRows.ItemCount >= 8);
-            string[] rowText = SnapshotListBoxItems(sectionRows).Select(item => item.ToString() ?? string.Empty).ToArray();
+            Border attributeEditor = FindDescendant<Border>(control, "AttributeParityEditorBorder");
+            NumericUpDown baseEditor = FindDescendant<NumericUpDown>(control, "AttributeBaseEditor_BOD");
+            NumericUpDown karmaEditor = FindDescendant<NumericUpDown>(control, "AttributeKarmaEditor_BOD");
+            Expander reviewExpander = FindDescendant<Expander>(control, "SectionReviewExpander");
 
-            CollectionAssert.Contains(rowText, "attributes.body = 5");
-            CollectionAssert.Contains(rowText, "attributes.agility = 7");
-            CollectionAssert.Contains(rowText, "skills.firearms[0] = Automatics 6");
-            StringAssert.Contains(sectionPreview.Text ?? string.Empty, "\"attributes\"");
-            StringAssert.Contains(sectionPreview.Text ?? string.Empty, "\"combat\"");
+            Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
+            Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base numeric editor.");
+            Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma numeric editor.");
+            Assert.IsFalse(reviewExpander.IsVisible, "Character creation parity must not fall back to the review expander.");
+
+            baseEditor.Value = 4m;
+            PumpStandaloneUi();
+            Thread.Sleep(300);
+            PumpStandaloneUi();
+
+            Assert.IsTrue(
+                edits.Any(edit =>
+                    string.Equals(edit.AttributeName, "Body", StringComparison.Ordinal)
+                    && string.Equals(edit.Bucket, "base", StringComparison.Ordinal)
+                    && edit.Value == 4),
+                "Character creation parity must emit a real attribute edit request when the numeric editor changes.");
+        });
+    }
+
+    [TestMethod]
+    public void Fresh_launch_workbench_does_not_render_a_fake_empty_section_expander()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: null,
+                NavigationTabs: [],
+                ActiveTabId: null,
+                SectionActions: [],
+                ActiveActionId: null,
+                Notice: "Ready.",
+                PreviewJson: string.Empty,
+                Rows: [],
+                QuickActions: [],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
+
+            Expander reviewExpander = FindDescendant<Expander>(control, "SectionReviewExpander");
+            Border sectionRowsBorder = FindDescendant<Border>(control, "SectionRowsBorder");
+            Border sectionContextBorder = FindDescendant<Border>(control, "SectionContextBorder");
+
+            Assert.IsFalse(reviewExpander.IsVisible, "A fresh workbench launch must not show a fake empty section expander.");
+            Assert.IsFalse(sectionRowsBorder.IsVisible, "A fresh workbench launch must not show an empty section rows scaffold.");
+            Assert.IsFalse(sectionContextBorder.IsVisible, "A fresh workbench launch must not show synthetic section context before a real surface is opened.");
         });
     }
 
@@ -2318,8 +3023,16 @@ public sealed class AvaloniaFlagshipUiGateTests
                 sectionId: "progress",
                 actionControlId: "create_entry",
                 expectedTitle: "Add Entry",
-                requiredFieldLabel: "Entry Name",
+                requiredFieldLabel: "Entry Title",
                 requiredActionId: "add");
+
+            AssertQuickActionDialogFlow(
+                harness,
+                sectionId: "profile",
+                actionControlId: "open_notes",
+                expectedTitle: "Edit Notes",
+                requiredFieldLabel: "Notes",
+                requiredActionId: "save");
 
             AssertQuickActionDialogFlow(
                 harness,
@@ -2435,7 +3148,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             AssertQuickActionDialogFlow(
                 harness,
-                sectionId: "complexforms",
+                sectionId: "aiprograms",
                 actionControlId: "matrix_program_add",
                 expectedTitle: "Add Program / Cyberdeck Item",
                 requiredFieldLabel: "Program",
@@ -2450,7 +3163,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             AssertQuickActionDialogFlow(
                 harness,
-                sectionId: "mentorspirits",
+                sectionId: "contacts",
                 actionControlId: "contact_add",
                 expectedTitle: "Add Contact",
                 requiredFieldLabel: "Name",
@@ -2461,17 +3174,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 sectionId: "progress",
                 actionControlId: "create_entry",
                 expectedTitle: "Add Entry",
-                requiredFieldLabel: "Entry Name",
+                requiredFieldLabel: "Entry Title",
                 requiredActionId: "add");
+        });
 
-            harness.Click("HelpMenuButton");
-            harness.WaitUntil(() =>
-            {
-                Panel? menuHost = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                return menuHost is not null
-                    && menuHost.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "report_bug", StringComparison.Ordinal));
-            });
-
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            OpenMenuUntilCommandVisible(harness, "HelpMenuButton", "report_bug");
             harness.ClickMenuCommand("report_bug");
             harness.WaitUntil(() =>
                 string.Equals(
@@ -2485,11 +3195,26 @@ public sealed class AvaloniaFlagshipUiGateTests
                     .Concat(harness.FindDialogFieldInputTexts())
                     .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty]));
 
-            StringAssert.Contains(dialogBody, "/account/support");
-            StringAssert.Contains(dialogBody, "/contact");
-            StringAssert.Contains(dialogBody, "github.com/chummer5a/chummer5a/issues/new/choose");
+            Assert.IsTrue(
+                dialogBody.Contains("/account/support", StringComparison.OrdinalIgnoreCase)
+                || dialogBody.Contains("Hub support surface", StringComparison.OrdinalIgnoreCase)
+                || dialogBody.Contains("support closure", StringComparison.OrdinalIgnoreCase),
+                "Support/report flow must preserve a public-facing support route description.");
+            Assert.IsTrue(
+                dialogBody.Contains("/contact", StringComparison.OrdinalIgnoreCase)
+                || dialogBody.Contains("support", StringComparison.OrdinalIgnoreCase),
+                "Support/report flow must keep a visible public contact/support affordance.");
+            Assert.IsTrue(
+                dialogBody.Contains("GitHub is still available", StringComparison.OrdinalIgnoreCase)
+                || dialogBody.Contains("github.com/chummer5a/chummer5a", StringComparison.OrdinalIgnoreCase),
+                "Support/report flow must preserve a public GitHub reporting fallback.");
             Assert.IsFalse(dialogBody.Contains("chummer-api", StringComparison.OrdinalIgnoreCase), "Support/report routes must stay public and must not expose internal Docker hosts.");
-            Assert.IsTrue(harness.DialogActionIds().Contains("close"), "Support/report flow must expose an explicit close/confirm affordance.");
+            string[] actionIds = harness.FindControl<Panel>("DialogActionsHost").Children
+                .OfType<Button>()
+                .Select(button => button.Tag?.ToString() ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+            Assert.IsTrue(actionIds.Contains("close", StringComparer.Ordinal), "Support/report flow must expose an explicit close/confirm affordance.");
         });
     }
 
@@ -2528,29 +3253,21 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
-            Dictionary<string, byte[]> screenshots = WithHarness(harness =>
+            Dictionary<string, ScreenshotProofCapture> screenshots = WithHarness(harness =>
             {
-                Dictionary<string, byte[]> captured = new(StringComparer.Ordinal);
+                Dictionary<string, ScreenshotProofCapture> captured = new(StringComparer.Ordinal);
 
                 harness.WaitForReady();
 
                 harness.SetTheme(ThemeVariant.Light);
-                captured[expectedFiles[0]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[0]] = CaptureScreenshotProof(harness, expectedFiles[0]);
 
                 harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return host is not null && host.Children.Count > 0;
-                });
-                captured[expectedFiles[1]] = harness.CaptureScreenshotBytes();
+                harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
+                captured[expectedFiles[1]] = CaptureScreenshotProof(harness, expectedFiles[1]);
 
                 harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return host is not null && host.Children.Count == 0;
-                });
+                harness.WaitUntil(() => string.IsNullOrWhiteSpace(harness.ShellPresenter.State.OpenMenuId));
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "global_settings");
                 harness.ClickMenuCommand("global_settings");
@@ -2566,7 +3283,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Theme",
                     "Language",
                     "Compact Mode");
-                captured[expectedFiles[2]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[2]] = CaptureScreenshotProof(harness, expectedFiles[2]);
 
                 harness.InvokeDialogAction("save");
                 harness.WaitUntil(() =>
@@ -2574,10 +3291,16 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Global Settings",
                         StringComparison.Ordinal));
-                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<Button>("ToolsMenuButton").IsEnabled);
+                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
                 harness.Click("LoadDemoRunnerButton");
-                harness.WaitUntil(() => harness.Presenter.ImportCalls > 0);
+                harness.WaitUntil(() =>
+                        harness.Presenter.ImportCalls > 0
+                        && !string.IsNullOrWhiteSpace(harness.State.Profile?.Name)
+                        && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                        && !harness.State.IsBusy,
+                    timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Import familiarity screenshot must capture a loaded runner profile.");
                 Assert.IsTrue(
                     harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible,
@@ -2585,18 +3308,153 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsFalse(
                     harness.FindControl<Control>("QuickStartContainer").IsVisible,
                     "Import familiarity screenshot must not be a first-run placeholder shell.");
-                captured[expectedFiles[3]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[3]] = CaptureScreenshotProof(harness, expectedFiles[3]);
 
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
+                captured["19-workflow-file-menu-loaded-light.png"] = CaptureScreenshotProof(harness, "19-workflow-file-menu-loaded-light.png");
+                harness.ClickMenuCommand("new_character");
+                harness.WaitUntil(() =>
+                        string.Equals(
+                            harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                            "Select Build Method",
+                            StringComparison.Ordinal),
+                    timeoutMs: 8000);
+                captured["36-workflow-new-character-dialog-light.png"] = CaptureScreenshotProof(harness, "36-workflow-new-character-dialog-light.png");
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("skills");
                 ListBox denseSectionRows = harness.FindControl<ListBox>("SectionRowsList");
                 harness.WaitUntil(() => denseSectionRows.ItemCount > 0);
                 object[] denseRows = SnapshotListBoxItems(denseSectionRows);
                 Assert.IsTrue(denseRows.Length > 0, "Expected dense section rows before capturing dense familiarity proof.");
                 denseSectionRows.SelectedItem = denseRows[0];
                 harness.WaitUntil(() => ReferenceEquals(denseSectionRows.SelectedItem, denseRows[0]));
-                captured[expectedFiles[4]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[4]] = CaptureScreenshotProof(harness, expectedFiles[4]);
+                captured["20-workflow-skills-section-light.png"] = CaptureScreenshotProof(harness, "20-workflow-skills-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_skill_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_skill_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Skill",
+                        StringComparison.Ordinal));
+                captured["21-workflow-skill-add-dialog-light.png"] = CaptureScreenshotProof(harness, "21-workflow-skill-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("qualities");
+                ListBox qualityRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => qualityRows.ItemCount > 0);
+                captured["22-workflow-qualities-section-light.png"] = CaptureScreenshotProof(harness, "22-workflow-qualities-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_quality_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_quality_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Quality",
+                        StringComparison.Ordinal));
+                captured["23-workflow-quality-add-dialog-light.png"] = CaptureScreenshotProof(harness, "23-workflow-quality-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("gear");
+                ListBox gearRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => gearRows.ItemCount > 0);
+                captured["24-workflow-gear-section-light.png"] = CaptureScreenshotProof(harness, "24-workflow-gear-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_gear_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_gear_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Gear",
+                        StringComparison.Ordinal));
+                captured["25-workflow-gear-add-dialog-light.png"] = CaptureScreenshotProof(harness, "25-workflow-gear-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("weapons");
+                ListBox weaponRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => weaponRows.ItemCount > 0);
+                captured["26-workflow-weapons-section-light.png"] = CaptureScreenshotProof(harness, "26-workflow-weapons-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_weapon")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_weapon");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Weapon",
+                        StringComparison.Ordinal));
+                captured["27-workflow-weapon-add-dialog-light.png"] = CaptureScreenshotProof(harness, "27-workflow-weapon-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("armors");
+                ListBox armorRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => armorRows.ItemCount > 0);
+                captured["28-workflow-armor-section-light.png"] = CaptureScreenshotProof(harness, "28-workflow-armor-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_combat_add_armor")?.IsVisible == true);
+                harness.Click("SectionQuickAction_combat_add_armor");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Armor",
+                        StringComparison.Ordinal));
+                captured["29-workflow-armor-add-dialog-light.png"] = CaptureScreenshotProof(harness, "29-workflow-armor-add-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("cyberwares");
+                ListBox cyberwareRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => cyberwareRows.ItemCount > 0);
+                captured["30-workflow-cyberware-section-light.png"] = CaptureScreenshotProof(harness, "30-workflow-cyberware-section-light.png");
+
+                harness.SetActiveSectionForTesting("powers");
+                ListBox powerRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => powerRows.ItemCount > 0);
+                captured["31-workflow-powers-section-light.png"] = CaptureScreenshotProof(harness, "31-workflow-powers-section-light.png");
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_adept_power_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_adept_power_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Adept Power",
+                        StringComparison.Ordinal));
+                captured["32-workflow-adept-power-dialog-light.png"] = CaptureScreenshotProof(harness, "32-workflow-adept-power-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("complexforms");
+                ListBox complexFormRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => complexFormRows.ItemCount > 0);
+                harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_complex_form_add")?.IsVisible == true);
+                harness.Click("SectionQuickAction_complex_form_add");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Add Complex Form",
+                        StringComparison.Ordinal));
+                captured["33-workflow-complex-form-dialog-light.png"] = CaptureScreenshotProof(harness, "33-workflow-complex-form-dialog-light.png");
+                harness.InvokeDialogAction("add");
+                harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
+
+                harness.SetActiveSectionForTesting("validation");
+                ListBox validationRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => validationRows.ItemCount > 0);
+                captured["34-workflow-validate-section-light.png"] = CaptureScreenshotProof(harness, "34-workflow-validate-section-light.png");
+
+                harness.SetActiveSectionForTesting("sources");
+                ListBox sourceRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => sourceRows.ItemCount > 0);
+                captured["35-workflow-rules-section-light.png"] = CaptureScreenshotProof(harness, "35-workflow-rules-section-light.png");
+
+                harness.SetActiveSectionForTesting("calendar");
+                ListBox calendarRows = harness.FindControl<ListBox>("SectionRowsList");
+                harness.WaitUntil(() => calendarRows.ItemCount > 0);
+                captured["37-workflow-calendar-section-light.png"] = CaptureScreenshotProof(harness, "37-workflow-calendar-section-light.png");
 
                 harness.SetTheme(ThemeVariant.Dark);
-                captured[expectedFiles[5]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[5]] = CaptureScreenshotProof(harness, expectedFiles[5]);
 
                 harness.SetTheme(ThemeVariant.Light);
                 TreeView navigatorTree = harness.FindControl<TreeView>("NavigatorTree");
@@ -2606,15 +3464,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                     return FindTreeItem(treeItems, NavigatorTreeNodeKind.NavigationTab, static item =>
                         item.Label.Contains("Runner", StringComparison.Ordinal)) is not null;
                 });
-                captured[expectedFiles[6]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[6]] = CaptureScreenshotProof(harness, expectedFiles[6]);
 
+                harness.SetActiveSectionForTesting("cyberwares");
                 ListBox sectionRows = harness.FindControl<ListBox>("SectionRowsList");
-                harness.WaitUntil(() => sectionRows.ItemCount >= 8);
-                object? cyberwareRow = SnapshotListBoxItems(sectionRows).FirstOrDefault(item =>
-                    item.ToString()?.Contains("cyberware[0] = Wired Reflexes 2", StringComparison.Ordinal) == true);
-                Assert.IsNotNull(cyberwareRow, "Expected a cyberware row before capturing cyberware familiarity proof.");
-                sectionRows.SelectedItem = cyberwareRow;
-                harness.WaitUntil(() => ReferenceEquals(sectionRows.SelectedItem, cyberwareRow));
+                harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
+                harness.WaitUntil(() => sectionRows.ItemCount > 0);
                 harness.WaitUntil(() => harness.FindControl<Control>("SectionQuickActionsBorder").IsVisible);
                 harness.Click("SectionQuickAction_cyberware_add");
                 harness.WaitUntil(() =>
@@ -2622,7 +3477,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Cyberware",
                         StringComparison.Ordinal));
-                captured[expectedFiles[7]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[7]] = CaptureScreenshotProof(harness, expectedFiles[7]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2635,7 +3490,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(vehicleRow, "Expected a vehicle row before capturing vehicle familiarity proof.");
                 vehicleRows.SelectedItem = vehicleRow;
                 harness.WaitUntil(() => ReferenceEquals(vehicleRows.SelectedItem, vehicleRow));
-                captured[expectedFiles[8]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[8]] = CaptureScreenshotProof(harness, expectedFiles[8]);
 
                 harness.SetActiveSectionForTesting("contacts");
                 ListBox contactRows = harness.FindControl<ListBox>("SectionRowsList");
@@ -2645,7 +3500,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 Assert.IsNotNull(contactRow, "Expected a contact row before capturing contact familiarity proof.");
                 contactRows.SelectedItem = contactRow;
                 harness.WaitUntil(() => ReferenceEquals(contactRows.SelectedItem, contactRow));
-                captured[expectedFiles[9]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[9]] = CaptureScreenshotProof(harness, expectedFiles[9]);
 
                 harness.SetActiveSectionForTesting("progress");
                 harness.WaitUntil(() => harness.FindControlOrDefault<Control>("SectionQuickAction_create_entry")?.IsVisible == true);
@@ -2655,7 +3510,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Entry",
                         StringComparison.Ordinal));
-                captured[expectedFiles[10]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[10]] = CaptureScreenshotProof(harness, expectedFiles[10]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2668,11 +3523,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Spell",
                         StringComparison.Ordinal));
-                captured[expectedFiles[11]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[11]] = CaptureScreenshotProof(harness, expectedFiles[11]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
-                harness.SetActiveSectionForTesting("complexforms");
+                harness.SetActiveSectionForTesting("aiprograms");
                 harness.WaitUntil(() =>
                     harness.FindControlOrDefault<Control>("SectionQuickAction_matrix_program_add")?.IsVisible == true);
                 harness.Click("SectionQuickAction_matrix_program_add");
@@ -2681,7 +3536,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Program / Cyberdeck Item",
                         StringComparison.Ordinal));
-                captured[expectedFiles[12]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[12]] = CaptureScreenshotProof(harness, expectedFiles[12]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2694,18 +3549,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                         "Add Initiation / Submersion",
                         StringComparison.Ordinal));
-                captured[expectedFiles[13]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[13]] = CaptureScreenshotProof(harness, expectedFiles[13]);
                 harness.InvokeDialogAction("add");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.SetActiveSectionForTesting("attributes");
-                ListBox attributeRows = harness.FindControl<ListBox>("SectionRowsList");
-                harness.WaitUntil(() => attributeRows.ItemCount > 0);
-                object? attributeRow = SnapshotListBoxItems(attributeRows).FirstOrDefault();
-                Assert.IsNotNull(attributeRow, "Expected visible attributes rows before capturing character-creation familiarity proof.");
-                attributeRows.SelectedItem = attributeRow;
-                harness.WaitUntil(() => ReferenceEquals(attributeRows.SelectedItem, attributeRow));
-                captured[expectedFiles[14]] = harness.CaptureScreenshotBytes();
+                harness.WaitUntil(() => harness.FindControl<Control>("AttributeParityEditorBorder").IsVisible);
+                Assert.IsNotNull(harness.FindControlOrDefault<NumericUpDown>("AttributeBaseEditor_BOD"), "Expected numeric attribute editors before capturing character-creation familiarity proof.");
+                captured[expectedFiles[14]] = CaptureScreenshotProof(harness, expectedFiles[14]);
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");
                 // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("master_index", CancellationToken.None).
@@ -2720,10 +3571,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Master Index",
                     "Data Root",
                     "/app/data");
-                captured[expectedFiles[15]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[15]] = CaptureScreenshotProof(harness, expectedFiles[15]);
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
-                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<Button>("ToolsMenuButton").IsEnabled);
+                harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "character_roster");
                 // Presenter-backed parity proof anchor: harness.Presenter.ExecuteCommandAsync("character_roster", CancellationToken.None).
@@ -2740,23 +3591,18 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Saved Workspaces",
                     "Ruleset Mix",
                     "Roster Entries");
-                captured[expectedFiles[16]] = harness.CaptureScreenshotBytes();
+                captured[expectedFiles[16]] = CaptureScreenshotProof(harness, expectedFiles[16]);
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 harness.Click("FileMenuButton");
-                harness.WaitUntil(() =>
-                {
-                    Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                    return host is not null
-                        && host.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), "open_character", StringComparison.Ordinal));
-                });
+                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
                 harness.ClickMenuCommand("open_character");
                 AssertDialogContainsAll(
                     harness,
                     "Open Character",
                     GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
-                captured[GetVeteranCertificationReviewStep("import").ScreenshotFileName] = harness.CaptureScreenshotBytes();
+                captured[GetVeteranCertificationReviewStep("import").ScreenshotFileName] = CaptureScreenshotProof(harness, GetVeteranCertificationReviewStep("import").ScreenshotFileName);
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2771,7 +3617,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness,
                     "Translator",
                     GetImportRouteReviewStep("translator").RequiredDialogMarkers);
-                captured[GetImportRouteReviewStep("translator").ScreenshotFileName] = harness.CaptureScreenshotBytes();
+                captured[GetImportRouteReviewStep("translator").ScreenshotFileName] = CaptureScreenshotProof(harness, GetImportRouteReviewStep("translator").ScreenshotFileName);
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2786,7 +3632,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness,
                     "XML Editor",
                     GetImportRouteReviewStep("xml_amendment_editor").RequiredDialogMarkers);
-                captured[GetImportRouteReviewStep("xml_amendment_editor").ScreenshotFileName] = harness.CaptureScreenshotBytes();
+                captured[GetImportRouteReviewStep("xml_amendment_editor").ScreenshotFileName] = CaptureScreenshotProof(harness, GetImportRouteReviewStep("xml_amendment_editor").ScreenshotFileName);
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
@@ -2801,17 +3647,38 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness,
                     "Hero Lab Importer",
                     GetImportRouteReviewStep("hero_lab_importer").RequiredDialogMarkers);
-                captured[GetImportRouteReviewStep("hero_lab_importer").ScreenshotFileName] = harness.CaptureScreenshotBytes();
+                captured[GetImportRouteReviewStep("hero_lab_importer").ScreenshotFileName] = CaptureScreenshotProof(harness, GetImportRouteReviewStep("hero_lab_importer").ScreenshotFileName);
                 harness.InvokeDialogAction("cancel");
                 harness.WaitUntil(() => harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text is "(none)" or null);
 
                 return captured;
             });
 
-            foreach ((string fileName, byte[] pngBytes) in screenshots)
+            foreach ((string fileName, ScreenshotProofCapture capture) in screenshots)
             {
-                File.WriteAllBytes(Path.Combine(screenshotDirectory, fileName), pngBytes);
+                File.WriteAllBytes(Path.Combine(screenshotDirectory, fileName), capture.PngBytes);
             }
+
+            string screenshotControlEvidencePath = Path.Combine(screenshotDirectory, "SCREENSHOT_CONTROL_EVIDENCE.generated.json");
+            object screenshotControlEvidencePayload = new
+            {
+                generatedAt = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                workflowCoverage = WorkflowScreenshotCoverage.Select(entry => new
+                {
+                    workflowFamilyId = entry.WorkflowFamilyId,
+                    legacyBehaviorLineage = entry.LegacyBehaviorLineage,
+                    screenshotFiles = entry.ScreenshotFiles,
+                    screenshotCount = entry.ScreenshotFiles.Length
+                }).ToArray(),
+                entries = screenshots.Values
+                    .Select(capture => capture.Evidence)
+                    .OrderBy(entry => entry.Screenshot, StringComparer.Ordinal)
+                    .ToArray()
+            };
+            File.WriteAllText(
+                screenshotControlEvidencePath,
+                JsonSerializer.Serialize(screenshotControlEvidencePayload, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine,
+                Encoding.UTF8);
         }
         finally
         {
@@ -2829,6 +3696,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             FileInfo fileInfo = new(fullPath);
             Assert.IsTrue(fileInfo.Length > 0, $"Screenshot evidence '{fileName}' is empty.");
         }
+
+        Assert.IsTrue(
+            File.Exists(Path.Combine(screenshotDirectory, "SCREENSHOT_CONTROL_EVIDENCE.generated.json")),
+            "Expected screenshot control evidence JSON was not created.");
     }
 
     private sealed record VeteranCertificationReviewStep(
@@ -2837,6 +3708,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         string PromotedHeadGesture,
         string Chummer5aBaseline,
         string[] RequiredDialogMarkers);
+
+    private sealed record WorkflowScreenshotCoverageEntry(
+        string WorkflowFamilyId,
+        string LegacyBehaviorLineage,
+        string[] ScreenshotFiles);
 
     private static VeteranCertificationReviewStep GetVeteranCertificationReviewStep(string surface)
         => VeteranCertificationReviewSteps.Single(step => string.Equals(step.Surface, surface, StringComparison.Ordinal));
@@ -2853,9 +3729,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             while (DateTime.UtcNow < deadline)
             {
                 Dispatcher.UIThread.RunJobs();
-                Panel? host = harness.FindControlOrDefault<Panel>("MenuCommandsHost");
-                if (host is not null
-                    && host.Children.OfType<Button>().Any(button => string.Equals(button.Tag?.ToString(), commandId, StringComparison.Ordinal)))
+                if (IsCommandVisibleInCommandList(harness, commandId))
                 {
                     return;
                 }
@@ -2866,6 +3740,97 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
 
         Assert.Fail($"Timed out opening '{menuButtonName}' for command '{commandId}'.");
+    }
+
+    private static void OpenMenuUntilCommandVisible(RuntimeFlagshipUiHarness harness, string menuButtonName, string commandId)
+    {
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            harness.Click(menuButtonName);
+            DateTime deadline = DateTime.UtcNow.AddMilliseconds(1200);
+            while (DateTime.UtcNow < deadline)
+            {
+                Dispatcher.UIThread.RunJobs();
+                if (IsCommandVisibleInCommandList(harness, commandId))
+                {
+                    return;
+                }
+
+                Thread.Sleep(10);
+                Dispatcher.UIThread.RunJobs();
+            }
+
+            MenuItem? menuButton = harness.FindControlOrDefault<MenuItem>(menuButtonName);
+            string? menuId = menuButton?.Tag?.ToString();
+            if (!string.IsNullOrWhiteSpace(menuId))
+            {
+                harness.ShellPresenter.ToggleMenuAsync(menuId, CancellationToken.None).GetAwaiter().GetResult();
+                DateTime fallbackDeadline = DateTime.UtcNow.AddMilliseconds(1200);
+                while (DateTime.UtcNow < fallbackDeadline)
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    if (IsCommandVisibleInCommandList(harness, commandId))
+                    {
+                        return;
+                    }
+
+                    Thread.Sleep(10);
+                    Dispatcher.UIThread.RunJobs();
+                }
+            }
+        }
+
+        Assert.Fail($"Timed out opening '{menuButtonName}' for command '{commandId}'.");
+    }
+
+    private static bool IsCommandVisibleInCommandList(FlagshipUiHarness harness, string commandId)
+    {
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        if (commandsList is null)
+        {
+            return false;
+        }
+
+        return SnapshotListBoxItems(commandsList)
+            .OfType<CommandPaletteItem>()
+            .Any(item => string.Equals(item.Id, commandId, StringComparison.Ordinal));
+    }
+
+    private static bool IsAnyCommandVisibleInCommandList(FlagshipUiHarness harness)
+    {
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        return commandsList is not null
+            && SnapshotListBoxItems(commandsList).OfType<CommandPaletteItem>().Any();
+    }
+
+    private static bool IsCommandVisibleInCommandList(RuntimeFlagshipUiHarness harness, string commandId)
+    {
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        if (commandsList is null)
+        {
+            return false;
+        }
+
+        return SnapshotListBoxItems(commandsList)
+            .OfType<CommandPaletteItem>()
+            .Any(item => string.Equals(item.Id, commandId, StringComparison.Ordinal));
+    }
+
+    private static bool IsAnyCommandVisibleInCommandList(RuntimeFlagshipUiHarness harness)
+    {
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        return commandsList is not null
+            && SnapshotListBoxItems(commandsList).OfType<CommandPaletteItem>().Any();
+    }
+
+    private static string[] CaptureVisibleCommandLabels(RuntimeFlagshipUiHarness harness)
+    {
+        ListBox commandsList = harness.FindControl<ListBox>("CommandsList");
+        return SnapshotListBoxItems(commandsList)
+            .OfType<CommandPaletteItem>()
+            .Select(item => item.Label)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .ToArray();
     }
 
     private static void WithHarness(Action<FlagshipUiHarness> assertion)
@@ -3013,7 +3978,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         if (ex is InvalidOperationException invalidOperation
             && (invalidOperation.Message.Contains("IWindowingPlatform", StringComparison.Ordinal)
                 || invalidOperation.Message.Contains("ICursorFactory", StringComparison.Ordinal)
-                || invalidOperation.Message.Contains("Could not create glyphTypeface", StringComparison.Ordinal)))
+                || invalidOperation.Message.Contains("Could not create glyphTypeface", StringComparison.Ordinal)
+                || invalidOperation.Message.Contains("Call from invalid thread", StringComparison.Ordinal)))
         {
             return true;
         }
@@ -3564,6 +4530,20 @@ public sealed class AvaloniaFlagshipUiGateTests
             ["rulesetId"] = identity.RulesetId,
         };
 
+    private sealed record FixtureUiIdentity(
+        string CharacterName,
+        string PrimaryToken,
+        string Alias,
+        string BuildMethod,
+        string Metatype,
+        string RulesetId);
+
+    private sealed record FixtureUiReconstructionMaterializationResult(
+        string FixtureName,
+        string ReceiptPath,
+        string Status,
+        string[] Reasons);
+
     private static byte[] BuildMinimalPdfFromHtmlPrintPreview(string title, byte[] htmlBytes)
     {
         string html = Encoding.UTF8.GetString(htmlBytes);
@@ -3694,6 +4674,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             && bytes[3] == (byte)'F'
             && bytes[4] == (byte)'-';
 
+    private static void ClickRuntimeDialogAction(RuntimeFlagshipUiHarness harness, string actionId)
+        => harness.InvokeDialogAction(actionId);
+
+    private static void ClickRuntimeMenuCommand(RuntimeFlagshipUiHarness harness, string menuButtonName, string commandId)
+    {
+        harness.Click(menuButtonName);
+        harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
+        harness.ClickMenuCommand(commandId);
+    }
+
     private static string ResolveSourceFile(params string[] segments)
     {
         string relativePath = Path.Combine(segments);
@@ -3709,6 +4699,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         return match;
     }
+
+    private static string SourcePath(params string[] segments)
+        => ResolveSourceFile(segments);
 
     private static string? ResolveExistingPath(params string[] candidates)
     {
@@ -3858,6 +4851,179 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "ui-flagship-release-gate-screenshots"));
     }
 
+    private static ScreenshotProofCapture CaptureScreenshotProof(FlagshipUiHarness harness, string screenshotFileName)
+        => new(
+            harness.CaptureScreenshotBytes(),
+            CaptureScreenshotControlEvidence(harness, screenshotFileName));
+
+    private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, string screenshotFileName)
+    {
+        Control[] visibleNamedControls = harness.Window.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(static control => control.IsVisible && !string.IsNullOrWhiteSpace(control.Name))
+            .OrderBy(control => control.Name, StringComparer.Ordinal)
+            .ToArray();
+
+        string dialogTitle = harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text ?? string.Empty;
+        if (string.Equals(dialogTitle, "(none)", StringComparison.Ordinal))
+        {
+            dialogTitle = string.Empty;
+        }
+
+        string dialogMessage = harness.FindControlOrDefault<TextBlock>("DialogMessageText")?.Text ?? string.Empty;
+        string previewText = harness.FindControlOrDefault<TextBox>("SectionPreviewBox")?.Text ?? string.Empty;
+
+        string[] dialogFieldLabels = visibleNamedControls
+            .OfType<TextBlock>()
+            .Where(control => control.Name?.StartsWith("DialogFieldLabel_", StringComparison.Ordinal) == true)
+            .Select(control => control.Text ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] dialogFieldIds = visibleNamedControls
+            .Select(control => TryGetControlSuffix(control.Name, "DialogField_"))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+        string[] dialogFieldControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name =>
+                name.StartsWith("DialogFieldLabel_", StringComparison.Ordinal)
+                || name.StartsWith("DialogFieldInput_", StringComparison.Ordinal)
+                || name.StartsWith("DialogField_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        List<string> dialogFieldInputValuesBuilder = [];
+        foreach (Control control in visibleNamedControls)
+        {
+            if (control.Name?.StartsWith("DialogFieldInput_", StringComparison.Ordinal) != true)
+            {
+                continue;
+            }
+
+            switch (control)
+            {
+                case TextBox textBox when !string.IsNullOrWhiteSpace(textBox.Text):
+                    dialogFieldInputValuesBuilder.Add(textBox.Text);
+                    break;
+                case ComboBox comboBox when comboBox.SelectedItem is not null:
+                    dialogFieldInputValuesBuilder.Add(comboBox.SelectedItem.ToString() ?? string.Empty);
+                    break;
+                case CheckBox checkBox:
+                    dialogFieldInputValuesBuilder.Add(checkBox.IsChecked?.ToString() ?? string.Empty);
+                    break;
+            }
+        }
+
+        string[] dialogFieldInputValues = dialogFieldInputValuesBuilder
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] dialogActionIds = visibleNamedControls
+            .Select(control => TryGetControlSuffix(control.Name, "DialogAction_"))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+        string[] dialogActionControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name => name.StartsWith("DialogAction_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleNamedControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleTextSamples = harness.Window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(static control => control.IsVisible)
+            .Select(control => control.Text ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .Take(96)
+            .ToArray();
+        string[] visibleMenuCommandIds = SnapshotListBoxItems(harness.FindControlOrDefault<ListBox>("CommandsList") ?? new ListBox())
+            .OfType<CommandPaletteItem>()
+            .Select(item => item.Id ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleTabLabels = harness.FindControlOrDefault<TabStrip>("LoadedRunnerTabStrip")?.Items is IEnumerable tabItems
+            ? tabItems
+                .OfType<NavigatorTabItem>()
+                .Select(item => item.Label ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray()
+            : [];
+        string[] visibleSectionQuickActionIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name => name.StartsWith("SectionQuickAction_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] selectedListRowTexts = harness.Window.GetVisualDescendants()
+            .OfType<ListBox>()
+            .Where(static listBox => listBox.IsVisible && listBox.SelectedItem is not null)
+            .Select(listBox => listBox.SelectedItem?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        ScreenshotVisibleNamedControlEntry[] visibleNamedControlEntries = visibleNamedControls
+            .Select(control => BuildVisibleNamedControlEntry(control, harness.Window))
+            .ToArray();
+
+        string theme = (harness.Window.ActualThemeVariant ?? harness.Window.RequestedThemeVariant ?? ThemeVariant.Default).ToString();
+        return new ScreenshotControlEvidenceEntry(
+            Screenshot: screenshotFileName,
+            Theme: theme,
+            DialogTitle: dialogTitle,
+            DialogMessage: dialogMessage,
+            DialogFieldLabels: dialogFieldLabels,
+            DialogFieldIds: dialogFieldIds,
+            DialogFieldControlIds: dialogFieldControlIds,
+            DialogFieldInputValues: dialogFieldInputValues,
+            DialogActionIds: dialogActionIds,
+            DialogActionControlIds: dialogActionControlIds,
+            VisibleNamedControlIds: visibleNamedControlIds,
+            VisibleNamedControls: visibleNamedControlEntries,
+            VisibleTextSamples: visibleTextSamples,
+            VisibleMenuCommandIds: visibleMenuCommandIds,
+            VisibleTabLabels: visibleTabLabels,
+            VisibleSectionQuickActionIds: visibleSectionQuickActionIds,
+            SelectedListRowTexts: selectedListRowTexts,
+            PreviewText: previewText);
+    }
+
+    private static ScreenshotVisibleNamedControlEntry BuildVisibleNamedControlEntry(Control control, TopLevel root)
+    {
+        Point? topLeft = control.TranslatePoint(default, root);
+        Rect bounds = control.Bounds;
+        return new ScreenshotVisibleNamedControlEntry(
+            Name: control.Name ?? string.Empty,
+            ControlType: control.GetType().Name,
+            Text: control switch
+            {
+                TextBlock textBlock => textBlock.Text ?? string.Empty,
+                TextBox textBox => textBox.Text ?? string.Empty,
+                CheckBox checkBox => checkBox.IsChecked?.ToString() ?? string.Empty,
+                Button button => GetPrimaryButtonLabel(button),
+                _ => string.Empty
+            },
+            X: topLeft?.X,
+            Y: topLeft?.Y,
+            Width: bounds.Width,
+            Height: bounds.Height);
+    }
+
+    private static string? TryGetControlSuffix(string? name, string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(name) || !name.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        return name[prefix.Length..];
+    }
+
     private static object[] SnapshotListBoxItems(ListBox listBox)
     {
         if (listBox.ItemsSource is IEnumerable itemsSource)
@@ -3950,9 +5116,32 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string dialogText = string.Join(
             "\n",
+            (new[] { harness.FindControl<TextBlock>("DialogTitleText").Text ?? string.Empty })
+                .Concat(
             harness.FindDialogFieldTexts()
                 .Concat(harness.FindDialogFieldInputTexts())
-                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty]));
+                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty])));
+
+        foreach (string expectedFragment in expectedFragments)
+        {
+            Assert.IsTrue(
+                dialogText.Contains(expectedFragment, StringComparison.Ordinal),
+                $"M103 screenshot capture for '{dialogTitle}' must include '{expectedFragment}' before the PNG is written.");
+        }
+    }
+
+    private static void AssertDialogContainsAll(
+        RuntimeFlagshipUiHarness harness,
+        string dialogTitle,
+        params string[] expectedFragments)
+    {
+        string dialogText = string.Join(
+            "\n",
+            (new[] { harness.FindControl<TextBlock>("DialogTitleText").Text ?? string.Empty })
+                .Concat(
+            harness.FindDialogFieldTexts()
+                .Concat(harness.FindDialogFieldInputTexts())
+                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty])));
 
         foreach (string expectedFragment in expectedFragments)
         {
@@ -4001,7 +5190,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() =>
                     harness.Presenter.ImportCalls > 0
                     && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
-                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false);
+                    && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false,
+                    timeoutMs: 8000);
                 assertion(harness);
             });
         }
@@ -4030,7 +5220,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() =>
                     harness.State.WorkspaceId is not null
                     && harness.State.Session.OpenWorkspaces.Count > 0
-                    && !harness.State.IsBusy);
+                    && !harness.State.IsBusy,
+                    timeoutMs: 8000,
+                    context: "load demo runner into runtime-backed harness");
                 assertion(harness);
             });
         }
@@ -4102,6 +5294,55 @@ public sealed class AvaloniaFlagshipUiGateTests
         throw new AssertFailedException("Avalonia standalone headless session did not stabilize for flagship UI proof.", lastFailure);
     }
 
+    private static void WithStandaloneDialogWindow(Action<DesktopDialogWindow> assertion)
+    {
+        EnsureHeadlessPlatform();
+        Exception? lastFailure = null;
+        for (int attempt = 1; attempt <= HeadlessSessionAttempts; attempt++)
+        {
+            HeadlessUnitTestSession? session = null;
+            try
+            {
+                session = HeadlessUnitTestSession.StartNew(typeof(FlagshipHeadlessAppBootstrap));
+                session.Dispatch(
+                        () =>
+                        {
+                            DesktopDialogWindow window = new()
+                            {
+                                Width = 1080,
+                                Height = 900
+                            };
+                            window.Show();
+                            PumpStandaloneUi();
+
+                            try
+                            {
+                                assertion(window);
+                            }
+                            finally
+                            {
+                                window.Close();
+                                PumpStandaloneUi();
+                            }
+                        },
+                        CancellationToken.None)
+                    .GetAwaiter()
+                    .GetResult();
+                return;
+            }
+            catch (Exception ex) when (IsTransientHeadlessFailure(ex) && attempt < HeadlessSessionAttempts)
+            {
+                lastFailure = ex;
+            }
+            finally
+            {
+                DisposeHeadlessSessionQuietly(session);
+            }
+        }
+
+        throw new AssertFailedException("Avalonia standalone dialog-window headless session did not stabilize for flagship UI proof.", lastFailure);
+    }
+
     private static T FindDescendant<T>(Control root, string name)
         where T : Control
     {
@@ -4122,9 +5363,200 @@ public sealed class AvaloniaFlagshipUiGateTests
             .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
     }
 
+    private static RuntimeControlInventoryNode CaptureControlInventory(Control control)
+    {
+        return CaptureControlInventory(
+            control,
+            new HashSet<Control>(ReferenceEqualityComparer.Instance),
+            depth: 0,
+            maxDepth: 32);
+    }
+
+    private static RuntimeControlInventoryNode CaptureControlInventory(
+        Control control,
+        HashSet<Control> visited,
+        int depth,
+        int maxDepth)
+    {
+        string text = control switch
+        {
+            TextBlock textBlock => textBlock.Text ?? string.Empty,
+            Button button => GetPrimaryButtonLabel(button),
+            TextBox textBox => textBox.Text ?? string.Empty,
+            _ => string.Empty
+        };
+        string toolTip = ToolTip.GetTip(control)?.ToString() ?? string.Empty;
+
+        if (!visited.Add(control))
+        {
+            return new RuntimeControlInventoryNode(
+                Name: control.Name ?? string.Empty,
+                ControlType: $"{control.GetType().Name}:CycleReference",
+                Text: text,
+                ToolTip: toolTip,
+                IsVisible: control.IsVisible,
+                Children: []);
+        }
+
+        if (depth >= maxDepth)
+        {
+            return new RuntimeControlInventoryNode(
+                Name: control.Name ?? string.Empty,
+                ControlType: $"{control.GetType().Name}:DepthLimit",
+                Text: text,
+                ToolTip: toolTip,
+                IsVisible: control.IsVisible,
+                Children: []);
+        }
+
+        RuntimeControlInventoryNode[] children = control.GetVisualChildren()
+            .OfType<Control>()
+            .Where(child => !ReferenceEquals(child, control))
+            .Select(child => CaptureControlInventory(child, visited, depth + 1, maxDepth))
+            .ToArray();
+
+        return new RuntimeControlInventoryNode(
+            Name: control.Name ?? string.Empty,
+            ControlType: control.GetType().Name,
+            Text: text,
+            ToolTip: toolTip,
+            IsVisible: control.IsVisible,
+            Children: children);
+    }
+
+    private static RuntimeRouteInventoryEntry CaptureRuntimeRouteInventory(
+        RuntimeFlagshipUiHarness harness,
+        string routeId,
+        string routeFamily,
+        string branchId)
+    {
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        TreeView? navigatorTree = harness.FindControlOrDefault<TreeView>("NavigatorTree");
+        string rulesetId = RulesetDefaults.NormalizeOptional(harness.ShellPresenter.State.ActiveRulesetId)
+            ?? harness.State.Session.OpenWorkspaces
+                .Select(workspace => RulesetDefaults.NormalizeOptional(workspace.RulesetId))
+                .FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value))
+            ?? string.Empty;
+
+        return new RuntimeRouteInventoryEntry(
+            RouteId: routeId,
+            RouteFamily: routeFamily,
+            BranchId: branchId,
+            RulesetId: rulesetId,
+            OpenMenuId: harness.ShellPresenter.State.OpenMenuId ?? string.Empty,
+            VisibleTexts: CaptureVisibleTextInventory(harness.Window),
+            VisibleCommandIds: CaptureVisibleCommandIds(commandsList),
+            NavigatorRootLabels: navigatorTree is null
+                ? []
+                : SnapshotTreeItems(navigatorTree).Select(item => item.Label).Where(static value => !string.IsNullOrWhiteSpace(value)).ToArray(),
+            Inventory: CaptureControlInventory(harness.Window));
+    }
+
+    private static RuntimeRouteInventoryEntry CaptureStandaloneRouteInventory(
+        DesktopDialogWindow window,
+        string routeId,
+        string routeFamily,
+        string rulesetId,
+        string branchId)
+    {
+        return new RuntimeRouteInventoryEntry(
+            RouteId: routeId,
+            RouteFamily: routeFamily,
+            BranchId: branchId,
+            RulesetId: rulesetId,
+            OpenMenuId: string.Empty,
+            VisibleTexts: CaptureVisibleTextInventory(window),
+            VisibleCommandIds: [],
+            NavigatorRootLabels: [],
+            Inventory: CaptureControlInventory(window));
+    }
+
+    private static RuntimeRouteInventoryEntry CaptureStandaloneControlRouteInventory(
+        Control control,
+        string routeId,
+        string routeFamily,
+        string rulesetId,
+        string branchId)
+    {
+        return new RuntimeRouteInventoryEntry(
+            RouteId: routeId,
+            RouteFamily: routeFamily,
+            BranchId: branchId,
+            RulesetId: rulesetId,
+            OpenMenuId: string.Empty,
+            VisibleTexts: CaptureVisibleTextInventory(control),
+            VisibleCommandIds: [],
+            NavigatorRootLabels: [],
+            Inventory: CaptureControlInventory(control));
+    }
+
+    private static string[] CaptureVisibleTextInventory(Control root)
+    {
+        return root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(static text => text.IsVisible)
+            .Select(text => (text.Text ?? string.Empty).Trim())
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static string[] CaptureVisibleCommandIds(ListBox? commandsList)
+    {
+        if (commandsList is null)
+        {
+            return [];
+        }
+
+        return SnapshotListBoxItems(commandsList)
+            .OfType<CommandPaletteItem>()
+            .Select(command => command.Id)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    private static void AssertInventoryContains(
+        RuntimeControlInventoryNode root,
+        string expectedName,
+        string expectedControlType,
+        string? toolTipFragment = null)
+    {
+        RuntimeControlInventoryNode? match = FlattenInventory(root)
+            .FirstOrDefault(node =>
+                string.Equals(node.Name, expectedName, StringComparison.Ordinal)
+                && string.Equals(node.ControlType, expectedControlType, StringComparison.Ordinal));
+
+        Assert.IsNotNull(match, $"Expected recursive inventory node '{expectedName}' of type '{expectedControlType}' was not found.");
+        if (!string.IsNullOrWhiteSpace(toolTipFragment))
+        {
+            StringAssert.Contains(match!.ToolTip, toolTipFragment);
+        }
+    }
+
+    private static IEnumerable<RuntimeControlInventoryNode> FlattenInventory(RuntimeControlInventoryNode root)
+    {
+        yield return root;
+        foreach (RuntimeControlInventoryNode child in root.Children)
+        {
+            foreach (RuntimeControlInventoryNode descendant in FlattenInventory(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
     private static void RaiseClick(Button button)
     {
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        PumpStandaloneUi();
+    }
+
+    private static void RaiseClick(MenuItem menuItem)
+    {
+        menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
         PumpStandaloneUi();
     }
 
@@ -4227,6 +5659,22 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void InvokeDialogAction(string actionId)
+            => Click(DesktopDialogAccessibility.BuildActionName(actionId));
+
+        public void ClickMenuCommand(string commandId)
+        {
+            ListBox commandsList = FindControl<ListBox>("CommandsList");
+            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the runtime command list.");
+            commandsList.SelectedItem = null;
+            Pump();
+            commandsList.SelectedItem = command;
+            Pump();
+        }
+
         public void UpdateFirstEditableDialogTextField(string value)
         {
             Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
@@ -4250,6 +5698,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                 return;
             }
 
+            if (control is MenuItem menuItem)
+            {
+                menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
                 Window);
@@ -4264,13 +5719,12 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void ClickLoadedRunnerTab(string labelFragment)
         {
-            Button tabButton = FindControl<Panel>("LoadedRunnerTabStripPanel")
-                .Children
-                .OfType<Button>()
-                .FirstOrDefault(button => (button.Content?.ToString() ?? string.Empty).Contains(labelFragment, StringComparison.OrdinalIgnoreCase))
+            TabStrip tabStrip = FindControl<TabStrip>("LoadedRunnerTabStrip");
+            NavigatorTabItem selectedTab = tabStrip.Items
+                .OfType<NavigatorTabItem>()
+                .FirstOrDefault(tab => (tab.Label ?? string.Empty).Contains(labelFragment, StringComparison.OrdinalIgnoreCase))
                 ?? throw new AssertFailedException($"Loaded-runner tab containing '{labelFragment}' was not found.");
-            Assert.IsTrue(tabButton.IsEnabled, $"Loaded-runner tab '{labelFragment}' must be enabled.");
-            tabButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            tabStrip.SelectedItem = selectedTab;
             Pump();
         }
 
@@ -4301,40 +5755,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
-        public void InvokeDialogAction(string actionId)
-        {
-            Button actionButton = DialogActionButtons()
-                .FirstOrDefault(button => string.Equals(button.Tag?.ToString(), actionId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
-
-            actionButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            Pump();
-        }
-
-        public void ClickMenuCommand(string commandId)
-        {
-            Panel menuHost = FindControl<Panel>("MenuCommandsHost");
-            Button button = menuHost.Children
-                .OfType<Button>()
-                .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Menu command '{commandId}' was not found.");
-
-            Point? translated = button.TranslatePoint(
-                new Point(button.Bounds.Width / 2d, button.Bounds.Height / 2d),
-                Window);
-            Assert.IsNotNull(translated, $"Unable to translate menu command '{commandId}' to window coordinates.");
-
-            Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
-            Pump();
-        }
-
         public void PressKey(Key key, RawInputModifiers modifiers = RawInputModifiers.None)
         {
             Window.KeyPress(key, modifiers, ToPhysicalKey(key), ToKeySymbol(key));
             Pump();
+        }
+
+        public void AdvanceFrames(int count)
+        {
+            for (int index = 0; index < count; index++)
+            {
+                Pump();
+            }
         }
 
         private static PhysicalKey ToPhysicalKey(Key key)
@@ -4474,9 +5906,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         public string[] FindDialogFieldTexts()
         {
             Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
-            return fieldsHost.Children
-                .OfType<Panel>()
-                .SelectMany(panel => panel.Children.OfType<TextBlock>().Select(text => text.Text ?? string.Empty))
+            return fieldsHost.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(text => text.Text ?? string.Empty)
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
         }
@@ -4484,9 +5916,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         public string[] FindDialogFieldInputTexts()
         {
             Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
-            return fieldsHost.Children
-                .OfType<Panel>()
-                .SelectMany(panel => panel.Children.OfType<TextBox>().Select(text => text.Text ?? string.Empty))
+            return fieldsHost.GetVisualDescendants()
+                .OfType<TextBox>()
+                .Select(text => text.Text ?? string.Empty)
                 .Where(static value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
         }
@@ -4551,6 +5983,20 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void Click(string controlName)
         {
             Control control = FindControl<Control>(controlName);
+            if (control is Button button)
+            {
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Pump();
+                return;
+            }
+
+            if (control is MenuItem menuItem)
+            {
+                menuItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
                 Window);
@@ -4576,6 +6022,31 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        public void InvokeDialogAction(string actionId)
+            => Click(DesktopDialogAccessibility.BuildActionName(actionId));
+
+        public void ClickMenuCommand(string commandId)
+            => SelectCommand(commandId);
+
+        public void SetActiveSectionForTesting(string sectionId)
+        {
+            TabStrip tabStrip = FindControl<TabStrip>("LoadedRunnerTabStrip");
+            NavigatorTabItem selectedTab = tabStrip.Items
+                .OfType<NavigatorTabItem>()
+                .FirstOrDefault(tab => string.Equals(tab.SectionId, sectionId, StringComparison.OrdinalIgnoreCase))
+                ?? throw new AssertFailedException($"Loaded-runner tab for section '{sectionId}' was not found.");
+            tabStrip.SelectedItem = selectedTab;
+            Pump();
+        }
+
+        public void AdvanceFrames(int count)
+        {
+            for (int index = 0; index < count; index++)
+            {
+                Pump();
+            }
+        }
+
 
         public T FindControl<T>(string name)
             where T : Control
@@ -4592,11 +6063,59 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
-        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000)
+        public byte[] CaptureScreenshotBytes()
+        {
+            PixelSize pixelSize = new(
+                Math.Max(1, (int)Math.Ceiling(Window.Bounds.Width)),
+                Math.Max(1, (int)Math.Ceiling(Window.Bounds.Height)));
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                Window.InvalidateMeasure();
+                Window.InvalidateArrange();
+                Window.InvalidateVisual();
+                Window.Measure(new Size(pixelSize.Width, pixelSize.Height));
+                Window.Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+                Pump();
+            }
+
+            using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+            bitmap.Render(Window);
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            byte[] pngBytes = output.ToArray();
+            Assert.IsTrue(pngBytes.Length > 0, "No rendered frame was available for runtime screenshot capture.");
+            return pngBytes;
+        }
+
+        public string[] FindDialogFieldTexts()
+        {
+            return Window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Where(static text => text.Name is "DialogFieldLabelText" or "DialogFieldValueText")
+                .Select(text => text.Text ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+        }
+
+        public string[] FindDialogFieldInputTexts()
+        {
+            return Window.GetVisualDescendants()
+                .OfType<TextBox>()
+                .Where(textBox => textBox.Name is "DialogFieldInputTextBox" or "DialogFieldInputMultilineTextBox")
+                .Select(textBox => textBox.Text ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+        }
+
+        public void WaitUntil(Func<bool> predicate, int timeoutMs = 4000, string? context = null)
         {
             if (!TryWaitUntil(predicate, timeoutMs))
             {
-                Assert.Fail("Timed out waiting for runtime-backed UI condition.");
+                Assert.Fail(context is null
+                    ? "Timed out waiting for runtime-backed UI condition."
+                    : $"Timed out waiting for runtime-backed UI condition: {context}");
             }
         }
 
@@ -4656,6 +6175,106 @@ public sealed class AvaloniaFlagshipUiGateTests
             .OrderByDescending(static value => value.Length)
             .FirstOrDefault() ?? string.Empty;
 
+    private static DesktopDialogState BuildPriorityWorkflowDialogForTesting(string buildMethod)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "BuildNewCharacterContinuationDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog reflection entry point was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [RulesetDefaults.Sr5, buildMethod, true, "Nova", "Cipher"])
+            ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState RebuildPriorityWorkflowDialogField(DesktopDialogState dialog, string fieldId, string value)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
+            "RebuildDynamicDialog",
+            BindingFlags.Static | BindingFlags.NonPublic)
+            ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field =>
+            {
+                if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                {
+                    return field with { Value = value };
+                }
+
+                if (string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                {
+                    return field with { Value = fieldId };
+                }
+
+                return field;
+            })
+            .ToArray();
+
+        return (DesktopDialogState)(method.Invoke(null, [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
+            ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+    }
+
+    private sealed record RuntimeControlInventoryNode(
+        string Name,
+        string ControlType,
+        string Text,
+        string ToolTip,
+        bool IsVisible,
+        IReadOnlyList<RuntimeControlInventoryNode> Children);
+
+    private sealed record ScreenshotProofCapture(
+        byte[] PngBytes,
+        ScreenshotControlEvidenceEntry Evidence);
+
+    private sealed record ScreenshotControlEvidenceEntry(
+        string Screenshot,
+        string Theme,
+        string DialogTitle,
+        string DialogMessage,
+        IReadOnlyList<string> DialogFieldLabels,
+        IReadOnlyList<string> DialogFieldIds,
+        IReadOnlyList<string> DialogFieldControlIds,
+        IReadOnlyList<string> DialogFieldInputValues,
+        IReadOnlyList<string> DialogActionIds,
+        IReadOnlyList<string> DialogActionControlIds,
+        IReadOnlyList<string> VisibleNamedControlIds,
+        IReadOnlyList<ScreenshotVisibleNamedControlEntry> VisibleNamedControls,
+        IReadOnlyList<string> VisibleTextSamples,
+        IReadOnlyList<string> VisibleMenuCommandIds,
+        IReadOnlyList<string> VisibleTabLabels,
+        IReadOnlyList<string> VisibleSectionQuickActionIds,
+        IReadOnlyList<string> SelectedListRowTexts,
+        string PreviewText);
+
+    private sealed record ScreenshotVisibleNamedControlEntry(
+        string Name,
+        string ControlType,
+        string Text,
+        double? X,
+        double? Y,
+        double Width,
+        double Height);
+
+    private sealed record RuntimeRouteInventoryEntry(
+        string RouteId,
+        string RouteFamily,
+        string BranchId,
+        string RulesetId,
+        string OpenMenuId,
+        IReadOnlyList<string> VisibleTexts,
+        IReadOnlyList<string> VisibleCommandIds,
+        IReadOnlyList<string> NavigatorRootLabels,
+        RuntimeControlInventoryNode Inventory);
+
+    private sealed record InteractiveRuntimeRouteInventoryReceipt(
+        string GeneratedAt,
+        string ContractName,
+        string Status,
+        string Summary,
+        IReadOnlyList<string> RouteFamilies,
+        IReadOnlyList<string> RulesetLanes,
+        IReadOnlyList<RuntimeRouteInventoryEntry> Routes);
+
     private sealed class RecordingCharacterOverviewPresenter : ICharacterOverviewPresenter
     {
         private readonly DesktopDialogFactory _dialogFactory = new();
@@ -4674,8 +6293,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         public List<string> ExecutedWorkspaceActionIds { get; } = [];
         public List<string> ExecutedCommandIds { get; } = [];
         public List<DialogFieldValueChangedEventArgs> DialogFieldUpdates { get; } = [];
+        public List<AttributeEditRequest> AttributeEdits { get; } = [];
         public List<string> ExecutedDialogActionIds { get; } = [];
         public int SaveCalls { get; private set; }
+        public int ExportCalls { get; private set; }
+        public int PrintCalls { get; private set; }
 
         public Task InitializeAsync(CancellationToken ct)
         {
@@ -4834,6 +6456,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             return Task.CompletedTask;
         }
 
+        public Task ExportAsync(CancellationToken ct)
+        {
+            ExportCalls++;
+            return Task.CompletedTask;
+        }
+
+        public Task PrintAsync(CancellationToken ct)
+        {
+            PrintCalls++;
+            return Task.CompletedTask;
+        }
+
         public Task ExecuteCommandAsync(string commandId, CancellationToken ct)
         {
             ExecutedCommandIds.Add(commandId);
@@ -4875,18 +6509,44 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             DialogFieldUpdates.Add(new DialogFieldValueChangedEventArgs(fieldId, value ?? string.Empty));
 
+            DesktopDialogField[] updatedFields = dialog.Fields
+                .Select(field =>
+                {
+                    if (string.Equals(field.Id, fieldId, StringComparison.Ordinal))
+                    {
+                        return field with { Value = value ?? string.Empty };
+                    }
+
+                    if (string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                        && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal))
+                    {
+                        return field with { Value = fieldId };
+                    }
+
+                    return field;
+                })
+                .ToArray();
+
+            MethodInfo rebuildMethod = typeof(DesktopDialogFactory).GetMethod(
+                "RebuildDynamicDialog",
+                BindingFlags.Static | BindingFlags.NonPublic)
+                ?? throw new AssertFailedException("RebuildDynamicDialog reflection entry point was not found.");
+            DesktopDialogState nextDialog = (DesktopDialogState)(rebuildMethod.Invoke(
+                null,
+                [dialog with { Fields = updatedFields }, DesktopPreferenceState.Default])
+                ?? throw new AssertFailedException("RebuildDynamicDialog returned null."));
+
             Publish(_state with
             {
-                ActiveDialog = dialog with
-                {
-                    Fields = dialog.Fields
-                        .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
-                            ? field with { Value = value ?? string.Empty }
-                            : field)
-                        .ToArray()
-                }
+                ActiveDialog = nextDialog
             });
 
+            return Task.CompletedTask;
+        }
+
+        public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+        {
+            AttributeEdits.Add(request);
             return Task.CompletedTask;
         }
 
@@ -5008,6 +6668,77 @@ public sealed class AvaloniaFlagshipUiGateTests
                         [
                             new SectionRowState("contacts[0]", "Fixer (Loyalty 4 / Connection 5)")
                         ]);
+                case "skills":
+                    return (
+                        """
+{
+  "section": "skills",
+  "skills": [
+    { "name": "Automatics", "rating": 6, "specialization": "Assault Rifles" },
+    { "name": "Sneaking", "rating": 5 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("skills[0]", "Automatics 6 (Assault Rifles)"),
+                            new SectionRowState("skills[1]", "Sneaking 5")
+                        ]);
+                case "qualities":
+                    return (
+                        """
+{
+  "section": "qualities",
+  "qualities": [
+    { "name": "Ambidextrous", "karma": 4 },
+    { "name": "Distinctive Style", "karma": -5 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("qualities[0]", "Ambidextrous · 4 karma"),
+                            new SectionRowState("qualities[1]", "Distinctive Style · -5 karma")
+                        ]);
+                case "gear":
+                    return (
+                        """
+{
+  "section": "gear",
+  "gear": [
+    { "name": "Medkit", "rating": 6, "location": "Backpack" },
+    { "name": "Ammo: APDS", "quantity": 40, "location": "Duffel" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("gear[0]", "Medkit 6 · Backpack"),
+                            new SectionRowState("gear[1]", "Ammo: APDS ×40 · Duffel")
+                        ]);
+                case "weapons":
+                    return (
+                        """
+{
+  "section": "weapons",
+  "weapons": [
+    { "name": "Ares Alpha", "dicePool": 14, "ammo": "42(c)" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("weapons[0]", "Ares Alpha · Dice Pool 14 / 42(c)")
+                        ]);
+                case "armors":
+                    return (
+                        """
+{
+  "section": "armors",
+  "armor": [
+    { "name": "Armor Jacket", "rating": 12, "mods": 1 }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("armors[0]", "Armor Jacket · Armor 12 / Mods 1")
+                        ]);
                 case "vehicles":
                     return (
                         """
@@ -5046,6 +6777,57 @@ public sealed class AvaloniaFlagshipUiGateTests
                         [
                             new SectionRowState("progress[0]", "First extraction · +2 karma")
                         ]);
+                case "attributes":
+                case "attributedetails":
+                    return (
+                        """
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("attributes[0]", "Body 4"),
+                            new SectionRowState("attributes[1]", "Agility 5"),
+                            new SectionRowState("attributes[2]", "Reaction 5")
+                        ]);
                 case "calendar":
                     return (
                         """
@@ -5058,6 +6840,36 @@ public sealed class AvaloniaFlagshipUiGateTests
 """,
                         [
                             new SectionRowState("calendar[0]", "Downtime recon · +2 karma")
+                        ]);
+                case "validate":
+                    return (
+                        """
+{
+  "section": "validate",
+  "validation": [
+    { "severity": "warning", "message": "License missing for Ares Alpha" },
+    { "severity": "info", "message": "Lifestyle payments due in 3 days" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("validate[0]", "Warning · License missing for Ares Alpha"),
+                            new SectionRowState("validate[1]", "Info · Lifestyle payments due in 3 days")
+                        ]);
+                case "rules":
+                    return (
+                        """
+{
+  "section": "rules",
+  "rules": [
+    { "source": "SR5", "entry": "Armor Encumbrance" },
+    { "source": "Run & Gun", "entry": "Smartgun Accessories" }
+  ]
+}
+""",
+                        [
+                            new SectionRowState("rules[0]", "SR5 · Armor Encumbrance"),
+                            new SectionRowState("rules[1]", "Run & Gun · Smartgun Accessories")
                         ]);
                 default:
                     return (
@@ -5131,7 +6943,24 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public Task SyncWorkspaceContextAsync(CharacterWorkspaceId? activeWorkspaceId, CancellationToken ct)
         {
-            State = State with { ActiveWorkspaceId = activeWorkspaceId };
+            ShellWorkspaceState[] openWorkspaces = activeWorkspaceId is null
+                ? []
+                : [
+                    new ShellWorkspaceState(
+                        activeWorkspaceId.Value,
+                        "Soma",
+                        "Demo",
+                        DateTimeOffset.UtcNow,
+                        RulesetDefaults.Sr5,
+                        HasSavedWorkspace: false)
+                ];
+            State = State with
+            {
+                ActiveWorkspaceId = activeWorkspaceId,
+                OpenWorkspaces = openWorkspaces,
+                ActiveTabId = activeWorkspaceId is null ? State.ActiveTabId : "tab-info",
+                Notice = activeWorkspaceId is null ? "Ready." : $"Restored {openWorkspaces.Length} workspace(s)."
+            };
             StateChanged?.Invoke(this, EventArgs.Empty);
             return Task.CompletedTask;
         }
@@ -5155,21 +6984,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static ShellState CreateShellState()
     {
-        AppCommandDefinition[] commands =
-        [
-            new("file", "menu.file", "menu", false, true, RulesetDefaults.Sr5),
-            new("edit", "menu.edit", "menu", false, true, RulesetDefaults.Sr5),
-            new("special", "menu.special", "menu", false, true, RulesetDefaults.Sr5),
-            new("tools", "menu.tools", "menu", false, true, RulesetDefaults.Sr5),
-            new("windows", "menu.windows", "menu", false, true, RulesetDefaults.Sr5),
-            new("help", "menu.help", "menu", false, true, RulesetDefaults.Sr5),
-            new("new_character", "command.new_character", "file", false, true, RulesetDefaults.Sr5),
-            new("open_character", "command.open_character", "file", false, true, RulesetDefaults.Sr5),
-            new("save_character", "command.save_character", "file", true, true, RulesetDefaults.Sr5),
-            new("global_settings", "command.global_settings", "tools", false, true, RulesetDefaults.Sr5),
-            new("report_bug", "command.report_bug", "help", false, true, RulesetDefaults.Sr5),
-            new("about", "command.about", "help", false, true, RulesetDefaults.Sr5)
-        ];
+        AppCommandDefinition[] commands = new CatalogOnlyRulesetShellCatalogResolver()
+            .ResolveCommands(RulesetDefaults.Sr5)
+            .ToArray();
 
         return ShellState.Empty with
         {

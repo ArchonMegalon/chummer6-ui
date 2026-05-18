@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.503089Z",
+  "generatedAt": "2026-05-17T20:18:40.855153Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family parity evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
@@ -8,13 +8,14 @@
     "edition": "sr6",
     "familyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
       "Avalonia_and_Blazor_magic_family_workspace_actions_render_matching_sections",
-      "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
-      "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+      "Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+      "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",

@@ -1,0 +1,43 @@
+{
+  "contractName": "chummer6-ui.chummer_sr6_ruleset_ui_sophistication_policy",
+  "scopeStrategy": "sr6_ruleset_specific_surface_depth_must_match_sr5_editor_grade_richness",
+  "baselineLanes": {
+    "sr4": "Chummer4-backed oracle for promoted SR4 surfaces",
+    "sr5": "Chummer5A-backed oracle for promoted SR5 surfaces",
+    "sr6": "Promoted SR6 desktop baseline with explicit authored ruleset posture"
+  },
+  "sr5ComparisonContract": "chummer6-ui.ruleset_ui_adaptation_frontier",
+  "sr6WorkflowParityContract": "chummer6-ui.sr6_desktop_workflow_parity",
+  "sr6SharedMuscleMemoryContract": "chummer6-ui.chummer_sr6_shared_muscle_memory_parity_gate",
+  "interactiveInventoryContract": "chummer6-ui.interactive_control_inventory",
+  "runtimeRouteInventoryContract": "chummer6-ui.interactive_runtime_route_inventory",
+  "fullScope": {
+    "sharedShellSurfaceDepthParityInScope": true,
+    "rulesetAuthoredLabelsInScope": true,
+    "rulesetSpecificCommandsInScope": true,
+    "rulesetSpecificDialogsAndPanelsInScope": true,
+    "rulesetSpecificWorkflowSurfacesInScope": true,
+    "widgetClassParityInScope": true,
+    "eventParityInScope": true,
+    "keyboardRouteParityInScope": true,
+    "tooltipAndSecondaryRouteParityInScope": true,
+    "runtimeBranchParityInScope": true,
+    "zeroFallbackHostsInScope": true,
+    "noThinSharedShellSubstituteInScope": true,
+    "equalUiSophisticationAgainstSr5InScope": true
+  },
+  "requiredRuntimeTestMarkers": [
+    "DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane",
+    "DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
+  ],
+  "requiredSourceMarkers": [
+    "SR6 Setup Tabs",
+    "SR6 Setup Actions",
+    "SR6 Setup Flows",
+    "SR6 Setup Tools",
+    "No SR6 setup tools are currently available.",
+    "SR6 Matrix Action"
+  ]
+}

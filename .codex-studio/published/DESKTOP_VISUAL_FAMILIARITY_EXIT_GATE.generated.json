@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-08T15:28:36.660167Z",
+  "generatedAt": "2026-05-17T20:20:07.046518Z",
   "contract_name": "chummer6-ui.desktop_visual_familiarity_exit_gate",
-  "channelId": "docker",
-  "releaseVersion": "run-20260420-072339",
+  "channelId": "preview",
+  "releaseVersion": "run-20260514-restore-mac-preview",
   "status": "pass",
   "summary": "Desktop visual familiarity is proven for shell chrome, loaded-runner tabs, dense builder posture, and explicit milestone-2 surface cues across creation, advancement, magic, matrix, gear, cyberware, vehicles, contacts, and diary plus SR4/SR5/SR6 codex orientation.",
   "reasons": [],
@@ -11,7 +11,7 @@
       "status": "pass",
       "reasonCount": 0,
       "reasons": [],
-      "receiptPath": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
       "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "headProofReview": {
@@ -19,7 +19,8 @@
       "reasonCount": 0,
       "reasons": [],
       "requiredHeads": [
-        "avalonia"
+        "avalonia",
+        "blazor-desktop"
       ],
       "canonicalRequiredHeads": [
         "avalonia"
@@ -55,11 +56,8 @@
       "reasonCount": 0,
       "reasons": [],
       "requiredTests": [
-        "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
-        "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
-        "Master_index_is_a_first_class_runtime_backed_workbench_route",
-        "Character_roster_is_a_first_class_runtime_backed_workbench_route",
         "Desktop_shell_preserves_chummer5a_familiarity_cues",
+        "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
         "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
         "Theme_tokens_preserve_chummer5a_palette_and_readability",
         "Loaded_runner_preserves_visible_character_tab_posture",
@@ -76,18 +74,25 @@
         "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
         "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
         "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-        "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
         "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
         "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
+        "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
         "Standalone_toolstrip_buttons_raise_expected_events",
         "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
         "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+        "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+        "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
         "Standalone_summary_header_tab_buttons_raise_expected_events",
         "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
         "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
         "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
-        "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+        "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+        "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
+        "Master_index_is_a_first_class_runtime_backed_workbench_route",
+        "Character_roster_is_a_first_class_runtime_backed_workbench_route"
       ],
       "requiredDesktopShellTests": [
         "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
@@ -116,7 +121,10 @@
         "15-creation-section-light.png",
         "16-master-index-dialog-light.png",
         "17-character-roster-dialog-light.png",
-        "18-import-dialog-light.png"
+        "18-import-dialog-light.png",
+        "38-translator-dialog-light.png",
+        "39-xml-editor-dialog-light.png",
+        "40-hero-lab-importer-dialog-light.png"
       ]
     },
     "legacyFamiliarityReview": {
@@ -137,15 +145,15 @@
     }
   },
   "evidence": {
-    "flagship_gate_path": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    "screenshot_dir": "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "app_axaml_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/App.axaml",
-    "main_window_axaml_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/MainWindow.axaml",
-    "navigator_axaml_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
-    "toolstrip_axaml_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/Controls/ToolStripControl.axaml",
-    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
-    "ui_gate_tests_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
-    "desktop_shell_ruleset_tests_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
+    "flagship_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "app_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml",
+    "main_window_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml",
+    "navigator_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml",
+    "toolstrip_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "toolstrip_codebehind_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "ui_gate_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+    "desktop_shell_ruleset_tests_path": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/DesktopShellRulesetCatalogTests.cs",
     "legacy_frmcareer_designer_path": "/docker/chummer5a/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
     "minimum_shell_review_size": {
       "width": 1280,
@@ -160,13 +168,13 @@
     "screenshot_max_age_seconds": 86400,
     "screenshot_receipt_skew_max_seconds": 86400,
     "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "flagship_gate_status": "pass",
-    "flagship_ui_release_gate_generated_at": "2026-05-08T15:04:28.373540Z",
-    "flagship_ui_release_gate_age_seconds": 1448,
+    "flagship_gate_status": "fail",
+    "flagship_ui_release_gate_generated_at": "2026-05-17T20:20:06.750229Z",
+    "flagship_ui_release_gate_age_seconds": 0,
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "preview",
-    "release_channel_version": "run-20260503-163502",
-    "release_channel_generated_at": "2026-05-07T21:12:55Z",
+    "release_channel_version": "run-20260514-restore-mac-preview",
+    "release_channel_generated_at": "2026-05-16T21:12:08Z",
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -187,7 +195,8 @@
     "flagship_avalonia_head_proof_status": "pass",
     "flagship_blazor_head_proof_status": "pass",
     "flagship_required_desktop_heads": [
-      "avalonia"
+      "avalonia",
+      "blazor-desktop"
     ],
     "canonical_required_desktop_heads": [
       "avalonia"
@@ -227,19 +236,33 @@
         "requiredRuntimeBackedTests": "pass",
         "sourceTestFile": "pass",
         "testSuites": "pass"
+      },
+      "blazor-desktop": {
+        "status": "pass",
+        "shellChrome": "pass",
+        "commandSurface": "pass",
+        "dialogSurface": "pass",
+        "journeyPanels": "pass",
+        "requiredShellTests": "pass",
+        "sourceTestFile": "pass",
+        "testSuites": "pass"
       }
     },
     "flagship_head_missing_contract_markers": {
-      "avalonia": []
+      "avalonia": [],
+      "blazor-desktop": []
     },
     "flagship_head_source_test_file_paths": {
-      "avalonia": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
+      "avalonia": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+      "blazor-desktop": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/BlazorShellComponentTests.cs"
     },
     "flagship_head_source_test_file_exists": {
-      "avalonia": true
+      "avalonia": true,
+      "blazor-desktop": true
     },
     "flagship_head_source_test_file_within_repo_root": {
-      "avalonia": true
+      "avalonia": true,
+      "blazor-desktop": true
     },
     "runtime_backed_shell_menu": "pass",
     "runtime_backed_menu_bar_labels": "pass",
@@ -294,11 +317,8 @@
     "missing_required_legacy_interaction_keys": [],
     "missing_theme_tokens": [],
     "required_tests": [
-      "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
-      "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
-      "Master_index_is_a_first_class_runtime_backed_workbench_route",
-      "Character_roster_is_a_first_class_runtime_backed_workbench_route",
       "Desktop_shell_preserves_chummer5a_familiarity_cues",
+      "Desktop_shell_preserves_classic_dense_three_pane_workbench_posture",
       "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
       "Theme_tokens_preserve_chummer5a_palette_and_readability",
       "Loaded_runner_preserves_visible_character_tab_posture",
@@ -315,20 +335,66 @@
       "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
       "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
       "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-      "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
       "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
       "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
       "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
+      "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
+      "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
       "Standalone_toolstrip_buttons_raise_expected_events",
       "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events",
       "Standalone_workspace_strip_quick_start_button_raises_expected_event",
+      "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+      "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+      "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff",
       "Standalone_summary_header_tab_buttons_raise_expected_events",
       "Standalone_navigator_tree_selection_raises_workspace_tab_section_and_workflow_events",
       "Standalone_command_dialog_pane_routes_command_selection_field_updates_and_dialog_actions",
       "Standalone_coach_sidecar_copy_button_raises_event_when_launch_uri_is_available",
-      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+      "Opening_mainframe_preserves_chummer5a_successor_workbench_posture",
+      "Master_index_is_a_first_class_runtime_backed_workbench_route",
+      "Character_roster_is_a_first_class_runtime_backed_workbench_route"
     ],
     "missing_tests": [],
+    "required_test_aliases": {
+      "Desktop_shell_preserves_classic_dense_center_first_workbench_posture": [
+        [
+          "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks"
+        ]
+      ],
+      "Runtime_backed_file_menu_preserves_working_open_save_import_routes": [
+        [
+          "Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters",
+          "File_menu_new_character_creates_runtime_workspace"
+        ]
+      ],
+      "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist": [
+        [
+          "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
+          "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session"
+        ]
+      ],
+      "Standalone_summary_header_tab_buttons_raise_expected_events": [
+        [
+          "Standalone_summary_header_keeps_navigation_tabs_visible_without_restore_handoff"
+        ]
+      ],
+      "Opening_mainframe_preserves_chummer5a_successor_workbench_posture": [
+        [
+          "Loaded_runner_workbench_preserves_legacy_frmcareer_landmarks"
+        ]
+      ],
+      "Master_index_is_a_first_class_runtime_backed_workbench_route": [
+        [
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
+        ]
+      ],
+      "Character_roster_is_a_first_class_runtime_backed_workbench_route": [
+        [
+          "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome"
+        ]
+      ]
+    },
     "required_desktop_shell_tests": [
       "DesktopShell_hides_workspace_left_pane_for_single_runner_posture",
       "DesktopShell_restores_workspace_left_pane_for_multi_workspace_session"
@@ -337,7 +403,7 @@
     "required_toolstrip_markers": [
       "shell-toolstrip-band",
       "shell-toolstrip-state",
-      "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"28\"",
+      "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"30\"",
       "button.Content = label;"
     ],
     "missing_toolstrip_markers": [],
@@ -349,7 +415,7 @@
       "BuildActionContent("
     ],
     "present_disallowed_toolstrip_markers": [],
-    "loaded_runner_tab_host_axaml_path": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Avalonia/Controls/SectionHostControl.axaml",
+    "loaded_runner_tab_host_axaml_path": "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/SectionHostControl.axaml",
     "required_summary_header_markers": [
       "x:Name=\"LoadedRunnerTabStripBorder\"",
       "x:Name=\"LoadedRunnerTabStrip\""
@@ -410,34 +476,37 @@
       "15-creation-section-light.png",
       "16-master-index-dialog-light.png",
       "17-character-roster-dialog-light.png",
-      "18-import-dialog-light.png"
+      "18-import-dialog-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
     ],
     "missing_screenshots": [],
     "invalid_screenshots": {},
     "undersized_screenshots": {},
-    "flagship_gate_reference_generated_at": "2026-05-08T15:04:28.373540Z",
+    "flagship_gate_reference_generated_at": "2026-05-17T20:20:06.750229Z",
     "screenshot_timestamps": {
-      "01-initial-shell-light.png": "2026-05-08T15:28:36.243386Z",
-      "02-menu-open-light.png": "2026-05-08T15:28:36.243386Z",
-      "03-settings-open-light.png": "2026-05-08T15:28:36.243386Z",
-      "04-loaded-runner-light.png": "2026-05-08T15:28:36.243386Z",
-      "05-dense-section-light.png": "2026-05-08T15:28:36.243386Z",
-      "06-dense-section-dark.png": "2026-05-08T15:28:36.243386Z",
-      "07-loaded-runner-tabs-light.png": "2026-05-08T15:28:36.243386Z",
-      "08-cyberware-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "09-vehicles-section-light.png": "2026-05-08T15:28:36.243386Z",
-      "10-contacts-section-light.png": "2026-05-08T15:28:36.243386Z",
-      "11-diary-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "12-magic-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "13-matrix-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "14-advancement-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "15-creation-section-light.png": "2026-05-08T15:28:36.243386Z",
-      "16-master-index-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "17-character-roster-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "18-import-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "38-translator-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "39-xml-editor-dialog-light.png": "2026-05-08T15:28:36.243386Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-05-08T15:28:36.243386Z"
+      "01-initial-shell-light.png": "2026-05-17T20:20:06.899214Z",
+      "02-menu-open-light.png": "2026-05-17T20:20:06.899214Z",
+      "03-settings-open-light.png": "2026-05-17T20:20:06.899214Z",
+      "04-loaded-runner-light.png": "2026-05-17T20:20:06.899214Z",
+      "05-dense-section-light.png": "2026-05-17T20:20:06.899214Z",
+      "06-dense-section-dark.png": "2026-05-17T20:20:06.899214Z",
+      "07-loaded-runner-tabs-light.png": "2026-05-17T20:20:06.899214Z",
+      "08-cyberware-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "09-vehicles-section-light.png": "2026-05-17T20:20:06.899214Z",
+      "10-contacts-section-light.png": "2026-05-17T20:20:06.899214Z",
+      "11-diary-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "12-magic-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "13-matrix-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "14-advancement-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "15-creation-section-light.png": "2026-05-17T20:20:06.899214Z",
+      "16-master-index-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "17-character-roster-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "18-import-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "38-translator-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "39-xml-editor-dialog-light.png": "2026-05-17T20:20:06.899214Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-05-17T20:20:06.899214Z"
     },
     "stale_screenshots": [],
     "screenshots_older_than_flagship_receipt": [],
@@ -473,15 +542,24 @@
     "magic_method_has_rhythm_markers": true,
     "matrix_method_has_rhythm_markers": true,
     "creation_method_has_rhythm_markers": true,
+    "creation_method_marker_bundles": [
+      [
+        "AttributeBaseEditor_BOD",
+        "AttributeKarmaEditor_BOD",
+        "edits.Any(edit =>",
+        "edit.AttributeName, \"Body\"",
+        "edit.Bucket, \"base\""
+      ],
+      [
+        "attributes.body = 5",
+        "skills.firearms[0] = Automatics 6"
+      ]
+    ],
     "advancement_method_has_rhythm_markers": true,
     "gear_method_has_rhythm_markers": true,
     "contacts_diary_method_has_rhythm_markers": true,
     "ruleset_orientation_method_has_markers": true,
     "missing_ruleset_orientation_markers": [],
-    "legacy_equivalent_chrome_gate_generated_at": "2026-05-08T15:04:28.756438Z",
-    "legacy_equivalent_chrome_gate_age_seconds": 1447,
-    "muscle_memory_parity_gate_generated_at": "2026-05-08T15:05:44.085757Z",
-    "muscle_memory_parity_gate_age_seconds": 1372,
     "failureCount": 0
   }
 }

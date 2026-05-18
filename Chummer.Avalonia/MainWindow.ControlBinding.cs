@@ -1,4 +1,5 @@
 using Chummer.Avalonia.Controls;
+using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia;
@@ -29,9 +30,6 @@ internal static class MainWindowControlBinder
         EventHandler onRosterMovementRequested,
         EventHandler onRuleEnvironmentStudioRequested,
         EventHandler onCloseWorkspaceRequested,
-        EventHandler onGmPrepRequested,
-        EventHandler onRosterMovementRequested,
-        EventHandler onRuleEnvironmentStudioRequested,
         EventHandler onCampaignWorkspaceRequested,
         EventHandler onUpdateStatusRequested,
         EventHandler onInstallLinkingRequested,
@@ -48,6 +46,7 @@ internal static class MainWindowControlBinder
         EventHandler<string> onSectionActionSelected,
         EventHandler<string> onWorkflowSurfaceSelected,
         EventHandler<string> onSectionQuickActionRequested,
+        EventHandler<AttributeEditRequest> onSectionAttributeEditRequested,
         EventHandler onCoachLaunchCopyRequested,
         EventHandler<string> onCommandSelected,
         EventHandler<string> onDialogActionSelected,
@@ -66,9 +65,6 @@ internal static class MainWindowControlBinder
         toolStrip.RosterMovementRequested += onRosterMovementRequested;
         toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;
         toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
-        toolStrip.GmPrepRequested += onGmPrepRequested;
-        toolStrip.RosterMovementRequested += onRosterMovementRequested;
-        toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;
         toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
         toolStrip.UpdateStatusRequested += onUpdateStatusRequested;
         toolStrip.InstallLinkingRequested += onInstallLinkingRequested;
@@ -77,6 +73,7 @@ internal static class MainWindowControlBinder
         toolStrip.SettingsRequested += onSettingsRequested;
         toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.NavigationTabSelected += onNavigationTabSelected;
+        summaryHeader.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
@@ -90,6 +87,7 @@ internal static class MainWindowControlBinder
         sectionHost.NavigationTabSelected += onNavigationTabSelected;
         sectionHost.SectionActionSelected += onSectionActionSelected;
         sectionHost.QuickActionRequested += onSectionQuickActionRequested;
+        sectionHost.AttributeEditRequested += onSectionAttributeEditRequested;
         coachSidecar.CopyLaunchRequested += onCoachLaunchCopyRequested;
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;
@@ -126,6 +124,7 @@ internal sealed record MainWindowControls(
     {
         ToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
         MenuBar.SetState(shellFrame.HeaderState.MenuBar);
+        SummaryHeader.SetWorkspaceStripState(shellFrame.ChromeState.WorkspaceStrip);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
         StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
         CharacterRoster.SetState(shellFrame.RosterPaneState);

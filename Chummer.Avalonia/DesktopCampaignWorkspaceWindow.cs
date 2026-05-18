@@ -161,6 +161,18 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         await dialog.ShowDialog(owner);
     }
 
+    public static Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowGmPrepAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
+    public static Task ShowRosterMovementAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)
+        => ShowAsync(owner, headId);
+
     private static async Task<DesktopCampaignWorkspaceWindow> CreateAsync(string headId)
     {
         IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
@@ -356,6 +368,10 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             BuildRestoreContinuityDecisionSummary(),
             BuildRestoreConflictChoiceSummary(),
             BuildRestoreSupportHandoffSummary(),
+            BuildCampaignAdoptionSummary(),
+            BuildCampaignAdoptionConfidenceSummary(),
+            BuildRunnerGoalPinSummary(),
+            BuildResolutionReportCloseoutSummary(),
             BuildCampaignConsequenceSummary(),
             BuildCampaignConsequenceEvidenceSummary(),
             BuildCampaignNextSessionReturnSummary(),
@@ -415,8 +431,33 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     private string BuildCampaignNextSessionReturnActionSummary()
         => ResolveCampaignMemoryNextSafeAction();
 
+    private string BuildCampaignAdoptionSummary()
+        => string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionSummary)
+            ? "Campaign adoption: no adoption receipt is currently projected for this desktop workspace."
+            : $"Campaign adoption: {_campaignServerPlane.AdoptionSummary}";
+
+    private string BuildCampaignAdoptionConfidenceSummary()
+        => string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionConfidenceSummary)
+            ? "Adoption confidence: no ready, playable-with-review, or blocked verdict is currently projected."
+            : $"Adoption confidence: {_campaignServerPlane.AdoptionConfidenceSummary}";
+
+    private string BuildRunnerGoalPinSummary()
+        => string.IsNullOrWhiteSpace(_campaignServerPlane?.GoalPinSummary)
+            ? "Runner goal pins: no pinned runner upgrade or downtime target is currently projected."
+            : $"Runner goal pins: {_campaignServerPlane.GoalPinSummary}";
+
+    private string BuildResolutionReportCloseoutSummary()
+        => string.IsNullOrWhiteSpace(_campaignServerPlane?.ResolutionReportSummary)
+            ? "ResolutionReport closeout: no approved run closeout is currently projected."
+            : $"ResolutionReport closeout: {_campaignServerPlane.ResolutionReportSummary}";
+
     private string ResolveCampaignMemorySummary()
     {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerSummary))
+        {
+            return $"BLACK LEDGER consequence: {_campaignServerPlane.BlackLedgerSummary}";
+        }
+
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.CampaignMemorySummary))
         {
             return $"Campaign consequence summary: {_campaignServerPlane.CampaignMemorySummary}";
@@ -437,6 +478,16 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
     private string ResolveCampaignMemoryEvidence()
     {
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerProofSummary))
+        {
+            return $"BLACK LEDGER consequence proof: {_campaignServerPlane.BlackLedgerProofSummary}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionEvidenceSummary))
+        {
+            return $"Campaign adoption proof: {_campaignServerPlane.AdoptionEvidenceSummary}";
+        }
+
         string? evidenceLine = _campaignProjection.ReadinessHighlights
             .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(evidenceLine))

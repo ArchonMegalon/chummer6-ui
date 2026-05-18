@@ -10,9 +10,23 @@ linux_gate_path="${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH:-$repo_root/.code
 screenshot_dir="${CHUMMER_USER_JOURNEY_TESTER_SCREENSHOT_DIR:-$repo_root/.codex-studio/published/user-journey-tester-screenshots}"
 flagship_gate_path="${CHUMMER_USER_JOURNEY_TESTER_FLAGSHIP_GATE_PATH:-$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 refresh_trace_from_flagship_gate="${CHUMMER_USER_JOURNEY_TESTER_REFRESH_TRACE_FROM_FLAGSHIP_GATE:-1}"
+linux_gate_temp_path=""
+
+cleanup() {
+  if [[ -n "$linux_gate_temp_path" && -f "$linux_gate_temp_path" ]]; then
+    rm -f "$linux_gate_temp_path"
+  fi
+}
+
+trap cleanup EXIT
 
 if [[ "${CHUMMER_USER_JOURNEY_TESTER_RUN_LINUX_GATE:-0}" == "1" ]]; then
-  bash scripts/materialize-linux-desktop-exit-gate.sh >/dev/null
+  if [[ -z "${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH:-}" ]]; then
+    linux_gate_temp_path="$(mktemp)"
+    linux_gate_path="$linux_gate_temp_path"
+  fi
+  CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_path" \
+    bash scripts/materialize-linux-desktop-exit-gate.sh >/dev/null
 fi
 
 if [[ "$refresh_trace_from_flagship_gate" == "1" ]]; then

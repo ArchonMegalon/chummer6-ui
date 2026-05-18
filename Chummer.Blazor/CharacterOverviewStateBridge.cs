@@ -61,6 +61,11 @@ public sealed class CharacterOverviewStateBridge : IDisposable
         return _presenter.UpdateDialogFieldAsync(fieldId, value, ct);
     }
 
+    public Task ApplyAttributeEditAsync(AttributeEditRequest request, CancellationToken ct)
+    {
+        return _presenter.ApplyAttributeEditAsync(request, ct);
+    }
+
     public Task ExecuteDialogActionAsync(string actionId, CancellationToken ct)
     {
         return _presenter.ExecuteDialogActionAsync(actionId, ct);

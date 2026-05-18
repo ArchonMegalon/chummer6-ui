@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T15:03:28.443541Z",
+  "generatedAt": "2026-05-17T20:18:40.808664Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_verification_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family verification evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
@@ -8,11 +8,13 @@
     "edition": "sr6",
     "familyId": "recovery-reload-migration-roundtrips",
     "proofKind": "sr6_family_carry_forward",
-    "ledgerPath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
-    "oraclePath": "/docker/chummercomplete/chummer-presentation-clean/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
+    "ledgerPath": "/docker/chummercomplete/chummer-presentation/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
+    "oraclePath": "/docker/chummercomplete/chummer-presentation/docs/SR6_DESKTOP_WORKFLOW_PARITY_ORACLE.json",
     "auditTests": [
       "Avalonia_and_Blazor_metadata_save_roundtrip_match",
-      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section"
+      "Avalonia_and_Blazor_tab_selection_loads_same_workspace_section",
+      "Menu_dialog_workflows_keep_recursive_parity",
+      "Legacy_ui_controls_keep_recursive_parity"
     ],
     "oracle": {
       "classification": "carry-forward",
@@ -23,7 +25,7 @@
       ]
     },
     "executionReceipts": [
-      "/docker/chummercomplete/chummer-presentation-clean/.codex-studio/published/workflow-family-parity/executed/sr6/recovery-reload-migration-roundtrips.generated.json"
+      "/docker/chummercomplete/chummer-presentation/.codex-studio/published/workflow-family-parity/executed/sr6/recovery-reload-migration-roundtrips.generated.json"
     ],
     "executionFailures": [],
     "executionExternalBlockers": []

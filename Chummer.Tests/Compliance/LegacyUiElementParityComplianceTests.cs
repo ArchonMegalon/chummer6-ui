@@ -35,10 +35,10 @@ public sealed class LegacyUiElementParityComplianceTests
         StringAssert.Contains(scriptText, "Individual {legacy_subject} legacy UI elements still rely on behavior-family fallback");
         StringAssert.Contains(scriptText, "unclassifiedLegacyEvents");
         StringAssert.Contains(scriptText, "unclassifiedLegacyDynamicElements");
-        StringAssert.Contains(scriptText, "Runtime_backed_file_menu_new_character_opens_creation_dialog");
-        StringAssert.Contains(scriptText, "Runtime_backed_global_settings_visible_selects_and_toggles_remain_live");
-        StringAssert.Contains(scriptText, "Runtime_generated_dialog_controls_expose_stable_inventory_names");
-        StringAssert.Contains(scriptText, "Avalonia_and_Blazor_legacy_ui_controls_expose_matching_dialog_contracts");
+        StringAssert.Contains(scriptText, "File_menu_new_character_creates_runtime_workspace");
+        StringAssert.Contains(scriptText, "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome");
+        StringAssert.Contains(scriptText, "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces");
+        StringAssert.Contains(scriptText, "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches");
     }
 
     [TestMethod]
@@ -122,7 +122,7 @@ public sealed class LegacyUiElementParityComplianceTests
         StringAssert.Contains(receiptText, "\"settings_global\"");
         StringAssert.Contains(receiptText, "\"character_creation\"");
         StringAssert.Contains(receiptText, "\"search_filter_category\"");
-        StringAssert.Contains(receiptText, "\"Runtime_generated_dialog_controls_expose_stable_inventory_names\": true");
+        StringAssert.Contains(receiptText, "\"Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces\": true");
         StringAssert.Contains(receiptText, "\"legacyElementDispositionReview\"");
         StringAssert.Contains(receiptText, "\"legacyElementDispositionCount\"");
         Assert.AreEqual("pass", root.GetProperty("legacyExtractionReview").GetProperty("status").GetString());

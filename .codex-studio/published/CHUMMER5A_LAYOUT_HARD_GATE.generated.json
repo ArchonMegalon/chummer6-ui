@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-08T15:10:53.243593Z",
+  "generatedAt": "2026-05-17T20:19:13.756576Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -42,27 +42,31 @@
     "legacyTabCount": 19,
     "menuHeaders": [
       "File",
+      "Edit",
+      "Special",
       "Tools",
       "Windows",
       "Help"
     ],
     "expectedMenuHeaders": [
       "File",
+      "Edit",
+      "Special",
       "Tools",
       "Windows",
       "Help"
     ],
-    "blazorRoot": "/docker/chummercomplete/chummer-presentation-clean/Chummer.Blazor",
+    "blazorRoot": "/docker/chummercomplete/chummer6-ui/Chummer.Blazor",
     "toolstripButtonPositions": {
       "SaveButton": 430,
-      "PrintButton": 583,
-      "CopyButton": 738,
-      "DesktopHomeButton": 891,
-      "ImportFileButton": 1058,
-      "CloseWorkspaceButton": 1223,
-      "SettingsButton": 2121,
-      "LoadDemoRunnerButton": 1778,
-      "ImportRawButton": 1955
+      "PrintButton": 584,
+      "CopyButton": 740,
+      "DesktopHomeButton": 894,
+      "ImportFileButton": 1062,
+      "CloseWorkspaceButton": 1228,
+      "SettingsButton": 2641,
+      "LoadDemoRunnerButton": 2316,
+      "ImportRawButton": 2475
     },
     "toolstripButtonVisibility": {
       "SaveButton": true,
@@ -71,8 +75,8 @@
       "DesktopHomeButton": true,
       "ImportFileButton": true,
       "CloseWorkspaceButton": true,
-      "SettingsButton": false,
-      "LoadDemoRunnerButton": false,
+      "SettingsButton": true,
+      "LoadDemoRunnerButton": true,
       "ImportRawButton": false
     },
     "orderedVisibleButtons": [
@@ -81,7 +85,9 @@
       "CopyButton",
       "DesktopHomeButton",
       "ImportFileButton",
-      "CloseWorkspaceButton"
+      "CloseWorkspaceButton",
+      "LoadDemoRunnerButton",
+      "SettingsButton"
     ],
     "blazorPreferredToolstripOrderPositions": {
       "save_character": 391,

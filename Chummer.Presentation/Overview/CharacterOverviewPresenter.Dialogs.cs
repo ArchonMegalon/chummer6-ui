@@ -38,6 +38,13 @@ public sealed partial class CharacterOverviewPresenter
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal)
                 ? field with { Value = DesktopDialogFieldValueParser.Normalize(field, value) }
+                : string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
+                    && string.Equals(field.Id, "newCharacterPriorityLastChangedFieldId", StringComparison.Ordinal)
+                ? field with
+                {
+                    Value = fieldId,
+                    Placeholder = fieldId
+                }
                 : field)
             .ToArray();
         DesktopDialogState updatedDialog = dialog with { Fields = updatedFields };

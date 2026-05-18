@@ -234,6 +234,65 @@ def parse_iso_utc(value: Any) -> datetime | None:
     return parsed.astimezone(timezone.utc)
 
 
+def _startup_smoke_candidate_timestamp(payload: Dict[str, Any], path: Path) -> float:
+    for key in ("completedAtUtc", "recordedAtUtc", "generated_at", "generatedAt"):
+        parsed = parse_iso_utc(payload.get(key))
+        if parsed is not None:
+            return parsed.timestamp()
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def select_startup_smoke_receipt(
+    candidates: List[Path],
+    *,
+    expected_head: str,
+    expected_platform: str,
+    expected_rid: str,
+    expected_channel: str,
+    expected_digest: str,
+) -> Path | None:
+    best_path: Path | None = None
+    best_score: tuple[int, int, int, int, int, int, float] | None = None
+    normalized_expected_head = normalize_token(expected_head)
+    normalized_expected_platform = normalize_token(expected_platform)
+    normalized_expected_rid = normalize_token(expected_rid)
+    normalized_expected_channel = normalize_token(expected_channel)
+    normalized_expected_digest = normalize_token(expected_digest)
+
+    for path in candidates:
+        if not path.is_file():
+            continue
+        payload = load_json(path)
+        status = normalize_token(payload.get("status"))
+        checkpoint = normalize_token(payload.get("readyCheckpoint"))
+        head = normalize_token(payload.get("headId"))
+        platform_name = normalize_token(payload.get("platform"))
+        rid = normalize_token(payload.get("rid"))
+        channel = normalize_token(payload.get("channelId") or payload.get("channel"))
+        digest = normalize_token(payload.get("artifactDigest"))
+        timestamp = _startup_smoke_candidate_timestamp(payload, path)
+        score = (
+            int(status in PASSING_STARTUP_SMOKE_STATUSES),
+            int(checkpoint == "pre_ui_event_loop"),
+            int(head == normalized_expected_head),
+            int(platform_name == normalized_expected_platform),
+            int(rid == normalized_expected_rid),
+            int(
+                (not normalized_expected_channel or channel == normalized_expected_channel)
+                and (not normalized_expected_digest or digest == normalized_expected_digest)
+            ),
+            timestamp,
+        )
+        if best_score is None or score > best_score:
+            best_score = score
+            best_path = path
+
+    return best_path
+
+
 def path_is_within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -474,7 +533,14 @@ else:
                 hub_registry_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
             ]
         )
-    startup_smoke_receipt_path = next((path for path in startup_smoke_candidates if path.is_file()), startup_smoke_candidates[0])
+    startup_smoke_receipt_path = select_startup_smoke_receipt(
+        startup_smoke_candidates,
+        expected_head=expected_head,
+        expected_platform="windows",
+        expected_rid=expected_rid,
+        expected_channel=release_channel_id,
+        expected_digest=f"sha256:{installer_sha}" if installer_sha else "",
+    ) or startup_smoke_candidates[0]
 
 startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)

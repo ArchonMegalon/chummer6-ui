@@ -225,7 +225,7 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
-    public async Task ExecuteCommandAsync_new_character_imports_starter_workspace()
+    public async Task ExecuteCommandAsync_new_character_opens_creation_dialog()
     {
         var client = new FakeChummerClient();
         var presenter = new CharacterOverviewPresenter(client);
@@ -233,15 +233,11 @@ public class CharacterOverviewPresenterTests
         await presenter.InitializeAsync(CancellationToken.None);
         await presenter.ExecuteCommandAsync("new_character", CancellationToken.None);
 
-        Assert.IsNotNull(client.LastImportedDocument);
-        Assert.AreEqual(RulesetDefaults.Sr5, client.LastImportedDocument!.RulesetId);
-        Assert.AreEqual(WorkspaceDocumentFormat.NativeXml, client.LastImportedDocument.Format);
-        StringAssert.Contains(client.LastImportedDocument.Content, "<name>New Character</name>");
-        StringAssert.Contains(client.LastImportedDocument.Content, "<gameedition>SR5</gameedition>");
+        Assert.IsNull(client.LastImportedDocument);
         Assert.AreEqual("new_character", presenter.State.LastCommandId);
-        Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
-        Assert.IsNotNull(presenter.State.Profile);
-        Assert.IsGreaterThan(0, presenter.State.ActiveSectionRows.Count);
+        Assert.AreEqual("dialog.new_character", presenter.State.ActiveDialog?.Id);
+        Assert.IsNull(presenter.State.WorkspaceId);
+        Assert.IsNull(presenter.State.Profile);
     }
 
     [TestMethod]
@@ -758,13 +754,14 @@ public class CharacterOverviewPresenterTests
                 TranslatorLanguageCount: 6,
                 EnabledLanguageOverlayCount: 3),
             new TranslatorLanguagesResponse(
-                EnabledLanguageOverlayCount: 1,
+                Count: 2,
                 Languages:
                 [
-                    new TranslatorLanguageEntry("en-us", "English", true),
-                    new TranslatorLanguageEntry("de-de", "Deutsch", true)
+                    new TranslatorLanguageEntry("en-us", "English"),
+                    new TranslatorLanguageEntry("de-de", "Deutsch")
                 ],
-                TranslatorBridgePosture: "partial"));
+                TranslatorBridgePosture: "partial",
+                EnabledLanguageOverlayCount: 1));
         var presenter = new CharacterOverviewPresenter(client);
 
         await presenter.ExecuteCommandAsync("translator", CancellationToken.None);
@@ -882,7 +879,7 @@ public class CharacterOverviewPresenterTests
         Assert.AreEqual("sr6", client.LastImportedDocument.RulesetId);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.IsNull(presenter.State.ActiveDialog);
-        Assert.AreEqual("Character imported.", presenter.State.Notice);
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
 
         await presenter.ExecuteCommandAsync("open_character", CancellationToken.None);
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "importRulesetId"));
@@ -1185,8 +1182,8 @@ public class CharacterOverviewPresenterTests
         await presenter.ExecuteDialogActionAsync("roll", CancellationToken.None);
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
-        Assert.IsNotNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResult", StringComparison.Ordinal)));
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "3d6+2");
+        Assert.IsNotNull(presenter.State.ActiveDialog?.Fields.FirstOrDefault(field => string.Equals(field.Id, "diceResultsSummary", StringComparison.Ordinal)));
+        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Sum");
     }
 
     [TestMethod]
