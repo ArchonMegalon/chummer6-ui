@@ -273,7 +273,23 @@ RELEASE_PUBLISHED_AT="$RELEASE_PUBLISHED_AT" \
 bash scripts/generate-releases-manifest.sh
 ```
 
-If you have release proof JSON, pass it too:
+Before manifest generation, materialize a fresh local Hub release proof from the checked-out
+`chummer6-hub` compatibility tree and export it as the default proof source:
+
+```bash
+python3 ../.c/hub/scripts/materialize_hub_local_release_proof.py \
+  ../.c/hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json \
+  https://chummer.run \
+  docker-compose.yml \
+  120 \
+  true
+
+export CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH="$PWD/../.c/hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json"
+```
+
+Then materialize the manifests. `generate-releases-manifest.sh` now honors
+`CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH` directly, so you do not need a second proof override if
+that export is present:
 
 ```bash
 DOWNLOADS_DIR="dist/files" \
@@ -282,7 +298,19 @@ PORTAL_MANIFEST_PATH="dist/releases.json" \
 RELEASE_VERSION="$CHUMMER_RELEASE_VERSION" \
 RELEASE_CHANNEL="$CHUMMER_RELEASE_CHANNEL" \
 RELEASE_PUBLISHED_AT="$RELEASE_PUBLISHED_AT" \
-RELEASE_PROOF_PATH=".codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \
+bash scripts/generate-releases-manifest.sh
+```
+
+If you need to pass the proof path explicitly for a one-off shell, use either variable:
+
+```bash
+DOWNLOADS_DIR="dist/files" \
+MANIFEST_PATH="dist/releases.json" \
+PORTAL_MANIFEST_PATH="dist/releases.json" \
+RELEASE_VERSION="$CHUMMER_RELEASE_VERSION" \
+RELEASE_CHANNEL="$CHUMMER_RELEASE_CHANNEL" \
+RELEASE_PUBLISHED_AT="$RELEASE_PUBLISHED_AT" \
+CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH="$PWD/../.c/hub/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \
 bash scripts/generate-releases-manifest.sh
 ```
 
