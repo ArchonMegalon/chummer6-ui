@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T20:19:02.649572Z",
+  "generatedAt": "2026-05-19T08:32:03.608245Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "preview",
   "status": "pass",
@@ -15,8 +15,8 @@
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "preview",
-    "releaseChannelGeneratedAt": "2026-05-16T21:12:08Z",
-    "releaseChannelAgeSeconds": 83214,
+    "releaseChannelGeneratedAt": "2026-05-19T06:34:10Z",
+    "releaseChannelAgeSeconds": 7073,
     "releaseChannelFutureSkewSeconds": 0,
     "sr4Status": "pass",
     "sr6Status": "pass",
@@ -35,8 +35,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "preview",
-    "generatedAt": "2026-05-16T21:12:08Z",
-    "ageSeconds": 83214,
+    "generatedAt": "2026-05-19T06:34:10Z",
+    "ageSeconds": 7073,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -52,10 +52,10 @@
       "rulesetUiAdaptation": "pass"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-05-17T20:13:44.267821Z",
-      "sr6": "2026-05-17T20:18:40.889244Z",
-      "chummer5a": "2026-05-17T20:18:49.865055Z",
-      "rulesetUiAdaptation": "2026-05-17T20:19:02.588980Z"
+      "sr4": "2026-05-19T08:30:32.995225Z",
+      "sr6": "2026-05-19T08:31:01.645119Z",
+      "chummer5a": "2026-05-19T08:31:29.539160Z",
+      "rulesetUiAdaptation": "2026-05-19T08:31:47.394912Z"
     }
   },
   "workflowCoverageReview": {
@@ -131,10 +131,10 @@
       "rulesetUiAdaptation": "preview"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-05-16T21:12:08Z",
-      "sr6": "2026-05-16T21:12:08Z",
-      "chummer5a": "2026-05-16T21:12:08Z",
-      "rulesetUiAdaptation": "2026-05-16T21:12:08Z"
+      "sr4": "2026-05-19T06:34:10Z",
+      "sr6": "2026-05-19T06:34:10Z",
+      "chummer5a": "2026-05-19T06:34:10Z",
+      "rulesetUiAdaptation": "2026-05-19T06:34:10Z"
     }
   },
   "gateExecutionReview": {

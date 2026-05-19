@@ -28,16 +28,19 @@ else
   release_channel_path_default="$default_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+skip_dependency_materialize="${CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
 
 mkdir -p "$(dirname "$receipt_path")"
 workflow_gate_exit=0
 dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" --no-restore -v minimal >/dev/null || workflow_gate_exit=$?
 execution_exit=0
-bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-execution-receipts.sh" sr6 >/dev/null || execution_exit=$?
 verification_exit=0
-bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-verification-receipts.sh" sr6 >/dev/null || verification_exit=$?
 materializer_exit=0
-bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?
+if [[ "$skip_dependency_materialize" != "1" ]]; then
+  bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-execution-receipts.sh" sr6 >/dev/null || execution_exit=$?
+  bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-verification-receipts.sh" sr6 >/dev/null || verification_exit=$?
+  bash "$repo_root/scripts/ai/milestones/materialize-sr-workflow-family-receipts.sh" sr6 >/dev/null || materializer_exit=$?
+fi
 
 python3 - <<'PY' "$repo_root" "$receipt_path" "$ledger_path" "$sr4_receipt_path" "$dual_head_tests_path" "$compliance_tests_path" "$ui_gate_tests_path" "$workflow_gate_tests_path" "$workflow_gate_exit" "$execution_exit" "$verification_exit" "$materializer_exit" "$release_channel_path"
 from __future__ import annotations

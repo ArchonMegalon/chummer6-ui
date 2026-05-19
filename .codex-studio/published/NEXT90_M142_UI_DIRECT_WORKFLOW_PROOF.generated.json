@@ -1,11 +1,9 @@
 {
-  "generatedAt": "2026-05-14T18:41:46.325091Z",
+  "generatedAt": "2026-05-19T09:05:05.680678Z",
   "contract_name": "chummer6-ui.next90_m142_ui_direct_workflow_proof",
-  "status": "fail",
-  "summary": "Milestone 142 direct workflow proof is incomplete.",
-  "unresolved": [
-    "Route-local receipt check failed: screenshot_review_receipt_pass"
-  ],
+  "status": "pass",
+  "summary": "Milestone 142 direct workflow proof is closed on route-local evidence.",
+  "unresolved": [],
   "evidence": {
     "packageId": "next90-m142-ui-close-direct-screenshot-and-runtime-proof-for-dense-builder-and-career-fl",
     "frontierId": 9095697868,
@@ -69,7 +67,7 @@
     },
     "receiptChecks": {
       "audit_receipt_pass": true,
-      "screenshot_review_receipt_pass": false,
+      "screenshot_review_receipt_pass": true,
       "workflow_execution_receipt_pass": true,
       "route_local_dense_initiative_pass": true,
       "route_local_dense_initiative_route_ids_match": true,

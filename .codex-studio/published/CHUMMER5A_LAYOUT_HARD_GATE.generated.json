@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T20:19:13.756576Z",
+  "generatedAt": "2026-05-19T09:18:42.993897Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -56,23 +56,23 @@
       "Windows",
       "Help"
     ],
-    "blazorRoot": "/docker/chummercomplete/chummer6-ui/Chummer.Blazor",
+    "blazorRoot": "/docker/chummercomplete/chummer-presentation/Chummer.Blazor",
     "toolstripButtonPositions": {
       "SaveButton": 430,
       "PrintButton": 584,
       "CopyButton": 740,
       "DesktopHomeButton": 894,
-      "ImportFileButton": 1062,
-      "CloseWorkspaceButton": 1228,
-      "SettingsButton": 2641,
-      "LoadDemoRunnerButton": 2316,
-      "ImportRawButton": 2475
+      "ImportFileButton": 1080,
+      "CloseWorkspaceButton": 1246,
+      "SettingsButton": 2719,
+      "LoadDemoRunnerButton": 2370,
+      "ImportRawButton": 2541
     },
     "toolstripButtonVisibility": {
       "SaveButton": true,
       "PrintButton": true,
       "CopyButton": true,
-      "DesktopHomeButton": true,
+      "DesktopHomeButton": false,
       "ImportFileButton": true,
       "CloseWorkspaceButton": true,
       "SettingsButton": true,
@@ -83,7 +83,6 @@
       "SaveButton",
       "PrintButton",
       "CopyButton",
-      "DesktopHomeButton",
       "ImportFileButton",
       "CloseWorkspaceButton",
       "LoadDemoRunnerButton",

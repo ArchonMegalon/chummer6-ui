@@ -25,6 +25,7 @@ queue_path = Path(sys.argv[2])
 design_queue_path = Path(sys.argv[3])
 receipt_path = Path(sys.argv[4])
 repo_root = Path(sys.argv[5])
+published_repo_root = (repo_root.parent / "chummer6-ui") if (repo_root.parent / "chummer6-ui").exists() else repo_root
 
 PACKAGE_ID = "next90-m142-ui-close-direct-screenshot-and-runtime-proof-for-dense-builder-and-career-fl"
 TITLE = "Close direct screenshot and runtime proof for dense builder and career flows, dice or initiative utilities, and contacts or lifestyles or notes workflows."
@@ -54,43 +55,43 @@ EXPECTED_TARGETED_TEST_COMMAND = (
     'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests" --no-restore'
 )
 EXPECTED_PROOF = [
-    f"{repo_root}/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",
-    f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj",
-    f"{repo_root}/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
-    f"{repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-    f"{repo_root}/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
-    f"{repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-    f"{repo_root}/scripts/ai/verify.sh",
-    f"{repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    f"{repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-    f"{repo_root}/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-    f"{repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-    f"{repo_root}/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-    f"{repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
+    f"{published_repo_root}/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",
+    f"{published_repo_root}/Chummer.Tests/Chummer.Tests.csproj",
+    f"{published_repo_root}/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
+    f"{published_repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+    f"{published_repo_root}/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh",
+    f"{published_repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+    f"{published_repo_root}/scripts/ai/verify.sh",
+    f"{published_repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    f"{published_repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    f"{published_repo_root}/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+    f"{published_repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    f"{published_repo_root}/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+    f"{published_repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
 ]
 EXPECTED_REGISTRY_EVIDENCE = [
     (
-        f"{repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh, "
-        f"{repo_root}/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh, and "
-        f"{repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh keep dense builder/career, "
+        f"{published_repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh, "
+        f"{published_repo_root}/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh, and "
+        f"{published_repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh keep dense builder/career, "
         "dice/initiative, and contacts/lifestyles/notes proof bound to direct screenshot-backed and runtime-backed route receipts instead of family prose."
     ),
     (
-        f"{repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json, "
-        f"{repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json, "
-        f"{repo_root}/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json, "
-        f"{repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json, "
-        f"{repo_root}/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json, and "
-        f"{repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json keep the three milestone-142 parity families aligned to route-local proof."
+        f"{published_repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json, "
+        f"{published_repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json, "
+        f"{published_repo_root}/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json, "
+        f"{published_repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json, "
+        f"{published_repo_root}/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json, and "
+        f"{published_repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json keep the three milestone-142 parity families aligned to route-local proof."
     ),
     (
-        f"{repo_root}/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs, "
-        f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj, "
-        f"{repo_root}/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh, and "
-        f"{repo_root}/scripts/ai/verify.sh fail closed when canonical registry rows, queue mirrors, audit evidence, or verify wiring drift from the completed package contract."
+        f"{published_repo_root}/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs, "
+        f"{published_repo_root}/Chummer.Tests/Chummer.Tests.csproj, "
+        f"{published_repo_root}/scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh, and "
+        f"{published_repo_root}/scripts/ai/verify.sh fail closed when canonical registry rows, queue mirrors, audit evidence, or verify wiring drift from the completed package contract."
     ),
     (
-        f"{repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json records the closed-package receipt for "
+        f"{published_repo_root}/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json records the closed-package receipt for "
         f"`{PACKAGE_ID}`."
     ),
 ]

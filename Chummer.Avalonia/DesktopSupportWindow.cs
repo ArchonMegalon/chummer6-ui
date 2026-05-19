@@ -99,10 +99,18 @@ internal sealed class DesktopSupportWindow : Window
                     Spacing = 12,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.support.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.support.section.case"), _caseText, _caseActionsRow),
                         CreateSection(S("desktop.support.section.release"), _releaseText, _releaseActionsRow),
+                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
                         CreateSection(S("desktop.support.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -176,6 +184,11 @@ internal sealed class DesktopSupportWindow : Window
     private string BuildCaseBody()
     {
         List<string> lines = [_supportProjection.Summary];
+        if (_supportProjection.HasTrackedCase)
+        {
+            lines.Add("Support choice: open the tracked case");
+        }
+
         string? highlight = _supportProjection.Highlights.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(highlight))
         {
@@ -203,7 +216,36 @@ internal sealed class DesktopSupportWindow : Window
     }
 
     private string BuildDiagnosticsBody()
-        => DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);
+    {
+        List<string> lines =
+        [
+            DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)
+        ];
+        AppendDiagnosticsDiffLines(
+            lines,
+            DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),
+            _supportProjection);
+        return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+    }
+
+    private static void AppendDiagnosticsDiffLines(
+        List<string> lines,
+        IReadOnlyList<string> diagnosticsDiff,
+        DesktopHomeSupportProjection supportProjection)
+    {
+        foreach (string line in diagnosticsDiff)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                lines.Add(line);
+            }
+        }
+
+        if (supportProjection.NeedsAttention)
+        {
+            lines.Add("Diagnostics diff stays visible while support closure still needs attention.");
+        }
+    }
 
     private string BuildFollowThroughBody()
     {

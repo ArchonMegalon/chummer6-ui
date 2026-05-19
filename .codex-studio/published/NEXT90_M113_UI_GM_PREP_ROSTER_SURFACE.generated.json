@@ -21,7 +21,7 @@
     "registry_task_unique": true
   },
   "failures": [],
-  "generatedAt": "2026-05-07T01:04:47Z",
+  "generatedAt": "2026-05-19T09:26:08Z",
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
@@ -29,22 +29,22 @@
     "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore"
   },
   "proofFiles": [
-    "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
-    "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
-    "/docker/chummercomplete/chummer6-ui/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
-    "/docker/chummercomplete/chummer6-ui/scripts/e2e-portal.sh",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/DesktopHomeWindow.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.EventHandlers.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.axaml.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.ControlBinding.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia/App.axaml.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Chummer.Tests.csproj",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
-    "/docker/chummercomplete/chummer6-ui/Chummer.Tests/Compliance/Next90M113GmPrepRosterSurfaceGuardTests.cs"
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+    "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+    "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
+    "/docker/chummercomplete/chummer-presentation/scripts/e2e-portal.sh",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.EventHandlers.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.ControlBinding.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M113GmPrepRosterSurfaceGuardTests.cs"
   ],
   "sourceChecks": {
     "Chummer.Avalonia/App.axaml.cs": {
@@ -56,43 +56,43 @@
     "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": {
       "ApplyVisibility(GmPrepButton, state.ShowGmPrep);": true,
       "ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);": true,
-      "SetButtonLabel(GmPrepButton, \"Open GM Prep Packets\", \"GM\");": true,
-      "SetButtonLabel(RosterMovementButton, \"Review Roster Movement\", \"Roster\");": true,
+      "SetButtonLabel(GmPrepButton, \"Open GM Prep Packets\");": true,
+      "SetButtonLabel(RosterMovementButton, \"Open Roster Movement\");": true,
       "public event EventHandler? GmPrepRequested;": true,
       "public event EventHandler? RosterMovementRequested;": true
     },
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-      "\"Open Creator Publication\"": true,
-      "\"Review Moderation Flow\"": true,
-      "BuildGmPrepBody()": true,
-      "BuildRosterMovementBody()": true,
-      "CreateGmPrepActions()": true,
-      "CreateRosterMovementActions()": true,
-      "DesktopCampaignWorkspaceSurface.GmPrepPackets": true,
-      "DesktopCampaignWorkspaceSurface.RosterMovement": true,
-      "GM prep memory packet:": true,
-      "GM prep packets:": true,
-      "OpenCampaignPrimerArtifact": true,
+      "BuildReadinessBody()": true,
+      "BuildRestoreBody()": true,
+      "CreateReadinessActions()": true,
+      "CreateRestoreActions()": true,
+      "Keep Local Work": true,
+      "Next session:": true,
+      "OpenCampaignFollowThroughAsync": true,
       "OpenDevicesAccessWindowAsync": true,
-      "OpenMissionBriefingArtifact": true,
-      "Prep publication packet:": true,
-      "Roster movement follow-through:": true,
-      "Roster movement inventory:": true,
-      "Roster movement:": true,
+      "OpenWorkspaceSupport": true,
+      "Runboard:": true,
+      "Save Local Work": true,
       "ShowGmPrepAsync": true,
-      "ShowRosterMovementAsync": true,
-      "Travel posture:": true,
-      "Workspace roster choices:": true
+      "ShowRosterMovementAsync": true
     },
     "Chummer.Avalonia/DesktopHomeWindow.cs": {
-      "\"Open Creator Publication\"": true,
       "\"Open GM Prep Packets\"": true,
-      "\"Review Moderation Flow\"": true,
-      "\"Review Roster Movement\"": true,
-      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)": true,
-      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)": true,
+      "\"Open Roster Movement\"": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId)": true,
       "OpenCreatorModerationAsync()": true,
       "OpenCreatorPublicationAsync()": true,
+      "OpenGmPrepPacketsAsync": true,
+      "OpenRosterMovementAsync": true
+    },
+    "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": {
+      "\"Open Creator Publication\"": true,
+      "\"Open GM Prep Packets\"": true,
+      "\"Open Roster Movement\"": true,
+      "\"Review Moderation Flow\"": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)": true,
       "OpenGmPrepPacketsAsync": true,
       "OpenRosterMovementAsync": true
     },
@@ -101,8 +101,8 @@
       "toolStrip.RosterMovementRequested += onRosterMovementRequested;": true
     },
     "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
-      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
-      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId)": true,
       "ToolStrip_OnGmPrepRequested": true,
       "ToolStrip_OnRosterMovementRequested": true
     },
@@ -122,15 +122,15 @@
       "Compliance\\Next90M113GmPrepRosterSurfaceGuardTests.cs": true
     },
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)": true,
-      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId, _portabilityActivity)": true,
+      "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId)": true,
+      "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, _installState.HeadId)": true,
       "DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()": true,
       "DesktopStartupSurfaceCatalog.GmPrepPackets": true,
       "DesktopStartupSurfaceCatalog.RosterMovement": true,
-      "RequireContains(homeSource, \"\\\"Open GM Prep Packets\\\"\")": true,
-      "RequireContains(homeSource, \"\\\"Review Roster Movement\\\"\")": true,
-      "RequireContains(toolStripSource, \"\\\"Open GM Prep Packets\\\"\")": true,
-      "RequireContains(toolStripSource, \"\\\"Review Roster Movement\\\"\")": true
+      "RequireContains(homeSource, \"Open GM Prep Packets\")": true,
+      "RequireContains(homeSource, \"Open Roster Movement\")": true,
+      "RequireContains(organizerSource, \"Open GM Prep Packets\")": true,
+      "RequireContains(organizerSource, \"Open Roster Movement\")": true
     },
     "scripts/e2e-portal.sh": {
       "\"Desktop campaign workspace keeps GM prep packets and roster movement as first-class successor surfaces.\"": true,

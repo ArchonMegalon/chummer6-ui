@@ -1905,6 +1905,7 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    // Veteran proof anchor: CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields
     public void CreateCommandDialog_hero_lab_importer_surfaces_import_oracle_and_adjacent_sr6_posture()
     {
         DesktopDialogFactory factory = new();

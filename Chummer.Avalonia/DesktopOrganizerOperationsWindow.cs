@@ -448,7 +448,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
             CreateButton("Open Campaign Workspace", OpenCampaignWorkspaceAsync),
             CreateButton("Open GM Runboard", OpenGmRunboardAsync),
             CreateButton("Open GM Prep Packets", OpenGmPrepPacketsAsync),
-            CreateButton("Review Roster Movement", OpenRosterMovementAsync)
+            CreateButton("Open Roster Movement", OpenRosterMovementAsync)
         ];
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))

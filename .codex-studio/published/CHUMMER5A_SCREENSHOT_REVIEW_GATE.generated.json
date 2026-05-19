@@ -1,16 +1,20 @@
 {
-  "generatedAt": "2026-05-17T20:20:09.968681Z",
+  "generatedAt": "2026-05-19T09:36:48.357985Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260514-restore-mac-preview",
-  "version": "run-20260514-restore-mac-preview",
-  "status": "fail",
-  "summary": "Chummer5a screenshot-based compare review still has blocking proof gaps.",
-  "reasons": [
-    "UI flagship release gate is not passing."
+  "releaseVersion": "run-20260518-220935",
+  "version": "run-20260518-220935",
+  "status": "pass",
+  "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
+  "reasons": [],
+  "frontierIdsClosed": [
+    3782970110,
+    2714856833,
+    1186439541,
+    4871476959,
+    1922169755
   ],
-  "frontierIdsClosed": [],
   "feedbackSources": [
     "/docker/chummercomplete/chummer6-ui/feedback/2026-04-12-classic-dense-workbench-and-veteran-parity.md",
     "/docker/chummercomplete/chummer6-ui/feedback/2026-04-13-post-flagship-release-train-and-veteran-certification.md"
@@ -24,13 +28,11 @@
     ]
   },
   "supportingReceiptReview": {
-    "status": "fail",
-    "reasons": [
-      "UI flagship release gate is not passing."
-    ],
+    "status": "pass",
+    "reasons": [],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "fail"
+      "flagshipGate": "pass"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -232,7 +234,7 @@
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "preview",
-    "releaseChannelVersion": "run-20260514-restore-mac-preview",
+    "releaseChannelVersion": "run-20260518-220935",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -274,7 +276,7 @@
         "status": "pass"
       }
     },
-    "reasonCount": 1,
-    "failureCount": 1
+    "reasonCount": 0,
+    "failureCount": 0
   }
 }

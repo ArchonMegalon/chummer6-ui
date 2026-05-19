@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T20:01:56.435121Z",
+  "generatedAt": "2026-05-19T07:58:54.735453Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer5a designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
@@ -26,7 +26,7 @@
     "legacyDesignerEventHookCount": 1755,
     "legacyRuntimeEventHookCount": 336,
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 55,
+    "currentDynamicInteractiveElementCount": 57,
     "currentNamedAxamlInteractiveElementCount": 44,
     "legacyBehaviorFamilyCounts": {
       "add_create": 13,
@@ -695,11 +695,11 @@
     "wiredIntoStandardVerify": true,
     "b14ConsumesReceipt": true,
     "buildExitCode": 0,
-    "buildOutputTail": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/MainWindowShellFrameProjectorTests.cs(259,9): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/MainWindowShellFrameProjectorTests.cs(295,9): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(552,17): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(685,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(691,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1058,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1029,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs(1036,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(3214,9): warning MSTEST0037: Use 'Assert.IsLessThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(3217,9): warning MSTEST0037: Use 'Assert.IsLessThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(4428,9): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1600,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1601,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3680,76): warning CA1869: Avoid creating a new 'JsonSerializerOptions' instance for every serialization operation. Cache and reuse instances instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1869) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1852,9): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1884,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1803,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1749,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1756,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(1996,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(4627,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(4637,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(4642,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(4650,13): warning CA1861: Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1861) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3331,17): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(3697,13): warning MSTEST0037: Use 'Assert.IsGreaterThan' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2338,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/DesktopDialogFactoryTests.cs(2339,9): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(6878,13): warning MSTEST0037: Use 'Assert.HasCount' instead of 'Assert.AreEqual' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/MigrationComplianceTests.cs(6980,45): warning CA1869: Avoid creating a new 'JsonSerializerOptions' instance for every serialization operation. Cache and reuse instances instead. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1869) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(4806,9): warning MSTEST0037: Use 'Assert.IsGreaterThanOrEqualTo' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(6088,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(5851,13): warning MSTEST0037: Use 'Assert.IsNotEmpty' instead of 'Assert.IsTrue' (https://learn.microsoft.com/dotnet/core/testing/mstest-analyzers/mstest0037) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(6042,21): warning CA1822: Member 'AdvanceFrames' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(6122,21): warning CA1822: Member 'TryWaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(5870,21): warning CA1822: Member 'WaitUntil' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs(5764,21): warning CA1822: Member 'AdvanceFrames' does not access instance data and can be marked as static (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1822) [/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj::TargetFramework=net10.0]\n    202 Warning(s)\n    0 Error(s)\nTime Elapsed 00:01:56.97",
+    "buildOutputTail": [],
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:14.20\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (12s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (15s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (18s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 18s 651ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+12/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (23s 902ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 24s 422ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -1231,42 +1231,42 @@
     "currentDynamicElementSamples": [
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 128,
+        "line": 184,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 192,
+        "line": 290,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 265,
+        "line": 363,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 312,
+        "line": 410,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 417,
+        "line": 515,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 287,
+        "line": 299,
         "type": "NumericUpDown"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 300,
+        "line": 312,
         "type": "NumericUpDown"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 1202,
+        "line": 1215,
         "type": "Button"
       },
       {
@@ -1276,17 +1276,17 @@
       },
       {
         "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs",
-        "line": 104,
+        "line": 103,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
-        "line": 800,
+        "line": 805,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
-        "line": 1032,
+        "line": 967,
         "type": "Button"
       },
       {
@@ -1296,88 +1296,88 @@
       },
       {
         "source": "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
-        "line": 384,
+        "line": 376,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
-        "line": 771,
+        "line": 782,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
-        "line": 618,
+        "line": 616,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 2177,
+        "line": 2295,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 236,
+        "line": 263,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 259,
+        "line": 367,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 389,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 294,
+        "line": 424,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 356,
+        "line": 486,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 636,
+        "line": 767,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 817,
+        "line": 948,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1011,
+        "line": 1132,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1112,
+        "line": 1232,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1135,
+        "line": 1255,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1155,
+        "line": 1275,
         "type": "Button"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1279,
-        "type": "TabControl"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 1321,
-        "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
         "line": 1399,
-        "type": "ComboBox"
+        "type": "TabControl"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1441,
+        "type": "CheckBox"
       }
     ],
     "currentNamedAxamlElementSamples": [
@@ -3803,8 +3803,9 @@
       "chummer5a_legacy_ui_element_parity_receipt_path": true
     },
     "testCommand": [
-      "bash",
-      "scripts/ai/test.sh",
+      "dotnet",
+      "test",
+      "--project",
       "Chummer.Tests/Chummer.Tests.csproj",
       "--no-build",
       "--filter",
@@ -3813,17 +3814,9 @@
       "minimal"
     ],
     "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-    "buildCommand": [
-      "bash",
-      "scripts/ai/with-package-plane.sh",
-      "build",
-      "Chummer.Tests/Chummer.Tests.csproj",
-      "--nologo",
-      "--verbosity",
-      "quiet",
-      "--ignore-failed-sources",
-      "-p:NuGetAudit=false"
-    ],
+    "testAssemblyPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/Chummer.Tests.dll",
+    "reusedExistingTestBuild": true,
+    "buildCommand": [],
     "observedFamilyCount": 29,
     "observedFamilies": [
       "add_create",
@@ -4469,7 +4462,7 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 55,
+    "currentDynamicInteractiveElementCount": 57,
     "currentNamedAxamlInteractiveElementCount": 44
   },
   "verifyWiringReview": {
@@ -4495,7 +4488,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:14.20\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (12s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (15s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (18s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 18s 651ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+12/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (23s 902ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 24s 422ms"
     }
   }
 }

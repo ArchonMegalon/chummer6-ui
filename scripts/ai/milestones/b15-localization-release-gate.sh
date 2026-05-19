@@ -9,7 +9,7 @@ catalog_path="$repo_root/Chummer.Presentation/Overview/DesktopLocalizationCatalo
 signoff_project_path="$repo_root/Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj"
 signoff_dll_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests.dll"
 signoff_exe_path="$repo_root/Chummer.Tests/Presentation/bin/Debug/net10.0/Chummer.Presentation.Signoff.Tests"
-signoff_runner_dir="$(cd "$(dirname "$signoff_dll_path")" && pwd -P)"
+signoff_runner_dir="$(dirname "$signoff_dll_path")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 local_release_proof_path="$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json"
 next90_m104_receipt_path="$repo_root/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json"
@@ -38,6 +38,7 @@ signoff_lock_retry_max_attempts="${CHUMMER_B15_LOCK_RETRY_MAX_ATTEMPTS:-3}"
 signoff_build_command=(dotnet build "$signoff_project_path" -c Debug --nologo -m:1 -v quiet)
 
 prepare_signoff_runner_dir() {
+  mkdir -p "$signoff_runner_dir"
   rm -f \
     "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests" \
     "$signoff_runner_dir/Chummer.Presentation.Signoff.Tests.dll" \

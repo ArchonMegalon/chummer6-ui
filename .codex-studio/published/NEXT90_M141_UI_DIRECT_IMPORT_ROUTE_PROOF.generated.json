@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-05-15T16:07:13Z",
+  "generatedAt": "2026-05-19T09:36:45Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "preview",
   "channel": "preview",
-  "releaseVersion": "run-20260514-restore-mac-preview",
-  "version": "run-20260514-restore-mac-preview",
+  "releaseVersion": "run-20260518-220935",
+  "version": "run-20260518-220935",
   "evidence": {
     "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
     "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",

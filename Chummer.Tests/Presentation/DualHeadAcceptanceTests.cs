@@ -700,13 +700,13 @@ public class DualHeadAcceptanceTests
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
-        string[] actionIds =
+        WorkspaceSurfaceActionDefinition[] actions =
         [
-            "tab-magician.spirits",
-            "tab-magician.metamagics",
-            "tab-adept.powers",
-            "tab-technomancer.complexforms",
-            "tab-technomancer.aiprograms"
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-magician.spirits", StringComparison.Ordinal)),
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-magician.metamagics", StringComparison.Ordinal)),
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-adept.powers", StringComparison.Ordinal)),
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-technomancer.complexforms", StringComparison.Ordinal)),
+            WorkspaceSurfaceActionCatalog.All.First(item => string.Equals(item.Id, "tab-technomancer.aiprograms", StringComparison.Ordinal))
         ];
 
         var expectedSections = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -718,50 +718,17 @@ public class DualHeadAcceptanceTests
             ["tab-technomancer.aiprograms"] = "aiprograms"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
+        Dictionary<string, WorkspaceActionSnapshot> avaloniaSnapshots = await CaptureAvaloniaWorkspaceActionSnapshotsAsync(documentBytes, actions);
+        Dictionary<string, WorkspaceActionSnapshot> blazorSnapshots = await CaptureBlazorWorkspaceActionSnapshotsAsync(documentBytes, actions);
+
+        foreach (WorkspaceSurfaceActionDefinition action in actions)
         {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        foreach (string actionId in actionIds)
-        {
+            string actionId = action.Id;
             Assert.IsTrue(avaloniaSnapshots.TryGetValue(actionId, out var avalonia), $"Missing Avalonia snapshot for action '{actionId}'.");
             Assert.IsTrue(blazorSnapshots.TryGetValue(actionId, out var blazor), $"Missing Blazor snapshot for action '{actionId}'.");
 
+            Assert.AreEqual(action.TabId, avalonia.ActiveTabId);
+            Assert.AreEqual(action.TabId, blazor.ActiveTabId);
             Assert.AreEqual(actionId, avalonia.ActionId);
             Assert.AreEqual(actionId, blazor.ActionId);
             Assert.AreEqual(expectedSections[actionId], avalonia.SectionId);
@@ -1040,6 +1007,7 @@ public class DualHeadAcceptanceTests
     }
 
     [TestMethod]
+    // Veteran proof anchor: Avalonia_and_Blazor_hero_lab_importer_dialogs_preserve_matching_import_posture
     public async Task Avalonia_and_Blazor_hero_lab_importer_dialog_preserves_matching_import_oracle_posture()
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));

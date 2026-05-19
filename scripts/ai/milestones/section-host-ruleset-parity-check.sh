@@ -487,13 +487,13 @@ evidence["buildExitCode"] = None
 evidence["testResults"] = test_results
 if not reasons:
     build_command = [
-        "bash",
-        "scripts/ai/with-package-plane.sh",
+        "dotnet",
         "build",
         "Chummer.Tests/Chummer.Tests.csproj",
         "--nologo",
         "--verbosity",
         "quiet",
+        "--no-restore",
         "--ignore-failed-sources",
         "-p:NuGetAudit=false",
     ]
@@ -508,11 +508,26 @@ if not reasons:
     evidence["buildExitCode"] = build_result.returncode
     evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
     if build_result.returncode != 0:
-        add_failure(
-            f"Section-host/ruleset parity build slice failed with exit code {build_result.returncode}.",
-            execution_failures,
+        retry_build_command = [arg for arg in build_command if arg != "--no-restore"]
+        evidence["retryBuildCommand"] = retry_build_command
+        retry_build_result = subprocess.run(
+            retry_build_command,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
         )
+        evidence["retryBuildExitCode"] = retry_build_result.returncode
+        evidence["retryBuildOutputTail"] = tail_lines((retry_build_result.stdout or "") + "\n" + (retry_build_result.stderr or ""))
+        if retry_build_result.returncode != 0:
+            add_failure(
+                f"Section-host/ruleset parity build slice failed with exit code {retry_build_result.returncode}.",
+                execution_failures,
+            )
+        else:
+            build_result = retry_build_result
     else:
+        evidence["retryBuildCommand"] = []
+    if build_result is not None and build_result.returncode == 0:
         for test_command in test_commands:
             test_result = subprocess.run(
                 test_command,

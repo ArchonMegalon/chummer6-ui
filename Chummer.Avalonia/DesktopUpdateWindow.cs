@@ -89,6 +89,13 @@ internal sealed class DesktopUpdateWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.update.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.update.section.current"), _currentText, _currentActionsRow),
@@ -263,6 +270,9 @@ internal sealed class DesktopUpdateWindow : Window
                 ? CreateButton(S("desktop.home.button.open_devices_access"), OpenDevicesAccessWindowAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true)
         ];
+        actions.Add(CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language),
+            static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal()));
 
         return actions;
     }

@@ -724,6 +724,11 @@ internal sealed class DesktopHomeWindow : Window
             lines.Add($"Claim issue: {_installState.LastClaimError}");
         }
 
+        if (_installState.LastClaimAttemptUtc is DateTimeOffset lastClaimAttemptUtc)
+        {
+            lines.Add(F("desktop.home.install_summary.last_claim_attempt", lastClaimAttemptUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+        }
+
         return string.Join("\n", lines);
     }
 
@@ -733,24 +738,36 @@ internal sealed class DesktopHomeWindow : Window
         string manifestVersion = string.IsNullOrWhiteSpace(_updateStatus.LastManifestVersion)
             ? S("desktop.home.value.unknown")
             : _updateStatus.LastManifestVersion;
+        string manifestPublished = _updateStatus.LastManifestPublishedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
+        string rolloutState = string.IsNullOrWhiteSpace(_updateStatus.RolloutState) ? S("desktop.home.value.unknown") : _updateStatus.RolloutState;
+        string rolloutReason = string.IsNullOrWhiteSpace(_updateStatus.RolloutReason) ? S("desktop.home.value.unknown") : _updateStatus.RolloutReason;
+        string supportabilityState = string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState) ? S("desktop.home.value.unknown") : _updateStatus.SupportabilityState;
+        string supportabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary) ? S("desktop.home.value.no_supportability_summary") : _updateStatus.SupportabilitySummary;
+        string proofStatus = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus) ? S("desktop.home.value.none_published") : _updateStatus.ProofStatus;
+        string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
+        string knownIssueSummary = string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary) ? S("desktop.home.value.none_published") : _updateStatus.KnownIssueSummary;
+        string fixAvailabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary) ? S("desktop.home.value.no_fix_guidance") : _updateStatus.FixAvailabilitySummary;
+        string lastError = string.IsNullOrWhiteSpace(_updateStatus.LastError) ? S("desktop.home.value.none") : _updateStatus.LastError;
 
-        List<string> lines =
-        [
-            $"State: {_updateStatus.Status} · Installed {_updateStatus.InstalledVersion}",
-            $"Latest: {manifestVersion} · Checked {lastChecked} UTC"
-        ];
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
-        {
-            lines.Add(_updateStatus.RecommendedAction);
-        }
-
-        if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
-        {
-            lines.Add($"Issue: {_updateStatus.LastError}");
-        }
-
-        return string.Join("\n", lines);
+        return F(
+            "desktop.home.update_summary",
+            _updateStatus.Status,
+            _updateStatus.InstalledVersion,
+            manifestVersion,
+            manifestPublished,
+            _updateStatus.ChannelId,
+            lastChecked,
+            _updateStatus.AutoApply ? "enabled" : "disabled",
+            rolloutState,
+            rolloutReason,
+            supportabilityState,
+            supportabilitySummary,
+            proofStatus,
+            proofGenerated,
+            knownIssueSummary,
+            fixAvailabilitySummary,
+            _updateStatus.RecommendedAction,
+            lastError);
     }
 
     private string BuildWorkspaceSummary()
@@ -775,7 +792,19 @@ internal sealed class DesktopHomeWindow : Window
         [
             F("desktop.home.next_safe_action", _campaignProjection.NextSafeAction),
             _campaignProjection.Summary,
-            BuildCampaignRestoreContinuitySummary()
+            _campaignProjection.RestoreSummary,
+            _campaignProjection.DeviceRoleSummary,
+            _campaignProjection.SupportClosureSummary,
+            BuildCampaignRestoreContinuitySummary(),
+            "Review campaign consequences before opening another restore surface.",
+            BuildCampaignConsequenceSummary(),
+            BuildCampaignConsequenceEvidenceSummary(),
+            BuildCampaignNextSessionReturnSummary(),
+            BuildCampaignReturnActionSummary(),
+            BuildCampaignAdoptionSummary(),
+            BuildCampaignAdoptionConfidenceSummary(),
+            BuildRunnerGoalPinSummary(),
+            BuildResolutionReportCloseoutSummary()
         ];
 
         string? highlight = _campaignProjection.ReadinessHighlights.FirstOrDefault();
@@ -947,7 +976,11 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildSupportBody()
     {
-        List<string> lines = [_supportProjection.Summary];
+        List<string> lines =
+        [
+            F("desktop.home.next_safe_action", _supportProjection.NextSafeAction),
+            _supportProjection.Summary
+        ];
         string? highlight = _supportProjection.Highlights.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(highlight))
         {
@@ -961,9 +994,17 @@ internal sealed class DesktopHomeWindow : Window
     {
         List<string> lines =
         [
+            F("desktop.home.next_safe_action", _buildExplainProjection.NextSafeAction),
             _buildExplainProjection.Summary,
-            _buildExplainProjection.ExplainFocus
+            _buildExplainProjection.RulesetSpotlight,
+            _buildExplainProjection.ExplainFocus,
+            _buildExplainProjection.RuntimeHealthSummary,
+            _buildExplainProjection.ReturnTarget,
+            _buildExplainProjection.RulePosture
         ];
+
+        lines.AddRange(_buildExplainProjection.CompatibilityReceipts);
+        lines.AddRange(_buildExplainProjection.BuildPathComparisons);
 
         string? watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(watchout))
@@ -1029,6 +1070,12 @@ internal sealed class DesktopHomeWindow : Window
 
         if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
         {
+            actions.Add(CreateButton("Open GM Runboard", OpenGmRunboardAsync));
+            actions.Add(CreateButton("Open GM Prep Packets", OpenGmPrepPacketsAsync));
+            actions.Add(CreateButton("Open Roster Movement", OpenRosterMovementAsync));
+            actions.Add(CreateButton(S("desktop.home.button.open_my_artifacts"), OpenCreatorPublicationAsync));
+            actions.Add(CreateButton(S("desktop.home.button.open_campaign_artifacts"), OpenCampaignPrimerArtifact));
+            actions.Add(CreateButton(S("desktop.home.button.open_published_artifacts"), OpenCreatorModerationAsync));
             if (HasFirstPlayableSession())
             {
                 actions.Add(CreateButton("Starter", OpenStarterLaneReviewAsync));
@@ -1085,14 +1132,14 @@ internal sealed class DesktopHomeWindow : Window
         {
             return
             [
-                CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
+                CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync),
                 CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
             ];
         }
 
         List<Button> actions =
         [
-            CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true)
+            CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync)
         ];
 
         if (!string.IsNullOrWhiteSpace(_supportProjection.PrimaryActionHref))

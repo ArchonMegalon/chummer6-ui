@@ -802,6 +802,7 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
+    // Veteran proof anchor: ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture
     public async Task ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_import_oracle_lane_posture()
     {
         var client = new FakeChummerClient();

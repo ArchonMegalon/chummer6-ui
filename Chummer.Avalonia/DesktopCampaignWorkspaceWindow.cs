@@ -117,6 +117,13 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.campaign.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _introText,
                         _statusText,
                         CreateSection(
@@ -324,6 +331,11 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         if (!string.IsNullOrWhiteSpace(highlight))
         {
             lines.Add(highlight);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.RunboardSummary))
+        {
+            lines.Add($"Runboard: {_campaignServerPlane.RunboardSummary}");
         }
 
         if (_campaignServerPlane is null)
@@ -543,8 +555,19 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         List<string> lines =
         [
-            _supportProjection.Summary
+            _supportProjection.Summary,
+            "Review campaign consequences before continuing this restore route.",
+            BuildCampaignConsequenceSummary(),
+            BuildCampaignConsequenceEvidenceSummary(),
+            BuildCampaignNextSessionReturnSummary(),
+            BuildCampaignNextSessionReturnActionSummary(),
+            BuildCampaignAdoptionSummary(),
+            BuildCampaignAdoptionConfidenceSummary()
         ];
+        if (_supportProjection.HasTrackedCase)
+        {
+            lines.Add("Support choice: open the tracked case");
+        }
 
         string? highlight = _supportProjection.Highlights.FirstOrDefault();
         if (!string.IsNullOrWhiteSpace(highlight))

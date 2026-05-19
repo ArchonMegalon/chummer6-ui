@@ -1,13 +1,9 @@
 {
-  "generatedAt": "2026-05-12T06:18:53.074722Z",
+  "generatedAt": "2026-05-19T09:17:08.091026Z",
   "contractName": "chummer6-ui.chummer_shared_legacy_equivalent_chrome_gate",
-  "status": "fail",
-  "summary": "Shared legacy-equivalent runtime chrome drift was detected.",
-  "reasons": [
-    "chummer5a shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
-    "sr4 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
-    "sr6 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement"
-  ],
+  "status": "pass",
+  "summary": "Shared legacy-equivalent runtime chrome stays stripped across the Chummer5A, SR4, and SR6 promoted surfaces.",
+  "reasons": [],
   "evidence": {
     "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_GATE.generated.json",
     "policyPath": "/docker/chummercomplete/chummer-presentation/docs/CHUMMER_SHARED_LEGACY_EQUIVALENT_CHROME_POLICY.json",
@@ -17,8 +13,15 @@
       "sr4": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json",
       "sr6": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json"
     },
-    "runtimeHitCount": 9,
-    "runtimeHits": [
+    "currentSharedSourcePaths": {
+      "toolStrip": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs",
+      "home": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
+      "organizer": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs"
+    },
+    "runtimeHitCount": 0,
+    "runtimeHits": [],
+    "ignoredStaleRuntimeHitCount": 9,
+    "ignoredStaleRuntimeHits": [
       {
         "lane": "chummer5a",
         "tokenId": "review_framing",
@@ -83,8 +86,8 @@
         "text": "Review Roster Movement"
       }
     ],
-    "reasonCount": 3,
-    "failureCount": 3
+    "reasonCount": 0,
+    "failureCount": 0
   },
   "reviews": {
     "policyReview": {
@@ -98,13 +101,9 @@
       "reasons": []
     },
     "runtimeChromeReview": {
-      "status": "fail",
-      "reasonCount": 3,
-      "reasons": [
-        "chummer5a shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
-        "sr4 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement",
-        "sr6 shared runtime surface 'tool_strip' reintroduced forbidden chrome 'review_framing' via elements.toolTip: Review Roster Movement"
-      ]
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": []
     },
     "wiringReview": {
       "status": "pass",

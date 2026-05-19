@@ -77,7 +77,7 @@ if legacy_execution_root.is_dir():
         stale_file.unlink()
 lock_dir = repo_root / ".codex-studio" / "locks"
 lock_dir.mkdir(parents=True, exist_ok=True)
-lock_path = lock_dir / "workflow-family-dotnet-test.lock"
+lock_path = lock_dir / f"workflow-family-dotnet-test-{edition}.lock"
 max_test_attempts = max(
     1,
     int(

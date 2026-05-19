@@ -151,7 +151,7 @@
         </Border>
         <Expander Grid.Row="5"
                   x:Name="SectionPayloadExpander"
-                  Header=""
+                  Header="Section Payload"
                   Height="0"
                   MinHeight="0"
                   MaxHeight="0"
@@ -184,7 +184,7 @@
     </ScrollViewer>
 
     <Border Grid.Row="4" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
-      <Expander Header="" IsExpanded="False">
+      <Expander Header="Raw XML Import" IsExpanded="False">
         <StackPanel Spacing="2" Margin="0,4,0,0">
           <TextBox x:Name="XmlInputBox"
                    AcceptsReturn="True"

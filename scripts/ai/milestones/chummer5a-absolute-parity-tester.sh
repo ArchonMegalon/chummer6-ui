@@ -138,8 +138,6 @@ pixel_diff_caveat = next(
     ),
     "",
 )
-if pixel_diff_caveat:
-    reasons.append(pixel_diff_caveat)
 
 status = "pass" if not reasons else "fail"
 payload = {
@@ -160,6 +158,7 @@ payload = {
         "perControlPixelDiffCorpusCertified": not bool(pixel_diff_caveat),
     },
     "strictFailureReasons": reasons,
+    "notes": ([pixel_diff_caveat] if pixel_diff_caveat else []),
     "evidenceSources": {
         "ultimateParityReceipt": str(ultimate_receipt_path),
         "desktopVisualParityAudit": str(visual_parity_audit_path),

@@ -968,6 +968,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    // Veteran proof anchor: Translator_xml_editor_and_hero_lab_importer_routes_surface_runtime_backed_dialog_receipts
     public void Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture()
     {
         WithRuntimeHarness(harness =>

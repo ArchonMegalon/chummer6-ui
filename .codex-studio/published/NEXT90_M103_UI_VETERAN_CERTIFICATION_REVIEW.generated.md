@@ -1,83 +1,960 @@
 # Next90 M103 Veteran Certification Review
 
-Package: `next90-m103-ui-veteran-certification`
-Frontier: `2257965187`
-Landed commit: `a8e4f92c`
-Promoted desktop head: `avalonia`
-Receipt: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json`
-Proof command: `bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh`
-Screenshot pack: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots`
+Receipt: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json`
+Screenshot pack: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots`
+Source repo: `/docker/chummercomplete/chummer-presentation`
+Authority proof repo: `/docker/chummercomplete/chummer6-ui-finish`
+Screenshot control evidence: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json`
+Difference ledger source: `/docker/chummercomplete/chummer-presentation/docs/CHUMMER5A_VISUAL_DIFFERENCE_LEDGER.json`
 
-This review packet summarizes the screenshot-backed parity checks that keep the promoted desktop head familiar to Chummer5a veterans.
+| Surface | Parity Question | Promoted-Head Proof | Legacy Familiarity | Screenshot | Sample Colors | SHA-256 |
+| --- | --- | --- | --- | --- | ---: | --- |
+| menu | Can a veteran find the same top-level command geography in the first minute? | Open the promoted Avalonia head and expand a primary menu to reveal command choices. | Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help. | 02-menu-open-light.png | 3 | 34f75730018f3b36979d5046c39f26829011e43b0c672390b758a151aff06e5a |
+| toolstrip | Can a veteran start normal character work from the same always-visible toolbar posture? | Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip. | Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards. | 01-initial-shell-light.png | 3 | d64869152095cfb2e037ddaf956c2cea3d564108800451f0461d424cb7aee510 |
+| roster | Can a veteran find the familiar roster utility without support instructions? | Open Character Roster from the promoted desktop command surface. | The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation. | 17-character-roster-dialog-light.png | 3 | 8b52e28707214635add42b090f2207d67a092149978ce2153b3ab023f095caba |
+| master_index | Can a veteran reach the familiar index/search utility from desktop chrome? | Open Master Index from the promoted desktop command surface. | The Master Index utility remains a named searchable reference surface. | 16-master-index-dialog-light.png | 3 | 778d5af6c3345b320486d07486117ec1743a1dd21bd34387e293d6829e435914 |
+| settings | Can a veteran find global setup before editing a character? | Open Global Settings from the promoted desktop toolstrip/menu surface. | Global Settings remains a first-minute settings route with source and roster configuration lineage. | 03-settings-open-light.png | 3 | 5e6629fce066d9bd9c33e535de7bad7cd9879509974a41b2022e5b039ffc4053 |
+| import | Can a veteran find the classic import route after landing in the modern workbench? | Load the bundled legacy runner, then open File > Open Character on the promoted desktop head. | Existing .chum5-era import still starts from the desktop shell and exposes the familiar open-character route. | 18-import-dialog-light.png | 3 | 5c309054d772b79282331f9dcae9f193ad7b9945e3ef1f717ec6c858a0ac74e7 |
+| translator | Can a veteran find the translator-era localization route and understand its governed replacement state? | Open Translator from the promoted desktop command surface and confirm the governed localization bridge posture. | The Translator utility still exists as a named desktop Tools route rather than buried in generic settings. | 38-translator-dialog-light.png | 3 | 5a01f3866f3fb7748524b6f0ae32355910220700724425c10f554d3c38c408d5 |
+| xml_editor | Can a veteran inspect XML amend/custom-data posture without dropping into unsupported hidden tooling? | Open XML Editor from the promoted desktop command surface and verify overlay plus custom-data posture. | The XML editing and amend workflow still exists as a named desktop route with explicit XML bridge posture. | 39-xml-editor-dialog-light.png | 3 | 840c23ec296b7271064003a731a58c5ed6ee5dcdcfaf84f23d5a290556c3918a |
+| hero_lab_importer | Can a veteran still find the Hero Lab-specific import route when adjacent import oracles matter? | Open Hero Lab Importer from the promoted desktop Tools surface and confirm the compatibility import payload. | Hero Lab importer remains a named compatibility import route instead of disappearing behind the generic open flow. | 40-hero-lab-importer-dialog-light.png | 3 | 5c309054d772b79282331f9dcae9f193ad7b9945e3ef1f717ec6c858a0ac74e7 |
 
-| Surface | Veteran question | Gesture proved on promoted head | Chummer5a baseline | Screenshot | Size | Fresh vs source | SHA-256 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| toolstrip | Can a veteran start normal character work from the same always-visible toolbar posture? | Inspect the initial shell and verify load, import, save, settings, support, and close actions stay in the toolstrip. | Classic flat workbench actions remain immediate toolbar buttons instead of dashboard cards. | 01-initial-shell-light.png | 1280x800 | fresh | 2491a56cd9da78af8c4e6795ad086bb5d9fa39960486e26aeebf7611e4f37556 |
-| menu | Can a veteran find the same top-level command geography in the first minute? | Open the promoted Avalonia head and expand a primary menu to reveal command choices. | Chummer5a top menu roots remain visible as File, Edit, Special, Tools, Windows, and Help. | 02-menu-open-light.png | 1280x800 | fresh | daf168881b7a4e817d46008acb66302559d435b701da8910465b2adb4589f381 |
-| settings | Can a veteran find global setup before editing a character? | Open Global Settings from the promoted desktop toolstrip/menu surface. | Global Settings remains a first-minute settings route with source and roster configuration lineage. | 03-settings-open-light.png | 1280x800 | fresh | 94da1ae9e16f4da06ac10e69c1934bb320c7938525f91d5f875d38a3ecf213e1 |
-| import | Can a veteran bring an existing character into the workbench without browser-only ritual? | Load the bundled legacy runner through the promoted desktop import path. | Existing .chum5-era import starts from an obvious desktop import action and lands in the loaded-runner workbench. | 18-import-dialog-light.png | 1280x800 | fresh | 95ae9a65b162bac13b28a75e980804a59002dcf233806fbf96b371be756c496d |
-| master index | Can a veteran reach the familiar index/search utility from desktop chrome? | Open Master Index from the promoted desktop command surface. | The Master Index utility remains a named searchable reference surface. | 16-master-index-dialog-light.png | 1280x800 | fresh | e941c746d714e9546a705252b1bf1ecf532fd0fff000eb0a2dbd798844bdf9f1 |
-| roster | Can a veteran find the familiar roster utility without support instructions? | Open Character Roster from the promoted desktop command surface. | The Character Roster utility is still a named utility surface, not hidden behind campaign-only navigation. | 17-character-roster-dialog-light.png | 1280x800 | fresh | a0f2311ec011e169616069cd1e3705083236b7f0687affb69ed5eec0a9c2ab0a |
+## Screenshots
 
-## Screenshot paths
+- `menu`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png`
+- `toolstrip`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png`
+- `roster`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png`
+- `master_index`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png`
+- `settings`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png`
+- `import`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png`
+- `translator`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png`
+- `xml_editor`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png`
+- `hero_lab_importer`: `/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png`
 
-- `toolstrip`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png`
-- `menu`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png`
-- `settings`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png`
-- `import`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png`
-- `master_index`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png`
-- `roster`: `/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png`
+## Audited UI Differences
 
-## Legacy baselines
+### 01-initial-shell-light.png (`initial_shell`)
 
-- `toolstrip`: `/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs` (`f7a0a6a78c5dd72e7c8e3a4be83bf9c2db7e18bb2729d8c901c0431168037f4d`)
-- `menu`: `/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs` (`f7a0a6a78c5dd72e7c8e3a4be83bf9c2db7e18bb2729d8c901c0431168037f4d`)
-- `settings`: `/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs` (`8b5070f37ee7231fec6b4a1c01525845d23c15342942c5300025f3f7bf9df88a`)
-- `import`: `/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs` (`7c189fc3d2aeb80d946ae5e2793eac73553a701bc423f53e8385fac9f1e70daa`)
-- `master_index`: `/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs` (`0faa79543933d5e6f6372722e2c04ec20df5f5483083d221712a5f104b48f7b7`)
-- `roster`: `/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs` (`fe93903fdf104df824d55d0da9be7e8b10edbbd3cf3fd380d5c378d2c43478eb`)
+- Surface kind: frame
+- Parity intent: Workbench-first startup posture with visible menu, core toolbar actions, and no wasted first-paint chrome.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/ToolStripControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `ContentRegion`, `CopyButton`, `DeterminateRoot`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerButton`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_TransparencyFallback`, `PrintButton`, `ProgressBarRoot`, `QuickStartContainer`, `RestoreActionButtonsPanel`, `ReviewCampaignWorkspaceButton`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionsHeader`, `SectionHostControl`, `SectionPayloadExpander`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`
+- Evidence anchors:
+- Anchor: ShellMenuBarControl.axaml roots: FileMenuButton, EditMenuButton, SpecialMenuButton, ToolsMenuButton, WindowsMenuButton, HelpMenuButton.
+- Anchor: ToolStripControl.axaml visible first-paint buttons: SaveButton, PrintButton, CopyButton, DesktopHomeButton, ImportFileButton, CloseWorkspaceButton, SettingsButton.
+- Anchor: AvaloniaFlagshipUiGateTests.cs hides ImportRawButton, LoadDemoRunnerButton, CampaignWorkspaceButton, UpdateStatusButton, InstallLinkingButton, SupportButton, and ReportIssueButton on the default workbench.
+- Anchor: AvaloniaFlagshipUiGateTests.cs keeps LeftNavigatorRegion, LoadedRunnerTabStripBorder, and RestoreContinuityStatusBorder collapsed before a runner is loaded.
+- `ToolStripControl.SaveButton/PrintButton/CopyButton/DesktopHomeButton/ImportFileButton/CloseWorkspaceButton/SettingsButton`: The Avalonia startup strip keeps Save, Print, Copy, New, Open, Close, and Options as first-paint buttons inside a compact WrapPanel instead of duplicating the old ToolStrip widget stack. Legacy posture: Classic WinForms ToolStrip exposed New/Open/Save/Print/Copy as always-visible main-form actions tied to MDI-era chrome. Why it differs: The user still gets one-click muscle memory for the first minute, but the promoted shell is tuned for a dense single-workbench layout rather than a literal WinForms clone.
+- `ToolStripControl.ImportRawButton/LoadDemoRunnerButton/CampaignWorkspaceButton/UpdateStatusButton/InstallLinkingButton/SupportButton/ReportIssueButton visibility`: Those buttons still exist in the promoted head, but they stay hidden on the startup screenshot so the workbench does not burn first-paint width on demo, raw XML, campaign, update, linking, support, or bug chrome. Legacy posture: Legacy desktop utility affordances were spread across main-form chrome, menus, and detached helper flows. Why it differs: The first screen is required to feel like Chummer's dense workbench, not a dashboard of secondary operations.
+- `MainWindow.LeftNavigatorRegion/SummaryHeaderControl.LoadedRunnerTabStripBorder/SummaryHeaderControl.RestoreContinuityStatusBorder`: The promoted shell mounts navigator, tab-strip, and restore controls in code but collapses them completely until a runner or recovery handoff makes them relevant. Legacy posture: Chummer5a centered the first minute on the main form and did not spend initial vertical space on workspace rails, runner tabs, or recovery dossiers. Why it differs: The modern shell needs those routes later, but startup parity is only credible if the dense workbench still owns the opening frame.
 
-## Source proof anchors
+### 02-menu-open-light.png (`menu_open`)
 
-- `toolstrip`:
-  - `toolstrip`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/Controls/ToolStripControl.axaml`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `menu`:
-  - `menu`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/Controls/ShellMenuBarControl.axaml`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `settings`:
-  - `toolstrip`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/Controls/ToolStripControl.axaml`
-  - `event_handlers`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/MainWindow.EventHandlers.cs`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `import`:
-  - `toolstrip`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/Controls/ToolStripControl.axaml`
-  - `event_handlers`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Avalonia/MainWindow.EventHandlers.cs`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `master_index`:
-  - `presenter_test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
-- `roster`:
-  - `presenter_test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/CharacterOverviewPresenterTests.cs`
-  - `test`: `/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs`
+- Surface kind: frame
+- Parity intent: Top-level command geography remains recognizable to a veteran in the first minute.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/ShellMenuBarControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerButton`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `QuickStartContainer`, `RestoreActionButtonsPanel`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionsHeader`, `SectionHostControl`, `SectionPayloadExpander`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `print_setup`, `print_multiple`, `exit`
+- Evidence anchors:
+- Anchor: ShellMenuBarControl.axaml declares FileMenuButton, EditMenuButton, SpecialMenuButton, ToolsMenuButton, WindowsMenuButton, and HelpMenuButton.
+- Anchor: AvaloniaFlagshipUiGateTests.cs asserts ClassicMenuLabels exactly equal File, Edit, Special, Tools, Windows, Help.
+- Anchor: AvaloniaFlagshipUiGateTests.cs requires FileMenuButton to surface open_character and save_character runtime commands.
+- Anchor: CatalogOnlyRulesetShellCatalogResolver.cs and ShellChromeBoundary.cs bind current command ids open_character, global_settings, master_index, character_roster, and report_bug into the shell.
+- `ShellMenuBarControl.FileMenuButton/EditMenuButton/SpecialMenuButton/ToolsMenuButton/WindowsMenuButton/HelpMenuButton`: The promoted shell keeps the same six roots by id and label, but they render through Avalonia menu primitives and modern shell styling instead of classic WinForms paint. Legacy posture: WinForms MenuStrip roots used the familiar File/Edit/Special/Tools/Windows/Help geography with ampersand accelerators and legacy chrome. Why it differs: Veteran navigation landmarks must survive, but the promoted head is not required to reproduce the old rendering engine's exact typography and accelerator quirks.
+- `FileMenuButton -> open_character/save_character runtime commands`: FileMenuButton now dispatches live command ids such as open_character and save_character through the promoted shell runtime instead of static form-event wiring. Legacy posture: The legacy main form wired File/Open and File/Save directly to WinForms handlers. Why it differs: The new parity proof is only honest if the menu is backed by the current command pipeline rather than by a screenshot-only façade.
+- `EditMenuButton/SpecialMenuButton/WindowsMenuButton workspace scoping`: The promoted shell keeps the familiar roots visible, but Edit and Special routes only expose live commands when the active workspace actually supports them and Windows no longer implies a full MDI manager. Legacy posture: Legacy menu geography was more static because the main form owned most command surfaces directly. Why it differs: Current menus are required to stay truthful to the active workspace model instead of advertising dead or MDI-only paths.
 
-## Screenshot capture health
+### 03-settings-open-light.png (`settings_dialog`)
 
-| Surface | Screenshot mtime (UTC) | Newest source proof (UTC) | Distinct sampled colors | Content non-blank |
-| --- | --- | --- | --- | --- |
-| toolstrip | 2026-04-26T10:00:45.433089Z | 2026-04-26T09:57:21.497826Z | 6 | true |
-| menu | 2026-04-26T10:00:45.434089Z | 2026-04-26T09:57:21.497826Z | 5 | true |
-| settings | 2026-04-26T10:00:45.434089Z | 2026-04-26T09:57:21.497826Z | 6 | true |
-| import | 2026-04-26T10:00:45.440089Z | 2026-04-26T09:57:21.497826Z | 6 | true |
-| master index | 2026-04-26T10:00:45.439089Z | 2026-04-26T09:57:21.497826Z | 6 | true |
-| roster | 2026-04-26T10:00:45.440089Z | 2026-04-26T09:57:21.497826Z | 6 | true |
+- Surface kind: dialog
+- Parity intent: Global setup stays first-minute reachable and still reads like a serious desktop settings surface.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/EditGlobalSettings.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `Background`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentPresenter`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_cancel`, `DialogAction_save`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_globalCharacterPriority`, `DialogFieldInput_globalCharacterRosterPath`, `DialogFieldInput_globalCheckForUpdates`, `DialogFieldInput_globalCompactMode`, `DialogFieldInput_globalHideMasterIndex`, `DialogFieldInput_globalLanguage`, `DialogFieldInput_globalPreferNightlyBuilds`, `DialogFieldInput_globalSheetLanguage`, `DialogFieldInput_globalTheme`, `DialogFieldInput_globalUiScale`, `DialogFieldLabel_globalCharacterPriority`, `DialogFieldLabel_globalCharacterRosterPath`, `DialogFieldLabel_globalCheckForUpdates`, `DialogFieldLabel_globalCompactMode`, `DialogFieldLabel_globalHideMasterIndex`, `DialogFieldLabel_globalLanguage`, `DialogFieldLabel_globalPreferNightlyBuilds`, `DialogFieldLabel_globalSheetLanguage`, `DialogFieldLabel_globalTheme`, `DialogFieldLabel_globalUiScale`, `DialogField_globalCharacterRosterPath`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `DropDownGlyph`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerButton`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `QuickStartContainer`, `RestoreActionButtonsPanel`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionsHeader`, `SectionHostControl`, `SectionPayloadExpander`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Default Setting for New Characters`, `Character Roster Watch Folder`, `Automatically download updates`, `Compact Mode`, `Hide the Master Index`, `Language`, `Prefer Nightly builds when updating`, `Sheet Language`, `Theme`, `UI Scale (%)`
+- Observed dialog actions: `cancel`, `save`
+- Observed selected rows: `Global Settings [tools] enabled`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens the same dialog from SettingsButton and Ctrl+G -> global_settings.
+- Anchor: CommandDialogPaneControl.axaml exposes DialogTitleText, DialogFieldsHost, and DialogActionsHost for the inline settings surface.
+- Anchor: DesktopDialogFactory.BuildGlobalSettingsFields creates globalSettingsTree, globalSettingsPropertyGrid, globalCharacterRosterPath, and globalPdfViewerPath.
+- Anchor: AvaloniaFlagshipUiGateTests.cs keeps FileMenuButton responsive while the Global Settings dialog is still mounted.
+- `SettingsButton/Ctrl+G -> global_settings command route`: The promoted shell routes both the toolbar button and the keyboard shortcut through the same global_settings command id and presenter path. Legacy posture: Legacy settings were typically opened through dedicated menu or utility-form routes on the WinForms shell. Why it differs: Modern command routing must be consistent across toolbar, menu, and keyboard surfaces even when the visual destination remains recognizable.
+- `CommandDialogPaneControl.DialogTitleText/DialogFieldsHost/DialogActionsHost`: Global Settings is rendered inside the shared shell dialog host with a common title band, field stack, and action bar instead of a separate utility window. Legacy posture: EditGlobalSettings was a standalone WinForms window with its own frame, button row, and modality behavior. Why it differs: The promoted head standardizes dialog hosting so settings, import, utility, and builder dialogs all behave consistently inside the desktop shell.
+- `DesktopDialogFactory.globalSettingsTree/globalSettingsPropertyGrid/globalCharacterRosterPath/globalPdfViewerPath`: The new dialog makes the navigation tree, current-pane property grid, roster path, PDF viewer path, and compact-mode fields explicit in one shared field model. Legacy posture: The old settings form used WinForms tabs and heterogeneous controls to distribute options across several pages. Why it differs: The settings content still follows the old mental model, but it is represented through a structured dialog field system that the current shell can verify and reuse.
 
-## Review posture
+### 04-loaded-runner-light.png (`loaded_runner`)
 
-- Required promoted platforms: `linux, windows, macos`
-- Required surface count: `6`
-- All required screenshots present: `true`
-- All screenshots fresh against source proof: `true`
-- All screenshots meet desktop review size: `true`
-- All screenshots show non-blank sampled content: `true`
-- Queue completion action: `verify_closed_package_only`
-- Do-not-reopen reason: M103 chummer6-ui veteran certification is complete; future shards must verify this receipt, registry row, design queue row, Fleet queue row, and direct proof command instead of recapturing promoted-head Chummer5a screenshot parity.
+- Surface kind: frame
+- Parity intent: A loaded runner still reads as a character-first workbench rather than a landing page or dashboard.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SectionHostControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `ClassicCharacterSheetBorder`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_cyberware_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_cyberware_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Global Settings [tools] enabled`
+- Observed preview text: `Cyberware
+Name: Soma
+Metatype: Human
+Ruleset: sr5
+Initiative: 11 \u002B 2d6
+Armor: 12
+Essence: 5.34
+
+BOD: 5
+AGI: 7
+REA: 6
+Firearms 1: Automatics 6
+Stealth 1: Sneaking 5
+Weapons 1: Ares Alpha
+Armor 1: Armor Jacket
+Cyberware 1: Wired Reflexes 2
+Contact 1: Fixer (Loyalty 4 / Connection 5)
+Runner Goal: Ready for a flagship shell smoke pass
+
+Payload
+{
+  "name": "Soma",
+  "ruleset": "sr5",
+  "metatype": "Human",
+  "priority": "Standard",
+  "role": "Street Sam",
+  "attributes": {
+    "Body": 5,
+    "Agility": 7,
+    "Reaction": 6,
+    "Strength": 4,
+    "Willpower": 3,
+    "Logic": 3
+  },
+  "combat": {
+    "initiative": "11 + 2d6",
+    "armor": 12,
+    "essence": 5.34
+  }
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs loads the bundled Soma runner through LoadDemoRunnerButton and then captures 04-loaded-runner-light.png.
+- Anchor: LoadedRunnerTabStripBorder becomes visible after import while LeftNavigatorRegion stays collapsed for the single-runner posture.
+- Anchor: LoadedRunnerTabStrip keeps stable info/profile and gear landmarks in SnapshotLoadedRunnerTabs().
+- Anchor: SectionRowsList is visible and SectionPreviewBox is non-empty before the loaded-runner screenshot is accepted.
+- `SummaryHeaderControl.LoadedRunnerTabStripBorder/LoadedRunnerTabStrip`: The promoted head uses a compact tab-strip card to expose the Runner/Profile/Gear landmarks inside the summary header instead of rebuilding legacy form tabs verbatim. Legacy posture: Chummer5a relied on frmCareer-era tab geography and form chrome to show that a runner was active. Why it differs: The tab posture must still be obvious, but the current shell collapses everything that is not needed for a single loaded runner.
+- `MainWindow.LeftNavigatorRegion/WorkspaceStripRegion`: The promoted shell keeps workspace-rail plumbing out of sight for the default loaded-runner case and refuses to reserve width for an empty navigator strip. Legacy posture: Legacy navigation lived inside the main character form without a separate workspace rail concept. Why it differs: Single-runner parity is stronger when the workbench owns the available width instead of emulating multi-workspace chrome that is irrelevant in the screenshot.
+- `SectionHostControl.SectionRowsList/SectionPreviewBox`: The promoted shell keeps the same dense list-and-detail rhythm, but it expresses it through a structured row list and a preview payload pane that the tests can snapshot directly. Legacy posture: frmCareer showed dense browse-and-detail landmarks through WinForms tabs, lists, and property-style panes. Why it differs: The behavioral landmark is the browse/detail cadence, not the old control class names.
+
+### 05-dense-section-light.png (`dense_section_light`)
+
+- Surface kind: frame
+- Parity intent: The light-theme dense builder keeps the same inspect, compare, and confirm rhythm without wasting space.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SectionHostControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_skill_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_skill_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `skills[0] = Automatics 6 (Assault Rifles)`, `New Character [file] enabled`
+- Observed preview text: `Skills
+Skill 1: Automatics 6 (Assault Rifles)
+Skill 2: Sneaking 5
+
+Payload
+{
+  "section": "skills",
+  "skills": [
+    { "name": "Automatics", "rating": 6, "specialization": "Assault Rifles" },
+    { "name": "Sneaking", "rating": 5 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Character_creation_preserves_familiar_dense_builder_rhythm() requires ClassicCharacterSheetBorder to be visible.
+- Anchor: Gear_builder_preserves_familiar_browse_detail_confirm_rhythm() checks SectionRowsList rows gear.weapons[0] = Ares Alpha and gear.armor[0] = Armor Jacket.
+- Anchor: SectionPreviewBox must contain combat/attributes payload markers before the dense screenshot is accepted.
+- Anchor: NoticeBorder and NoticeText stay hidden so routine command noise does not consume visible workbench space.
+- `SectionHostControl.ClassicCharacterSheetBorder/ClassicCharacterSummaryTitle/ClassicCharacterFactsPanel`: The promoted shell recreates that effect as a compact section-scoped summary band inside SectionHostControl instead of copying the old form layout exactly. Legacy posture: frmCareer kept the runner summary woven into the character form rather than in detached cards or a landing dashboard. Why it differs: The familiarity target is a dense always-near summary, not a pixel match to every legacy panel edge.
+- `SectionHostControl.SectionRowsList`: The Avalonia workbench renders rows as explicit DisplayPath/DisplayValue pairs such as gear.weapons[0] = Ares Alpha and gear.armor[0] = Armor Jacket. Legacy posture: Classic dense sections mixed WinForms lists, trees, and field groups to render gear and related rows. Why it differs: Path/value rows are more mechanically testable and still preserve the dense browse rhythm veterans expect.
+- `SectionHostControl.SectionPreviewBox`: The promoted shell keeps a hidden-but-mounted preview payload box that contains section markers such as combat and attributes for the selected row. Legacy posture: Legacy detail panes were embedded in WinForms sublayouts and were not exposed as a structured payload surface. Why it differs: The current head needs a stable, inspectable detail surface while still presenting a visually dense workbench.
+- `SectionHostControl.NoticeBorder/NoticeText`: Routine command-dispatch notices are deliberately suppressed on the dense screenshot instead of occupying visible shell chrome. Legacy posture: Legacy utility noise typically stayed out of the central editing pane unless the user explicitly triggered an alert. Why it differs: A loud status banner would break the frmCareer-style serious-work posture more than any missing pixel-perfect border would.
+
+### 06-dense-section-dark.png (`dense_section_dark`)
+
+- Surface kind: frame
+- Parity intent: Dark theme remains dense and readable without inheriting legacy dark-mode debt.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/App.axaml`
+- Observed theme: Dark
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_create_entry`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_create_entry`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Calendar
+Entry 1: Downtime recon · +2 karma
+
+Payload
+{
+  "section": "calendar",
+  "diary": [
+    { "title": "Downtime recon", "date": "2080-02-14", "karma": 2 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Theme_tokens_preserve_chummer5a_palette_and_readability() asserts ChummerShellActiveMenuBorderBrush and ChummerShellAccentButtonBrush equal #1C4A2D in light and dark palettes.
+- Anchor: The same test asserts ChummerShellActiveMenuBackgroundBrush is #1C4A2D and ChummerShellActiveMenuBorderBrush is #90C39A in dark mode.
+- Anchor: The dark-theme proof enforces >=12:1 foreground contrast and >=7:1 muted-foreground contrast on shell surfaces.
+- Anchor: 06-dense-section-dark.png is captured from the same SectionRowsList workbench after ThemeVariant.Dark is applied.
+- `App.axaml ChummerShellActiveMenuBorderBrush/ChummerShellAccentButtonBrush/ChummerShellActiveMenuBackgroundBrush`: The promoted shell uses explicit branded dark tokens such as #1C4A2D and #90C39A instead of whatever the host toolkit would otherwise default to. Legacy posture: Legacy dark mode was inconsistent and inherited WinForms-era palette constraints. Why it differs: Dark mode is allowed to improve materially because the parity contract is about familiar work rhythm, not preserving poor legacy color behavior.
+- `App.axaml contrast budgets for ChummerShellForegroundBrush/MutedForegroundBrush/WarningBrush/DangerBrush`: The promoted head hard-gates foreground, muted, warning, and danger contrast ratios in dark mode before the screenshot pack is accepted. Legacy posture: The old client did not enforce hard contrast budgets across every dark surface. Why it differs: Readable dense work matters more than cloning legacy contrast mistakes.
+- `Dark-mode SectionRowsList and shell panel chrome`: The same dense list/detail surface is recolored through shared shell brushes and panel classes rather than per-form overrides. Legacy posture: Dark workbench surfaces came from ad hoc panel fills and WinForms border behavior. Why it differs: The promoted desktop needs one consistent dark-theme system across all major surfaces.
+
+### 07-loaded-runner-tabs-light.png (`loaded_runner_tabs`)
+
+- Surface kind: frame
+- Parity intent: Visible tab posture survives without reintroducing full MDI chrome.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SummaryHeaderControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_create_entry`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_create_entry`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Calendar
+Entry 1: Downtime recon · +2 karma
+
+Payload
+{
+  "section": "calendar",
+  "diary": [
+    { "title": "Downtime recon", "date": "2080-02-14", "karma": 2 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Loaded_runner_preserves_visible_character_tab_posture() requires LoadedRunnerTabStripBorder to be visible and to surface a Runner tab label.
+- Anchor: Loaded_runner_header_stays_tab_panel_only_without_metric_cards() forbids NameValueText, AliasValueText, KarmaValueText, SkillsValueText, RuntimeValueText, and RuntimeInspectButton.
+- Anchor: Desktop_shell_preserves_classic_dense_center_first_workbench_posture() requires WorkspaceStripRegion to stay absent and LeftNavigatorRegion width to collapse.
+- Anchor: SnapshotLoadedRunnerTabs() is expected to contain info/profile and gear landmarks on the loaded runner.
+- `SummaryHeaderControl.LoadedRunnerTabStripBorder/LoadedRunnerTabStrip`: The promoted head distills that into a dedicated tab-strip card instead of an MDI-style shell or a second workspace row. Legacy posture: Legacy runner context was expressed through frmCareer-era tabs and main-form chrome. Why it differs: Visible runner tabs are required; full legacy window-management chrome is not.
+- `WorkspaceStripRegion/MainWindow.LeftNavigatorRegion`: The promoted shell explicitly collapses workspace-strip and left-rail chrome when only one runner matters. Legacy posture: There was no separate modern workspace strip to keep alive for inactive sessions. Why it differs: The central workbench is more important than showcasing future multi-workspace affordances on this proof.
+- `NameValueText/AliasValueText/KarmaValueText/SkillsValueText/RuntimeValueText/RuntimeInspectButton`: The promoted shell intentionally omits those card-style metrics from the header and leaves the header as tab chrome only. Legacy posture: Legacy dense runner work did not stop above the workbench to read hero cards or metric dashboards. Why it differs: Any card stack here would feel less like Chummer5a than the absence of old border styling.
+
+### 08-cyberware-dialog-light.png (`cyberware_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Cyberware selection keeps the familiar browse-detail-confirm posture while making implant costs and essence easier to audit.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/Selection Forms/SelectCyberware.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `CheckGlyph`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_add`, `DialogAction_add_more`, `DialogAction_cancel`, `DialogAction_focus_category`, `DialogAction_toggle_search_scope`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_uiCyberwareBlackMarketDiscount`, `DialogFieldInput_uiCyberwareBookFilter`, `DialogFieldInput_uiCyberwareBrowseGrid`, `DialogFieldInput_uiCyberwareCandidateList`, `DialogFieldInput_uiCyberwareCapacity`, `DialogFieldInput_uiCyberwareCategory`, `DialogFieldInput_uiCyberwareCategoryCommands`, `DialogFieldInput_uiCyberwareCategoryTree`, `DialogFieldInput_uiCyberwareCost`, `DialogFieldInput_uiCyberwareDiscount`, `DialogFieldInput_uiCyberwareEssDiscount`, `DialogFieldInput_uiCyberwareEssence`, `DialogFieldInput_uiCyberwareFilterSummary`, `DialogFieldInput_uiCyberwareGrade`, `DialogFieldInput_uiCyberwareHideBannedGrades`, `DialogFieldInput_uiCyberwareHideOverAvailLimit`, `DialogFieldInput_uiCyberwareLiveRecalc`, `DialogFieldInput_uiCyberwareMarkup`, `DialogFieldInput_uiCyberwareName`, `DialogFieldInput_uiCyberwareNotes`, `DialogFieldInput_uiCyberwarePrototypeTranshuman`, `DialogFieldInput_uiCyberwareRating`, `DialogFieldInput_uiCyberwareResultCommands`, `DialogFieldInput_uiCyberwareSearch`, `DialogFieldInput_uiCyberwareSearchInCategoryOnly`, `DialogFieldInput_uiCyberwareSelectionDetails`, `DialogFieldInput_uiCyberwareSelectionTrail`, `DialogFieldInput_uiCyberwareSlot`, `DialogFieldInput_uiCyberwareSource`, `DialogFieldLabel_uiCyberwareBookFilter`, `DialogFieldLabel_uiCyberwareBrowseGrid`, `DialogFieldLabel_uiCyberwareCandidateList`, `DialogFieldLabel_uiCyberwareCapacity`, `DialogFieldLabel_uiCyberwareCategory`, `DialogFieldLabel_uiCyberwareCategoryCommands`, `DialogFieldLabel_uiCyberwareCategoryTree`, `DialogFieldLabel_uiCyberwareCost`, `DialogFieldLabel_uiCyberwareDiscount`, `DialogFieldLabel_uiCyberwareEssDiscount`, `DialogFieldLabel_uiCyberwareEssence`, `DialogFieldLabel_uiCyberwareFilterSummary`, `DialogFieldLabel_uiCyberwareGrade`, `DialogFieldLabel_uiCyberwareLiveRecalc`, `DialogFieldLabel_uiCyberwareMarkup`, `DialogFieldLabel_uiCyberwareName`, `DialogFieldLabel_uiCyberwareNotes`, `DialogFieldLabel_uiCyberwareRating`, `DialogFieldLabel_uiCyberwareResultCommands`, `DialogFieldLabel_uiCyberwareSearch`, `DialogFieldLabel_uiCyberwareSelectionDetails`, `DialogFieldLabel_uiCyberwareSelectionTrail`, `DialogFieldLabel_uiCyberwareSlot`, `DialogFieldLabel_uiCyberwareSource`, `DialogField_uiCyberwareBookFilter`, `DialogField_uiCyberwareBrowseGrid`, `DialogField_uiCyberwareCandidateList`, `DialogField_uiCyberwareCapacity`, `DialogField_uiCyberwareCategory`, `DialogField_uiCyberwareCategoryCommands`, `DialogField_uiCyberwareCategoryTree`, `DialogField_uiCyberwareCost`, `DialogField_uiCyberwareDiscount`, `DialogField_uiCyberwareEssDiscount`, `DialogField_uiCyberwareEssence`, `DialogField_uiCyberwareFilterSummary`, `DialogField_uiCyberwareGrade`, `DialogField_uiCyberwareLiveRecalc`, `DialogField_uiCyberwareMarkup`, `DialogField_uiCyberwareName`, `DialogField_uiCyberwareNotes`, `DialogField_uiCyberwareRating`, `DialogField_uiCyberwareResultCommands`, `DialogField_uiCyberwareSearch`, `DialogField_uiCyberwareSelectionDetails`, `DialogField_uiCyberwareSelectionTrail`, `DialogField_uiCyberwareSlot`, `DialogField_uiCyberwareSource`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NormalRectangle`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_Border`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RootGrid`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_cyberware_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Data File`, `Catalog Grid`, `Available Cyberware`, `Capacity`, `Category`, `Category Commands`, `Navigation`, `Cost`, `Discount %`, `Essence Discount %`, `Essence`, `Filter Summary`, `Grade`, `Live Recalculation`, `Markup %`, `Cyberware`, `Notes`, `Rating`, `Result Commands`, `Search`, `Selection Details`, `Selection Trail`, `Location`, `Source`
+- Observed dialog actions: `add`, `add_more`, `cancel`, `focus_category`, `toggle_search_scope`
+- Observed quick actions: `SectionQuickAction_cyberware_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Cyberware
+Runner Goal: Ready for a flagship shell smoke pass
+
+Payload
+{
+  "section": "profile"
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs selects the row cyberware[0] = Wired Reflexes 2, confirms SectionPreviewBox contains essence 5.34, then clicks SectionQuickAction_cyberware_add.
+- Anchor: DialogTitleText must equal Add Cyberware before 08-cyberware-dialog-light.png is captured.
+- Anchor: DesktopDialogFactory.BuildCyberwareSelectionFields creates uiCyberwareCategoryTree, uiCyberwareCandidateList, uiCyberwareGrade, uiCyberwareEssence, uiCyberwareCost, uiCyberwareSource, and uiCyberwareSelectionDetails.
+- Anchor: Cyberware dialogs expose add/add_more/cancel actions through BuildAddAndMoreActions().
+- `SectionQuickAction_cyberware_add -> dialog.ui.cyberware_add`: The promoted shell launches cyberware selection through a named section quick action anchored directly to the dense workbench row context. Legacy posture: Classic cyberware work launched from dedicated selector forms and context menus tied to legacy control trees. Why it differs: Quick actions keep the same user intent visible while fitting the shared section host model.
+- `DesktopDialogFactory.uiCyberwareCategoryTree/uiCyberwareCandidateList`: The current dialog uses an explicit Navigation tree and Available Cyberware list field model with predictable ids and layout slots. Legacy posture: Legacy dialogs relied on WinForms tree/list widgets and form-specific layout code for category browsing. Why it differs: The promoted shell needs selection dialogs that are both familiar to browse and mechanically testable across heads.
+- `DesktopDialogFactory.uiCyberwareGrade/uiCyberwareSlot/uiCyberwareRating/uiCyberwareMarkup/uiCyberwareDiscount`: The current dialog exposes grade, slot, rating, markup, and discount in a single shared field stack around the selected implant. Legacy posture: Legacy implant modifiers and grade choices were spread across dialog-specific widgets that varied by selection form. Why it differs: The new field model makes the cost and essence implications easier to audit without hiding them behind form-specific control arrangements.
+- `DesktopDialogFactory.uiCyberwareEssence/uiCyberwareCost/uiCyberwareSource/uiCyberwareSelectionDetails + add/add_more/cancel`: Essence, cost, source, and selection details remain visible beside a standardized add/add more/cancel action bar. Legacy posture: Older confirmation posture depended on bespoke totals areas and legacy button rows. Why it differs: The current desktop puts explainability and reversible action posture ahead of faithfully cloning the old layout skeleton.
+
+### 09-vehicles-section-light.png (`vehicles_section`)
+
+- Surface kind: frame
+- Parity intent: Vehicles and drones stay dense, technical, and easy to re-find from the main workbench.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SectionHostControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_vehicle_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_vehicle_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `vehicles[0] = Roadmaster · Armor 16 / Handling 3`, `New Character [file] enabled`
+- Observed preview text: `Vehicles
+Vehicle 1: Roadmaster · Armor 16 / Handling 3
+
+Payload
+{
+  "section": "vehicles",
+  "vehicles": [
+    { "name": "Roadmaster", "handling": 3, "armor": 16 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Non_classic_sections_surface_a_named_workbench_context_instead_of_an_untitled_row_dump() requires SectionContextTitleText to equal Vehicles and SectionContextSummaryText to mention Roadmaster.
+- Anchor: 09-vehicles-section-light.png is captured after selecting the row vehicles[0] = Roadmaster in SectionRowsList.
+- Anchor: Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm() opens SectionQuickAction_vehicle_add with title Add Vehicle / Drone and field Vehicle.
+- Anchor: DesktopDialogFactory.BuildVehicleSelectionFields creates uiVehicleCategoryTree, uiVehicleCandidateList, uiVehicleHandling, uiVehicleCost, uiVehicleSource, and uiVehicleSelectionDetails.
+- `SectionHostControl.SectionContextTitleText/SectionContextSummaryText`: The promoted workbench adds an explicit Vehicles section header and summary line directly above the rows. Legacy posture: Vehicle work was often spread across dedicated forms or older nested layouts where the current context could be easy to lose. Why it differs: Modern section context cues improve re-findability without changing the underlying builder rhythm.
+- `SectionHostControl.SectionRowsList row vehicles[0] = Roadmaster`: Vehicle entries are rendered as dense path/value rows inside the same workbench list that drives the rest of the character builder. Legacy posture: Legacy vehicle editors used form-specific grids and tab stacks for chassis state. Why it differs: Keeping vehicles inside the shared row model reduces shell switching while still exposing the same dense editing cadence.
+- `SectionQuickAction_vehicle_add`: The promoted section exposes vehicle creation as a named quick action attached to the current section host instead of a detached form button. Legacy posture: Add Vehicle or Drone often launched from per-form buttons tied to legacy vehicle tabs. Why it differs: Quick actions make the launch point consistent across builder families.
+- `DesktopDialogFactory.uiVehicleCategoryTree/uiVehicleCandidateList/uiVehicleHandling/uiVehicleSource`: The current dialog keeps the same browse/detail/confirm loop, but it expresses navigation, candidate list, handling, cost, and source in a shared dialog field model. Legacy posture: The legacy vehicle selector depended on form-specific tree and field arrangements. Why it differs: The shell can standardize the selection mechanics without erasing the vehicle-builder mental model.
+
+### 10-contacts-section-light.png (`contacts_section`)
+
+- Surface kind: frame
+- Parity intent: Contacts stay first-class, contextual, and editable without sending the user to a separate dashboard.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SectionHostControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_contact_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed quick actions: `SectionQuickAction_contact_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `contacts[0] = Fixer (Loyalty 4 / Connection 5)`, `New Character [file] enabled`
+- Observed preview text: `Contacts
+Contact 1: Fixer (Loyalty 4 / Connection 5)
+
+Payload
+{
+  "section": "contacts",
+  "contacts": [
+    { "name": "Fixer", "role": "Broker", "location": "Seattle", "connection": 5, "loyalty": 4 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: 10-contacts-section-light.png is captured after SetActiveSectionForTesting("contacts") and selecting contacts[0] = Fixer in SectionRowsList.
+- Anchor: SectionHostControl.axaml contains ContactGraphBorder, ContactNodeList, ContactFactionStatusBox, ContactHeatObligationBox, and ContactFavorRailBox for the contacts family.
+- Anchor: Contacts_diary_and_support_routes_execute_with_public_path_visibility() opens contact_add with title Add Contact and required field Name.
+- Anchor: DesktopDialogFactory.BuildContactAddFields creates uiContactName, uiContactRole, uiContactConnection, uiContactLoyalty, uiContactDetails, and uiContactNotes.
+- `SectionHostControl.SectionRowsList row contacts[0] = Fixer`: The promoted shell keeps contacts in the same dense path/value row list used by other builder families, with the selected Fixer entry visible in-frame. Legacy posture: Legacy contacts were edited through older field groups and control clusters separate from the main workbench narrative. Why it differs: The common row model improves re-findability and keeps contacts from feeling like a detached side utility.
+- `SectionHostControl.ContactGraphBorder/ContactNodeList/ContactFactionStatusBox/ContactHeatObligationBox/ContactFavorRailBox`: The promoted contacts lane can surface relationship graph, faction status, heat or obligation, and favor-rail context inside the same section host. Legacy posture: Legacy contact editing focused on direct form fields and less on adjacent relationship context surfaces. Why it differs: Contacts are more useful when the surrounding social context is visible where the user is already editing.
+- `DesktopDialogFactory.uiContactName/uiContactRole/uiContactConnection/uiContactLoyalty`: The current add-contact dialog keeps the same essential Name/Role/Connection/Loyalty fields but expresses them through the shared dialog field system. Legacy posture: Add Contact relied on legacy dialog controls arranged specifically for the old form stack. Why it differs: The shell can modernize how the fields are hosted without changing what a veteran needs to fill in.
+- `DesktopDialogFactory.uiContactDetails/uiContactNotes`: The promoted dialog pairs the edit fields with a Contact Details grid and Notes snippet so the selected social posture stays visible through confirmation. Legacy posture: Legacy contact dialogs offered less structured summary context around the selected role and connection state. Why it differs: Current parity prioritizes explicit context over reproducing the exact old arrangement of textboxes and labels.
+
+### 11-diary-dialog-light.png (`diary_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Diary and progression-entry work stays compact, list-oriented, and tied to the active runner.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/Utility Forms/frmExpense.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_add`, `DialogAction_add_more`, `DialogAction_cancel`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_uiCreateEntryName`, `DialogFieldInput_uiEntryCommandList`, `DialogFieldInput_uiEntryContextTree`, `DialogFieldInput_uiEntryDetails`, `DialogFieldInput_uiEntryNotes`, `DialogFieldLabel_uiCreateEntryName`, `DialogFieldLabel_uiEntryCommandList`, `DialogFieldLabel_uiEntryContextTree`, `DialogFieldLabel_uiEntryDetails`, `DialogFieldLabel_uiEntryNotes`, `DialogField_uiCreateEntryName`, `DialogField_uiEntryCommandList`, `DialogField_uiEntryContextTree`, `DialogField_uiEntryDetails`, `DialogField_uiEntryNotes`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_create_entry`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Entry Title`, `Command Posture`, `Navigation`, `Details`, `Notes`
+- Observed dialog actions: `add`, `add_more`, `cancel`
+- Observed quick actions: `SectionQuickAction_create_entry`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Karma Journal
+Entry 1: First extraction · +2 karma
+
+Payload
+{
+  "section": "progress",
+  "diary": [
+    { "title": "First extraction", "karma": 2 }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs captures 11-diary-dialog-light.png after clicking SectionQuickAction_create_entry in the progress section.
+- Anchor: DialogTitleText must equal Add Entry and the required field label is Entry Title before the screenshot is accepted.
+- Anchor: DesktopDialogFactory.BuildEntryEditorFields creates uiEntrySections, uiCreateEntryName, uiEntryDetails, and uiEntryNotes.
+- Anchor: Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm() requires SectionPreviewBox to contain diary and karma markers.
+- `SectionQuickAction_create_entry -> dialog.ui.create_entry`: The promoted head launches diary entry creation from the progress section's quick-action strip so the action starts in the same dense work context. Legacy posture: Legacy diary and expense flows opened through utility windows and per-form commands. Why it differs: The shared section host is the new center of gravity for editing, even when the underlying mental model remains diary-first.
+- `DesktopDialogFactory.uiEntrySections/uiCreateEntryName`: The current dialog reduces that to an explicit Entry/Details/Notes section model plus a first-class Entry Title field. Legacy posture: The old flow used a standalone form with its own control arrangement for entry naming and details. Why it differs: The dialog field contract is reused across the desktop shell, so the diary surface inherits that structure.
+- `DesktopDialogFactory.uiEntryDetails/uiEntryNotes`: The promoted dialog keeps a Details grid and Notes snippet visible while the user creates the entry. Legacy posture: Legacy entry utilities carried less structured inline explanation about current posture and list context. Why it differs: Current parity favors explicit context and reversibility during edits.
+- `Dialog action ids add/add_more/cancel`: The diary flow uses the shared add/add more/cancel action trio instead of custom button wiring. Legacy posture: Classic confirmation posture was expressed through dialog-specific button rows. Why it differs: A common action contract makes shell behavior consistent across builder dialogs without changing the user's basic commit or cancel choices.
+
+### 12-magic-dialog-light.png (`magic_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Magic selection keeps obvious browse, inspect, and confirm landmarks while adapting to the current ruleset field model.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `CheckGlyph`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_add`, `DialogAction_add_more`, `DialogAction_cancel`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_uiSpellBookFilter`, `DialogFieldInput_uiSpellCandidateList`, `DialogFieldInput_uiSpellCategory`, `DialogFieldInput_uiSpellCategoryFilter`, `DialogFieldInput_uiSpellCategoryTree`, `DialogFieldInput_uiSpellExtendedOnly`, `DialogFieldInput_uiSpellName`, `DialogFieldInput_uiSpellNotes`, `DialogFieldInput_uiSpellSearch`, `DialogFieldInput_uiSpellSelectionDetails`, `DialogFieldInput_uiSpellSource`, `DialogFieldLabel_uiSpellBookFilter`, `DialogFieldLabel_uiSpellCandidateList`, `DialogFieldLabel_uiSpellCategory`, `DialogFieldLabel_uiSpellCategoryFilter`, `DialogFieldLabel_uiSpellCategoryTree`, `DialogFieldLabel_uiSpellName`, `DialogFieldLabel_uiSpellNotes`, `DialogFieldLabel_uiSpellSearch`, `DialogFieldLabel_uiSpellSelectionDetails`, `DialogFieldLabel_uiSpellSource`, `DialogField_uiSpellBookFilter`, `DialogField_uiSpellCandidateList`, `DialogField_uiSpellCategory`, `DialogField_uiSpellCategoryFilter`, `DialogField_uiSpellCategoryTree`, `DialogField_uiSpellName`, `DialogField_uiSpellNotes`, `DialogField_uiSpellSearch`, `DialogField_uiSpellSelectionDetails`, `DialogField_uiSpellSource`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NormalRectangle`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_Border`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RootGrid`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_spell_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Data File`, `Available Spells`, `Category`, `Category Filter`, `Navigation`, `Spell`, `Notes`, `Search`, `Selection Details`, `Source`
+- Observed dialog actions: `add`, `add_more`, `cancel`
+- Observed quick actions: `SectionQuickAction_spell_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Spells
+Spell 1: Stunbolt · Combat
+
+Payload
+{
+  "section": "spells",
+  "spells": [
+    { "name": "Stunbolt", "category": "Combat", "drain": "F-3" }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs captures 12-magic-dialog-light.png after clicking SectionQuickAction_spell_add and waiting for DialogTitleText = Add Spell.
+- Anchor: Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions() requires the field label Spell and the add action id.
+- Anchor: DesktopDialogFactory.BuildSpellSelectionFields creates uiSpellCategoryTree, uiSpellCandidateList, uiSpellName, uiSpellSource, uiSpellSelectionDetails, and uiSpellNotes.
+- Anchor: The same test family also exercises adept_power_add and initiation_add so the dialog contract is shared across magic-family routes.
+- `SectionQuickAction_spell_add -> dialog.ui.spell_add`: The promoted shell launches Add Spell from a section quick action inside the dense workbench instead of a form-specific toolbar button. Legacy posture: Legacy Add Spell flowed from frmCareer buttons and WinForms selector forms. Why it differs: Magic actions are now routed through the shared section host so every builder family behaves consistently.
+- `DesktopDialogFactory.uiSpellCategoryTree/uiSpellCandidateList`: The current dialog exposes an explicit spell category tree and Available Spells list with stable field ids and layout slots. Legacy posture: The old selector used legacy tree and list controls shaped by the WinForms form designer. Why it differs: The selection landmarks stay recognizable, but the structure must fit the shared dialog system.
+- `DesktopDialogFactory.uiSpellName/uiSpellCategory/uiSpellSource/uiSpellSelectionDetails`: The promoted dialog keeps Spell, Category, Source, and Selection Details visible in a single normalized field model. Legacy posture: Legacy detail panels varied by form and did not share a common field contract across heads. Why it differs: Current parity values testable structured context more than exact legacy control placement.
+- `Dialog action ids add/add_more/cancel`: Add Spell uses the same add/add more/cancel action bar as other builder dialogs, even though the field content is magic-specific. Legacy posture: Classic spell dialogs had bespoke OK-style button rows. Why it differs: The promoted shell standardizes action posture without erasing the spell-selection workflow.
+
+### 13-matrix-dialog-light.png (`matrix_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Matrix program selection stays technical and dense without leaving the main workbench shell model.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `CheckGlyph`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_add`, `DialogAction_add_more`, `DialogAction_cancel`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_uiMatrixProgramBookFilter`, `DialogFieldInput_uiMatrixProgramCandidateList`, `DialogFieldInput_uiMatrixProgramCategoryTree`, `DialogFieldInput_uiMatrixProgramHideOverAvailLimit`, `DialogFieldInput_uiMatrixProgramName`, `DialogFieldInput_uiMatrixProgramNotes`, `DialogFieldInput_uiMatrixProgramSearch`, `DialogFieldInput_uiMatrixProgramSelectionDetails`, `DialogFieldInput_uiMatrixProgramShowDongles`, `DialogFieldInput_uiMatrixProgramSlot`, `DialogFieldInput_uiMatrixProgramSource`, `DialogFieldLabel_uiMatrixProgramBookFilter`, `DialogFieldLabel_uiMatrixProgramCandidateList`, `DialogFieldLabel_uiMatrixProgramCategoryTree`, `DialogFieldLabel_uiMatrixProgramName`, `DialogFieldLabel_uiMatrixProgramNotes`, `DialogFieldLabel_uiMatrixProgramSearch`, `DialogFieldLabel_uiMatrixProgramSelectionDetails`, `DialogFieldLabel_uiMatrixProgramSlot`, `DialogFieldLabel_uiMatrixProgramSource`, `DialogField_uiMatrixProgramBookFilter`, `DialogField_uiMatrixProgramCandidateList`, `DialogField_uiMatrixProgramCategoryTree`, `DialogField_uiMatrixProgramName`, `DialogField_uiMatrixProgramNotes`, `DialogField_uiMatrixProgramSearch`, `DialogField_uiMatrixProgramSelectionDetails`, `DialogField_uiMatrixProgramSlot`, `DialogField_uiMatrixProgramSource`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NormalRectangle`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_Border`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RootGrid`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_matrix_program_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Data File`, `Available Programs`, `Navigation`, `Program`, `Notes`, `Search`, `Selection Details`, `Slot`, `Source`
+- Observed dialog actions: `add`, `add_more`, `cancel`
+- Observed quick actions: `SectionQuickAction_matrix_program_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Aiprograms
+Runner Goal: Ready for a flagship shell smoke pass
+
+Payload
+{
+  "section": "profile"
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs captures 13-matrix-dialog-light.png after clicking SectionQuickAction_matrix_program_add and waiting for Add Program / Cyberdeck Item.
+- Anchor: Matrix_workflows_execute_with_specific_dialog_fields_and_confirm_actions() requires field label Program and action id add.
+- Anchor: DesktopDialogFactory.BuildMatrixProgramSelectionFields creates uiMatrixProgramCategoryTree, uiMatrixProgramCandidateList, uiMatrixProgramName, uiMatrixProgramSlot, uiMatrixProgramSource, and uiMatrixProgramSelectionDetails.
+- Anchor: The surrounding complexforms section also exposes complex_form_add, proving the matrix family shares one current shell lane rather than separate legacy forms.
+- `SectionQuickAction_matrix_program_add -> dialog.ui.matrix_program_add`: The promoted shell exposes Add Program / Cyberdeck Item as a named quick action inside the current section host. Legacy posture: Legacy matrix editing used form-specific selectors and menu/button launch points tied to older control stacks. Why it differs: The workbench is now responsible for launching matrix flows instead of scattering them across detached selectors.
+- `DesktopDialogFactory.uiMatrixProgramCategoryTree/uiMatrixProgramCandidateList`: The promoted dialog keeps the same distinction, but it expresses it through an explicit Navigation tree and Available Programs list. Legacy posture: Older dialogs used legacy selector widgets to split programs, deck items, and dongles. Why it differs: The shell can standardize the dialog framework while still preserving the technical browse posture.
+- `DesktopDialogFactory.uiMatrixProgramName/uiMatrixProgramSlot/uiMatrixProgramSource/uiMatrixProgramSelectionDetails`: Program name, slot, source, and selection details remain visible as named fields inside the shared dialog contract. Legacy posture: Legacy detail panes were layout-specific and less uniform across matrix subflows. Why it differs: Matrix parity depends on visible slot and source context, not on keeping the old field arrangement byte-for-byte.
+- `Dialog action ids add/add_more/cancel`: The promoted matrix dialog uses the same standardized add/add more/cancel action bar as the rest of the builder family. Legacy posture: Legacy matrix selectors used custom button rows and form-event wiring. Why it differs: Consistent action posture across builders is a deliberate modern shell choice.
+
+### 14-advancement-dialog-light.png (`advancement_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Advancement stays tied to visible karma history and still makes grade or reward choices explicit before commit.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCareer.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeParityHeaderGrid`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_add`, `DialogAction_add_more`, `DialogAction_cancel`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_uiInitiationCandidateList`, `DialogFieldInput_uiInitiationCategoryTree`, `DialogFieldInput_uiInitiationGrade`, `DialogFieldInput_uiInitiationNotes`, `DialogFieldInput_uiInitiationReward`, `DialogFieldInput_uiInitiationSelectionDetails`, `DialogFieldInput_uiInitiationTrack`, `DialogFieldLabel_uiInitiationCandidateList`, `DialogFieldLabel_uiInitiationCategoryTree`, `DialogFieldLabel_uiInitiationGrade`, `DialogFieldLabel_uiInitiationNotes`, `DialogFieldLabel_uiInitiationReward`, `DialogFieldLabel_uiInitiationSelectionDetails`, `DialogFieldLabel_uiInitiationTrack`, `DialogField_uiInitiationCandidateList`, `DialogField_uiInitiationCategoryTree`, `DialogField_uiInitiationGrade`, `DialogField_uiInitiationNotes`, `DialogField_uiInitiationReward`, `DialogField_uiInitiationSelectionDetails`, `DialogField_uiInitiationTrack`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderContent`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickAction_initiation_add`, `SectionQuickActionsBorder`, `SectionQuickActionsHost`, `SectionRegion`, `SectionReviewExpander`, `SectionRowsBorder`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Available Rewards`, `Navigation`, `Grade`, `Notes`, `Reward`, `Selection Details`, `Track`
+- Observed dialog actions: `add`, `add_more`, `cancel`
+- Observed quick actions: `SectionQuickAction_initiation_add`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Initiation & Submersion
+Initiation Grade 1: Grade 1 · Metamagic
+
+Payload
+{
+  "section": "initiationgrades",
+  "grades": [
+    { "grade": 1, "reward": "Metamagic" }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Advancement_and_karma_journal_workflows_preserve_familiar_progression_rhythm() requires progress[0] = First extraction · +2 karma in SectionRowsList and diary/karma markers in SectionPreviewBox.
+- Anchor: AvaloniaFlagshipUiGateTests.cs captures 14-advancement-dialog-light.png after clicking SectionQuickAction_initiation_add and waiting for Add Initiation / Submersion.
+- Anchor: The same test requires field label Grade and action id add.
+- Anchor: DesktopDialogFactory.BuildInitiationSelectionFields creates uiInitiationTrack, uiInitiationGrade, uiInitiationCandidateList, uiInitiationReward, uiInitiationSelectionDetails, and uiInitiationNotes.
+- `SectionRowsList progress[0] = First extraction · +2 karma / SectionPreviewBox diary+karma payload`: The promoted workbench keeps the current progression row and diary or karma payload visible directly in the progress section before the dialog opens. Legacy posture: Legacy advancement cues were distributed across expense, karma, and character forms. Why it differs: Advancement parity is stronger when the running history remains visible in the same lane as the next action.
+- `SectionQuickAction_initiation_add -> dialog.ui.initiation_add`: The promoted head launches the initiation flow from the progress workbench through a named quick action. Legacy posture: Initiation and submersion choices launched from legacy buttons and selector forms tied to older section layouts. Why it differs: The quick-action model keeps advancement tools attached to the same dense editing lane.
+- `DesktopDialogFactory.uiInitiationTrack/uiInitiationGrade/uiInitiationCandidateList/uiInitiationReward`: The current dialog exposes Track, Grade, Available Rewards, and Reward as normalized fields inside the shared dialog shell. Legacy posture: Legacy initiation dialogs used form-specific controls to mix track, grade, and reward selection. Why it differs: The shell now needs a stable field contract across advancement flows while preserving the same user decisions.
+- `Dialog action ids add/add_more/cancel`: The promoted dialog uses the shared add/add more/cancel bar after keeping grade and metamagic or echo context visible. Legacy posture: Classic advancement flows depended on dialog-specific OK/Cancel rows. Why it differs: Standardized commit posture reduces shell variation without changing the core progression workflow.
+
+### 15-creation-section-light.png (`creation_section`)
+
+- Surface kind: frame
+- Parity intent: Character creation still feels like a dense builder, not a wizard or marketing surface.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/CharacterCreate.Designer.cs`
+- Current reference: `Chummer.Avalonia/Controls/SectionHostControl.axaml`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogActionsHost`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed tab labels: `Runner`
+- Observed selected rows: `New Character [file] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: Character_creation_preserves_familiar_dense_builder_rhythm() requires ClassicCharacterSheetBorder to be visible in the creation-like surface.
+- Anchor: The same test requires SectionRowsList to contain attributes.body = 5, attributes.agility = 7, and skills.firearms[0] = Automatics 6.
+- Anchor: SectionPreviewBox must contain attributes and combat markers before the screenshot is accepted.
+- Anchor: 15-creation-section-light.png is captured after SetActiveSectionForTesting("attributes") on the loaded-runner workbench, not from a detached wizard window.
+- `SectionHostControl.SectionRowsList rows attributes.body/attributes.agility/skills.firearms[0]`: The promoted builder renders creation facts as dense path/value rows inside the same workbench row list used elsewhere. Legacy posture: CharacterCreate used dedicated creation-form controls, pages, and widgets to expose attributes and skills. Why it differs: The dense builder feel survives even though the control implementation is unified with the rest of the current shell.
+- `SectionHostControl.ClassicCharacterSheetBorder`: The promoted creation surface uses the same compact summary band to keep the character sheet posture visible while editing attributes. Legacy posture: The old creation experience kept a compact runner summary close to the editing surface rather than delegating it to an external dashboard. Why it differs: One summary-band implementation is cheaper to maintain and still gives the user the same dense builder cue.
+- `SectionHostControl.SectionPreviewBox`: The current builder keeps a structured preview payload with attributes and combat markers mounted alongside the dense list. Legacy posture: Legacy creation panes expressed detail context through form-specific fields and labels. Why it differs: The preview surface makes the current builder auditable without forcing a separate wizard step.
+- `Loaded-runner workbench hosting instead of a detached creation form`: The promoted head hosts creation-like editing inside the same dense workbench shell and does not bounce the user into a separate wizard frame for this proof. Legacy posture: Character creation lived in a separate dedicated WinForms experience. Why it differs: The modern shell is intentionally consolidated, but it must still feel like a serious creation builder.
+
+### 16-master-index-dialog-light.png (`master_index_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Master Index remains a first-class searchable utility with stronger source provenance than the legacy form.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `Background`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentPresenter`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_close`, `DialogAction_open_source`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_masterIndexActiveResultKey`, `DialogFieldInput_masterIndexCurrentSourcebook`, `DialogFieldInput_masterIndexDataRoot`, `DialogFieldInput_masterIndexFileSelection`, `DialogFieldInput_masterIndexSearch`, `DialogFieldInput_masterIndexSelectedSource`, `DialogFieldInput_masterIndexSettingsSummary`, `DialogFieldInput_masterIndexSnippetPreview`, `DialogFieldLabel_masterIndexActiveResultKey`, `DialogFieldLabel_masterIndexCurrentSourcebook`, `DialogFieldLabel_masterIndexDataRoot`, `DialogFieldLabel_masterIndexFileSelection`, `DialogFieldLabel_masterIndexSearch`, `DialogFieldLabel_masterIndexSelectedSource`, `DialogFieldLabel_masterIndexSettingsSummary`, `DialogFieldLabel_masterIndexSnippetPreview`, `DialogField_masterIndexActiveResultKey`, `DialogField_masterIndexCurrentSourcebook`, `DialogField_masterIndexDataRoot`, `DialogField_masterIndexFileSelection`, `DialogField_masterIndexSearch`, `DialogField_masterIndexSelectedSource`, `DialogField_masterIndexSettingsSummary`, `DialogField_masterIndexSnippetPreview`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `DropDownGlyph`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Entries`, `Source`, `Data Root`, `Data File`, `Search`, `Linked PDF / URL`, `Use Setting`, `Notes`
+- Observed dialog actions: `close`, `open_source`
+- Observed tab labels: `Runner`
+- Observed selected rows: `DialogFieldOptionDisplayItem { Value = , Label = No indexed entries discovered. }`, `Master Index [tools] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens ToolsMenuButton -> master_index and captures the dialog after AssertDialogContainsAll(..., ["Master Index"]).
+- Anchor: DesktopDialogFactory.BuildMasterIndexFields creates masterIndexSections, masterIndexSearch, masterIndexCatalogEntries, masterIndexDetails, masterIndexSnippetPreview, and masterIndexSelectedSource.
+- Anchor: The same field builder also creates masterIndexReferenceCoverage, masterIndexReferenceSources, and masterIndexReferenceSourceReceipt.
+- Anchor: The dialog closes through the shared close action instead of a standalone utility-form frame.
+- `ToolsMenuButton -> master_index / DialogTitleText = Master Index`: The promoted shell preserves the same named utility route, but it opens inside the shared dialog host rather than a separate form window. Legacy posture: Master Index was a named WinForms utility surfaced from the legacy tools lane. Why it differs: The route must stay familiar even though utility hosting is now standardized.
+- `DesktopDialogFactory.masterIndexSections/masterIndexSearch/masterIndexCatalogEntries`: The promoted dialog keeps Sections, Search, and Items explicit as named fields inside the shared dialog contract. Legacy posture: Legacy Master Index centered on a dedicated utility form with its own search and result widgets. Why it differs: The shared dialog model gives the current shell stable, testable field ids instead of form-specific widget wiring.
+- `DesktopDialogFactory.masterIndexDetails/masterIndexSnippetPreview/masterIndexSelectedSource`: The promoted dialog keeps Details, Snippet Preview, and Source visible together so the selected sourcebook's current provenance is explicit. Legacy posture: Legacy Master Index focused on local reference navigation and did not consistently surface snippet provenance in one normalized panel. Why it differs: Reference truth is now a governed product contract, not just a convenience utility.
+- `DesktopDialogFactory.masterIndexReferenceCoverage/masterIndexReferenceSources/masterIndexReferenceSourceReceipt`: The promoted dialog surfaces snippet coverage, reference-source posture, and a reference-source receipt as first-class fields. Legacy posture: The old Master Index did not expose modern receipt-style coverage and source-governance fields. Why it differs: The flagship desktop now has to prove source quality and provenance, not merely show that search results exist.
+
+### 17-character-roster-dialog-light.png (`character_roster_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Character Roster remains a named first-class utility for multi-runner context.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_close`, `DialogAction_open_portrait`, `DialogAction_open_roster_folder`, `DialogAction_open_runner`, `DialogAction_refresh_watch_folder`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_rosterEntries`, `DialogFieldInput_rosterMugshot`, `DialogFieldInput_rosterOpenCount`, `DialogFieldInput_rosterRulesetMix`, `DialogFieldInput_rosterRunnerCommands`, `DialogFieldInput_rosterSavedCount`, `DialogFieldInput_rosterSelectedRunner`, `DialogFieldInput_rosterSelectedRunnerBackground`, `DialogFieldInput_rosterSelectedRunnerNotes`, `DialogFieldInput_rosterSelectedRunnerStatus`, `DialogFieldInput_rosterSelectionTrail`, `DialogFieldInput_rosterTree`, `DialogFieldInput_rosterWatchFolderCommands`, `DialogFieldInput_rosterWatchFolderStatus`, `DialogFieldLabel_rosterEntries`, `DialogFieldLabel_rosterMugshot`, `DialogFieldLabel_rosterOpenCount`, `DialogFieldLabel_rosterRulesetMix`, `DialogFieldLabel_rosterRunnerCommands`, `DialogFieldLabel_rosterSavedCount`, `DialogFieldLabel_rosterSelectedRunner`, `DialogFieldLabel_rosterSelectedRunnerBackground`, `DialogFieldLabel_rosterSelectedRunnerNotes`, `DialogFieldLabel_rosterSelectedRunnerStatus`, `DialogFieldLabel_rosterSelectionTrail`, `DialogFieldLabel_rosterTree`, `DialogFieldLabel_rosterWatchFolderCommands`, `DialogFieldLabel_rosterWatchFolderStatus`, `DialogField_rosterEntries`, `DialogField_rosterMugshot`, `DialogField_rosterOpenCount`, `DialogField_rosterRulesetMix`, `DialogField_rosterRunnerCommands`, `DialogField_rosterSavedCount`, `DialogField_rosterSelectedRunner`, `DialogField_rosterSelectedRunnerBackground`, `DialogField_rosterSelectedRunnerNotes`, `DialogField_rosterSelectedRunnerStatus`, `DialogField_rosterSelectionTrail`, `DialogField_rosterTree`, `DialogField_rosterWatchFolderCommands`, `DialogField_rosterWatchFolderStatus`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Roster Entries`, `Mugshot`, `Open Runners`, `Ruleset Mix`, `Runner Commands`, `Saved Workspaces`, `Selected Runner`, `Background / Concept`, `Bio / Concept / Notes`, `Runner Status`, `Selection Trail`, `Characters`, `Watch Folder Commands`, `Watch Folder`
+- Observed dialog actions: `close`, `open_portrait`, `open_roster_folder`, `open_runner`, `refresh_watch_folder`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Character Roster [tools] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens ToolsMenuButton -> character_roster and captures the dialog after AssertDialogContainsAll(..., ["Character Roster"]).
+- Anchor: DesktopDialogFactory.BuildRosterFields creates rosterTree, rosterEntries, rosterSelectedRunner, rosterMugshot, rosterSelectedRunnerStatus, and rosterSelectedRunnerNotes.
+- Anchor: The same builder also creates rosterOpenCount, rosterSavedCount, rosterRulesetMix, and rosterActiveWorkspace.
+- Anchor: The roster dialog closes through the shared close action instead of a separate utility window frame.
+- `ToolsMenuButton -> character_roster / DialogTitleText = Character Roster`: The promoted shell keeps the named Character Roster route but hosts it inside the shared dialog layer. Legacy posture: Character Roster was a standalone WinForms utility reachable from the legacy tools lane. Why it differs: The route stays veteran-familiar while the window-hosting model is intentionally modernized.
+- `DesktopDialogFactory.rosterTree/rosterEntries`: The promoted dialog renders Characters and Roster Entries as explicit shared fields, including open-runner ordering and save posture markers. Legacy posture: Legacy roster views depended on utility-form trees and lists with form-specific layout rules. Why it differs: The field contract is reusable across heads and lets the shell verify multi-runner state directly.
+- `DesktopDialogFactory.rosterSelectedRunner/rosterMugshot/rosterSelectedRunnerStatus/rosterSelectedRunnerNotes`: The current roster keeps selected-runner summary, mugshot placeholder, status snippet, and notes snippet visible in one standardized detail region. Legacy posture: The old roster centered on the runner list and supporting form fields without the same normalized summary model. Why it differs: Current roster parity needs stronger explicit context about the selected runner and active workspace.
+- `DesktopDialogFactory.rosterOpenCount/rosterSavedCount/rosterRulesetMix/rosterActiveWorkspace`: The promoted roster makes open runner count, saved workspace count, ruleset mix, and active workspace explicit at the top of the dialog. Legacy posture: Legacy roster utilities did not expose modern session-level counts and ruleset-mix posture as first-class dialog fields. Why it differs: The current shell has to explain the session state around the roster, not only render the character list.
+
+### 18-import-dialog-light.png (`import_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Import still begins from File/Open posture while making current ruleset and payload expectations explicit.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `Background`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentPresenter`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_cancel`, `DialogAction_import`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_importRulesetId`, `DialogFieldInput_openCharacterImportSource`, `DialogFieldInput_openCharacterReviewSummary`, `DialogFieldInput_openCharacterXml`, `DialogFieldLabel_importRulesetId`, `DialogFieldLabel_openCharacterImportSource`, `DialogFieldLabel_openCharacterReviewSummary`, `DialogFieldLabel_openCharacterXml`, `DialogField_importRulesetId`, `DialogField_openCharacterImportSource`, `DialogField_openCharacterReviewSummary`, `DialogField_openCharacterXml`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `DropDownGlyph`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Import Ruleset`, `Import Source`, `Review imported summary`, `Character XML`
+- Observed dialog actions: `cancel`, `import`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Open... [file] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs loads the demo runner, opens FileMenuButton, dispatches open_character, and then captures the dialog after AssertDialogContainsAll(..., ["Open Character"]).
+- Anchor: DesktopDialogFactory.CreateOpenCharacterDialog creates importRulesetId and openCharacterXml fields with title Open Character and message Paste Chummer XML to import into a workspace.
+- Anchor: The dialog exposes import/cancel actions through the shared dialog action model.
+- Anchor: MainWindow.DesktopFileCoordinator.cs still carries the host-facing title Open Character File for the desktop file route.
+- `FileMenuButton -> open_character after LoadDemoRunnerButton`: The promoted head keeps that exact shell entry, but it proves it through a runtime command id instead of a legacy form handler. Legacy posture: Veterans expect import to begin from the File/Open route on the main desktop shell. Why it differs: The command pipeline changed, but the user's first step is intentionally still File/Open.
+- `DesktopDialogFactory.importRulesetId/openCharacterXml`: The promoted dialog makes Ruleset and Character XML explicit named fields inside the shell dialog model. Legacy posture: Legacy import flows relied on older file-picker or importer-specific forms without a normalized shared field contract. Why it differs: The current desktop needs a consistent import surface that can be audited and reused across related routes.
+- `Dialog action ids import/cancel`: Import uses the shared dialog action model with an explicit import primary action and cancel secondary action. Legacy posture: Classic import dialogs used form-specific buttons and callback wiring. Why it differs: Unified action handling is a deliberate shell-level simplification, not a loss of import capability.
+- `MainWindow.DesktopFileCoordinator 'Open Character File' host route`: The promoted shell keeps a host-facing Open Character File route while the in-shell dialog focuses on ruleset and payload review. Legacy posture: Legacy import blended desktop-file and importer behavior directly into WinForms main-form flows. Why it differs: Desktop file integration and in-shell import confirmation are intentionally separated in the current architecture.
+
+### 38-translator-dialog-light.png (`translator_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Translator remains a named localization workstation while the promoted shell makes lane posture and overlays explicit.
+- Legacy reference: `/docker/chummer5a/Translator/TranslatorMain.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_close`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_lang1`, `DialogFieldInput_lang2`, `DialogFieldInput_lang3`, `DialogFieldInput_lang4`, `DialogFieldInput_lang5`, `DialogFieldInput_lang6`, `DialogFieldInput_translatorBridgePosture`, `DialogFieldInput_translatorLanePosture`, `DialogFieldInput_translatorOverlayCount`, `DialogFieldInput_translatorRouteTitle`, `DialogFieldInput_translatorSearch`, `DialogFieldLabel_lang1`, `DialogFieldLabel_lang2`, `DialogFieldLabel_lang3`, `DialogFieldLabel_lang4`, `DialogFieldLabel_lang5`, `DialogFieldLabel_lang6`, `DialogFieldLabel_translatorBridgePosture`, `DialogFieldLabel_translatorLanePosture`, `DialogFieldLabel_translatorOverlayCount`, `DialogFieldLabel_translatorRouteTitle`, `DialogFieldLabel_translatorSearch`, `DialogField_lang1`, `DialogField_lang2`, `DialogField_lang3`, `DialogField_lang4`, `DialogField_lang5`, `DialogField_lang6`, `DialogField_translatorBridgePosture`, `DialogField_translatorLanePosture`, `DialogField_translatorOverlayCount`, `DialogField_translatorRouteTitle`, `DialogField_translatorSearch`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `English (en-US)`, `Deutsch (de-DE)`, `Francais (fr-FR)`, `Japanese (ja-JP)`, `Portugues (pt-BR)`, `Chinese Simplified (zh-CN)`, `Translator Bridge`, `Translator Lane`, `Enabled Language Overlays`, `Translator`, `Language Search`
+- Observed dialog actions: `close`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Open... [file] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> translator and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().
+- Anchor: DesktopDialogFactory.BuildTranslatorFields creates translatorSearch, translatorLanePosture, translatorBridgePosture, translatorOverlayCount, and per-language langN fields.
+- Anchor: The dialog title and message come from desktop.dialog.translator.title and desktop.dialog.translator.message so the promoted head stays localization-aware.
+- Anchor: The translator dialog closes through the shared dialog host instead of a separate translator executable frame.
+- `FileMenuButton -> translator / dialog.translator`: The promoted shell keeps Translator as a named runtime-backed route, but it opens inside the shared desktop dialog host. Legacy posture: Classic translator work lived in its own dedicated Translator tool window and project surface. Why it differs: The route stays veteran-recognizable while hosting is consolidated into one governed shell.
+- `DesktopDialogFactory.translatorSearch/langN fields`: The promoted dialog exposes search plus a deterministic list of shipping or runtime languages as named shared fields. Legacy posture: The old translator centered on form-specific search and language lists with standalone utility wiring. Why it differs: Shared field ids make translator coverage auditable across heads without losing the recognizable language-workbench rhythm.
+- `DesktopDialogFactory.translatorLanePosture/translatorBridgePosture/translatorOverlayCount`: The promoted shell shows translator lane, bridge posture, and enabled overlay count directly in the dialog. Legacy posture: Legacy translator tooling did not surface modern lane posture and overlay governance as first-class UI facts. Why it differs: Current parity has to prove localization readiness and overlay truth, not just that translation editing exists.
+
+### 39-xml-editor-dialog-light.png (`xml_editor_dialog`)
+
+- Surface kind: dialog
+- Parity intent: XML amendment/editor posture stays available while the promoted shell makes bridge, overlay, and custom-data truth explicit.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/EditXmlData.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_apply`, `DialogAction_cancel`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_xmlEditorCustomDataDirectoryCount`, `DialogFieldInput_xmlEditorCustomDataLanePosture`, `DialogFieldInput_xmlEditorDialog`, `DialogFieldInput_xmlEditorLanePosture`, `DialogFieldInput_xmlEditorOverlayCount`, `DialogFieldInput_xmlEditorReceipt`, `DialogFieldLabel_xmlEditorCustomDataDirectoryCount`, `DialogFieldLabel_xmlEditorCustomDataLanePosture`, `DialogFieldLabel_xmlEditorDialog`, `DialogFieldLabel_xmlEditorLanePosture`, `DialogFieldLabel_xmlEditorOverlayCount`, `DialogFieldLabel_xmlEditorReceipt`, `DialogField_xmlEditorCustomDataDirectoryCount`, `DialogField_xmlEditorCustomDataLanePosture`, `DialogField_xmlEditorDialog`, `DialogField_xmlEditorLanePosture`, `DialogField_xmlEditorOverlayCount`, `DialogField_xmlEditorReceipt`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Custom Data Directories`, `Custom Data Lane`, `XML`, `XML Bridge`, `Enabled XML Overlays`, `XML Bridge Receipt`
+- Observed dialog actions: `apply`, `cancel`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Open... [file] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> xml_editor and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().
+- Anchor: DesktopDialogFactory.CreateCommandDialog("xml_editor", ...) creates xmlEditorLanePosture, xmlEditorOverlayCount, xmlEditorCustomDataLanePosture, xmlEditorCustomDataDirectoryCount, xmlEditorReceipt, and xmlEditorDialog.
+- Anchor: The promoted dialog message explicitly states that edit/import flow is file-first while the XML bridge posture remains visible.
+- Anchor: The dialog uses shared apply/cancel actions instead of a dedicated legacy amendment-editor window frame.
+- `dialog.xml_editor title/message and apply/cancel action bar`: The promoted shell keeps XML editing as a named route inside the shared dialog host and standard action bar. Legacy posture: The classic XML Amendment Editor was a standalone power-user form with its own save/apply chrome. Why it differs: Window hosting is unified, but the XML-editing posture remains explicit and reachable.
+- `DesktopDialogFactory.xmlEditorLanePosture/xmlEditorOverlayCount/xmlEditorCustomDataLanePosture/xmlEditorCustomDataDirectoryCount`: The promoted dialog surfaces bridge posture, overlay counts, and custom-data directory coverage before the user edits XML. Legacy posture: Legacy XML tooling focused on raw amendment authoring and did not foreground bridge posture or custom-data coverage counts. Why it differs: The current shell must explain whether the XML bridge is governed before parity claims can be trusted.
+- `DesktopDialogFactory.xmlEditorReceipt/xmlEditorDialog`: The promoted dialog keeps a receipt field plus one shared XML field that exposes the current bridge preview payload. Legacy posture: The old editor showed base XML, amendment XML, and result XML through form-specific text areas. Why it differs: The promoted head optimizes for route proof and deterministic shell fields rather than mirroring every legacy textbox split exactly.
+
+### 40-hero-lab-importer-dialog-light.png (`hero_lab_importer_dialog`)
+
+- Surface kind: dialog
+- Parity intent: Hero Lab import remains a named utility while the promoted shell exposes import-oracle coverage and adjacent SR6 proof.
+- Legacy reference: `/docker/chummer5a/Chummer/Forms/Utility Forms/HeroLabImporter.Designer.cs`
+- Current reference: `Chummer.Presentation/Overview/DesktopDialogFactory.cs`
+- Observed theme: Light
+- Observed named controls: `AttributeBaseEditor_AGI`, `AttributeBaseEditor_BOD`, `AttributeBaseEditor_REA`, `AttributeKarmaEditor_AGI`, `AttributeKarmaEditor_BOD`, `AttributeKarmaEditor_REA`, `AttributeParityEditorBorder`, `AttributeParityHeaderGrid`, `AttributeParityRow_AGI`, `AttributeParityRow_BOD`, `AttributeParityRow_REA`, `AttributeParityRowsHost`, `AuditList`, `Background`, `BuildLabTrustReceiptPanel`, `CenterShellRegion`, `CharacterRosterControl`, `ChevronPath`, `ClassicAttributeFactsPanel`, `ClassicCharacterFactsPanel`, `CloseWorkspaceButton`, `CoachLaunchUriTextBox`, `CoachSidecarControl`, `CodexHeadingText`, `CommandDialogPaneControl`, `CommandsHostBorder`, `CommandsList`, `ContentPresenter`, `ContentRegion`, `CopyButton`, `CopyCoachLaunchButton`, `DeterminateRoot`, `DialogAction_cancel`, `DialogAction_import`, `DialogActionsBorder`, `DialogActionsHost`, `DialogFieldInput_heroLabAdjacentSr6OracleReceipt`, `DialogFieldInput_heroLabFixtureCount`, `DialogFieldInput_heroLabImportOracleCoverage`, `DialogFieldInput_heroLabImportOracleLanePosture`, `DialogFieldInput_heroLabImportOracleMatrix`, `DialogFieldInput_heroLabImportOracleMissingSources`, `DialogFieldInput_heroLabImportOracleReceipt`, `DialogFieldInput_heroLabSource`, `DialogFieldInput_heroLabXml`, `DialogFieldInput_importRulesetId`, `DialogFieldLabel_heroLabAdjacentSr6OracleReceipt`, `DialogFieldLabel_heroLabFixtureCount`, `DialogFieldLabel_heroLabImportOracleCoverage`, `DialogFieldLabel_heroLabImportOracleLanePosture`, `DialogFieldLabel_heroLabImportOracleMatrix`, `DialogFieldLabel_heroLabImportOracleMissingSources`, `DialogFieldLabel_heroLabImportOracleReceipt`, `DialogFieldLabel_heroLabSource`, `DialogFieldLabel_heroLabXml`, `DialogFieldLabel_importRulesetId`, `DialogField_heroLabAdjacentSr6OracleReceipt`, `DialogField_heroLabFixtureCount`, `DialogField_heroLabImportOracleCoverage`, `DialogField_heroLabImportOracleLanePosture`, `DialogField_heroLabImportOracleMatrix`, `DialogField_heroLabImportOracleMissingSources`, `DialogField_heroLabImportOracleReceipt`, `DialogField_heroLabSource`, `DialogField_heroLabXml`, `DialogField_importRulesetId`, `DialogFieldsHost`, `DialogMessageText`, `DialogTrustReceiptText`, `DropDownGlyph`, `ExpandCollapseChevron`, `ExpandCollapseChevronBorder`, `ExpanderHeader`, `FileMenuButton`, `GmPrepButton`, `HelpMenuButton`, `ImportFileButton`, `IndeterminateProgressBarIndicator`, `IndeterminateProgressBarIndicator2`, `IndeterminateRoot`, `KeepLocalWorkButton`, `LeftNavigatorRegion`, `LoadDemoRunnerQuickActionButton`, `LoadedRunnerTabStrip`, `LoadedRunnerTabStripBorder`, `MenuBarPanel`, `MenuBarRegion`, `NavigationTabsButtonsPanel`, `NavigationTabsHeader`, `NavigationTabsPanel`, `NavigatorPaneControl`, `NavigatorTree`, `NoticeText`, `OpenForExportButton`, `OpenWorkspaceSupportButton`, `OpenWorkspacesHeader`, `PART_BorderElement`, `PART_ContentPresenter`, `PART_DecreaseButton`, `PART_ExpandCollapseChevron`, `PART_ExpandCollapseChevronContainer`, `PART_Header`, `PART_HeaderPresenter`, `PART_IncreaseButton`, `PART_Indicator`, `PART_InnerDockPanel`, `PART_ItemsPresenter`, `PART_LayoutRoot`, `PART_LineDownButton`, `PART_LineUpButton`, `PART_PageDownButton`, `PART_PageUpButton`, `PART_Popup`, `PART_ScrollBarsSeparator`, `PART_ScrollViewer`, `PART_SelectedPipe`, `PART_Spinner`, `PART_SpinnerPanel`, `PART_TextBox`, `PART_TextPresenter`, `PART_TransparencyFallback`, `PART_VerticalScrollBar`, `PART_Watermark`, `PrintButton`, `ProgressBarRoot`, `ProviderHealthList`, `RestoreActionButtonsPanel`, `RestoreContinuityActionPanel`, `RestoreContinuityStatusBorder`, `ReviewCampaignWorkspaceButton`, `RightShellRegion`, `Root`, `RootBorder`, `RosterMovementButton`, `SaveButton`, `SaveLocalWorkButton`, `SectionActionTabStrip`, `SectionActionTabStripBorder`, `SectionActionsHeader`, `SectionContextBorder`, `SectionHostControl`, `SectionPayloadExpander`, `SectionPreviewBox`, `SectionQuickActionsHost`, `SectionRegion`, `SectionRowsList`, `SettingsButton`, `ShellMenuBarControl`, `StatusStripControl`, `StatusStripRegion`, `StatusText`, `StatusTextBorder`, `SummaryHeaderControl`, `SummaryHeaderRegion`, `ToggleButtonBackground`, `ToggleButtonGrid`, `ToolStripControl`, `ToolStripRegion`, `ToolsMenuButton`, `TrackRect`, `VerticalRoot`, `WindowsMenuButton`, `WorkbenchProgressBar`, `WorkflowSurfacesHeader`, `WorkspaceStripControl`, `WorkspaceText`, `border`
+- Observed menu commands: `new_character`, `new_critter`, `open_character`, `open_for_printing`, `open_for_export`, `save_character`, `save_character_as`, `print_character`, `export_character`, `copy`, `paste`, `dice_roller`, `global_settings`, `character_settings`, `update`, `restart`, `switch_ruleset`, `translator`, `xml_editor`, `hero_lab_importer`, `master_index`, `character_roster`, `data_exporter`, `report_bug`, `print_setup`, `print_multiple`, `exit`, `new_window`, `close_window`, `close_all`, `wiki`, `discord`, `revision_history`, `dumpshock`, `about`
+- Observed dialog fields: `Adjacent SR6 Oracle`, `Hero Lab Fixtures`, `Import Oracle Coverage`, `Import Oracle Lane`, `Import Oracle Matrix`, `Missing Sources`, `Import Oracle Receipt`, `Input File`, `Hero Lab XML`, `Ruleset`
+- Observed dialog actions: `cancel`, `import`
+- Observed tab labels: `Runner`
+- Observed selected rows: `Open... [file] enabled`
+- Observed preview text: `Attributes
+Attribute 1: Body 4
+Attribute 2: Agility 5
+Attribute 3: Reaction 5
+
+Payload
+{
+  "sectionId": "attributes",
+  "attributes": [
+    {
+      "name": "Body",
+      "baseValue": 3,
+      "karmaValue": 1,
+      "totalValue": 4,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Agility",
+      "baseValue": 5,
+      "karmaValue": 0,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 4,
+      "baseUnlocked": true
+    },
+    {
+      "name": "Reaction",
+      "baseValue": 4,
+      "karmaValue": 1,
+      "totalValue": 5,
+      "metatypeMin": 1,
+      "metatypeMax": 6,
+      "metatypeAugMax": 9,
+      "priorityMaximum": 6,
+      "karmaMaximum": 5,
+      "baseUnlocked": true
+    }
+  ]
+}`
+- Evidence anchors:
+- Anchor: AvaloniaFlagshipUiGateTests.cs opens FileMenuButton -> hero_lab_importer and captures the dialog in Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture().
+- Anchor: DesktopDialogFactory.CreateCommandDialog("hero_lab_importer", ...) creates heroLabSource, importRulesetId, heroLabImportOracleLanePosture, heroLabImportOracleCoverage, heroLabFixtureCount, heroLabImportOracleMatrix, heroLabImportOracleReceipt, heroLabAdjacentSr6OracleReceipt, and heroLabXml.
+- Anchor: The dialog summary text reports import-oracle posture, coverage counts, and adjacent SR6 oracle posture when master-index data is available.
+- Anchor: The importer uses shared import/cancel actions instead of a separate Hero Lab utility form frame.
+- `FileMenuButton -> hero_lab_importer / dialog.hero_lab_importer`: The promoted shell keeps Hero Lab Importer as a named route, but hosts it in the shared dialog layer. Legacy posture: Classic Hero Lab import opened as a dedicated importer utility from the desktop toolset. Why it differs: The route remains familiar while the shell standardizes utility hosting.
+- `DesktopDialogFactory.heroLabSource/importRulesetId/heroLabXml`: The promoted dialog keeps source, ruleset, and XML payload fields explicit inside the shared dialog contract. Legacy posture: The legacy importer focused on source file selection and payload-specific form widgets. Why it differs: The shared shell needs deterministic field ids for import proof and auditability.
+- `DesktopDialogFactory.heroLabImportOracleLanePosture/heroLabImportOracleCoverage/heroLabImportOracleMatrix/heroLabImportOracleReceipt/heroLabAdjacentSr6OracleReceipt`: The promoted shell surfaces import-oracle posture, coverage, receipt text, and adjacent SR6 oracle evidence directly in the dialog. Legacy posture: The old importer did not publish import-oracle coverage, matrix, or adjacent SR6 proof as first-class form facts. Why it differs: Current parity has to prove governed import truth instead of merely exposing an importer entry point.
