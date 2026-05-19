@@ -70,26 +70,19 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     {
                         Orientation = Orientation.Vertical,
                         HorizontalAlignment = HorizontalAlignment.Stretch,
-                        Spacing = 6,
+                        Spacing = 8,
                         Children =
                         {
-                            new StackPanel
+                            new TextBlock
                             {
-                                Orientation = Orientation.Horizontal,
-                                HorizontalAlignment = HorizontalAlignment.Right,
-                                Spacing = 6,
-                                Children =
-                                {
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
-                                }
+                                Text = "Next step",
+                                FontWeight = FontWeight.SemiBold,
+                                TextWrapping = TextWrapping.Wrap
                             },
                             new StackPanel
                             {
                                 Orientation = Orientation.Horizontal,
-                                HorizontalAlignment = HorizontalAlignment.Right,
+                                HorizontalAlignment = HorizontalAlignment.Left,
                                 Spacing = 6,
                                 Children =
                                 {
@@ -97,12 +90,38 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                         DesktopInstallLinkingRuntime.IsClaimed(_state)
                                             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
                                             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language),
-                                        OpenFollowThroughAsync),
+                                        OpenFollowThroughAsync,
+                                        isDefault: true),
                                     CreateButton(
-                                        DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language),
+                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
+                                            ? "Open linked account"
+                                            : "Link this copy now",
+                                        DesktopInstallLinkingRuntime.IsClaimed(_state) ? OpenAccountAsync : LinkAsync)
+                                }
+                            },
+                            new TextBlock
+                            {
+                                Text = "More tools",
+                                FontWeight = FontWeight.SemiBold,
+                                TextWrapping = TextWrapping.Wrap
+                            },
+                            new StackPanel
+                            {
+                                Orientation = Orientation.Horizontal,
+                                HorizontalAlignment = HorizontalAlignment.Left,
+                                Spacing = 6,
+                                Children =
+                                {
+                                    CreateButton(
+                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
+                                            ? "Open your account"
+                                            : "Open your account first",
                                         OpenAccountAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _language), LinkAsync, isDefault: true),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language), ContinueAsGuestAsync)
+                                    CreateButton("Quit until this copy is linked", ContinueAsGuestAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
                                 }
                             }
                         }
@@ -121,7 +140,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.prompt_guest_claim", _language));
+                SetStatus("Link this copy before you continue. Unlinked installs do not open the desktop workspace.");
             }
         };
     }
@@ -298,7 +317,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void SetStatus(string message)
     {
         _statusText.Text = message;
-        _statusText.IsVisible = false;
+        _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
         ToolTip.SetTip(_statusText, message);
     }
 

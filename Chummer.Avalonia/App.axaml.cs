@@ -144,6 +144,16 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop install linking window: {ex}");
             }
 
+            DesktopInstallLinkingState currentInstallState = DesktopInstallLinkingRuntime.LoadOrCreateState(installLinkingContext.State.HeadId);
+            if (!DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))
+            {
+                if (Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
+                {
+                    lifetime.Shutdown();
+                }
+
+                return;
+            }
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
