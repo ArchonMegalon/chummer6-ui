@@ -1063,6 +1063,7 @@ for raw_path in sys.argv[2:]:
         raise SystemExit(f"release manifest must be a JSON object: {manifest_path}")
     coverage = payload.get("desktopTupleCoverage")
     if isinstance(coverage, dict):
+        coverage["externalProofRequests"] = verifier.expected_external_proof_request_rows(payload)
         coverage["desktopRouteTruth"] = verifier.expected_desktop_route_truth_rows(payload)
     payload["installAwareArtifactRegistry"] = verifier.expected_install_aware_artifact_registry_rows(payload)
     payload["desktopSurfaceRefs"] = verifier.expected_desktop_surface_ref_rows(payload)
@@ -1080,6 +1081,16 @@ for raw_path in sys.argv[2:]:
             payload["knownIssueSummary"] = (
                 "Proof freshness is missing or stale on this shelf, so preview publication is visible but not yet gold-ready."
             )
+    # Recompute verifier-owned registry surfaces once more after supportability/trust normalization
+    # so carried-forward manifests cannot keep stale dependent rows such as desktopSurfaceRefs.
+    coverage = payload.get("desktopTupleCoverage")
+    if isinstance(coverage, dict):
+        coverage["externalProofRequests"] = verifier.expected_external_proof_request_rows(payload)
+        coverage["desktopRouteTruth"] = verifier.expected_desktop_route_truth_rows(payload)
+    payload["installAwareArtifactRegistry"] = verifier.expected_install_aware_artifact_registry_rows(payload)
+    payload["desktopSurfaceRefs"] = verifier.expected_desktop_surface_ref_rows(payload)
+    payload["artifactIdentityRegistry"] = verifier.expected_artifact_identity_registry_rows(payload)
+    payload["artifactPublicationBindings"] = verifier.expected_artifact_publication_binding_rows(payload)
     payload["registryBoundaryCoverage"] = verifier.expected_registry_boundary_coverage(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
