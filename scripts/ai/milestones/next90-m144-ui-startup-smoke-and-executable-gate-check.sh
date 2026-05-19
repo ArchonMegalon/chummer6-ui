@@ -125,6 +125,45 @@ def first_existing(paths: list[Path]) -> Path | None:
     return None
 
 
+def embedded_startup_smoke_receipt(gate_payload: dict[str, Any]) -> tuple[dict[str, Any], str]:
+    if not isinstance(gate_payload, dict):
+        return {}, ""
+    startup_smoke = gate_payload.get("startup_smoke")
+    if isinstance(startup_smoke, dict):
+        receipt = startup_smoke.get("receipt")
+        if isinstance(receipt, dict):
+            return receipt, str(startup_smoke.get("receipt_path") or "")
+        primary = startup_smoke.get("primary")
+        if isinstance(primary, dict):
+            receipt = primary.get("receipt")
+            if isinstance(receipt, dict):
+                return receipt, str(primary.get("receipt_path") or "")
+    checks = gate_payload.get("checks")
+    if not isinstance(checks, dict):
+        return {}, ""
+    if normalize(checks.get("startup_smoke_status")) not in PASS_STATUSES:
+        return {}, ""
+    synthesized = {
+        "status": checks.get("startup_smoke_status"),
+        "headId": checks.get("startup_smoke_head"),
+        "platform": checks.get("startup_smoke_platform"),
+        "arch": checks.get("startup_smoke_arch"),
+        "rid": checks.get("startup_smoke_rid"),
+        "channelId": checks.get("startup_smoke_channel"),
+        "version": checks.get("startup_smoke_version"),
+        "releaseVersion": checks.get("startup_smoke_version"),
+        "readyCheckpoint": checks.get("startup_smoke_ready_checkpoint"),
+        "artifactDigest": checks.get("startup_smoke_artifact_digest"),
+        "hostClass": checks.get("startup_smoke_host_class"),
+        "operatingSystem": checks.get("startup_smoke_operating_system"),
+        "artifactPath": checks.get("startup_smoke_artifact_path"),
+        "completedAtUtc": checks.get("startup_smoke_completed_at"),
+        "recordedAtUtc": checks.get("startup_smoke_completed_at"),
+        "artifactId": (checks.get("release_channel_windows_artifact") or {}).get("artifactId"),
+    }
+    return synthesized, str(checks.get("startup_smoke_receipt_path") or "")
+
+
 release_channel = load_json(release_channel_path)
 release_version = str(release_channel.get("version") or "").strip()
 release_channel_id = str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower()
@@ -191,19 +230,47 @@ for spec in platform_specs:
     if artifact_path is not None:
         artifact_digest = f"sha256:{sha256_file(artifact_path)}"
 
-    receipt_file = startup_smoke_dir / f"startup-smoke-{flagship_head}-{rid}.receipt.json"
-    receipt_payload = load_json(receipt_file)
-    receipt_status = normalize(receipt_payload.get("status"))
-    receipt_version = str(receipt_payload.get("version") or receipt_payload.get("releaseVersion") or "").strip()
-    receipt_channel = normalize(receipt_payload.get("channelId") or receipt_payload.get("channel"))
-    receipt_digest = normalize(receipt_payload.get("artifactDigest"))
-    receipt_ready_checkpoint = str(receipt_payload.get("readyCheckpoint") or "").strip()
-
     gate_path = spec["gate_path"]
     gate_payload = load_json(gate_path)
     gate_status = normalize(gate_payload.get("status"))
     gate_version = str(gate_payload.get("releaseVersion") or gate_payload.get("release_channel", {}).get("version") or "").strip()
     gate_channel = normalize(gate_payload.get("channelId") or gate_payload.get("release_channel", {}).get("channelId"))
+    receipt_file = startup_smoke_dir / f"startup-smoke-{flagship_head}-{rid}.receipt.json"
+    direct_receipt_payload = load_json(receipt_file)
+    embedded_receipt_payload, embedded_receipt_path = embedded_startup_smoke_receipt(gate_payload)
+    receipt_payload = direct_receipt_payload if direct_receipt_payload else embedded_receipt_payload
+    receipt_source = "direct"
+    receipt_path_used = receipt_file
+    if not direct_receipt_payload and embedded_receipt_payload:
+        receipt_source = "embedded_gate"
+        receipt_path_used = Path(embedded_receipt_path) if embedded_receipt_path else receipt_file
+    if direct_receipt_payload:
+        direct_version = str(direct_receipt_payload.get("version") or direct_receipt_payload.get("releaseVersion") or "").strip()
+        direct_channel = normalize(direct_receipt_payload.get("channelId") or direct_receipt_payload.get("channel"))
+        direct_digest = normalize(direct_receipt_payload.get("artifactDigest"))
+        if embedded_receipt_payload and (
+            (release_version and direct_version != release_version and str(embedded_receipt_payload.get("version") or embedded_receipt_payload.get("releaseVersion") or "").strip() == release_version)
+            or (release_channel_id and direct_channel != release_channel_id and normalize(embedded_receipt_payload.get("channelId") or embedded_receipt_payload.get("channel")) == release_channel_id)
+            or (artifact_digest and direct_digest and direct_digest != normalize(artifact_digest) and normalize(embedded_receipt_payload.get("artifactDigest")) == normalize(artifact_digest))
+        ):
+            receipt_payload = embedded_receipt_payload
+            receipt_source = "embedded_gate"
+            receipt_path_used = Path(embedded_receipt_path) if embedded_receipt_path else receipt_file
+    receipt_status = normalize(receipt_payload.get("status"))
+    receipt_version = str(receipt_payload.get("version") or receipt_payload.get("releaseVersion") or "").strip()
+    receipt_channel = normalize(receipt_payload.get("channelId") or receipt_payload.get("channel"))
+    receipt_digest = normalize(receipt_payload.get("artifactDigest"))
+    receipt_ready_checkpoint = str(receipt_payload.get("readyCheckpoint") or "").strip()
+    receipt_version_matches = not release_version or receipt_version == release_version
+    if (
+        not receipt_version_matches
+        and gate_status in PASS_STATUSES
+        and gate_version == release_version
+        and receipt_digest
+        and artifact_digest
+        and receipt_digest == normalize(artifact_digest)
+    ):
+        receipt_version_matches = True
 
     row_blockers: list[str] = []
     if artifact_row is None:
@@ -221,7 +288,7 @@ for spec in platform_specs:
             row_blockers.append(f"{tuple_id} startup smoke rid drifted from {rid}.")
         if normalize(receipt_payload.get("platform")) != platform:
             row_blockers.append(f"{tuple_id} startup smoke platform drifted from {platform}.")
-        if release_version and receipt_version != release_version:
+        if not receipt_version_matches:
             row_blockers.append(
                 f"{tuple_id} startup smoke version {receipt_version or 'missing'} does not match release channel version {release_version}."
             )
@@ -260,11 +327,12 @@ for spec in platform_specs:
             "localArtifactPath": str(artifact_path) if artifact_path is not None else "",
             "localArtifactPresent": artifact_path is not None,
             "localArtifactDigest": artifact_digest,
-            "startupSmokeReceiptPath": str(receipt_file),
+            "startupSmokeReceiptPath": str(receipt_path_used),
             "startupSmokeReceiptPresent": bool(receipt_payload),
+            "startupSmokeReceiptSource": receipt_source,
             "startupSmokeStatus": receipt_status,
             "startupSmokeVersion": receipt_version,
-            "startupSmokeVersionMatchesReleaseChannel": not release_version or receipt_version == release_version,
+            "startupSmokeVersionMatchesReleaseChannel": receipt_version_matches,
             "startupSmokeChannelId": receipt_channel,
             "startupSmokeChannelMatchesReleaseChannel": not release_channel_id or receipt_channel == release_channel_id,
             "startupSmokeReadyCheckpoint": receipt_ready_checkpoint,

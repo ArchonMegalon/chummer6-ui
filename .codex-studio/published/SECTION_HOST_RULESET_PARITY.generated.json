@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-17T19:53:16.775648Z",
+  "generatedAt": "2026-05-19T09:20:37.865231Z",
   "contract_name": "chummer6-ui.section_host_ruleset_parity",
   "status": "pass",
   "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
@@ -589,7 +589,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (671ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 1s 011ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (675ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 944ms"
       },
       {
         "command": [
@@ -606,7 +606,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (694ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 006ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (625ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 928ms"
       },
       {
         "command": [
@@ -623,7 +623,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (784ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 1s 122ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (616ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 903ms"
       },
       {
         "command": [
@@ -640,7 +640,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (711ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 081ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (643ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 041ms"
       },
       {
         "command": [
@@ -657,7 +657,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (724ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 024ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (625ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 911ms"
       },
       {
         "command": [
@@ -674,7 +674,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (731ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 110ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (749ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 050ms"
       },
       {
         "command": [
@@ -691,7 +691,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (773ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 132ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (762ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 103ms"
       },
       {
         "command": [
@@ -708,7 +708,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (706ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 005ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (679ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 954ms"
       },
       {
         "command": [
@@ -725,7 +725,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (701ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 004ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (604ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 914ms"
       },
       {
         "command": [
@@ -742,7 +742,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (624ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 950ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (798ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 121ms"
       },
       {
         "command": [
@@ -759,21 +759,22 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 237ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 583ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 036ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 323ms"
       }
     ],
     "buildCommand": [
-      "bash",
-      "scripts/ai/with-package-plane.sh",
+      "dotnet",
       "build",
       "Chummer.Tests/Chummer.Tests.csproj",
       "--nologo",
       "--verbosity",
       "quiet",
+      "--no-restore",
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildOutputTail": "[with-package-plane] waiting for package-plane lock: /docker/chummercomplete/.tmp/ai/with-package-plane.lock\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:14.19",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:06.75",
+    "retryBuildCommand": [],
     "failureCount": 0,
     "reasonCount": 0
   },
@@ -1115,7 +1116,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (671ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 1s 011ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (675ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 944ms"
       },
       {
         "command": [
@@ -1132,7 +1133,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (694ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 006ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (625ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 928ms"
       },
       {
         "command": [
@@ -1149,7 +1150,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (784ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 1s 122ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (616ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 903ms"
       },
       {
         "command": [
@@ -1166,7 +1167,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (711ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 081ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (643ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 041ms"
       },
       {
         "command": [
@@ -1183,7 +1184,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (724ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 024ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (625ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 911ms"
       },
       {
         "command": [
@@ -1200,7 +1201,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (731ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 110ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (749ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 050ms"
       },
       {
         "command": [
@@ -1217,7 +1218,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (773ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 132ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (762ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 103ms"
       },
       {
         "command": [
@@ -1234,7 +1235,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (706ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 005ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (679ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 954ms"
       },
       {
         "command": [
@@ -1251,7 +1252,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (701ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 004ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (604ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 914ms"
       },
       {
         "command": [
@@ -1268,7 +1269,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (624ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 950ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (798ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 121ms"
       },
       {
         "command": [
@@ -1285,7 +1286,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 237ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 583ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 036ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 2s 323ms"
       }
     ]
   }

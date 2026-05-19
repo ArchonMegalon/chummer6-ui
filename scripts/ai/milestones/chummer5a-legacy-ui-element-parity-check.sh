@@ -33,6 +33,7 @@ import json
 import re
 import subprocess
 import sys
+import os
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,6 +49,9 @@ verify_banner_override = sys.argv[7]
 verify_invocation_override = sys.argv[8]
 b14_markers_override = sys.argv[9]
 contract_name = sys.argv[10]
+reuse_existing_test_build = str(
+    os.environ.get("CHUMMER_LEGACY_UI_PARITY_REUSE_EXISTING_TEST_BUILD") or "1"
+).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def resolve_path(value: str) -> Path:
@@ -1129,8 +1133,9 @@ if not evidence["b14ConsumesReceipt"]:
     add_reason(f"B14 flagship UI release gate does not consume the {legacy_subject} legacy UI element parity receipt.")
 
 test_command = [
-    "bash",
-    "scripts/ai/test.sh",
+    "dotnet",
+    "test",
+    "--project",
     "Chummer.Tests/Chummer.Tests.csproj",
     "--no-build",
     "--filter",
@@ -1140,27 +1145,34 @@ test_command = [
 ]
 evidence["testCommand"] = test_command
 evidence["testFilter"] = PROOF_FILTER
+test_assembly_path = repo_root / "Chummer.Tests" / "bin" / "Debug" / "Chummer.Tests.dll"
+evidence["testAssemblyPath"] = str(test_assembly_path)
+evidence["reusedExistingTestBuild"] = bool(reuse_existing_test_build and test_assembly_path.is_file())
 
 execution_failures: list[str] = []
 if not reasons:
-    build_command = [
-        "bash",
-        "scripts/ai/with-package-plane.sh",
-        "build",
-        "Chummer.Tests/Chummer.Tests.csproj",
-        "--nologo",
-        "--verbosity",
-        "quiet",
-        "--ignore-failed-sources",
-        "-p:NuGetAudit=false",
-    ]
-    evidence["buildCommand"] = build_command
-    build_result = subprocess.run(build_command, cwd=repo_root, text=True, capture_output=True)
-    evidence["buildExitCode"] = build_result.returncode
-    evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
-    if build_result.returncode != 0:
-        execution_failures.append(f"Legacy UI element parity build failed with exit code {build_result.returncode}.")
+    if reuse_existing_test_build and test_assembly_path.is_file():
+        evidence["buildCommand"] = []
+        evidence["buildExitCode"] = 0
+        evidence["buildOutputTail"] = []
     else:
+        build_command = [
+            "dotnet",
+            "build",
+            "Chummer.Tests/Chummer.Tests.csproj",
+            "--nologo",
+            "--verbosity",
+            "quiet",
+            "--ignore-failed-sources",
+            "-p:NuGetAudit=false",
+        ]
+        evidence["buildCommand"] = build_command
+        build_result = subprocess.run(build_command, cwd=repo_root, text=True, capture_output=True)
+        evidence["buildExitCode"] = build_result.returncode
+        evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
+        if build_result.returncode != 0:
+            execution_failures.append(f"Legacy UI element parity build failed with exit code {build_result.returncode}.")
+    if not execution_failures:
         test_result = subprocess.run(test_command, cwd=repo_root, text=True, capture_output=True)
         combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
         no_matches = "no test matches the given testcase filter" in combined_output.lower()

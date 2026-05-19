@@ -105,6 +105,13 @@ internal sealed class DesktopDevicesAccessWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.devices.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.devices.section.current"), _currentText, _currentActionsRow),

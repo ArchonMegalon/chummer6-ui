@@ -1022,7 +1022,7 @@ internal static class AccessibilitySignoffSmokeTests
 
         string homeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(homeSource, "Open GM Prep Packets");
-        RequireContains(homeSource, "Review Roster Movement");
+        RequireContains(homeSource, "Open Roster Movement");
         RequireContains(homeSource, "OpenGmPrepPacketsAsync");
         RequireContains(homeSource, "OpenRosterMovementAsync");
         RequireContains(homeSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId)");
@@ -1030,7 +1030,7 @@ internal static class AccessibilitySignoffSmokeTests
 
         string organizerSource = ReadSource("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs");
         RequireContains(organizerSource, "Open GM Prep Packets");
-        RequireContains(organizerSource, "Review Roster Movement");
+        RequireContains(organizerSource, "Open Roster Movement");
         RequireContains(organizerSource, "OpenGmPrepPacketsAsync");
         RequireContains(organizerSource, "OpenRosterMovementAsync");
         RequireContains(organizerSource, "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, _installState.HeadId, _portabilityActivity)");

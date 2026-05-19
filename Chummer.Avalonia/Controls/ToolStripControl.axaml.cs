@@ -101,7 +101,7 @@ public partial class ToolStripControl : UserControl
         SetButtonLabel(OpenForPrintingButton, "Open Character for Printing");
         SetButtonLabel(OpenForExportButton, "Open Character for Export");
         SetButtonLabel(GmPrepButton, "Open GM Prep Packets");
-        SetButtonLabel(RosterMovementButton, "Review Roster Movement");
+        SetButtonLabel(RosterMovementButton, "Open Roster Movement");
         SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio");
         SetButtonLabel(CampaignWorkspaceButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.campaign_workspace", language));
         SetButtonLabel(UpdateStatusButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.update_status", language));
@@ -144,7 +144,14 @@ public partial class ToolStripControl : UserControl
         }
         else
         {
-            button.Content = shortLabel;
+            if (string.Equals(shortLabel, label, StringComparison.Ordinal))
+            {
+                button.Content = label;
+            }
+            else
+            {
+                button.Content = shortLabel;
+            }
         }
 
         ToolTip.SetTip(button, label);

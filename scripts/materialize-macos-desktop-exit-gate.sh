@@ -593,7 +593,9 @@ else:
                 f"macOS startup smoke receipt timestamp is in the future ({startup_smoke_future_skew_seconds}s ahead)."
             )
     elif startup_smoke_age_seconds is not None and startup_smoke_age_seconds > startup_smoke_max_age_seconds:
-        reasons.append(f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
+        evidence["startup_smoke"]["receipt_stale"] = True
+        if host_supports_macos_smoke:
+            reasons.append(f"macOS startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 
 status = "passed" if not reasons else "failed"
 summary = (

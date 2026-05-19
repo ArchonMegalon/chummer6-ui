@@ -73,7 +73,18 @@ internal sealed class DesktopReportIssueWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.report.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _statusText,
+                        CreateSection(
+                            S("desktop.report.section.context"),
+                            _contextText,
+                            null),
                         CreateSection(
                             S("desktop.report.section.bug"),
                             CreateBugBody(),

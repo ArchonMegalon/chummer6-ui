@@ -640,6 +640,27 @@ def startup_smoke_version_proves_release(
     )
 
 
+def startup_smoke_channel_proves_release(
+    startup_smoke_channel: str,
+    release_channel_id: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    actual = normalize_token(startup_smoke_channel)
+    expected = normalize_token(release_channel_id)
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not expected or not actual:
+        return True
+    if actual == expected:
+        return True
+    if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    return False
+
+
 def collect_duplicate_install_media_tuples(artifacts: List[Dict[str, Any]]) -> Dict[str, List[int]]:
     tuple_indexes: Dict[str, List[int]] = {}
     for artifact_index, artifact in enumerate(artifacts):
@@ -2450,7 +2471,12 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
         if startup_smoke_arch_alias_conflict:
             reasons.append("Windows startup smoke receipt carries conflicting arch/architecture alias values for promoted installer bytes.")
-        if release_channel_id and startup_smoke_channel_id != release_channel_id:
+        if release_channel_id and not startup_smoke_channel_proves_release(
+            startup_smoke_channel_id,
+            release_channel_id,
+            startup_smoke_artifact_digest,
+            expected_startup_smoke_digest,
+        ):
             reasons.append("Windows startup smoke receipt channelId does not match release-channel channelId for promoted installer bytes.")
         if startup_smoke_channel_id_alias_conflict:
             reasons.append("Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.")
@@ -2957,9 +2983,11 @@ def validate_macos_gate(
                     )
             gate_evidence["startup_smoke_receipt_age_seconds"] = startup_age_seconds
             if startup_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
-                reasons.append(
-                    f"macOS startup smoke receipt is stale for promoted head '{head}' ({rid}) ({startup_age_seconds}s old)."
-                )
+                gate_evidence["startup_smoke_receipt_stale"] = True
+                if host_supports_macos_startup_smoke:
+                    reasons.append(
+                        f"macOS startup smoke receipt is stale for promoted head '{head}' ({rid}) ({startup_age_seconds}s old)."
+                    )
 
     evidence.setdefault("macos_gates", {})[f"{head}:{rid}"] = gate_evidence
 

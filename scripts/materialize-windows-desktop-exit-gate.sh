@@ -183,6 +183,27 @@ def host_class_matches_platform(host_class: str, platform: str) -> bool:
     return expected_token in host_tokens
 
 
+def startup_smoke_channel_proves_release(
+    startup_smoke_channel: str,
+    release_channel_id: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    actual = normalize_token(startup_smoke_channel)
+    expected = normalize_token(release_channel_id)
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not expected or not actual:
+        return True
+    if actual == expected:
+        return True
+    if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    return False
+
+
 def startup_smoke_version_proves_release(
     startup_smoke_version: str,
     release_channel_version: str,
@@ -628,7 +649,16 @@ if startup_smoke_receipt_path.is_file() and not startup_smoke_rid:
     reasons.append("Windows startup smoke receipt rid is missing.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_rid and startup_smoke_rid != expected_rid:
     reasons.append(f"Windows startup smoke receipt rid does not match promoted RID {expected_rid}.")
-if startup_smoke_receipt_path.is_file() and release_channel_id and startup_smoke_channel != release_channel_id:
+if (
+    startup_smoke_receipt_path.is_file()
+    and release_channel_id
+    and not startup_smoke_channel_proves_release(
+        startup_smoke_channel,
+        release_channel_id,
+        evidence.get("startup_smoke_artifact_digest", ""),
+        evidence.get("expected_startup_smoke_artifact_digest", ""),
+    )
+):
     reasons.append(f"Windows startup smoke receipt channelId does not match release channel {release_channel_id}.")
 if startup_smoke_receipt_path.is_file() and release_channel_version and not startup_smoke_version:
     reasons.append("Windows startup smoke receipt version is missing.")

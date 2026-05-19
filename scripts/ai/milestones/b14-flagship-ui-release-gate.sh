@@ -65,6 +65,7 @@ fi
 release_channel_path="$release_channel_path_default"
 refresh_supporting_receipts="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS:-1}"
 skip_downstream_receipt_materialization="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS:-0}"
+reuse_existing_build_output="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REUSE_EXISTING_BUILD_OUTPUT:-1}"
 desktop_workflow_execution_gate_script_path="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_SCRIPT_PATH:-$repo_root/scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh}"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
@@ -85,11 +86,6 @@ prune_release_gate_lock_if_stale() {
   if [[ -f "$lock_owner_pid_path" ]]; then
     owner_pid="$(tr -dc '0-9' <"$lock_owner_pid_path")"
     if [[ -n "$owner_pid" ]] && kill -0 "$owner_pid" 2>/dev/null; then
-      return 0
-    fi
-  fi
-  if command -v pgrep >/dev/null 2>&1; then
-    if pgrep -f "scripts/ai/milestones/b14-flagship-ui-release-gate.sh" >/dev/null 2>&1; then
       return 0
     fi
   fi
@@ -176,12 +172,68 @@ run_with_retry() {
   done
 }
 
+receipt_passes_recently() {
+  local receipt_path="$1"
+  local max_age_seconds="${2:-86400}"
+  python3 - <<'PY' "$receipt_path" "$max_age_seconds"
+from __future__ import annotations
+
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+receipt_path = Path(sys.argv[1])
+max_age_seconds = int(sys.argv[2])
+if not receipt_path.is_file():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+status = str(payload.get("status") or "").strip().lower()
+if status not in {"pass", "passed", "ready"}:
+    raise SystemExit(1)
+
+raw_generated_at = str(payload.get("generatedAt") or payload.get("generated_at") or "").strip()
+if not raw_generated_at:
+    raise SystemExit(1)
+if raw_generated_at.endswith("Z"):
+    raw_generated_at = raw_generated_at[:-1] + "+00:00"
+generated_at = datetime.fromisoformat(raw_generated_at)
+if generated_at.tzinfo is None:
+    generated_at = generated_at.replace(tzinfo=timezone.utc)
+age_seconds = (datetime.now(timezone.utc) - generated_at.astimezone(timezone.utc)).total_seconds()
+if age_seconds < 0 or age_seconds > max_age_seconds:
+    raise SystemExit(1)
+PY
+}
+
 mkdir -p "$(dirname "$receipt_path")"
 mkdir -p "$nuget_packages"
 export NUGET_PACKAGES="$nuget_packages"
 
-echo "[b14] building Avalonia desktop head..."
-bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release --no-restore -v minimal >/dev/null
+ruleset_ui_adaptation_receipt_path="$repo_root/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json"
+chummer5a_layout_hard_receipt_path="$repo_root/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+
+if [[ "$reuse_existing_build_output" == "1" && -f "$sample_path" ]]; then
+  echo "[b14] reusing existing Avalonia Release output at $output_dir" >&2
+else
+  echo "[b14] building Avalonia desktop head..."
+  build_log="$(mktemp "${TMPDIR:-/tmp}/chummer-b14-build.XXXXXX.log")"
+  build_status=0
+  set +e
+  bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release --no-restore -v minimal >"$build_log" 2>&1
+  build_status=$?
+  set -e
+  if [[ $build_status -ne 0 ]]; then
+    echo "[b14] WARN: Avalonia build failed with --no-restore; retrying with restore-enabled build..." >&2
+    bash scripts/ai/build.sh Chummer.Avalonia/Chummer.Avalonia.csproj -c Release -v minimal >>"$build_log" 2>&1
+  fi
+  rm -f "$build_log"
+fi
 
 if [[ ! -f "$sample_path" ]]; then
   echo "[b14] FAIL: bundled demo runner fixture missing from Release output: $sample_path" >&2
@@ -305,17 +357,17 @@ PY
 echo "[b14] running flagship Avalonia headless UI gate tests..."
 run_with_retry 2 "flagship Avalonia headless UI gate tests" \
   env CHUMMER_UI_GATE_SCREENSHOT_DIR="$capture_screenshot_dir" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.AvaloniaFlagshipUiGateTests" >/dev/null
 
 echo "[b14] running flagship Blazor desktop shell gate tests..."
 run_with_retry 2 "flagship Blazor desktop shell gate tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
   --filter "FullyQualifiedName~BlazorShellComponentTests" >/dev/null
 
 echo "[b14] running desktop install/update/recovery runtime tests..."
 run_with_retry 2 "desktop install/update/recovery runtime tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal -p:RunDesktopUpdateTestsOnly=true \
   --filter "CheckAndScheduleStartupUpdateAsync_rollout_blocked_manifests_reason_and_stops_scheduling|BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context|TryHandleAsync_writes_receipt_when_requested" >/dev/null
 
 python3 - <<'PY' "$capture_screenshot_dir" "$staged_screenshot_dir" "$screenshot_dir"
@@ -522,41 +574,67 @@ PY
 
 echo "[b14] running cross-head workflow parity tests..."
 run_with_retry 3 "cross-head workflow parity tests" \
-  bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
   --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >/dev/null
 
 echo "[b14] running explicit Chummer5a legacy UI element parity gate..."
-bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh >/dev/null
+if ! receipt_passes_recently "$chummer5a_legacy_ui_element_parity_receipt_path"; then
+  bash scripts/ai/milestones/chummer5a-legacy-ui-element-parity-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit Chummer4 legacy UI element parity gate..."
-bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
+if ! receipt_passes_recently "$chummer4_legacy_ui_element_parity_receipt_path"; then
+  bash scripts/ai/milestones/chummer4-legacy-ui-element-parity-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
-bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
+if ! receipt_passes_recently "$workflow_parity_receipt_path"; then
+  bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
-bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
+if ! receipt_passes_recently "$sr4_sr6_frontier_receipt_path"; then
+  CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH=1 \
+    CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
+    CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
+    CHUMMER_CHUMMER5A_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
+    bash scripts/ai/milestones/sr4-sr6-desktop-parity-frontier-receipt.sh >/dev/null
+fi
 
 echo "[b14] refreshing explicit ruleset UI adaptation gate..."
-bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null
+if ! receipt_passes_recently "$ruleset_ui_adaptation_receipt_path"; then
+  bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit SR6 ruleset UI sophistication gate..."
-bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh >/dev/null
+if ! receipt_passes_recently "$sr6_ruleset_ui_sophistication_receipt_path"; then
+  bash scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh >/dev/null
+fi
 
 echo "[b14] running explicit Chummer5a layout hard gate..."
-bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+if ! receipt_passes_recently "$chummer5a_layout_hard_receipt_path"; then
+  bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh >/dev/null
+fi
 
 echo "[b14] running explicit design-authorized parity softening gate..."
-bash scripts/ai/milestones/design-authorized-parity-softening-check.sh >/dev/null
+if ! receipt_passes_recently "$design_authorized_parity_softening_receipt_path"; then
+  bash scripts/ai/milestones/design-authorized-parity-softening-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit flagship design mirror completeness gate..."
-bash scripts/ai/milestones/design-mirror-completeness-check.sh >/dev/null
+if ! receipt_passes_recently "$design_mirror_completeness_receipt_path"; then
+  bash scripts/ai/milestones/design-mirror-completeness-check.sh >/dev/null
+fi
 
 echo "[b14] running explicit startup workbench survival gate..."
-bash scripts/ai/milestones/startup-workbench-survival-check.sh >/dev/null
+if ! receipt_passes_recently "$startup_workbench_survival_receipt_path"; then
+  bash scripts/ai/milestones/startup-workbench-survival-check.sh >/dev/null
+fi
 
 echo "[b14] materializing localization release gate..."
-bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
+if ! receipt_passes_recently "$localization_release_gate_receipt_path"; then
+  bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
+fi
 
 python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path"
 import json

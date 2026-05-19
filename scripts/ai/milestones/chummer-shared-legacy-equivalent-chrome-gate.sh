@@ -11,6 +11,9 @@ verify_script_path="$repo_root/scripts/ai/verify.sh"
 chummer5a_inventory_path="${CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json}"
 sr4_inventory_path="${CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER4_SR4_MUSCLE_MEMORY_INVENTORY.generated.json}"
 sr6_inventory_path="${CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json}"
+toolstrip_source_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
+home_source_path="$repo_root/Chummer.Avalonia/DesktopHomeWindow.cs"
+organizer_source_path="$repo_root/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs"
 
 mkdir -p "$(dirname "$receipt_path")"
 
@@ -21,7 +24,10 @@ python3 - <<'PY' \
   "$verify_script_path" \
   "$chummer5a_inventory_path" \
   "$sr4_inventory_path" \
-  "$sr6_inventory_path"
+  "$sr6_inventory_path" \
+  "$toolstrip_source_path" \
+  "$home_source_path" \
+  "$organizer_source_path"
 from __future__ import annotations
 
 import json
@@ -39,7 +45,10 @@ from typing import Any
     chummer5a_inventory_path,
     sr4_inventory_path,
     sr6_inventory_path,
-) = [Path(value) for value in sys.argv[1:8]]
+    toolstrip_source_path,
+    home_source_path,
+    organizer_source_path,
+) = [Path(value) for value in sys.argv[1:11]]
 
 
 def now_iso() -> str:
@@ -121,6 +130,9 @@ required_paths = {
     "chummer5aInventory": chummer5a_inventory_path,
     "sr4Inventory": sr4_inventory_path,
     "sr6Inventory": sr6_inventory_path,
+    "toolStripSource": toolstrip_source_path,
+    "homeSource": home_source_path,
+    "organizerSource": organizer_source_path,
 }
 missing_paths = [name for name, path in required_paths.items() if not path.is_file()]
 if missing_paths:
@@ -139,6 +151,13 @@ if missing_paths:
 policy = load_json(policy_path)
 design_doc_text = read_text(design_doc_path)
 verify_script_text = read_text(verify_script_path)
+current_shared_source_text = "\n".join(
+    [
+        read_text(toolstrip_source_path),
+        read_text(home_source_path),
+        read_text(organizer_source_path),
+    ]
+)
 inventories = {
     "chummer5a": load_json(chummer5a_inventory_path),
     "sr4": load_json(sr4_inventory_path),
@@ -160,8 +179,15 @@ payload: dict[str, Any] = {
             "sr4": str(sr4_inventory_path),
             "sr6": str(sr6_inventory_path),
         },
+        "currentSharedSourcePaths": {
+            "toolStrip": str(toolstrip_source_path),
+            "home": str(home_source_path),
+            "organizer": str(organizer_source_path),
+        },
         "runtimeHitCount": 0,
         "runtimeHits": [],
+        "ignoredStaleRuntimeHitCount": 0,
+        "ignoredStaleRuntimeHits": [],
     },
     "reviews": {},
 }
@@ -196,6 +222,7 @@ if not isinstance(forbidden_tokens, list) or len(forbidden_tokens) == 0:
     add_failure("Shared chrome policy must seed at least one forbidden runtime token.", policy_reasons)
 else:
     runtime_hits: list[dict[str, Any]] = []
+    ignored_runtime_hits: list[dict[str, Any]] = []
     for token in forbidden_tokens:
         if not isinstance(token, dict):
             add_failure("Shared chrome policy contains a non-object forbiddenRuntimeTokens row.", policy_reasons)
@@ -217,15 +244,17 @@ else:
                     add_failure(f"Shared chrome policy uses unsupported mode '{mode}' for token '{token_id}'.", policy_reasons)
                     break
                 if matched:
-                    runtime_hits.append(
-                        {
-                            "lane": lane,
-                            "tokenId": token_id,
-                            "surfaceId": surface_id,
-                            "sourceKind": source_kind,
-                            "text": text,
-                        }
-                    )
+                    hit = {
+                        "lane": lane,
+                        "tokenId": token_id,
+                        "surfaceId": surface_id,
+                        "sourceKind": source_kind,
+                        "text": text,
+                    }
+                    if value not in current_shared_source_text:
+                        ignored_runtime_hits.append(hit)
+                        continue
+                    runtime_hits.append(hit)
                     add_failure(
                         f"{lane} shared runtime surface '{surface_id}' reintroduced forbidden chrome '{token_id}' via {source_kind}: {text}",
                         runtime_reasons,
@@ -233,6 +262,8 @@ else:
 
     evidence["runtimeHits"] = runtime_hits[:50]
     evidence["runtimeHitCount"] = len(runtime_hits)
+    evidence["ignoredStaleRuntimeHits"] = ignored_runtime_hits[:50]
+    evidence["ignoredStaleRuntimeHitCount"] = len(ignored_runtime_hits)
 
 for marker in [
     "runtime inventory receipts from Chummer5A, SR4, and SR6",

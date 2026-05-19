@@ -71,6 +71,13 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.crash.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _statusText,
                         CreateSection(
                             S("desktop.crash.section.summary"),

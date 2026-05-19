@@ -106,10 +106,18 @@ internal sealed class DesktopSupportCaseWindow : Window
                     Spacing = 10,
                     Children =
                     {
+                        new TextBlock
+                        {
+                            Text = S("desktop.support_case.heading"),
+                            FontSize = 22,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        },
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.support_case.section.summary"), _summaryText, _summaryActionsRow),
                         CreateSection(S("desktop.support_case.section.timeline"), _timelineText, _timelineActionsRow),
+                        CreateSection("Diagnostics environment diff", _diagnosticsText, null),
                         CreateSection(S("desktop.support_case.section.follow_through"), _followThroughText, _followThroughActionsRow),
                         new StackPanel
                         {
@@ -424,7 +432,36 @@ internal sealed class DesktopSupportCaseWindow : Window
     }
 
     private string BuildDiagnosticsBody()
-        => DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase);
+    {
+        List<string> lines =
+        [
+            DesktopSupportDiagnosticsText.BuildTrackedCaseDiagnostics(_installState, _updateStatus, _supportProjection, _supportCase)
+        ];
+        AppendDiagnosticsDiffLines(
+            lines,
+            DesktopTrustReceiptText.BuildDiagnosticsDiff(_installState, _updateStatus),
+            _supportProjection);
+        return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+    }
+
+    private static void AppendDiagnosticsDiffLines(
+        List<string> lines,
+        IReadOnlyList<string> diagnosticsDiff,
+        DesktopHomeSupportProjection supportProjection)
+    {
+        foreach (string line in diagnosticsDiff)
+        {
+            if (!string.IsNullOrWhiteSpace(line))
+            {
+                lines.Add(line);
+            }
+        }
+
+        if (supportProjection.NeedsAttention)
+        {
+            lines.Add("Diagnostics diff stays visible while the tracked case still needs reporter follow-through.");
+        }
+    }
 
     private string BuildFollowThroughBody()
     {
@@ -481,7 +518,7 @@ internal sealed class DesktopSupportCaseWindow : Window
         [
             HasOpenableAttachment
                 ? CreateButton(S("desktop.support_case.button.open_attachment"), OpenFirstAttachment, isPrimary: true)
-                : CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
+                : CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync),
             CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync)
         ];
 

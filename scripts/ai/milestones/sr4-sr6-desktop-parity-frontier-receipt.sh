@@ -18,24 +18,39 @@ else
   release_channel_path_default="$default_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+skip_sr4_refresh="${CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
+skip_sr6_refresh="${CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
+skip_chummer5a_refresh="${CHUMMER_CHUMMER5A_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
+skip_subgate_refresh="${CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH:-0}"
 
 mkdir -p "$(dirname "$receipt_path")"
 
 echo "[sr4-sr6-frontier] running SR4 parity gate..."
 sr4_exit=0
-bash scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh >/dev/null || sr4_exit=$?
+if [[ "$skip_subgate_refresh" != "1" ]]; then
+  CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE="$skip_sr4_refresh" \
+    bash scripts/ai/milestones/sr4-desktop-workflow-parity-check.sh >/dev/null || sr4_exit=$?
+fi
 
 echo "[sr4-sr6-frontier] running SR6 parity gate..."
 sr6_exit=0
-bash scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh >/dev/null || sr6_exit=$?
+if [[ "$skip_subgate_refresh" != "1" ]]; then
+  CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE="$skip_sr6_refresh" \
+    bash scripts/ai/milestones/sr6-desktop-workflow-parity-check.sh >/dev/null || sr6_exit=$?
+fi
 
 echo "[sr4-sr6-frontier] running Chummer5A parity gate..."
 chummer5a_exit=0
-bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null || chummer5a_exit=$?
+if [[ "$skip_subgate_refresh" != "1" ]]; then
+  CHUMMER_CHUMMER5A_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE="$skip_chummer5a_refresh" \
+    bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null || chummer5a_exit=$?
+fi
 
 echo "[sr4-sr6-frontier] running ruleset/UI adaptation gate..."
 ruleset_ui_adaptation_exit=0
-bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null || ruleset_ui_adaptation_exit=$?
+if [[ "$skip_subgate_refresh" != "1" ]]; then
+  bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh >/dev/null || ruleset_ui_adaptation_exit=$?
+fi
 
 python3 - <<'PY' "$receipt_path" "$sr4_receipt_path" "$sr6_receipt_path" "$chummer5a_receipt_path" "$ruleset_ui_adaptation_receipt_path" "$sr4_exit" "$sr6_exit" "$chummer5a_exit" "$ruleset_ui_adaptation_exit" "$release_channel_path"
 from __future__ import annotations

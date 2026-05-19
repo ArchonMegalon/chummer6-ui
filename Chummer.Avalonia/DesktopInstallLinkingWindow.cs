@@ -41,7 +41,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _claimCodeBox = new TextBox
         {
-            Text = context.StartupClaimCode ?? string.Empty
+            Text = context.StartupClaimCode ?? string.Empty,
+            Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language)
         };
         ToolTip.SetTip(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
         AutomationProperties.SetName(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
@@ -339,6 +340,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
 
         lines.AddRange(DesktopSurfacePostureText.BuildLines(updateStatus));
+        lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString(
+            "desktop.install_link.shipping_locales",
+            language,
+            DesktopLocalizationCatalog.BuildSupportedLanguageSummary()));
         lines.Add(
             DesktopInstallLinkingRuntime.IsClaimed(state)
                 ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.next_safe_action_claimed", language)

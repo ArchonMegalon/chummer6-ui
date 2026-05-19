@@ -255,18 +255,30 @@ fallback_heads = set(flagship_gate.get("desktopFallbackHeads") or [])
 
 visual_evidence = visual_gate.get("evidence") or {}
 required_screenshots = set(visual_evidence.get("required_screenshots") or [])
+required_screenshot_aliases = {
+    "19-translator-dialog-light.png": "38-translator-dialog-light.png",
+    "20-xml-editor-dialog-light.png": "39-xml-editor-dialog-light.png",
+    "21-hero-lab-importer-dialog-light.png": "40-hero-lab-importer-dialog-light.png",
+}
+
+
+def has_required_screenshot(name: str) -> bool:
+    alias = required_screenshot_aliases.get(name)
+    return name in required_screenshots or (alias in required_screenshots if alias else False)
+
+
 for key in ["runtime_backed_master_index", "runtime_backed_character_roster", "runtime_backed_file_menu_routes"]:
     if not status_pass(visual_evidence.get(key)):
         append_reason(f"Desktop visual familiarity gate does not pass {key}.", reasons, screenshot_review_reasons)
 for screenshot in ["03-settings-open-light.png", "16-master-index-dialog-light.png", "17-character-roster-dialog-light.png", "18-import-dialog-light.png"]:
-    if screenshot not in required_screenshots:
+    if not has_required_screenshot(screenshot):
         append_reason(
             f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.",
             reasons,
             screenshot_review_reasons,
         )
 for screenshot in ["19-translator-dialog-light.png", "20-xml-editor-dialog-light.png", "21-hero-lab-importer-dialog-light.png"]:
-    if screenshot not in required_screenshots:
+    if not has_required_screenshot(screenshot):
         append_reason(
             f"Desktop visual familiarity gate does not require screenshot review for {screenshot}.",
             reasons,
@@ -365,8 +377,8 @@ required_task_time_jobs = {
             translator_xml_tokens[1] in presenter_tests_text,
             translator_xml_tokens[2] in dual_head_tests_text,
             translator_xml_tokens[3] in dialog_tests_text,
-            "19-translator-dialog-light.png" in required_screenshots,
-            "20-xml-editor-dialog-light.png" in required_screenshots,
+            has_required_screenshot("19-translator-dialog-light.png"),
+            has_required_screenshot("20-xml-editor-dialog-light.png"),
         ),
         "tests": [
             "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture",
@@ -388,8 +400,8 @@ required_task_time_jobs = {
             hero_lab_importer_tokens[1] in dual_head_tests_text,
             hero_lab_importer_tokens[2] in dialog_tests_text,
             hero_lab_importer_tokens[3] in avalonia_tests_text,
-            "18-import-dialog-light.png" in required_screenshots,
-            "21-hero-lab-importer-dialog-light.png" in required_screenshots,
+            has_required_screenshot("18-import-dialog-light.png"),
+            has_required_screenshot("21-hero-lab-importer-dialog-light.png"),
         ),
         "tests": [
             "ExecuteCommandAsync_hero_lab_importer_opens_dialog_with_compatibility_posture",

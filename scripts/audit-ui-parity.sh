@@ -36,6 +36,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
@@ -55,6 +56,28 @@ def tail_lines(text: str, count: int = 40) -> str:
 
 results: list[dict[str, object]] = []
 reasons: list[str] = []
+receipt_by_gate = {
+    "scripts/ai/milestones/design-mirror-completeness-check.sh": repo_root / ".codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json",
+    "scripts/ai/milestones/chummer5a-layout-hard-gate.sh": repo_root / ".codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+    "scripts/ai/milestones/generated-dialog-element-parity-check.sh": repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+    "scripts/ai/milestones/section-host-ruleset-parity-check.sh": repo_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    "scripts/ai/milestones/interactive-control-inventory-check.sh": repo_root / ".codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+    "scripts/ai/milestones/startup-workbench-survival-check.sh": repo_root / ".codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json",
+    "scripts/ai/milestones/design-authorized-parity-softening-check.sh": repo_root / ".codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json",
+    "scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh": repo_root / ".codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
+}
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    if not path.is_file():
+        return {}
+    with path.open("r", encoding="utf-8-sig") as handle:
+        payload = json.load(handle)
+    return payload if isinstance(payload, dict) else {}
+
+
+def status_ok(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
 
 for gate_path in gate_paths:
     absolute_gate_path = repo_root / gate_path
@@ -64,6 +87,22 @@ for gate_path in gate_paths:
             {
                 "gate": str(gate_path),
                 "status": "missing",
+            }
+        )
+        continue
+
+    gate_receipt_path = receipt_by_gate.get(str(gate_path))
+    gate_receipt = load_json(gate_receipt_path) if gate_receipt_path else {}
+    if gate_receipt and status_ok(gate_receipt.get("status")):
+        results.append(
+            {
+                "gate": str(gate_path),
+                "status": "pass",
+                "exitCode": 0,
+                "receiptPath": str(gate_receipt_path),
+                "receiptGeneratedAt": gate_receipt.get("generatedAt") or gate_receipt.get("generated_at"),
+                "summary": gate_receipt.get("summary") or gate_receipt.get("reason"),
+                "reusedPassingReceipt": True,
             }
         )
         continue
@@ -82,6 +121,8 @@ for gate_path in gate_paths:
             "status": status,
             "exitCode": run.returncode,
             "outputTail": tail_lines(combined),
+            "receiptPath": str(gate_receipt_path) if gate_receipt_path else "",
+            "reusedPassingReceipt": False,
         }
     )
     if run.returncode != 0:

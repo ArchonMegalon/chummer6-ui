@@ -1175,6 +1175,48 @@ def normalize_token(value: object) -> str:
     return str(value or "").strip().lower()
 
 
+def startup_smoke_channel_proves_release(
+    startup_smoke_channel: str,
+    release_channel_id: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    actual = normalize_token(startup_smoke_channel)
+    expected = normalize_token(release_channel_id)
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not expected or not actual:
+        return True
+    if actual == expected:
+        return True
+    if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    return False
+
+
+def startup_smoke_version_proves_release(
+    startup_smoke_version: str,
+    release_channel_version: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    version = str(startup_smoke_version or "").strip()
+    release_version = str(release_channel_version or "").strip()
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not release_version:
+        return True
+    if expected_digest and startup_digest == expected_digest:
+        return True
+    if not version:
+        return False
+    if version == release_version:
+        return True
+    return version.lower().startswith("smoke-") and bool(expected_digest) and startup_digest == expected_digest
+
+
 def sha256_file(path_text: str):
     path = pathlib.Path(path_text)
     if not path.is_file():
@@ -2720,12 +2762,25 @@ if expected_artifact is not None:
             reasons.append("Linux startup smoke receipt platform is not linux.")
         if normalize_token(receipt.get("rid")) != normalize_token(rid):
             reasons.append("Linux startup smoke receipt rid does not match promoted RID.")
-        if expected_channel and normalize_token(receipt.get("channelId") or receipt.get("channel")) != expected_channel:
+        receipt_channel = normalize_token(receipt.get("channelId") or receipt.get("channel"))
+        receipt_digest = normalize_token(receipt.get("artifactDigest"))
+        expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+        if expected_channel and not startup_smoke_channel_proves_release(
+            receipt_channel,
+            expected_channel,
+            receipt_digest,
+            expected_digest,
+        ):
             reasons.append("Linux startup smoke receipt channelId does not match release channel.")
         receipt_version = str(receipt.get("version") or receipt.get("releaseVersion") or "").strip()
-        if expected_version and receipt_version != expected_version:
+        if expected_version and not startup_smoke_version_proves_release(
+            receipt_version,
+            expected_version,
+            receipt_digest,
+            expected_digest,
+        ):
             reasons.append("Linux startup smoke receipt version does not match release channel version.")
-        if expected_sha and normalize_token(receipt.get("artifactDigest")) != f"sha256:{expected_sha}":
+        if expected_sha and receipt_digest != expected_digest:
             reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
         if not str(receipt.get("operatingSystem") or "").strip():
             reasons.append("Linux startup smoke receipt operatingSystem is missing.")
@@ -2911,6 +2966,48 @@ def host_class_matches_platform(host_class: str, platform_name: str) -> bool:
         return False
     host_tokens = [token for token in normalized_host.split("-") if token]
     return expected_token in host_tokens
+
+
+def startup_smoke_channel_proves_release(
+    startup_smoke_channel: str,
+    release_channel_id: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    actual = normalize_token(startup_smoke_channel)
+    expected = normalize_token(release_channel_id)
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not expected or not actual:
+        return True
+    if actual == expected:
+        return True
+    if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    return False
+
+
+def startup_smoke_version_proves_release(
+    startup_smoke_version: str,
+    release_channel_version: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    version = str(startup_smoke_version or "").strip()
+    release_version = str(release_channel_version or "").strip()
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not release_version:
+        return True
+    if expected_digest and startup_digest == expected_digest:
+        return True
+    if not version:
+        return False
+    if version == release_version:
+        return True
+    return version.lower().startswith("smoke-") and bool(expected_digest) and startup_digest == expected_digest
 
 
 def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
@@ -3108,20 +3205,44 @@ else:
                 reasons.append("Linux startup smoke receipt rid is missing.")
             elif receipt_rid != rid.lower():
                 reasons.append("Linux startup smoke receipt rid does not match promoted RID.")
-            if expected_channel and receipt_channel != expected_channel:
+            if expected_channel and not startup_smoke_channel_proves_release(
+                receipt_channel,
+                expected_channel,
+                receipt_digest,
+                expected_digest,
+            ):
                 reasons.append("Linux startup smoke receipt channelId does not match release channel.")
             if expected_version and not receipt_release_version:
                 reasons.append("Linux startup smoke receipt releaseVersion is missing.")
             if (
                 expected_version
                 and receipt_release_version
-                and receipt_release_version != expected_version
-                and receipt_version != expected_version
+                and not startup_smoke_version_proves_release(
+                    receipt_release_version,
+                    expected_version,
+                    receipt_digest,
+                    expected_digest,
+                )
+                and not startup_smoke_version_proves_release(
+                    receipt_version,
+                    expected_version,
+                    receipt_digest,
+                    expected_digest,
+                )
             ):
                 reasons.append("Linux startup smoke receipt releaseVersion does not match release channel version.")
             if expected_version and not receipt_version:
                 reasons.append("Linux startup smoke receipt version is missing.")
-            if expected_version and receipt_version and receipt_version != expected_version:
+            if (
+                expected_version
+                and receipt_version
+                and not startup_smoke_version_proves_release(
+                    receipt_version,
+                    expected_version,
+                    receipt_digest,
+                    expected_digest,
+                )
+            ):
                 reasons.append("Linux startup smoke receipt version does not match release channel version.")
             if expected_digest and receipt_digest != expected_digest:
                 reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")

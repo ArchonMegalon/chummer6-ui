@@ -51,7 +51,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"\\\"Review Moderation Flow\\\"\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/DesktopHomeWindow.cs\": [");
         StringAssert.Contains(scriptText, "\"\\\"Open GM Prep Packets\\\"\"");
-        StringAssert.Contains(scriptText, "\"\\\"Review Roster Movement\\\"\"");
+        StringAssert.Contains(scriptText, "\"\\\"Open Roster Movement\\\"\"");
         StringAssert.Contains(scriptText, "\"OpenGmPrepPacketsAsync\"");
         StringAssert.Contains(scriptText, "\"OpenRosterMovementAsync\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.EventHandlers.cs\": [");
