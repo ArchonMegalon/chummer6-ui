@@ -367,7 +367,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
-    public async Task InitializeForStartupAsync_without_explicit_handoff_does_not_prompt_on_first_launch()
+    public async Task InitializeForStartupAsync_without_explicit_handoff_requires_linking_on_first_launch()
     {
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
         string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
@@ -384,8 +384,8 @@ public sealed class DesktopInstallLinkingRuntimeTests
                 Array.Empty<string>(),
                 CancellationToken.None);
 
-            Assert.IsFalse(context.ShouldPrompt, "First launch without a claim or callback must enter the workbench directly.");
-            Assert.AreEqual("none", context.PromptReason);
+            Assert.IsTrue(context.ShouldPrompt, "First launch without a claim or callback must enter the install-link gate.");
+            Assert.AreEqual("claim_required", context.PromptReason);
             Assert.IsNull(context.ClaimResult);
             Assert.AreEqual(1, context.State.LaunchCount);
         }
