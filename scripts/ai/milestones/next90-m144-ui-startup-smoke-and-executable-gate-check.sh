@@ -42,6 +42,8 @@ EXPECTED_SURFACES = [
     "capture_fresh_windows_linux_and_macos_startup_smoke_and:ui",
 ]
 PASS_STATUSES = {"pass", "passed", "ready"}
+STARTUP_SMOKE_MAX_AGE_SECONDS = 7 * 24 * 3600
+STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS = 300
 
 release_channel_path = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
@@ -66,6 +68,25 @@ def load_json(path: Path) -> dict[str, Any]:
         return {}
     loaded = json.loads(path.read_text(encoding="utf-8-sig"))
     return loaded if isinstance(loaded, dict) else {}
+
+
+def parse_iso_timestamp(value: Any) -> datetime | None:
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(timezone.utc)
+    except ValueError:
+        return None
+
+
+def resolve_receipt_timestamp(receipt: dict[str, Any]) -> tuple[str, datetime | None]:
+    for key in ("completedAtUtc", "recordedAtUtc", "startedAtUtc", "generated_at", "generatedAt"):
+        raw = str(receipt.get(key) or "").strip()
+        parsed = parse_iso_timestamp(raw)
+        if parsed is not None:
+            return raw, parsed
+    return "", None
 
 
 def sha256_file(path: Path) -> str:
@@ -261,6 +282,7 @@ for spec in platform_specs:
     receipt_channel = normalize(receipt_payload.get("channelId") or receipt_payload.get("channel"))
     receipt_digest = normalize(receipt_payload.get("artifactDigest"))
     receipt_ready_checkpoint = str(receipt_payload.get("readyCheckpoint") or "").strip()
+    receipt_timestamp_raw, receipt_timestamp = resolve_receipt_timestamp(receipt_payload)
     receipt_version_matches = not release_version or receipt_version == release_version
     if (
         not receipt_version_matches
@@ -300,6 +322,18 @@ for spec in platform_specs:
             row_blockers.append(
                 f"{tuple_id} startup smoke ready checkpoint {receipt_ready_checkpoint or 'missing'} does not match pre_ui_event_loop."
             )
+        if receipt_timestamp is None:
+            row_blockers.append(f"{tuple_id} startup smoke receipt timestamp is missing or invalid.")
+        else:
+            age_seconds = int((datetime.now(timezone.utc) - receipt_timestamp).total_seconds())
+            if age_seconds < -STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS:
+                row_blockers.append(
+                    f"{tuple_id} startup smoke receipt timestamp {receipt_timestamp_raw} is in the future."
+                )
+            elif age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+                row_blockers.append(
+                    f"{tuple_id} startup smoke receipt is stale at {receipt_timestamp_raw} ({age_seconds}s old; max {STARTUP_SMOKE_MAX_AGE_SECONDS}s)."
+                )
         if artifact_digest and receipt_digest and receipt_digest != normalize(artifact_digest):
             row_blockers.append(f"{tuple_id} startup smoke artifact digest does not match the local artifact bytes.")
     if not gate_payload:
@@ -337,6 +371,7 @@ for spec in platform_specs:
             "startupSmokeChannelMatchesReleaseChannel": not release_channel_id or receipt_channel == release_channel_id,
             "startupSmokeReadyCheckpoint": receipt_ready_checkpoint,
             "startupSmokeReadyCheckpointMatches": receipt_ready_checkpoint == "pre_ui_event_loop",
+            "startupSmokeTimestamp": receipt_timestamp_raw,
             "startupSmokeArtifactDigest": receipt_payload.get("artifactDigest"),
             "startupSmokeArtifactDigestMatchesLocalArtifact": not artifact_digest or not receipt_digest or receipt_digest == normalize(artifact_digest),
             "executableGatePath": str(gate_path),
@@ -379,6 +414,12 @@ if sorted(required_release_tuples) != reported_required_tuples:
     blocking_findings.append(
         "Release channel requiredDesktopPlatformHeadRidTuples does not cover the expected flagship Windows/Linux/macOS tuple set."
     )
+
+blocking_findings = [
+    finding
+    for row in proof_rows
+    for finding in row.get("blockingFindings", [])
+] + blocking_findings
 
 status = "pass" if not blocking_findings else "fail"
 summary = (
