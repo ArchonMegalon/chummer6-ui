@@ -1,0 +1,85 @@
+name: Capture Promoted Windows Startup Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_version:
+        description: Promoted release version
+        required: true
+        default: run-20260518-220935
+        type: string
+      expected_sha256:
+        description: Promoted installer SHA-256
+        required: true
+        default: 54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde
+        type: string
+      download_url:
+        description: Public installer download URL
+        required: true
+        default: https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  capture-startup-smoke:
+    name: Capture promoted Windows startup smoke
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      CHUMMER_DESKTOP_RELEASE_CHANNEL: public_stable
+      CHUMMER_DESKTOP_STARTUP_SMOKE_HOST_CLASS: github-actions-win-x64
+      CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM: Windows
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Download promoted installer bytes
+        run: |
+          set -euo pipefail
+          mkdir -p Docker/Downloads/files Docker/Downloads/startup-smoke
+          curl -fL --retry 3 --retry-delay 2 \
+            "${{ inputs.download_url }}" \
+            -o Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe
+
+      - name: Verify promoted installer digest
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path
+          path = Path("Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe")
+          digest = hashlib.sha256(path.read_bytes()).hexdigest().lower()
+          expected = "${{ inputs.expected_sha256 }}".strip().lower()
+          if digest != expected:
+              raise SystemExit(f"sha256 mismatch: {digest} != {expected}")
+          PY
+
+      - name: Capture startup smoke
+        run: |
+          set -euo pipefail
+          ./scripts/run-desktop-startup-smoke.sh \
+            "Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe" \
+            avalonia \
+            win-x64 \
+            Chummer.Avalonia.exe \
+            "Docker/Downloads/startup-smoke" \
+            "${{ inputs.expected_version }}"
+
+      - name: Upload startup smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promoted-startup-smoke-avalonia-win-x64
+          path: |
+            Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json
+            Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.log
+          if-no-files-found: error
