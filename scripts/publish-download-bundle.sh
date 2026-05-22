@@ -12,7 +12,7 @@ DEPLOY_MODE="${CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED:-false}"
 LIVE_VERIFY_TARGET="${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}"
 MANIFEST_SOURCE="$BUNDLE_DIR/releases.json"
 FILES_SOURCE="$BUNDLE_DIR/files"
-RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH:-}}"
+RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
 
@@ -120,6 +120,105 @@ cleanup() {
 }
 trap cleanup EXIT
 
+append_unique_downloads_mirror_dir() {
+  local candidate="$1"
+  local resolved_candidate=""
+  local existing=""
+
+  [[ -n "$candidate" ]] || return 0
+  resolved_candidate="$(realpath -m "$candidate")"
+  for existing in "${live_downloads_mirror_dirs[@]:-}"; do
+    if [[ "$(realpath -m "$existing")" == "$resolved_candidate" ]]; then
+      return 0
+    fi
+  done
+  live_downloads_mirror_dirs+=("$candidate")
+}
+
+discover_live_downloads_mirror_dirs() {
+  local configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"
+  local candidate=""
+  local sibling_root=""
+
+  if [[ -n "$configured" ]]; then
+    IFS=',' read -r -a configured_dirs <<<"$configured"
+    for candidate in "${configured_dirs[@]}"; do
+      candidate="${candidate#"${candidate%%[![:space:]]*}"}"
+      candidate="${candidate%"${candidate##*[![:space:]]}"}"
+      [[ -n "$candidate" ]] || continue
+      append_unique_downloads_mirror_dir "$candidate"
+    done
+  fi
+
+  for sibling_root in \
+    "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \
+    "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads" \
+    "$REPO_ROOT/../chummer-presentation/Docker/Downloads"
+  do
+    if [[ -d "$(dirname "$sibling_root")" ]]; then
+      append_unique_downloads_mirror_dir "$sibling_root"
+    fi
+  done
+}
+
+sync_live_downloads_mirror_dir() {
+  local target_dir="$1"
+  local target_label="$2"
+  local resolved_target_dir=""
+  local resolved_deploy_dir=""
+  local resolved_portal_dir=""
+  local files_dir=""
+  local startup_smoke_dir=""
+  local source_path=""
+  local file_name=""
+
+  resolved_target_dir="$(realpath -m "$target_dir")"
+  resolved_deploy_dir="$(realpath -m "$DEPLOY_DIR")"
+  resolved_portal_dir="$(realpath -m "$PORTAL_DOWNLOADS_DIR")"
+
+  if [[ "$resolved_target_dir" == "$resolved_deploy_dir" || "$resolved_target_dir" == "$resolved_portal_dir" ]]; then
+    return 0
+  fi
+
+  mkdir -p "$target_dir"
+  cp "$DEPLOY_DIR/releases.json" "$target_dir/releases.json"
+  cp "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$target_dir/RELEASE_CHANNEL.generated.json"
+
+  startup_smoke_dir="$target_dir/startup-smoke"
+  mkdir -p "$startup_smoke_dir"
+  find "$startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
+  if [[ -d "$DEPLOY_DIR/startup-smoke" ]] && find "$DEPLOY_DIR/startup-smoke" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+    cp -f "$DEPLOY_DIR"/startup-smoke/startup-smoke-*.receipt.json "$startup_smoke_dir"/
+  fi
+
+  files_dir="$target_dir/files"
+  mkdir -p "$files_dir"
+  find "$files_dir" -maxdepth 1 -type f \
+    \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
+       -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
+       -name "chummer-avalonia-*-installer.pkg" -o -name "chummer-avalonia-*-installer.dmg" -o \
+       -name "chummer-avalonia-*-installer.msix" -o -name "chummer-blazor-desktop-*.exe" -o -name "chummer-blazor-desktop-*.zip" -o \
+       -name "chummer-blazor-desktop-*.tar.gz" -o -name "chummer-blazor-desktop-*-installer.exe" -o \
+       -name "chummer-blazor-desktop-*-installer.deb" -o -name "chummer-blazor-desktop-*-installer.pkg" -o \
+       -name "chummer-blazor-desktop-*-installer.dmg" -o -name "chummer-blazor-desktop-*-installer.msix" -o \
+       -name "chummer-6-*.exe" -o -name "chummer-6-*.zip" -o -name "chummer-6-*.tar.gz" -o -name "chummer-6-*-installer.exe" -o \
+       -name "chummer-6-*-installer.deb" -o -name "chummer-6-*-installer.pkg" -o -name "chummer-6-*-installer.dmg" -o \
+       -name "chummer-6-*-installer.msix" \) \
+    -delete
+
+  for file_name in "${promoted_file_names[@]}"; do
+    source_path="$DEPLOY_DIR/files/$file_name"
+    if [[ ! -f "$source_path" ]]; then
+      echo "promoted artifact missing from deploy root for $target_label mirror: $source_path" >&2
+      exit 1
+    fi
+    cp "$source_path" "$files_dir/"
+  done
+
+  bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
+  echo "synced ${#promoted_file_names[@]} promoted artifact(s) -> $target_label mirror $target_dir"
+}
+
 for artifact in "${artifacts[@]}"; do
   cp "$artifact" "$sync_source_dir/"
 done
@@ -167,6 +266,8 @@ fi
 release_version="${release_version:-unpublished}"
 release_channel="${release_channel:-docker}"
 release_published_at="${release_published_at:-$default_published_at}"
+live_downloads_mirror_dirs=()
+discover_live_downloads_mirror_dirs
 
 DOWNLOADS_DIR="$sync_source_dir" \
 MANIFEST_PATH="$DEPLOY_DIR/releases.json" \
@@ -224,6 +325,10 @@ for file_name in "${promoted_file_names[@]}"; do
     exit 1
   fi
   cp "$source_path" "$DEPLOY_DIR/files/"
+done
+
+for mirror_dir in "${live_downloads_mirror_dirs[@]:-}"; do
+  sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
 done
 
 if [[ -d "$STARTUP_SMOKE_SOURCE" ]]; then
