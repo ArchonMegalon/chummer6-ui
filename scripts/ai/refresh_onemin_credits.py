@@ -6,6 +6,7 @@ from __future__ import annotations
 import csv
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -259,6 +260,8 @@ def _measurement_trust(payload: dict[str, Any], *, source_age_seconds: int | Non
     payload_source = str(payload.get("payload_source") or "").strip()
     if source_age_seconds is None:
         return "unknown_source_time"
+    if payload_source == "actual_provider_api_snapshot_rollup":
+        return "fresh"
     if payload_source.endswith("_cache") or payload_source == "browseract_refresh_summary":
         if source_age_seconds is not None and source_age_seconds > _browseract_max_age_seconds():
             return "stale"
@@ -328,6 +331,92 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _container_global_refresh_payload() -> dict[str, Any] | None:
+    if not shutil.which("docker"):
+        return None
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    script = r"""
+import json
+import os
+import requests
+
+base_url = "http://127.0.0.1:8090"
+principal = ""
+for env_name in ("EA_OPERATOR_PRINCIPAL_IDS", "EA_OPERATOR_PRINCIPALS"):
+    raw = str(os.environ.get(env_name) or "").strip()
+    if not raw:
+        continue
+    for item in raw.split(","):
+        item = str(item or "").strip()
+        if item:
+            principal = item
+            break
+    if principal:
+        break
+if not principal:
+    principal = str(os.environ.get("EA_DEFAULT_PRINCIPAL_ID") or "").strip() or "codex-fleet"
+headers = {"X-EA-Principal-ID": principal}
+token = str(os.environ.get("EA_API_TOKEN") or "").strip()
+if token:
+    headers["Authorization"] = f"Bearer {token}"
+refresh_payload = {
+    "include_members": True,
+    "capture_raw_text": True,
+    "provider_api_all_accounts": True,
+    "provider_api_continue_on_rate_limit": True,
+}
+refresh = requests.post(
+    f"{base_url}/v1/providers/onemin/billing-refresh",
+    headers=headers,
+    json=refresh_payload,
+    timeout=180,
+)
+refresh.raise_for_status()
+refresh_json = refresh.json()
+print(json.dumps({
+    "principal_id": principal,
+    "fetched_at_utc": "__NOW_UTC__",
+    "billing_lookup": refresh_json,
+    "global_aggregate_snapshot": refresh_json.get("global_aggregate_snapshot") or {},
+}))
+""".replace("__NOW_UTC__", now_utc)
+    result = subprocess.run(
+        ["docker", "exec", "-i", "ea-api", "python", "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        return None
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    aggregate = payload.get("global_aggregate_snapshot")
+    if not isinstance(aggregate, dict) or not aggregate:
+        return None
+    merged = dict(aggregate)
+    merged["billing_lookup"] = payload.get("billing_lookup") if isinstance(payload.get("billing_lookup"), dict) else {}
+    merged["payload_source"] = "actual_provider_api_snapshot_rollup"
+    merged["payload_fetched_at"] = str(payload.get("fetched_at_utc") or now_utc)
+    merged["used_precomputed_aggregate"] = False
+    return merged
+
+
+def _should_use_container_global_refresh(payload: dict[str, Any]) -> bool:
+    payload_source = str(payload.get("payload_source") or "").strip()
+    if payload_source.endswith("_cache"):
+        return True
+    billing_lookup = payload.get("billing_lookup")
+    if isinstance(billing_lookup, dict):
+        global_snapshot = billing_lookup.get("global_aggregate_snapshot")
+        if isinstance(global_snapshot, dict) and global_snapshot:
+            return False
+    return bool(payload.get("refresh_error"))
+
+
 def load_payload() -> dict[str, Any]:
     browseract_payload = _latest_browseract_refresh_payload()
     env = os.environ.copy()
@@ -386,7 +475,12 @@ def load_payload() -> dict[str, Any]:
         }
         envelope.update(data)
         payload = envelope
-    return _prefer_browseract_refresh_payload(payload, browseract_payload)
+    payload = _prefer_browseract_refresh_payload(payload, browseract_payload)
+    if _should_use_container_global_refresh(payload):
+        container_payload = _container_global_refresh_payload()
+        if container_payload is not None:
+            return container_payload
+    return payload
 
 
 def _read_previous_history_row(path: Path) -> dict[str, str] | None:
