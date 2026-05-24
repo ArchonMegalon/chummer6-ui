@@ -1,0 +1,330 @@
+{
+  "site_title": "Chummer6 Flagship Table Pulse",
+  "site_summary": "Governed live-play and living-world systems for Chummer6, with dramatic but receipt-backed follow-through.",
+  "overview": {
+    "title": "Table Pulse Flagship Showcase",
+    "purpose": "Regenerate the Jammer5-style documentation surface for the new Chummer6 live-play and living-world stack in a way that feels flagship, not provisional.",
+    "one_line_pitch": "Chummer6 turns live table pressure, between-session faction motion, and public-safe world fallout into one governed play loop where the GM stays in charge and every meaningful action leaves a receipt.",
+    "delivery_posture": "This documentation describes the flagship target stack and the actively running implementation program. It must not imply that every named surface is already universally shipped on every public head at the moment a reader opens the docs.",
+    "system_truths": [
+      "the GM remains final authority",
+      "all external reactions are receipt-backed",
+      "all public fallout is public-safe and approval-gated",
+      "media and AI may dramatize or suggest, but they do not become truth on their own"
+    ],
+    "layers": [
+      {
+        "name": "Table Pulse Core",
+        "items": [
+          "heat domains",
+          "thresholds",
+          "recipient packets",
+          "GM adjudication"
+        ]
+      },
+      {
+        "name": "Living World Engagement",
+        "items": [
+          "inbox",
+          "rumor market",
+          "standing orders",
+          "Runner Passport"
+        ]
+      },
+      {
+        "name": "Remote Reaction And Opt-Out Safety",
+        "items": [
+          "quiet hours",
+          "suppression proof",
+          "consent defaults",
+          "remote mini-games"
+        ]
+      },
+      {
+        "name": "Pulse Director Control Surface",
+        "items": [
+          "GM cockpit",
+          "pressure economy",
+          "after-action projection",
+          "AI steward suggestions"
+        ]
+      },
+      {
+        "name": "Big Redesign Surface",
+        "items": [
+          "Signal Deck",
+          "stronger Passport framing",
+          "faction role paths",
+          "opposition clocks",
+          "living newsroom framing"
+        ]
+      }
+    ],
+    "surfaces": [
+      {
+        "name": "Signal Deck",
+        "descriptor": "the fast player-facing action board",
+        "feels": [
+          "urgent",
+          "tactical",
+          "dense but readable",
+          "connected to the city, not just the session transcript"
+        ],
+        "must_show": [
+          "current signals",
+          "heat pressure",
+          "reaction windows",
+          "consequence lanes",
+          "validated follow-through"
+        ]
+      },
+      {
+        "name": "Runner Passport",
+        "descriptor": "the identity and continuity surface",
+        "feels": [
+          "personal",
+          "earned",
+          "faction-aware",
+          "session-to-session"
+        ],
+        "must_show": [
+          "standing",
+          "role path",
+          "recent receipts",
+          "unlocked pressure lanes",
+          "social and faction context"
+        ]
+      },
+      {
+        "name": "GM Cockpit",
+        "descriptor": "the authority surface",
+        "feels": [
+          "calm",
+          "sovereign",
+          "readable under pressure"
+        ],
+        "must_show": [
+          "pulse policy",
+          "heat thresholds",
+          "recipient routes",
+          "mini-game approvals",
+          "quiet-hours and opt-out posture",
+          "public-safe release controls"
+        ]
+      },
+      {
+        "name": "Living Newsroom",
+        "feels": [
+          "cinematic",
+          "reactive",
+          "consequence-driven"
+        ],
+        "must_show": [
+          "aftermath",
+          "faction motion",
+          "opposition clocks",
+          "Black Ledger-compatible public fallout"
+        ],
+        "must_never_imply": [
+          "private table truth leaked automatically",
+          "AI invented the event",
+          "media became truth by itself"
+        ]
+      }
+    ],
+    "play_loop": [
+      {
+        "name": "Spark",
+        "description": "A session event raises heat and creates a bounded pulse packet with typed context and recipient rules."
+      },
+      {
+        "name": "Reach",
+        "description": "If policy and consent allow it, the pulse packet becomes player-facing or faction-facing delivery.",
+        "items": [
+          "inbox event",
+          "Signal Deck prompt",
+          "rumor item",
+          "standing-order update",
+          "remote reaction mini-game prompt"
+        ]
+      },
+      {
+        "name": "Response",
+        "description": "Players or factions respond inside governed rails.",
+        "items": [
+          "advance Passport standing",
+          "change a role path",
+          "change faction heat",
+          "nudge opposition clocks",
+          "create after-action proof"
+        ]
+      },
+      {
+        "name": "Fallout",
+        "description": "Enough validated response can produce public-safe fallout.",
+        "items": [
+          "newsroom beat",
+          "Black Ledger-compatible consequence",
+          "after-action brief"
+        ]
+      }
+    ],
+    "wow_effect": {
+      "comes_from": [
+        "seeing live pressure become playable",
+        "watching a Signal Deck prompt cascade into faction consequences",
+        "seeing Passport identity, role path, and city pressure connect",
+        "watching a remote reaction mini-game end in a newsroom or Black Ledger fallout beat"
+      ],
+      "must_not_come_from": [
+        "surveillance framing",
+        "fake autonomous AI control",
+        "public shaming scores",
+        "empty engagement-platform language"
+      ]
+    },
+    "hero_moment": [
+      "a run spikes heat and the GM approves a bounded pulse packet",
+      "a player receives a Signal Deck card with one sharp risky choice and one safer choice",
+      "the choice resolves into Passport movement, faction pressure, and a receipt trail",
+      "the city later reflects that action through rumor, newsroom fallout, or Black Ledger-safe consequence"
+    ],
+    "hard_truths": [
+      "private campaigns default silent",
+      "notifications are opt-in",
+      "remote reactions are mini-games, not direct table mutation",
+      "public projection requires public-safe GM-approved posture",
+      "receipts outrank summaries",
+      "BeHuman and Answerly stay adapter layers"
+    ],
+    "flagship_bar": [
+      "Signal Deck, Passport, and GM cockpit all exist as coherent product surfaces.",
+      "Remote reaction mini-games are real, not placeholder prose.",
+      "Inbox, rumor, order, and fallout lanes are receipt-backed.",
+      "Public-safe projection stays bounded by GM authority.",
+      "The system still feels fast, legible, and exciting for players."
+    ]
+  },
+  "minigames": {
+    "title": "Table Pulse Remote Reaction Minigames",
+    "purpose": "Define the new remote reaction mini-games in concrete product language so they read like a flagship feature rather than a vague engagement promise.",
+    "goal": "Give players a dramatic city-is-still-moving moment without breaking consent, authority, or campaign privacy.",
+    "families": [
+      {
+        "name": "Intercept",
+        "description": "The player receives a short intelligence or courier prompt and chooses how aggressively to intercept, forward, or suppress it.",
+        "payoff": [
+          "rumor gain",
+          "heat shift",
+          "faction notice"
+        ]
+      },
+      {
+        "name": "Cover Story",
+        "description": "The player gets a social or public-facing cleanup prompt and must pick a cover approach.",
+        "payoff": [
+          "public fallout softening",
+          "reputation lane protection",
+          "possible contradiction receipt for later review"
+        ]
+      },
+      {
+        "name": "Scramble",
+        "description": "The player gets a time-sensitive logistics or support prompt.",
+        "payoff": [
+          "small resource preservation",
+          "standing-order reinforcement",
+          "opposition-clock movement"
+        ]
+      },
+      {
+        "name": "Temptation",
+        "description": "The player gets a morally gray opportunity prompt.",
+        "payoff": [
+          "faction favor",
+          "pressure increase",
+          "future story hook"
+        ]
+      },
+      {
+        "name": "Shadow Reply",
+        "description": "A player or faction representative sends back a coded answer to a pulse packet.",
+        "payoff": [
+          "role-path advancement",
+          "Passport identity flavor",
+          "follow-on rumor or order hook"
+        ]
+      }
+    ],
+    "policy_rules": {
+      "inherit": [
+        "campaign privacy posture",
+        "recipient allowlist",
+        "quiet-hours and mute rules",
+        "GM override authority",
+        "bounded consequence rules"
+      ],
+      "may": [
+        "draft consequences",
+        "move pressure",
+        "create receipts",
+        "recommend fallout"
+      ],
+      "may_not": [
+        "create public truth on their own",
+        "reveal private session content by default",
+        "alter campaign canon without approval"
+      ]
+    },
+    "surface_requirements": {
+      "mobile_pwa": {
+        "feel": [
+          "immediate",
+          "sharp",
+          "readable in under a minute"
+        ],
+        "must_show": [
+          "why this arrived",
+          "what is at stake",
+          "how strong the consequence is",
+          "whether the GM must still approve fallout"
+        ]
+      },
+      "signal_deck": [
+        "a live card",
+        "visible pressure and countdown",
+        "one strong dramatic choice and one safer choice"
+      ],
+      "gm_cockpit": [
+        "prompt source",
+        "recipient reasoning",
+        "chosen response",
+        "proposed consequence",
+        "proof chain"
+      ]
+    },
+    "wow_pattern": [
+      "a player gets a tight dramatic prompt",
+      "the choice feels sharp and immediate",
+      "the result lands in Passport or faction pressure",
+      "the city later reflects that move through rumor or newsroom fallout"
+    ],
+    "anti_pattern": [
+      "giant wall of text",
+      "a generic push notification",
+      "a random mini-quiz disconnected from world state"
+    ],
+    "example_loop": "After a high-heat extraction, a player receives a Scramble mini-game through Signal Deck. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.",
+    "flagship_bar": [
+      "the prompt is dramatic in under one screen",
+      "the choice is meaningful but bounded",
+      "the consequence is receipt-backed",
+      "the result can feed Passport, rumor, faction, or newsroom lanes",
+      "the system still keeps GM and consent authority intact"
+    ]
+  },
+  "published_design_sources": [
+    "TABLE_PULSE_LIVING_WORLD_STACK_20260523.md",
+    "TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md"
+  ]
+}
