@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T03:30:16.727332Z",
+  "generatedAt": "2026-05-26T20:04:35.953676Z",
   "contract_name": "chummer6-ui.next90_m143_ui_direct_output_proof",
   "status": "pass",
   "summary": "Milestone 143 direct output proof is closed on route-local screenshot, runtime, and queue/registry evidence.",
@@ -132,7 +132,7 @@
       },
       "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": {
         "Runtime_backed_file_menu_restores_classic_save_and_print_commands": true,
-        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true,
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks": true,
         "\"18-import-dialog-light.png\"": true,
         "\"19-workflow-file-menu-loaded-light.png\"": true,
         "\"34-workflow-validate-section-light.png\"": true,

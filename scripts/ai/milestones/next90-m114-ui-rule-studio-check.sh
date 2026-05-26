@@ -52,47 +52,42 @@ MILESTONE_TASK_ANCHOR = """- id: 114.2
 
 SOURCE_MARKERS = {
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
-        "_portabilityActivity",
-        "Import rule environment:",
-        "Import environment before:",
-        "Import environment after:",
-        "Import explain receipt:",
-        "Support reuse:",
-        'actions.Add(CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));',
-        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
+        'CreateButton("Explain", OpenRuleEnvironmentStudioAsync)',
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)",
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId)",
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId)",
     ],
     "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": [
         "_portabilityActivity",
-        "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)",
-        "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)",
+        "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)",
+        "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)",
     ],
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
-        "_portabilityActivity",
-        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
-        'CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync)',
-        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
+        "public static Task ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
+        "public static Task ShowGmPrepAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
+        "public static Task ShowRosterMovementAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
     ],
     "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": [
         "_portabilityActivity",
-        'CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync)',
+        'CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync));',
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
-        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)",
     ],
     "Chummer.Avalonia/MainWindow.EventHandlers.cs": [
-        'DesktopHomeWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity)',
-        'DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia", _adapter.State.LatestPortabilityActivity)',
-        "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
-        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
+        'DesktopHomeWindow.ShowAsync(this, "avalonia")',
+        'DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia")',
+        "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)",
+        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId)",
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)",
     ],
     "Chummer.Avalonia/Controls/ToolStripControl.axaml": [
         'x:Name="RuleEnvironmentStudioButton"',
-        'Content="Rules"',
+        'Content="Rule Studio"',
         "RuleEnvironmentStudioButton_OnClick",
     ],
     "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": [
         "public event EventHandler? RuleEnvironmentStudioRequested;",
-        'SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio", "Rules");',
+        'SetButtonLabel(RuleEnvironmentStudioButton, "Open Rule Environment Studio");',
         "RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);",
     ],
     "Chummer.Avalonia/MainWindow.ControlBinding.cs": [
@@ -104,8 +99,7 @@ SOURCE_MARKERS = {
         'DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, "avalonia")',
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
-        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
-        "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\", _adapter.State.LatestPortabilityActivity)",
+        "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\")",
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
         "Import explain receipt:",
     ],
@@ -114,6 +108,10 @@ SOURCE_MARKERS = {
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
 
 
 def block_for_package(text: str, package_id: str) -> str:
@@ -151,6 +149,38 @@ def yaml_list_after(block: str, key: str) -> list[str]:
     return items
 
 
+def yaml_scalar_after(block: str, key: str) -> str:
+    marker = f"{key}:"
+    lines = block.splitlines()
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith(f"- {marker}"):
+            stripped = stripped.removeprefix("- ").strip()
+        elif not stripped.startswith(marker):
+            continue
+        first = stripped.removeprefix(marker).strip()
+        values = [first] if first else []
+        base_indent = len(line) - len(line.lstrip(" "))
+        for continuation in lines[index + 1:]:
+            continuation_indent = len(continuation) - len(continuation.lstrip(" "))
+            if continuation_indent <= base_indent:
+                break
+            continuation_text = continuation.lstrip(" ")
+            if continuation_text.startswith("- title:"):
+                break
+            if continuation_text.startswith("- "):
+                if values:
+                    break
+                continue
+            if ":" in continuation_text:
+                head = continuation_text.split(":", 1)[0]
+                if head.replace("_", "").replace("-", "").isalnum():
+                    break
+            values.append(continuation.strip())
+        return normalize_whitespace(" ".join(value for value in values if value))
+    raise AssertionError(f"missing {key}")
+
+
 def yaml_scalar(block: str, key: str) -> str:
     marker = f"{key}:"
     for line in block.splitlines():
@@ -178,20 +208,20 @@ checks = {
     "queue_milestone_matches": yaml_scalar(queue_block, "milestone_id") == str(MILESTONE_ID),
     "design_queue_milestone_matches": yaml_scalar(design_queue_block, "milestone_id") == str(MILESTONE_ID),
     "queue_title_matches": f"title: {TITLE}" in queue_block,
-    "queue_task_matches": f"task: {TASK}" in queue_block,
+    "queue_task_matches": yaml_scalar_after(queue_block, "task") == TASK,
     "queue_status_complete": "status: complete" in queue_block,
     "queue_wave_matches": yaml_scalar(queue_block, "wave") == WAVE,
     "design_queue_wave_matches": yaml_scalar(design_queue_block, "wave") == WAVE,
     "queue_repo_matches": yaml_scalar(queue_block, "repo") == "chummer6-ui",
     "design_queue_repo_matches": yaml_scalar(design_queue_block, "repo") == "chummer6-ui",
     "design_queue_title_matches": f"title: {TITLE}" in design_queue_block,
-    "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
+    "design_queue_task_matches": yaml_scalar_after(design_queue_block, "task") == TASK,
     "design_queue_status_complete": "status: complete" in design_queue_block,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
-    "queue_design_block_parity": queue_block == design_queue_block,
+    "queue_design_block_parity": normalize_whitespace(queue_block) == normalize_whitespace(design_queue_block),
     "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
     "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == "verify_closed_package_only",
     "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == "verify_closed_package_only",

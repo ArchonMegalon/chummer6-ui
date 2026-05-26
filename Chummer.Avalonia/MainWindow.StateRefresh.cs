@@ -54,7 +54,7 @@ public partial class MainWindow
     {
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
         bool showRosterPane = !showNavigatorPane;
-        bool showSummaryHeader = true;
+        bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
         bool showCommandSurface = !string.IsNullOrWhiteSpace(_shellPresenter.State.OpenMenuId)
             || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
         bool showRightShell = !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogTitle)

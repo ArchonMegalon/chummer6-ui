@@ -12,7 +12,7 @@
               Padding="0"
               IsVisible="False">
         <TextBlock x:Name="DialogTitleText"
-                   Text="(none)"
+                   Text=""
                    FontWeight="SemiBold"
                    TextWrapping="Wrap" />
       </Border>
@@ -25,7 +25,7 @@
               IsVisible="False">
         <TextBlock x:Name="DialogMessageText"
                    Classes="shell-caption"
-                   Text="(none)"
+                   Text=""
                    TextWrapping="Wrap" />
       </Border>
 
@@ -35,11 +35,11 @@
               Padding="6,3"
               IsVisible="False">
         <StackPanel Spacing="4">
-          <TextBlock Text="Explain Receipt And Environment Diff"
+          <TextBlock Text="Why This Action Is Here"
                      Classes="shell-section-title" />
           <TextBlock x:Name="DialogTrustReceiptText"
                      Classes="shell-caption"
-                     Text="(none)"
+                     Text=""
                      TextWrapping="Wrap" />
         </StackPanel>
       </Border>

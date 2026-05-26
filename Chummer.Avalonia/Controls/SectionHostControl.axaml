@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.SectionHostControl">
-  <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="0">
     <Border Grid.Row="0"
             x:Name="LoadedRunnerTabStripBorder"
             Classes="shell-panel subtle"
@@ -35,16 +35,27 @@
       </TabStrip>
     </Border>
 
-    <Border Grid.Row="2" x:Name="NoticeBorder" Classes="shell-panel subtle" Padding="2,1" IsVisible="False">
+    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+      <Border Padding="0">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="1">
+        <Border x:Name="NoticeBorder"
+                Classes="shell-panel subtle"
+                Padding="2,1"
+                IsVisible="False"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="6,6,6,0"
+                MaxWidth="420"
+                ZIndex="10"
+                IsHitTestVisible="False">
       <TextBlock x:Name="NoticeText"
                  Classes="shell-caption"
                  Text=""
+                 TextWrapping="Wrap"
+                 MaxLines="2"
                  TextTrimming="CharacterEllipsis" />
     </Border>
 
-    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto">
-      <Border Padding="0">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="1">
         <Border Grid.Row="0"
                 x:Name="SectionContextBorder"
                 Classes="shell-panel subtle"
@@ -183,7 +194,7 @@
       </Border>
     </ScrollViewer>
 
-    <Border Grid.Row="4" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
+    <Border Grid.Row="3" x:Name="RawXmlImportBorder" Classes="shell-panel subtle" Padding="3" IsVisible="False">
       <Expander Header="Raw XML Import" IsExpanded="False">
         <StackPanel Spacing="2" Margin="0,4,0,0">
           <TextBox x:Name="XmlInputBox"

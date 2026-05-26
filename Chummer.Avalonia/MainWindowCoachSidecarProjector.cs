@@ -49,18 +49,18 @@ public static class MainWindowCoachSidecarProjector
                 RiskSummary: DescribeRisks(audit.StructuredAnswer),
                 SourceSummary: DescribeSources(audit.StructuredAnswer),
                 CacheStatus: FormatCacheStatus(audit.Cache),
-                RouteDecision: DescribeRouteDecision(audit.RouteDecision, audit.LastProviderId ?? "n/a"),
+                RouteDecision: DescribeRouteDecision(audit.RouteDecision, audit.LastProviderId ?? "no provider pinned"),
                 Coverage: DescribeCoverage(audit.GroundingCoverage),
                 Updated: FormatTimestamp(audit.LastUpdatedAtUtc)))
             .ToArray();
 
         return new CoachSidecarPaneState(
             Status: status?.Status ?? "unloaded",
-            PromptPolicy: status?.PromptPolicy ?? "n/a",
-            BudgetSummary: coachBudget is null ? "n/a" : $"{coachBudget.MonthlyRemaining} left / {coachBudget.BurstRemaining} burst",
-            WorkspaceId: string.IsNullOrWhiteSpace(workspaceId) ? "n/a" : workspaceId,
-            RuntimeFingerprint: string.IsNullOrWhiteSpace(runtimeFingerprint) ? "n/a" : runtimeFingerprint,
-            LaunchUri: string.IsNullOrWhiteSpace(launchUri) ? "n/a" : launchUri,
+            PromptPolicy: status?.PromptPolicy ?? "Policy not loaded yet",
+            BudgetSummary: coachBudget is null ? "Budget not loaded yet" : $"{coachBudget.MonthlyRemaining} left / {coachBudget.BurstRemaining} burst",
+            WorkspaceId: string.IsNullOrWhiteSpace(workspaceId) ? "No workspace attached" : workspaceId,
+            RuntimeFingerprint: string.IsNullOrWhiteSpace(runtimeFingerprint) ? "No runtime fingerprint yet" : runtimeFingerprint,
+            LaunchUri: string.IsNullOrWhiteSpace(launchUri) ? string.Empty : launchUri,
             LaunchStatusMessage: launchStatusMessage,
             ErrorMessage: errorMessage,
             Providers: providers,
@@ -92,7 +92,7 @@ public static class MainWindowCoachSidecarProjector
 
     private static string FormatBudgetSnapshot(AiBudgetSnapshot? budget)
         => budget is null
-            ? "n/a"
+            ? "Budget snapshot unavailable"
             : $"{budget.MonthlyConsumed} / {budget.MonthlyAllowance} {budget.BudgetUnit} · burst {budget.CurrentBurstConsumed} / {budget.BurstLimitPerMinute}";
 
     private static string DescribeTransport(AiProviderHealthProjection provider)
@@ -111,7 +111,7 @@ public static class MainWindowCoachSidecarProjector
     private static string DescribeBinding(AiProviderHealthProjection provider)
     {
         string route = string.IsNullOrWhiteSpace(provider.LastRouteType)
-            ? "route n/a"
+            ? "route not used yet"
             : $"route {provider.LastRouteType}";
         string binding = string.IsNullOrWhiteSpace(provider.LastCredentialTier)
             ? "binding none"
@@ -186,5 +186,5 @@ public static class MainWindowCoachSidecarProjector
     }
 
     private static string FormatTimestamp(DateTimeOffset? value)
-        => value?.ToString("yyyy-MM-dd HH:mm:ss") ?? "n/a";
+        => value?.ToString("yyyy-MM-dd HH:mm:ss") ?? "not recorded yet";
 }

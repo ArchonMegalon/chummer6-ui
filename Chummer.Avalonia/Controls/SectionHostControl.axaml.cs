@@ -131,21 +131,14 @@ public partial class SectionHostControl : UserControl
             || string.Equals(normalizedNotice, "Notice: Ready.", StringComparison.OrdinalIgnoreCase);
         if (hideNotice)
         {
-            NoticeText.Text = string.IsNullOrWhiteSpace(normalizedNotice)
-                ? string.Empty
-                : (normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase)
-                    ? normalizedNotice
-                    : $"Notice: {normalizedNotice}");
+            NoticeText.Text = string.Empty;
             NoticeBorder.IsVisible = false;
             return;
         }
 
-        if (!normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase))
-        {
-            normalizedNotice = $"Notice: {normalizedNotice}";
-        }
-
-        NoticeText.Text = normalizedNotice;
+        NoticeText.Text = normalizedNotice.StartsWith("Notice:", StringComparison.OrdinalIgnoreCase)
+            ? normalizedNotice["Notice:".Length..].TrimStart()
+            : normalizedNotice;
         NoticeBorder.IsVisible = true;
     }
 

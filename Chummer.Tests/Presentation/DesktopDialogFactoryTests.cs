@@ -343,7 +343,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual(DesktopPreferenceState.Default.CharacterPriority, DesktopDialogFieldValueParser.GetValue(dialog, "characterPriority"));
         Assert.AreEqual("2", DesktopDialogFieldValueParser.GetValue(dialog, "characterKarmaNuyen"));
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "characterHouseRulesEnabled"));
-        Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterNotes", StringComparison.Ordinal)));
+        Assert.AreEqual(string.Empty, DesktopDialogFieldValueParser.GetValue(dialog, "characterNotes"));
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterSettingsLanePosture", StringComparison.Ordinal)));
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "characterXmlBridgePosture", StringComparison.Ordinal)));
     }

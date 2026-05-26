@@ -14,7 +14,7 @@ public partial class CommandDialogPaneControl : UserControl
 {
     private bool _suppressCommandSelectionEvent;
     private bool _suppressDialogUpdates;
-    private string _currentDialogTitle = "(none)";
+    private string _currentDialogTitle = string.Empty;
 
     public CommandDialogPaneControl()
     {
@@ -55,16 +55,18 @@ public partial class CommandDialogPaneControl : UserControl
         IEnumerable<DialogFieldDisplayItem> fields,
         IEnumerable<DialogActionDisplayItem> actions)
     {
-        _currentDialogTitle = string.IsNullOrWhiteSpace(title) ? "(none)" : title;
+        _currentDialogTitle = title?.Trim() ?? string.Empty;
+        string normalizedMessage = message?.Trim() ?? string.Empty;
+        string normalizedTrustReceipt = trustReceipt?.Trim() ?? string.Empty;
         DialogTitleText.Text = _currentDialogTitle;
-        DialogMessageText.Text = string.IsNullOrWhiteSpace(message) ? "(none)" : message;
-        DialogTitleText.IsVisible = false;
-        DialogMessageBorder.IsVisible = false;
-        DialogTrustReceiptText.Text = string.IsNullOrWhiteSpace(trustReceipt) ? "(none)" : trustReceipt;
-        DialogTrustReceiptBorder.IsVisible = false;
+        DialogTitleText.IsVisible = !string.IsNullOrWhiteSpace(_currentDialogTitle);
+        DialogMessageText.Text = normalizedMessage;
+        DialogMessageBorder.IsVisible = !string.IsNullOrWhiteSpace(normalizedMessage);
+        DialogTrustReceiptText.Text = normalizedTrustReceipt;
+        DialogTrustReceiptBorder.IsVisible = !string.IsNullOrWhiteSpace(normalizedTrustReceipt);
         string dialogContext = string.Join(
             Environment.NewLine + Environment.NewLine,
-            new[] { title, message, trustReceipt }
+            new[] { _currentDialogTitle, normalizedMessage, normalizedTrustReceipt }
                 .Where(static segment => !string.IsNullOrWhiteSpace(segment)));
         ToolTip.SetTip(DialogFieldsHost, string.IsNullOrWhiteSpace(dialogContext) ? null : dialogContext);
         RebuildDialogFields(fields.ToArray());

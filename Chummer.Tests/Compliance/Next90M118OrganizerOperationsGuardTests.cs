@@ -83,8 +83,8 @@ public sealed class Next90M118OrganizerOperationsGuardTests
         Assert.IsTrue(checks.GetProperty("registry_task_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_owner_matches").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_status_complete").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_evidence_exact").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_status_is_queue_managed").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_evidence_is_queue_managed").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_id_matches").GetBoolean());
@@ -120,7 +120,6 @@ public sealed class Next90M118OrganizerOperationsGuardTests
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
-        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/App.axaml.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs"));
@@ -132,7 +131,6 @@ public sealed class Next90M118OrganizerOperationsGuardTests
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M118_UI_ORGANIZER_OPS.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m118-ui-organizer-ops-check.sh"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopOrganizerOperationsWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopStartupSurfaceCatalog.cs"),
@@ -148,7 +146,6 @@ public sealed class Next90M118OrganizerOperationsGuardTests
             new[]
             {
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopOrganizerOperationsWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"),
                 Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopStartupSurfaceCatalog.cs"),

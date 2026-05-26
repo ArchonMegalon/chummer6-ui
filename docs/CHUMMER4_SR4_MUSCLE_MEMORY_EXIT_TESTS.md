@@ -28,10 +28,10 @@ The gate layers are:
 - Tooltip-only hosts must not be counted as right-click or flyout posture; the SR4 receipt must prove real secondary hosts or prove zero hosts on the promoted SR4 slice.
 - Runtime-backed tests must prove the promoted SR4 lane still mounts combo-based choosers instead of freeform text boxes.
 - The seeded runtime checks cover the SR4 switch-ruleset chooser, SR4 new-character build-method chooser, SR4 starter-runner gear category chooser, and the shared Dice Roller utility.
-- The runtime layer must also fail when row order, footer placement, two-pane geography, or spinner posture drift away from Chummer4 muscle memory.
+- The runtime layer must also fail when row order, footer placement, two-pane geography, spinner posture, or compact inline numeric-entry posture drift away from Chummer4 muscle memory.
 - The runtime inventory must also fail when left/right slot ownership, within-slot field order, or right-click secondary-menu posture drift away from the legacy dialog rhythm.
 - Middle click stays fail-closed on the promoted SR4 lane until a real Chummer4-equivalent middle-click route is explicitly proven.
-- Chummer4 spinner-class controls should stay spinner-class controls when the same utility lane still exists.
+- Chummer4 numeric-entry controls should stay compact numeric-entry controls when the same utility lane still exists.
 - The new-character chooser must keep the Modify button on the build-method row and keep the OK/Cancel footer on one compact legacy action band.
 - The SR4 gear selector must keep the browse list on the left, details on the right, and the commit buttons on one legacy action band.
 

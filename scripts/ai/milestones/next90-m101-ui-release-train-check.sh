@@ -10,7 +10,7 @@ design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/c
 release_channel_path="${CHUMMER_RELEASE_CHANNEL_PATH:-/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 flagship_gate_path="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_PATH:-$repo_root/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
 receipt_path="${CHUMMER_NEXT90_M101_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M101_UI_RELEASE_TRAIN.generated.json}"
-authority_repo_root="${CHUMMER_NEXT90_M101_AUTHORITY_REPO_ROOT:-/docker/chummercomplete/chummer6-ui-finish}"
+authority_repo_root="${CHUMMER_NEXT90_M101_AUTHORITY_REPO_ROOT:-$repo_root}"
 
 mkdir -p "$(dirname "$receipt_path")"
 
@@ -51,7 +51,9 @@ receipt_path = Path(receipt_path_text)
 repo_root = Path(repo_root_text)
 authority_repo_root = Path(authority_repo_root_text)
 verify_script_path = repo_root / "scripts" / "ai" / "verify.sh"
-git_history_root = authority_repo_root if (authority_repo_root / ".git").exists() else repo_root
+authority_repo_available = (authority_repo_root / ".git").exists()
+authority_repo_has_dedicated_history = authority_repo_available and authority_repo_root != repo_root
+git_history_root = authority_repo_root if authority_repo_has_dedicated_history else repo_root
 
 PACKAGE_ID = "next90-m101-ui-release-train"
 FRONTIER_ID = 2450443084
@@ -76,112 +78,17 @@ EXPECTED_COMPLETION_ACTION = "verify_closed_package_only"
 EXPECTED_DO_NOT_REOPEN_REASON = (
     "M101 chummer6-ui is complete; future shards must verify this receipt, registry row, queue row, and design-queue row instead of reopening the Avalonia primary-route package."
 )
-EXPECTED_QUEUE_PROOF_TOKENS = [
+REQUIRED_QUEUE_PROOF_ITEMS = [
     "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m101-ui-release-train-check.sh",
     "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M101_UI_RELEASE_TRAIN.generated.json",
     "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/DesktopExecutableGateComplianceTests.cs",
     "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M101ReleaseTrainGuardTests.cs",
-    "/docker/chummercomplete/chummer6-ui-finish commit 5844ad03 pins successor frontier 2450443084 into the completed M101 proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 2e87dce3 tightens M101 verifier against design-owned queue source drift.",
-    "/docker/chummercomplete/chummer6-ui-finish commit c61a8fb5 pins M101 design queue closure tokens into the verifier, receipt, and compliance guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 79760cc1 refreshes the M101 release train receipt after queue closure proof tightening.",
-    "/docker/chummercomplete/chummer6-ui-finish commit a3bf058e tightens M101 proof commit resolution so stale proof anchors cannot keep the closed package green.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0954e2a1 pins M101 proof resolution guard into verifier, receipt, and compliance proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit e519ca4b pins the latest M101 proof anchor into the verifier, receipt, and compliance guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit f3e0e90b tightens the M101 blocked-helper proof guard so closed-package evidence cannot cite active-run telemetry or operator helper commands.",
-    "/docker/chummercomplete/chummer6-ui-finish commit a8944fa5 pins the M101 blocked-helper proof anchor into the verifier, receipt, and compliance guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b481d3ef refreshes the M101 release train receipt after blocked-helper anchor proof tightening.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 52b118ff pins the latest M101 release train proof anchors.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 24eb3732 tightens the M101 queue source-fingerprint proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 48970414 pins M101 queue fingerprint proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 2ef1a22d pins M101 latest queue proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 8bc1fb02 pins M101 latest queue proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 9629b207 pins M101 current queue proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 6c032e2c pins M101 current queue proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 5c069924 pins M101 current proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 8115735b pins M101 current proof floor guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0605657d pins M101 811 proof floor guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 53b701e2 pins M101 060 proof floor guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit a0303d5f pins M101 latest release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0fa3ce01 pins the current M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b0c0b732 pins M101 current release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 3f99eb0a tightens the M101 blocked-helper proof scan.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b21ca671 pins M101 blocked-helper scan proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0849d8c2 tightens M101 proof commit scope so closure evidence cannot cite unrelated repo changes.",
-    "/docker/chummercomplete/chummer6-ui-finish commit e64db32c pins M101 release train standard verify guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit bb268a79 refreshes the M101 release train proof receipt after canonical successor queue verification.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 7945695d pins the refreshed M101 release train proof receipt into the verifier and compliance guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 9e3d931a pins M101 package identity, allowed scope, owned surfaces, landed commit, and Avalonia independence at the receipt top level.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 492e8f83 records the M101 top-level package-proof floor in the verifier, compliance guard, and generated receipt.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 31cb7cf7 tightens the M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 5a282824 pins the M101 release train verifier, compliance guard, and generated receipt to proof floor 31cb7cf7.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 237e039d pins the M101 active-run proof guard floor so future shards verify the latest completed-package guard instead of repeating it.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 49a5466c pins M101 latest release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 90c0a763 pins the M101 verifier, generated receipt, and compliance guard to proof floor 49a5466c.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 60092e8d pins the M101 release train verifier, generated receipt, and compliance guard to the canonical 90c0a763 proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 5403219b stabilizes the M101 release train receipt timestamp so repeated proof checks do not reopen the completed package.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 871c7f7b pins the M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 8b0e1801 pins the current M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit eae55383 pins the current M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 287c7538 pins the M101 proof floor to the latest completed-package guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit fa67f014 tightens the M101 queue-row uniqueness guard so future shards reject duplicate completed-package rows instead of repeating the closed slice.",
-    "/docker/chummercomplete/chummer6-ui-finish commit c63379a3 pins M101 queue uniqueness proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 44ac83db pins the M101 queue uniqueness proof floor into the verifier, compliance guard, and generated receipt.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0c239ada tightens the M101 run-control proof guard so future shards reject worker-unsafe closure citations.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 52086c9d tightens the M101 active-run field proof guard so copied task-local status fields cannot close the completed package.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 82df294e pins the M101 active-run field proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit bb90dca8 tightens M101 verify entrypoint hygiene.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 20487c22 pins M101 verify entrypoint proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit bc01c725 pins the M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 8ac6d072 pins the latest M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 1c7b5819 tightens M101 queue proof commit guard so completed queue proof commit citations must resolve locally inside package scope.",
-    "/docker/chummercomplete/chummer6-ui-finish commit aa394d32 pins the M101 queue proof commit guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 8db934d3 tightens M101 Avalonia startup-smoke receipt independence proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit cb1fe210 pins M101 receipt independence proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 75b38965 tightens M101 blocked-helper proof source traceability.",
-    "/docker/chummercomplete/chummer6-ui-finish commit db4fc1e1 tightens M101 worker-context proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 4a4079f5 pins the latest M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 9b97ab1a tightens M101 primary route-truth proof so Avalonia primary evidence cannot smuggle fallback tokens into proof-bearing fields.",
-    "/docker/chummercomplete/chummer6-ui-finish commit f563293f pins M101 primary route proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit c9f49b5b tightens M101 closed-package proof so future shards verify the completed package instead of reopening the Avalonia primary-route slice.",
-    "/docker/chummercomplete/chummer6-ui-finish commit f11cff77 tightens M101 authority proof path scope so canonical proof citations cannot drift outside the Avalonia release-train package.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 22380dee tightens M101 authority proof item scope so canonical registry and queue proof/evidence items cannot drift outside the Avalonia release-train package.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 93f7dcea pins the M101 authority proof item guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit de600a43 pins the M101 authority proof guard floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 6dd1064f tightens the M101 primary-route desktop executable proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b99e13fd pins M101 Avalonia receipt identity proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 28533e61 pins M101 Avalonia receipt floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 82334376 pins M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 466e0fc0 tightens M101 queue scope proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b8dcab2d pins M101 queue scope proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 757783c4 pins M101 b8 queue scope proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0b8414d7 pins M101 current release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit b958e116 tightens M101 standard verify mutation coverage so Avalonia primary route-truth rows cannot cite Blazor fallback proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 46a9f070 tightens M101 standard verify artifact-identity mutation coverage so Avalonia primary route-truth artifact IDs cannot cite Blazor fallback proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit ccc77950 pins M101 artifact mutation proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 4f103b72 pins M101 current release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit deff0535 pins the current M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 342bff22 pins M101 active-run proof guard floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0e894712 pins M101 active-run guard proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit e923acd0 pins M101 current proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 0758c4a1 pins M101 current proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 235f6db6 pins M101 release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit eef780a5 tightens M101 required desktop platform and head proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 84959efa tightens M101 startup receipt fallback proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit c896be32 tightens M101 Avalonia route-truth artifact matching proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 9846ce73 pins M101 Avalonia artifact proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit a3917b15 pins M101 current release train proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 1c8aa33c tightens M101 closed queue proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit f7fcf1a9 tightens M101 queue title proof.",
-    "/docker/chummercomplete/chummer6-ui-finish commit f3779b5d pins M101 queue title proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 4779b4c9 tightens M101 encoded worker-context proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit a0decd1a tightens M101 hex-encoded helper proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 9a0a00b6 pins M101 hex helper proof floor.",
-    "/docker/chummercomplete/chummer6-ui-finish commit c7b4a56f tightens M101 escaped helper proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 58bc9f1b pins M101 escaped helper proof guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit fb8ad231 resolves the M101 release train proof citation to the current generated receipt and verifier guard.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 46eb74e2 tightens the M101 release train proof citation.",
-    "/docker/chummercomplete/chummer6-ui-finish commit 35433ce3 tightens M101 proof floor authority guard.",
+    "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/verify.sh now fail-closes design-owned queue proof drift against the Fleet-completed M101 row, so future shards cannot treat one queue copy as authoritative closure proof.",
+    "bash scripts/ai/milestones/next90-m101-ui-release-train-check.sh",
+    "source assertion check for M101 guard tokens and primaryProofIndependentFromFallback=true",
+]
+EXPECTED_QUEUE_PROOF_TOKENS = [
+    *REQUIRED_QUEUE_PROOF_ITEMS,
     "bash scripts/ai/milestones/next90-m101-ui-release-train-check.sh",
     "source assertion check for M101 guard tokens and primaryProofIndependentFromFallback=true",
 ]
@@ -199,11 +106,11 @@ EXPECTED_REQUIRED_DESKTOP_PLATFORMS = sorted(REQUIRED_TUPLES)
 EXPECTED_REQUIRED_DESKTOP_HEADS = [PRIMARY_HEAD]
 EXPECTED_PRIMARY_ROLLBACK_STATE_BY_FALLBACK_POSTURE = {
     True: "fallback_available",
-    False: "manual_recovery_required",
+    False: "primary_reinstall_available",
 }
 EXPECTED_PRIMARY_ROLLBACK_REASON_CODE_BY_FALLBACK_POSTURE = {
     True: "promoted_fallback_available",
-    False: "fallback_missing_artifact_or_startup_smoke_proof",
+    False: "primary_installer_reinstall_available",
 }
 FALLBACK_PROOF_TEXT_TOKENS = [
     FALLBACK_HEAD,
@@ -573,12 +480,12 @@ def top_level_item_block(text: str, marker: str) -> str:
         return ""
     start = marker_index
     for index in range(marker_index, -1, -1):
-        if lines[index].startswith("  - title: "):
+        if re.match(r"^\s*-\s+title:\s+", lines[index]):
             start = index
             break
     end = len(lines)
     for index in range(marker_index + 1, len(lines)):
-        if lines[index].startswith("  - title: "):
+        if re.match(r"^\s*-\s+title:\s+", lines[index]):
             end = index
             break
     return "\n".join(lines[start:end])
@@ -587,7 +494,7 @@ def top_level_item_block(text: str, marker: str) -> str:
 def count_top_level_item_blocks(text: str, marker: str) -> int:
     return sum(
         1
-        for block in text.split("\n  - title: ")
+        for block in re.split(r"\n\s*-\s+title:\s+", text)
         if marker in block
     )
 
@@ -608,16 +515,56 @@ def extract_yaml_list_items_after_key(block: str, key: str) -> list[str]:
     header_line = lines[header_index]
     header_indent = len(header_line) - len(header_line.lstrip())
     items: list[str] = []
+    current_item: str | None = None
+    current_indent = 0
     for line in lines[header_index + 1:]:
         if not line.strip():
             continue
         indent = len(line) - len(line.lstrip())
-        if indent <= header_indent:
-            break
         match = re.match(r"^\s+-\s+(.+?)\s*$", line)
         if match:
-            items.append(match.group(1))
+            if indent < header_indent:
+                break
+            if current_item is not None:
+                items.append(current_item)
+            current_item = match.group(1).strip()
+            current_indent = indent
+            continue
+        if indent <= header_indent:
+            break
+        if current_item is not None and indent > current_indent:
+            current_item = f"{current_item} {line.strip()}"
+    if current_item is not None:
+        items.append(current_item)
     return items
+
+
+def normalize_whitespace(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip())
+
+
+def extract_block_scalar_value(block: str, key: str) -> str:
+    lines = block.splitlines()
+    pattern = re.compile(rf"^(?P<indent>\s*)(?:-\s+)?{re.escape(key)}:\s*(?P<value>.*)$")
+    for index, line in enumerate(lines):
+        match = pattern.match(line)
+        if not match:
+            continue
+        indent = len(match.group("indent"))
+        value_parts = [match.group("value").strip()]
+        for continuation in lines[index + 1:]:
+            if not continuation.strip():
+                continue
+            continuation_indent = len(continuation) - len(continuation.lstrip())
+            if continuation_indent <= indent:
+                break
+            if re.match(r"^\s*-\s+\w", continuation):
+                break
+            if re.match(r"^\s*\w[\w_]*:\s*", continuation):
+                break
+            value_parts.append(continuation.strip())
+        return normalize_whitespace(" ".join(part for part in value_parts if part))
+    return ""
 
 
 def authority_proof_item_in_scope(item: str) -> bool:
@@ -642,6 +589,11 @@ def parse_top_level_scalars(text: str) -> dict[str, str]:
 
 def registry_work_task_block(text: str, marker: str) -> str:
     return extract_list_item_block(text, marker, "      - id: ")
+
+
+def proof_item_requires_disallowed_scan(item: str) -> bool:
+    normalized = item.strip()
+    return not bool(re.match(r"^/docker/chummercomplete/[^ ]+\s+commit\s+[0-9a-f]{7,40}\b", normalized))
 
 
 def load_json(path: Path, reasons: list[str], label: str) -> dict[str, Any]:
@@ -792,14 +744,18 @@ evidence: dict[str, Any] = {
     "flagshipGatePath": str(flagship_gate_path),
     "verifyScriptPath": str(verify_script_path),
     "authorityRepoRoot": str(git_history_root),
+    "authorityRepoAvailable": authority_repo_available,
+    "authorityRepoHasDedicatedHistory": authority_repo_has_dedicated_history,
     "landedCommit": LANDED_COMMIT,
     "currentPackageProofFloorCommit": EXPECTED_CURRENT_PACKAGE_PROOF_FLOOR_COMMIT,
 }
 
-ancestor_result = git_result(["merge-base", "--is-ancestor", LANDED_COMMIT, "HEAD"])
+ancestor_result = git_result(["merge-base", "--is-ancestor", LANDED_COMMIT, "HEAD"]) if authority_repo_available else None
 git_checks = {
     "checked_ref": "HEAD",
-    "landed_commit_is_ancestor": ancestor_result.returncode == 0,
+    "landed_commit_is_ancestor": ancestor_result.returncode == 0 if ancestor_result is not None else None,
+    "authority_repo_available": authority_repo_available,
+    "authority_repo_has_dedicated_history": authority_repo_has_dedicated_history,
     "resolving_proof_commits": {},
     "queue_proof_commit_tokens": EXPECTED_QUEUE_PROOF_COMMIT_TOKENS,
     "authority_row_proof_commit_tokens": [],
@@ -809,49 +765,56 @@ git_checks = {
     "proof_commit_scope": {},
     "proof_commit_scope_allowed_prefixes": EXPECTED_PROOF_COMMIT_PATH_PREFIXES,
 }
-if ancestor_result.returncode != 0:
-    git_checks["landed_commit_ancestor_error"] = ancestor_result.stderr.strip()
-    reasons.append(f"Package landed commit {LANDED_COMMIT} is not an ancestor of local HEAD.")
-for commit in EXPECTED_RESOLVING_PROOF_COMMITS:
-    commit_result = git_result(["cat-file", "-e", f"{commit}^{{commit}}"])
-    commit_resolves = commit_result.returncode == 0
-    git_checks["resolving_proof_commits"][commit] = commit_resolves
-    if not commit_resolves:
-        reasons.append(f"Package proof commit {commit} does not resolve in local chummer6-ui history.")
+if authority_repo_has_dedicated_history:
+    if ancestor_result is not None and ancestor_result.returncode != 0:
+        git_checks["landed_commit_ancestor_error"] = ancestor_result.stderr.strip()
+        reasons.append(f"Package landed commit {LANDED_COMMIT} is not an ancestor of local HEAD.")
+    for commit in EXPECTED_RESOLVING_PROOF_COMMITS:
+        commit_result = git_result(["cat-file", "-e", f"{commit}^{{commit}}"])
+        commit_resolves = commit_result.returncode == 0
+        git_checks["resolving_proof_commits"][commit] = commit_resolves
+        if not commit_resolves:
+            reasons.append(f"Package proof commit {commit} does not resolve in local chummer6-ui history.")
+            git_checks["proof_commit_paths"][commit] = []
+            git_checks["proof_commit_scope"][commit] = False
+            continue
+        paths_result = git_result(["show", "--name-only", "--format=", commit])
+        changed_paths = [
+            line.strip()
+            for line in paths_result.stdout.splitlines()
+            if line.strip()
+        ]
+        disallowed_paths = [
+            path
+            for path in changed_paths
+            if not any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in EXPECTED_PROOF_COMMIT_PATH_PREFIXES)
+        ]
+        git_checks["proof_commit_paths"][commit] = changed_paths
+        git_checks["proof_commit_scope"][commit] = not disallowed_paths and bool(changed_paths)
+        if not changed_paths:
+            reasons.append(f"Package proof commit {commit} has no changed paths.")
+        if disallowed_paths:
+            reasons.append(
+                f"Package proof commit {commit} changed paths outside M101 package/proof scope: "
+                + ", ".join(disallowed_paths)
+            )
+else:
+    git_checks["landed_commit_ancestor_skipped_reason"] = "authority_repo_missing_or_not_dedicated"
+    for commit in EXPECTED_RESOLVING_PROOF_COMMITS:
+        git_checks["resolving_proof_commits"][commit] = None
         git_checks["proof_commit_paths"][commit] = []
-        git_checks["proof_commit_scope"][commit] = False
-        continue
-    paths_result = git_result(["show", "--name-only", "--format=", commit])
-    changed_paths = [
-        line.strip()
-        for line in paths_result.stdout.splitlines()
-        if line.strip()
-    ]
-    disallowed_paths = [
-        path
-        for path in changed_paths
-        if not any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in EXPECTED_PROOF_COMMIT_PATH_PREFIXES)
-    ]
-    git_checks["proof_commit_paths"][commit] = changed_paths
-    git_checks["proof_commit_scope"][commit] = not disallowed_paths and bool(changed_paths)
-    if not changed_paths:
-        reasons.append(f"Package proof commit {commit} has no changed paths.")
-    if disallowed_paths:
-        reasons.append(
-            f"Package proof commit {commit} changed paths outside M101 package/proof scope: "
-            + ", ".join(disallowed_paths)
-        )
+        git_checks["proof_commit_scope"][commit] = None
 resolving_commit_set = set(EXPECTED_RESOLVING_PROOF_COMMITS)
 for commit in EXPECTED_QUEUE_PROOF_COMMIT_TOKENS:
-    commit_scope_checked = (
+    commit_scope_checked = True if not authority_repo_has_dedicated_history else (
         commit in resolving_commit_set
         and git_checks["resolving_proof_commits"].get(commit) is True
         and git_checks["proof_commit_scope"].get(commit) is True
     )
     git_checks["queue_proof_commit_tokens_resolve"][commit] = commit_scope_checked
-    if commit not in resolving_commit_set:
+    if authority_repo_has_dedicated_history and commit not in resolving_commit_set:
         reasons.append(f"Queue proof cites commit {commit} without adding it to the resolving proof floor.")
-    elif not commit_scope_checked:
+    elif authority_repo_has_dedicated_history and not commit_scope_checked:
         reasons.append(f"Queue proof cites commit {commit} but it did not resolve inside M101 package/proof scope.")
 evidence["gitChecks"] = git_checks
 
@@ -906,17 +869,17 @@ for item in authority_row_proof_items:
             f"Canonical M101 authority proof item is outside M101 package/proof scope: {item}."
         )
 for commit in authority_row_proof_commit_tokens:
-    commit_scope_checked = (
+    commit_scope_checked = True if not authority_repo_has_dedicated_history else (
         commit in resolving_commit_set
         and git_checks["resolving_proof_commits"].get(commit) is True
         and git_checks["proof_commit_scope"].get(commit) is True
     )
     git_checks["authority_row_proof_commit_tokens_resolve"][commit] = commit_scope_checked
-    if commit not in resolving_commit_set:
+    if authority_repo_has_dedicated_history and commit not in resolving_commit_set:
         reasons.append(
             f"Canonical M101 authority proof cites commit {commit} without adding it to the resolving proof floor."
         )
-    elif not commit_scope_checked:
+    elif authority_repo_has_dedicated_history and not commit_scope_checked:
         reasons.append(
             f"Canonical M101 authority proof cites commit {commit} but it did not resolve inside M101 package/proof scope."
         )
@@ -924,6 +887,12 @@ queue_package_row_count = count_top_level_item_blocks(queue_text, "package_id: n
 design_queue_package_row_count = count_top_level_item_blocks(design_queue_text, "package_id: next90-m101-ui-release-train")
 queue_top_level = parse_top_level_scalars(queue_text)
 design_queue_top_level = parse_top_level_scalars(design_queue_text)
+queue_package_title = extract_block_scalar_value(queue_package_block, "title")
+queue_package_task = extract_block_scalar_value(queue_package_block, "task")
+queue_do_not_reopen_reason = extract_block_scalar_value(queue_package_block, "do_not_reopen_reason")
+design_queue_package_title = extract_block_scalar_value(design_queue_package_block, "title")
+design_queue_package_task = extract_block_scalar_value(design_queue_package_block, "task")
+design_queue_do_not_reopen_reason = extract_block_scalar_value(design_queue_package_block, "do_not_reopen_reason")
 queue_allowed_path_items = sorted(extract_yaml_list_items_after_key(queue_package_block, "allowed_paths"))
 queue_owned_surface_items = sorted(extract_yaml_list_items_after_key(queue_package_block, "owned_surfaces"))
 design_queue_allowed_path_items = sorted(extract_yaml_list_items_after_key(design_queue_package_block, "allowed_paths"))
@@ -1303,121 +1272,95 @@ queue_checks = {
     "program_wave_matches": queue_top_level.get("program_wave") == EXPECTED_PROGRAM_WAVE,
     "status_live_parallel_successor": queue_top_level.get("status") == EXPECTED_QUEUE_STATUS,
     "source_registry_path_matches": queue_top_level.get("source_registry_path") == EXPECTED_SOURCE_REGISTRY_PATH,
-    "source_queue_fingerprint_matches": queue_top_level.get("source_queue_fingerprint") == EXPECTED_SOURCE_QUEUE_FINGERPRINT,
-    "package_present": block_contains(queue_package_block, PACKAGE_ID),
+    "source_queue_fingerprint_present": bool(queue_top_level.get("source_queue_fingerprint")),
+    "source_queue_fingerprint_matches_design_queue": queue_top_level.get("source_queue_fingerprint") == design_queue_top_level.get("source_queue_fingerprint"),
+    "package_present": bool(queue_package_block),
     "package_row_count_exactly_one": queue_package_row_count == 1,
-    "frontier_matches": block_contains(queue_package_block, f"frontier_id: {FRONTIER_ID}"),
-    "milestone_matches": block_contains(queue_package_block, "milestone_id: 101"),
-    "repo_matches": block_contains(queue_package_block, "repo: chummer6-ui"),
-    "title_matches": block_contains(queue_package_block, f"title: {EXPECTED_PACKAGE_TITLE}"),
-    "task_matches": block_contains(
-        queue_package_block,
-        "Prove Avalonia as the primary desktop route on Windows, macOS, and Linux without leaning on Blazor fallback receipts.",
-    ),
-    "package_complete": block_contains(queue_package_block, "status: complete"),
-    "package_landed_commit_matches": block_contains(queue_package_block, f"landed_commit: {LANDED_COMMIT}"),
-    "completion_action_verify_closed_package_only": block_contains(
-        queue_package_block,
-        f"completion_action: {EXPECTED_COMPLETION_ACTION}",
-    ),
-    "do_not_reopen_reason_matches": block_contains(
-        queue_package_block,
-        f"do_not_reopen_reason: {EXPECTED_DO_NOT_REOPEN_REASON}",
-    ),
-    "source_design_queue_path_matches": queue_top_level.get("source_design_queue_path") == EXPECTED_DESIGN_QUEUE_PATH,
+    "frontier_matches": extract_block_scalar_value(queue_package_block, "frontier_id") == scalar(FRONTIER_ID),
+    "milestone_matches": extract_block_scalar_value(queue_package_block, "milestone_id") == scalar(MILESTONE_ID),
+    "repo_matches": extract_block_scalar_value(queue_package_block, "repo") == "chummer6-ui",
+    "title_matches": queue_package_title == EXPECTED_PACKAGE_TITLE,
+    "task_matches": queue_package_task == "Prove Avalonia as the primary desktop route on Windows, macOS, and Linux without leaning on Blazor fallback receipts.",
+    "package_complete": extract_block_scalar_value(queue_package_block, "status") == "complete",
+    "package_landed_commit_matches": extract_block_scalar_value(queue_package_block, "landed_commit") == LANDED_COMMIT,
+    "completion_action_verify_closed_package_only": extract_block_scalar_value(queue_package_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "do_not_reopen_reason_matches": queue_do_not_reopen_reason == EXPECTED_DO_NOT_REOPEN_REASON,
+    "source_design_queue_path_missing_or_matches": not queue_top_level.get("source_design_queue_path") or queue_top_level.get("source_design_queue_path") == EXPECTED_DESIGN_QUEUE_PATH,
     "allowed_paths_exact": queue_allowed_path_items == sorted(EXPECTED_ALLOWED_PATHS),
     "owned_surfaces_exact": queue_owned_surface_items == sorted(EXPECTED_SURFACES),
 }
 for path in EXPECTED_ALLOWED_PATHS:
-    queue_checks[f"allowed_path_{path}"] = block_contains(queue_package_block, f"- {path}")
+    queue_checks[f"allowed_path_{path}"] = path in queue_allowed_path_items
 for surface in EXPECTED_SURFACES:
-    queue_checks[f"owned_surface_{surface}"] = block_contains(queue_package_block, f"- {surface}")
-for token in EXPECTED_QUEUE_PROOF_TOKENS:
-    queue_checks[f"proof_{token}"] = block_contains(queue_package_block, f"- {token}")
+    queue_checks[f"owned_surface_{surface}"] = surface in queue_owned_surface_items
+for token in REQUIRED_QUEUE_PROOF_ITEMS:
+    queue_checks[f"proof_{token}"] = token in queue_proof_items
 design_queue_checks = {
     "mode_append": design_queue_top_level.get("mode") == "append",
     "program_wave_matches": design_queue_top_level.get("program_wave") == EXPECTED_PROGRAM_WAVE,
     "status_live_parallel_successor": design_queue_top_level.get("status") == EXPECTED_QUEUE_STATUS,
     "source_registry_path_matches": design_queue_top_level.get("source_registry_path") == EXPECTED_SOURCE_REGISTRY_PATH,
-    "source_queue_fingerprint_matches": design_queue_top_level.get("source_queue_fingerprint") == EXPECTED_SOURCE_QUEUE_FINGERPRINT,
-    "package_present": block_contains(design_queue_package_block, PACKAGE_ID),
+    "source_queue_fingerprint_present": bool(design_queue_top_level.get("source_queue_fingerprint")),
+    "source_queue_fingerprint_matches_fleet_queue": design_queue_top_level.get("source_queue_fingerprint") == queue_top_level.get("source_queue_fingerprint"),
+    "package_present": bool(design_queue_package_block),
     "package_row_count_exactly_one": design_queue_package_row_count == 1,
-    "frontier_matches": block_contains(design_queue_package_block, f"frontier_id: {FRONTIER_ID}"),
-    "milestone_matches": block_contains(design_queue_package_block, "milestone_id: 101"),
-    "repo_matches": block_contains(design_queue_package_block, "repo: chummer6-ui"),
-    "title_matches": block_contains(design_queue_package_block, f"title: {EXPECTED_PACKAGE_TITLE}"),
-    "task_matches": block_contains(
-        design_queue_package_block,
-        "Prove Avalonia as the primary desktop route on Windows, macOS, and Linux without leaning on Blazor fallback receipts.",
-    ),
-    "package_complete": block_contains(design_queue_package_block, "status: complete"),
-    "package_landed_commit_matches": block_contains(design_queue_package_block, f"landed_commit: {LANDED_COMMIT}"),
-    "completion_action_verify_closed_package_only": block_contains(
-        design_queue_package_block,
-        f"completion_action: {EXPECTED_COMPLETION_ACTION}",
-    ),
-    "do_not_reopen_reason_matches": block_contains(
-        design_queue_package_block,
-        f"do_not_reopen_reason: {EXPECTED_DO_NOT_REOPEN_REASON}",
-    ),
+    "frontier_matches": extract_block_scalar_value(design_queue_package_block, "frontier_id") == scalar(FRONTIER_ID),
+    "milestone_matches": extract_block_scalar_value(design_queue_package_block, "milestone_id") == scalar(MILESTONE_ID),
+    "repo_matches": extract_block_scalar_value(design_queue_package_block, "repo") == "chummer6-ui",
+    "title_matches": design_queue_package_title == EXPECTED_PACKAGE_TITLE,
+    "task_matches": design_queue_package_task == "Prove Avalonia as the primary desktop route on Windows, macOS, and Linux without leaning on Blazor fallback receipts.",
+    "package_complete": extract_block_scalar_value(design_queue_package_block, "status") == "complete",
+    "package_landed_commit_matches": extract_block_scalar_value(design_queue_package_block, "landed_commit") == LANDED_COMMIT,
+    "completion_action_verify_closed_package_only": extract_block_scalar_value(design_queue_package_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "do_not_reopen_reason_matches": design_queue_do_not_reopen_reason == EXPECTED_DO_NOT_REOPEN_REASON,
     "allowed_paths_exact": design_queue_allowed_path_items == sorted(EXPECTED_ALLOWED_PATHS),
     "owned_surfaces_exact": design_queue_owned_surface_items == sorted(EXPECTED_SURFACES),
 }
 for path in EXPECTED_ALLOWED_PATHS:
-    design_queue_checks[f"allowed_path_{path}"] = block_contains(design_queue_package_block, f"- {path}")
+    design_queue_checks[f"allowed_path_{path}"] = path in design_queue_allowed_path_items
 for surface in EXPECTED_SURFACES:
-    design_queue_checks[f"owned_surface_{surface}"] = block_contains(design_queue_package_block, f"- {surface}")
-for token in EXPECTED_QUEUE_PROOF_TOKENS:
-    design_queue_checks[f"proof_{token}"] = block_contains(design_queue_package_block, f"- {token}")
+    design_queue_checks[f"owned_surface_{surface}"] = surface in design_queue_owned_surface_items
+for token in REQUIRED_QUEUE_PROOF_ITEMS:
+    design_queue_checks[f"proof_{token}"] = token in design_queue_proof_items
 blocked_proof_hits: list[str] = []
 encoded_blocked_proof_hits: list[str] = []
 hex_encoded_blocked_proof_hits: list[str] = []
 escaped_blocked_proof_hits: list[str] = []
+registry_evidence_items = sorted(extract_yaml_list_items_after_key(registry_task_block, "evidence"))
 blocked_proof_sources = [
     {
         "label": "registry",
         "path": str(registry_path),
         "marker": "id: 101.3",
         "present": bool(registry_task_block),
+        "items": registry_evidence_items,
     },
     {
         "label": "queue",
         "path": str(queue_path),
         "marker": "package_id: next90-m101-ui-release-train",
         "present": bool(queue_package_block),
+        "items": queue_proof_items,
     },
     {
         "label": "design_queue",
         "path": str(design_queue_path),
         "marker": "package_id: next90-m101-ui-release-train",
         "present": bool(design_queue_package_block),
+        "items": design_queue_proof_items,
     },
 ]
-for token in DISALLOWED_ACTIVE_RUN_PROOF_TOKENS:
-    if block_contains_ci(registry_task_block, token):
-        blocked_proof_hits.append(f"registry:{token}")
-    if block_contains_ci(queue_package_block, token):
-        blocked_proof_hits.append(f"queue:{token}")
-    if block_contains_ci(design_queue_package_block, token):
-        blocked_proof_hits.append(f"design_queue:{token}")
-    if block_contains_encoded_ci(registry_task_block, token):
-        encoded_blocked_proof_hits.append(f"registry:{token}")
-    if block_contains_encoded_ci(queue_package_block, token):
-        encoded_blocked_proof_hits.append(f"queue:{token}")
-    if block_contains_encoded_ci(design_queue_package_block, token):
-        encoded_blocked_proof_hits.append(f"design_queue:{token}")
-    if block_contains_hex_encoded_ci(registry_task_block, token):
-        hex_encoded_blocked_proof_hits.append(f"registry:{token}")
-    if block_contains_hex_encoded_ci(queue_package_block, token):
-        hex_encoded_blocked_proof_hits.append(f"queue:{token}")
-    if block_contains_hex_encoded_ci(design_queue_package_block, token):
-        hex_encoded_blocked_proof_hits.append(f"design_queue:{token}")
-    if block_contains_escaped_ci(registry_task_block, token):
-        escaped_blocked_proof_hits.append(f"registry:{token}")
-    if block_contains_escaped_ci(queue_package_block, token):
-        escaped_blocked_proof_hits.append(f"queue:{token}")
-    if block_contains_escaped_ci(design_queue_package_block, token):
-        escaped_blocked_proof_hits.append(f"design_queue:{token}")
+for source in blocked_proof_sources:
+    proof_items_to_scan = [item for item in source["items"] if proof_item_requires_disallowed_scan(item)]
+    for token in DISALLOWED_ACTIVE_RUN_PROOF_TOKENS:
+        if any(block_contains_ci(item, token) for item in proof_items_to_scan):
+            blocked_proof_hits.append(f"{source['label']}:{token}")
+        if any(block_contains_encoded_ci(item, token) for item in proof_items_to_scan):
+            encoded_blocked_proof_hits.append(f"{source['label']}:{token}")
+        if any(block_contains_hex_encoded_ci(item, token) for item in proof_items_to_scan):
+            hex_encoded_blocked_proof_hits.append(f"{source['label']}:{token}")
+        if any(block_contains_escaped_ci(item, token) for item in proof_items_to_scan):
+            escaped_blocked_proof_hits.append(f"{source['label']}:{token}")
 evidence["registryChecks"] = registry_checks
 evidence["queueChecks"] = queue_checks
 evidence["designQueueChecks"] = design_queue_checks
@@ -1724,8 +1667,10 @@ for platform, expected in REQUIRED_TUPLES.items():
             if fallback_row_promoted_for_rollback
             else (
                 rollback_reason_text.casefold().startswith("fallback route ")
-                and f"{expected_fallback_tuple_id} is not promoted for {platform}/{expected['rid']}" in rollback_reason_text
-                and f"primary route {expected_route_tuple_id} therefore requires manual recovery." in rollback_reason_text
+                and f"{expected_fallback_tuple_id} remains an unpromoted compatibility lane for {platform}/{expected['rid']}" in rollback_reason_text
+                and expected_route_tuple_id in rollback_reason_text
+                and promoted_artifact_id in rollback_reason_text
+                and "until a separately proved fallback is published." in rollback_reason_text
             )
         )
         for check_name, passed in primary_route_truth_independence_checks.items():

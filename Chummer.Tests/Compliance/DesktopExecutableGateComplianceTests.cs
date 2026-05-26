@@ -140,8 +140,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(verifyScriptText, "checking codex-studio tracked artifact guard");
         StringAssert.Contains(verifyScriptText, "bash scripts/ai/milestones/codex-studio-tracking-check.sh");
         StringAssert.Contains(guardScriptText, "git ls-files .codex-studio");
-        StringAssert.Contains(guardScriptText, ".codex-studio/published/(QUEUE|WORKPACKAGES)\\.generated\\.yaml");
-        StringAssert.Contains(guardScriptText, "only .codex-studio/published/QUEUE.generated.yaml and WORKPACKAGES.generated.yaml may be tracked.");
+        StringAssert.Contains(guardScriptText, "grep -E '^\\.codex-studio/(locks/|generated/|tmp/)'");
+        StringAssert.Contains(guardScriptText, "ephemeral .codex-studio lock/generated/tmp artifacts may not be tracked.");
     }
 
     [TestMethod]
@@ -170,6 +170,46 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Release_manifest_generation_prefers_startup_smoke_receipts_that_match_current_download_bytes()
+    {
+        string repoRoot = FindRepoRoot();
+        string releaseManifestScriptPath = Path.Combine(repoRoot, "scripts", "generate-releases-manifest.sh");
+        string releaseManifestScriptText = File.ReadAllText(releaseManifestScriptPath);
+
+        StringAssert.Contains(releaseManifestScriptText, "def receipt_matches_download_bytes(payload: dict) -> bool:");
+        StringAssert.Contains(releaseManifestScriptText, "selection_rank = 1 if receipt_matches_download_bytes(payload) else 0");
+        StringAssert.Contains(releaseManifestScriptText, "artifact_digest_cache: dict[Path, str] = {}");
+    }
+
+    [TestMethod]
+    public void Release_manifest_generation_restores_missing_receipt_backed_artifacts_from_trusted_shelves()
+    {
+        string repoRoot = FindRepoRoot();
+        string releaseManifestScriptPath = Path.Combine(repoRoot, "scripts", "generate-releases-manifest.sh");
+        string releaseManifestScriptText = File.ReadAllText(releaseManifestScriptPath);
+
+        StringAssert.Contains(releaseManifestScriptText, "def trusted_receipt_artifact_dirs(repo_root: Path, registry_root: Path) -> list[Path]:");
+        StringAssert.Contains(releaseManifestScriptText, "repo_root.parent / \"chummer.run-services\" / \"Chummer.Portal\" / \"downloads\" / \"files\"");
+        StringAssert.Contains(releaseManifestScriptText, "def restore_missing_receipt_backed_artifact(payload: dict) -> Path | None:");
+        StringAssert.Contains(releaseManifestScriptText, "shutil.copy2(candidate_path, target_path)");
+        StringAssert.Contains(releaseManifestScriptText, "restore_missing_receipt_backed_artifact(payload)");
+    }
+
+    [TestMethod]
+    public void Release_manifest_generation_scans_all_published_desktop_gate_receipts_for_startup_smoke_hydration()
+    {
+        string repoRoot = FindRepoRoot();
+        string releaseManifestScriptPath = Path.Combine(repoRoot, "scripts", "generate-releases-manifest.sh");
+        string releaseManifestScriptText = File.ReadAllText(releaseManifestScriptPath);
+
+        StringAssert.Contains(releaseManifestScriptText, "gate_paths = sorted((repo_root / \".codex-studio\" / \"published\").glob(\"UI_*_DESKTOP_EXIT_GATE.generated.json\"))");
+        StringAssert.Contains(releaseManifestScriptText, "embedded_gate_receipts_dir = Path(tempfile.mkdtemp(prefix=\"chummer-startup-smoke-gate-\"))");
+        StringAssert.Contains(releaseManifestScriptText, "embedded_receipt = startup_smoke.get(\"receipt\")");
+        StringAssert.Contains(releaseManifestScriptText, "candidate_dirs.append(Path(receipt_path).resolve(strict=False).parent)");
+        StringAssert.Contains(releaseManifestScriptText, "\"$DOWNLOADS_DIR\"");
+    }
+
+    [TestMethod]
     public void Workflow_parity_receipts_pin_script_execution_to_repo_root()
     {
         string repoRoot = FindRepoRoot();
@@ -179,9 +219,9 @@ public sealed class DesktopExecutableGateComplianceTests
         string sr6ScriptText = File.ReadAllText(sr6ScriptPath);
 
         StringAssert.Contains(sr4ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr4ScriptText, "dotnet test Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr4ScriptText, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj");
         StringAssert.Contains(sr6ScriptText, "cd \"$repo_root\"");
-        StringAssert.Contains(sr6ScriptText, "dotnet test Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(sr6ScriptText, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj");
     }
 
     [TestMethod]
@@ -226,6 +266,19 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT");
         StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_WAIT_SECONDS");
         StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_VISUAL_RELEASE_GATE_LOCK_POLL_SECONDS");
+    }
+
+    [TestMethod]
+    public void Desktop_executable_gate_forces_workflow_dependency_refresh_against_the_same_release_channel()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-executable-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH=\"$release_channel_path\"");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1");
+        StringAssert.Contains(scriptText, "CHUMMER_HUB_REGISTRY_ROOT=\"$hub_registry_root\"");
+        StringAssert.Contains(scriptText, "bash \"$workflow_execution_materializer_path\"");
     }
 
     [TestMethod]
@@ -904,9 +957,9 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
-        Assert.IsFalse(
-            visualScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
-            "Visual gate must not depend on the aggregate flagship gate already passing."
+        StringAssert.Contains(
+            visualScriptText,
+            "Flagship UI release gate is missing or not passing."
         );
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
@@ -931,13 +984,13 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level workflow receipts resolve outside this repo root:");
         StringAssert.Contains(workflowScriptText, "SR4/SR6 family-level execution receipts resolve outside this repo root:");
         StringAssert.Contains(workflowScriptText, "outside_repo_root:{entry}");
-        Assert.IsFalse(
-            executableScriptText.Contains("Flagship UI release gate is missing or not passing.", StringComparison.Ordinal),
-            "Executable gate must not depend on the aggregate flagship gate already passing."
+        StringAssert.Contains(
+            executableScriptText,
+            "Flagship UI release gate is missing or not passing."
         );
-        Assert.IsFalse(
-            windowsGateScriptText.Contains("Flagship UI release gate proof is missing or not passed.", StringComparison.Ordinal),
-            "Windows gate must not depend on the aggregate flagship gate already passing."
+        StringAssert.Contains(
+            windowsGateScriptText,
+            "UI local release proof is missing or not passed."
         );
     }
 
@@ -985,7 +1038,8 @@ public sealed class DesktopExecutableGateComplianceTests
 
         StringAssert.Contains(scriptText, "FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH=");
         StringAssert.Contains(scriptText, "control_evidence_path = pathlib.Path(sys.argv[3])");
-        StringAssert.Contains(scriptText, "control_evidence = json.loads(control_evidence_path.read_text(encoding=\"utf-8-sig\"))");
+        StringAssert.Contains(scriptText, "def load_json(path: pathlib.Path) -> object:");
+        StringAssert.Contains(scriptText, "control_evidence = load_json(control_evidence_path)");
         StringAssert.Contains(scriptText, "workflow_coverage = control_evidence.get(\"workflowCoverage\") or []");
         StringAssert.Contains(scriptText, "for entry in control_evidence.get(\"entries\") or []");
         Assert.IsFalse(
@@ -1003,9 +1057,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "def is_generated_build_output(relative_path: str) -> bool:");
         StringAssert.Contains(scriptText, "return any(part in {\"bin\", \"obj\", \"TestResults\"} for part in parts)");
         StringAssert.Contains(scriptText, "if is_generated_build_output(relative):");
-        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/bin/\"");
-        StringAssert.Contains(scriptText, "\"Chummer.Avalonia/obj/\"");
-        StringAssert.Contains(scriptText, "\"Chummer.Desktop.Runtime.Tests/obj/\"");
+        StringAssert.Contains(scriptText, "\"$SOURCE_SNAPSHOT_ROOT/TestResults\"");
+        StringAssert.Contains(scriptText, "\"$SOURCE_SNAPSHOT_ROOT/Chummer.Desktop.Runtime.Tests/TestResults\"");
     }
 
     [TestMethod]
@@ -1087,7 +1140,7 @@ public sealed class DesktopExecutableGateComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "normalize_test_trx_path()");
-        StringAssert.Contains(scriptText, "find \"$TEST_RESULTS_DIR\" -maxdepth 1 -type f -name '*.trx'");
+        StringAssert.Contains(scriptText, "find \"$candidate_dir\" -maxdepth 1 -type f -name '*.trx'");
         StringAssert.Contains(scriptText, "cp \"$discovered_trx\" \"$TEST_TRX_PATH\"");
         StringAssert.Contains(scriptText, "desktop runtime unit tests did not produce a TRX report");
         StringAssert.Contains(scriptText, "--logger \"trx;LogFileName=$(basename \"$TEST_TRX_PATH\")\"");
@@ -1136,7 +1189,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "if [[ \"$use_mstest_runner\" -eq 0 ]]; then");
         StringAssert.Contains(scriptText, "normalize_projectish_args");
         Assert.IsTrue(
-            scriptText.IndexOf("detect_mstest_runner", StringComparison.Ordinal) < scriptText.IndexOf("normalize_projectish_args", StringComparison.Ordinal),
+            scriptText.LastIndexOf("detect_mstest_runner", StringComparison.Ordinal) < scriptText.LastIndexOf("normalize_projectish_args", StringComparison.Ordinal),
             "The test wrapper must decide MSTest runner mode before normalizing project paths so .NET 10 can keep MSTest project arguments relative.");
     }
 
@@ -1253,7 +1306,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(linuxScriptText, "BUILD_LOCK_FD=\"8\"");
         StringAssert.Contains(linuxScriptText, "mkdir -p \"$(dirname \"$BUILD_LOCK_PATH\")\"");
         StringAssert.Contains(linuxScriptText, "eval \"exec ${BUILD_LOCK_FD}>\\\"\\$BUILD_LOCK_PATH\\\"\"");
-        StringAssert.Contains(linuxScriptText, "flock \"$BUILD_LOCK_FD\"");
+        StringAssert.Contains(linuxScriptText, "flock -n \"$BUILD_LOCK_FD\"");
+        StringAssert.Contains(linuxScriptText, "flock -w \"$wait_seconds\" \"$BUILD_LOCK_FD\"");
         Assert.IsFalse(
             linuxScriptText.Contains("exec {BUILD_LOCK_FD}>", StringComparison.Ordinal),
             "The Linux gate must not use dynamic fd assignment for the build lock; it has produced build_lock failures in worker shells.");
@@ -1318,6 +1372,18 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableGateScriptText, "\"expectedInstallerRelativePath\": row_expected_installer_relative_path");
         StringAssert.Contains(executableGateScriptText, "\"expectedInstallerSha256\": row_expected_installer_sha256");
         StringAssert.Contains(executableGateScriptText, "expected_installer_sha256=row_expected_installer_sha256");
+        StringAssert.Contains(windowsScriptText, "desktop_tuple_coverage.get(\"externalProofRequests\")");
+        StringAssert.Contains(windowsScriptText, "\"publicationSource\": \"desktopTupleCoverage.externalProofRequests\"");
+        StringAssert.Contains(windowsScriptText, "if windows_artifact is not None and str(windows_artifact.get(\"publicationSource\") or \"\").strip() == \"desktopTupleCoverage.externalProofRequests\":");
+        StringAssert.Contains(windowsScriptText, "windows_artifact[\"sizeBytes\"] = installer_size");
+        StringAssert.Contains(windowsScriptText, "or release_channel.get(\"generated_at\")");
+        StringAssert.Contains(windowsScriptText, "windows_artifact[\"generatedAt\"] = fallback_generated_at");
+        StringAssert.Contains(windowsScriptText, "windows_artifact[\"id\"] = str(windows_artifact.get(\"artifactId\") or \"\").strip()");
+        StringAssert.Contains(executableGateScriptText, "def synthesize_external_proof_request_install_artifacts(");
+        StringAssert.Contains(executableGateScriptText, "desktop_install_artifacts.extend(");
+        StringAssert.Contains(executableGateScriptText, "\"publicationSource\": \"desktopTupleCoverage.externalProofRequests\"");
+        StringAssert.Contains(executableGateScriptText, "startup_smoke_stale_age_acceptable = bool(");
+        StringAssert.Contains(executableGateScriptText, "if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS and not startup_smoke_stale_age_acceptable:");
         StringAssert.Contains(executableGateScriptText, "installer-preflight-sha256-mismatch");
         StringAssert.Contains(executableGateScriptText, "tuple_token not in published_installer_tuples");
         StringAssert.Contains(executableGateScriptText, "no_published_promoted_installer_tuple");

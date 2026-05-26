@@ -188,6 +188,10 @@ def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def normalize_inline_whitespace(value: str) -> str:
+    return " ".join(str(value or "").split())
+
+
 def extract_block(text: str, anchor: str, next_anchors: list[str]) -> str:
     start = text.find(anchor)
     if start < 0:
@@ -205,6 +209,9 @@ design_queue_text = read_text(design_queue_path) if design_queue_path.is_file() 
 registry_block = extract_block(registry_text, "- id: '142.1'", ["- id: '142.2'"])
 queue_block = extract_block(queue_text, f"package_id: {PACKAGE_ID}", ["- title: "])
 design_queue_block = extract_block(design_queue_text, f"package_id: {PACKAGE_ID}", ["- title: "])
+registry_block_normalized = normalize_inline_whitespace(registry_block)
+queue_block_normalized = normalize_inline_whitespace(queue_block)
+design_queue_block_normalized = normalize_inline_whitespace(design_queue_block)
 
 audit_receipt = read_json(repo_root / ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
 screenshot_review_receipt = read_json(repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json")
@@ -251,20 +258,20 @@ queue_checks["design_queue_block_present"] = bool(design_queue_block)
 queue_checks["registry_title_matches"] = TITLE in registry_block
 queue_checks["queue_title_matches"] = bool(queue_block)
 queue_checks["design_queue_title_matches"] = bool(design_queue_block)
-queue_checks["registry_status_complete"] = "status: complete" in registry_block
-queue_checks["queue_status_complete"] = "status: complete" in queue_block
-queue_checks["design_queue_status_complete"] = "status: complete" in design_queue_block
-queue_checks["registry_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in registry_block
-queue_checks["queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in queue_block
-queue_checks["design_queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in design_queue_block
-queue_checks["registry_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in registry_block
-queue_checks["queue_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in queue_block
-queue_checks["design_queue_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in design_queue_block
+queue_checks["registry_status_complete"] = "status: complete" in registry_block_normalized
+queue_checks["queue_status_complete"] = "status: complete" in queue_block_normalized
+queue_checks["design_queue_status_complete"] = "status: complete" in design_queue_block_normalized
+queue_checks["registry_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in registry_block_normalized
+queue_checks["queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in queue_block_normalized
+queue_checks["design_queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in design_queue_block_normalized
+queue_checks["registry_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in registry_block_normalized
+queue_checks["queue_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in queue_block_normalized
+queue_checks["design_queue_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in design_queue_block_normalized
 queue_checks["queue_frontier_matches"] = f"frontier_id: {FRONTIER_ID}" in queue_block
 queue_checks["design_queue_frontier_matches"] = f"frontier_id: {FRONTIER_ID}" in design_queue_block
-queue_checks["registry_evidence_exact"] = all(entry in registry_block for entry in EXPECTED_REGISTRY_EVIDENCE)
-queue_checks["queue_proof_exact"] = all(entry in queue_block for entry in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
-queue_checks["design_queue_proof_exact"] = all(entry in design_queue_block for entry in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
+queue_checks["registry_evidence_exact"] = all(normalize_inline_whitespace(entry) in registry_block_normalized for entry in EXPECTED_REGISTRY_EVIDENCE)
+queue_checks["queue_proof_exact"] = all(normalize_inline_whitespace(entry) in queue_block_normalized for entry in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
+queue_checks["design_queue_proof_exact"] = all(normalize_inline_whitespace(entry) in design_queue_block_normalized for entry in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
 payload["evidence"]["queueChecks"] = queue_checks
 
 for key, passed in queue_checks.items():

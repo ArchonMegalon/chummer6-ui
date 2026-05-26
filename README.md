@@ -65,7 +65,27 @@ Run repo-local restore/build/test flows through the package-plane helpers so sha
 bash scripts/ai/restore.sh Chummer.Tests/Chummer.Tests.csproj -p:TargetFramework=net10.0
 bash scripts/ai/build.sh Chummer.Blazor/Chummer.Blazor.csproj
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj -f net10.0 -p:TargetFramework=net10.0
+bash scripts/ai/coverage.sh Chummer.Tests/Chummer.Tests.csproj
+bash scripts/ai/test-matrix.sh Chummer.Tests/Chummer.Tests.csproj
 bash scripts/ai/verify.sh
 ```
 
 If you intentionally want the mounted sibling compatibility tree instead of the local package feed, pass `-p:ChummerUseLocalCompatibilityTree=true` explicitly.
+
+`scripts/ai/test-matrix.sh` is the host-aware entrypoint for the current test matrix:
+- always runs the Linux `net10.0` suite
+- always restores and builds the `net10.0-windows` target
+- only executes the `net10.0-windows` test binary when `Microsoft.WindowsDesktop.App 10.x` is available on the host
+- on macOS hosts, also builds the Avalonia and Blazor desktop heads
+
+For final native-host certification use:
+
+```bash
+bash scripts/ai/test-native-host-matrix.sh Chummer.Tests/Chummer.Tests.csproj
+```
+
+That wrapper is intentionally stricter:
+- on Windows, it requires real Windows desktop test execution
+- on macOS, it runs the host-aware matrix and desktop-head builds
+
+`scripts/ai/coverage.sh` collects Linux `net10.0` coverage with the `XPlat Code Coverage` collector and writes a Cobertura summary JSON under `.artifacts/coverage/summary.json`.

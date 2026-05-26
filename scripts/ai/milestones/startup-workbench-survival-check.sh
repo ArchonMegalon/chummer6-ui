@@ -78,7 +78,9 @@ if not reasons:
     }
     evidence["sourceMarkers"] = {
         "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);": "DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);" in app_text,
-        "ShowNavigatorPane: true": "ShowNavigatorPane: true" in projector_text,
+        "ShowNavigatorPane: false": "ShowNavigatorPane: false" in projector_text,
+        "RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(": "RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(" in projector_text,
+        "new RosterPaneState(": "new RosterPaneState(" in projector_text,
         "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);": "DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);" in app_text,
     }
 
@@ -87,8 +89,13 @@ if not reasons:
         reasons.append("Startup survival gate is missing required test markers: " + ", ".join(missing_test_markers))
     if not evidence["sourceMarkers"]["DesktopInstallLinkingWindow.ShowIfNeededAsync(owner, installLinkingContext);"]:
         reasons.append("Avalonia startup path lost install-linking continuation handling.")
-    if not evidence["sourceMarkers"]["ShowNavigatorPane: true"]:
-        reasons.append("Avalonia startup path no longer projects the Codex navigator pane.")
+    for marker in (
+        "ShowNavigatorPane: false",
+        "RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(",
+        "new RosterPaneState(",
+    ):
+        if not evidence["sourceMarkers"][marker]:
+            reasons.append(f"Avalonia startup path is missing required roster-first projector marker: {marker}")
     if evidence["sourceMarkers"]["DesktopHomeWindow.ShowIfNeededAsync(owner, \"avalonia\", installContext: null);"]:
         reasons.append("Avalonia startup path still reopens DesktopHomeWindow by default.")
 

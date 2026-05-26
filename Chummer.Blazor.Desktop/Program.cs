@@ -1,5 +1,8 @@
 using Chummer.Blazor.Components;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
+using Chummer.Presentation.Shell;
+using Microsoft.Extensions.DependencyInjection;
 using Photino.Blazor;
 
 namespace Chummer.Blazor.Desktop;
@@ -58,7 +61,13 @@ internal static class Program
         }
 
         PhotinoBlazorAppBuilder builder = PhotinoBlazorAppBuilder.CreateDefault(args);
+        builder.Services.AddSingleton(installLinking);
         builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+        builder.Services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
+        builder.Services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
+        builder.Services.AddSingleton<IShellPresenter, ShellPresenter>();
+        builder.Services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
+        builder.Services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
         builder.RootComponents.Add<DesktopAppHost>("app");
 
         int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
@@ -71,6 +80,10 @@ internal static class Program
         }
 
         PhotinoBlazorApp app = builder.Build();
+        app.MainWindow.Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.shell.window_title", DesktopLocalizationCatalog.DefaultLanguage),
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", DesktopLocalizationCatalog.DefaultLanguage),
+            installLinking.State);
         string desktopIconPath = Path.Combine(AppContext.BaseDirectory, "chummer.ico");
         if (File.Exists(desktopIconPath))
         {

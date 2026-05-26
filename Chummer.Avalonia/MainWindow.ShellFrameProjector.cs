@@ -85,8 +85,7 @@ internal static class MainWindowShellFrameProjector
         string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);
         string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);
         string? conflictChoiceSummary = BuildConflictChoiceSummary(shellSurface, workspaceContext, language);
-        bool summaryHeaderHasVisibleContent = navigationTabs.Length > 0
-            || !string.IsNullOrWhiteSpace(restoreContinuitySummary)
+        bool summaryHeaderHasVisibleContent = !string.IsNullOrWhiteSpace(restoreContinuitySummary)
             || !string.IsNullOrWhiteSpace(staleStateSummary)
             || !string.IsNullOrWhiteSpace(conflictChoiceSummary);
 
@@ -157,7 +156,7 @@ internal static class MainWindowShellFrameProjector
                 Items: CharacterRosterDataBinder.CreateRosterNodes(resolvedOpenWorkspaces).ToArray(),
                 SelectedWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
             CommandDialogPaneState: ProjectCommandDialogState(state, commands, shellSurface.LastCommandId),
-            ShowNavigatorPane: true,
+            ShowNavigatorPane: false,
             NavigatorPaneState: new NavigatorPaneState(
                 OpenWorkspacesHeading: RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(shellSurface.ActiveRulesetId),
                 OpenWorkspaces: ProjectOpenWorkspaces(state, shellSurface),

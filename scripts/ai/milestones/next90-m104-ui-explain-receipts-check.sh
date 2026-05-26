@@ -299,10 +299,14 @@ def queue_item_block(queue_text: str) -> str:
     index = queue_text.find(marker)
     if index < 0:
         return ""
-    start = queue_text.rfind("\n  - ", 0, index)
+    start = queue_text.rfind("\n- title:", 0, index)
+    if start < 0:
+        start = queue_text.rfind("\n  - title:", 0, index)
     if start < 0:
         start = 0
-    end = queue_text.find("\n  - ", index)
+    end = queue_text.find("\n- title:", index)
+    if end < 0:
+        end = queue_text.find("\n  - title:", index)
     if end < 0:
         end = len(queue_text)
     return queue_text[start:end]
@@ -312,9 +316,44 @@ def package_occurrence_count(text: str) -> int:
     return text.count(f"package_id: {PACKAGE_ID}")
 
 
+def normalize_yaml_scalar_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+def yaml_scalar_after(block: str, key: str) -> str:
+    lines = block.splitlines()
+    first_index = -1
+    first_line = ""
+    for index, raw_line in enumerate(lines):
+        if raw_line.lstrip(" ").startswith(f"{key}:"):
+            first_index = index
+            first_line = raw_line
+            break
+    if first_index < 0:
+        return ""
+    _, _, first_value = first_line.partition(":")
+    value_parts = [first_value.strip()]
+    base_indent = len(first_line) - len(first_line.lstrip(" "))
+    for raw_line in lines[first_index + 1:]:
+        if not raw_line.strip():
+            if value_parts:
+                break
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if indent <= base_indent:
+            break
+        value_parts.append(raw_line.strip())
+    return normalize_yaml_scalar_whitespace(" ".join(part for part in value_parts if part))
+
+
+def canonicalize_queue_block(block: str) -> str:
+    return " ".join(block.split())
+
+
 def queue_checks_for(block: str) -> dict[str, bool]:
     allowed_paths = yaml_list_after(block, "allowed_paths")
     owned_surfaces = yaml_list_after(block, "owned_surfaces")
+    task_value = yaml_scalar_after(block, "task")
     checks = {
         "package_present": bool(block),
         "repo_matches": "repo: chummer6-ui" in block,
@@ -322,7 +361,7 @@ def queue_checks_for(block: str) -> dict[str, bool]:
         "milestone_matches": "milestone_id: 104" in block,
         "wave_matches": "wave: W7" in block,
         "title_matches": "title: Surface explain receipts and environment diffs where users need trust" in block,
-        "task_matches": "task: Expose grounded explain receipts and before-after environment diffs on import, build blockers, and support diagnostics." in block,
+        "task_matches": task_value == "Expose grounded explain receipts and before-after environment diffs on import, build blockers, and support diagnostics.",
         "status_complete": "status: complete" in block,
         "landed_commit_matches": f"landed_commit: {EXPECTED_LANDED_COMMIT}" in block,
     }
@@ -471,7 +510,7 @@ queue_checks = queue_checks_for(queue_block)
 design_queue_checks = queue_checks_for(design_queue_block)
 queue_mirror_checks = {
     "fleet_queue_points_to_design_queue": True if "source_design_queue_path:" not in queue_text else f"source_design_queue_path: {design_queue_path}" in queue_text,
-    "package_blocks_match": queue_block.strip() == design_queue_block.strip(),
+    "package_blocks_match": canonicalize_queue_block(queue_block) == canonicalize_queue_block(design_queue_block),
     "fleet_queue_package_unique": package_occurrence_count(queue_text) == 1,
     "design_queue_package_unique": package_occurrence_count(design_queue_text) == 1,
 }

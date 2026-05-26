@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-05-19T07:59:22.157494Z",
+  "generatedAt": "2026-05-26T20:00:18.466322Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
   "reasons": [],
   "evidence": {
-    "receiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_LEGACY_UI_ELEMENT_PARITY.generated.json",
     "legacySubject": "Chummer4",
     "legacySubjectSlug": "chummer4",
     "sourcePaths": {
@@ -26,7 +26,7 @@
     "legacyRuntimeEventHookCount": 34,
     "legacyDynamicInteractiveElementCount": 1371,
     "currentDynamicInteractiveElementCount": 57,
-    "currentNamedAxamlInteractiveElementCount": 44,
+    "currentNamedAxamlInteractiveElementCount": 42,
     "legacyBehaviorFamilyCounts": {
       "add_create": 11,
       "browse_select": 162,
@@ -85,7 +85,7 @@
       "ui": 47,
       "dialog-action": 23,
       "current-dynamic": 9,
-      "current-named": 44
+      "current-named": 42
     },
     "familyReviews": {
       "add_create": {
@@ -637,7 +637,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (24s 081ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 24s 594ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (15s 590ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 15s 842ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -1169,42 +1169,42 @@
     "currentDynamicElementSamples": [
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 184,
+        "line": 186,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 290,
+        "line": 292,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 363,
+        "line": 365,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 410,
+        "line": 412,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 515,
+        "line": 517,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 299,
+        "line": 292,
         "type": "NumericUpDown"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 312,
+        "line": 305,
         "type": "NumericUpDown"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 1215,
+        "line": 1208,
         "type": "Button"
       },
       {
@@ -1244,7 +1244,7 @@
       },
       {
         "source": "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
-        "line": 616,
+        "line": 620,
         "type": "Button"
       },
       {
@@ -1356,23 +1356,13 @@
       },
       {
         "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
-        "type": "TextBox",
-        "name": "CoachLaunchUriTextBox"
+        "type": "Button",
+        "name": "OpenCoachLaunchButton"
       },
       {
         "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
         "type": "Button",
         "name": "CopyCoachLaunchButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
-        "type": "ListBox",
-        "name": "ProviderHealthList"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/CoachSidecarControl.axaml",
-        "type": "ListBox",
-        "name": "AuditList"
       },
       {
         "source": "Chummer.Avalonia/Controls/CharacterRosterControl.axaml",
@@ -1468,6 +1458,16 @@
         "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
         "type": "Button",
         "name": "ImportFileButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "CloseWorkspaceButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "type": "Button",
+        "name": "OpenForPrintingButton"
       }
     ],
     "legacyElementDispositionCount": 2602,
@@ -5449,7 +5449,7 @@
       "minimal"
     ],
     "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-    "testAssemblyPath": "/docker/chummercomplete/chummer6-ui/Chummer.Tests/bin/Debug/Chummer.Tests.dll",
+    "testAssemblyPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll",
     "reusedExistingTestBuild": true,
     "buildCommand": [],
     "observedFamilyCount": 26,
@@ -6038,7 +6038,7 @@
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 1371,
     "currentDynamicInteractiveElementCount": 57,
-    "currentNamedAxamlInteractiveElementCount": 44
+    "currentNamedAxamlInteractiveElementCount": 42
   },
   "verifyWiringReview": {
     "status": "pass",
@@ -6063,7 +6063,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(17s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(20s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(23s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (24s 081ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 24s 594ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (15s 590ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 15s 842ms"
     }
   }
 }

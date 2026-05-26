@@ -285,11 +285,16 @@ for token in [
             f"Avalonia shell refresh is missing required conditional workspace-rail token: {token}",
             avalonia_layout_reasons,
         )
-if "ShowNavigatorPane: true" not in avalonia_projector_text:
-    append_reason(
-        "Avalonia shell projector must surface the Codex navigator pane as part of the primary Chummer-style workbench.",
-        avalonia_layout_reasons,
-    )
+for token in [
+    "ShowNavigatorPane: false",
+    "RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(",
+    "new RosterPaneState(",
+]:
+    if token not in avalonia_projector_text:
+        append_reason(
+            f"Avalonia shell projector is missing required roster-first workbench token: {token}",
+            avalonia_layout_reasons,
+        )
 if "return [];" not in avalonia_projector_text:
     append_reason(
         "Avalonia shell still exposes section quick-action chrome that Chummer5a never had.",

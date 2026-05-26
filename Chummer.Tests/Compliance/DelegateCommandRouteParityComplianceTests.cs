@@ -28,9 +28,9 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(scriptText, "\"SaveAsync\"");
         StringAssert.Contains(scriptText, "\"ExportAsync\"");
         StringAssert.Contains(scriptText, "\"PrintAsync\"");
-        StringAssert.Contains(scriptText, "Name~delegates_to_presenter");
-        StringAssert.Contains(scriptText, "Name~CoordinateAsync_");
-        StringAssert.Contains(scriptText, "Name~Avalonia_and_Blazor_");
+        StringAssert.Contains(scriptText, "\"delegates_to_presenter\"");
+        StringAssert.Contains(scriptText, "\"CoordinateAsync_\"");
+        StringAssert.Contains(scriptText, "\"Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity\"");
         StringAssert.Contains(scriptText, "ExecuteCommandAsync_all_catalog_commands_are_handled");
         StringAssert.Contains(scriptText, "HandleUiControlAsync_all_catalog_controls_are_non_generic");
         StringAssert.Contains(scriptText, "Avalonia_and_Blazor_shell_surfaces_expose_identical_ids");
@@ -39,6 +39,8 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(scriptText, "ActiveDialog = _dialogFactory.CreateUiControlDialog(controlId, State.Preferences)");
         StringAssert.Contains(scriptText, "updatedDialog = DesktopDialogFactory.RebuildDynamicDialog(updatedDialog, State.Preferences);");
         StringAssert.Contains(scriptText, "Delegate-route parity guard is not wired into scripts/ai/verify.sh.");
+        StringAssert.Contains(scriptText, "verify_invocation = \"bash scripts/ai/milestones/delegate-command-route-parity-check.sh\"");
+        StringAssert.Contains(scriptText, "run_with_retries(");
         StringAssert.Contains(scriptText, "\"scripts/ai/test.sh\"");
         StringAssert.Contains(scriptText, "contract_surface_reasons");
         StringAssert.Contains(scriptText, "bridge_adapter_reasons");
@@ -92,9 +94,9 @@ public sealed class DelegateCommandRouteParityComplianceTests
         Assert.AreEqual("chummer6-ui.delegate_command_route_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(16, evidence.GetProperty("contractMethodCount").GetInt32());
-        Assert.AreEqual(16, evidence.GetProperty("bridgeMethodCount").GetInt32());
-        Assert.AreEqual(16, evidence.GetProperty("adapterMethodCount").GetInt32());
+        Assert.AreEqual(17, evidence.GetProperty("contractMethodCount").GetInt32());
+        Assert.AreEqual(17, evidence.GetProperty("bridgeMethodCount").GetInt32());
+        Assert.AreEqual(17, evidence.GetProperty("adapterMethodCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
@@ -108,9 +110,9 @@ public sealed class DelegateCommandRouteParityComplianceTests
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"ExportAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"PrintAsync\"");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"buildExitCode\": 0");
-        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Name~delegates_to_presenter\"");
-        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Name~CoordinateAsync_\"");
-        StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Name~Avalonia_and_Blazor_\"");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "delegates_to_presenter");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "CoordinateAsync_");
+        StringAssert.Contains(receipt.RootElement.GetRawText(), "Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"exitCode\": 0");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"noMatches\": false");
         StringAssert.Contains(receipt.RootElement.GetRawText(), "\"Avalonia_and_Blazor_dialog_workflow_keeps_shell_regions_in_parity\": true");

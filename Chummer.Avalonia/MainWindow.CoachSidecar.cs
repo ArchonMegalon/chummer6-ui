@@ -3,6 +3,7 @@ using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Presentation;
 using Chummer.Presentation.Shell;
+using System.Diagnostics;
 
 namespace Chummer.Avalonia;
 
@@ -87,7 +88,8 @@ public partial class MainWindow
 
         if (!result.IsImplemented)
         {
-            _coachErrorMessage = result.NotImplemented?.Message ?? "Coach sidecar route is not implemented yet.";
+            _coachErrorMessage = result.NotImplemented?.Message
+                ?? "Coach is unavailable for the current shell state right now. Open the browser route to continue there.";
             return false;
         }
 
@@ -127,22 +129,56 @@ public partial class MainWindow
     }
 
     private string BuildCoachLaunchUri(ShellSurfaceState shellSurface)
-        => AiCoachLaunchQuery.BuildRelativeUri(
-            "/coach/",
-            new AiCoachLaunchContext(
-                RouteType: AiRouteTypes.Coach,
-                RuntimeFingerprint: shellSurface.ActiveRuntime?.RuntimeFingerprint,
-                WorkspaceId: shellSurface.ActiveWorkspaceId?.Value));
+        => BuildCoachAbsoluteLaunchUri(
+            AiCoachLaunchQuery.BuildRelativeUri(
+                "/coach/",
+                new AiCoachLaunchContext(
+                    RouteType: AiRouteTypes.Coach,
+                    RuntimeFingerprint: shellSurface.ActiveRuntime?.RuntimeFingerprint,
+                    WorkspaceId: shellSurface.ActiveWorkspaceId?.Value)));
+
+    private void CoachSidecar_OnOpenLaunchRequested(object? sender, EventArgs e)
+        => _ = OpenCoachLaunchUriAsync();
 
     private void CoachSidecar_OnCopyLaunchRequested(object? sender, EventArgs e)
         => _ = CopyCoachLaunchUriAsync();
 
+    private async Task OpenCoachLaunchUriAsync()
+    {
+        string launchUri = _coachSidecarState.LaunchUri;
+        if (string.IsNullOrWhiteSpace(launchUri))
+        {
+            _coachLaunchStatusMessage = "No Coach destination is available for the current shell state.";
+            RebuildCoachSidecarState(_lastCoachShellSurface);
+            ApplyCoachSidecarState();
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = launchUri,
+                UseShellExecute = true
+            });
+            _coachLaunchStatusMessage = "Coach opened in your browser.";
+        }
+        catch (Exception ex)
+        {
+            _coachLaunchStatusMessage = $"Could not open Coach in the browser: {ex.Message}";
+        }
+
+        RebuildCoachSidecarState(_lastCoachShellSurface);
+        ApplyCoachSidecarState();
+        await Task.CompletedTask;
+    }
+
     private async Task CopyCoachLaunchUriAsync()
     {
         string launchUri = _coachSidecarState.LaunchUri;
-        if (string.IsNullOrWhiteSpace(launchUri) || string.Equals(launchUri, "n/a", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(launchUri))
         {
-            _coachLaunchStatusMessage = "No scoped Coach launch link is available for the current shell state.";
+            _coachLaunchStatusMessage = "No Coach destination is available for the current shell state.";
             RebuildCoachSidecarState(_lastCoachShellSurface);
             ApplyCoachSidecarState();
             return;
@@ -157,12 +193,12 @@ public partial class MainWindow
             else
             {
                 await Clipboard.SetTextAsync(launchUri);
-                _coachLaunchStatusMessage = "Scoped Coach launch link copied to the clipboard.";
+                _coachLaunchStatusMessage = "Coach browser link copied to the clipboard.";
             }
         }
         catch (Exception ex)
         {
-            _coachLaunchStatusMessage = $"Could not copy the Coach launch link: {ex.Message}";
+            _coachLaunchStatusMessage = $"Could not copy the Coach browser link: {ex.Message}";
         }
 
         RebuildCoachSidecarState(_lastCoachShellSurface);
@@ -171,4 +207,48 @@ public partial class MainWindow
 
     private static string BuildCoachScopeKey(ShellSurfaceState shellSurface)
         => $"{shellSurface.ActiveWorkspaceId?.Value ?? "none"}|{shellSurface.ActiveRuntime?.RuntimeFingerprint ?? "none"}";
+
+    private static string BuildCoachAbsoluteLaunchUri(string relativeLaunchUri)
+    {
+        if (string.IsNullOrWhiteSpace(relativeLaunchUri))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(relativeLaunchUri, UriKind.Absolute, out Uri? absoluteUri))
+        {
+            return absoluteUri.ToString();
+        }
+
+        string baseUrl = ResolveCoachPublicBaseUrl();
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseUri)
+            || !Uri.TryCreate(baseUri, relativeLaunchUri, out Uri? combinedUri))
+        {
+            return relativeLaunchUri;
+        }
+
+        return combinedUri.ToString();
+    }
+
+    private static string ResolveCoachPublicBaseUrl()
+    {
+        string? configuredPublic = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        if (!string.IsNullOrWhiteSpace(configuredPublic))
+        {
+            return configuredPublic.Trim().TrimEnd('/') + "/";
+        }
+
+        string? configuredApi = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        if (Uri.TryCreate(configuredApi, UriKind.Absolute, out Uri? apiUri))
+        {
+            if (string.Equals(apiUri.Host, "chummer-api", StringComparison.OrdinalIgnoreCase))
+            {
+                return "https://chummer.run/";
+            }
+
+            return $"{apiUri.Scheme}://{apiUri.Authority}/";
+        }
+
+        return "https://chummer.run/";
+    }
 }

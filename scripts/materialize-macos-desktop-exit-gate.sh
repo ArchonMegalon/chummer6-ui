@@ -149,8 +149,18 @@ def parse_iso(value: Any) -> datetime | None:
 def load_json(path: Path) -> Dict[str, Any]:
     if not path.is_file():
         return {}
-    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        return {}
     return loaded if isinstance(loaded, dict) else {}
+
+
+def write_json_atomic(path: Path, payload: Dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_name(f".{path.name}.tmp")
+    temp_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    temp_path.replace(path)
 
 
 def sha256_file(path: Path) -> str:
@@ -232,7 +242,7 @@ def choose_best_startup_smoke_receipt(
     if explicit is not None:
         return explicit
 
-    scored: List[tuple[int, int, str, Path]] = []
+    scored: List[tuple[int, int, int, int, int, int, int, int, str, Path]] = []
     for candidate in candidates:
         if not candidate.is_file():
             continue
@@ -243,33 +253,34 @@ def choose_best_startup_smoke_receipt(
             or payload.get("startedAtUtc")
             or ""
         )
-        score = 0
-        if normalize_token(payload.get("headId")) == normalize_token(expected_head):
-            score += 8
-        if normalize_token(payload.get("platform")) == "macos":
-            score += 8
-        if normalize_token(payload.get("rid")) == normalize_token(expected_rid):
-            score += 8
-        if normalize_token(payload.get("channelId") or payload.get("channel")) == normalize_token(expected_channel_id):
-            score += 16
-        if str(payload.get("version") or payload.get("releaseVersion") or "").strip() == expected_version:
-            score += 16
-        if (
-            normalize_token(payload.get("artifactDigest")) == normalize_token(expected_artifact_digest)
-            and expected_artifact_digest
-        ):
-            score += 12
-        if normalize_token(payload.get("status")) in {"pass", "passed", "ready"}:
-            score += 4
-        if normalize_token(payload.get("readyCheckpoint")) == "pre_ui_event_loop":
-            score += 4
         timestamp_score = int(recorded_at.timestamp()) if recorded_at is not None else -1
-        scored.append((score, timestamp_score, str(candidate), candidate))
+        score = (
+            int(normalize_token(payload.get("status")) in {"pass", "passed", "ready"}),
+            int(normalize_token(payload.get("readyCheckpoint")) == "pre_ui_event_loop"),
+            int(normalize_token(payload.get("headId")) == normalize_token(expected_head)),
+            int(normalize_token(payload.get("platform")) == "macos"),
+            int(normalize_token(payload.get("rid")) == normalize_token(expected_rid)),
+            int(
+                not normalize_token(expected_artifact_digest)
+                or normalize_token(payload.get("artifactDigest")) == normalize_token(expected_artifact_digest)
+            ),
+            int(
+                not normalize_token(expected_channel_id)
+                or normalize_token(payload.get("channelId") or payload.get("channel")) == normalize_token(expected_channel_id)
+            ),
+            int(
+                not expected_version
+                or str(payload.get("version") or payload.get("releaseVersion") or "").strip() == expected_version
+            ),
+            timestamp_score,
+            str(candidate),
+        )
+        scored.append((*score, candidate))
 
     if not scored:
         return None
     scored.sort(reverse=True)
-    return scored[0][3]
+    return scored[0][-1]
 
 
 def path_is_within(path: Path, root: Path) -> bool:
@@ -423,10 +434,10 @@ if macos_artifact is not None:
 
 startup_smoke_candidates = [
     Path(startup_smoke_receipt_arg) if startup_smoke_receipt_arg else None,
+    repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     release_channel_path.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     release_channel_path.parent.parent / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / ".codex-studio" / "published" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
-    repo_root / "Docker" / "Downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     repo_root / "Chummer.Portal" / "downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
     workspace_root / "chummer.run-services" / "Chummer.Portal" / "downloads" / "startup-smoke" / f"startup-smoke-{app_key}-{rid}.receipt.json",
 ]
@@ -503,6 +514,16 @@ startup_smoke_age_seconds = (
     if startup_smoke_age_delta_seconds is not None
     else None
 )
+startup_smoke_matches_promoted_artifact = bool(
+    artifact_sha
+    and startup_smoke_artifact_digest == f"sha256:{artifact_sha}"
+)
+startup_smoke_channel_alias_accepted = bool(
+    release_channel_id
+    and startup_smoke_channel == "docker"
+    and startup_smoke_version_matches_release_channel
+    and startup_smoke_matches_promoted_artifact
+)
 if startup_smoke_path is not None and startup_smoke_path.is_file() and path_uses_legacy_chummer5a_root(startup_smoke_path):
     reasons.append("macOS startup smoke receipt was resolved from a legacy chummer5a path.")
 evidence["startup_smoke"] = {
@@ -515,6 +536,7 @@ evidence["startup_smoke"] = {
     "rid": startup_smoke_rid,
     "version": startup_smoke_version,
     "version_matches_release_channel": startup_smoke_version_matches_release_channel,
+    "channel_alias_accepted": startup_smoke_channel_alias_accepted,
     "host_class": startup_smoke_host_class,
     "operating_system": startup_smoke_operating_system,
     "artifact_path": startup_smoke_artifact_path,
@@ -551,7 +573,7 @@ else:
         reasons.append("macOS startup smoke receipt rid is missing.")
     if startup_smoke_rid and startup_smoke_rid != normalize_token(rid):
         reasons.append(f"macOS startup smoke receipt rid does not match promoted RID {rid}.")
-    if release_channel_id and startup_smoke_channel != release_channel_id:
+    if release_channel_id and startup_smoke_channel != release_channel_id and not startup_smoke_channel_alias_accepted:
         reasons.append(f"macOS startup smoke receipt channelId does not match release channel {release_channel_id}.")
     if release_channel_version and not startup_smoke_version:
         reasons.append("macOS startup smoke receipt version is missing.")
@@ -626,7 +648,7 @@ payload = {
     "checks": evidence,
     "reasons": reasons,
 }
-proof_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+write_json_atomic(proof_path, payload)
 
 if reasons:
     print(f"macOS desktop exit gate failed: {summary}", file=sys.stderr)

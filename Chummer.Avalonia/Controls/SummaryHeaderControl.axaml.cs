@@ -20,16 +20,16 @@ public partial class SummaryHeaderControl : UserControl
     private const string SupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
     private const string SaveAvailableDecisionSummary = "Review restore before replacing local work. Save first if needed.";
     private const string SaveUnavailableDecisionSummary = "Review restore before replacing local work. Keep local work or open support.";
-    private const string SaveAvailableStatus = "Save local work is available before restore or conflict review changes the desktop state.";
-    private const string SaveUnavailableStatus = "Save local work is unavailable because no dirty local workspace is active; keep local work, review Campaign Workspace, or open Workspace Support.";
-    private const string KeepLocalStatus = "Kept local work visible; no restore, stale-state refresh, or conflict choice replaced desktop state.";
-    private const string SaveRequestedStatus = "Save local work requested before any restore or conflict review changes desktop state.";
-    private const string SavedLocalWorkStatus = "Local work saved before restore review; keep local work visible, review Campaign Workspace, or open Workspace Support before any replacement.";
-    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace to review restore continuation, stale state, and conflict choices before replacing local work.";
-    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.";
+    private const string SaveAvailableStatus = "Save local work is available before restore review changes this desktop copy.";
+    private const string SaveUnavailableStatus = "Save local work is unavailable because no dirty local workspace is active.";
+    private const string KeepLocalStatus = "Keep Local leaves this desktop copy in place while you review restore choices.";
+    private const string SaveRequestedStatus = "Saving local work before you review restore options.";
+    private const string SavedLocalWorkStatus = "Local work saved. Keep Local, review Campaign Workspace, or open Workspace Support before replacing anything.";
+    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace so you can compare restore choices before changing this copy.";
+    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with your restore details already attached.";
 
     private readonly Dictionary<string, Button> _navigationTabButtons = new(StringComparer.Ordinal);
-    private WorkspaceStripState _workspaceStripState = new("Workspace: none");
+    private WorkspaceStripState _workspaceStripState = new("No character open");
     private SummaryHeaderState _state = new(
         NavigationTabsHeading: string.Empty,
         NavigationTabs: [],
@@ -187,34 +187,34 @@ public partial class SummaryHeaderControl : UserControl
 
     private void BuildRestoreActionButtons()
     {
-        ToolTip.SetTip(KeepLocalWorkButton, "Keep local work visible before any restore review changes desktop state.");
-        ToolTip.SetTip(SaveLocalWorkButton, "Save local work before reviewing restore or conflict choices.");
-        ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Review Campaign Workspace restore choices before any replacement.");
-        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open support with restore, stale-state, and conflict-choice context.");
+        ToolTip.SetTip(KeepLocalWorkButton, "Keep Local keeps this desktop copy visible while you review restore choices.");
+        ToolTip.SetTip(SaveLocalWorkButton, "Save local work before you review restore or conflict choices.");
+        ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Open Campaign Workspace to compare restore choices before replacing anything.");
+        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open Workspace Support with your restore details already attached.");
     }
 
     private void ApplyAutomationProperties()
     {
         AutomationProperties.SetName(RestoreContinuityStatusBorder, "Restore continuity decision gate");
-        AutomationProperties.SetHelpText(RestoreContinuityStatusBorder, "Primary Avalonia desktop route keeps restore continuation, stale state, and conflict choices visible before replacement.");
+        AutomationProperties.SetHelpText(RestoreContinuityStatusBorder, "The desktop app keeps restore and conflict details visible before anything can replace your local copy.");
         AutomationProperties.SetName(RestoreContinuityStatusText, "Restore continuation status");
         AutomationProperties.SetName(StaleStateStatusText, "Stale state visibility status");
         AutomationProperties.SetName(ConflictChoiceStatusText, "Conflict choice status");
         AutomationProperties.SetName(RestoreContinuityDecisionText, "Restore decision guard");
-        AutomationProperties.SetHelpText(RestoreContinuityDecisionText, "Chummer will not replace local work automatically; review the restore, stale-state, and conflict-choice posture first.");
+        AutomationProperties.SetHelpText(RestoreContinuityDecisionText, "Chummer does not replace your local work automatically; review the restore choices first.");
         AutomationProperties.SetName(RestoreContinuityDecisionOrderText, "Restore decision order");
-        AutomationProperties.SetHelpText(RestoreContinuityDecisionOrderText, "Use the visible restore choices in order: keep local, save when available, review Campaign Workspace, then open support.");
+        AutomationProperties.SetHelpText(RestoreContinuityDecisionOrderText, "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then open Workspace Support.");
         AutomationProperties.SetName(RestoreContinuityLocalAuthorityText, "Restore local authority");
-        AutomationProperties.SetHelpText(RestoreContinuityLocalAuthorityText, "The primary desktop route keeps local work authoritative until the user chooses a review or support action.");
+        AutomationProperties.SetHelpText(RestoreContinuityLocalAuthorityText, "Your local desktop copy stays authoritative until you choose Campaign Workspace review or Workspace Support.");
         AutomationProperties.SetName(RestoreContinuityReplacementGuardText, "Restore replacement guard");
-        AutomationProperties.SetHelpText(RestoreContinuityReplacementGuardText, "There is no automatic or one-click restore replacement path on the primary desktop route.");
+        AutomationProperties.SetHelpText(RestoreContinuityReplacementGuardText, "There is no automatic or one-click replacement from this desktop route.");
         AutomationProperties.SetName(RestoreContinuitySupportHandoffText, "Restore support handoff");
-        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace Support receives restore, stale-state, conflict-choice, and local-anchor context before replacement.");
-        AutomationProperties.SetName(KeepLocalWorkButton, "Keep local work");
+        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace Support opens with your restore, stale-state, conflict-choice, and local copy context.");
+        AutomationProperties.SetName(KeepLocalWorkButton, "Keep Local");
         AutomationProperties.SetName(SaveLocalWorkButton, "Save local work before restore review");
-        AutomationProperties.SetName(ReviewCampaignWorkspaceButton, "Review campaign workspace restore choices");
-        AutomationProperties.SetName(OpenWorkspaceSupportButton, "Open workspace support for restore conflict");
-        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Open support with restore, stale-state, and conflict-choice context.");
+        AutomationProperties.SetName(ReviewCampaignWorkspaceButton, "Review Campaign Workspace restore choices");
+        AutomationProperties.SetName(OpenWorkspaceSupportButton, "Open Workspace Support");
+        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Open Workspace Support with your restore details already attached.");
         AutomationProperties.SetName(RestoreContinuityActionStatusText, "Restore decision action status");
     }
 

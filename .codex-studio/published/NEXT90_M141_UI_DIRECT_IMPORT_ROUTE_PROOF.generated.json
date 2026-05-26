@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-05-19T09:36:45Z",
+  "generatedAt": "2026-05-26T20:21:17Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
-  "channelId": "preview",
-  "channel": "preview",
+  "channelId": "public_stable",
+  "channel": "public_stable",
   "releaseVersion": "run-20260518-220935",
   "version": "run-20260518-220935",
   "evidence": {

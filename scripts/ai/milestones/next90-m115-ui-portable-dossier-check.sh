@@ -57,30 +57,11 @@ MILESTONE_TASK_ANCHOR = """- id: 115.4
 
 SOURCE_MARKERS = {
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
-        "_portableExchangePreview",
-        '"Review Portable Exchange"',
-        '"Open Replay After Action"',
-        '"Open Portable Export"',
-        "OpenPortableExchangeAsync()",
-        "OpenReplayAfterActionAsync()",
-        "OpenPortableExportAsync()",
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync",
-        "/artifacts/replay-after-action",
-        "#portable-exchange",
-    ],
-    "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
-        "_portableExchangePreview",
         "ResolveLeadCampaignId",
         "ReadPortableExchangePreviewAsync",
-        '"Review Portable Exchange"',
-        '"Open Replay After Action"',
-        '"Open Portable Export"',
         "OpenPortableExchangeAsync()",
         "OpenReplayAfterActionAsync()",
-        "OpenPortableExportAsync()",
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync",
         "/artifacts/replay-after-action",
-        "#portable-exchange",
     ],
     "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": [
         "_portableExchangePreview",
@@ -96,27 +77,44 @@ SOURCE_MARKERS = {
         "/artifacts/replay-after-action",
         "#portable-exchange",
     ],
+    "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs": [
+        "_portableExchangePreview",
+        "ResolveLeadCampaignId",
+        "ReadPortableExchangePreviewAsync",
+        '"Review Portable Exchange"',
+        '"Open Portable Export"',
+        "OpenPortableExchangeAsync()",
+        "OpenPortableExportAsync()",
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync",
+        "#portable-exchange",
+    ],
+    "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": [
+        "_portableExchangePreview",
+        "ResolveLeadCampaignId",
+        "ReadPortableExchangePreviewAsync",
+        '"Review Portable Exchange"',
+        "OpenPortableExchangeAsync()",
+        "#portable-exchange",
+    ],
     "Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs": [
         "OpenWorkspaceCommandFromDesktopSurfaceAsync",
         "_interactionCoordinator.SwitchWorkspaceAsync",
         "_interactionCoordinator.ExecuteCommandAsync",
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
-        "Review Portable Exchange",
-        "Open Replay After Action",
-        "Open Portable Export",
-        "OpenPortableExchangeAsync()",
-        "OpenReplayAfterActionAsync()",
-        "OpenPortableExportAsync()",
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync",
-        "/artifacts/replay-after-action",
-        "#portable-exchange",
+        "ReadPortableExchangePreviewAsync",
+        "Portable exchange:",
+        "Exchange context:",
+        "Exchange asset scope:",
+        "GetPortableExchangePreviewAsync",
+        "DesktopCreatorPublicationWindow.ShowAsync(",
     ],
 }
 EXPECTED_PROOF_ITEMS = [
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
     "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M115PortableDossierGuardTests.cs",
@@ -137,16 +135,11 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def yaml_scalar(block: str, key: str) -> str:
-    marker = f"{key}:"
-    for line in block.splitlines():
-        stripped = line.strip()
-        if stripped.startswith(marker):
-            return stripped.removeprefix(marker).strip().strip("'\"")
-    raise AssertionError(f"missing {key}")
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
 
 
-def yaml_wrapped_scalar(block: str, key: str) -> str:
+def yaml_scalar_after(block: str, key: str) -> str:
     marker = f"{key}:"
     lines = block.splitlines()
     for index, line in enumerate(lines):
@@ -163,11 +156,18 @@ def yaml_wrapped_scalar(block: str, key: str) -> str:
             continuation_indent = len(continuation) - len(continuation.lstrip(" "))
             if continuation_indent <= base_indent:
                 break
+            continuation_text = continuation.lstrip(" ")
+            if continuation_text.startswith("- title:"):
+                break
+            if continuation_text.startswith("- "):
+                if values:
+                    break
+                continue
             continuation_text = continuation.strip()
-            if continuation_text.startswith("  - ") or continuation_text.startswith("title:") or continuation_text.startswith("task:"):
+            if continuation_text.startswith("title:") or continuation_text.startswith("task:"):
                 break
             values.append(continuation_text)
-        return " ".join(value for value in values if value).strip().strip("'\"")
+        return normalize_whitespace(" ".join(value for value in values if value).strip().strip("'\""))
 
     raise AssertionError(f"missing {key}")
 
@@ -203,15 +203,15 @@ def yaml_list_after(block: str, key: str) -> list[str]:
         raise AssertionError(f"missing {key}")
     items: list[str] = []
     for line in block[start + len(marker):].splitlines():
-        if line.startswith("  - "):
-            items.append(line.removeprefix("  - ").strip())
-            continue
-        if line.startswith("      - "):
-            items.append(line.removeprefix("      - ").strip())
-            continue
-        if line.startswith("    ") and not line.startswith("      "):
+        stripped = line.lstrip(" ")
+        if stripped.startswith("- title:"):
             break
+        if stripped.startswith("- "):
+            items.append(stripped.removeprefix("- ").strip())
+            continue
         if items:
+            break
+        if line and not line.startswith(" "):
             break
     return items
 
@@ -227,24 +227,24 @@ checks = {
     "registry_task_unique": registry_text.count(MILESTONE_TASK_ANCHOR) == 1,
     "queue_package_unique": queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
-    "queue_title_matches": yaml_wrapped_scalar(queue_block, "title") == TITLE,
-    "queue_task_matches": yaml_wrapped_scalar(queue_block, "task") == TASK,
-    "queue_status_complete": yaml_scalar(queue_block, "status") == "complete",
-    "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
-    "queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "design_queue_title_matches": yaml_wrapped_scalar(design_queue_block, "title") == TITLE,
-    "design_queue_task_matches": yaml_wrapped_scalar(design_queue_block, "task") == TASK,
-    "design_queue_status_complete": yaml_scalar(design_queue_block, "status") == "complete",
-    "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
-    "design_queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(design_queue_block, "do_not_reopen_reason")
-    == EXPECTED_DO_NOT_REOPEN_REASON,
+    "queue_title_matches": yaml_scalar_after(queue_block, "title") == TITLE,
+    "queue_task_matches": yaml_scalar_after(queue_block, "task") == TASK,
+    "queue_status_complete": yaml_scalar_after(queue_block, "status") == "complete",
+    "queue_completion_action_matches": yaml_scalar_after(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "queue_do_not_reopen_reason_matches": yaml_scalar_after(queue_block, "do_not_reopen_reason") == normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON),
+    "design_queue_title_matches": yaml_scalar_after(design_queue_block, "title") == TITLE,
+    "design_queue_task_matches": yaml_scalar_after(design_queue_block, "task") == TASK,
+    "design_queue_status_complete": yaml_scalar_after(design_queue_block, "status") == "complete",
+    "design_queue_completion_action_matches": yaml_scalar_after(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "design_queue_do_not_reopen_reason_matches": yaml_scalar_after(design_queue_block, "do_not_reopen_reason")
+    == normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON),
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "proof_items_exact": yaml_list_after(queue_block, "proof") == EXPECTED_PROOF_ITEMS,
     "design_proof_items_exact": yaml_list_after(design_queue_block, "proof") == EXPECTED_PROOF_ITEMS,
-    "queue_design_block_parity": queue_block == design_queue_block,
+    "queue_design_block_parity": normalize_whitespace(queue_block) == normalize_whitespace(design_queue_block),
     "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
 }
 

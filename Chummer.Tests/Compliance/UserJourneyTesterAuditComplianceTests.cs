@@ -34,6 +34,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "tester_shard_id and fix_shard_id must both be present and different");
         StringAssert.Contains(scriptText, "used_internal_apis=false");
         StringAssert.Contains(scriptText, "PNG_SIGNATURE");
+        StringAssert.Contains(scriptText, "MIN_SCREENSHOT_BYTES = 1024");
+        StringAssert.Contains(scriptText, "screenshot is too small to count as credible review evidence");
         StringAssert.Contains(scriptText, "CHUMMER_USER_JOURNEY_TESTER_RUN_LINUX_GATE");
         StringAssert.Contains(scriptText, "linux_gate_temp_path=\"\"");
         StringAssert.Contains(scriptText, "trap cleanup EXIT");
@@ -56,10 +58,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
 
         StringAssert.Contains(worklistText, "| B16 Adversarial user-journey tester gate | done |");
         StringAssert.Contains(worklistText, "| WL-221 | done | P1 | Publish the adversarial Linux user-journey tester gate");
-        Assert.IsTrue(
-            worklistText.Contains("Repo-local live queue: none.", System.StringComparison.Ordinal) ||
-            worklistText.Contains("Repo-local live queue: active (`WL-214`).", System.StringComparison.Ordinal),
-            "Worklist queue truth may stay empty or keep the bounded WL-214 mirror-hygiene slice active.");
+        StringAssert.Contains(queueText, "items: []");
+        StringAssert.Contains(queueText, "source_queue_fingerprint:");
 
         StringAssert.Contains(milestoneScriptText, "B16 user-journey tester milestone row");
         StringAssert.Contains(milestoneScriptText, "WL-221 runnable backlog entry");

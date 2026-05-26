@@ -7,6 +7,7 @@ namespace Chummer.Avalonia.Controls;
 
 public partial class CoachSidecarControl : UserControl
 {
+    public event EventHandler? OpenLaunchRequested;
     public event EventHandler? CopyLaunchRequested;
 
     public CoachSidecarControl()
@@ -16,38 +17,33 @@ public partial class CoachSidecarControl : UserControl
 
     public void SetState(CoachSidecarPaneState state)
     {
-        CoachStatusText.Text = $"Status: {state.Status}";
-        CoachPromptPolicyText.Text = $"Prompt Policy: {state.PromptPolicy}";
-        CoachBudgetText.Text = $"Coach Budget: {state.BudgetSummary}";
-        CoachWorkspaceText.Text = $"Workspace: {state.WorkspaceId}";
-        CoachRuntimeText.Text = $"Runtime: {state.RuntimeFingerprint}";
-        CoachLaunchUriTextBox.Text = state.LaunchUri;
         CoachLaunchStatusText.Text = string.IsNullOrWhiteSpace(state.LaunchStatusMessage)
-            ? "Copy the scoped /coach link to continue in the dedicated Coach head."
+            ? "Open Coach in your browser, or copy the link if you need to hand it off."
             : state.LaunchStatusMessage;
-        CopyCoachLaunchButton.IsEnabled = !string.IsNullOrWhiteSpace(state.LaunchUri)
-            && !string.Equals(state.LaunchUri, "n/a", StringComparison.Ordinal);
+        OpenCoachLaunchButton.IsEnabled = !string.IsNullOrWhiteSpace(state.LaunchUri);
+        CopyCoachLaunchButton.IsEnabled = !string.IsNullOrWhiteSpace(state.LaunchUri);
         CoachErrorText.Text = string.IsNullOrWhiteSpace(state.ErrorMessage)
-            ? "(none)"
+            ? string.Empty
             : $"Error: {state.ErrorMessage}";
-        ProviderHealthList.ItemsSource = state.Providers;
-        AuditList.ItemsSource = state.Audits;
         ToolTip.SetTip(
             this,
             string.Join(
                 Environment.NewLine,
                 new[]
                 {
-                    CoachStatusText.Text,
-                    CoachPromptPolicyText.Text,
-                    CoachBudgetText.Text,
-                    CoachWorkspaceText.Text,
-                    CoachRuntimeText.Text,
+                    $"Status: {state.Status}",
+                    $"Prompt policy: {state.PromptPolicy}",
+                    $"Budget: {state.BudgetSummary}",
+                    $"Workspace: {state.WorkspaceId}",
+                    $"Runtime: {state.RuntimeFingerprint}",
+                    state.LaunchUri,
                     CoachLaunchStatusText.Text,
                     CoachErrorText.Text
-                }.Where(static line => !string.IsNullOrWhiteSpace(line) && !string.Equals(line, "(none)", StringComparison.Ordinal))));
-        ToolTip.SetTip(CoachLaunchUriTextBox, state.LaunchUri);
+                }.Where(static line => !string.IsNullOrWhiteSpace(line))));
     }
+
+    private void OpenCoachLaunchButton_OnClick(object? sender, RoutedEventArgs e)
+        => OpenLaunchRequested?.Invoke(this, EventArgs.Empty);
 
     private void CopyCoachLaunchButton_OnClick(object? sender, RoutedEventArgs e)
         => CopyLaunchRequested?.Invoke(this, EventArgs.Empty);
@@ -67,11 +63,11 @@ public sealed record CoachSidecarPaneState(
 {
     public static CoachSidecarPaneState Empty { get; } = new(
         Status: "unloaded",
-        PromptPolicy: "n/a",
-        BudgetSummary: "n/a",
-        WorkspaceId: "n/a",
-        RuntimeFingerprint: "n/a",
-        LaunchUri: "n/a",
+        PromptPolicy: "Policy not loaded yet",
+        BudgetSummary: "Budget not loaded yet",
+        WorkspaceId: "No workspace attached",
+        RuntimeFingerprint: "No runtime fingerprint yet",
+        LaunchUri: string.Empty,
         LaunchStatusMessage: null,
         ErrorMessage: null,
         Providers: [],
@@ -87,11 +83,7 @@ public sealed record CoachProviderDisplayItem(
     string CredentialSummary,
     string BindingSummary,
     string LastSuccess,
-    string LastFailure)
-{
-    public override string ToString()
-        => $"{DisplayName} [{CircuitState}] · {ProviderId} · {AdapterKind} · transport {TransportSummary} · keys {CredentialSummary} · {BindingSummary} · success {LastSuccess} · failure {LastFailure}";
-}
+    string LastFailure);
 
 public sealed record CoachAuditDisplayItem(
     string ConversationId,
@@ -108,18 +100,4 @@ public sealed record CoachAuditDisplayItem(
     string CacheStatus,
     string RouteDecision,
     string Coverage,
-    string Updated)
-{
-    public override string ToString()
-        => $"{ConversationId} · {RuntimeFingerprint}"
-            + (string.Equals(LaunchUri, "n/a", StringComparison.Ordinal) ? string.Empty : $" · launch {LaunchUri}")
-            + $" · {CacheStatus} · {Summary}"
-            + (string.IsNullOrWhiteSpace(FlavorLine) ? string.Empty : $" · flavor {FlavorLine}")
-            + (string.Equals(BudgetSummary, "n/a", StringComparison.Ordinal) ? string.Empty : $" · budget {BudgetSummary}")
-            + (string.Equals(StructuredSummary, "none", StringComparison.Ordinal) ? string.Empty : $" · structured {StructuredSummary}")
-            + (string.Equals(RecommendationSummary, "none", StringComparison.Ordinal) ? string.Empty : $" · recommendations {RecommendationSummary}")
-            + (string.Equals(EvidenceSummary, "none", StringComparison.Ordinal) ? string.Empty : $" · evidence {EvidenceSummary}")
-            + (string.Equals(RiskSummary, "none", StringComparison.Ordinal) ? string.Empty : $" · risks {RiskSummary}")
-            + (string.Equals(SourceSummary, "0 sources / 0 action drafts", StringComparison.Ordinal) ? string.Empty : $" · sources {SourceSummary}")
-            + $" · {RouteDecision} · {Coverage} · updated {Updated}";
-}
+    string Updated);

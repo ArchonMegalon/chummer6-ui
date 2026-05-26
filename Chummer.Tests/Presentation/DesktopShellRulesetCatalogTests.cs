@@ -221,7 +221,7 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [TestMethod]
-    public void DesktopShell_summary_header_stays_tab_only_without_runtime_copy_or_inline_inspector_button()
+    public void DesktopShell_summary_header_keeps_runtime_summary_inline_and_only_exposes_inspector_as_a_disabled_button()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -257,9 +257,11 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual(0, cut.FindAll("#summaryRuntimeInspect").Count);
+            Assert.AreEqual(1, cut.FindAll("#summaryRuntimeInspect").Count);
             Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count);
         });
+
+        Assert.IsFalse(string.IsNullOrWhiteSpace(cut.Find("#summaryRuntime").GetAttribute("value")));
 
         Assert.IsNull(presenter.ExecutedCommandId);
     }

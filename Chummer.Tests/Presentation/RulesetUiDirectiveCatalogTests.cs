@@ -123,7 +123,7 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr5Resume, "SR5 character");
         StringAssert.Contains(sr5Resume, "Apex / Ghost");
         StringAssert.Contains(sr6Open, "SR6 runner");
-        StringAssert.Contains(sr4FollowThrough, "SR4 import details");
+        StringAssert.Contains(sr4FollowThrough, "SR4 intake details");
         StringAssert.Contains(sr6WorkspaceFollowThrough, "SR6 runner details");
         Assert.AreEqual("SR5", sr5Prefix);
     }

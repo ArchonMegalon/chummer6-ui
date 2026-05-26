@@ -14,11 +14,10 @@ dialog_factory_path="$repo_root/Chummer.Presentation/Overview/DesktopDialogFacto
 desktop_dialog_window_path="$repo_root/Chummer.Avalonia/DesktopDialogWindow.axaml.cs"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 verify_script_path="$repo_root/scripts/ai/verify.sh"
-runtime_test_marker="Runtime_backed_sr4_"
-
 mkdir -p "$(dirname "$receipt_path")"
 
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name~$runtime_test_marker" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6" -m:1 -v minimal >/dev/null
 
 python3 - <<'PY' \
   "$receipt_path" \

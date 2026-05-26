@@ -237,7 +237,7 @@ internal sealed class DesktopSupportCaseWindow : Window
             InstallReadinessSummary: "This preview install is already carrying the reporter-ready fix posture, so the last visible closure step stays grounded to this exact desktop copy.",
             StatusLabel: "Released",
             StageLabel: "Released",
-            UpdatedLabel: $"{now.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+            UpdatedLabel: FormatDisplayTime(now),
             FixedReleaseLabel: "preview smoke",
             AffectedInstallSummary: "This preview case stays attached to the linked avalonia desktop copy.",
             FollowUpLaneSummary: "Follow-up stays grounded to the signed-in support lane when the live account surface is reachable again.",
@@ -255,7 +255,7 @@ internal sealed class DesktopSupportCaseWindow : Window
                 "Release progress: The preview fix already reached the reporter-ready release lane for this desktop path.",
                 "Fix availability: preview smoke is the tracked fix target for this desktop support lane.",
                 "Verification: Use the signed-in support lane to record final fix confirmation once the live account surface is available again.",
-                $"Updated: {now.ToUniversalTime():yyyy-MM-dd HH:mm} UTC"
+                $"Updated: {FormatDisplayTime(now)}"
             ]);
     }
 
@@ -398,7 +398,7 @@ internal sealed class DesktopSupportCaseWindow : Window
             {
                 lines.Add(F(
                     "desktop.support_case.context.timeline_entry",
-                    entry.OccurredAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm"),
+                    FormatDisplayTime(entry.OccurredAtUtc),
                     HumanizeToken(entry.Status),
                     entry.Summary));
 
@@ -424,7 +424,7 @@ internal sealed class DesktopSupportCaseWindow : Window
                     "desktop.support_case.context.attachment",
                     attachment.FileName,
                     FormatBytes(attachment.SizeBytes),
-                    attachment.UploadedAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                    FormatDisplayTime(attachment.UploadedAtUtc)));
             }
         }
 
@@ -700,6 +700,9 @@ internal sealed class DesktopSupportCaseWindow : Window
 
         return $"{sizeBytes / (1024d * 1024d):0.#} MB";
     }
+
+    private static string FormatDisplayTime(DateTimeOffset value)
+        => value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {

@@ -57,7 +57,12 @@ families = [item for item in (ledger.get("requiredFamilies") or []) if isinstanc
 
 test_corpus = "\n".join(
     path.read_text(encoding="utf-8")
-    for path in [dual_head_tests_path, compliance_tests_path, ui_gate_tests_path]
+    for path in [
+        dual_head_tests_path,
+        compliance_tests_path,
+        ui_gate_tests_path,
+        repo_root / "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
+    ]
     if path.is_file()
 )
 

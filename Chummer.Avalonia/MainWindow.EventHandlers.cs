@@ -176,6 +176,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopInstallLinkingWindow.ShowAsync(this, "avalonia");
+                ApplyInstallLinkingChrome(DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia"));
                 MainWindowFeedbackCoordinator.ShowInstallLinkingReviewed(_controls.ToolStrip);
             },
             "open install linking");

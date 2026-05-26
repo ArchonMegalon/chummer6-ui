@@ -55,7 +55,7 @@
         "\"using Rule of 6\"",
         "\"Hit on 4, 5, or 6\"",
         "\"Rushed Job (Glitch on 1 or 2)\"",
-        "BuildLegacyInlineNumericUpDown"
+        "BuildLegacyInlineTextBox"
       ],
       "requiredTestMarkers": [
         "Runtime_backed_sr4_dice_roller_preserves_chummer4_checkbox_copy",

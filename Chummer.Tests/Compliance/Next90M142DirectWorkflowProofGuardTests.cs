@@ -87,22 +87,25 @@ public sealed class Next90M142DirectWorkflowProofGuardTests
             AssertAllBooleansAreTrue(sourceCheck.Value);
         }
 
+        string publishedRepoRoot = Directory.Exists(Path.Combine(Directory.GetParent(repoRoot)?.FullName ?? repoRoot, "chummer6-ui"))
+            ? Path.Combine(Directory.GetParent(repoRoot)?.FullName ?? repoRoot, "chummer6-ui")
+            : repoRoot;
         CollectionAssert.AreEquivalent(
             new[]
             {
-                Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M142DirectWorkflowProofGuardTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m142-ui-direct-workflow-proof-check.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "chummer5a-screenshot-review-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "verify.sh"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "SECTION_HOST_RULESET_PARITY.generated.json"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Compliance", "Next90M142DirectWorkflowProofGuardTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "next90-m142-ui-direct-workflow-proof-check.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "chummer5a-screenshot-review-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "verify.sh"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "SECTION_HOST_RULESET_PARITY.generated.json"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"),
             },
             ReadStringArray(evidence.GetProperty("proofFiles")));
         CollectionAssert.AreEquivalent(

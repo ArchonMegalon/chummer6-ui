@@ -1,0 +1,93 @@
+{
+  "contract_name": "chummer6-ui.next90_m109_ui_build_explain_artifacts",
+  "evidence": {
+    "allowedPaths": [
+      "Chummer.Avalonia",
+      "Chummer.Desktop.Runtime",
+      "Chummer.Tests",
+      "scripts"
+    ],
+    "closureGuard": {
+      "canonicalQueueComplete": true,
+      "canonicalRegistryComplete": true,
+      "completionActionPinned": true,
+      "doNotReopenReasonPinned": true,
+      "reason": "Canonical registry and successor queue both mark the M109 UI package complete at da261bb7; rerun this verifier as proof instead of reopening the closed desktop explain-companion package.",
+      "status": "closed_and_verified"
+    },
+    "designQueueChecks": {
+      "allowed_paths_exact": true,
+      "completion_action_verify_closed_package_only": true,
+      "do_not_reopen_reason_matches": true,
+      "frontier_matches": true,
+      "landed_commit_matches": true,
+      "milestone_matches": true,
+      "owned_surfaces_exact": true,
+      "package_present": true,
+      "queue_proof_items_exact": true,
+      "repo_matches": true,
+      "status_complete": true,
+      "task_matches": true,
+      "title_matches": true,
+      "wave_matches": true
+    },
+    "directProofCommand": "bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh",
+    "frontierId": 4240255582,
+    "landedCommit": "da261bb7",
+    "localRepoChecks": {
+      "compliance_wiring_present": true,
+      "guard_script_present": true,
+      "guard_test_present": true,
+      "historical_finish_repo_proof_pinned": true,
+      "historical_landed_commit_resolves": false,
+      "verify_wiring_present": true
+    },
+    "milestoneId": 109,
+    "ownedSurfaces": [
+      "build_explain:artifact_launch",
+      "explain_receipts:desktop"
+    ],
+    "packageId": "next90-m109-ui-build-explain-artifacts",
+    "queueChecks": {
+      "allowed_paths_exact": true,
+      "completion_action_verify_closed_package_only": true,
+      "do_not_reopen_reason_matches": true,
+      "frontier_matches": true,
+      "landed_commit_matches": true,
+      "milestone_matches": true,
+      "owned_surfaces_exact": true,
+      "package_present": true,
+      "queue_proof_items_exact": true,
+      "repo_matches": true,
+      "status_complete": true,
+      "task_matches": true,
+      "title_matches": true,
+      "wave_matches": true
+    },
+    "queueMirrorChecks": {
+      "design_queue_package_unique": true,
+      "fleet_queue_package_unique": true,
+      "fleet_queue_points_to_design_queue": true,
+      "package_blocks_match": true
+    },
+    "registryChecks": {
+      "direct_proof_command_recorded": true,
+      "landed_commit_matches": true,
+      "milestone_present": true,
+      "owner_matches": true,
+      "status_complete": true,
+      "task_present": true,
+      "title_matches": true
+    },
+    "repo": "chummer6-ui",
+    "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests\" --no-restore",
+    "task": "Make desktop compare, import, and blocker surfaces open inspectable explain companions instead of plain receipts alone.",
+    "title": "Launch build explain companions from compare, import, and blocker surfaces",
+    "wave": "W9",
+    "workTaskId": "109.2"
+  },
+  "generatedAt": "2026-05-26T20:29:11Z",
+  "status": "pass",
+  "summary": "M109 desktop explain companions remain canonically closed and locally guarded against reopen work in the active chummer6-ui repo.",
+  "unresolved": []
+}

@@ -62,16 +62,16 @@
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-before.png",
-            "sha256": "7c96425767a6d8437be29e4e84a61d17804e26b35316cae8a47d989b56eb43ef",
-            "size_bytes": 50,
+            "sha256": "a02bab49bbf889f8b040d27f4c6e12c5e7f64e894c60845aedca6f949fae94ed",
+            "size_bytes": 111468,
             "within_repo_root": true
           },
           {
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/master_index_search_focus_stability-after.png",
-            "sha256": "a0cb84902e1e46ffa024832a300b83ebfa6e5e45ef8be926c68cb122f16927da",
-            "size_bytes": 49,
+            "sha256": "3214c96f8fcaa2d0f61843564d037e50a877f363b41c4da2e8a34d493fb471b2",
+            "size_bytes": 114269,
             "within_repo_root": true
           }
         ],
@@ -95,16 +95,16 @@
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-before.png",
-            "sha256": "9398828bb1e824e9b6de171b703c36f833ccd3d351f2b5e178298350f8932c35",
-            "size_bytes": 51,
+            "sha256": "b224261e53622a2e8f7ee6d45b49339bec44e4c5551492ebdef2dc9c3e5c2b72",
+            "size_bytes": 34451,
             "within_repo_root": true
           },
           {
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/file_new_character_visible_workspace-after.png",
-            "sha256": "2997e8e853f60d14a8e0cfd61627cbd28e20b8b018c90f57fc5895914fd7da68",
-            "size_bytes": 50,
+            "sha256": "4cf776997e03601b172a461a8d6991255da996450fbf8e915e6c3779d726e158",
+            "size_bytes": 142308,
             "within_repo_root": true
           }
         ],
@@ -126,16 +126,16 @@
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-before.png",
-            "sha256": "07489f7d9a041faaff6b456575d82d1e7a29adf36b7603d006744c8916d19037",
-            "size_bytes": 50,
+            "sha256": "4cf776997e03601b172a461a8d6991255da996450fbf8e915e6c3779d726e158",
+            "size_bytes": 142308,
             "within_repo_root": true
           },
           {
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/minimal_character_build_save_reload-after.png",
-            "sha256": "c62541e24ff10f547631947c4deb1cb107a6ff5e9bb2bdb721252fae53d5a572",
-            "size_bytes": 49,
+            "sha256": "1364aca8b444f75796d75c0e445ef05de76e2fe39b2fb43f100f9b4ad7c455d8",
+            "size_bytes": 134532,
             "within_repo_root": true
           }
         ],
@@ -157,16 +157,16 @@
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-before.png",
-            "sha256": "a5bae7ea7f31466b8553c6c8445bcad32cd5758430d92533d58074e2b7a8279b",
-            "size_bytes": 38,
+            "sha256": "1364aca8b444f75796d75c0e445ef05de76e2fe39b2fb43f100f9b4ad7c455d8",
+            "size_bytes": 134532,
             "within_repo_root": true
           },
           {
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/major_navigation_sanity-after.png",
-            "sha256": "95e5856edda46fb357467921f169639b24de0c2868f3f22e1e1f13aa999925c1",
-            "size_bytes": 37,
+            "sha256": "c75478489dd560151dfca6444ceca6ab0b68f9819c8242378df49e15b4a7f779",
+            "size_bytes": 125163,
             "within_repo_root": true
           }
         ],
@@ -188,16 +188,16 @@
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-before.png",
-            "sha256": "f253ef8880e1beb7a4944074ad8408c9aaafe0acea2017c65eeb514cd8b2dc0b",
-            "size_bytes": 41,
+            "sha256": "553452ef56545b69782f547c42d2c4c87deb9f6ea05f7f4fa7b5b8130b27fa41",
+            "size_bytes": 114237,
             "within_repo_root": true
           },
           {
             "exists": true,
             "is_png": true,
             "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/user-journey-tester-screenshots/validation_or_export_smoke-after.png",
-            "sha256": "692c5489a13ee258a1a29cf8b2f392d9af6493550ad07b0a278e1d8017fee4a2",
-            "size_bytes": 40,
+            "sha256": "e33b32e48df9e2656aa6916600204f09de5ea4ac88fed908243478537aef8eb5",
+            "size_bytes": 123499,
             "within_repo_root": true
           }
         ],
@@ -210,8 +210,8 @@
     ]
   },
   "fix_shard_separate": true,
-  "generatedAt": "2026-05-06T15:16:28.559919Z",
-  "generated_at": "2026-05-06T15:16:28.559919Z",
+  "generatedAt": "2026-05-26T20:24:14.078177Z",
+  "generated_at": "2026-05-26T20:24:14.078177Z",
   "linux_binary_under_test": true,
   "open_blocking_findings_count": 0,
   "reasons": [],

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -211,7 +212,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                 CurrentClaimedInstallation.HostLabel ?? CurrentClaimedInstallation.InstallationId,
                 CurrentClaimedInstallation.Platform ?? _installState.Platform,
                 CurrentClaimedInstallation.HeadId ?? _installState.HeadId,
-                CurrentClaimedInstallation.UpdatedAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                FormatDisplayTime(CurrentClaimedInstallation.UpdatedAtUtc)));
         }
         else
         {
@@ -223,16 +224,16 @@ internal sealed class DesktopDevicesAccessWindow : Window
             lines.Add(F(
                 "desktop.devices.context.current_grant",
                 CurrentGrant.GrantId,
-                CurrentGrant.ExpiresAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                FormatDisplayTime(CurrentGrant.ExpiresAtUtc)));
         }
         else if (_installState.GrantExpiresAtUtc is not null)
         {
-            lines.Add(F("desktop.install_link.summary.linked_status", _installState.GrantExpiresAtUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+            lines.Add(F("desktop.install_link.summary.linked_status", FormatDisplayTime(_installState.GrantExpiresAtUtc.Value)));
         }
 
         if (_installState.LastClaimAttemptUtc is not null)
         {
-            lines.Add(F("desktop.install_link.summary.last_claim_attempt", _installState.LastClaimAttemptUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+            lines.Add(F("desktop.install_link.summary.last_claim_attempt", FormatDisplayTime(_installState.LastClaimAttemptUtc.Value)));
         }
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimMessage))
@@ -301,12 +302,12 @@ internal sealed class DesktopDevicesAccessWindow : Window
                         ticket.ClaimCode,
                         ticket.Channel,
                         ticket.Version,
-                        ticket.ExpiresAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm"))
+                        FormatDisplayTime(ticket.ExpiresAtUtc))
                     : F(
                         "desktop.devices.context.claims_pending_install",
                         ticket.ClaimCode,
                         ticket.InstallationId,
-                        ticket.ExpiresAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                        FormatDisplayTime(ticket.ExpiresAtUtc)));
         }
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimCode)
@@ -324,7 +325,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                 receipt.Version,
                 receipt.Platform,
                 receipt.Arch,
-                receipt.IssuedAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                FormatDisplayTime(receipt.IssuedAtUtc)));
         }
 
         return lines.Count == 0
@@ -354,7 +355,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                 grant.GrantId,
                 grant.InstallationId,
                 grant.Status,
-                grant.ExpiresAtUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+                FormatDisplayTime(grant.ExpiresAtUtc)));
         }
 
         return string.Join("\n", lines);
@@ -390,7 +391,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         if (LatestPendingClaim is not null || !string.IsNullOrWhiteSpace(_installState.LastClaimCode))
         {
-            actions.Insert(0, CreateButton(S("desktop.devices.button.copy_claim_code"), OpenLatestInstallHandoffAsync, isPrimary: true));
+            actions.Insert(0, CreateButton("Use latest claim code", OpenLatestInstallHandoffAsync, isPrimary: true));
         }
         else
         {
@@ -561,6 +562,9 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         return lines;
     }
+
+    private static string FormatDisplayTime(DateTimeOffset value)
+        => value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {

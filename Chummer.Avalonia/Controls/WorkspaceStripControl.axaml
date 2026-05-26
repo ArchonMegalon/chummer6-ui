@@ -6,7 +6,7 @@
                Grid.Row="0"
                Classes="shell-caption"
                VerticalAlignment="Center"
-               Text="Workspace: none"
+               Text="No character open"
                TextTrimming="CharacterEllipsis" />
     <StackPanel x:Name="QuickStartContainer"
                 Grid.Row="1"
@@ -20,7 +20,7 @@
                  Text="Start:" />
       <Button x:Name="LoadDemoRunnerQuickActionButton"
               Classes="shell-action quiet"
-              Content="Demo"
+              Content="Open Demo"
               Click="LoadDemoRunnerQuickActionButton_OnClick" />
     </StackPanel>
     <TextBlock x:Name="WorkspaceCaptionText"

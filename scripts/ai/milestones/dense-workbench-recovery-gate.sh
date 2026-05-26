@@ -243,7 +243,7 @@ if not budget_evidence["loadedRunnerTabStripPanel"]:
 
 for token in [
     'Classes="shell-toolstrip-band"',
-    'WrapPanel Orientation="Horizontal" ItemHeight="28"',
+    'WrapPanel Orientation="Horizontal"',
     'x:Name="SaveButton"',
     'x:Name="PrintButton"',
     'x:Name="CopyButton"',

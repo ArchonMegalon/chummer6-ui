@@ -14,17 +14,17 @@
       <Button x:Name="CloseWorkspaceButton" Classes="shell-action tool-icon" MinWidth="54" Height="24" Padding="5,1" Margin="0,0,2,0" Click="CloseWorkspaceButton_OnClick" />
       <Button x:Name="OpenForPrintingButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="76" Height="24" Padding="5,1" Margin="0,0,2,0" Click="OpenForPrintingButton_OnClick" />
       <Button x:Name="OpenForExportButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="76" Height="24" Padding="5,1" Margin="0,0,2,0" Click="OpenForExportButton_OnClick" />
-      <Button x:Name="GmPrepButton" IsVisible="False" Classes="shell-action quiet" Content="GM" MinWidth="40" Height="24" Margin="0,0,2,0" Click="GmPrepButton_OnClick" />
-      <Button x:Name="RosterMovementButton" IsVisible="False" Classes="shell-action quiet" Content="Roster" MinWidth="52" Height="24" Margin="0,0,2,0" Click="RosterMovementButton_OnClick" />
-      <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Classes="shell-action quiet" Content="Rules" MinWidth="50" Height="24" Margin="0,0,2,0" Click="RuleEnvironmentStudioButton_OnClick" />
-      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Demo" MinWidth="46" Height="24" Margin="0,0,2,0" Click="LoadDemoRunnerButton_OnClick" />
-      <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="XML" MinWidth="40" Height="24" Margin="0,0,2,0" Click="ImportRawButton_OnClick" />
-      <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Options" MinWidth="56" Height="24" Margin="0,0,2,0" Click="SettingsButton_OnClick" />
-      <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Classes="shell-action quiet" Content="Campaign" Height="24" Margin="0,0,2,0" Click="CampaignWorkspaceButton_OnClick" />
-      <Button x:Name="UpdateStatusButton" IsVisible="False" Classes="shell-action quiet" Content="Update" Height="24" Margin="0,0,2,0" Click="UpdateStatusButton_OnClick" />
-      <Button x:Name="InstallLinkingButton" IsVisible="False" Classes="shell-action quiet" Content="Link" Height="24" Margin="0,0,2,0" Click="InstallLinkingButton_OnClick" />
+      <Button x:Name="GmPrepButton" IsVisible="False" Classes="shell-action quiet" Content="GM Prep" MinWidth="72" Height="24" Margin="0,0,2,0" Click="GmPrepButton_OnClick" />
+      <Button x:Name="RosterMovementButton" IsVisible="False" Classes="shell-action quiet" Content="Roster Movement" MinWidth="122" Height="24" Margin="0,0,2,0" Click="RosterMovementButton_OnClick" />
+      <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Classes="shell-action quiet" Content="Rule Studio" MinWidth="94" Height="24" Margin="0,0,2,0" Click="RuleEnvironmentStudioButton_OnClick" />
+      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Open Demo" MinWidth="82" Height="24" Margin="0,0,2,0" Click="LoadDemoRunnerButton_OnClick" />
+      <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="Raw XML" MinWidth="78" Height="24" Margin="0,0,2,0" Click="ImportRawButton_OnClick" />
+      <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Settings" MinWidth="62" Height="24" Margin="0,0,2,0" Click="SettingsButton_OnClick" />
+      <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Classes="shell-action quiet" Content="Campaign Review" Height="24" Margin="0,0,2,0" Click="CampaignWorkspaceButton_OnClick" />
+      <Button x:Name="UpdateStatusButton" IsVisible="False" Classes="shell-action quiet" Content="Updates" Height="24" Margin="0,0,2,0" Click="UpdateStatusButton_OnClick" />
+      <Button x:Name="InstallLinkingButton" IsVisible="False" Classes="shell-action quiet" Content="Install Link" Height="24" Margin="0,0,2,0" Click="InstallLinkingButton_OnClick" />
       <Button x:Name="SupportButton" IsVisible="False" Classes="shell-action quiet" Content="Support" Height="24" Margin="0,0,2,0" Click="SupportButton_OnClick" />
-      <Button x:Name="ReportIssueButton" IsVisible="False" Classes="shell-action quiet" Content="Bug" Height="24" Click="ReportIssueButton_OnClick" />
+      <Button x:Name="ReportIssueButton" IsVisible="False" Classes="shell-action quiet" Content="Report Issue" Height="24" Click="ReportIssueButton_OnClick" />
     </WrapPanel>
 
     <Border x:Name="StatusTextBorder"
@@ -36,7 +36,7 @@
       <TextBlock x:Name="StatusText"
                  Classes="shell-caption"
                  VerticalAlignment="Center"
-                 Text="State: idle"
+                 Text="Ready"
                  TextTrimming="CharacterEllipsis" />
     </Border>
   </Grid>

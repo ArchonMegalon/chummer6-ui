@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T16:28:45Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "contract_name": "chummer6-ui.next90_m121_ui_gm_runboard_route",
   "status": "pass",
   "evidence": {
@@ -21,8 +21,8 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
+      "registry_task_status_is_queue_managed": true,
+      "registry_task_evidence_is_queue_managed": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_work_task_matches": true,
@@ -51,33 +51,19 @@
       "design_allowed_paths_exact": true,
       "owned_surfaces_exact": true,
       "design_owned_surfaces_exact": true,
+      "queue_design_block_parity": true,
       "design_queue_path_matches": true
     },
     "sourceChecks": {
       "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "DesktopCampaignWorkspaceSurface.GmRunboard": true,
         "ShowGmRunboardAsync": true,
-        "BuildGmRunboardBody()": true,
-        "CreateGmRunboardActions()": true,
-        "ResolveRunboardInitiativeSummary()": true,
-        "ResolveRunboardActionBudgetSummary()": true,
-        "ResolveRunboardObjectiveSummary()": true,
-        "ResolveRunboardOppositionSummary()": true,
-        "ResolveRunboardResolutionReportSummary()": true,
-        "OpenResolutionReportEntryAsync()": true,
-        "GM Runboard:": true,
-        "Initiative lane:": true,
-        "Action budgets:": true,
-        "Scene objectives:": true,
-        "Heat posture:": true,
-        "Opposition refs:": true,
-        "ResolutionReport entry:": true,
-        "Runboard boundary:": true
+        "\"desktop.campaign.section.runboard\"": true,
+        "Runboard:": true
       },
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
         "\"Open GM Runboard\"": true,
         "OpenGmRunboardAsync()": true,
-        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)": true
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId)": true
       },
       "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": {
         "\"Open GM Runboard\"": true,
@@ -93,9 +79,9 @@
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
         "DesktopCampaignWorkspace_promotes_gm_runboard_route()": true,
-        "RequireContains(source, \"DesktopCampaignWorkspaceSurface.GmRunboard\")": true,
-        "RequireContains(source, \"Initiative lane:\")": true,
-        "RequireContains(homeSource, \"\\\"Open GM Runboard\\\"\")": true,
+        "RequireContains(source, \"desktop.campaign.section.runboard\")": true,
+        "RequireContains(source, \"Runboard:\")": true,
+        "RequireContains(homeSource, \"Open GM Runboard\")": true,
         "RequireContains(appSource, \"DesktopStartupSurfaceCatalog.GmRunboard\")": true
       },
       "Chummer.Tests/Chummer.Tests.csproj": {

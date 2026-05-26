@@ -34,7 +34,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(scriptText, "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions");
         StringAssert.Contains(scriptText, "ExecuteCommandAsync_all_catalog_commands_are_handled");
         StringAssert.Contains(scriptText, "HandleUiControlAsync_all_catalog_controls_are_non_generic");
-        StringAssert.Contains(scriptText, "\"scripts/ai/test.sh\"");
+        StringAssert.Contains(scriptText, "\"dotnet\"");
+        StringAssert.Contains(scriptText, "\"--project\"");
+        StringAssert.Contains(scriptText, "\"Chummer.Tests/Chummer.Tests.csproj\"");
         StringAssert.Contains(scriptText, "\"m103_receipt\": repo_root / \".codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json\"");
         StringAssert.Contains(scriptText, "\"sourceArtifactReview\"");
         StringAssert.Contains(scriptText, "\"inventoryReview\"");
@@ -75,7 +77,7 @@ public sealed class GeneratedDialogElementParityComplianceTests
         JsonElement evidence = root.GetProperty("evidence");
         Assert.AreEqual(28, evidence.GetProperty("commandDialogCount").GetInt32());
         Assert.AreEqual(47, evidence.GetProperty("legacyControlCount").GetInt32());
-        Assert.AreEqual(13, evidence.GetProperty("rebuildableDialogCount").GetInt32());
+        Assert.AreEqual(14, evidence.GetProperty("rebuildableDialogCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());

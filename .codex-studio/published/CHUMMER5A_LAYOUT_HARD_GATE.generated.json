@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T09:18:42.993897Z",
+  "generatedAt": "2026-05-26T19:57:04.819765Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
@@ -64,9 +64,9 @@
       "DesktopHomeButton": 894,
       "ImportFileButton": 1080,
       "CloseWorkspaceButton": 1246,
-      "SettingsButton": 2719,
-      "LoadDemoRunnerButton": 2370,
-      "ImportRawButton": 2541
+      "SettingsButton": 2749,
+      "LoadDemoRunnerButton": 2391,
+      "ImportRawButton": 2567
     },
     "toolstripButtonVisibility": {
       "SaveButton": true,
@@ -89,11 +89,11 @@
       "SettingsButton"
     ],
     "blazorPreferredToolstripOrderPositions": {
-      "save_character": 391,
-      "print_character": 417,
-      "copy": 444,
-      "new_character": 460,
-      "open_character": 485
+      "save_character": 422,
+      "print_character": 448,
+      "copy": 475,
+      "new_character": 491,
+      "open_character": 516
     },
     "requiredTestName": "Chummer5a_layout_hard_gate_is_wired_into_release_proofs_and_classic_shell_markers",
     "mainWindowDefaultContentColumns": "0,*,0",

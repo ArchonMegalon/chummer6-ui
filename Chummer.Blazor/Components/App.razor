@@ -68,8 +68,22 @@
             printWindow.document.title = fileName;
         }
 
-        printWindow.focus();
-        setTimeout(() => printWindow.print(), 50);
+        const triggerPrint = function() {
+            printWindow.focus();
+            if (printWindow.requestAnimationFrame) {
+                printWindow.requestAnimationFrame(() => printWindow.print());
+                return;
+            }
+
+            printWindow.print();
+        };
+
+        if (printWindow.document.readyState === 'complete') {
+            triggerPrint();
+            return;
+        }
+
+        printWindow.addEventListener('load', triggerPrint, { once: true });
     };
 </script>
 </body>

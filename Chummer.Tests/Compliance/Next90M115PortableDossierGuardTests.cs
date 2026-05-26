@@ -92,8 +92,9 @@ public sealed class Next90M115PortableDossierGuardTests
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
-        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignArtifactWindow.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCreatorPublicationWindow.cs"));
+        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
     }

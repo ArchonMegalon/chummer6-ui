@@ -252,7 +252,7 @@ inventory_text = json.dumps(interactive_inventory_receipt, ensure_ascii=False)
 for expected_text in (
     "\"ruleset-sr5-codex-tree\"",
     "\"ruleset-sr6-codex-tree\"",
-    "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks\": true",
+    "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks\": true",
 ):
     if expected_text not in inventory_text:
         add_failure(f"Interactive inventory receipt is missing required SR6/SR5 parity evidence: {expected_text}", runtime_reasons)
@@ -270,7 +270,7 @@ for marker in (
     "SR6 Matrix Action",
     "DesktopShell_renders_ruleset_specific_flagship_posture_for_each_supported_lane",
     "DesktopShell_uses_active_ruleset_plugin_catalogs_for_actions_and_workflow_surfaces",
-    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
     "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
 ):
     if (

@@ -159,37 +159,37 @@
         "avalonia_build_blocker_receipts": {
           "markers": [
             {
-              "line": 769,
+              "line": 762,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 771,
+              "line": 764,
               "marker": "Rule environment:",
               "present": true
             },
             {
-              "line": 773,
+              "line": 766,
               "marker": "Before:",
               "present": true
             },
             {
-              "line": 774,
+              "line": 767,
               "marker": "After:",
               "present": true
             },
             {
-              "line": 772,
+              "line": 765,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             },
             {
-              "line": 772,
+              "line": 765,
               "marker": "BuildBuildBlockerAfter(buildLab)",
               "present": true
             },
             {
-              "line": 775,
+              "line": 768,
               "marker": "BuildBuildBlockerSupport(buildLab)",
               "present": true
             }
@@ -215,7 +215,7 @@
         "avalonia_support_diagnostics": {
           "markers": [
             {
-              "line": 222,
+              "line": 226,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             }
@@ -322,27 +322,27 @@
         "avalonia_import_receipt_surface": {
           "markers": [
             {
-              "line": 203,
+              "line": 202,
               "marker": "Import rule environment:",
               "present": true
             },
             {
-              "line": 207,
+              "line": 206,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 208,
+              "line": 207,
               "marker": "Import environment after:",
               "present": true
             },
             {
-              "line": 212,
+              "line": 211,
               "marker": "Import explain receipt:",
               "present": true
             },
             {
-              "line": 218,
+              "line": 217,
               "marker": "Support reuse:",
               "present": true
             }
@@ -454,7 +454,7 @@
         "m104_guard_project_wiring": {
           "markers": [
             {
-              "line": 78,
+              "line": 82,
               "marker": "Compliance\\Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             }
@@ -467,297 +467,297 @@
         "m104_guard_self_closure": {
           "markers": [
             {
-              "line": 39,
+              "line": 89,
               "marker": "M104_explain_receipts_guard_fail_closes_missing_completed_queue_proof",
               "present": true
             },
             {
-              "line": 173,
+              "line": 188,
               "marker": "M104_explain_receipts_receipt_proves_desktop_trust_surfaces_are_closed_in_repo_local_state",
               "present": true
             },
             {
-              "line": 164,
+              "line": 178,
               "marker": "M104_explain_receipts_guard_is_wired_into_compliance_test_project",
               "present": true
             },
             {
-              "line": 165,
+              "line": 179,
               "marker": "M104_explain_receipts_guard_is_wired_into_standard_ai_verify",
               "present": true
             },
             {
-              "line": 87,
+              "line": 137,
               "marker": "Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             },
             {
-              "line": 89,
+              "line": 15,
               "marker": "commit 0a2a321f tightens M104 explain receipt guard wiring",
               "present": true
             },
             {
-              "line": 90,
+              "line": 16,
               "marker": "commit 2c29f1be tightens M104 explain receipt commit proof",
               "present": true
             },
             {
-              "line": 91,
+              "line": 17,
               "marker": "commit 1df92955 tightens M104 explain receipt frontier guard",
               "present": true
             },
             {
-              "line": 92,
+              "line": 18,
               "marker": "commit 7556a33b pins M104 explain receipt proof anchors",
               "present": true
             },
             {
-              "line": 93,
+              "line": 19,
               "marker": "commit d9e5392d wires the M104 explain receipt guard into standard scripts/ai/verify.sh",
               "present": true
             },
             {
-              "line": 94,
+              "line": 20,
               "marker": "commit d4d34e1c requires the standard-verify wiring commit as registry and queue proof",
               "present": true
             },
             {
-              "line": 95,
+              "line": 21,
               "marker": "commit cea19d0d tightens M104 explain receipt proof guard",
               "present": true
             },
             {
-              "line": 96,
+              "line": 22,
               "marker": "commit f27fefb8 tightens M104 proof commit resolution",
               "present": true
             },
             {
-              "line": 97,
+              "line": 23,
               "marker": "commit b08d3b2c tightens M104 blocked-helper proof exclusion",
               "present": true
             },
             {
-              "line": 98,
+              "line": 24,
               "marker": "commit 0a84aef2 pins the M104 blocked-helper proof anchor",
               "present": true
             },
             {
-              "line": 99,
+              "line": 25,
               "marker": "commit 96125b0e pins the M104 explain receipt proof guard",
               "present": true
             },
             {
-              "line": 100,
+              "line": 26,
               "marker": "commit c51f8657 pins the current M104 explain receipt proof guard",
               "present": true
             },
             {
-              "line": 101,
+              "line": 27,
               "marker": "commit d3dfb527 tightens M104 explain receipt proof anchor",
               "present": true
             },
             {
-              "line": 102,
+              "line": 28,
               "marker": "commit d18aa133 pins M104 explain receipt proof anchor",
               "present": true
             },
             {
-              "line": 103,
+              "line": 29,
               "marker": "commit 0da2d157 pins M104 explain receipt latest proof anchor",
               "present": true
             },
             {
-              "line": 104,
+              "line": 30,
               "marker": "commit f494f32f tightens M104 explain receipt proof anchor",
               "present": true
             },
             {
-              "line": 105,
+              "line": 31,
               "marker": "commit 7ddae55e pins the current M104 explain receipt guard",
               "present": true
             },
             {
-              "line": 106,
+              "line": 32,
               "marker": "commit 9a4a2ae1 pins M104 proof closure to the 7ddae55e guard",
               "present": true
             },
             {
-              "line": 107,
+              "line": 33,
               "marker": "commit cb784e7b tightens M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 108,
+              "line": 34,
               "marker": "commit 7d5e8e61 pins the current M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 109,
+              "line": 35,
               "marker": "commit 06819ea3 pins the current M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 110,
+              "line": 36,
               "marker": "commit 208908b7 pins M104 explain receipt current proof floor",
               "present": true
             },
             {
-              "line": 111,
+              "line": 37,
               "marker": "commit 21ddae58 tightens M104 proof commit citation checks",
               "present": true
             },
             {
-              "line": 112,
+              "line": 38,
               "marker": "commit 8c7d639f tightens M104 canonical queue closure",
               "present": true
             },
             {
-              "line": 113,
+              "line": 39,
               "marker": "commit d2650d0b pins M104 explain receipt queue closure guard",
               "present": true
             },
             {
-              "line": 114,
+              "line": 40,
               "marker": "commit 79b8b594 pins M104 explain receipt current proof floor",
               "present": true
             },
             {
-              "line": 115,
+              "line": 41,
               "marker": "commit ea689297 pins M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 116,
+              "line": 42,
               "marker": "commit 5a8e0b2a pins M104 explain receipt guard floor",
               "present": true
             },
             {
-              "line": 117,
+              "line": 43,
               "marker": "commit bfd66025 pins M104 explain receipt current guard floor",
               "present": true
             },
             {
-              "line": 118,
+              "line": 44,
               "marker": "commit f9607bb8 tightens M104 generated proof hygiene",
               "present": true
             },
             {
-              "line": 119,
+              "line": 45,
               "marker": "commit 9d302a0e tightens M104 explain receipt proof-path scope",
               "present": true
             },
             {
-              "line": 120,
+              "line": 46,
               "marker": "commit cb028208 pins M104 explain receipt proof scope",
               "present": true
             },
             {
-              "line": 121,
+              "line": 47,
               "marker": "commit 5c19e4e3 pins M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 122,
+              "line": 48,
               "marker": "commit c92d8dc4 tightens M104 explain receipt proof floor",
               "present": true
             },
             {
-              "line": 123,
+              "line": 49,
               "marker": "commit af590503 tightens M104 canonical proof-path scope",
               "present": true
             },
             {
-              "line": 124,
+              "line": 50,
               "marker": "commit f6049a9d tightens M104 queue and registry uniqueness proof",
               "present": true
             },
             {
-              "line": 125,
+              "line": 51,
               "marker": "commit 283f8ee3 pins M104 explain receipt uniqueness proof",
               "present": true
             },
             {
-              "line": 126,
+              "line": 52,
               "marker": "commit 853c807a tightens M104 encoded and escaped worker-context proof guards",
               "present": true
             },
             {
-              "line": 127,
+              "line": 53,
               "marker": "commit 2f69ed4e tightens M104 explain receipt proof-line uniqueness",
               "present": true
             },
             {
-              "line": 73,
+              "line": 123,
               "marker": "canonical_block_proof_path_scope_checks",
               "present": true
             },
             {
-              "line": 74,
+              "line": 124,
               "marker": "canonicalProofPathScopeChecks",
               "present": true
             },
             {
-              "line": 75,
+              "line": 125,
               "marker": "all_canonical_block_paths_allowed",
               "present": true
             },
             {
-              "line": 76,
+              "line": 126,
               "marker": "canonical proof path scope check failed",
               "present": true
             },
             {
-              "line": 137,
+              "line": 151,
               "marker": "operatorHelperProofChecks",
               "present": true
             },
             {
-              "line": 138,
+              "line": 152,
               "marker": "required_proof_avoids_active_run_helpers",
               "present": true
             },
             {
-              "line": 139,
+              "line": 153,
               "marker": "registry_evidence_avoids_active_run_helpers",
               "present": true
             },
             {
-              "line": 140,
+              "line": 154,
               "marker": "queue_evidence_avoids_active_run_helpers",
               "present": true
             },
             {
-              "line": 141,
+              "line": 155,
               "marker": "design_queue_evidence_avoids_active_run_helpers",
               "present": true
             },
             {
-              "line": 24,
+              "line": 74,
               "marker": "VEFTS19MT0NBTF9URUxFTUVUUlkuZ2VuZXJhdGVkLmpzb24=",
               "present": true
             },
             {
-              "line": 25,
+              "line": 75,
               "marker": "QUNUSVZFX1JVTl9IQU5ET0ZGLmdlbmVyYXRlZC5tZA==",
               "present": true
             },
             {
-              "line": 28,
+              "line": 78,
               "marker": "5441534b5f4c4f43414c5f54454c454d455452592e67656e6572617465642e6a736f6e",
               "present": true
             },
             {
-              "line": 29,
+              "line": 79,
               "marker": "4143544956455f52554e5f48414e444f46462e67656e6572617465642e6d64",
               "present": true
             },
             {
-              "line": 32,
+              "line": 82,
               "marker": "TASK&#95;LOCAL&#95;TELEMETRY.generated.json",
               "present": true
             },
             {
-              "line": 33,
+              "line": 83,
               "marker": "ACTIVE&#95;RUN&#95;HANDOFF.generated.md",
               "present": true
             }
@@ -770,27 +770,27 @@
         "targeted_signoff": {
           "markers": [
             {
-              "line": 1816,
+              "line": 1822,
               "marker": "BuildImportRuleEnvironment(activity.Receipt)",
               "present": true
             },
             {
-              "line": 1457,
+              "line": 1463,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 74,
+              "line": 76,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 1603,
+              "line": 1609,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             },
             {
-              "line": 75,
+              "line": 77,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             }
@@ -867,12 +867,12 @@
         "m104_standard_verify_wiring": {
           "markers": [
             {
-              "line": 1025,
+              "line": 1036,
               "marker": "checking next-90 M104 desktop explain receipt guard",
               "present": true
             },
             {
-              "line": 1026,
+              "line": 1037,
               "marker": "bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh",
               "present": true
             }
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-05-19T09:28:21Z",
+  "generatedAt": "2026-05-26T19:52:53Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

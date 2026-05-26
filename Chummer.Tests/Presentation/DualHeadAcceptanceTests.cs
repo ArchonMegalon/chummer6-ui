@@ -478,44 +478,10 @@ public class DualHeadAcceptanceTests
             ["tab-info.awakening"] = "awakening"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> avaloniaSnapshots =
+            await CaptureAvaloniaWorkspaceActionTuplesAsync(documentBytes, actionIds);
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> blazorSnapshots =
+            await CaptureBlazorWorkspaceActionTuplesAsync(documentBytes, actionIds);
 
         foreach (string actionId in actionIds)
         {
@@ -552,44 +518,10 @@ public class DualHeadAcceptanceTests
             ["tab-skills.skills"] = "skills"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> avaloniaSnapshots =
+            await CaptureAvaloniaWorkspaceActionTuplesAsync(documentBytes, actionIds);
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> blazorSnapshots =
+            await CaptureBlazorWorkspaceActionTuplesAsync(documentBytes, actionIds);
 
         foreach (string actionId in actionIds)
         {
@@ -635,44 +567,10 @@ public class DualHeadAcceptanceTests
             ["tab-gear.vehicles"] = "vehicles"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> avaloniaSnapshots =
+            await CaptureAvaloniaWorkspaceActionTuplesAsync(documentBytes, actionIds);
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> blazorSnapshots =
+            await CaptureBlazorWorkspaceActionTuplesAsync(documentBytes, actionIds);
 
         foreach (string actionId in actionIds)
         {
@@ -766,44 +664,10 @@ public class DualHeadAcceptanceTests
             ["tab-improvements.improvements"] = "improvements"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> avaloniaSnapshots =
+            await CaptureAvaloniaWorkspaceActionTuplesAsync(documentBytes, actionIds);
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> blazorSnapshots =
+            await CaptureBlazorWorkspaceActionTuplesAsync(documentBytes, actionIds);
 
         foreach (string actionId in actionIds)
         {
@@ -849,44 +713,10 @@ public class DualHeadAcceptanceTests
             ["tab-cyberware.cyberwares"] = "cyberwares"
         };
 
-        var avaloniaSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            using var adapter = new CharacterOverviewViewModelAdapter(presenter);
-            await adapter.InitializeAsync(CancellationToken.None);
-            await adapter.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = presenter.State;
-                avaloniaSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
-
-        var blazorSnapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
-        using (RuntimeClientLease runtime = CreateClient())
-        {
-            var presenter = new CharacterOverviewPresenter(runtime.Client);
-            CharacterOverviewState callbackState = CharacterOverviewState.Empty;
-            using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
-            CharacterOverviewState Snapshot() => bridge.Current;
-
-            await bridge.InitializeAsync(CancellationToken.None);
-            await bridge.ImportAsync(documentBytes, CancellationToken.None);
-
-            foreach (string actionId in actionIds)
-            {
-                WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                    .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
-                await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
-                CharacterOverviewState state = Snapshot();
-                blazorSnapshots[actionId] = (state.ActiveActionId, state.ActiveSectionId, state.ActiveSectionJson, state.ActiveSectionRows.Count);
-            }
-        }
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> avaloniaSnapshots =
+            await CaptureAvaloniaWorkspaceActionTuplesAsync(documentBytes, actionIds);
+        Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)> blazorSnapshots =
+            await CaptureBlazorWorkspaceActionTuplesAsync(documentBytes, actionIds);
 
         foreach (string actionId in actionIds)
         {
@@ -1301,12 +1131,36 @@ public class DualHeadAcceptanceTests
         {
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
             CharacterOverviewState state = presenter.State;
-            snapshots[action.Id] = new WorkspaceActionSnapshot(
-                state.ActiveTabId,
-                state.ActiveActionId,
-                state.ActiveSectionId,
-                NormalizeSectionJson(state.ActiveSectionJson),
-                state.ActiveSectionRows.Count);
+            snapshots[action.Id] = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>> CaptureAvaloniaWorkspaceActionTuplesAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> actionIds)
+    {
+        var snapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+        await adapter.InitializeAsync(CancellationToken.None);
+        await adapter.ImportAsync(documentBytes, CancellationToken.None);
+
+        foreach (string actionId in actionIds)
+        {
+            WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
+                .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
+            await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
+            CharacterOverviewState state = presenter.State;
+            WorkspaceActionSnapshot snapshot = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
+            snapshots[actionId] = (
+                snapshot.ActionId,
+                snapshot.SectionId,
+                snapshot.Json,
+                snapshot.RowCount);
         }
 
         return snapshots;
@@ -1329,12 +1183,37 @@ public class DualHeadAcceptanceTests
         {
             await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
             CharacterOverviewState state = ResolveBridgeState(callbackState, bridge);
-            snapshots[action.Id] = new WorkspaceActionSnapshot(
-                state.ActiveTabId,
-                state.ActiveActionId,
-                state.ActiveSectionId,
-                NormalizeSectionJson(state.ActiveSectionJson),
-                state.ActiveSectionRows.Count);
+            snapshots[action.Id] = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
+        }
+
+        return snapshots;
+    }
+
+    private static async Task<Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>> CaptureBlazorWorkspaceActionTuplesAsync(
+        byte[] documentBytes,
+        IReadOnlyList<string> actionIds)
+    {
+        var snapshots = new Dictionary<string, (string? ActionId, string? SectionId, string? Json, int RowCount)>(StringComparer.Ordinal);
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
+        CharacterOverviewState callbackState = CharacterOverviewState.Empty;
+        using var bridge = new CharacterOverviewStateBridge(presenter, state => callbackState = state);
+        await bridge.InitializeAsync(CancellationToken.None);
+        await bridge.ImportAsync(documentBytes, CancellationToken.None);
+
+        foreach (string actionId in actionIds)
+        {
+            WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
+                .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
+            await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
+            CharacterOverviewState state = ResolveBridgeState(callbackState, bridge);
+            WorkspaceActionSnapshot snapshot = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
+            snapshots[actionId] = (
+                snapshot.ActionId,
+                snapshot.SectionId,
+                snapshot.Json,
+                snapshot.RowCount);
         }
 
         return snapshots;
@@ -1566,6 +1445,41 @@ public class DualHeadAcceptanceTests
             NormalizeDownloadNotice(state.Notice));
     }
 
+    private static async Task<WorkspaceActionSnapshot> TakeWorkspaceActionSnapshotAsync(
+        RuntimeClientLease runtime,
+        CharacterOverviewState state,
+        WorkspaceSurfaceActionDefinition action,
+        CancellationToken ct)
+    {
+        string activeTabId = string.IsNullOrWhiteSpace(state.ActiveTabId)
+            ? action.TabId
+            : state.ActiveTabId;
+        string activeActionId = string.IsNullOrWhiteSpace(state.ActiveActionId)
+            ? action.Id
+            : state.ActiveActionId;
+        string activeSectionId = string.IsNullOrWhiteSpace(state.ActiveSectionId)
+            ? action.TargetId
+            : state.ActiveSectionId;
+        JsonNode? section = await TryLoadSectionSnapshotNodeAsync(runtime, state, activeSectionId, ct);
+        string? activeSectionJson = !string.IsNullOrWhiteSpace(state.ActiveSectionJson)
+            ? NormalizeSectionJson(state.ActiveSectionJson)
+            : section is null
+                ? NormalizeSectionJson(state.ActiveSectionJson)
+                : NormalizeSectionJson(SerializeSectionPreviewJson(activeSectionId, section));
+        int rowCount = state.ActiveSectionRows.Count;
+        if (rowCount == 0 && section is not null)
+        {
+            rowCount = SectionRowProjector.BuildRows(activeSectionId, section).Count;
+        }
+
+        return new WorkspaceActionSnapshot(
+            activeTabId,
+            activeActionId,
+            activeSectionId,
+            activeSectionJson,
+            rowCount);
+    }
+
     private static string NormalizeDialogFieldValue(string fieldId, string value)
     {
         if (string.Equals(fieldId, "workspace", StringComparison.Ordinal))
@@ -1651,6 +1565,36 @@ public class DualHeadAcceptanceTests
         }
     }
 
+    private static async Task<string?> ResolveSectionJsonSnapshotAsync(
+        RuntimeClientLease runtime,
+        CharacterOverviewState state,
+        CancellationToken ct)
+    {
+        string? sectionId = string.IsNullOrWhiteSpace(state.ActiveSectionId) ? null : state.ActiveSectionId;
+        if (!string.IsNullOrWhiteSpace(state.ActiveSectionJson))
+            return NormalizeSectionJson(state.ActiveSectionJson);
+
+        JsonNode? section = await TryLoadSectionSnapshotNodeAsync(runtime, state, sectionId, ct);
+        return section is null
+            ? NormalizeSectionJson(state.ActiveSectionJson)
+            : NormalizeSectionJson(SerializeSectionPreviewJson(sectionId!, section));
+    }
+
+    private static async Task<JsonNode?> TryLoadSectionSnapshotNodeAsync(
+        RuntimeClientLease runtime,
+        CharacterOverviewState state,
+        string? sectionId,
+        CancellationToken ct)
+    {
+        if (state.WorkspaceId is null || string.IsNullOrWhiteSpace(sectionId))
+            return null;
+
+        return await runtime.Client.GetSectionAsync(
+            state.WorkspaceId.Value,
+            sectionId,
+            ct);
+    }
+
     private static string? NormalizeSectionJson(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -1707,6 +1651,45 @@ public class DualHeadAcceptanceTests
                 }
             }
         }
+    }
+
+    private static string SerializeSectionPreviewJson(string sectionId, JsonNode section)
+    {
+        JsonNode normalized = section.DeepClone();
+        if (normalized is JsonObject root)
+        {
+            if (!HasNonBlankString(root, "sectionId"))
+            {
+                root["sectionId"] = sectionId;
+            }
+
+            return normalized.ToJsonString(new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+        }
+
+        JsonObject wrapped = new()
+        {
+            ["sectionId"] = sectionId,
+            ["payload"] = normalized
+        };
+        return wrapped.ToJsonString(new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+    }
+
+    private static bool HasNonBlankString(JsonObject root, string propertyName)
+    {
+        if (!root.TryGetPropertyValue(propertyName, out JsonNode? node))
+        {
+            return false;
+        }
+
+        return node is JsonValue value
+            && value.TryGetValue(out string? text)
+            && !string.IsNullOrWhiteSpace(text);
     }
 
     private static string? NormalizeDownloadFileName(string? fileName)

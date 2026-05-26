@@ -18,9 +18,9 @@ internal sealed class DesktopUpdateWindow : Window
     private readonly TextBlock _currentText;
     private readonly TextBlock _followThroughText;
     private readonly TextBlock _installText;
-    private readonly StackPanel _currentActionsRow;
-    private readonly StackPanel _followThroughActionsRow;
-    private readonly StackPanel _installActionsRow;
+    private readonly WrapPanel _currentActionsRow;
+    private readonly WrapPanel _followThroughActionsRow;
+    private readonly WrapPanel _installActionsRow;
     private bool _isChecking;
 
     private DesktopUpdateWindow(
@@ -170,8 +170,8 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
-            $"State: {_updateStatus.Status} · Installed {_updateStatus.InstalledVersion}",
-            $"Latest: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
+            $"Installed now: {_updateStatus.InstalledVersion}",
+            $"Latest available: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
         ];
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
@@ -181,7 +181,7 @@ internal sealed class DesktopUpdateWindow : Window
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add($"Issue: {_updateStatus.LastError}");
+            lines.Add($"Something still needs attention: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines);
@@ -231,18 +231,18 @@ internal sealed class DesktopUpdateWindow : Window
     {
         List<string> lines =
         [
-            $"{_installState.HeadId} · {_installState.Platform}/{_installState.Arch}",
-            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}"
+            $"This desktop copy: {_installState.Platform}/{_installState.Arch}",
+            $"Installed version: {_installState.ApplicationVersion} on {_installState.ChannelId}"
         ];
 
         lines.Add(
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? $"Linked until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
-                : "This copy is not linked yet.");
+                ? $"Account link stays active until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
+                : "This copy is not linked to an account yet.");
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add($"Claim issue: {_installState.LastClaimError}");
+            lines.Add($"Linking still needs attention: {_installState.LastClaimError}");
         }
 
         return string.Join("\n", lines);
@@ -372,7 +372,15 @@ internal sealed class DesktopUpdateWindow : Window
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
         ToolTip.SetTip(body, title);
-        StackPanel content = new() { Spacing = 0 };
+        StackPanel content = new() { Spacing = 8 };
+
+        content.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        content.Children.Add(body);
 
         if (actionContent is not null)
         {
@@ -390,27 +398,30 @@ internal sealed class DesktopUpdateWindow : Window
         };
     }
 
-    private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
+    private static WrapPanel CreateActionRow(IReadOnlyList<Button> actions)
     {
-        StackPanel actionRow = new()
+        WrapPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6
+            ItemHeight = 32,
+            ItemWidth = double.NaN
         };
 
         foreach (Button action in actions)
         {
+            action.Margin = new Thickness(0, 0, 6, 6);
             actionRow.Children.Add(action);
         }
 
         return actionRow;
     }
 
-    private static void ResetActionRow(StackPanel actionRow, IReadOnlyList<Button> actions)
+    private static void ResetActionRow(WrapPanel actionRow, IReadOnlyList<Button> actions)
     {
         actionRow.Children.Clear();
         foreach (Button action in actions)
         {
+            action.Margin = new Thickness(0, 0, 6, 6);
             actionRow.Children.Add(action);
         }
     }

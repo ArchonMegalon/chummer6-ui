@@ -34,9 +34,10 @@ public sealed class SectionHostRulesetParityComplianceTests
         StringAssert.Contains(scriptText, "Project_hides_unbacked_section_quick_actions");
         StringAssert.Contains(scriptText, "Project_formats_ruleset_conditioned_navigator_section_action_labels");
         StringAssert.Contains(scriptText, "ShellDirectives_distinguish_headings_and_tab_action_labels_per_ruleset");
-        StringAssert.Contains(scriptText, "\"QuickActions: ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId),\"");
-        StringAssert.Contains(scriptText, "\"RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(\"");
-        StringAssert.Contains(scriptText, "\"scripts/ai/test.sh\"");
+        StringAssert.Contains(scriptText, "\"quick_action_projection\": \"ProjectSectionQuickActions(shellSurface.ActiveRulesetId, state.ActiveSectionId)\"");
+        StringAssert.Contains(scriptText, "\"section_action_label_projection\": \"RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(\"");
+        StringAssert.Contains(scriptText, "\"dotnet\"");
+        StringAssert.Contains(scriptText, "\"test\"");
         StringAssert.Contains(scriptText, "\"sourceArtifactReview\"");
         StringAssert.Contains(scriptText, "\"sectionInventoryReview\"");
         StringAssert.Contains(scriptText, "\"shellInventoryReview\"");
@@ -76,11 +77,11 @@ public sealed class SectionHostRulesetParityComplianceTests
         Assert.AreEqual("chummer6-ui.section_host_ruleset_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(23, evidence.GetProperty("standardSectionCount").GetInt32());
+        Assert.AreEqual(26, evidence.GetProperty("standardSectionCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("sr6AdaptedSectionCount").GetInt32());
         Assert.AreEqual(39, evidence.GetProperty("commandCount").GetInt32());
         Assert.AreEqual(10, evidence.GetProperty("tabCount").GetInt32());
-        Assert.AreEqual(13, evidence.GetProperty("workspaceActionCount").GetInt32());
+        Assert.AreEqual(16, evidence.GetProperty("workspaceActionCount").GetInt32());
         Assert.AreEqual("pass", evidence.GetProperty("rulesetAdaptationStatus").GetString());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());

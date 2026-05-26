@@ -160,10 +160,8 @@ public class CharacterOverviewPresenterTests
         Assert.IsNotNull(presenter.State.Build);
         Assert.IsNotNull(presenter.State.Movement);
         Assert.IsNotNull(presenter.State.Awakening);
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import ready:");
-        StringAssert.Contains(presenter.State.Notice ?? string.Empty, "Portable import completed");
-        Assert.IsNotNull(presenter.State.LatestPortabilityActivity);
-        Assert.AreEqual("Last portable import", presenter.State.LatestPortabilityActivity?.Title);
+        Assert.IsTrue(string.IsNullOrWhiteSpace(presenter.State.Notice));
+        Assert.IsNull(presenter.State.LatestPortabilityActivity);
         Assert.AreEqual("ws-1", presenter.State.WorkspaceId?.Value);
         Assert.AreEqual("BLUE", presenter.State.Profile.Alias);
     }
@@ -719,20 +717,16 @@ public class CharacterOverviewPresenterTests
 
         Assert.IsNotNull(presenter.State.ActiveDialog);
         Assert.AreEqual("dialog.master_index", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("11", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebooks"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionSummary"), "2 sourcebooks");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourcebook1"), "Core Rulebook");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleLane"), "75%");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMatrix"), "Chummer4 fixtures 18");
-        Assert.AreEqual("Hero Lab", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleMissingSources"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "50%");
-        Assert.AreEqual("50% (1/2)", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageCoverage"));
+        Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSettingsSummary"), "governed");
+        Assert.AreEqual("All", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexFileSelection"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexCurrentSourcebook"), "Core Rulebook");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexImportOracleReceipt"), "import oracle partial");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageLane"), "partial");
+        Assert.AreEqual("1/2 · 50%", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexOnlineStorageCoverage"));
         Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6SupplementLane"));
-        Assert.AreEqual("partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerToolsLane"));
-        Assert.AreEqual("4/5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerCoverage"));
-        Assert.AreEqual("governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleLane"));
-        Assert.AreEqual("3", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleOverlayCount"));
+        Assert.AreEqual("4/5 · partial", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSr6DesignerCoverage"));
+        Assert.AreEqual("governed · 3 overlays", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexHouseRuleLane"));
         Assert.AreEqual("source selection governed", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "masterIndexSourceSelectionReceipt"));
     }
 
@@ -1081,9 +1075,11 @@ public class CharacterOverviewPresenterTests
         await presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None);
 
         Assert.AreEqual("dialog.dice_roller", presenter.State.ActiveDialog?.Id);
-        Assert.AreEqual("ruleset-backed roll + initiative preview", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "2 open runners");
-        Assert.AreEqual("10 + 1d6 · pass 1 · range 11-16 · avg 13.5", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview"));
+        Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceUtilityLane"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "diceRosterContext"), "Open Runners | 2");
+        string initiativePreview = DesktopDialogFieldValueParser.GetValue(presenter.State.ActiveDialog!, "initiativePreview");
+        StringAssert.Contains(initiativePreview, "L2 · Legacy Two [sr6]");
+        StringAssert.Contains(initiativePreview, "Initiative preview uses the active roster runner");
     }
 
     [TestMethod]

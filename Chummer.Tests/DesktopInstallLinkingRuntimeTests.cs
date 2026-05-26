@@ -1,7 +1,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -212,6 +214,85 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
         StringAssert.Contains(path, "applicationVersion=6.0.1-preview", StringComparison.Ordinal);
         StringAssert.Contains(path, "Recommended%20action%3A%20Review%20the%20promoted%20preview%20and%20route%20support%20before%20retrying.", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void BuildSupportDiagnosticsReceiptLines_returns_grounded_before_after_support_receipt()
+    {
+        IReadOnlyList<string> lines = DesktopInstallLinkingRuntime.BuildSupportDiagnosticsReceiptLines(CreateState(), CreateUpdateStatus());
+
+        Assert.IsTrue(lines.Count > 0);
+        Assert.IsTrue(lines.Any(line => line.Contains("support/ins-avalonia-1/avalonia/preview", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(lines.Any(line => line.Contains("Manifest signature mismatch.", StringComparison.Ordinal)));
+        Assert.IsTrue(lines.Any(line => line.Contains("before 6.0.1-preview/attention_required", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(lines.Any(line => line.Contains("after 6.0.2-preview", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [TestMethod]
+    public void BuildPublicPortalAbsoluteUri_uses_web_base_override()
+    {
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "https://hub.example.test/root/");
+
+            string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/account/work");
+
+            Assert.AreEqual("https://hub.example.test/account/work", absoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+        }
+    }
+
+    [TestMethod]
+    public void Callback_fragment_extractors_read_fragment_queries_and_reject_non_install_routes()
+    {
+        MethodInfo? browserMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "TryExtractBrowserCallbackCodeFromCallbackUri",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        MethodInfo? claimMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "TryExtractClaimCodeFromCallbackUri",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.IsNotNull(browserMethod);
+        Assert.IsNotNull(claimMethod);
+
+        object?[] browserArgs = ["https://chummer.run/downloads/install/callback#?callbackCode=grant-fragment-7", null];
+        object?[] claimArgs = ["chummer://install-link#?claim_code=claim-fragment-7", null];
+        object?[] rejectedArgs = ["https://chummer.run/account/support?claim=ignored", null];
+
+        Assert.AreEqual(true, browserMethod.Invoke(null, browserArgs));
+        Assert.AreEqual("grant-fragment-7", browserArgs[1]);
+
+        Assert.AreEqual(true, claimMethod.Invoke(null, claimArgs));
+        Assert.AreEqual("CLAIMFRAGMENT7", claimArgs[1]);
+
+        Assert.AreEqual(false, claimMethod.Invoke(null, rejectedArgs));
+        Assert.IsNull(rejectedArgs[1]);
+    }
+
+    [TestMethod]
+    public void Runtime_alias_normalizers_include_legacy_platform_and_arch_tokens()
+    {
+        MethodInfo? platformMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "NormalizePlatformAliases",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        MethodInfo? architectureMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(
+            "NormalizeArchitectureAliases",
+            BindingFlags.NonPublic | BindingFlags.Static);
+
+        Assert.IsNotNull(platformMethod);
+        Assert.IsNotNull(architectureMethod);
+
+        string[] platformAliases = ((IEnumerable<string>)platformMethod.Invoke(null, ["windows"])!).ToArray();
+        string[] architectureAliases = ((IEnumerable<string>)architectureMethod.Invoke(null, ["x64"])!).ToArray();
+
+        CollectionAssert.Contains(platformAliases, "windows");
+        CollectionAssert.Contains(platformAliases, "win");
+        CollectionAssert.Contains(architectureAliases, "x64");
+        CollectionAssert.Contains(architectureAliases, "amd64");
     }
 
     [TestMethod]

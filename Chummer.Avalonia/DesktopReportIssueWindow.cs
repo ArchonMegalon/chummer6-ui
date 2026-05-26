@@ -167,12 +167,12 @@ internal sealed class DesktopReportIssueWindow : Window
         [
             $"{_installState.HeadId} · {_installState.Platform}/{_installState.Arch}",
             $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}",
-            $"Release: {_updateStatus.Status}"
+            $"Update channel status: {_updateStatus.Status}"
         ];
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add($"Issue: {_updateStatus.LastError}");
+            lines.Add($"What still needs attention: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines);

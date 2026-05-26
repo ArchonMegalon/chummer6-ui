@@ -10,7 +10,12 @@
       <Grid RowDefinitions="Auto,*" RowSpacing="2">
         <!-- Roster header matching Chummer5a posture -->
         <Border Grid.Row="0" Classes="shell-section-title" Padding="4,2,4,4">
-          <TextBlock Classes="shell-kicker" Text="Character Roster" IsVisible="False" />
+          <StackPanel Spacing="0">
+            <TextBlock Classes="shell-section-title" Text="Characters" />
+            <TextBlock Classes="shell-caption"
+                       Text="Grouped by ruleset"
+                       TextTrimming="CharacterEllipsis" />
+          </StackPanel>
         </Border>
 
         <!-- TreeView matching Chummer5a treCharacterList structure -->
@@ -34,6 +39,7 @@
               <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4" Margin="0,1">
                 <!-- Character icon/mugshot placeholder -->
                 <Border Grid.Column="0"
+                      IsVisible="{Binding ShowInitialBadge}"
                       Width="24"
                       Height="24"
                       Background="#E0E0E0"
@@ -49,11 +55,13 @@
                 <StackPanel Grid.Column="1" Spacing="0">
                   <TextBlock Classes="shell-tree-label"
                              Text="{Binding Name}"
-                             FontWeight="SemiBold" />
+                             FontWeight="SemiBold"
+                             TextTrimming="CharacterEllipsis" />
                   <TextBlock Classes="shell-caption"
                              Text="{Binding Meta}"
                              FontSize="10"
-                             IsVisible="{Binding HasMeta}" />
+                             TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding ShowMeta}" />
                 </StackPanel>
               </Grid>
             </TreeDataTemplate>

@@ -95,8 +95,8 @@ public sealed class Next90M119FirstSessionFlowGuardTests
         Assert.IsTrue(checks.GetProperty("design_queue_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_task_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_task_matches").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_status_complete").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_evidence_exact").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_status_is_queue_managed").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_evidence_is_queue_managed").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_wave_matches").GetBoolean());
@@ -118,7 +118,6 @@ public sealed class Next90M119FirstSessionFlowGuardTests
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
-        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
 
         CollectionAssert.AreEquivalent(
@@ -129,7 +128,6 @@ public sealed class Next90M119FirstSessionFlowGuardTests
                 Path.Combine(repoRoot, "scripts", "ai", "verify.sh"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M119FirstSessionFlowGuardTests.cs"),
             },

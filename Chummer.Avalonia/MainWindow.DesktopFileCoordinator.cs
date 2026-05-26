@@ -214,7 +214,7 @@ internal static class MainWindowDesktopFileCoordinator
         await output.FlushAsync(ct);
         return new DesktopDownloadSaveResult(
             DesktopFileOperationOutcome.Completed,
-            $"Notice: downloaded {request.Download.FileName} to {targetFile.Name}.");
+            BuildSavedFileNotice("Downloaded", request.Download.FileName, targetFile.Name));
     }
 
     public static async Task<DesktopDownloadSaveResult> SaveExportAsync(
@@ -309,8 +309,16 @@ internal static class MainWindowDesktopFileCoordinator
         await output.FlushAsync(ct);
         return new DesktopDownloadSaveResult(
             DesktopFileOperationOutcome.Completed,
-            $"Notice: {noticePrefix} {suggestedFileName} to {targetFile.Name}.");
+            BuildSavedFileNotice(CapitalizeNoticePrefix(noticePrefix), suggestedFileName, targetFile.Name));
     }
+
+    private static string BuildSavedFileNotice(string action, string sourceName, string targetName)
+        => $"{action} {sourceName} to {targetName}.";
+
+    private static string CapitalizeNoticePrefix(string noticePrefix)
+        => string.IsNullOrWhiteSpace(noticePrefix)
+            ? "Saved"
+            : char.ToUpperInvariant(noticePrefix[0]) + noticePrefix[1..];
 }
 
 internal enum DesktopFileOperationOutcome

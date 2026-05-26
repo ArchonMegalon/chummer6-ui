@@ -45,7 +45,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         StringAssert.Contains(guardScript, "CHUMMER_FLAGSHIP_FRONTIER_ROOT");
         StringAssert.Contains(guardScript, "CHUMMER_FLAGSHIP_FRONTIER_ID");
         StringAssert.Contains(guardScript, "default_flagship_frontier_path");
-        StringAssert.Contains(guardScript, "\"release_channel_is_preview\"");
+        StringAssert.Contains(guardScript, "\"release_channel_is_not_preview\"");
         StringAssert.Contains(guardScript, "\"release_channel_version_present\"");
         StringAssert.Contains(guardScript, "\"frontier_artifact_path_under_root\"");
         StringAssert.Contains(guardScript, "\"frontier_artifact_uses_shard_generated_yaml\"");
@@ -157,7 +157,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         AssertSourceMarkersPass(sourceChecks.GetProperty("scripts/ai/verify.sh"));
 
         JsonElement receiptChecks = evidence.GetProperty("receiptChecks");
-        Assert.IsTrue(receiptChecks.GetProperty("release_channel_is_preview").GetBoolean());
+        Assert.IsTrue(receiptChecks.GetProperty("release_channel_is_not_preview").GetBoolean());
         Assert.IsTrue(receiptChecks.GetProperty("release_channel_version_present").GetBoolean());
         Assert.IsTrue(receiptChecks.GetProperty("visual_familiarity_gate_pass").GetBoolean());
         Assert.IsTrue(receiptChecks.GetProperty("visual_required_screenshots_present").GetBoolean());
@@ -181,21 +181,24 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.IsTrue(screenshotFiles.GetProperty("39-xml-editor-dialog-light.png").GetBoolean());
         Assert.IsTrue(screenshotFiles.GetProperty("40-hero-lab-importer-dialog-light.png").GetBoolean());
 
+        string publishedRepoRoot = Directory.Exists(Path.Combine(Directory.GetParent(repoRoot)?.FullName ?? repoRoot, "chummer6-ui"))
+            ? Path.Combine(Directory.GetParent(repoRoot)?.FullName ?? repoRoot, "chummer6-ui")
+            : repoRoot;
         CollectionAssert.AreEquivalent(
             new[]
             {
-                Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "CharacterOverviewPresenterTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "DesktopDialogFactoryTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "DualHeadAcceptanceTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M141DirectImportRouteProofGuardTests.cs"),
-                Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "chummer5a-screenshot-review-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "veteran-task-time-evidence-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m141-ui-direct-import-route-proof-check.sh"),
-                Path.Combine(repoRoot, "scripts", "ai", "verify.sh"),
-                Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Presentation", "CharacterOverviewPresenterTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Presentation", "DesktopDialogFactoryTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Presentation", "DualHeadAcceptanceTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Compliance", "Next90M141DirectImportRouteProofGuardTests.cs"),
+                Path.Combine(publishedRepoRoot, "Chummer.Tests", "Chummer.Tests.csproj"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "chummer5a-screenshot-review-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "veteran-task-time-evidence-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "b14-flagship-ui-release-gate.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "milestones", "next90-m141-ui-direct-import-route-proof-check.sh"),
+                Path.Combine(publishedRepoRoot, "scripts", "ai", "verify.sh"),
+                Path.Combine(publishedRepoRoot, ".codex-studio", "published", "NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json"),
             },
             ReadStringArray(evidence.GetProperty("proofFiles")));
         CollectionAssert.AreEquivalent(
@@ -215,7 +218,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.IsTrue(File.Exists(flagshipFrontierPath), $"Flagship frontier receipt is missing: {flagshipFrontierPath}");
 
         using JsonDocument releaseChannel = JsonDocument.Parse(File.ReadAllText(releaseChannelPath));
-        Assert.AreEqual("preview", releaseChannel.RootElement.GetProperty("channelId").GetString());
+        Assert.AreEqual("public_stable", releaseChannel.RootElement.GetProperty("channelId").GetString());
         Assert.IsFalse(string.IsNullOrWhiteSpace(releaseChannel.RootElement.GetProperty("version").GetString()));
 
         string flagshipFrontierText = File.ReadAllText(flagshipFrontierPath);

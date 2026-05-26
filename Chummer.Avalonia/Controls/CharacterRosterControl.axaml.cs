@@ -89,6 +89,11 @@ public partial class CharacterRosterControl : UserControl
 
         if (RosterTree.SelectedItem is CharacterRosterNode node)
         {
+            if (node.IsGroup)
+            {
+                return;
+            }
+
             SelectedWorkspaceId = node.Id;
             RaiseEvent(new RosterSelectionChangedEventArgs(SelectionChangedEvent, node));
         }
@@ -140,7 +145,10 @@ public sealed class CharacterRosterNode
     public string Name { get; init; } = string.Empty;
     public string? Meta { get; init; }
     public string? Initials { get; init; }
+    public bool IsGroup { get; init; }
     public bool HasMeta => !string.IsNullOrWhiteSpace(Meta);
+    public bool ShowMeta => HasMeta;
+    public bool ShowInitialBadge => !IsGroup && !string.IsNullOrWhiteSpace(Initials);
     public IList<CharacterRosterNode> Children { get; init; } = Array.Empty<CharacterRosterNode>();
 }
 

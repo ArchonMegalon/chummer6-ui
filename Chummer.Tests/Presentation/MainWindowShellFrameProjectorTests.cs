@@ -256,11 +256,11 @@ public sealed class MainWindowShellFrameProjectorTests
             openWorkspaces: openWorkspaces,
             activeWorkspaceId: activeWorkspaceId);
 
-        Assert.AreEqual(2, frame.RosterPaneState.Items.Length);
+        Assert.AreEqual(1, frame.RosterPaneState.Items.Length);
         Assert.AreEqual("runner-011", frame.RosterPaneState.SelectedWorkspaceId);
-        Assert.AreEqual("Runner 011", frame.RosterPaneState.Items[0].Name);
-        Assert.AreEqual("Switchback", frame.RosterPaneState.Items[0].Meta);
-        CollectionAssert.AreEqual(new[] { "runner-011", "runner-012" }, frame.RosterPaneState.Items.Select(item => item.Id).ToArray());
+        Assert.AreEqual("SR6 Roster", frame.RosterPaneState.Items[0].Name);
+        Assert.AreEqual("2 characters", frame.RosterPaneState.Items[0].Meta);
+        CollectionAssert.AreEqual(new[] { "runner-011", "runner-012" }, frame.RosterPaneState.Items[0].Children.Select(item => item.Id).ToArray());
     }
 
     [TestMethod]

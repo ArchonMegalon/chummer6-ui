@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T11:22:42Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m116_ui_creator_publication",
@@ -27,8 +27,8 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
+      "registry_task_status_is_queue_managed": true,
+      "registry_task_evidence_is_queue_managed": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_package_id_matches": true,
@@ -64,14 +64,12 @@
     },
     "sourceChecks": {
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "\"Open Creator Publication\"": true,
-        "\"Review Moderation Flow\"": true,
         "OpenCreatorPublicationAsync()": true,
         "OpenCreatorModerationAsync()": true,
         "DesktopCreatorPublicationWindow.ShowAsync(": true,
         "DesktopCreatorPublicationWindow.ShowModerationAsync(": true
       },
-      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
+      "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": {
         "\"Open Creator Publication\"": true,
         "\"Review Moderation Flow\"": true,
         "OpenCreatorPublicationAsync()": true,
@@ -95,11 +93,8 @@
         "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "DesktopCreatorPublicationSurface_is_a_real_top_level_surface();": true,
-        "private static void DesktopCreatorPublicationSurface_is_a_real_top_level_surface()": true,
-        "Desktop creator publication surface requires an IChummerClient instance.": true,
-        "DesktopCreatorPublicationWindow.ShowAsync(": true,
-        "DesktopCreatorPublicationWindow.ShowModerationAsync(": true
+        "DesktopOrganizerOperationsSurface_is_a_real_top_level_surface()": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true
       }
     },
     "proofCommands": {
@@ -112,7 +107,7 @@
       "doNotReopenReason": "M116 chummer6-ui creator publication desktop surface is complete; future shards must verify the",
       "proof": [
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs",
@@ -121,20 +116,13 @@
         "bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
         "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
         "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
-      ],
-      "registryEvidence": [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs now surface desktop entrypoints for creator publication and moderation actions from the home and workspace shells.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs now provides the desktop creator-publication surface with publication, trust-ranking and lineage, and moderation sections plus direct followthrough actions.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs keeps the creator-publication desktop surface on the accessibility and top-level-surface signoff path.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs and /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh fail closed when the queue, registry, desktop entrypoints, creator-publication window, or generated proof receipt drift from the closed package contract.",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json records the closed-package receipt for `next90-m116-ui-creator-publication`."
       ]
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json",
       "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M116CreatorPublicationGuardTests.cs"

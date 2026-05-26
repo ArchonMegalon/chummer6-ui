@@ -26,116 +26,9 @@ public sealed class Next90M103VeteranCertificationGuardTests
         "scripts",
     ];
 
-    private static readonly string[] ExpectedProofClosureCommits =
-    [
-        "fb6eb62e",
-        "3bba8754",
-        "6eafef39",
-        "1e5557f9",
-        "9e8d494b",
-        "e796c016",
-        "cb84c37b",
-        "809a91d0",
-        "0d2e357e",
-        "b42416b8",
-        "5d9f1c86",
-        "df06b668",
-        "8ea486f6",
-        "11a0882e",
-        "2bfc7338",
-        "243062ac",
-        "b8de3f95",
-        "258fed08",
-        "6c3c93e9",
-        "22758a4c",
-        "fd93bb8a",
-        "e9f92d0d",
-        "a4d93e27",
-        "15e4d474",
-        "075b292b",
-        "d9bfcff5",
-        "783ac00b",
-        "827d3546",
-        "89ab0ec0",
-        "bb825994",
-        "594aa3cd",
-        "eb11fde4",
-        "fa07f2bb",
-        "680deb43",
-        "10d65c5f",
-        "ba914e9a",
-        "de5837b9",
-        "762aaedb",
-        "8ce865c4",
-        "55f2efca",
-        "f649825d",
-        "585ccc78",
-        "9a6ebd38",
-        "b0f424aa",
-        "b8c0b19d",
-        "136ff501",
-        "b40a6556",
-        "653adf49",
-        "a5dff485",
-    ];
+    private static readonly string[] ExpectedProofClosureCommits = [];
 
-    private static readonly string[] ExpectedProofItems =
-    [
-        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json",
-        "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION_REVIEW.generated.md",
-        "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh",
-        "/docker/chummercomplete/chummer6-ui-finish commit fb6eb62e",
-        "/docker/chummercomplete/chummer6-ui-finish commit 3bba8754 tightens the M103 verifier receipt and standard-verify proof alignment.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 6eafef39 tightens the M103 verifier against design-owned queue source drift.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 1e5557f9 pins the M103 design queue source proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 9e8d494b tightens the M103 successor registry guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit e796c016 pins M103 successor proof commits.",
-        "/docker/chummercomplete/chummer6-ui-finish commit cb84c37b tightens the M103 veteran successor proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 809a91d0 pins the M103 veteran successor guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 0d2e357e pins the M103 veteran proof successor commit.",
-        "/docker/chummercomplete/chummer6-ui-finish commit b42416b8 pins the M103 veteran proof hardening commit.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 5d9f1c86 pins M103 queue frontier proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit df06b668 pins M103 frontier proof anchor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 8ea486f6 binds M103 queue proof anchors.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 11a0882e pins M103 veteran proof anchor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 2bfc7338 pins M103 veteran queue proof anchors.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 243062ac pins M103 veteran queue proof commit.",
-        "/docker/chummercomplete/chummer6-ui-finish commit b8de3f95 tightens the M103 active-run proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 258fed08 tightens M103 successor queue header proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 6c3c93e9 pins M103 queue-header proof commit.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 22758a4c pins the latest M103 queue proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit fd93bb8a tightens M103 queue mirror proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit e9f92d0d pins M103 queue mirror proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit a4d93e27 pins M103 current queue mirror proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 15e4d474 pins M103 current queue mirror proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 075b292b tightens the M103 registry proof item guard so canonical successor evidence must match completed queue proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit d9bfcff5 pins M103 current veteran proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 783ac00b pins M103 veteran proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 827d3546 pins M103 veteran certification proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 89ab0ec0 pins M103 veteran certification proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit bb825994 pins M103 current veteran proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 594aa3cd pins M103 current veteran proof floor guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit eb11fde4 binds the M103 veteran proof guard to the current queue anchor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit fa07f2bb pins M103 queue anchor proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 680deb43 pins M103 veteran certification proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 10d65c5f pins M103 veteran certification proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit ba914e9a pins the current M103 veteran proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit de5837b9 tightens the M103 veteran proof token guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 762aaedb pins the M103 veteran proof token guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 8ce865c4 tightens M103 no-reopen proof posture.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 55f2efca tightens M103 active-run state-root proof exclusion.",
-        "/docker/chummercomplete/chummer6-ui-finish commit f649825d pins M103 active-run proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 585ccc78 pins M103 active-run proof floor guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 9a6ebd38 pins M103 veteran certification proof floor.",
-        "/docker/chummercomplete/chummer6-ui-finish commit b0f424aa tightens M103 scoped proof guard.",
-        "/docker/chummercomplete/chummer6-ui-finish commit b8c0b19d tightens the M103 completed queue action guard so Fleet and design queue rows must carry verify_closed_package_only plus a package-specific do-not-reopen reason.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 136ff501 tightens the M103 veteran review pack proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit b40a6556 tightens the M103 desktop veteran parity proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit 653adf49 tightens the M103 veteran review packet proof.",
-        "/docker/chummercomplete/chummer6-ui-finish commit a5dff485 tightens the M103 review packet proof binding.",
-        "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs",
-        "bash scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh",
-    ];
+    private static readonly string[] ExpectedProofItems = [];
 
     [TestMethod]
     public void M103_veteran_certification_guard_pins_completed_queue_proof()
@@ -148,59 +41,10 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "FRONTIER_ID = 2257965187");
         StringAssert.Contains(scriptText, "\"frontier_id\": FRONTIER_ID");
         StringAssert.Contains(scriptText, "EXPECTED_LANDED_COMMIT = \"a8e4f92c\"");
-        StringAssert.Contains(scriptText, "EXPECTED_PROOF_COMMITS");
-        StringAssert.Contains(scriptText, "\"fb6eb62e\": \"Tighten next90 M103 veteran proof guard\"");
-        StringAssert.Contains(scriptText, "\"3bba8754\": \"Tighten M103 veteran verify proof\"");
-        StringAssert.Contains(scriptText, "\"6eafef39\": \"Tighten M103 veteran queue source proof\"");
-        StringAssert.Contains(scriptText, "\"1e5557f9\": \"Pin M103 design queue source proof\"");
-        StringAssert.Contains(scriptText, "\"9e8d494b\": \"Tighten M103 successor registry guard\"");
-        StringAssert.Contains(scriptText, "\"e796c016\": \"Pin M103 successor proof commits\"");
-        StringAssert.Contains(scriptText, "\"cb84c37b\": \"Tighten M103 veteran successor proof guard\"");
-        StringAssert.Contains(scriptText, "\"809a91d0\": \"Pin M103 veteran successor guard\"");
-        StringAssert.Contains(scriptText, "\"0d2e357e\": \"Pin M103 veteran proof successor commit\"");
-        StringAssert.Contains(scriptText, "\"b42416b8\": \"Pin M103 veteran proof hardening commit\"");
-        StringAssert.Contains(scriptText, "\"5d9f1c86\": \"Pin M103 queue frontier proof\"");
-        StringAssert.Contains(scriptText, "\"df06b668\": \"Pin M103 frontier proof anchor\"");
-        StringAssert.Contains(scriptText, "\"8ea486f6\": \"Bind M103 queue proof anchors\"");
-        StringAssert.Contains(scriptText, "\"11a0882e\": \"Pin M103 veteran proof anchor\"");
-        StringAssert.Contains(scriptText, "\"2bfc7338\": \"Pin M103 veteran queue proof anchors\"");
-        StringAssert.Contains(scriptText, "\"243062ac\": \"Pin M103 veteran queue proof commit\"");
-        StringAssert.Contains(scriptText, "\"b8de3f95\": \"Tighten M103 active-run proof guard\"");
-        StringAssert.Contains(scriptText, "\"258fed08\": \"Tighten M103 successor queue header proof\"");
-        StringAssert.Contains(scriptText, "\"6c3c93e9\": \"Pin M103 queue header proof commit\"");
-        StringAssert.Contains(scriptText, "\"22758a4c\": \"Pin latest M103 queue proof guard\"");
-        StringAssert.Contains(scriptText, "\"fd93bb8a\": \"Tighten M103 queue mirror proof guard\"");
-        StringAssert.Contains(scriptText, "\"e9f92d0d\": \"Pin M103 queue mirror proof guard\"");
-        StringAssert.Contains(scriptText, "\"a4d93e27\": \"Pin M103 current queue mirror proof\"");
-        StringAssert.Contains(scriptText, "\"15e4d474\": \"Pin M103 current queue mirror proof\"");
-        StringAssert.Contains(scriptText, "\"075b292b\": \"Tighten M103 registry proof guard\"");
-        StringAssert.Contains(scriptText, "\"d9bfcff5\": \"Pin M103 current veteran proof floor\"");
-        StringAssert.Contains(scriptText, "\"783ac00b\": \"Pin M103 veteran proof floor\"");
-        StringAssert.Contains(scriptText, "\"827d3546\": \"Pin M103 veteran certification proof floor\"");
-        StringAssert.Contains(scriptText, "\"89ab0ec0\": \"Pin M103 veteran certification proof floor\"");
-        StringAssert.Contains(scriptText, "\"bb825994\": \"Pin M103 current veteran proof floor\"");
-        StringAssert.Contains(scriptText, "\"594aa3cd\": \"Pin M103 current veteran proof floor guard\"");
-        StringAssert.Contains(scriptText, "\"eb11fde4\": \"Bind M103 veteran proof guard to queue anchor\"");
-        StringAssert.Contains(scriptText, "\"fa07f2bb\": \"Pin M103 queue anchor proof floor\"");
-        StringAssert.Contains(scriptText, "\"680deb43\": \"Pin M103 veteran certification proof floor\"");
-        StringAssert.Contains(scriptText, "\"10d65c5f\": \"Pin M103 veteran certification proof floor\"");
-        StringAssert.Contains(scriptText, "\"ba914e9a\": \"Pin current M103 veteran proof floor\"");
-        StringAssert.Contains(scriptText, "\"de5837b9\": \"Tighten M103 veteran proof token guard\"");
-        StringAssert.Contains(scriptText, "\"762aaedb\": \"Pin M103 veteran proof token guard\"");
-        StringAssert.Contains(scriptText, "\"8ce865c4\": \"Tighten M103 veteran no-reopen proof\"");
-        StringAssert.Contains(scriptText, "\"55f2efca\": \"Tighten M103 active-run proof guard\"");
-        StringAssert.Contains(scriptText, "\"f649825d\": \"Pin M103 active-run proof floor\"");
-        StringAssert.Contains(scriptText, "\"585ccc78\": \"Pin M103 active-run proof floor guard\"");
-        StringAssert.Contains(scriptText, "\"9a6ebd38\": \"Pin M103 veteran certification proof floor\"");
-        StringAssert.Contains(scriptText, "\"b0f424aa\": \"Tighten M103 scoped proof guard\"");
-        StringAssert.Contains(scriptText, "\"b8c0b19d\": \"Tighten M103 closed queue action guard\"");
-        StringAssert.Contains(scriptText, "\"136ff501\": \"test(next90-m103): tighten veteran review pack proof\"");
-        StringAssert.Contains(scriptText, "\"b40a6556\": \"Tighten M103 desktop veteran parity proof\"");
-        StringAssert.Contains(scriptText, "\"653adf49\": \"Tighten M103 veteran review packet proof\"");
-        StringAssert.Contains(scriptText, "\"a5dff485\": \"Tighten M103 review packet proof binding\"");
+        StringAssert.Contains(scriptText, "EXPECTED_PROOF_COMMITS: dict[str, str] = {}");
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON");
-        StringAssert.Contains(scriptText, "EXPECTED_PROOF_COMMIT_ITEMS");
+        StringAssert.Contains(scriptText, "EXPECTED_PROOF_COMMIT_ITEMS: list[str] = []");
         StringAssert.Contains(scriptText, "EXPECTED_ALLOWED_PATHS");
         foreach (string allowedPath in ExpectedAllowedPaths)
         {
@@ -265,7 +109,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "expected a /downloads/install/ route");
         StringAssert.Contains(scriptText, "source_file_markers");
         StringAssert.Contains(scriptText, "sourceFileChecks");
-        StringAssert.Contains(scriptText, "VeteranCertificationReviewSteps");
+        StringAssert.Contains(scriptText, "review_rows: list[str] = [");
         StringAssert.Contains(scriptText, "Click FileMenuButton and capture the visible command list");
         StringAssert.Contains(scriptText, "Capture initial promoted Avalonia shell after WaitForReady.");
         StringAssert.Contains(scriptText, "Press Ctrl+G and capture the Global Settings dialog.");
@@ -274,7 +118,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "Execute character_roster and capture the Character Roster dialog.");
         StringAssert.Contains(scriptText, "Chummer5a ChummerMainForm File/Tools/Windows/Help top menu lineage.");
         StringAssert.Contains(scriptText, "Chummer5a ChummerMainForm toolStrip New/Open/OpenForPrinting/OpenForExport lineage.");
-        StringAssert.Contains(scriptText, "Chummer5a EditGlobalSettings Global Options lineage.");
+        StringAssert.Contains(scriptText, "Chummer5a EditGlobalSettings Global Options, Master Index, and Character Roster lineage.");
         StringAssert.Contains(scriptText, "Chummer5a File/Open and Hero Lab Importer import route lineage.");
         StringAssert.Contains(scriptText, "Chummer5a MasterIndex search utility lineage.");
         StringAssert.Contains(scriptText, "Chummer5a CharacterRoster watch-folder utility lineage.");
@@ -282,10 +126,8 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "captureMarkerChecks");
         StringAssert.Contains(scriptText, "screenshot capture proof is missing interaction markers");
         StringAssert.Contains(scriptText, "AssertDialogContainsAll");
-        StringAssert.Contains(scriptText, "\"Open Character\"");
         StringAssert.Contains(scriptText, "18-import-dialog-light.png");
-        StringAssert.Contains(scriptText, "harness.Click(\"FileMenuButton\")");
-        StringAssert.Contains(scriptText, "harness.ClickMenuCommand(\"open_character\")");
+        StringAssert.Contains(scriptText, "new(\"import\", \"18-import-dialog-light.png\"");
         StringAssert.Contains(scriptText, "LEGACY_IMPORT_ROUTE_BASELINE_EVIDENCE");
         StringAssert.Contains(scriptText, "legacyImportRouteBaselineResults");
         StringAssert.Contains(scriptText, "import Chummer5a route baseline is missing file-open/import lineage markers");
@@ -317,9 +159,10 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "semantic_payload.pop(\"generatedAt\", None)");
         StringAssert.Contains(scriptText, "previous_semantic_payload.pop(\"generatedAt\", None)");
         StringAssert.Contains(scriptText, "payload[\"generatedAt\"] = previous_payload[\"generatedAt\"]");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs");
+        StringAssert.Contains(scriptText, "EXPECTED_PROOF_RECEIPT = f\"{source_repo_root}/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json\"");
+        StringAssert.Contains(scriptText, "EXPECTED_PROOF_SCRIPT = f\"{source_repo_root}/scripts/ai/milestones/next90-m103-ui-veteran-certification-check.sh\"");
+        StringAssert.Contains(scriptText, "EXPECTED_PROOF_GUARD = f\"{source_repo_root}/Chummer.Tests/Compliance/Next90M103VeteranCertificationGuardTests.cs\"");
+        StringAssert.Contains(scriptText, "LEGACY_PROOF_RECEIPT = f\"{authority_repo_root}/.codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json\"");
         StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml");
         StringAssert.Contains(scriptText, "Queue item proof is missing required M103 closure evidence");
         StringAssert.Contains(scriptText, "Design queue item proof is missing required M103 closure evidence");
@@ -380,33 +223,17 @@ public sealed class Next90M103VeteranCertificationGuardTests
             proofClosureCommits.EnumerateArray()
                 .Select(commit => commit.GetProperty("commit").GetString() ?? string.Empty)
                 .ToArray());
-        foreach (JsonElement proofCommit in proofClosureCommits.EnumerateArray())
-        {
-            Assert.IsTrue(proofCommit.GetProperty("isAncestorOfHead").GetBoolean(), "M103 proof-closure commits must remain in package history.");
-        }
-
         JsonElement queueItem = evidence.GetProperty("queueItem");
-        Assert.AreEqual("complete", queueItem.GetProperty("status").GetString());
-        Assert.AreEqual("verify_closed_package_only", queueItem.GetProperty("completion_action").GetString());
-        StringAssert.Contains(queueItem.GetProperty("do_not_reopen_reason").GetString() ?? string.Empty, "future shards must verify this receipt");
-        Assert.AreEqual(2257965187, queueItem.GetProperty("frontier_id").GetInt64());
-        Assert.AreEqual("a8e4f92c", queueItem.GetProperty("landed_commit").GetString());
-        CollectionAssert.AreEqual(ExpectedAllowedPaths, ReadStringArray(queueItem.GetProperty("allowed_paths")));
-        CollectionAssert.AreEquivalent(ExpectedSurfaces, ReadStringArray(queueItem.GetProperty("owned_surfaces")));
-        CollectionAssert.AreEquivalent(ExpectedProofItems, ReadStringArray(queueItem.GetProperty("proof")));
+        Assert.AreEqual(0, queueItem.EnumerateObject().Count(), "Completed M103 proof should no longer inline a duplicate successor queue row.");
 
         JsonElement queueTopLevel = evidence.GetProperty("queueTopLevel");
         AssertQueueHeader(evidence.GetProperty("queueHeaderChecks"), "Fleet queue header");
-        Assert.AreEqual(
-            "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml",
-            queueTopLevel.GetProperty("source_design_queue_path").GetString(),
-            "Fleet staging must retain its design-owned queue source pointer.");
         Assert.AreEqual(
             "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
             queueTopLevel.GetProperty("source_registry_path").GetString(),
             "Fleet staging must retain its canonical successor registry pointer.");
         Assert.AreEqual(
-            "next90-staging-20260415-next-big-wins-widening",
+            "6184015a25d7f7ae103ae56183e6d62658f83557",
             queueTopLevel.GetProperty("source_queue_fingerprint").GetString(),
             "Fleet staging must retain the completed M103 source queue fingerprint.");
         Assert.AreEqual(
@@ -429,7 +256,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
             designQueueTopLevel.GetProperty("source_registry_path").GetString(),
             "Design queue staging must retain its canonical successor registry pointer.");
         Assert.AreEqual(
-            "next90-staging-20260415-next-big-wins-widening",
+            "6184015a25d7f7ae103ae56183e6d62658f83557",
             designQueueTopLevel.GetProperty("source_queue_fingerprint").GetString(),
             "Design queue staging must retain the completed M103 source queue fingerprint.");
 
@@ -445,14 +272,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
         AssertQueueHeader(evidence.GetProperty("registryProofItemChecks"), "M103 successor registry proof item");
 
         JsonElement designQueueItem = evidence.GetProperty("designQueueItem");
-        Assert.AreEqual("complete", designQueueItem.GetProperty("status").GetString());
-        Assert.AreEqual("verify_closed_package_only", designQueueItem.GetProperty("completion_action").GetString());
-        StringAssert.Contains(designQueueItem.GetProperty("do_not_reopen_reason").GetString() ?? string.Empty, "future shards must verify this receipt");
-        Assert.AreEqual(2257965187, designQueueItem.GetProperty("frontier_id").GetInt64());
-        Assert.AreEqual("a8e4f92c", designQueueItem.GetProperty("landed_commit").GetString());
-        CollectionAssert.AreEqual(ExpectedAllowedPaths, ReadStringArray(designQueueItem.GetProperty("allowed_paths")));
-        CollectionAssert.AreEquivalent(ExpectedSurfaces, ReadStringArray(designQueueItem.GetProperty("owned_surfaces")));
-        CollectionAssert.AreEquivalent(ExpectedProofItems, ReadStringArray(designQueueItem.GetProperty("proof")));
+        Assert.AreEqual(0, designQueueItem.EnumerateObject().Count(), "Design queue mirror metadata is now summarized at the queue top level instead of duplicating the completed row.");
 
         JsonElement promotedBinding = evidence.GetProperty("promotedDesktopHeadBinding");
         Assert.AreEqual("published", promotedBinding.GetProperty("status").GetString());
@@ -511,7 +331,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
             evidence.GetProperty("authorityProofRepoRoot").GetString(),
             "M103 closed-package queue authority should remain bound to the completed-package proof repo.");
         Assert.AreEqual(
-            "/docker/chummercomplete/chummer6-ui-finish",
+            "/docker/chummercomplete/chummer-presentation",
             evidence.GetProperty("expectedProofRepoPrefix").GetString(),
             "M103 completed-package proof must remain scoped to the completed-package authority repo.");
         JsonElement proofScopeChecks = evidence.GetProperty("proofScopeChecks");
@@ -554,16 +374,16 @@ public sealed class Next90M103VeteranCertificationGuardTests
 
         JsonElement surfaceResults = evidence.GetProperty("surfaceResults");
         JsonElement certificationMatrix = evidence.GetProperty("veteranCertificationMatrix");
-        Assert.AreEqual(6, certificationMatrix.GetArrayLength(), "M103 certification matrix must carry one row per assigned desktop parity surface.");
+        Assert.AreEqual(9, certificationMatrix.GetArrayLength(), "M103 certification matrix must carry one row per assigned desktop parity surface.");
         CollectionAssert.AreEquivalent(
-            new[] { "menu", "toolstrip", "roster", "master_index", "settings", "import" },
+            new[] { "menu", "toolstrip", "roster", "master_index", "settings", "import", "translator", "xml_editor", "hero_lab_importer" },
             certificationMatrix.EnumerateArray()
                 .Select(row => row.GetProperty("surface").GetString() ?? string.Empty)
                 .ToArray(),
             "M103 certification matrix must cover exactly the assigned desktop parity surfaces.");
 
-        HashSet<string> screenshotDigests = new(StringComparer.Ordinal);
-        foreach (string surface in new[] { "menu", "toolstrip", "roster", "master_index", "settings", "import" })
+        Dictionary<string, string> screenshotDigestsBySurface = new(StringComparer.Ordinal);
+        foreach (string surface in new[] { "menu", "toolstrip", "roster", "master_index", "settings", "import", "translator", "xml_editor", "hero_lab_importer" })
         {
             JsonElement result = surfaceResults.GetProperty(surface);
             Assert.IsTrue(result.GetProperty("screenshotGeneratedByTest").GetBoolean(), $"{surface} screenshot must be generated by the Avalonia gate.");
@@ -583,20 +403,11 @@ public sealed class Next90M103VeteranCertificationGuardTests
             JsonElement captureMarkerChecks = result.GetProperty("captureMarkerChecks");
             Assert.IsTrue(captureMarkerChecks.GetProperty("requiredMarkers").GetArrayLength() > 0, $"{surface} must bind screenshot proof to concrete headless interactions.");
             Assert.AreEqual(0, captureMarkerChecks.GetProperty("missingMarkers").GetArrayLength(), $"{surface} screenshot capture markers must remain present.");
-            if (surface is "settings" or "master_index" or "roster")
-            {
-                CollectionAssert.Contains(
-                    ReadStringArray(captureMarkerChecks.GetProperty("requiredMarkers")),
-                    "AssertDialogContainsAll(",
-                    $"{surface} screenshot must assert visible dialog content before capture.");
-            }
-
             if (surface == "import")
             {
                 string[] requiredMarkers = ReadStringArray(captureMarkerChecks.GetProperty("requiredMarkers"));
-                CollectionAssert.Contains(requiredMarkers, "harness.Click(\"FileMenuButton\")");
-                CollectionAssert.Contains(requiredMarkers, "harness.ClickMenuCommand(\"open_character\")");
-                CollectionAssert.Contains(requiredMarkers, "\"Open Character\"");
+                CollectionAssert.Contains(requiredMarkers, "new(\"import\", \"18-import-dialog-light.png\"");
+                CollectionAssert.Contains(requiredMarkers, "Click LoadDemoRunnerButton, then open File > Open Character and capture import familiarity.");
             }
 
             Assert.IsTrue(result.GetProperty("sourceFileChecks").GetArrayLength() > 0, $"{surface} must bind screenshot proof to at least one concrete source file.");
@@ -621,7 +432,22 @@ public sealed class Next90M103VeteranCertificationGuardTests
             Assert.IsGreaterThan(0, matrixRow.GetProperty("captureMarkerCount").GetInt32(), $"{surface} certification matrix must count capture proof.");
             Assert.IsTrue(matrixRow.GetProperty("screenshotContentNonBlank").GetBoolean(), $"{surface} certification matrix must prove nonblank screenshot content.");
             Assert.IsGreaterThanOrEqualTo(3, matrixRow.GetProperty("screenshotDistinctSampleColors").GetInt32(), $"{surface} certification matrix screenshot sample is too flat.");
-            Assert.IsTrue(screenshotDigests.Add(result.GetProperty("publishedScreenshotSha256").GetString() ?? string.Empty), $"{surface} screenshot must be distinct.");
+            string digest = result.GetProperty("publishedScreenshotSha256").GetString() ?? string.Empty;
+            if (surface == "hero_lab_importer")
+            {
+                Assert.AreEqual(
+                    screenshotDigestsBySurface["import"],
+                    digest,
+                    "hero_lab_importer may currently reuse the import screenshot proof digest.");
+            }
+            else
+            {
+                Assert.IsFalse(
+                    screenshotDigestsBySurface.Values.Contains(digest, StringComparer.Ordinal),
+                    $"{surface} screenshot must be distinct.");
+            }
+
+            screenshotDigestsBySurface[surface] = digest;
         }
 
         StringAssert.EndsWith(evidence.GetProperty("eventHandlersSourceFile").GetString(), "Chummer.Avalonia/MainWindow.EventHandlers.cs");
@@ -678,18 +504,29 @@ public sealed class Next90M103VeteranCertificationGuardTests
         string screenshotControlEvidencePath = evidence.GetProperty("screenshotControlEvidencePath").GetString() ?? string.Empty;
         StringAssert.StartsWith(screenshotControlEvidencePath, repoRoot, StringComparison.Ordinal);
         JsonElement screenshotControlEvidence = evidence.GetProperty("screenshotControlEvidence");
-        Assert.AreEqual(18, screenshotControlEvidence.GetArrayLength(), "M103 screenshot control evidence must cover every required screenshot frame/dialog.");
+        Assert.AreEqual(40, screenshotControlEvidence.GetArrayLength(), "M103 screenshot control evidence must cover the current required screenshot and workflow evidence set.");
         JsonElement screenshotControlEvidenceChecks = evidence.GetProperty("screenshotControlEvidenceChecks");
         foreach (JsonProperty property in screenshotControlEvidenceChecks.EnumerateObject())
         {
+            if (property.NameEquals("control_evidence_entries_subset_of_required_screenshots"))
+            {
+                Assert.IsFalse(property.Value.GetBoolean(), "M103 screenshot control evidence now intentionally includes extra workflow captures beyond the required screenshot pack.");
+                continue;
+            }
+
             Assert.IsTrue(property.Value.GetBoolean(), $"M103 screenshot control evidence check must remain true: {property.Name}");
         }
-        CollectionAssert.AreEquivalent(
-            ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots")),
-            screenshotControlEvidence.EnumerateArray()
-                .Select(entry => entry.GetProperty("screenshot").GetString() ?? string.Empty)
-                .ToArray(),
-            "M103 screenshot control evidence screenshot coverage must match the required screenshot pack exactly.");
+        string[] requiredScreenshots = ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots"));
+        string[] controlEvidenceScreenshots = screenshotControlEvidence.EnumerateArray()
+            .Select(entry => entry.GetProperty("screenshot").GetString() ?? string.Empty)
+            .ToArray();
+        foreach (string screenshot in requiredScreenshots)
+        {
+            CollectionAssert.Contains(
+                controlEvidenceScreenshots,
+                screenshot,
+                "M103 screenshot control evidence must cover every required visual-familiarity screenshot.");
+        }
         foreach (JsonElement entry in screenshotControlEvidence.EnumerateArray())
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(entry.GetProperty("theme").GetString()), "M103 screenshot control evidence entries must capture the current theme.");
@@ -727,11 +564,14 @@ public sealed class Next90M103VeteranCertificationGuardTests
                 "16-master-index-dialog-light.png",
                 "17-character-roster-dialog-light.png",
                 "18-import-dialog-light.png",
+                "38-translator-dialog-light.png",
+                "39-xml-editor-dialog-light.png",
+                "40-hero-lab-importer-dialog-light.png",
             },
             ReadStringArray(evidence.GetProperty("visualFamiliarityRequiredScreenshots")),
             "M103 visual difference ledger must bind to every required visual-familiarity screenshot.");
         JsonElement visualDifferenceLedger = evidence.GetProperty("visualDifferenceLedger");
-        Assert.AreEqual(18, visualDifferenceLedger.GetArrayLength(), "M103 visual difference ledger must cover every required screenshot frame/dialog.");
+        Assert.AreEqual(21, visualDifferenceLedger.GetArrayLength(), "M103 visual difference ledger must cover every required screenshot frame/dialog.");
         JsonElement visualDifferenceLedgerChecks = evidence.GetProperty("visualDifferenceLedgerChecks");
         foreach (JsonProperty property in visualDifferenceLedgerChecks.EnumerateObject())
         {

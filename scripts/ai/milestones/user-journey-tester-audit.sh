@@ -128,6 +128,7 @@ flagship_gate_path = Path(sys.argv[6])
 CONTRACT_NAME = "chummer6-ui.user_journey_tester_audit"
 TRACE_CONTRACT_NAME = "chummer6-ui.user_journey_tester_trace"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
+MIN_SCREENSHOT_BYTES = 1024
 
 REQUIRED_WORKFLOWS = [
     "master_index_search_focus_stability",
@@ -254,6 +255,10 @@ def screenshot_review(values: list[str]) -> tuple[list[dict[str, Any]], list[str
             reasons.append(f"screenshot is outside repo root: {path}")
         if not row["is_png"]:
             reasons.append(f"screenshot is not a PNG: {path}")
+        if row["size_bytes"] < MIN_SCREENSHOT_BYTES:
+            reasons.append(
+                f"screenshot is too small to count as credible review evidence ({row['size_bytes']} bytes): {path}"
+            )
         if digest in seen_hashes:
             reasons.append(f"screenshot is duplicated by content: {path}")
         seen_hashes.add(digest)

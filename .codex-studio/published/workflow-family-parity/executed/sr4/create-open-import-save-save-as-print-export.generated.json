@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T08:30:32.885588Z",
+  "generatedAt": "2026-05-26T20:17:25.228249Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for create-open-import-save-save-as-print-export.",
@@ -54,7 +54,7 @@
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr4/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
       "exitCode": 0,
-      "attemptCount": 2,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {

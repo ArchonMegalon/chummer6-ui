@@ -12,9 +12,9 @@ if [[ -n "$repo_root_alias_candidate" && -d "$repo_root_alias_candidate" ]]; the
 fi
 cd "$repo_root"
 
-registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
-queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
-design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+registry_path="${CHUMMER_NEXT90_REGISTRY_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml}"
+queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
+design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-$repo_root/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M141_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M141_UI_DIRECT_IMPORT_ROUTE_PROOF.generated.json}"
 flagship_frontier_root="${CHUMMER_FLAGSHIP_FRONTIER_ROOT:-/docker/fleet/.codex-studio/published/full-product-frontiers}"
 flagship_frontier_id="${CHUMMER_FLAGSHIP_FRONTIER_ID:-1922169755}"
@@ -126,7 +126,7 @@ EXPECTED_SURFACES = [
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh"
 EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M141DirectImportRouteProofGuardTests" --no-restore'
-EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
+EXPECTED_DESIGN_QUEUE_PATH = f"{repo_root}/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_SCREENSHOTS = [
     "38-translator-dialog-light.png",
     "39-xml-editor-dialog-light.png",

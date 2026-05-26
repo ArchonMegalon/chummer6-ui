@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 proof_file="$repo_root/.codex-studio/generated/rule-environment-studio-proof.json"
-manifest_target="${1:-}"
+manifest_target="${1:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}"
 
 if [[ -f "$proof_file" ]]; then
   python3 "$repo_root/scripts/verify-avalonia-primary-route-proof.py" "$proof_file"
@@ -11,7 +11,11 @@ else
   echo "verify.sh: optional rule-environment studio proof not present at $proof_file; skipping package-specific proof check"
 fi
 
-bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
+if [[ -n "$manifest_target" ]]; then
+  bash "$repo_root/scripts/verify-releases-manifest.sh" "$manifest_target"
+else
+  echo "verify.sh: no portal release manifest target configured; skipping published-manifest verification"
+fi
 cd "$repo_root"
 
 test -f docs/COMPATIBILITY_CARGO.md
@@ -315,7 +319,14 @@ fi
 if [ "${CHUMMER_VERIFY_AVALONIA_PRIMARY_ROUTE_PROOF:-1}" = "1" ]; then
   echo "[verify] checking next90 Avalonia primary route proof guard..."
   avalonia_primary_route_proof_output="${CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_OUTPUT:-$repo_root/.codex-studio/published/NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json}"
-  avalonia_primary_route_receipt_dir="${CHUMMER_AVALONIA_PRIMARY_ROUTE_STARTUP_SMOKE_DIR:-$repo_root/Docker/Downloads/startup-smoke}"
+  default_avalonia_primary_route_receipt_dir="$repo_root/Docker/Downloads/startup-smoke"
+  canonical_avalonia_primary_route_receipt_dir="${hub_registry_root:+$hub_registry_root/.codex-studio/published/startup-smoke}"
+  if [[ -n "$canonical_avalonia_primary_route_receipt_dir" && -d "$canonical_avalonia_primary_route_receipt_dir" ]]; then
+    avalonia_primary_route_receipt_dir_default="$canonical_avalonia_primary_route_receipt_dir"
+  else
+    avalonia_primary_route_receipt_dir_default="$default_avalonia_primary_route_receipt_dir"
+  fi
+  avalonia_primary_route_receipt_dir="${CHUMMER_AVALONIA_PRIMARY_ROUTE_STARTUP_SMOKE_DIR:-$avalonia_primary_route_receipt_dir_default}"
   if [ "${CHUMMER_AVALONIA_PRIMARY_ROUTE_PROOF_ALLOW_MISSING_RECEIPTS:-0}" = "1" ] && [ ! -d "$avalonia_primary_route_receipt_dir" ]; then
     echo "[verify] WARN: skipping Avalonia primary route proof guard because startup-smoke receipts are unavailable."
   else

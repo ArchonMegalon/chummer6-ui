@@ -4,6 +4,8 @@ purpose: Measurable density and noise-budget contract for the promoted flagship 
 release_blocking: true
 head_policy:
   flagship_head: Chummer.Avalonia
+  bounded_fallback_heads:
+    - Chummer.Blazor.Desktop
   any_user_facing_desktop_head_must_respect_budget: true
 scope:
   surfaces:
@@ -12,6 +14,7 @@ scope:
     - dense_reference_and_roster_views
   heads:
     - Chummer.Avalonia
+    - Chummer.Blazor.Desktop
 metrics:
   spacing:
     shell_outer_margin_max: 8

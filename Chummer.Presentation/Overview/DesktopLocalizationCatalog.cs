@@ -115,6 +115,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.open_work"] = "Open Work",
         ["desktop.install_link.button.open_account"] = "Open Account",
         ["desktop.install_link.button.link_copy"] = "Link This Copy",
+        ["desktop.install_link.button.redeem_claim_code"] = "Redeem In App",
         ["desktop.install_link.button.continue_guest"] = "Continue as Guest",
         ["desktop.home.language_summary"] = "Language: {0}\nShipping locales: {1}\nLanguage changes apply fully on restart during the current desktop wave.",
         ["desktop.home.next_safe_action"] = "Next safe action: {0}",
@@ -567,6 +568,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "Arbeit öffnen";
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie verknüpfen";
+            localized["desktop.install_link.button.redeem_claim_code"] = "In App einlösen";
             localized["desktop.install_link.button.continue_guest"] = "Als Gast fortfahren";
             localized["desktop.install_link.shipping_locales"] = "Shipping-Lokale: {0}. Install-, Update- und Support-Vertrauensflusse sollen in dieser Desktop-Welle ausgerichtet bleiben.";
             localized["desktop.install_link.claim_code_watermark"] = "Fugen Sie den Installations-Handoff aus dem angemeldeten Chummer-Download oder Wiederherstellungsablauf ein";
@@ -960,6 +962,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "Ouvrir le travail";
             localized["desktop.install_link.button.open_account"] = "Ouvrir le compte";
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
+            localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
             localized["desktop.install_link.button.continue_guest"] = "Continuer en invité";
             localized["desktop.install_link.shipping_locales"] = "Locales livrees : {0}. Les flux de confiance installation, mise a jour et support doivent rester alignes dans cette vague desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Collez le relais d'installation depuis le telechargement Chummer connecte ou le flux de recuperation guide";
@@ -1353,6 +1356,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "作業を開く";
             localized["desktop.install_link.button.open_account"] = "アカウントを開く";
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
+            localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
             localized["desktop.install_link.button.continue_guest"] = "ゲストとして続行";
             localized["desktop.install_link.shipping_locales"] = "出荷ロケール: {0}。このデスクトップ波では、インストール・更新・サポートの信頼フローを揃える必要があります。";
             localized["desktop.install_link.claim_code_watermark"] = "サインイン済み Chummer ダウンロードまたはガイド付き復旧フローのインストール引き継ぎを貼り付けてください";
@@ -1746,6 +1750,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "Abrir trabalho";
             localized["desktop.install_link.button.open_account"] = "Abrir conta";
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
+            localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
             localized["desktop.install_link.button.continue_guest"] = "Continuar como convidado";
             localized["desktop.install_link.shipping_locales"] = "Locales de envio: {0}. Os fluxos de confianca de instalacao, atualizacao e suporte devem permanecer alinhados nesta onda desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Cole a transferência da instalação vinda do download conectado do Chummer ou do fluxo guiado de recuperação";
@@ -2139,6 +2144,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_work"] = "打开工作";
             localized["desktop.install_link.button.open_account"] = "打开账户";
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
+            localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
             localized["desktop.install_link.button.continue_guest"] = "以访客身份继续";
             localized["desktop.install_link.shipping_locales"] = "出货语言: {0}。本轮桌面波次中，安装、更新和支持的信任流程应保持一致。";
             localized["desktop.install_link.claim_code_watermark"] = "粘贴来自已登录 Chummer 下载或引导恢复流程的安装接续";

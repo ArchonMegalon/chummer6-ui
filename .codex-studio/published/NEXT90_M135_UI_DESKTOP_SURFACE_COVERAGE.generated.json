@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T19:43:48Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m135_ui_desktop_surface_coverage",
@@ -26,8 +26,6 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_package_id_matches": true,
@@ -63,21 +61,19 @@
     },
     "sourceChecks": {
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "\"Open Creator Publication\"": true,
         "\"Open GM Runboard\"": true,
-        "\"Open Rule Environment Studio\"": true,
-        "desktop.home.button.open_support_center": true,
+        "CreateButton(S(\"desktop.home.button.open_my_artifacts\"), OpenCreatorPublicationAsync)": true,
+        "CreateButton(S(\"desktop.home.button.open_published_artifacts\"), OpenCreatorModerationAsync)": true,
         "DesktopCreatorPublicationWindow.ShowAsync(": true,
-        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity);": true,
-        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity);": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId);": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId);": true,
         "DesktopSupportWindow.ShowAsync(this, _installState.HeadId);": true,
-        "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics": true
+        "OpenInstallSupport": true
       },
       "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "DesktopCampaignWorkspaceSurface.GmRunboard": true,
-        "ResolveRunboardInitiativeSummary()": true,
-        "ResolveRunboardActionBudgetSummary()": true,
-        "ResolveRunboardObjectiveSummary()": true,
+        "ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
+        "S(\"desktop.campaign.section.runboard\")": true,
+        "Runboard:": true,
         "Restore choice:": true,
         "DesktopSupportWindow.ShowAsync(this, _installState.HeadId);": true
       },
@@ -100,13 +96,13 @@
         "Proof shelf:": true
       },
       "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": {
-        "CreateSection(\"Amend-package lifecycle\", BuildLifecycleBody(), CreateActionRow(CreateLifecycleActions()))": true,
-        "CreateSection(\"Before-after diffs\", BuildDiffBody(), CreateActionRow(CreateDiffActions()))": true,
-        "CreateSection(\"Explain receipts\", BuildReceiptBody(), CreateActionRow(CreateReceiptActions()))": true,
+        "CreateSection(\"Amend-package lifecycle\", BuildLifecycleBody())": true,
+        "CreateSection(\"Before-after diffs\", BuildDiffBody())": true,
+        "CreateSection(\"Explain receipts\", BuildReceiptBody())": true,
         "GetBuildPathSuggestionsAsync": true,
         "GetBuildPathPreviewAsync": true,
-        "Build path:": true,
-        "CreateButton(\"Open Support\", OpenSupportAsync, isPrimary: true)": true
+        "Rule-environment studio": true,
+        "CreateButton(\"Support\", () => OpenSupportAsync(owner))": true
       },
       "Chummer.Avalonia/DesktopSupportWindow.cs": {
         "Desktop support requires an IChummerClient instance.": true,
@@ -114,17 +110,17 @@
         "BuildReleaseBody()": true,
         "BuildDiagnosticsBody()": true,
         "BuildFollowThroughBody()": true,
-        "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection);": true
+        "DesktopSupportDiagnosticsText.BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)": true
       },
       "Chummer.Avalonia/App.axaml.cs": {
         "DesktopStartupSurfaceCatalog.GmRunboard": true,
         "DesktopStartupSurfaceCatalog.OrganizerOperations": true,
         "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio": true,
-        "DesktopStartupSurfaceCatalog.Support": true,
-        "DesktopStartupSurfaceCatalog.SupportCase": true,
         "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, \"avalonia\")": true,
         "DesktopOrganizerOperationsWindow.ShowAsync(owner, \"avalonia\")": true,
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")": true,
+        "string.Equals(startupSurface, \"support\", StringComparison.OrdinalIgnoreCase)": true,
+        "string.Equals(startupSurface, \"support_case\", StringComparison.OrdinalIgnoreCase)": true,
         "DesktopSupportWindow.ShowAsync(owner, \"avalonia\")": true
       },
       "Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs": {
@@ -135,14 +131,14 @@
         "public const string RuleEnvironmentStudio = \"rule_environment_studio\";": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "DesktopCreatorPublicationSurface_is_a_real_top_level_surface();": true,
         "DesktopCampaignWorkspace_is_a_real_top_level_surface();": true,
         "DesktopCampaignWorkspace_promotes_gm_runboard_route();": true,
         "DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();": true,
         "DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();": true,
         "DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();": true,
         "DesktopSupportSurface_is_a_real_top_level_surface();": true,
-        "DesktopHome_exposes_claim_aware_install_and_update_actions();": true
+        "DesktopHome_exposes_claim_aware_install_and_update_actions();": true,
+        "RequireContains(source, \"DesktopCreatorPublicationWindow.ShowAsync(\");": true
       },
       "scripts/ai/verify.sh": {
         "checking veteran task-time evidence gate": true,

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-05-19T05:47:27Z",
+  "generated_at": "2026-05-26T20:30:23Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 386,
+  "default_key_count": 387,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -30,16 +30,16 @@
       "0 Warning(s)",
       "    0 Error(s)",
       "",
-      "Time Elapsed 00:00:04.05",
+      "Time Elapsed 00:00:23.31",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 386,
-      "minimum_override_count": 386,
-      "default_key_count": 386,
+      "override_count": 387,
+      "minimum_override_count": 387,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 386,
+      "override_count": 387,
       "minimum_override_count": 40,
-      "default_key_count": 386,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 386,
+      "override_count": 387,
       "minimum_override_count": 40,
-      "default_key_count": 386,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 386,
+      "override_count": 387,
       "minimum_override_count": 40,
-      "default_key_count": 386,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 386,
+      "override_count": 387,
       "minimum_override_count": 40,
-      "default_key_count": 386,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 386,
+      "override_count": 387,
       "minimum_override_count": 40,
-      "default_key_count": 386,
+      "default_key_count": 387,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-05-15T14:54:20Z",
+    "generated_at": "2026-05-26T20:29:59Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -121,15 +121,17 @@
       "/downloads/install/avalonia-linux-x64-installer",
       "/home/access",
       "/home/work",
+      "/account/access",
       "/account/work",
       "/account/support",
       "/contact",
+      "/downloads",
       "/downloads/install/avalonia-osx-arm64-installer",
       "/downloads/install/avalonia-win-x64-installer"
     ],
     "receipts": [
       {
-        "path": ".codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -364,8 +366,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 225,
-      "required_key_count": 225,
+      "matched_default_key_count": 226,
+      "required_key_count": 226,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -440,6 +442,7 @@
         "desktop.install_link.button.open_downloads",
         "desktop.install_link.button.open_support",
         "desktop.install_link.button.open_work",
+        "desktop.install_link.button.redeem_claim_code",
         "desktop.install_link.claim_code_label",
         "desktop.install_link.claim_code_watermark",
         "desktop.install_link.heading",
@@ -621,7 +624,7 @@
       },
       "required_receipts": {
         "next90_m104_explain_receipts": {
-          "status": "fail",
+          "status": "pass",
           "path": null,
           "effective_status": "pass"
         }

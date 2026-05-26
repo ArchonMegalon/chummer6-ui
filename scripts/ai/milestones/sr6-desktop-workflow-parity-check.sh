@@ -19,6 +19,8 @@ dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTe
 compliance_tests_path="$repo_root/Chummer.Tests/Compliance/MigrationComplianceTests.cs"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 workflow_gate_tests_path="$repo_root/Chummer.Tests/Presentation/WorkflowParityGateTests.cs"
+lock_dir="$repo_root/.codex-studio/locks"
+workflow_family_chain_lock_path="$lock_dir/sr6-workflow-family-parity-chain.lock"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -31,6 +33,9 @@ release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_
 skip_dependency_materialize="${CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
 
 mkdir -p "$(dirname "$receipt_path")"
+mkdir -p "$lock_dir"
+exec 9>"$workflow_family_chain_lock_path"
+flock 9
 workflow_gate_exit=0
 dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~WorkflowParityGateTests" --no-restore -v minimal >/dev/null || workflow_gate_exit=$?
 execution_exit=0

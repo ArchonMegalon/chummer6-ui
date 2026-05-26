@@ -98,7 +98,24 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
 
         StringAssert.Contains(scriptText, "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_REFRESH_SUPPORTING_RECEIPTS=0");
         StringAssert.Contains(scriptText, "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_SKIP_DOWNSTREAM_RECEIPTS=1");
-        StringAssert.Contains(scriptText, "env \"${flagship_refresh_env[@]}\" bash \"$dependency_script\"");
+        StringAssert.Contains(scriptText, "env \"${flagship_refresh_env[@]}\" \"${dependency_refresh_env[@]}\" bash \"$dependency_script\"");
+    }
+
+    [TestMethod]
+    public void Workflow_execution_gate_passes_canonical_release_channel_and_target_receipt_paths_into_child_refresh_scripts()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "materialize-desktop-workflow-execution-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "build_dependency_refresh_env()");
+        StringAssert.Contains(scriptText, "\"CHUMMER_HUB_REGISTRY_ROOT=$hub_registry_root\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH=$release_channel_path\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH=$dependency_receipt_target\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH=$release_channel_path\"");
+        StringAssert.Contains(scriptText, "\"CHUMMER_NEXT90_M141_UI_RECEIPT_PATH=$dependency_receipt_target\"");
+        StringAssert.Contains(scriptText, "mapfile -t dependency_refresh_env < <(build_dependency_refresh_env \"$dependency_label\" \"$dependency_receipt_target\")");
+        StringAssert.Contains(scriptText, "env \"${flagship_refresh_env[@]}\" \"${dependency_refresh_env[@]}\" bash \"$dependency_script\"");
     }
 
     [TestMethod]

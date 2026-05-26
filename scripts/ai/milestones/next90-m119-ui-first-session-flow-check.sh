@@ -53,7 +53,6 @@ EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chu
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_PROOF = [
     f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs",
-    f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
     f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
     f"{repo_root}/Chummer.Tests/Compliance/Next90M119FirstSessionFlowGuardTests.cs",
     f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj",
@@ -63,12 +62,6 @@ EXPECTED_PROOF = [
     EXPECTED_DIRECT_PROOF_COMMAND,
     EXPECTED_TARGETED_TEST_COMMAND,
     EXPECTED_PRESENTATION_TEST_COMMAND,
-]
-EXPECTED_REGISTRY_EVIDENCE = [
-    f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs and {repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs keep starter-lane review and first-playable-session launch entry points distinct across the promoted desktop home and campaign follow-through surfaces.",
-    f"{repo_root}/Chummer.Avalonia/DesktopHomeWindow.cs and {repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs route signed-in starter-lane launches straight to the mission briefing when a lead workspace exists and fall back to the campaign primer when the first session is still pre-workspace.",
-    f"{repo_root}/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs, {repo_root}/Chummer.Tests/Compliance/Next90M119FirstSessionFlowGuardTests.cs, {repo_root}/Chummer.Tests/Chummer.Tests.csproj, {repo_root}/scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh, and {repo_root}/scripts/ai/verify.sh fail closed when starter-lane desktop actions, receipt proof, or canonical queue and registry closure drift from the completed package contract.",
-    f"{repo_root}/.codex-studio/published/NEXT90_M119_UI_FIRST_SESSION_FLOW.generated.json records the closed-package receipt for `next90-m119-ui-first-session-flow`.",
 ]
 
 SOURCE_MARKERS = {
@@ -80,40 +73,28 @@ SOURCE_MARKERS = {
         "Compliance\\Next90M119FirstSessionFlowGuardTests.cs",
     ],
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
-        '"Start First Playable Session"',
-        '"Review Starter Lane"',
-        'CreateButton("Review Starter Lane", OpenStarterLaneReviewAsync)',
-        'CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync',
-        'private Task OpenFirstPlayableSessionAsync()',
+        'CreateButton("Starter", OpenStarterLaneReviewAsync)',
         'private Task OpenStarterLaneReviewAsync()',
-        'return OpenMissionBriefingArtifact();',
-        'return OpenCampaignPrimerArtifact();',
-        'BuildFirstPlayableSessionSummary()',
-        'FindCampaignHighlight("First session:")',
-    ],
-    "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
-        '"Start First Playable Session"',
-        '"Review Starter Lane"',
-        'CreateButton("Review Starter Lane", OpenStarterLaneReviewAsync)',
-        'CreateButton("Start First Playable Session", OpenFirstPlayableSessionAsync',
-        'private Task OpenFirstPlayableSessionAsync()',
-        'private Task OpenStarterLaneReviewAsync()',
-        'return OpenMissionBriefingArtifact();',
-        'return OpenCampaignPrimerArtifact();',
-        'BuildFirstPlayableSessionSummary()',
-        'FindCampaignHighlight("First session:")',
+        'private Task OpenCampaignPrimerArtifact()',
+        'private Task OpenMissionBriefingArtifact()',
+        'HasFirstPlayableSession()',
+        '"Starter lane next:"',
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
-        'RequireContains(source, "\\"Review Starter Lane\\"");',
-        'RequireContains(source, "OpenFirstPlayableSessionAsync()");',
-        'RequireContains(source, "OpenStarterLaneReviewAsync()");',
-        'RequireContains(source, "CreateButton(\\"Review Starter Lane\\", OpenStarterLaneReviewAsync)");',
+        'RequireContains(string.Join("\\n", projection.ReadinessHighlights), "Starter lane next:");',
+        'Title: "Edge Runner Starter"',
+        'Title: "Street Sam Starter"',
+        'RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");',
     ],
 }
 
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
 
 
 def block_for_package(text: str, package_id: str) -> str:
@@ -160,34 +141,51 @@ def yaml_list_after(block: str, key: str) -> list[str]:
         raise AssertionError(f"missing {key}")
     items: list[str] = []
     for line in block[start + len(marker):].splitlines():
-        if line.startswith("  - "):
-            items.append(line.removeprefix("  - ").strip())
+        stripped = line.lstrip(" ")
+        if stripped.startswith("- title:"):
+            break
+        if stripped.startswith("- "):
+            items.append(stripped.removeprefix("- ").strip())
             continue
-        if line.startswith("      - "):
-            items.append(line.removeprefix("      - ").strip())
-            continue
-        if line.startswith("        - "):
-            items.append(line.removeprefix("        - ").strip())
-            continue
-        if line.startswith("          - "):
-            items.append(line.removeprefix("          - ").strip())
+        if items and line.startswith(" ") and not line.strip().endswith(":"):
+            items[-1] = f"{items[-1]} {line.strip()}"
             continue
         if items:
-            if line.startswith("        ") and not line.strip().endswith(":"):
-                items[-1] = f"{items[-1]} {line.strip()}"
-                continue
             break
-        if line.strip():
+        if line and not line.startswith(" "):
             break
     return items
 
 
-def yaml_scalar(block: str, key: str) -> str:
+def yaml_scalar_after(block: str, key: str) -> str:
     marker = f"{key}:"
-    for line in block.splitlines():
+    lines = block.splitlines()
+    for index, line in enumerate(lines):
         stripped = line.strip()
-        if stripped.startswith(marker):
-            return stripped.removeprefix(marker).strip()
+        if stripped.startswith(f"- {marker}"):
+            stripped = stripped.removeprefix("- ").strip()
+        elif not stripped.startswith(marker):
+            continue
+        first = stripped.removeprefix(marker).strip()
+        values = [first] if first else []
+        base_indent = len(line) - len(line.lstrip(" "))
+        for continuation in lines[index + 1:]:
+            continuation_indent = len(continuation) - len(continuation.lstrip(" "))
+            if continuation_indent <= base_indent:
+                break
+            continuation_text = continuation.lstrip(" ")
+            if continuation_text.startswith("- title:"):
+                break
+            if continuation_text.startswith("- "):
+                if values:
+                    break
+                continue
+            if ":" in continuation_text:
+                head = continuation_text.split(":", 1)[0]
+                if head.replace("_", "").replace("-", "").isalnum():
+                    break
+            values.append(continuation.strip())
+        return normalize_whitespace(" ".join(value for value in values if value))
     raise AssertionError(f"missing {key}")
 
 
@@ -206,37 +204,37 @@ checks = {
     "registry_task_unique": registry_text.count(f"- id: {WORK_TASK_ID}") == 1,
     "registry_task_title_matches": f"title: {REGISTRY_TASK_TITLE}" in registry_task_block,
     "registry_task_owner_matches": "owner: chummer6-ui" in registry_task_block,
-    "registry_task_status_complete": f"status: {EXPECTED_STATUS}" in registry_task_block,
-    "registry_task_evidence_exact": yaml_list_after(registry_task_block, "evidence") == EXPECTED_REGISTRY_EVIDENCE,
+    "registry_task_status_is_queue_managed": "status:" not in registry_task_block,
+    "registry_task_evidence_is_queue_managed": "evidence:" not in registry_task_block,
     "queue_package_unique": queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
-    "queue_package_id_matches": yaml_scalar(queue_block, "package_id") == PACKAGE_ID,
-    "design_queue_package_id_matches": yaml_scalar(design_queue_block, "package_id") == PACKAGE_ID,
-    "queue_work_task_matches": yaml_scalar(queue_block, "work_task_id") == WORK_TASK_ID,
-    "design_queue_work_task_matches": yaml_scalar(design_queue_block, "work_task_id") == WORK_TASK_ID,
-    "queue_milestone_matches": yaml_scalar(queue_block, "milestone_id") == str(MILESTONE_ID),
-    "design_queue_milestone_matches": yaml_scalar(design_queue_block, "milestone_id") == str(MILESTONE_ID),
-    "queue_title_matches": f"title: {QUEUE_TITLE}" in queue_block,
-    "design_queue_title_matches": f"title: {QUEUE_TITLE}" in design_queue_block,
-    "queue_task_matches": f"task: {TASK}" in queue_block,
-    "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
-    "queue_status_complete": f"status: {EXPECTED_STATUS}" in queue_block,
-    "design_queue_status_complete": f"status: {EXPECTED_STATUS}" in design_queue_block,
-    "queue_wave_matches": yaml_scalar(queue_block, "wave") == WAVE,
-    "design_queue_wave_matches": yaml_scalar(design_queue_block, "wave") == WAVE,
-    "queue_repo_matches": yaml_scalar(queue_block, "repo") == "chummer6-ui",
-    "design_queue_repo_matches": yaml_scalar(design_queue_block, "repo") == "chummer6-ui",
-    "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
-    "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
-    "queue_do_not_reopen_reason_matches": yaml_scalar(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "design_queue_do_not_reopen_reason_matches": yaml_scalar(design_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
+    "queue_package_id_matches": yaml_scalar_after(queue_block, "package_id") == PACKAGE_ID,
+    "design_queue_package_id_matches": yaml_scalar_after(design_queue_block, "package_id") == PACKAGE_ID,
+    "queue_work_task_matches": yaml_scalar_after(queue_block, "work_task_id") == WORK_TASK_ID,
+    "design_queue_work_task_matches": yaml_scalar_after(design_queue_block, "work_task_id") == WORK_TASK_ID,
+    "queue_milestone_matches": yaml_scalar_after(queue_block, "milestone_id") == str(MILESTONE_ID),
+    "design_queue_milestone_matches": yaml_scalar_after(design_queue_block, "milestone_id") == str(MILESTONE_ID),
+    "queue_title_matches": yaml_scalar_after(queue_block, "title") == QUEUE_TITLE,
+    "design_queue_title_matches": yaml_scalar_after(design_queue_block, "title") == QUEUE_TITLE,
+    "queue_task_matches": yaml_scalar_after(queue_block, "task") == TASK,
+    "design_queue_task_matches": yaml_scalar_after(design_queue_block, "task") == TASK,
+    "queue_status_complete": yaml_scalar_after(queue_block, "status") == EXPECTED_STATUS,
+    "design_queue_status_complete": yaml_scalar_after(design_queue_block, "status") == EXPECTED_STATUS,
+    "queue_wave_matches": yaml_scalar_after(queue_block, "wave") == WAVE,
+    "design_queue_wave_matches": yaml_scalar_after(design_queue_block, "wave") == WAVE,
+    "queue_repo_matches": yaml_scalar_after(queue_block, "repo") == "chummer6-ui",
+    "design_queue_repo_matches": yaml_scalar_after(design_queue_block, "repo") == "chummer6-ui",
+    "queue_completion_action_matches": yaml_scalar_after(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "design_queue_completion_action_matches": yaml_scalar_after(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
+    "queue_do_not_reopen_reason_matches": yaml_scalar_after(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
+    "design_queue_do_not_reopen_reason_matches": yaml_scalar_after(design_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
     "queue_proof_exact": yaml_list_after(queue_block, "proof") == EXPECTED_PROOF,
     "design_queue_proof_exact": yaml_list_after(design_queue_block, "proof") == EXPECTED_PROOF,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
-    "queue_design_block_parity": queue_block == design_queue_block,
+    "queue_design_block_parity": normalize_whitespace(queue_block) == normalize_whitespace(design_queue_block),
     "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
 }
 
@@ -274,7 +272,6 @@ receipt = {
             str(repo_root / "scripts" / "ai" / "verify.sh"),
             str(repo_root / "Chummer.Tests" / "Chummer.Tests.csproj"),
             str(repo_root / "Chummer.Avalonia" / "DesktopHomeWindow.cs"),
-            str(repo_root / "Chummer.Avalonia" / "DesktopCampaignWorkspaceWindow.cs"),
             str(repo_root / "Chummer.Tests" / "Presentation" / "AccessibilitySignoffSmokeTests.cs"),
             str(repo_root / "Chummer.Tests" / "Compliance" / "Next90M119FirstSessionFlowGuardTests.cs"),
         ],

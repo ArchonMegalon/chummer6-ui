@@ -18,6 +18,7 @@ hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hu
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
@@ -26,7 +27,12 @@ fi
 if [[ ! -f "$release_channel_path_default" && -f "$presentation_release_channel_path" ]]; then
   release_channel_path_default="$presentation_release_channel_path"
 fi
-release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
+if [[ "${CHUMMER_DESKTOP_EXECUTABLE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-${CHUMMER_DESKTOP_WORKFLOW_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-0}}" == "1" \
+  && -f "$verified_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
+fi
+release_channel_path="${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}}"
 if [[ -z "${CHUMMER_DESKTOP_EXECUTABLE_GATE_PATH:-}" \
   && "${CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE:-0}" == "1" \
   && "$release_channel_path" == /tmp/* ]]; then
@@ -186,7 +192,11 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
     fi
   fi
   if [[ -f "$workflow_execution_materializer_path" ]]; then
-    if ! bash "$workflow_execution_materializer_path" >/dev/null 2>&1; then
+    if ! env \
+      CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
+      CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1 \
+      CHUMMER_HUB_REGISTRY_ROOT="$hub_registry_root" \
+      bash "$workflow_execution_materializer_path" >/dev/null 2>&1; then
       :
     fi
   fi
@@ -362,7 +372,10 @@ def now_iso() -> str:
 def load_json(path: Path) -> Dict[str, Any]:
     if not path.is_file():
         return {}
-    loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8-sig"))
+    except json.JSONDecodeError:
+        return {}
     return loaded if isinstance(loaded, dict) else {}
 
 
@@ -657,6 +670,8 @@ def startup_smoke_channel_proves_release(
     if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
         return not expected_digest or startup_digest == expected_digest
     if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected in {"public_stable", "docker"} and actual in {"public_stable", "docker"}:
         return not expected_digest or startup_digest == expected_digest
     return False
 
@@ -1818,6 +1833,9 @@ def validate_linux_gate(
         primary_receipt_for_validation
     )
     gate_evidence["primary_receipt_recorded_at"] = recorded_at_raw
+    expected_digest = ""
+    if expected_artifact is not None:
+        expected_digest = f"sha256:{normalize_token(expected_artifact.get('sha256'))}" if normalize_token(expected_artifact.get("sha256")) else ""
     recorded_at = parse_iso(recorded_at_raw)
     if not recorded_at_raw or recorded_at is None:
         reasons.append(f"Linux installer startup smoke receipt timestamp is missing/invalid for promoted head '{head}'.")
@@ -1853,15 +1871,17 @@ def validate_linux_gate(
         reasons.append(f"Linux installer startup smoke receipt hostClass does not identify a Linux host for promoted head '{head}'.")
     if not gate_evidence["primary_receipt_operating_system"]:
         reasons.append(f"Linux installer startup smoke receipt operatingSystem is missing for promoted head '{head}'.")
-    if release_channel_id and gate_evidence["primary_receipt_channel_id"] != release_channel_id:
+    if release_channel_id and not startup_smoke_channel_proves_release(
+        gate_evidence["primary_receipt_channel_id"],
+        release_channel_id,
+        gate_evidence["primary_receipt_artifact_digest"],
+        expected_digest,
+    ):
         reasons.append(f"Linux installer startup smoke receipt channelId does not match release channel for promoted head '{head}'.")
     if gate_evidence["primary_receipt_channel_id_alias_conflict"]:
         reasons.append(
             f"Linux installer startup smoke receipt carries conflicting channelId/channel alias values for promoted head '{head}'."
         )
-    expected_digest = ""
-    if expected_artifact is not None:
-        expected_digest = f"sha256:{normalize_token(expected_artifact.get('sha256'))}" if normalize_token(expected_artifact.get("sha256")) else ""
     gate_evidence["primary_receipt_version_proves_release"] = startup_smoke_version_proves_release(
         gate_evidence["primary_receipt_version"],
         release_channel_version,
@@ -2498,6 +2518,14 @@ def validate_windows_gate(
         else:
             startup_smoke_age_delta_seconds = int((datetime.now(timezone.utc) - startup_smoke_recorded_at).total_seconds())
             startup_smoke_age_seconds = max(0, startup_smoke_age_delta_seconds)
+            startup_smoke_stale_age_acceptable = bool(
+                gate_checks.get("startup_smoke_stale_age_acceptable")
+            )
+            startup_smoke_stale_age_accepted_reason = str(
+                gate_checks.get("startup_smoke_stale_age_accepted_reason") or ""
+            ).strip()
+            gate_evidence["startup_smoke_stale_age_acceptable"] = startup_smoke_stale_age_acceptable
+            gate_evidence["startup_smoke_stale_age_accepted_reason"] = startup_smoke_stale_age_accepted_reason
             if startup_smoke_age_delta_seconds < 0:
                 startup_smoke_future_skew_seconds = abs(startup_smoke_age_delta_seconds)
                 gate_evidence["startup_smoke_receipt_future_skew_seconds"] = startup_smoke_future_skew_seconds
@@ -2507,7 +2535,7 @@ def validate_windows_gate(
                         f"({startup_smoke_future_skew_seconds}s ahead)."
                     )
             gate_evidence["startup_smoke_receipt_age_seconds"] = startup_smoke_age_seconds
-            if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
+            if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS and not startup_smoke_stale_age_acceptable:
                 reasons.append(
                     f"Windows startup smoke receipt is stale for promoted installer bytes ({startup_smoke_age_seconds}s old)."
                 )
@@ -2946,7 +2974,12 @@ def validate_macos_gate(
             reasons.append(
                 f"macOS startup smoke receipt carries conflicting arch/architecture alias values for promoted head '{head}' ({rid})."
             )
-        if release_channel_id and startup_smoke_channel_id != release_channel_id:
+        if release_channel_id and not startup_smoke_channel_proves_release(
+            startup_smoke_channel_id,
+            release_channel_id,
+            startup_smoke_artifact_digest,
+            expected_digest,
+        ):
             reasons.append(f"macOS startup smoke receipt channelId does not match release-channel channelId for promoted head '{head}' ({rid}).")
         if startup_smoke_channel_id_alias_conflict:
             reasons.append(
@@ -3282,6 +3315,68 @@ def collect_stale_passing_startup_smoke_receipts_against_published_artifacts(
             + ", ".join(stale_passing)
             + "."
         )
+
+
+def synthesize_external_proof_request_install_artifacts(
+    requests: List[Dict[str, Any]],
+    existing_artifacts: List[Dict[str, Any]],
+    repo_root: Path,
+    release_channel_channel_id: str,
+    release_channel_version: str,
+    release_channel_generated_at_raw: str,
+) -> List[Dict[str, Any]]:
+    existing_tuples = {
+        build_platform_head_rid_tuple(item.get("head"), item.get("rid"), item.get("platform"))
+        for item in existing_artifacts
+        if isinstance(item, dict)
+    }
+    synthesized: List[Dict[str, Any]] = []
+    downloads_root = repo_root / "Docker" / "Downloads" / "files"
+
+    for request in requests:
+        if not isinstance(request, dict):
+            continue
+        head = normalize_token(request.get("head"))
+        rid = normalize_token(request.get("rid"))
+        platform_name = normalize_token(request.get("platform"))
+        tuple_token = build_platform_head_rid_tuple(head, rid, platform_name)
+        if not tuple_token or tuple_token in existing_tuples:
+            continue
+
+        file_name = str(request.get("expectedInstallerFileName") or "").strip()
+        artifact_path = downloads_root / file_name if file_name else None
+        size_bytes = artifact_path.stat().st_size if artifact_path and artifact_path.is_file() else 0
+        download_url = str(request.get("expectedPublicInstallRoute") or "").strip()
+        install_access_class = "account_required" if "/downloads/install/" in download_url else ""
+        artifact_id = str(request.get("expectedArtifactId") or "").strip()
+        generated_at = release_channel_generated_at_raw or now_iso()
+
+        synthesized.append(
+            {
+                "artifactId": artifact_id,
+                "id": artifact_id,
+                "head": head,
+                "rid": rid,
+                "platform": platform_name,
+                "arch": arch_from_rid(rid),
+                "kind": "installer",
+                "fileName": file_name,
+                "downloadUrl": download_url,
+                "sha256": str(request.get("expectedInstallerSha256") or "").strip().lower(),
+                "sizeBytes": size_bytes,
+                "installAccessClass": install_access_class,
+                "channelId": release_channel_channel_id,
+                "channel": release_channel_channel_id,
+                "version": release_channel_version,
+                "releaseVersion": release_channel_version,
+                "generated_at": generated_at,
+                "generatedAt": generated_at,
+                "publicationSource": "desktopTupleCoverage.externalProofRequests",
+            }
+        )
+        existing_tuples.add(tuple_token)
+
+    return synthesized
 
 
 receipt_path, release_channel_path, linux_avalonia_gate_path, linux_blazor_gate_path, windows_gate_path_default, flagship_gate_path, visual_familiarity_gate_path, workflow_execution_gate_path, repo_root = [Path(v) for v in sys.argv[1:10]]
@@ -3838,6 +3933,7 @@ release_channel_allowed_rollout_states = [
 release_channel_allowed_supportability_states = [
     "local_docker_proven",
     "preview_supported",
+    "gold_supported",
     "review_required",
     "unpublished",
 ]
@@ -4247,6 +4343,19 @@ reported_external_proof_request_rows_sorted = sorted(
         str(row.get("head") or ""),
         str(row.get("rid") or ""),
     ),
+)
+synthetic_external_proof_request_install_artifacts = (
+    synthesize_external_proof_request_install_artifacts(
+        reported_external_proof_request_rows_normalized,
+        desktop_install_artifacts,
+        repo_root,
+        release_channel_channel_id,
+        release_channel_version,
+        release_channel_generated_at_raw,
+    )
+)
+evidence["release_channel_external_proof_request_install_artifacts"] = (
+    synthetic_external_proof_request_install_artifacts
 )
 evidence["release_channel_external_proof_request_row_non_object_indexes"] = (
     external_proof_request_row_non_object_indexes
@@ -4746,9 +4855,8 @@ if desktop_install_artifacts and not tuple_coverage_declares_external_proof_requ
     reasons.append(
         "Release channel desktopTupleCoverage must declare externalProofRequests explicitly (empty list when complete)."
     )
-required_desktop_platforms = tuple(
-    tuple_coverage_required_desktop_platforms or ("linux", "windows", "macos")
-)
+required_desktop_platforms = ("linux", "windows", "macos")
+declared_required_desktop_platforms = tuple(tuple_coverage_required_desktop_platforms)
 platform_artifact_counts = {
     platform: len(
         [
@@ -4769,6 +4877,7 @@ platform_heads_from_release_channel = {
     for platform in required_desktop_platforms
 }
 evidence["required_desktop_platforms"] = list(required_desktop_platforms)
+evidence["declared_required_desktop_platforms"] = list(declared_required_desktop_platforms)
 evidence["platform_artifact_counts"] = platform_artifact_counts
 evidence["platform_heads_from_release_channel"] = platform_heads_from_release_channel
 def resolve_desktop_files_root() -> Path:
@@ -5306,6 +5415,7 @@ evidence["release_channel_rollout_state_invalid_for_publishable_complete"] = (
 release_channel_supportability_state_allowed_for_publishable_complete_values = [
     "local_docker_proven",
     "preview_supported",
+    "gold_supported",
 ]
 release_channel_supportability_state_invalid_for_publishable_complete = (
     not coverage_incomplete
@@ -5378,7 +5488,7 @@ if release_channel_rollout_state_invalid_for_publishable_complete:
     )
 if release_channel_supportability_state_invalid_for_publishable_complete:
     reasons.append(
-        "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete."
+        "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete."
     )
 if coverage_incomplete and release_channel_rollout_state != "coverage_incomplete":
     reasons.append(

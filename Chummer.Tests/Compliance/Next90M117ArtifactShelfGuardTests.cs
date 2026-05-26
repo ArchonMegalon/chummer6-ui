@@ -80,8 +80,8 @@ public sealed class Next90M117ArtifactShelfGuardTests
         Assert.IsTrue(checks.GetProperty("registry_task_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_title_matches").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_owner_matches").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_status_complete").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_evidence_exact").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_status_is_queue_managed").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_evidence_is_queue_managed").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_id_matches").GetBoolean());
@@ -113,9 +113,7 @@ public sealed class Next90M117ArtifactShelfGuardTests
 
         JsonElement sourceChecks = evidence.GetProperty("sourceChecks");
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopHomeWindow.cs"));
-        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCampaignArtifactWindow.cs"));
-        AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Avalonia/DesktopCreatorPublicationWindow.cs"));
         AssertSourceMarkersPass(sourceChecks.GetProperty("Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"));
 
@@ -125,9 +123,7 @@ public sealed class Next90M117ArtifactShelfGuardTests
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M117_UI_ARTIFACT_SHELF.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m117-ui-artifact-shelf-check.sh"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignArtifactWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRuleEnvironmentStudioWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M117ArtifactShelfGuardTests.cs"),
@@ -141,9 +137,7 @@ public sealed class Next90M117ArtifactShelfGuardTests
             new[]
             {
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCampaignArtifactWindow.cs"),
-                Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRuleEnvironmentStudioWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Presentation", "AccessibilitySignoffSmokeTests.cs"),
                 Path.Combine(repoRoot, "Chummer.Tests", "Compliance", "Next90M117ArtifactShelfGuardTests.cs"),

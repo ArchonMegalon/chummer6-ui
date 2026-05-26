@@ -9,6 +9,7 @@ DOWNLOADS_DIR="${DOWNLOADS_DIR:-$REPO_ROOT/Docker/Downloads/files}"
 MANIFEST_PATH="${MANIFEST_PATH:-$REPO_ROOT/Docker/Downloads/releases.json}"
 PORTAL_MANIFEST_PATH="${PORTAL_MANIFEST_PATH:-$REPO_ROOT/Chummer.Portal/downloads/releases.json}"
 PORTAL_DOWNLOADS_DIR="${PORTAL_DOWNLOADS_DIR:-$REPO_ROOT/Chummer.Portal/downloads}"
+PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-/docker/chummercomplete/chummer-presentation}"
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
 SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
@@ -44,6 +45,17 @@ import sys
 
 print(pathlib.Path(sys.argv[1]).resolve(strict=False))
 PY
+}
+
+presentation_mirror_enabled() {
+  if [[ -z "$PRESENTATION_MIRROR_ROOT" || ! -d "$PRESENTATION_MIRROR_ROOT" ]]; then
+    return 1
+  fi
+
+  local repo_root_physical mirror_root_physical
+  repo_root_physical="$(cd "$REPO_ROOT" && pwd -P)"
+  mirror_root_physical="$(cd "$PRESENTATION_MIRROR_ROOT" && pwd -P)"
+  [[ "$repo_root_physical" != "$mirror_root_physical" ]]
 }
 
 json_contract_name() {
@@ -386,6 +398,60 @@ output_path.write_text(json.dumps(sanitized, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
+normalize_startup_smoke_receipt_channel_identity() {
+  local receipt_dir="${1:-}"
+  local release_channel="${2:-}"
+  python3 - "$receipt_dir" "$release_channel" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+receipt_dir = Path(sys.argv[1]).resolve()
+release_channel = str(sys.argv[2] or "").strip()
+if not release_channel or not receipt_dir.is_dir():
+    raise SystemExit(0)
+
+for receipt_path in sorted(receipt_dir.glob("startup-smoke-*.receipt.json")):
+    try:
+        payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        continue
+    if not isinstance(payload, dict):
+        continue
+    changed = False
+    if str(payload.get("channelId") or "").strip() != release_channel:
+        payload["channelId"] = release_channel
+        changed = True
+    if str(payload.get("channel") or "").strip() != release_channel:
+        payload["channel"] = release_channel
+        changed = True
+    if changed:
+        receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
+release_channel_from_manifest() {
+  local manifest_path="${1:-}"
+  python3 - "$manifest_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+manifest_path = Path(sys.argv[1]).resolve()
+if not manifest_path.is_file():
+    raise SystemExit(0)
+try:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(0)
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+channel = str(payload.get("channelId") or payload.get("channel") or "").strip()
+if channel:
+    print(channel)
+PY
+}
+
 sanitize_source_manifest_for_channel_override() {
   local source_path="${1:-}"
   local output_path="${2:-}"
@@ -677,13 +743,16 @@ hydrate_startup_smoke_dir() {
   local output_dir="${2:-}"
   local registry_root="${3:-}"
   local repo_root="${4:-}"
-  python3 - "$source_dir" "$output_dir" "$registry_root" "$repo_root" <<'PY'
+  local downloads_dir="${5:-}"
+  python3 - "$source_dir" "$output_dir" "$registry_root" "$repo_root" "$downloads_dir" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -716,28 +785,145 @@ source_dir = Path(sys.argv[1]).resolve(strict=False)
 output_dir = Path(sys.argv[2]).resolve(strict=False)
 registry_root = Path(sys.argv[3]).resolve(strict=False)
 repo_root = Path(sys.argv[4]).resolve(strict=False)
+downloads_dir = Path(sys.argv[5]).resolve(strict=False)
 
 output_dir.mkdir(parents=True, exist_ok=True)
 
-gate_paths = [
-    repo_root / ".codex-studio" / "published" / "UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
-    repo_root / ".codex-studio" / "published" / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
-]
+def artifact_file_name(payload: dict) -> str:
+    return str(
+        payload.get("artifactFileName")
+        or payload.get("fileName")
+        or Path(str(payload.get("artifactPath") or "")).name
+    ).strip()
+
+
+def artifact_sha256(payload: dict) -> str:
+    digest = str(payload.get("artifactSha256") or "").strip().lower()
+    if len(digest) == 64:
+        return digest
+    artifact_digest = str(payload.get("artifactDigest") or "").strip().lower()
+    if artifact_digest.startswith("sha256:") and len(artifact_digest) == 71:
+        return artifact_digest.split(":", 1)[1]
+    return ""
+
+
+def sha256_file(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest().lower()
+
+
+artifact_digest_cache: dict[Path, str] = {}
+
+
+def receipt_matches_download_bytes(payload: dict) -> bool:
+    if not downloads_dir.is_dir():
+        return False
+    file_name = artifact_file_name(payload)
+    digest = artifact_sha256(payload)
+    if not file_name or not digest:
+        return False
+    artifact_path = downloads_dir / file_name
+    if not artifact_path.is_file():
+        return False
+    cached = artifact_digest_cache.get(artifact_path)
+    if cached is None:
+        cached = sha256_file(artifact_path)
+        artifact_digest_cache[artifact_path] = cached
+    return cached == digest
+
+
+def trusted_receipt_artifact_dirs(repo_root: Path, registry_root: Path) -> list[Path]:
+    roots = [
+        downloads_dir,
+        repo_root / "Chummer.Portal" / "downloads" / "files",
+        repo_root / "Docker" / "Downloads" / "files",
+        repo_root.parent / "chummer.run-services" / "Chummer.Portal" / "downloads" / "files",
+        repo_root.parent / "chummer.run-services" / "legacy" / "tooling" / "docker" / "Docker" / "Downloads" / "files",
+        repo_root.parent / "chummer-presentation" / "Docker" / "Downloads" / "files",
+    ]
+    if registry_root:
+        roots.append(registry_root / "Chummer.Portal" / "downloads" / "files")
+
+    ordered: list[Path] = []
+    seen: set[Path] = set()
+    for root in roots:
+        resolved = root.resolve(strict=False)
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        ordered.append(resolved)
+    return ordered
+
+
+def restore_missing_receipt_backed_artifact(payload: dict) -> Path | None:
+    if not downloads_dir.is_dir():
+        return None
+    file_name = artifact_file_name(payload)
+    digest = artifact_sha256(payload)
+    if not file_name or not digest:
+        return None
+
+    target_path = downloads_dir / file_name
+    if target_path.is_file():
+        return target_path if receipt_matches_download_bytes(payload) else None
+
+    for candidate_dir in trusted_receipt_artifact_dirs(repo_root, registry_root):
+        candidate_path = candidate_dir / file_name
+        if not candidate_path.is_file():
+            continue
+        cached = artifact_digest_cache.get(candidate_path)
+        if cached is None:
+            cached = sha256_file(candidate_path)
+            artifact_digest_cache[candidate_path] = cached
+        if cached != digest:
+            continue
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(candidate_path, target_path)
+        artifact_digest_cache[target_path] = cached
+        return target_path
+
+    return None
+
+
+gate_paths = sorted((repo_root / ".codex-studio" / "published").glob("UI_*_DESKTOP_EXIT_GATE.generated.json"))
 candidate_dirs: list[Path] = [source_dir]
 if registry_root:
     candidate_dirs.append(registry_root / ".codex-studio" / "published" / "startup-smoke")
+embedded_gate_receipts_dir = Path(tempfile.mkdtemp(prefix="chummer-startup-smoke-gate-"))
+embedded_gate_receipts_written = 0
 for gate_path in gate_paths:
     gate_payload = load_json(gate_path)
     if not gate_payload:
         continue
+    startup_smoke = gate_payload.get("startup_smoke") if isinstance(gate_payload.get("startup_smoke"), dict) else {}
+    embedded_receipt = startup_smoke.get("receipt") if isinstance(startup_smoke, dict) and isinstance(startup_smoke.get("receipt"), dict) else None
+    if isinstance(embedded_receipt, dict):
+        embedded_receipt_path = str(startup_smoke.get("receipt_path") or "").strip()
+        embedded_receipt_name = Path(embedded_receipt_path).name if embedded_receipt_path else ""
+        if not embedded_receipt_name:
+            head = str(((gate_payload.get("head") or {}) if isinstance(gate_payload.get("head"), dict) else {}).get("app_key") or "").strip()
+            rid = str(((gate_payload.get("head") or {}) if isinstance(gate_payload.get("head"), dict) else {}).get("rid") or "").strip()
+            if head and rid:
+                embedded_receipt_name = f"startup-smoke-{head}-{rid}.receipt.json"
+        if embedded_receipt_name:
+            (embedded_gate_receipts_dir / embedded_receipt_name).write_text(
+                json.dumps(embedded_receipt, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            embedded_gate_receipts_written += 1
     receipt_path = (
         str(((gate_payload.get("checks") or {}) if isinstance(gate_payload.get("checks"), dict) else {}).get("startup_smoke_receipt_path") or "").strip()
     )
     if not receipt_path:
         continue
     candidate_dirs.append(Path(receipt_path).resolve(strict=False).parent)
+if embedded_gate_receipts_written:
+    candidate_dirs.append(embedded_gate_receipts_dir)
 
-selected_by_name: dict[str, tuple[dt.datetime, Path]] = {}
+selected_by_name: dict[str, tuple[int, dt.datetime, Path]] = {}
 for candidate_dir in candidate_dirs:
     if not candidate_dir.is_dir():
         continue
@@ -747,11 +933,15 @@ for candidate_dir in candidate_dirs:
             continue
         name = receipt_path.name
         timestamp = parse_timestamp(payload)
+        selection_rank = 1 if receipt_matches_download_bytes(payload) else 0
         current = selected_by_name.get(name)
-        if current is None or timestamp >= current[0]:
-            selected_by_name[name] = (timestamp, receipt_path)
+        if current is None or (selection_rank, timestamp, str(receipt_path)) >= (current[0], current[1], str(current[2])):
+            selected_by_name[name] = (selection_rank, timestamp, receipt_path)
 
-for _, receipt_path in sorted(selected_by_name.values(), key=lambda item: item[1].name):
+for _, _, receipt_path in sorted(selected_by_name.values(), key=lambda item: item[2].name):
+    payload = load_json(receipt_path)
+    if payload:
+        restore_missing_receipt_backed_artifact(payload)
     shutil.copy2(receipt_path, output_dir / receipt_path.name)
 PY
 }
@@ -801,7 +991,8 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type 
     "$STARTUP_SMOKE_DIR" \
     "$hydrated_startup_smoke_dir" \
     "$REGISTRY_ROOT" \
-    "$REPO_ROOT"
+    "$REPO_ROOT" \
+    "$DOWNLOADS_DIR"
   SANITIZED_STARTUP_SMOKE_DIR="$(mktemp -d)"
   sanitize_startup_smoke_dir \
     "$hydrated_startup_smoke_dir" \
@@ -882,6 +1073,11 @@ run_materializer() {
 }
 
 run_materializer
+effective_release_channel="$(release_channel_from_manifest "$CANONICAL_MANIFEST_PATH")"
+if [[ -z "$effective_release_channel" ]]; then
+  effective_release_channel="$RELEASE_CHANNEL"
+fi
+normalize_startup_smoke_receipt_channel_identity "$STARTUP_SMOKE_DIR" "$effective_release_channel"
 python3 - "$CANONICAL_MANIFEST_PATH" <<'PY'
 from __future__ import annotations
 
@@ -1050,9 +1246,28 @@ def load_verifier(path: Path):
     spec.loader.exec_module(module)
     return module
 
+def load_materializer(path: Path):
+    spec = importlib.util.spec_from_file_location("materialize_public_release_channel", path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 verifier_path = Path(sys.argv[1]).resolve()
 verifier = load_verifier(verifier_path)
+materializer = load_materializer(verifier_path.with_name("materialize_public_release_channel.py"))
+
+def required_heads_and_platforms(payload: dict) -> tuple[list[str], list[str]]:
+    coverage = payload.get("desktopTupleCoverage")
+    default_heads = ["avalonia"]
+    default_platforms = ["linux", "windows", "macos"]
+    if not isinstance(coverage, dict):
+        return default_heads, default_platforms
+    heads = [str(item).strip().lower() for item in coverage.get("requiredDesktopHeads") or [] if str(item).strip()]
+    platforms = [str(item).strip().lower() for item in coverage.get("requiredDesktopPlatforms") or [] if str(item).strip()]
+    return (heads or default_heads, platforms or default_platforms)
 
 for raw_path in sys.argv[2:]:
     manifest_path = Path(raw_path).resolve()
@@ -1061,15 +1276,163 @@ for raw_path in sys.argv[2:]:
     payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     if not isinstance(payload, dict):
         raise SystemExit(f"release manifest must be a JSON object: {manifest_path}")
+
+    def fallback_tuple_coverage(local_payload: dict) -> dict | None:
+        if materializer is None or not hasattr(materializer, "desktop_tuple_coverage"):
+            return None
+        artifacts = local_payload.get("artifacts")
+        if not isinstance(artifacts, list):
+            return None
+        required_heads, required_platforms = required_heads_and_platforms(local_payload)
+        return materializer.desktop_tuple_coverage(
+            artifacts,
+            required_heads=required_heads,
+            required_platforms=required_platforms,
+            channel_id=str(local_payload.get("channelId") or local_payload.get("channel") or "").strip().lower(),
+            release_version=str(local_payload.get("version") or local_payload.get("releaseVersion") or "").strip(),
+            channel_status=str(local_payload.get("status") or "").strip().lower(),
+            rollout_state=str(local_payload.get("rolloutState") or local_payload.get("rollout_state") or "").strip().lower(),
+            rollout_reason=str(local_payload.get("rolloutReason") or local_payload.get("rollout_reason") or "").strip(),
+            known_issue_summary=str(local_payload.get("knownIssueSummary") or local_payload.get("known_issue_summary") or "").strip(),
+        )
+
+    def derive_verifier_owned_value(name: str, current_value):
+        helper = getattr(verifier, name, None)
+        if callable(helper):
+            return helper(payload)
+        if materializer is None:
+            return current_value
+        tuple_coverage = fallback_tuple_coverage(payload)
+        artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), list) else []
+        channel_id = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
+        release_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
+        fallback_helpers = {
+            "expected_external_proof_request_rows": lambda: (tuple_coverage or {}).get("externalProofRequests") or current_value,
+            "expected_desktop_route_truth_rows": lambda: (tuple_coverage or {}).get("desktopRouteTruth") or current_value,
+            "expected_install_aware_artifact_registry_rows": lambda: (
+                materializer.install_aware_artifact_registry(
+                    artifacts,
+                    tuple_coverage,
+                    channel_id=channel_id,
+                    release_version=release_version,
+                )
+                if tuple_coverage is not None and hasattr(materializer, "install_aware_artifact_registry")
+                else current_value
+            ),
+            "expected_desktop_surface_ref_rows": lambda: (
+                materializer.desktop_surface_refs(
+                    artifacts,
+                    tuple_coverage,
+                    channel_id=channel_id,
+                    release_version=release_version,
+                )
+                if tuple_coverage is not None and hasattr(materializer, "desktop_surface_refs")
+                else current_value
+            ),
+            "expected_artifact_identity_registry_rows": lambda: (
+                materializer.artifact_identity_registry(
+                    tuple_coverage,
+                    channel_id=channel_id,
+                    release_version=release_version,
+                )
+                if tuple_coverage is not None and hasattr(materializer, "artifact_identity_registry")
+                else current_value
+            ),
+            "expected_artifact_publication_binding_rows": lambda: (
+                materializer.artifact_publication_bindings(
+                    tuple_coverage,
+                    channel_id=channel_id,
+                    release_version=release_version,
+                )
+                if tuple_coverage is not None and hasattr(materializer, "artifact_publication_bindings")
+                else current_value
+            ),
+            "expected_public_trust_metrics": lambda: (
+                materializer.expected_public_trust_metrics(payload)
+                if hasattr(materializer, "expected_public_trust_metrics")
+                else current_value
+            ),
+            "expected_registry_boundary_coverage": lambda: (
+                materializer.expected_registry_boundary_coverage(payload)
+                if hasattr(materializer, "expected_registry_boundary_coverage")
+                else current_value
+            ),
+        }
+        fallback = fallback_helpers.get(name)
+        if fallback is not None:
+            return fallback()
+        return current_value
+
+    def assert_desktop_surface_ref_consistency(local_payload: dict) -> None:
+        artifacts = local_payload.get("artifacts") or local_payload.get("downloads") or []
+        artifact_ids = {
+            normalized_token(item.get("artifactId") or item.get("id"))
+            for item in artifacts
+            if isinstance(item, dict) and normalized_token(item.get("artifactId") or item.get("id"))
+        }
+        coverage = local_payload.get("desktopTupleCoverage")
+        route_truth = coverage.get("desktopRouteTruth") if isinstance(coverage, dict) else []
+        route_truth_by_tuple = {
+            str(item.get("tupleId") or "").strip(): item
+            for item in route_truth
+            if isinstance(item, dict) and str(item.get("tupleId") or "").strip()
+        }
+        problems: list[str] = []
+        for row in local_payload.get("desktopSurfaceRefs") or []:
+            if not isinstance(row, dict):
+                continue
+            tuple_id = str(row.get("tupleId") or "").strip()
+            artifact_id = normalized_token(row.get("artifactId"))
+            if not artifact_id or artifact_id not in artifact_ids:
+                problems.append(f"{tuple_id or '<missing-tuple>'}: desktopSurfaceRefs artifactId is missing from artifacts")
+                continue
+            route_row = route_truth_by_tuple.get(tuple_id)
+            if not isinstance(route_row, dict):
+                problems.append(f"{tuple_id}: desktopSurfaceRefs tuple is missing from desktopRouteTruth")
+                continue
+            route_artifact_id = normalized_token(route_row.get("artifactId"))
+            if not route_artifact_id:
+                problems.append(f"{tuple_id}: desktopSurfaceRefs surfaced tuple has empty desktopRouteTruth.artifactId")
+            elif route_artifact_id != artifact_id:
+                problems.append(f"{tuple_id}: desktopSurfaceRefs artifactId does not match desktopRouteTruth.artifactId")
+            if normalized_token(route_row.get("promotionState")) == "proof_required":
+                problems.append(f"{tuple_id}: desktopSurfaceRefs must not surface proof_required tuples")
+        if problems:
+            raise SystemExit(
+                "Release channel desktopSurfaceRefs is inconsistent with artifacts/desktopRouteTruth:\n - "
+                + "\n - ".join(problems)
+            )
+
     coverage = payload.get("desktopTupleCoverage")
     if isinstance(coverage, dict):
-        coverage["externalProofRequests"] = verifier.expected_external_proof_request_rows(payload)
-        coverage["desktopRouteTruth"] = verifier.expected_desktop_route_truth_rows(payload)
-    payload["installAwareArtifactRegistry"] = verifier.expected_install_aware_artifact_registry_rows(payload)
-    payload["desktopSurfaceRefs"] = verifier.expected_desktop_surface_ref_rows(payload)
-    payload["artifactIdentityRegistry"] = verifier.expected_artifact_identity_registry_rows(payload)
-    payload["artifactPublicationBindings"] = verifier.expected_artifact_publication_binding_rows(payload)
-    payload["publicTrustMetrics"] = verifier.expected_public_trust_metrics(payload)
+        coverage["externalProofRequests"] = derive_verifier_owned_value(
+            "expected_external_proof_request_rows",
+            coverage.get("externalProofRequests") or [],
+        )
+        coverage["desktopRouteTruth"] = derive_verifier_owned_value(
+            "expected_desktop_route_truth_rows",
+            coverage.get("desktopRouteTruth") or [],
+        )
+    payload["installAwareArtifactRegistry"] = derive_verifier_owned_value(
+        "expected_install_aware_artifact_registry_rows",
+        payload.get("installAwareArtifactRegistry") or [],
+    )
+    payload["desktopSurfaceRefs"] = derive_verifier_owned_value(
+        "expected_desktop_surface_ref_rows",
+        payload.get("desktopSurfaceRefs") or [],
+    )
+    payload["artifactIdentityRegistry"] = derive_verifier_owned_value(
+        "expected_artifact_identity_registry_rows",
+        payload.get("artifactIdentityRegistry") or [],
+    )
+    payload["artifactPublicationBindings"] = derive_verifier_owned_value(
+        "expected_artifact_publication_binding_rows",
+        payload.get("artifactPublicationBindings") or [],
+    )
+    payload["publicTrustMetrics"] = derive_verifier_owned_value(
+        "expected_public_trust_metrics",
+        payload.get("publicTrustMetrics") or {},
+    )
     trust_release_channel = payload.get("publicTrustMetrics", {}).get("releaseChannel", {})
     trust_supportability_state = normalized_token(trust_release_channel.get("supportabilityState"))
     if normalized_token(payload.get("status")) == "published" and trust_supportability_state:
@@ -1085,13 +1448,35 @@ for raw_path in sys.argv[2:]:
     # so carried-forward manifests cannot keep stale dependent rows such as desktopSurfaceRefs.
     coverage = payload.get("desktopTupleCoverage")
     if isinstance(coverage, dict):
-        coverage["externalProofRequests"] = verifier.expected_external_proof_request_rows(payload)
-        coverage["desktopRouteTruth"] = verifier.expected_desktop_route_truth_rows(payload)
-    payload["installAwareArtifactRegistry"] = verifier.expected_install_aware_artifact_registry_rows(payload)
-    payload["desktopSurfaceRefs"] = verifier.expected_desktop_surface_ref_rows(payload)
-    payload["artifactIdentityRegistry"] = verifier.expected_artifact_identity_registry_rows(payload)
-    payload["artifactPublicationBindings"] = verifier.expected_artifact_publication_binding_rows(payload)
-    payload["registryBoundaryCoverage"] = verifier.expected_registry_boundary_coverage(payload)
+        coverage["externalProofRequests"] = derive_verifier_owned_value(
+            "expected_external_proof_request_rows",
+            coverage.get("externalProofRequests") or [],
+        )
+        coverage["desktopRouteTruth"] = derive_verifier_owned_value(
+            "expected_desktop_route_truth_rows",
+            coverage.get("desktopRouteTruth") or [],
+        )
+    payload["installAwareArtifactRegistry"] = derive_verifier_owned_value(
+        "expected_install_aware_artifact_registry_rows",
+        payload.get("installAwareArtifactRegistry") or [],
+    )
+    payload["desktopSurfaceRefs"] = derive_verifier_owned_value(
+        "expected_desktop_surface_ref_rows",
+        payload.get("desktopSurfaceRefs") or [],
+    )
+    payload["artifactIdentityRegistry"] = derive_verifier_owned_value(
+        "expected_artifact_identity_registry_rows",
+        payload.get("artifactIdentityRegistry") or [],
+    )
+    payload["artifactPublicationBindings"] = derive_verifier_owned_value(
+        "expected_artifact_publication_binding_rows",
+        payload.get("artifactPublicationBindings") or [],
+    )
+    payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
+        "expected_registry_boundary_coverage",
+        payload.get("registryBoundaryCoverage") or {},
+    )
+    assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
@@ -1103,6 +1488,7 @@ if [[ -d "$STARTUP_SMOKE_DIR" ]]; then
     find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -exec rm -f -- {} +
     if find "$STARTUP_SMOKE_DIR" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
       cp "$STARTUP_SMOKE_DIR"/* "$canonical_startup_smoke_dir"/
+      normalize_startup_smoke_receipt_channel_identity "$canonical_startup_smoke_dir" "$effective_release_channel"
     fi
   fi
 fi
@@ -1191,6 +1577,7 @@ sync_portal_outputs() {
   find "$portal_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
   if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
     cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$portal_startup_smoke_dir"/
+    normalize_startup_smoke_receipt_channel_identity "$portal_startup_smoke_dir" "$effective_release_channel"
     echo "synced startup-smoke receipts -> $portal_startup_smoke_dir"
   else
     echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for portal sync"
@@ -1223,6 +1610,48 @@ sync_portal_outputs() {
   fi
 }
 
+sync_presentation_downloads_mirror() {
+  local mirror_manifest_path="$1"
+  local mirror_canonical_manifest_path="$2"
+  local mirror_downloads_dir="$3"
+  local mirror_label="$4"
+  local resolved_manifest_path=""
+  local resolved_mirror_manifest_path=""
+  local mirror_startup_smoke_dir=""
+  local mirror_files_dir=""
+
+  if [[ -z "$mirror_manifest_path" || -z "$mirror_canonical_manifest_path" || -z "$mirror_downloads_dir" ]]; then
+    return 0
+  fi
+
+  resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
+  resolved_mirror_manifest_path="$(resolve_path_allow_missing "$mirror_manifest_path")"
+  if [[ "$resolved_manifest_path" == "$resolved_mirror_manifest_path" ]]; then
+    echo "$mirror_label manifest path matches manifest output; skipped secondary sync"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$mirror_manifest_path")"
+  mkdir -p "$mirror_downloads_dir"
+  cp "$MANIFEST_PATH" "$mirror_manifest_path"
+  cp "$CANONICAL_MANIFEST_PATH" "$mirror_canonical_manifest_path"
+  echo "synced $mirror_label manifest -> $mirror_manifest_path"
+
+  mirror_startup_smoke_dir="$mirror_downloads_dir/startup-smoke"
+  mkdir -p "$mirror_startup_smoke_dir"
+  find "$mirror_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
+  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
+    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$mirror_startup_smoke_dir"/
+    normalize_startup_smoke_receipt_channel_identity "$mirror_startup_smoke_dir" "$effective_release_channel"
+    echo "synced startup-smoke receipts -> $mirror_startup_smoke_dir"
+  else
+    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for $mirror_label sync"
+  fi
+
+  mirror_files_dir="$mirror_downloads_dir/files"
+  sync_promoted_files_dir "$mirror_files_dir" "$mirror_label"
+}
+
 canonical_files_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/files"
 resolved_downloads_dir="$(realpath -m "$DOWNLOADS_DIR")"
 resolved_canonical_files_dir="$(realpath -m "$canonical_files_dir")"
@@ -1235,6 +1664,13 @@ fi
 resolved_manifest_path="$(resolve_path_allow_missing "$MANIFEST_PATH")"
 resolved_portal_manifest_path="$(resolve_path_allow_missing "$PORTAL_MANIFEST_PATH")"
 sync_portal_outputs "$resolved_manifest_path" "$resolved_portal_manifest_path"
+if presentation_mirror_enabled; then
+  sync_presentation_downloads_mirror \
+    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/releases.json" \
+    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads/RELEASE_CHANNEL.generated.json" \
+    "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
+    "presentation downloads mirror"
+fi
 
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)

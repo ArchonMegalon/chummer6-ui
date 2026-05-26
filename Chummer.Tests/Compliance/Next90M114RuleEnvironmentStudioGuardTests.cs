@@ -62,16 +62,16 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         StringAssert.Contains(scriptText, "\"queue_work_task_matches\": yaml_scalar(queue_block, \"work_task_id\") == WORK_TASK_ID");
         StringAssert.Contains(scriptText, "\"queue_repo_matches\": yaml_scalar(queue_block, \"repo\") == \"chummer6-ui\"");
         StringAssert.Contains(scriptText, "\"design_queue_repo_matches\": yaml_scalar(design_queue_block, \"repo\") == \"chummer6-ui\"");
-        StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)");
-        StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)");
+        StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        StringAssert.Contains(scriptText, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)");
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
-        StringAssert.Contains(scriptText, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)");
+        StringAssert.Contains(scriptText, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         StringAssert.Contains(scriptText, "public event EventHandler? RuleEnvironmentStudioRequested;");
         StringAssert.Contains(scriptText, "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;");
         StringAssert.Contains(scriptText, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")");
-        StringAssert.Contains(scriptText, "Import explain receipt:");
+        StringAssert.Contains(scriptText, "Content=\"Rule Studio\"");
     }
 
     [TestMethod]

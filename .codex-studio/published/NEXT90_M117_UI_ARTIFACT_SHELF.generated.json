@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T11:22:42Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m117_ui_artifact_shelf",
@@ -27,8 +27,8 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
+      "registry_task_status_is_queue_managed": true,
+      "registry_task_evidence_is_queue_managed": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_package_id_matches": true,
@@ -65,33 +65,9 @@
         "desktop.home.button.open_my_artifacts": true,
         "desktop.home.button.open_campaign_artifacts": true,
         "desktop.home.button.open_published_artifacts": true,
-        "\"Open Public Proof Shelf\"": true,
-        "OpenArtifactShelfView(\"personal\")": true,
-        "OpenArtifactShelfView(\"campaign\")": true,
-        "OpenArtifactShelfView(\"creator\")": true,
-        "OpenArtifactShelfView(\"public\")": true
-      },
-      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "\"Open My Artifact Shelf\"": true,
-        "\"Open Campaign Artifact Shelf\"": true,
-        "\"Open Creator Artifact Shelf\"": true,
-        "\"Open Public Proof Shelf\"": true,
-        "OpenArtifactShelfView(\"personal\")": true,
-        "OpenArtifactShelfView(\"campaign\")": true,
-        "OpenArtifactShelfView(\"creator\")": true,
-        "OpenArtifactShelfView(\"public\")": true
+        "OpenArtifactShelfView": true
       },
       "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": {
-        "\"Open My Artifact Shelf\"": true,
-        "\"Open Campaign Artifact Shelf\"": true,
-        "\"Open Creator Artifact Shelf\"": true,
-        "\"Open Public Proof Shelf\"": true,
-        "OpenArtifactShelfView(\"personal\")": true,
-        "OpenArtifactShelfView(\"campaign\")": true,
-        "OpenArtifactShelfView(\"creator\")": true,
-        "OpenArtifactShelfView(\"public\")": true
-      },
-      "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": {
         "\"Open My Artifact Shelf\"": true,
         "\"Open Campaign Artifact Shelf\"": true,
         "\"Open Creator Artifact Shelf\"": true,
@@ -112,11 +88,11 @@
         "OpenArtifactShelfView(\"public\")": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "private static void DesktopCampaignArtifactSurface_is_a_real_top_level_surface()": true,
-        "private static void DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface()": true,
-        "private static void DesktopCreatorPublicationSurface_is_a_real_top_level_surface()": true,
-        "RequireContains(source, \"\\\"Open Public Proof Shelf\\\"\");": true,
-        "RequireContains(source, \"OpenArtifactShelfView(\\\"public\\\")\");": true
+        "RequireContains(source, \"desktop.home.button.open_my_artifacts\");": true,
+        "RequireContains(source, \"desktop.home.button.open_campaign_artifacts\");": true,
+        "RequireContains(source, \"desktop.home.button.open_published_artifacts\");": true,
+        "RequireContains(source, \"OpenArtifactShelfView\");": true,
+        "RequireContains(source, \"DesktopInstallLinkingRuntime.TryOpenRelativePortal($\\\"/artifacts?view={Uri.EscapeDataString(view)}\\\")\");": true
       }
     },
     "proofCommands": {
@@ -129,9 +105,7 @@
       "doNotReopenReason": "M117 chummer6-ui desktop artifact shelf entry points are complete; future shards must verify the",
       "proof": [
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M117ArtifactShelfGuardTests.cs",
@@ -140,22 +114,13 @@
         "bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
         "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
         "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
-      ],
-      "registryEvidence": [
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs keep personal, campaign, creator, and public proof shelf entry points visible from the home and campaign desktop follow-through surfaces.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs and /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs expose the same artifact shelf and public proof shelf entry points from artifact and build-native desktop surfaces.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs now names the creator artifact shelf explicitly while keeping creator publication and moderation follow-through separate from shelf truth.",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs, /docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M117ArtifactShelfGuardTests.cs, and /docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh fail closed when queue proof, registry proof, or desktop artifact shelf entry points drift from the closed package contract.",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M117_UI_ARTIFACT_SHELF.generated.json records the closed-package receipt for `next90-m117-ui-artifact-shelf`."
       ]
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M117_UI_ARTIFACT_SHELF.generated.json",
       "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M117ArtifactShelfGuardTests.cs"

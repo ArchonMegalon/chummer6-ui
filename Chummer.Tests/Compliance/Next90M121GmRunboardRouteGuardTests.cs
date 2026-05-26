@@ -30,7 +30,7 @@ public sealed class Next90M121GmRunboardRouteGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M121 chummer6-ui desktop GM Runboard route is complete;");
         StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspaceSurface.GmRunboard\"");
-        StringAssert.Contains(scriptText, "\"Open GM Runboard\"");
+        StringAssert.Contains(scriptText, "\\\"Open GM Runboard\\\"");
         StringAssert.Contains(scriptText, "\"public const string GmRunboard = \\\"gm_runboard\\\";\"");
     }
 
@@ -60,8 +60,8 @@ public sealed class Next90M121GmRunboardRouteGuardTests
             ReadStringArray(evidence.GetProperty("ownedSurfaces")));
 
         JsonElement checks = evidence.GetProperty("queueChecks");
-        Assert.IsTrue(checks.GetProperty("registry_task_status_complete").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_task_evidence_exact").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_status_is_queue_managed").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_evidence_is_queue_managed").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_status_complete").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_proof_exact").GetBoolean());

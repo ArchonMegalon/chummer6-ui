@@ -1,9 +1,12 @@
 #nullable enable annotations
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -100,6 +103,108 @@ public sealed class DesktopCrashRuntimeTests
         Assert.IsFalse(json.Contains("claimGrantId", StringComparison.OrdinalIgnoreCase));
     }
 
+    [TestMethod]
+    public void BuildCrashDiagnosticsReceiptLines_includes_grounded_before_after_receipts()
+    {
+        DesktopCrashReport report = CreateReport("crash-4");
+
+        IReadOnlyList<string> lines = DesktopCrashRuntime.BuildCrashDiagnosticsReceiptLines(report);
+
+        Assert.IsTrue(lines.Count > 0);
+        Assert.IsTrue(lines.Any(line => line.Contains("crash diagnostics receipt", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(lines.Any(line => line.Contains("crash support handoff receipt", StringComparison.OrdinalIgnoreCase)));
+        Assert.AreEqual("local files, support posture, and install state remain unchanged", lines[^1]);
+    }
+
+    [TestMethod]
+    public void BuildRecoverySummary_lists_artifacts_and_details()
+    {
+        DesktopCrashReport report = CreateReport("crash-5");
+        string reportDirectory = Path.Combine(Path.GetTempPath(), $"desktop-crash-summary-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(reportDirectory);
+        try
+        {
+            string summary = DesktopCrashRuntime.BuildRecoverySummary(report, reportDirectory);
+
+            StringAssert.Contains(summary, "Report id: crash-5", StringComparison.Ordinal);
+            StringAssert.Contains(summary, "- Report:", StringComparison.Ordinal);
+            StringAssert.Contains(summary, "- Summary:", StringComparison.Ordinal);
+            StringAssert.Contains(summary, "- Bundle:", StringComparison.Ordinal);
+            StringAssert.Contains(summary, "Details:", StringComparison.Ordinal);
+        }
+        finally
+        {
+            if (Directory.Exists(reportDirectory))
+            {
+                Directory.Delete(reportDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void TryLoadPendingCrashReport_reads_marker_report_and_summary_and_acknowledges_match()
+    {
+        using TestStateRootScope scope = new();
+        DesktopCrashReport report = CreateReport("crash-pending-1");
+        string reportDirectory = Path.Combine(scope.CrashRoot, "20260520-090000-crash");
+        Directory.CreateDirectory(reportDirectory);
+        string reportPath = Path.Combine(reportDirectory, "report.json");
+        string summaryPath = Path.Combine(reportDirectory, "summary.txt");
+        File.WriteAllText(
+            reportPath,
+            JsonSerializer.Serialize(
+                report,
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                }),
+            Encoding.UTF8);
+        File.WriteAllText(summaryPath, "desktop crash summary", Encoding.UTF8);
+        scope.WritePendingMarker(
+            """
+            {
+              "crashId": "crash-pending-1",
+              "reportDirectory": "__REPORT_DIRECTORY__",
+              "submissionAttempts": 2,
+              "lastSubmissionError": "network timeout"
+            }
+            """.Replace("__REPORT_DIRECTORY__", reportDirectory.Replace("\\", "\\\\"), StringComparison.Ordinal));
+
+        DesktopPendingCrashReport? pending = DesktopCrashRuntime.TryLoadPendingCrashReport();
+
+        Assert.IsNotNull(pending);
+        Assert.AreEqual("crash-pending-1", pending.Report.CrashId);
+        Assert.AreEqual(reportDirectory, pending.ReportDirectory);
+        Assert.AreEqual(summaryPath, pending.SummaryPath);
+        Assert.AreEqual("desktop crash summary", pending.SummaryText);
+        Assert.AreEqual(2, pending.SubmissionAttempts);
+        Assert.AreEqual("network timeout", pending.LastSubmissionError);
+        Assert.IsTrue(DesktopCrashRuntime.TryAcknowledgePendingCrashReport("crash-pending-1"));
+        Assert.IsNull(DesktopCrashRuntime.TryLoadPendingCrashReport());
+    }
+
+    [TestMethod]
+    public void TryLoadPendingCrashReport_clears_marker_when_report_payload_is_invalid()
+    {
+        using TestStateRootScope scope = new();
+        string reportDirectory = Path.Combine(scope.CrashRoot, "20260520-091500-invalid");
+        Directory.CreateDirectory(reportDirectory);
+        File.WriteAllText(Path.Combine(reportDirectory, "report.json"), "{ invalid", Encoding.UTF8);
+        scope.WritePendingMarker(
+            """
+            {
+              "crashId": "crash-invalid",
+              "reportDirectory": "__REPORT_DIRECTORY__"
+            }
+            """.Replace("__REPORT_DIRECTORY__", reportDirectory.Replace("\\", "\\\\"), StringComparison.Ordinal));
+
+        DesktopPendingCrashReport? pending = DesktopCrashRuntime.TryLoadPendingCrashReport();
+
+        Assert.IsNull(pending);
+        Assert.IsFalse(File.Exists(scope.PendingMarkerPath));
+    }
+
     private static object BuildEnvelope(DesktopCrashReport report, string summary, DesktopCrashClaimSnapshot? snapshot)
     {
         MethodInfo method = typeof(DesktopCrashRuntime).GetMethod("BuildEnvelope", BindingFlags.NonPublic | BindingFlags.Static)
@@ -182,6 +287,23 @@ public sealed class DesktopCrashRuntimeTests
             _ => RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
         };
 
+    private static DesktopCrashReport CreateReport(string crashId)
+        => new(
+            CrashId: crashId,
+            HeadId: "avalonia",
+            CapturedAtUtc: DateTimeOffset.UtcNow,
+            IsTerminating: true,
+            ApplicationVersion: "1.0.0",
+            RuntimeVersion: ".NET 10",
+            OperatingSystem: RuntimeInformation.OSDescription,
+            ProcessArchitecture: RuntimeInformation.OSArchitecture.ToString(),
+            ProcessName: "chummer",
+            BaseDirectoryLabel: "<base>",
+            CurrentDirectoryLabel: "<cwd>",
+            ExceptionType: "System.Exception",
+            ExceptionMessage: "boom",
+            ExceptionDetail: "System.Exception: boom");
+
     private sealed class TestStateRootScope : IDisposable
     {
         private readonly string _tempRoot;
@@ -195,6 +317,10 @@ public sealed class DesktopCrashRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", _tempRoot);
         }
 
+        public string CrashRoot => Path.Combine(_tempRoot, "Chummer", "desktop-crashes");
+
+        public string PendingMarkerPath => Path.Combine(CrashRoot, "pending.json");
+
         public void WriteInstallState(DesktopInstallLinkingState state)
         {
             string path = Path.Combine(
@@ -207,6 +333,12 @@ public sealed class DesktopCrashRuntimeTests
                 "state.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             File.WriteAllText(path, JsonSerializer.Serialize(state));
+        }
+
+        public void WritePendingMarker(string json)
+        {
+            Directory.CreateDirectory(CrashRoot);
+            File.WriteAllText(PendingMarkerPath, json, Encoding.UTF8);
         }
 
         public void Dispose()

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T09:17:08.091026Z",
+  "generatedAt": "2026-05-26T20:04:35.511747Z",
   "contractName": "chummer6-ui.chummer_shared_legacy_equivalent_chrome_gate",
   "status": "pass",
   "summary": "Shared legacy-equivalent runtime chrome stays stripped across the Chummer5A, SR4, and SR6 promoted surfaces.",

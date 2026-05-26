@@ -6,37 +6,23 @@
       <Grid RowDefinitions="Auto,*" RowSpacing="0">
         <Grid Grid.Row="0" ColumnDefinitions="*" Margin="2,1,2,1">
           <StackPanel Spacing="0">
-            <TextBlock x:Name="CodexHeadingText" Classes="shell-section-title" Text="Codex" />
+            <TextBlock x:Name="CodexHeadingText" Classes="shell-section-title" Text="Characters" />
             <TextBlock x:Name="CodexCaptionText"
                        Classes="shell-caption"
                        IsVisible="False"
                        Text=""
                        TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="OpenWorkspacesHeader" IsVisible="False" />
+            <TextBlock x:Name="NavigationTabsHeader" IsVisible="False" />
+            <TextBlock x:Name="SectionActionsHeader" IsVisible="False" />
+            <TextBlock x:Name="WorkflowSurfacesHeader" IsVisible="False" />
           </StackPanel>
         </Grid>
-
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="4" IsVisible="False">
-          <TextBlock x:Name="CodexKickerText" Classes="shell-kicker" Text="Codex" IsVisible="False" />
-          <TextBlock x:Name="CodexHeadingTextShadow" Grid.Column="0" Classes="shell-caption" Text="Codex" IsVisible="False" />
-          <TextBlock x:Name="CodexCaptionTextShadow"
-                     Grid.Column="1"
-                     Classes="shell-caption"
-                     Text="Tree navigator for runners, tabs, actions, and workflow routes."
-                     IsVisible="False"
-                     TextTrimming="CharacterEllipsis" />
-        </Grid>
-
-        <StackPanel IsVisible="False" Spacing="0">
-          <TextBlock x:Name="OpenWorkspacesHeader" />
-          <TextBlock x:Name="NavigationTabsHeader" />
-          <TextBlock x:Name="SectionActionsHeader" />
-          <TextBlock x:Name="WorkflowSurfacesHeader" />
-        </StackPanel>
 
         <TreeView x:Name="NavigatorTree"
                   Grid.Row="1"
                   Margin="0"
-                  ToolTip.Tip="Tree navigator for runners, tabs, actions, and workflow routes."
+                  ToolTip.Tip="Character navigator grouped by ruleset."
                   SelectionChanged="NavigatorTree_OnSelectionChanged">
           <TreeView.ItemsPanel>
             <ItemsPanelTemplate>

@@ -15,8 +15,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly string _language;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _statusText;
-    private readonly TextBox _claimCodeBox;
-    private bool _isSubmitting;
+    private readonly TextBlock _claimCodeHintText;
+    private readonly TextBlock _claimCodeLabelText;
+    private readonly TextBox _claimCodeTextBox;
+    private readonly StackPanel _claimCodeEntryRow;
+    private readonly Button _followThroughButton;
+    private readonly Button _accountButton;
+    private readonly Button _continueGuestButton;
+    private readonly Button _redeemClaimCodeButton;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context)
     {
@@ -39,19 +45,54 @@ internal sealed class DesktopInstallLinkingWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
-        _claimCodeBox = new TextBox
-        {
-            Text = context.StartupClaimCode ?? string.Empty,
-            Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language)
-        };
-        ToolTip.SetTip(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
-        AutomationProperties.SetName(_claimCodeBox, DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language));
-
         _statusText = new TextBlock
         {
             IsVisible = false,
             Foreground = Brushes.DarkSlateGray,
             TextWrapping = TextWrapping.Wrap
+        };
+
+        _claimCodeHintText = new TextBlock
+        {
+            Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.prompt_guest_claim", _language),
+            IsVisible = false,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _claimCodeLabelText = new TextBlock
+        {
+            Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_label", _language),
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap,
+            IsVisible = false
+        };
+
+        _claimCodeTextBox = new TextBox
+        {
+            Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language),
+            MinWidth = 320,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        _followThroughButton = CreateButton(string.Empty, OpenFollowThroughAsync, isDefault: true);
+        _accountButton = CreateButton(string.Empty, OpenAccountAsync);
+        _continueGuestButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language),
+            ContinueAsGuestAsync);
+        _redeemClaimCodeButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
+            RedeemClaimCodeAsync);
+        _claimCodeEntryRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Spacing = 6,
+            IsVisible = false,
+            Children =
+            {
+                _claimCodeTextBox,
+                _redeemClaimCodeButton
+            }
         };
 
         Content = new Border
@@ -64,7 +105,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 Children =
                 {
                     _summaryText,
-                    _claimCodeBox,
+                    new TextBlock
+                    {
+                        Text = "Please claim your app before you continue.",
+                        FontWeight = FontWeight.SemiBold,
+                        TextWrapping = TextWrapping.Wrap
+                    },
                     _statusText,
                     new StackPanel
                     {
@@ -79,6 +125,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                 FontWeight = FontWeight.SemiBold,
                                 TextWrapping = TextWrapping.Wrap
                             },
+                            _claimCodeHintText,
+                            _claimCodeLabelText,
+                            _claimCodeEntryRow,
                             new StackPanel
                             {
                                 Orientation = Orientation.Horizontal,
@@ -86,17 +135,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                 Spacing = 6,
                                 Children =
                                 {
-                                    CreateButton(
-                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
-                                            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
-                                            : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language),
-                                        OpenFollowThroughAsync,
-                                        isDefault: true),
-                                    CreateButton(
-                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
-                                            ? "Open linked account"
-                                            : "Link this copy now",
-                                        DesktopInstallLinkingRuntime.IsClaimed(_state) ? OpenAccountAsync : LinkAsync)
+                                    _followThroughButton,
+                                    _accountButton
                                 }
                             },
                             new TextBlock
@@ -112,12 +152,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                 Spacing = 6,
                                 Children =
                                 {
-                                    CreateButton(
-                                        DesktopInstallLinkingRuntime.IsClaimed(_state)
-                                            ? "Open your account"
-                                            : "Open your account first",
-                                        OpenAccountAsync),
-                                    CreateButton("Quit until this copy is linked", ContinueAsGuestAsync),
+                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
+                                    _continueGuestButton,
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
                                     CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
@@ -137,12 +173,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 SetStatus(context.ClaimResult.Message);
                 _state = context.ClaimResult.State;
                 RefreshSummary();
+                RefreshActionState();
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                SetStatus("Link this copy before you continue. Unlinked installs do not open the desktop workspace.");
+                SetStatus("Paste the install handoff here or start the signed-in route on chummer.run. Chummer can redeem the handoff in-app and then continue without a browser-only claim ritual.");
             }
         };
+
+        RefreshActionState();
     }
 
     public static async Task ShowAsync(Window owner, string headId)
@@ -201,6 +240,33 @@ internal sealed class DesktopInstallLinkingWindow : Window
         SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.install_id_copied", _language));
     }
 
+    private async Task RedeemClaimCodeAsync()
+    {
+        string claimCode = _claimCodeTextBox.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(claimCode))
+        {
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.claim_code_required", _language));
+            return;
+        }
+
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
+        DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
+            _state.HeadId,
+            claimCode,
+            CancellationToken.None).ConfigureAwait(true);
+
+        _state = result.State;
+        _claimCodeTextBox.Text = result.Succeeded ? string.Empty : claimCode;
+        RefreshSummary();
+        RefreshActionState();
+        if (Owner is MainWindow ownerWindow)
+        {
+            ownerWindow.ApplyInstallLinkingChrome(_state);
+        }
+
+        SetStatus(result.Message);
+    }
+
     private Task OpenFollowThroughAsync()
     {
         if (DesktopInstallLinkingRuntime.IsClaimed(_state))
@@ -251,51 +317,24 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private Task OpenAccountAsync()
     {
-        if (DesktopInstallLinkingRuntime.TryOpenAccountPortal())
+        bool opened = DesktopInstallLinkingRuntime.IsClaimed(_state)
+            ? DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state)
+            : DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state);
+
+        if (opened)
         {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
+            SetStatus(DesktopInstallLinkingRuntime.IsClaimed(_state)
+                ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language)
+                : "Opened the signed-in claim route on chummer.run. Finish the OAuth handoff there and let Chummer come back with the install callback.");
         }
         else
         {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
+            SetStatus(DesktopInstallLinkingRuntime.IsClaimed(_state)
+                ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language)
+                : "Unable to open the signed-in claim route right now.");
         }
 
         return Task.CompletedTask;
-    }
-
-    private async Task LinkAsync()
-    {
-        if (_isSubmitting)
-        {
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(_claimCodeBox.Text))
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.claim_code_required", _language));
-            return;
-        }
-
-        _isSubmitting = true;
-        try
-        {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.linking", _language));
-            DesktopInstallClaimResult result = await DesktopInstallLinkingRuntime.RedeemClaimCodeAsync(
-                _state.HeadId,
-                _claimCodeBox.Text,
-                CancellationToken.None);
-            _state = result.State;
-            RefreshSummary();
-            SetStatus(result.Message);
-            if (result.Succeeded)
-            {
-                Close();
-            }
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
     }
 
     private Task ContinueAsGuestAsync()
@@ -312,6 +351,21 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void RefreshSummary()
     {
         _summaryText.Text = BuildSummary(_state, _updateStatus, _language);
+    }
+
+    private void RefreshActionState()
+    {
+        bool claimed = DesktopInstallLinkingRuntime.IsClaimed(_state);
+        _followThroughButton.Content = claimed
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
+        _accountButton.Content = claimed
+            ? "Open linked account"
+            : "Claim this app on chummer.run";
+        _claimCodeHintText.IsVisible = !claimed;
+        _claimCodeLabelText.IsVisible = !claimed;
+        _claimCodeEntryRow.IsVisible = !claimed;
+        _continueGuestButton.IsVisible = !claimed;
     }
 
     private void SetStatus(string message)

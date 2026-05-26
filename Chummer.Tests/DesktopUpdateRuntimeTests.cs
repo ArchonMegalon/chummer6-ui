@@ -474,6 +474,222 @@ public sealed class DesktopUpdateRuntimeTests
         }
     }
 
+    [TestMethod]
+    public void GetCurrentStatus_reports_disabled_when_manifest_is_missing()
+    {
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = null,
+            [UpdateEnabledEnvironmentVariable] = null,
+            [UpdateAutoApplyEnvironmentVariable] = null,
+            [StateRootEnvironmentVariable] = null
+        });
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("disabled", status.Status);
+        StringAssert.Contains(status.RecommendedAction, "Configure the desktop update manifest", StringComparison.Ordinal);
+    }
+
+    [TestMethod]
+    public void GetCurrentStatus_reports_release_attention_for_failed_proof_and_paused_rollout()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "6.0.1-preview",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-05-20T09:00:00Z",
+              "LastManifestVersion": "6.0.1-preview",
+              "LastManifestPublishedAt": "2026-05-20T08:55:00Z",
+              "LastError": null,
+              "LastProofStatus": "failed",
+              "LastRolloutState": "paused",
+              "LastRolloutReason": "registry hold"
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("attention_required", status.Status);
+        StringAssert.Contains(status.RecommendedAction, "latest local release proof failed", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
+    public void SelectCompatibleArtifacts_prefers_in_place_apply_and_filters_head_platform_matches()
+    {
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdateChannelManifest manifest = new(
+            ChannelId: "preview",
+            Version: "6.0.2-preview",
+            Status: "published",
+            PublishedAt: DateTimeOffset.Parse("2026-05-20T09:00:00Z"),
+            Artifacts:
+            [
+                new DesktopUpdateArtifact("other", "other", identity.Platform, identity.Arch, "archive", "other.zip", "/tmp/other.zip", null, null, null),
+                new DesktopUpdateArtifact("installer", "avalonia", identity.Platform, identity.Arch, "installer", "avalonia-installer.exe", "/tmp/installer.exe", null, null, null),
+                new DesktopUpdateArtifact("archive", "avalonia", identity.Platform, identity.Arch, "archive", "avalonia.zip", "/tmp/archive.zip", null, null, null)
+            ],
+            DesktopSurfaceRefs: [],
+            RolloutState: null,
+            RolloutReason: null,
+            SupportabilityState: null,
+            SupportabilitySummary: null,
+            KnownIssueSummary: null,
+            FixAvailabilitySummary: null,
+            ProofStatus: null,
+            ProofGeneratedAt: null,
+            SourceUri: new Uri("file:///tmp/RELEASE_CHANNEL.generated.json"));
+
+        IReadOnlyList<DesktopUpdateArtifact> artifacts = InvokePrivateStatic<IReadOnlyList<DesktopUpdateArtifact>>(
+            "SelectCompatibleArtifacts",
+            manifest,
+            "avalonia",
+            identity);
+
+        Assert.AreEqual(2, artifacts.Count);
+        Assert.AreEqual("archive", artifacts[0].ArtifactId);
+        Assert.AreEqual("installer", artifacts[1].ArtifactId);
+    }
+
+    [TestMethod]
+    public void Resolve_manifest_and_artifact_uris_support_directory_and_download_routes()
+    {
+        string manifestDirectory = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-dir-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(manifestDirectory);
+        try
+        {
+            Uri manifestUri = InvokePrivateStatic<Uri>("ResolveManifestUri", manifestDirectory);
+            DesktopUpdateArtifact artifact = new(
+                "archive",
+                "avalonia",
+                "linux",
+                "x64",
+                "archive",
+                "avalonia.zip",
+                "/downloads/promoted/avalonia.zip",
+                null,
+                null,
+                null);
+
+            Uri artifactUri = InvokePrivateStatic<Uri>("ResolveArtifactUri", manifestUri, artifact);
+
+            Assert.IsTrue(manifestUri.LocalPath.EndsWith(Path.Combine("RELEASE_CHANNEL.generated.json"), StringComparison.OrdinalIgnoreCase));
+            Assert.IsTrue(artifactUri.LocalPath.EndsWith(Path.Combine("promoted", "avalonia.zip"), StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(manifestDirectory))
+            {
+                Directory.Delete(manifestDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Normalize_payload_and_helper_checks_follow_packaged_runtime_rules()
+    {
+        string payloadRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-payload-{Guid.NewGuid():N}");
+        string nestedRoot = Path.Combine(payloadRoot, "bundle");
+        string helperDirectory = Path.Combine(Path.GetTempPath(), $"desktop-update-helper-dir-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(nestedRoot);
+        Directory.CreateDirectory(helperDirectory);
+        File.WriteAllText(Path.Combine(nestedRoot, "Chummer.Desktop"), "// app");
+        string helperPath = Path.Combine(helperDirectory, "Chummer.Desktop");
+        File.WriteAllText(helperPath, "// helper");
+        try
+        {
+            string normalized = InvokePrivateStatic<string>("NormalizePayloadRoot", payloadRoot, "Chummer.Desktop");
+            bool canRunHelper = InvokePrivateStatic<bool>("CanRunCopiedHelper", helperPath, helperDirectory);
+            bool dotnetBlocked = InvokePrivateStatic<bool>("CanRunCopiedHelper", "/usr/bin/dotnet", helperDirectory);
+
+            Assert.AreEqual(nestedRoot, normalized);
+            Assert.IsTrue(canRunHelper);
+            Assert.IsFalse(dotnetBlocked);
+        }
+        finally
+        {
+            if (Directory.Exists(payloadRoot))
+            {
+                Directory.Delete(payloadRoot, recursive: true);
+            }
+            if (Directory.Exists(helperDirectory))
+            {
+                Directory.Delete(helperDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Update_configuration_load_honors_legacy_manifest_and_boolean_aliases()
+    {
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = null,
+            ["CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"] = "/tmp/promoted",
+            [UpdateEnabledEnvironmentVariable] = "yes",
+            [UpdateAutoApplyEnvironmentVariable] = "off"
+        });
+
+        object configuration = InvokeNestedStatic("DesktopUpdateConfiguration", "Load");
+        Type configurationType = configuration.GetType();
+
+        Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
+        Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
+        Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+    }
+
+    [TestMethod]
+    public void State_store_load_returns_null_for_invalid_json_and_cleanup_helpers_remove_stale_artifacts()
+    {
+        string statePath = Path.Combine(Path.GetTempPath(), $"desktop-update-state-invalid-{Guid.NewGuid():N}.json");
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-cleanup-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        string oldDirectory = Path.Combine(tempRoot, "old-dir");
+        string oldFile = Path.Combine(tempRoot, "old-file.txt");
+        Directory.CreateDirectory(oldDirectory);
+        File.WriteAllText(oldFile, "stale");
+        File.WriteAllText(statePath, "{ this is not valid json");
+        Directory.SetCreationTimeUtc(oldDirectory, DateTime.UtcNow.AddDays(-3));
+        File.SetCreationTimeUtc(oldFile, DateTime.UtcNow.AddDays(-3));
+
+        try
+        {
+            object? loaded = InvokeNestedStatic("DesktopUpdateStateStore", "Load", statePath);
+            InvokePrivateStatic<object?>("CleanupExpiredTempArtifacts", tempRoot);
+
+            Assert.IsNull(loaded);
+            Assert.IsFalse(Directory.Exists(oldDirectory));
+            Assert.IsFalse(File.Exists(oldFile));
+        }
+        finally
+        {
+            if (File.Exists(statePath))
+            {
+                File.Delete(statePath);
+            }
+
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static string? GetStringProperty(JsonElement root, string propertyName)
     {
         foreach (JsonProperty property in root.EnumerateObject())
@@ -498,6 +714,28 @@ public sealed class DesktopUpdateRuntimeTests
         }
 
         return null;
+    }
+
+    private static T InvokePrivateStatic<T>(string methodName, params object?[] args)
+    {
+        System.Reflection.MethodInfo? method = typeof(DesktopUpdateRuntime).GetMethod(
+            methodName,
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(method, $"Expected DesktopUpdateRuntime.{methodName} to remain available for coverage.");
+        return (T)method.Invoke(null, args)!;
+    }
+
+    private static object InvokeNestedStatic(string nestedTypeName, string methodName, params object?[] args)
+    {
+        Type? nestedType = typeof(DesktopUpdateRuntime).GetNestedType(
+            nestedTypeName,
+            System.Reflection.BindingFlags.NonPublic);
+        Assert.IsNotNull(nestedType, $"Expected nested type {nestedTypeName} to remain available for coverage.");
+        System.Reflection.MethodInfo? method = nestedType.GetMethod(
+            methodName,
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(method, $"Expected {nestedTypeName}.{methodName} to remain available for coverage.");
+        return method.Invoke(null, args)!;
     }
 
     private sealed class TestEnvironmentScope : IDisposable

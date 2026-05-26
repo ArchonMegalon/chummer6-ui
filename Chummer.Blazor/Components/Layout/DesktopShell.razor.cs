@@ -1,5 +1,6 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Workspaces;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
 using Microsoft.AspNetCore.Components;
@@ -38,6 +39,16 @@ public partial class DesktopShell : IDisposable
     [Inject]
     public IShellSurfaceResolver ShellSurfaceResolver { get; set; } = default!;
 
+    [Inject]
+    public IServiceProvider Services { get; set; } = default!;
+
+    [Parameter]
+    public DesktopInstallLinkingStartupContext? InstallLinkingStartupContext { get; set; }
+
+    private DesktopInstallLinkingStartupContext? EffectiveInstallLinkingStartupContext =>
+        InstallLinkingStartupContext
+        ?? Services.GetService(typeof(DesktopInstallLinkingStartupContext)) as DesktopInstallLinkingStartupContext;
+
     private string RawImportXml { get; set; } = "<character><name>Demo</name><alias>Sample</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><created>True</created></character>";
     private string? ImportedFileName { get; set; }
     private string? ImportError { get; set; }
@@ -55,6 +66,13 @@ public partial class DesktopShell : IDisposable
     private CharacterOverviewState State => _bridge?.Current ?? Presenter.State;
     private ShellState ShellState => ShellPresenter.State;
     private string CurrentLanguage => DesktopLocalizationCatalog.NormalizeOrDefault(State.Preferences.Language);
+    private bool ShowInstallClaimGate =>
+        EffectiveInstallLinkingStartupContext is not null
+        && EffectiveInstallLinkingStartupContext.ShouldPrompt
+        && !DesktopInstallLinkingRuntime.IsClaimed(EffectiveInstallLinkingStartupContext.State);
+    private DesktopInstallLinkingState InstallLinkingState =>
+        EffectiveInstallLinkingStartupContext?.State
+        ?? DesktopInstallLinkingRuntime.LoadOrCreateState("blazor-desktop");
 
     private IEnumerable<AppCommandDefinition> HeadCommands =>
         _shellSurfaceState.Commands.Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
@@ -186,4 +204,15 @@ public partial class DesktopShell : IDisposable
             }
         }
     }
+
+    private string BuildInstallClaimHref()
+        => DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(
+            DesktopInstallLinkingRuntime.BuildClaimPortalRelativePathForInstall(InstallLinkingState));
+
+    private string BuildInstallSupportHref()
+        => DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(
+            DesktopInstallLinkingRuntime.BuildSupportPortalRelativePathForInstall(InstallLinkingState));
+
+    private string BuildInstallDownloadsHref()
+        => DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/downloads");
 }

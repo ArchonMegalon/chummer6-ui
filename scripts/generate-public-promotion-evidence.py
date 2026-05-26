@@ -329,7 +329,7 @@ def allowed_windows_status(channel: str) -> str:
     override = env_override("CHUMMER_WINDOWS_SIGNING_STATUS_OVERRIDE", "CHUMMER_WINDOWS_SIGNING_STATUS")
     if override:
         return override
-    if unsigned_public_release_allowed() and channel not in {"preview", "docker"}:
+    if unsigned_public_release_allowed() and channel != "preview":
         return "unsigned_public_release"
     return "skipped_preview" if channel == "preview" else "fail"
 
@@ -339,7 +339,7 @@ def allowed_mac_statuses(channel: str) -> tuple[str, str]:
     notarization = env_override("CHUMMER_MAC_NOTARIZATION_STATUS_OVERRIDE", "CHUMMER_MAC_NOTARIZATION_STATUS")
     if signing and notarization:
         return signing, notarization
-    if unsigned_public_release_allowed() and channel not in {"preview", "docker"}:
+    if unsigned_public_release_allowed() and channel != "preview":
         return signing or "unsigned_public_release", notarization or "unsigned_public_release"
     if channel == "preview":
         return signing or "skipped_preview", notarization or "skipped_preview"
@@ -354,7 +354,7 @@ def compute_promotion_status(platform: str, channel: str, startup_smoke_status: 
         allowed = {"pass"}
         if channel == "preview":
             allowed.add("skipped_preview")
-        if unsigned_public_release_allowed() and channel not in {"preview", "docker"}:
+        if unsigned_public_release_allowed() and channel != "preview":
             allowed.add("unsigned_public_release")
         return "pass" if signing_status in allowed else "fail"
 
@@ -362,7 +362,7 @@ def compute_promotion_status(platform: str, channel: str, startup_smoke_status: 
         allowed = {"pass"}
         if channel == "preview":
             allowed.add("skipped_preview")
-        if unsigned_public_release_allowed() and channel not in {"preview", "docker"}:
+        if unsigned_public_release_allowed() and channel != "preview":
             allowed.add("unsigned_public_release")
         return "pass" if signing_status in allowed and notarization_status in allowed else "fail"
 

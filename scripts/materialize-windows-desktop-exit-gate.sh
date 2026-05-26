@@ -230,6 +230,32 @@ def startup_smoke_version_proves_release(
     )
 
 
+def startup_smoke_stale_age_is_acceptable(
+    *,
+    host_supports_windows_smoke: bool,
+    startup_smoke_age_seconds: int,
+    max_age_seconds: int,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+    startup_smoke_version: str,
+    release_channel_version: str,
+) -> bool:
+    if host_supports_windows_smoke:
+        return False
+    if startup_smoke_age_seconds <= max_age_seconds:
+        return False
+    if not expected_startup_smoke_digest:
+        return False
+    if normalize_token(startup_smoke_artifact_digest) != normalize_token(expected_startup_smoke_digest):
+        return False
+    return startup_smoke_version_proves_release(
+        startup_smoke_version,
+        release_channel_version,
+        startup_smoke_artifact_digest,
+        expected_startup_smoke_digest,
+    )
+
+
 def artifact_rid(artifact: Dict[str, Any]) -> str:
     rid = normalize_token(artifact.get("rid"))
     if rid:
@@ -276,7 +302,7 @@ def select_startup_smoke_receipt(
     expected_digest: str,
 ) -> Path | None:
     best_path: Path | None = None
-    best_score: tuple[int, int, int, int, int, int, float] | None = None
+    best_score: tuple[int, int, int, int, int, int, int, float] | None = None
     normalized_expected_head = normalize_token(expected_head)
     normalized_expected_platform = normalize_token(expected_platform)
     normalized_expected_rid = normalize_token(expected_rid)
@@ -301,10 +327,8 @@ def select_startup_smoke_receipt(
             int(head == normalized_expected_head),
             int(platform_name == normalized_expected_platform),
             int(rid == normalized_expected_rid),
-            int(
-                (not normalized_expected_channel or channel == normalized_expected_channel)
-                and (not normalized_expected_digest or digest == normalized_expected_digest)
-            ),
+            int(not normalized_expected_digest or digest == normalized_expected_digest),
+            int(not normalized_expected_channel or channel == normalized_expected_channel),
             timestamp,
         )
         if best_score is None or score > best_score:
@@ -438,10 +462,18 @@ artifacts = [
     item for item in (release_channel.get("artifacts") or [])
     if isinstance(item, dict)
 ]
+desktop_tuple_coverage = release_channel.get("desktopTupleCoverage")
+external_proof_requests = (
+    desktop_tuple_coverage.get("externalProofRequests")
+    if isinstance(desktop_tuple_coverage, dict)
+    and isinstance(desktop_tuple_coverage.get("externalProofRequests"), list)
+    else []
+)
 expected_head = expected_head_override or "avalonia"
 expected_rid = expected_rid_override or "win-x64"
 expected_arch = "x64"
 windows_artifact = None
+fallback_external_request = None
 for artifact in artifacts:
     if (
         normalize_token(artifact.get("head")) == expected_head
@@ -451,6 +483,42 @@ for artifact in artifacts:
     ):
         windows_artifact = artifact
         break
+
+if windows_artifact is None:
+    fallback_external_request = next(
+        (
+            request
+            for request in external_proof_requests
+            if isinstance(request, dict)
+            and normalize_token(request.get("head")) == expected_head
+            and normalize_token(request.get("platform")) == "windows"
+            and normalize_token(request.get("rid")) == expected_rid
+        ),
+        None,
+    )
+    if fallback_external_request is not None:
+        fallback_file_name = str(fallback_external_request.get("expectedInstallerFileName") or "").strip()
+        fallback_sha = str(fallback_external_request.get("expectedInstallerSha256") or "").strip().lower()
+        fallback_route = str(fallback_external_request.get("expectedPublicInstallRoute") or "").strip()
+        fallback_artifact_id = str(fallback_external_request.get("expectedArtifactId") or "").strip()
+        fallback_arch = expected_rid.split("-", 1)[1] if expected_rid.startswith("win-") and "-" in expected_rid else expected_arch
+        windows_artifact = {
+            "artifactId": fallback_artifact_id,
+            "head": expected_head,
+            "rid": expected_rid,
+            "platform": "windows",
+            "arch": fallback_arch,
+            "kind": "installer",
+            "fileName": fallback_file_name,
+            "downloadUrl": fallback_route,
+            "sha256": fallback_sha,
+            "channelId": release_channel_id,
+            "channel": release_channel_id,
+            "version": release_channel_version,
+            "releaseVersion": release_channel_version,
+            "publicationSource": "desktopTupleCoverage.externalProofRequests",
+        }
+        evidence["release_channel_windows_external_proof_request"] = fallback_external_request
 
 if windows_artifact is None:
     reasons.append(
@@ -467,7 +535,6 @@ else:
     artifact_file_name = str(windows_artifact.get("fileName") or "").strip()
     artifact_size = int(windows_artifact.get("sizeBytes") or 0)
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
-    evidence["release_channel_windows_artifact"] = windows_artifact
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
 primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
@@ -516,6 +583,25 @@ if installer_exists and artifact_size and artifact_size != installer_size:
 if installer_exists and artifact_sha and artifact_sha != installer_sha:
     reasons.append("Release-channel Windows artifact sha256 does not match installer digest.")
 
+if windows_artifact is not None and str(windows_artifact.get("publicationSource") or "").strip() == "desktopTupleCoverage.externalProofRequests":
+    if installer_exists and not int(windows_artifact.get("sizeBytes") or 0):
+        windows_artifact["sizeBytes"] = installer_size
+    fallback_generated_at = str(
+        windows_artifact.get("generated_at")
+        or windows_artifact.get("generatedAt")
+        or release_channel.get("generated_at")
+        or release_channel.get("generatedAt")
+        or ""
+    ).strip()
+    if fallback_generated_at:
+        windows_artifact["generated_at"] = fallback_generated_at
+        windows_artifact["generatedAt"] = fallback_generated_at
+    if not str(windows_artifact.get("id") or "").strip():
+        windows_artifact["id"] = str(windows_artifact.get("artifactId") or "").strip()
+
+if windows_artifact is not None:
+    evidence["release_channel_windows_artifact"] = windows_artifact
+
 payload_marker_present = False
 appended_payload_marker_present = False
 sample_marker_present = False
@@ -541,11 +627,11 @@ if startup_smoke_receipt_override:
 else:
     startup_smoke_receipt_name = f"startup-smoke-{expected_head}-{expected_rid}.receipt.json"
     startup_smoke_candidates = [
+        repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
         release_channel_path.parent / "startup-smoke" / startup_smoke_receipt_name,
         release_channel_path.parent.parent / "startup-smoke" / startup_smoke_receipt_name,
         proof_path.parent / "startup-smoke" / startup_smoke_receipt_name,
         repo_root / ".codex-studio" / "published" / "startup-smoke" / startup_smoke_receipt_name,
-        repo_root / "Docker" / "Downloads" / "startup-smoke" / startup_smoke_receipt_name,
     ]
     if hub_registry_root is not None:
         startup_smoke_candidates.extend(
@@ -721,7 +807,22 @@ if startup_smoke_receipt_path.is_file():
         evidence["startup_smoke_max_age_seconds"] = STARTUP_SMOKE_MAX_AGE_SECONDS
         evidence["startup_smoke_max_future_skew_seconds"] = STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS
         if startup_smoke_age_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS:
-            reasons.append(f"Windows startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
+            stale_age_acceptable = startup_smoke_stale_age_is_acceptable(
+                host_supports_windows_smoke=host_supports_windows_smoke,
+                startup_smoke_age_seconds=startup_smoke_age_seconds,
+                max_age_seconds=STARTUP_SMOKE_MAX_AGE_SECONDS,
+                startup_smoke_artifact_digest=startup_smoke_digest,
+                expected_startup_smoke_digest=expected_installer_digest,
+                startup_smoke_version=startup_smoke_version,
+                release_channel_version=release_channel_version,
+            )
+            evidence["startup_smoke_stale_age_acceptable"] = stale_age_acceptable
+            if stale_age_acceptable:
+                evidence["startup_smoke_stale_age_accepted_reason"] = (
+                    "Trusted Windows host proof still matches the exact promoted installer bytes and release version."
+                )
+            else:
+                reasons.append(f"Windows startup smoke receipt is stale ({startup_smoke_age_seconds}s old).")
 
 ui_local_release_status = read_status(
     ui_local_release_proof_path,

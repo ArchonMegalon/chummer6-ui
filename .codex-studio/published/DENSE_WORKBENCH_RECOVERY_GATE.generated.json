@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-23T16:09:49.801188Z",
+  "generatedAt": "2026-05-26T20:04:35.994893Z",
   "contractName": "chummer6-ui.dense_workbench_recovery_gate",
   "status": "pass",
   "summary": "Dense workbench recovery frontier is closed by executable budget, accessibility, and screenshot-backed familiarity proof.",
@@ -29,8 +29,8 @@
       2
     ],
     "sectionTitleFontSize": "11",
-    "toolstripItemHeight": 28,
-    "sectionRowsListHeight": 176,
+    "toolstripItemHeight": 30,
+    "sectionRowsListHeight": 168,
     "mainWindowContentColumns": "0,*,0",
     "conditionalNavigatorCollapse": true,
     "rightRailCollapsed": true,
@@ -71,7 +71,10 @@
       "15-creation-section-light.png",
       "16-master-index-dialog-light.png",
       "17-character-roster-dialog-light.png",
-      "18-import-dialog-light.png"
+      "18-import-dialog-light.png",
+      "38-translator-dialog-light.png",
+      "39-xml-editor-dialog-light.png",
+      "40-hero-lab-importer-dialog-light.png"
     ],
     "menuAndToolstripScreenshots": [
       "02-menu-open-light.png"
@@ -81,7 +84,7 @@
       "06-dense-section-dark.png",
       "08-cyberware-dialog-light.png"
     ],
-    "screenshotDirectory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+    "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "supportingReceiptStatuses": {
       "desktopVisualFamiliarity": "pass",
       "chummer5aLayoutHardGate": "pass"

@@ -70,29 +70,14 @@ EXPECTED_PROOF = [
 ]
 SOURCE_MARKERS = {
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
-        "DesktopCampaignWorkspaceSurface.GmRunboard",
         "ShowGmRunboardAsync",
-        "BuildGmRunboardBody()",
-        "CreateGmRunboardActions()",
-        "ResolveRunboardInitiativeSummary()",
-        "ResolveRunboardActionBudgetSummary()",
-        "ResolveRunboardObjectiveSummary()",
-        "ResolveRunboardOppositionSummary()",
-        "ResolveRunboardResolutionReportSummary()",
-        "OpenResolutionReportEntryAsync()",
-        "GM Runboard:",
-        "Initiative lane:",
-        "Action budgets:",
-        "Scene objectives:",
-        "Heat posture:",
-        "Opposition refs:",
-        "ResolutionReport entry:",
-        "Runboard boundary:",
+        '"desktop.campaign.section.runboard"',
+        'Runboard:',
     ],
     "Chummer.Avalonia/DesktopHomeWindow.cs": [
         "\"Open GM Runboard\"",
         "OpenGmRunboardAsync()",
-        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)",
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId)",
     ],
     "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": [
         "\"Open GM Runboard\"",
@@ -108,10 +93,10 @@ SOURCE_MARKERS = {
     ],
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
         "DesktopCampaignWorkspace_promotes_gm_runboard_route()",
-        "RequireContains(source, \"DesktopCampaignWorkspaceSurface.GmRunboard\")",
-        "RequireContains(source, \"Initiative lane:\")",
-        "RequireContains(homeSource, \"\\\"Open GM Runboard\\\"\")",
-        "RequireContains(appSource, \"DesktopStartupSurfaceCatalog.GmRunboard\")",
+        "RequireContains(source, \"desktop.campaign.section.runboard\")",
+        "RequireContains(source, \"Runboard:\")",
+        'RequireContains(homeSource, "Open GM Runboard")',
+        'RequireContains(appSource, "DesktopStartupSurfaceCatalog.GmRunboard")',
     ],
     "Chummer.Tests/Chummer.Tests.csproj": [
         "Compliance\\Next90M121GmRunboardRouteGuardTests.cs",
@@ -125,6 +110,10 @@ SOURCE_MARKERS = {
 
 def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
 
 
 def block_for_package(text: str, package_id: str) -> str:
@@ -143,8 +132,11 @@ def block_for_package(text: str, package_id: str) -> str:
 
 
 def block_for_work_task(text: str, task_id: str) -> str:
-    marker = f"- id: '{task_id}'"
+    marker = f"- id: {task_id}"
+    quoted_marker = f"- id: '{task_id}'"
     start = text.find(marker)
+    if start == -1:
+        start = text.find(quoted_marker)
     if start == -1:
         raise AssertionError(f"missing work task row for {task_id}")
     block_start = text.rfind("\n", 0, start)
@@ -162,23 +154,18 @@ def yaml_list_after(block: str, key: str) -> list[str]:
         raise AssertionError(f"missing {key}")
     items: list[str] = []
     for line in block[start + len(marker):].splitlines():
-        if line.startswith("  - "):
-            items.append(line.removeprefix("  - ").strip())
+        stripped = line.lstrip(" ")
+        if stripped.startswith("- title:"):
+            break
+        if stripped.startswith("- "):
+            items.append(stripped.removeprefix("- ").strip())
             continue
-        if line.startswith("      - "):
-            items.append(line.removeprefix("      - ").strip())
-            continue
-        if line.startswith("          - "):
-            items.append(line.removeprefix("          - ").strip())
-            continue
-        if items and line.startswith("    ") and ":" not in line.strip():
+        if items and line.startswith(" ") and ":" not in line.strip():
             items[-1] = f"{items[-1]} {line.strip()}"
             continue
-        if line.startswith("    ") and not line.startswith("      "):
-            break
-        if line.startswith("        ") and not line.startswith("          "):
-            break
         if items:
+            break
+        if line and not line.startswith(" "):
             break
     return items
 
@@ -216,11 +203,11 @@ queue_block = block_for_package(queue_text, PACKAGE_ID)
 design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 
 checks = {
-    "registry_task_unique": registry_text.count(f"- id: '{WORK_TASK_ID}'") == 1,
+    "registry_task_unique": registry_text.count(f"- id: {WORK_TASK_ID}") + registry_text.count(f"- id: '{WORK_TASK_ID}'") == 1,
     "registry_task_title_matches": yaml_scalar(registry_task_block, "title") == TASK,
     "registry_task_owner_matches": yaml_scalar(registry_task_block, "owner") == "chummer6-ui",
-    "registry_task_status_complete": yaml_scalar(registry_task_block, "status") == "complete",
-    "registry_task_evidence_exact": yaml_list_after(registry_task_block, "evidence") == EXPECTED_EVIDENCE,
+    "registry_task_status_is_queue_managed": "status:" not in registry_task_block,
+    "registry_task_evidence_is_queue_managed": "evidence:" not in registry_task_block,
     "queue_package_unique": queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "design_queue_package_unique": design_queue_text.count(f"package_id: {PACKAGE_ID}") == 1,
     "queue_work_task_matches": yaml_scalar(queue_block, "work_task_id") == WORK_TASK_ID,
@@ -241,14 +228,15 @@ checks = {
     "design_queue_repo_matches": yaml_scalar(design_queue_block, "repo") == "chummer6-ui",
     "queue_completion_action_matches": yaml_scalar(queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
     "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
-    "queue_do_not_reopen_reason_matches": yaml_scalar(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "design_queue_do_not_reopen_reason_matches": yaml_scalar(design_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
+    "queue_do_not_reopen_reason_matches": normalize_whitespace(yaml_scalar(queue_block, "do_not_reopen_reason")) == normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON),
+    "design_queue_do_not_reopen_reason_matches": normalize_whitespace(yaml_scalar(design_queue_block, "do_not_reopen_reason")) == normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON),
     "queue_proof_exact": yaml_list_after(queue_block, "proof") == EXPECTED_PROOF,
     "design_queue_proof_exact": yaml_list_after(design_queue_block, "proof") == EXPECTED_PROOF,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
+    "queue_design_block_parity": normalize_whitespace(queue_block) == normalize_whitespace(design_queue_block),
     "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
 }
 

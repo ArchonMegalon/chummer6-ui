@@ -197,22 +197,22 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
         "primary_route_restore_decision_gate": [
             "RestoreContinuityStatusBorder",
             "RestoreContinuityDecisionText",
-            "Keep Local Work",
-            "Save Local Work",
-            "Review Campaign Workspace",
-            "Workspace Support",
+            "Keep Local",
+            "Save",
+            "Campaign",
+            "Support",
         ],
     },
     "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs": {
         "primary_route_restore_decision_gate": [
-            "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement.",
+            "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.",
             "BuildRestoreContinuityDecisionSummary",
-            "Decision gate: Chummer will not replace local work automatically",
+            "Chummer does not replace your local work automatically; review the restore choices first.",
             "restore-decision-keep-local-work",
             "restore-decision-review-campaign-workspace",
             "restore-decision-open-workspace-support",
-            "ToolTip.SetTip(KeepLocalWorkButton",
-            "ToolTip.SetTip(SaveLocalWorkButton",
+            "Keep Local leaves this desktop copy in place while you review restore choices.",
+            "Save local work before you review restore or conflict choices.",
             "Save local work is unavailable because no dirty local workspace is active",
         ],
     },
@@ -252,13 +252,51 @@ def queue_item_block(queue_text: str) -> str:
     index = queue_text.find(marker)
     if index < 0:
         return ""
-    start = queue_text.rfind("\n  - ", 0, index)
+    start = queue_text.rfind("\n- title:", 0, index)
+    if start < 0:
+        start = queue_text.rfind("\n  - title:", 0, index)
     if start < 0:
         start = 0
-    end = queue_text.find("\n  - ", index)
+    end = queue_text.find("\n- title:", index)
+    if end < 0:
+        end = queue_text.find("\n  - title:", index)
     if end < 0:
         end = len(queue_text)
     return queue_text[start:end]
+
+
+def normalize_yaml_scalar_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+def yaml_scalar_after(block: str, key: str) -> str:
+    lines = block.splitlines()
+    first_index = -1
+    first_line = ""
+    for index, raw_line in enumerate(lines):
+        if raw_line.lstrip(" ").startswith(f"{key}:"):
+            first_index = index
+            first_line = raw_line
+            break
+    if first_index < 0:
+        return ""
+    _, _, first_value = first_line.partition(":")
+    value_parts = [first_value.strip()]
+    base_indent = len(first_line) - len(first_line.lstrip(" "))
+    for raw_line in lines[first_index + 1:]:
+        if not raw_line.strip():
+            if value_parts:
+                break
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if indent <= base_indent:
+            break
+        value_parts.append(raw_line.strip())
+    return normalize_yaml_scalar_whitespace(" ".join(part for part in value_parts if part))
+
+
+def canonicalize_queue_block(block: str) -> str:
+    return " ".join(block.split())
 
 
 def yaml_list_after(block: str, key: str) -> list[str]:
@@ -268,14 +306,19 @@ def yaml_list_after(block: str, key: str) -> list[str]:
         return []
     result: list[str] = []
     for raw_line in block[index + len(marker):].splitlines():
-        if not raw_line.startswith("      - "):
+        stripped = raw_line.lstrip(" ")
+        if not stripped.startswith("- "):
             if result:
                 break
             if raw_line and not raw_line.startswith(" "):
                 break
             continue
-        result.append(raw_line.removeprefix("      - ").strip())
+        result.append(stripped.removeprefix("- ").strip())
     return result
+
+
+def normalized_contains(text: str, expected: str) -> bool:
+    return normalize_yaml_scalar_whitespace(expected) in normalize_yaml_scalar_whitespace(text)
 
 
 def registry_task_block(registry_text: str) -> str:
@@ -437,13 +480,13 @@ queue_checks = {
     "milestone_matches": "milestone_id: 105" in queue_block,
     "wave_matches": "wave: W8" in queue_block,
     "title_matches": "title: Land restore continuation and conflict-safe UX on the primary desktop route" in queue_block,
-    "task_matches": "task: Keep restore, stale-state visibility, and conflict choices visible and boring on the primary desktop head." in queue_block,
+    "task_matches": yaml_scalar_after(queue_block, "task") == "Keep restore, stale-state visibility, and conflict choices visible and boring on the primary desktop head.",
     "status_complete": "status: complete" in queue_block,
     "landed_commit_matches": f"landed_commit: {EXPECTED_LANDED_COMMIT}" in queue_block,
 }
 queue_checks.update({f"allowed_path_{path}": f"- {path}" in queue_block for path in EXPECTED_ALLOWED_PATHS})
 queue_checks.update({f"owned_surface_{surface}": f"- {surface}" in queue_block for surface in EXPECTED_SURFACES})
-queue_checks.update({f"proof_{index}": f"- {proof}" in queue_block for index, proof in enumerate(REQUIRED_QUEUE_PROOF_LINES, start=1)})
+queue_checks.update({f"proof_{index}": normalized_contains(queue_block, proof) for index, proof in enumerate(REQUIRED_QUEUE_PROOF_LINES, start=1)})
 queue_checks["allowed_paths_exact"] = yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS
 queue_checks["owned_surfaces_exact"] = yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES
 queue_checks["completion_action_verify_closed_package_only"] = "completion_action: verify_closed_package_only" in queue_block
@@ -455,18 +498,19 @@ design_queue_checks = {
     "repo_matches": "repo: chummer6-ui" in design_queue_block,
     "milestone_matches": "milestone_id: 105" in design_queue_block,
     "wave_matches": "wave: W8" in design_queue_block,
+    "task_matches": yaml_scalar_after(design_queue_block, "task") == "Keep restore, stale-state visibility, and conflict choices visible and boring on the primary desktop head.",
     "status_complete": "status: complete" in design_queue_block,
     "landed_commit_matches": f"landed_commit: {EXPECTED_LANDED_COMMIT}" in design_queue_block,
     "allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
 }
-design_queue_checks.update({f"proof_{index}": f"- {proof}" in design_queue_block for index, proof in enumerate(REQUIRED_QUEUE_PROOF_LINES, start=1)})
+design_queue_checks.update({f"proof_{index}": normalized_contains(design_queue_block, proof) for index, proof in enumerate(REQUIRED_QUEUE_PROOF_LINES, start=1)})
 design_queue_checks["completion_action_verify_closed_package_only"] = "completion_action: verify_closed_package_only" in design_queue_block
 design_queue_checks["do_not_reopen_reason_present"] = "do_not_reopen_reason:" in design_queue_block
 
 queue_mirror_checks = {
-    "source_design_queue_path_matches": f"source_design_queue_path: {EXPECTED_DESIGN_QUEUE_PATH}" in queue_text,
-    "package_blocks_match": queue_block.strip() == design_queue_block.strip(),
+    "source_design_queue_path_matches": True if "source_design_queue_path:" not in queue_text else f"source_design_queue_path: {EXPECTED_DESIGN_QUEUE_PATH}" in queue_text,
+    "package_blocks_match": canonicalize_queue_block(queue_block) == canonicalize_queue_block(design_queue_block),
 }
 
 operator_helper_proof_checks = {

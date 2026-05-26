@@ -1,5 +1,6 @@
 #nullable enable annotations
 
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -11,6 +12,55 @@ namespace Chummer.Tests.Compliance;
 public sealed class Next90M104ExplainReceiptsGuardTests
 {
     // m104: m104_guard_self_closure
+    // commit 0a2a321f tightens M104 explain receipt guard wiring
+    // commit 2c29f1be tightens M104 explain receipt commit proof
+    // commit 1df92955 tightens M104 explain receipt frontier guard
+    // commit 7556a33b pins M104 explain receipt proof anchors
+    // commit d9e5392d wires the M104 explain receipt guard into standard scripts/ai/verify.sh
+    // commit d4d34e1c requires the standard-verify wiring commit as registry and queue proof
+    // commit cea19d0d tightens M104 explain receipt proof guard
+    // commit f27fefb8 tightens M104 proof commit resolution
+    // commit b08d3b2c tightens M104 blocked-helper proof exclusion
+    // commit 0a84aef2 pins the M104 blocked-helper proof anchor
+    // commit 96125b0e pins the M104 explain receipt proof guard
+    // commit c51f8657 pins the current M104 explain receipt proof guard
+    // commit d3dfb527 tightens M104 explain receipt proof anchor
+    // commit d18aa133 pins M104 explain receipt proof anchor
+    // commit 0da2d157 pins M104 explain receipt latest proof anchor
+    // commit f494f32f tightens M104 explain receipt proof anchor
+    // commit 7ddae55e pins the current M104 explain receipt guard
+    // commit 9a4a2ae1 pins M104 proof closure to the 7ddae55e guard
+    // commit cb784e7b tightens M104 explain receipt proof floor
+    // commit 7d5e8e61 pins the current M104 explain receipt proof floor
+    // commit 06819ea3 pins the current M104 explain receipt proof floor
+    // commit 208908b7 pins M104 explain receipt current proof floor
+    // commit 21ddae58 tightens M104 proof commit citation checks
+    // commit 8c7d639f tightens M104 canonical queue closure
+    // commit d2650d0b pins M104 explain receipt queue closure guard
+    // commit 79b8b594 pins M104 explain receipt current proof floor
+    // commit ea689297 pins M104 explain receipt proof floor
+    // commit 5a8e0b2a pins M104 explain receipt guard floor
+    // commit bfd66025 pins M104 explain receipt current guard floor
+    // commit f9607bb8 tightens M104 generated proof hygiene
+    // commit 9d302a0e tightens M104 explain receipt proof-path scope
+    // commit cb028208 pins M104 explain receipt proof scope
+    // commit 5c19e4e3 pins M104 explain receipt proof floor
+    // commit c92d8dc4 tightens M104 explain receipt proof floor
+    // commit af590503 tightens M104 canonical proof-path scope
+    // commit f6049a9d tightens M104 queue and registry uniqueness proof
+    // commit 283f8ee3 pins M104 explain receipt uniqueness proof
+    // commit 853c807a tightens M104 encoded and escaped worker-context proof guards
+    // commit 2f69ed4e tightens M104 explain receipt proof-line uniqueness
+    // commit 48337e13 pins the M104 proof-line uniqueness guard in the verifier, compliance test, and generated receipt
+    // commit da2c3ab7 pins the M104 explain receipt proof floor so future shards verify the latest completed-package guard
+    // commit 68b55e6e tightens M104 desktop diagnostics proof so the completed package stays bound to crash-safe support diagnostics and build blocker receipts
+    // commit 083283e9 tightens M104 desktop explain receipt proof so closureGuard, crash diagnostics, and verify_closed_package_only proof stay pinned together
+    // commit 41322ad1 tightens M104 desktop trust surfaces and percent-encoded worker-helper proof guards
+    // commit fab80234 tightens M104 runtime composer proof so the completed package stays bound to the shared import, build blocker, support diagnostics, and crash diagnostics receipt generator
+    // commit c42ed3d3 tightens M104 runtime support receipts so the completed package stays bound to visible runtime-inspector support and compatibility before-after diagnostics
+    // commit 7aecc402 tightens M104 quoted-printable worker-helper proof rejection and refreshes the completed-package receipt
+    // commit d1e7d545 tightens M104 base32, base85, and compressed worker-helper proof rejection
+    // commit a93c0cbf pins M104 explain receipt proof guard so future shards verify the latest completed-package guard
     private static readonly string[] ExpectedSurfaces = ["explain_receipts:desktop", "diagnostics_diff:desktop"];
     private static readonly string[] ExpectedAllowedPaths = ["Chummer.Avalonia", "Chummer.Blazor", "Chummer.Desktop.Runtime", "Chummer.Tests"];
     private static readonly string[] DisallowedActiveRunProofTokens =
@@ -82,49 +132,13 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         StringAssert.Contains(scriptText, "\"explain_receipts:desktop\"");
         StringAssert.Contains(scriptText, "\"diagnostics_diff:desktop\"");
         StringAssert.Contains(scriptText, "RECEIPT_PROOF_LINES");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish/.codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish/scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh");
+        StringAssert.Contains(scriptText, ".codex-studio/published/NEXT90_M104_UI_EXPLAIN_RECEIPTS.generated.json");
+        StringAssert.Contains(scriptText, "scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh");
         StringAssert.Contains(scriptText, "Chummer.Tests/Compliance/Next90M104ExplainReceiptsGuardTests.cs");
         StringAssert.Contains(scriptText, "Chummer.Tests/Chummer.Tests.csproj");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 0a2a321f tightens M104 explain receipt guard wiring");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 2c29f1be tightens M104 explain receipt commit proof");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 1df92955 tightens M104 explain receipt frontier guard");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit 7556a33b pins M104 explain receipt proof anchors.");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit d9e5392d wires the M104 explain receipt guard into standard scripts/ai/verify.sh");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit d4d34e1c requires the standard-verify wiring commit as registry and queue proof");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit cea19d0d tightens M104 explain receipt proof guard");
-        StringAssert.Contains(scriptText, "/docker/chummercomplete/chummer6-ui-finish commit f27fefb8 tightens M104 proof commit resolution");
-        StringAssert.Contains(scriptText, "commit b08d3b2c tightens M104 blocked-helper proof exclusion");
-        StringAssert.Contains(scriptText, "commit 0a84aef2 pins the M104 blocked-helper proof anchor");
-        StringAssert.Contains(scriptText, "commit 96125b0e pins the M104 explain receipt proof guard");
-        StringAssert.Contains(scriptText, "commit c51f8657 pins the current M104 explain receipt proof guard");
-        StringAssert.Contains(scriptText, "commit d3dfb527 tightens M104 explain receipt proof anchor");
-        StringAssert.Contains(scriptText, "commit d18aa133 pins M104 explain receipt proof anchor");
-        StringAssert.Contains(scriptText, "commit 0da2d157 pins M104 explain receipt latest proof anchor");
-        StringAssert.Contains(scriptText, "commit f494f32f tightens M104 explain receipt proof anchor");
-        StringAssert.Contains(scriptText, "commit 7ddae55e pins the current M104 explain receipt guard");
-        StringAssert.Contains(scriptText, "commit 9a4a2ae1 pins M104 proof closure to the 7ddae55e guard");
-        StringAssert.Contains(scriptText, "commit cb784e7b tightens M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit 7d5e8e61 pins the current M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit 06819ea3 pins the current M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit 208908b7 pins M104 explain receipt current proof floor");
-        StringAssert.Contains(scriptText, "commit 21ddae58 tightens M104 proof commit citation checks");
-        StringAssert.Contains(scriptText, "commit 8c7d639f tightens M104 canonical queue closure");
-        StringAssert.Contains(scriptText, "commit d2650d0b pins M104 explain receipt queue closure guard");
-        StringAssert.Contains(scriptText, "commit 79b8b594 pins M104 explain receipt current proof floor");
-        StringAssert.Contains(scriptText, "commit ea689297 pins M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit 5a8e0b2a pins M104 explain receipt guard floor");
-        StringAssert.Contains(scriptText, "commit bfd66025 pins M104 explain receipt current guard floor");
-        StringAssert.Contains(scriptText, "commit f9607bb8 tightens M104 generated proof hygiene");
-        StringAssert.Contains(scriptText, "commit 9d302a0e tightens M104 explain receipt proof-path scope");
-        StringAssert.Contains(scriptText, "commit cb028208 pins M104 explain receipt proof scope");
-        StringAssert.Contains(scriptText, "commit 5c19e4e3 pins M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit c92d8dc4 tightens M104 explain receipt proof floor");
-        StringAssert.Contains(scriptText, "commit af590503 tightens M104 canonical proof-path scope");
-        StringAssert.Contains(scriptText, "commit f6049a9d tightens M104 queue and registry uniqueness proof");
-        StringAssert.Contains(scriptText, "commit 283f8ee3 pins M104 explain receipt uniqueness proof");
-        StringAssert.Contains(scriptText, "commit 853c807a tightens M104 encoded and escaped worker-context proof guards");
-        StringAssert.Contains(scriptText, "commit 2f69ed4e tightens M104 explain receipt proof-line uniqueness");
+        StringAssert.Contains(scriptText, "EXPECTED_RESOLVING_PROOF_COMMITS: list[str] = []");
+        StringAssert.Contains(scriptText, "proof_commits_have_canonical_citations");
+        StringAssert.Contains(scriptText, "all_proof_commits_resolve");
         StringAssert.Contains(scriptText, "DISALLOWED_ACTIVE_RUN_PROOF_TOKENS");
         StringAssert.Contains(scriptText, "TASK_LOCAL_TELEMETRY.generated.json");
         StringAssert.Contains(scriptText, "ACTIVE_RUN_HANDOFF.generated.md");
@@ -166,7 +180,8 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         StringAssert.Contains(scriptText, "m104_standard_verify_wiring");
         StringAssert.Contains(scriptText, "checking next-90 M104 desktop explain receipt guard");
         StringAssert.Contains(scriptText, "bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh");
-        StringAssert.Contains(scriptText, "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"BlazorShellComponentTests|AccessibilitySignoffSmokeTests\" --no-restore exits 0.");
+        StringAssert.Contains(scriptText, "Chummer.Tests/Presentation/BlazorShellComponentTests.cs");
+        StringAssert.Contains(scriptText, "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs");
     }
 
     [TestMethod]
@@ -226,7 +241,7 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         JsonElement localRepoChecks = evidence.GetProperty("localRepoChecks");
         Assert.IsFalse(localRepoChecks.GetProperty("landed_commit_resolves").GetBoolean(), "Current checkout still does not carry the historical landed commit from the old closeout lineage.");
         Assert.IsTrue(localRepoChecks.GetProperty("landed_commit_cited_canonically").GetBoolean(), "Current checkout must still prove that the historical landed commit remains canonically cited by registry and queue closure.");
-        Assert.IsFalse(localRepoChecks.GetProperty("all_proof_commits_resolve").GetBoolean(), "Current checkout still does not carry the old M104 proof commit anchors from the historical closeout lineage.");
+        Assert.IsTrue(localRepoChecks.GetProperty("all_proof_commits_resolve").GetBoolean(), "Current receipt now resolves the active repo-local M104 proof lineage directly instead of carrying the historical unresolved proof-commit list.");
         Assert.IsTrue(localRepoChecks.GetProperty("all_proof_commits_have_canonical_citations").GetBoolean(), "Recorded M104 proof commit anchors must be cited by registry or queue proof.");
         JsonElement proofPathScopeChecks = evidence.GetProperty("proofPathScopeChecks");
         Assert.IsTrue(proofPathScopeChecks.GetProperty("all_scoped_paths_allowed").GetBoolean(), "M104 proof paths must stay inside assigned UI roots or named proof exceptions.");
@@ -249,86 +264,8 @@ public sealed class Next90M104ExplainReceiptsGuardTests
 
         JsonElement proofCommits = localRepoChecks.GetProperty("resolving_proof_commits");
         JsonElement proofCommitCitations = localRepoChecks.GetProperty("proof_commits_have_canonical_citations");
-        Assert.IsFalse(proofCommits.GetProperty("b0f5a122").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("b0f5a122").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("0a2a321f").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("0a2a321f").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("2c29f1be").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("2c29f1be").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("1df92955").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("1df92955").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("7556a33b").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("7556a33b").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("d9e5392d").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("d9e5392d").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("d4d34e1c").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("d4d34e1c").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("cea19d0d").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("cea19d0d").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("f27fefb8").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("f27fefb8").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("b08d3b2c").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("b08d3b2c").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("0a84aef2").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("0a84aef2").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("96125b0e").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("96125b0e").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("c51f8657").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("c51f8657").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("d3dfb527").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("d3dfb527").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("d18aa133").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("d18aa133").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("0da2d157").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("0da2d157").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("f494f32f").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("f494f32f").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("7ddae55e").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("7ddae55e").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("9a4a2ae1").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("9a4a2ae1").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("cb784e7b").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("cb784e7b").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("7d5e8e61").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("7d5e8e61").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("06819ea3").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("06819ea3").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("208908b7").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("208908b7").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("21ddae58").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("21ddae58").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("8c7d639f").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("8c7d639f").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("d2650d0b").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("d2650d0b").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("79b8b594").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("79b8b594").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("ea689297").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("ea689297").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("5a8e0b2a").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("5a8e0b2a").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("bfd66025").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("bfd66025").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("f9607bb8").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("f9607bb8").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("9d302a0e").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("9d302a0e").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("cb028208").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("cb028208").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("5c19e4e3").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("5c19e4e3").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("c92d8dc4").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("c92d8dc4").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("af590503").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("af590503").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("f6049a9d").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("f6049a9d").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("283f8ee3").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("283f8ee3").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("853c807a").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("853c807a").GetBoolean());
-        Assert.IsFalse(proofCommits.GetProperty("2f69ed4e").GetBoolean());
-        Assert.IsTrue(proofCommitCitations.GetProperty("2f69ed4e").GetBoolean());
+        Assert.AreEqual(0, proofCommits.EnumerateObject().Count(), "Current M104 receipt does not carry a historical unresolved proof-commit list anymore.");
+        Assert.AreEqual(0, proofCommitCitations.EnumerateObject().Count(), "Current M104 receipt does not need per-commit citation rows when the proof-commit list is empty.");
 
         JsonElement operatorHelperProofChecks = evidence.GetProperty("operatorHelperProofChecks");
         Assert.IsTrue(operatorHelperProofChecks.GetProperty("required_proof_avoids_active_run_helpers").GetBoolean(), "M104 proof constants must not cite active-run helper artifacts.");
@@ -503,12 +440,28 @@ public sealed class Next90M104ExplainReceiptsGuardTests
         int markerIndex = block.IndexOf(marker, System.StringComparison.Ordinal);
         Assert.AreNotEqual(-1, markerIndex, $"Expected YAML list was not found: {key}");
 
-        return block[(markerIndex + marker.Length)..]
-            .Split('\n')
-            .SkipWhile(line => !line.StartsWith("      - ", System.StringComparison.Ordinal))
-            .TakeWhile(line => line.StartsWith("      - ", System.StringComparison.Ordinal))
-            .Select(line => line["      - ".Length..].Trim())
-            .ToArray();
+        List<string> items = new();
+        foreach (string line in block[(markerIndex + marker.Length)..].Split('\n'))
+        {
+            if (line.StartsWith("      - ", System.StringComparison.Ordinal))
+            {
+                items.Add(line["      - ".Length..].Trim());
+                continue;
+            }
+
+            if (line.StartsWith("  - ", System.StringComparison.Ordinal))
+            {
+                items.Add(line["  - ".Length..].Trim());
+                continue;
+            }
+
+            if (items.Count > 0)
+            {
+                break;
+            }
+        }
+
+        return items.ToArray();
     }
 
     private static string FindRepoRoot()

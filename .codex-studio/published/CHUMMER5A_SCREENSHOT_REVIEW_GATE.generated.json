@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-19T09:36:48.357985Z",
+  "generatedAt": "2026-05-26T20:06:04.572047Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
-  "channelId": "preview",
-  "channel": "preview",
+  "channelId": "public_stable",
+  "channel": "public_stable",
   "releaseVersion": "run-20260518-220935",
   "version": "run-20260518-220935",
   "status": "pass",
@@ -43,7 +43,8 @@
       "interactionProofReview": "pass",
       "sourceAnchorReview": "pass",
       "screenCaptureReview": "pass",
-      "legacyFamiliarityReview": "pass"
+      "legacyFamiliarityReview": "pass",
+      "muscleMemoryParityReview": "pass"
     },
     "visualFailureCount": 0
   },
@@ -88,8 +89,10 @@
       "dense_workbench_and_initiative",
       "hero_lab_importer",
       "master_index",
+      "print_export_exchange",
       "roster",
       "settings",
+      "sr6_supplements_and_house_rules",
       "translator",
       "xml_editor"
     ]
@@ -204,6 +207,32 @@
         "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
       ],
       "reasons": []
+    },
+    "print_export_exchange": {
+      "frontierId": 6764868619,
+      "status": "pass",
+      "screenshots": [
+        "19-workflow-file-menu-loaded-light.png",
+        "18-import-dialog-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ],
+      "reasons": []
+    },
+    "sr6_supplements_and_house_rules": {
+      "frontierId": 6764868619,
+      "status": "pass",
+      "screenshots": [
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png"
+      ],
+      "evidenceKeys": [],
+      "testMarkers": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ],
+      "reasons": []
     }
   },
   "routeLocalReceipts": {
@@ -216,6 +245,37 @@
       "screenshots": [
         "05-dense-section-light.png",
         "07-loaded-runner-tabs-light.png"
+      ],
+      "reasons": [],
+      "status": "pass"
+    },
+    "print_export_exchange": {
+      "routeIds": [
+        "screenshot:print_export_exchange",
+        "print_export_exchange",
+        "open_for_printing_menu_route",
+        "open_for_export_menu_route",
+        "print_multiple_menu_route"
+      ],
+      "workflowFamilyId": "create-open-import-save-save-as-print-export",
+      "screenshots": [
+        "19-workflow-file-menu-loaded-light.png",
+        "18-import-dialog-light.png"
+      ],
+      "reasons": [],
+      "status": "pass"
+    },
+    "sr6_supplements_and_house_rules": {
+      "routeIds": [
+        "screenshot:sr6_supplements_and_house_rules",
+        "sr6_rule_environment",
+        "sr6_supplements",
+        "house_rules"
+      ],
+      "workflowFamilyId": "improvements-explain-result-parity",
+      "screenshots": [
+        "34-workflow-validate-section-light.png",
+        "35-workflow-rules-section-light.png"
       ],
       "reasons": [],
       "status": "pass"
@@ -233,7 +293,7 @@
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelChannelId": "preview",
+    "releaseChannelChannelId": "public_stable",
     "releaseChannelVersion": "run-20260518-220935",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
@@ -241,7 +301,8 @@
       "interactionProofReview",
       "sourceAnchorReview",
       "screenCaptureReview",
-      "legacyFamiliarityReview"
+      "legacyFamiliarityReview",
+      "muscleMemoryParityReview"
     ],
     "missingVisualReviewKeys": [],
     "failingVisualReviewKeys": [],
@@ -255,8 +316,10 @@
       "dense_workbench_and_initiative",
       "hero_lab_importer",
       "master_index",
+      "print_export_exchange",
       "roster",
       "settings",
+      "sr6_supplements_and_house_rules",
       "translator",
       "xml_editor"
     ],
@@ -271,6 +334,37 @@
         "screenshots": [
           "05-dense-section-light.png",
           "07-loaded-runner-tabs-light.png"
+        ],
+        "reasons": [],
+        "status": "pass"
+      },
+      "print_export_exchange": {
+        "routeIds": [
+          "screenshot:print_export_exchange",
+          "print_export_exchange",
+          "open_for_printing_menu_route",
+          "open_for_export_menu_route",
+          "print_multiple_menu_route"
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+          "19-workflow-file-menu-loaded-light.png",
+          "18-import-dialog-light.png"
+        ],
+        "reasons": [],
+        "status": "pass"
+      },
+      "sr6_supplements_and_house_rules": {
+        "routeIds": [
+          "screenshot:sr6_supplements_and_house_rules",
+          "sr6_rule_environment",
+          "sr6_supplements",
+          "house_rules"
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+          "34-workflow-validate-section-light.png",
+          "35-workflow-rules-section-light.png"
         ],
         "reasons": [],
         "status": "pass"

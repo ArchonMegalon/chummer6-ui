@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T13:23:32Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "status": "pass",
   "contract_name": "chummer6-ui.next90_m118_ui_organizer_ops",
   "evidence": {
@@ -23,8 +23,8 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
+      "registry_task_status_is_queue_managed": true,
+      "registry_task_evidence_is_queue_managed": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_package_id_matches": true,
@@ -60,16 +60,6 @@
     },
     "sourceChecks": {
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "\"Open Organizer Operations\"": true,
-        "\"Review Organizer Roles\"": true,
-        "OpenOrganizerOperationsAsync()": true,
-        "OpenOrganizerRolesAsync()": true,
-        "DesktopOrganizerOperationsWindow.ShowAsync(": true,
-        "DesktopOrganizerOperationsWindow.ShowRolesAsync(": true
-      },
-      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "\"Open Organizer Operations\"": true,
-        "\"Review Organizer Roles\"": true,
         "OpenOrganizerOperationsAsync()": true,
         "OpenOrganizerRolesAsync()": true,
         "DesktopOrganizerOperationsWindow.ShowAsync(": true,
@@ -126,16 +116,13 @@
         "DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();": true,
         "DesktopOrganizerOperations_keeps_role_boundaries_visible();": true,
         "private static void DesktopOrganizerOperationsSurface_is_a_real_top_level_surface()": true,
-        "private static void DesktopOrganizerOperations_keeps_role_boundaries_visible()": true,
-        "RequireContains(source, \"Desktop organizer operations surface requires an IChummerClient instance.\");": true,
-        "RequireContains(source, \"Review organizer roles before you publish, escalate support, or widen discovery.\");": true
+        "private static void DesktopOrganizerOperations_keeps_role_boundaries_visible()": true
       }
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M118_UI_ORGANIZER_OPS.generated.json",
       "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",
@@ -147,7 +134,6 @@
       "doNotReopenReason": "M118 chummer6-ui organizer desktop operations are complete; future shards must verify the desktop organizer surface, startup routing, guard script, registry row, and queue mirrors instead of reopening the organizer-role desktop package.",
       "proof": [
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-        "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/App.axaml.cs",
         "/docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/DesktopStartupSurfaceCatalog.cs",

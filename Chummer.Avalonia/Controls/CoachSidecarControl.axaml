@@ -3,62 +3,35 @@
              x:Class="Chummer.Avalonia.Controls.CoachSidecarControl">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Spacing="12">
-      <Border Classes="shell-card subtle">
-        <StackPanel Spacing="6">
-          <TextBlock Classes="shell-kicker" Text="Reference &amp; Notes" IsVisible="False" />
-          <TextBlock x:Name="CoachStatusText" Classes="shell-section-title" Text="Status: unloaded" TextWrapping="Wrap" IsVisible="False" />
-          <TextBlock x:Name="CoachPromptPolicyText" Classes="shell-caption" Text="Prompt Policy: n/a" TextWrapping="Wrap" IsVisible="False" />
-          <TextBlock x:Name="CoachBudgetText" Classes="shell-caption" Text="Coach Budget: n/a" TextWrapping="Wrap" IsVisible="False" />
-          <TextBlock x:Name="CoachWorkspaceText" Classes="shell-caption" Text="Workspace: n/a" TextWrapping="Wrap" IsVisible="False" />
-          <TextBlock x:Name="CoachRuntimeText" Classes="shell-caption" Text="Runtime: n/a" TextWrapping="Wrap" IsVisible="False" />
-        </StackPanel>
-      </Border>
-
       <Border Classes="shell-card">
         <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Reference Link" IsVisible="False" />
-          <TextBox x:Name="CoachLaunchUriTextBox" IsReadOnly="True" />
-          <Button x:Name="CopyCoachLaunchButton"
-                  Classes="shell-action"
-                  Content="Copy Coach Link"
-                  Click="CopyCoachLaunchButton_OnClick"
-                  HorizontalAlignment="Left" />
+          <TextBlock Classes="shell-section-title" Text="Coach" />
+          <TextBlock x:Name="CoachLaunchHelpText"
+                     Classes="shell-caption"
+                     Text="Open a scoped coach session for the current workspace. Copy the browser link only if you need to hand the session off."
+                     TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button x:Name="OpenCoachLaunchButton"
+                    Classes="shell-action"
+                    Content="Open Coach"
+                    Click="OpenCoachLaunchButton_OnClick"
+                    HorizontalAlignment="Left" />
+            <Button x:Name="CopyCoachLaunchButton"
+                    Classes="shell-action quiet"
+                    Content="Copy Link"
+                    Click="CopyCoachLaunchButton_OnClick"
+                    HorizontalAlignment="Left" />
+          </StackPanel>
           <TextBlock x:Name="CoachLaunchStatusText"
                      Classes="shell-caption"
-                     Text="Launch link unavailable."
+                     Text="Coach browser handoff is unavailable."
                      TextWrapping="Wrap"
                      IsVisible="False" />
           <TextBlock x:Name="CoachErrorText"
                      Classes="shell-caption"
-                     Text="(none)"
+                     Text=""
                      TextWrapping="Wrap"
                      IsVisible="False" />
-        </StackPanel>
-      </Border>
-
-      <Border Classes="shell-card" IsVisible="False">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Provider Health" IsVisible="False" />
-          <ListBox x:Name="ProviderHealthList">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
-        </StackPanel>
-      </Border>
-
-      <Border Classes="shell-card" IsVisible="False">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="shell-section-title" Text="Recent Notes" IsVisible="False" />
-          <ListBox x:Name="AuditList">
-            <ListBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-              </DataTemplate>
-            </ListBox.ItemTemplate>
-          </ListBox>
         </StackPanel>
       </Border>
     </StackPanel>

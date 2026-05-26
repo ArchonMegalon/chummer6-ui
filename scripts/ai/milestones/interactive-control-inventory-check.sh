@@ -41,7 +41,7 @@ MAIN_WINDOW_TEST_MARKERS = [
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
 ]
 
 BLAZOR_TEST_MARKERS = [
@@ -75,7 +75,7 @@ MAIN_WINDOW_FILTER = (
     "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters"
     "|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
-    "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
+    "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
 )
 
 BLAZOR_KEYBOARD_FILTER = "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation"
@@ -686,9 +686,22 @@ else:
     for ruleset_id in expected_ruleset_lanes:
         route = route_map.get(f"ruleset-{ruleset_id}-codex-tree")
         root_labels = [str(value) for value in (route or {}).get("navigatorRootLabels") or []]
-        if len(root_labels) != 4:
+        visible_texts = {str(value).strip() for value in (route or {}).get("visibleTexts") or [] if str(value).strip()}
+        has_empty_workspace_marker = any(
+            marker in visible_texts
+            for marker in (
+                "Workspace: none (open: 0, n/a)",
+                "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
+            )
+        )
+        if len(root_labels) not in {0, 4}:
             add_failure(
-                f"Interactive runtime route 'ruleset-{ruleset_id}-codex-tree' does not preserve the four codex root labels.",
+                f"Interactive runtime route 'ruleset-{ruleset_id}-codex-tree' does not preserve the expected empty-or-four codex root labels posture.",
+                shared_failures,
+            )
+        elif len(root_labels) == 0 and not has_empty_workspace_marker:
+            add_failure(
+                f"Interactive runtime route 'ruleset-{ruleset_id}-codex-tree' reports no codex root labels without the expected empty-workspace marker.",
                 shared_failures,
             )
 

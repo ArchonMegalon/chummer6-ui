@@ -54,7 +54,7 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "AutomationProperties.SetName(StaleStateStatusText, \"Stale state visibility status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(ConflictChoiceStatusText, \"Conflict choice status\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Restore decision order\")");
-        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open support with restore, stale-state, and conflict-choice context.\")");
+        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open Workspace Support with your restore details already attached.\")");
 
         StringAssert.Contains(projector, "string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);");
         StringAssert.Contains(projector, "string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);");

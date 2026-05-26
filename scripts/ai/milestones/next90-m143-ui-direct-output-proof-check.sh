@@ -169,7 +169,7 @@ SOURCE_MARKERS = {
     ],
     "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": [
         "Runtime_backed_file_menu_restores_classic_save_and_print_commands",
-        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
         '"18-import-dialog-light.png"',
         '"19-workflow-file-menu-loaded-light.png"',
         '"34-workflow-validate-section-light.png"',
@@ -238,6 +238,10 @@ def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def normalize_inline_whitespace(value: str) -> str:
+    return " ".join(str(value or "").split())
+
+
 def extract_block(text: str, anchor: str, next_anchors: list[str]) -> str:
     start = text.find(anchor)
     if start < 0:
@@ -255,6 +259,9 @@ design_queue_text = read_text(design_queue_path) if design_queue_path.is_file() 
 registry_block = extract_block(registry_text, "- id: '143.1'", ["- id: '143.2'"])
 queue_block = extract_block(queue_text, f"package_id: {PACKAGE_ID}", ["- title: "])
 design_queue_block = extract_block(design_queue_text, f"package_id: {PACKAGE_ID}", ["- title: "])
+registry_block_normalized = normalize_inline_whitespace(registry_block)
+queue_block_normalized = normalize_inline_whitespace(queue_block)
+design_queue_block_normalized = normalize_inline_whitespace(design_queue_block)
 
 parity_audit = read_json(repo_root / ".codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json")
 screenshot_review = read_json(repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json")
@@ -319,9 +326,9 @@ queue_checks["design_queue_status_complete"] = f"status: {EXPECTED_STATUS}" in d
 queue_checks["registry_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in registry_block
 queue_checks["queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in queue_block
 queue_checks["design_queue_completion_action_matches"] = f"completion_action: {EXPECTED_COMPLETION_ACTION}" in design_queue_block
-queue_checks["registry_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in registry_block
-queue_checks["queue_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in queue_block
-queue_checks["design_queue_do_not_reopen_reason_matches"] = EXPECTED_DO_NOT_REOPEN_REASON in design_queue_block
+queue_checks["registry_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in registry_block_normalized
+queue_checks["queue_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in queue_block_normalized
+queue_checks["design_queue_do_not_reopen_reason_matches"] = normalize_inline_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in design_queue_block_normalized
 queue_checks["registry_title_matches"] = TITLE in registry_block
 queue_checks["queue_frontier_matches"] = f"frontier_id: {FRONTIER_ID}" in queue_block
 queue_checks["design_queue_frontier_matches"] = f"frontier_id: {FRONTIER_ID}" in design_queue_block
@@ -337,10 +344,10 @@ queue_checks["queue_allowed_paths_exact"] = allowed_paths_block in queue_block
 queue_checks["design_queue_allowed_paths_exact"] = allowed_paths_block in design_queue_block
 queue_checks["queue_owned_surfaces_exact"] = owned_surfaces_block in queue_block
 queue_checks["design_queue_owned_surfaces_exact"] = owned_surfaces_block in design_queue_block
-queue_checks["registry_evidence_exact"] = all(line in registry_block for line in EXPECTED_REGISTRY_EVIDENCE)
-queue_checks["queue_proof_exact"] = all(line in queue_block for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
-queue_checks["design_queue_proof_exact"] = all(line in design_queue_block for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
-queue_checks["queue_design_block_parity"] = queue_block == design_queue_block and bool(queue_block)
+queue_checks["registry_evidence_exact"] = all(normalize_inline_whitespace(line) in registry_block_normalized for line in EXPECTED_REGISTRY_EVIDENCE)
+queue_checks["queue_proof_exact"] = all(normalize_inline_whitespace(line) in queue_block_normalized for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
+queue_checks["design_queue_proof_exact"] = all(normalize_inline_whitespace(line) in design_queue_block_normalized for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
+queue_checks["queue_design_block_parity"] = queue_block_normalized == design_queue_block_normalized and bool(queue_block)
 queue_checks["registry_worker_safe"] = not any(token.lower() in registry_block.lower() for token in DISALLOWED_PROOF_TOKENS)
 queue_checks["queue_worker_safe"] = not any(token.lower() in queue_block.lower() for token in DISALLOWED_PROOF_TOKENS)
 queue_checks["design_queue_worker_safe"] = not any(token.lower() in design_queue_block.lower() for token in DISALLOWED_PROOF_TOKENS)
@@ -432,7 +439,7 @@ payload["evidence"]["routeReceiptChecks"] = route_checks
 reviewed_jobs = set((screenshot_review.get("evidence") or {}).get("reviewedJobs") or [])
 failing_jobs = set((screenshot_review.get("evidence") or {}).get("failingJobs") or [])
 receipt_checks["reviewed_jobs_are_known"] = all(
-    name in reviewed_jobs for name in ["dense_builder", "hero_lab_import_oracle", "translator_xml_custom_data"]
+    name in reviewed_jobs for name in ["print_export_exchange", "sr6_supplements_and_house_rules", "translator", "xml_editor", "hero_lab_importer"]
 )
 receipt_checks["failing_jobs_clear"] = not failing_jobs
 receipt_checks["route_local_receipts_present"] = all(name in route_receipts for name in EXPECTED_ROUTE_RECEIPTS)

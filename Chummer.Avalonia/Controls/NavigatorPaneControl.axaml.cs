@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Avalonia.Controls;
 using Chummer.Contracts.Presentation;
+using Chummer.Contracts.Rulesets;
 using Chummer.Presentation.Rulesets;
 
 namespace Chummer.Avalonia.Controls;
@@ -36,11 +37,6 @@ public partial class NavigatorPaneControl : UserControl
         CodexHeadingText.Text = BuildCodexHeading(state);
         CodexCaptionText.Text = BuildCodexCaption(state);
         CodexCaptionText.IsVisible = false;
-        ToolTip.SetTip(
-            NavigatorTree,
-            string.IsNullOrWhiteSpace(CodexCaptionText.Text)
-                ? null
-                : CodexCaptionText.Text);
         _openWorkspacesHeading = state.OpenWorkspacesHeading;
         _navigationTabsHeading = state.NavigationTabsHeading;
         _sectionActionsHeading = state.SectionActionsHeading;
@@ -49,6 +45,11 @@ public partial class NavigatorPaneControl : UserControl
         NavigationTabsHeader.Text = state.NavigationTabsHeading;
         SectionActionsHeader.Text = state.SectionActionsHeading;
         WorkflowSurfacesHeader.Text = state.WorkflowSurfacesHeading;
+        ToolTip.SetTip(
+            NavigatorTree,
+            string.IsNullOrWhiteSpace(CodexCaptionText.Text)
+                ? null
+                : CodexCaptionText.Text);
         SetOpenWorkspaces(state.OpenWorkspaces, state.SelectedWorkspaceId);
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
         SetSectionActions(state.SectionActions, state.ActiveActionId);
@@ -141,7 +142,7 @@ public partial class NavigatorPaneControl : UserControl
     }
 
     private static string BuildCodexHeading(NavigatorPaneState state)
-        => state.OpenWorkspaces.Length <= 1
+        => state.OpenWorkspaces.Length == 1
             ? "Character"
             : "Characters";
 
@@ -150,68 +151,103 @@ public partial class NavigatorPaneControl : UserControl
 
     private NavigatorTreeItem[] BuildTreeItems()
     {
-        NavigatorTreeItem[] workspaces = _openWorkspaces
-            .Select(workspace => new NavigatorTreeItem(
-                workspace.Id,
-                workspace.Name,
-                BuildWorkspaceDetail(workspace),
-                workspace.Enabled,
-                NavigatorTreeNodeKind.Workspace,
-                []))
-            .ToArray();
-        NavigatorTreeItem[] tabs = _navigationTabs
-            .Select(tab => new NavigatorTreeItem(
-                tab.Id,
-                tab.Label,
-                $"{tab.Group} · {tab.SectionId}",
-                tab.Enabled,
-                NavigatorTreeNodeKind.NavigationTab,
-                []))
-            .ToArray();
-        NavigatorTreeItem[] sectionActions = _sectionActions
-            .Select(action => new NavigatorTreeItem(
-                action.Id,
-                action.Label,
-                $"Action · {action.Kind}",
-                Enabled: true,
-                NavigatorTreeNodeKind.SectionAction,
-                []))
-            .ToArray();
-        NavigatorTreeItem[] workflowSurfaces = _workflowSurfaces
-            .Select(surface => new NavigatorTreeItem(
-                surface.ActionId,
-                surface.Label,
-                $"Workflow · {surface.WorkflowId}",
-                Enabled: true,
-                NavigatorTreeNodeKind.WorkflowSurface,
-                []))
+        IGrouping<string, NavigatorWorkspaceItem>[] rulesetGroups = _openWorkspaces
+            .GroupBy(static workspace => NormalizeRulesetId(workspace.RulesetId), StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)
             .ToArray();
 
-        return
-        [
-            CreateGroupNode(_openWorkspacesHeading, workspaces),
-            CreateGroupNode(_navigationTabsHeading, tabs),
-            CreateGroupNode(_sectionActionsHeading, sectionActions),
-            CreateGroupNode(_workflowSurfacesHeading, workflowSurfaces),
-        ];
+        List<NavigatorTreeItem> treeItems = rulesetGroups
+            .Select(group => new NavigatorTreeItem(
+                Id: group.Key,
+                Label: BuildRulesetGroupLabel(group.Key),
+                Detail: $"{group.Count()} character{(group.Count() == 1 ? string.Empty : "s")}",
+                Enabled: false,
+                Kind: NavigatorTreeNodeKind.Group,
+                Children: group
+                    .OrderBy(static workspace => workspace.Name, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(static workspace => workspace.Alias, StringComparer.OrdinalIgnoreCase)
+                    .Select(workspace => new NavigatorTreeItem(
+                        workspace.Id,
+                        workspace.Name,
+                        BuildWorkspaceDetail(workspace),
+                        workspace.Enabled,
+                        NavigatorTreeNodeKind.Workspace,
+                        []))
+                    .ToArray()))
+            .ToList();
+
+        bool hasOpenWorkspace = _openWorkspaces.Length > 0;
+
+        if (hasOpenWorkspace && _navigationTabs.Length > 0)
+        {
+            treeItems.Add(new NavigatorTreeItem(
+                Id: "navigation-tabs",
+                Label: string.IsNullOrWhiteSpace(_navigationTabsHeading) ? "Runner Tabs" : _navigationTabsHeading,
+                Detail: $"{_navigationTabs.Length} tab{(_navigationTabs.Length == 1 ? string.Empty : "s")}",
+                Enabled: false,
+                Kind: NavigatorTreeNodeKind.Group,
+                Children: _navigationTabs
+                    .Select(tab => new NavigatorTreeItem(
+                        tab.Id,
+                        tab.Label,
+                        tab.Group,
+                        tab.Enabled,
+                        NavigatorTreeNodeKind.NavigationTab,
+                        []))
+                    .ToArray()));
+        }
+
+        if (hasOpenWorkspace && _sectionActions.Length > 0)
+        {
+            treeItems.Add(new NavigatorTreeItem(
+                Id: "section-actions",
+                Label: string.IsNullOrWhiteSpace(_sectionActionsHeading) ? "Section Actions" : _sectionActionsHeading,
+                Detail: $"{_sectionActions.Length} action{(_sectionActions.Length == 1 ? string.Empty : "s")}",
+                Enabled: false,
+                Kind: NavigatorTreeNodeKind.Group,
+                Children: _sectionActions
+                    .Select(action => new NavigatorTreeItem(
+                        action.Id,
+                        action.Label,
+                        action.Kind.ToString(),
+                        true,
+                        NavigatorTreeNodeKind.SectionAction,
+                        []))
+                    .ToArray()));
+        }
+
+        if (hasOpenWorkspace && _workflowSurfaces.Length > 0)
+        {
+            treeItems.Add(new NavigatorTreeItem(
+                Id: "workflow-surfaces",
+                Label: string.IsNullOrWhiteSpace(_workflowSurfacesHeading) ? "Workflow Surfaces" : _workflowSurfacesHeading,
+                Detail: $"{_workflowSurfaces.Length} workflow{(_workflowSurfaces.Length == 1 ? string.Empty : "s")}",
+                Enabled: false,
+                Kind: NavigatorTreeNodeKind.Group,
+                Children: _workflowSurfaces
+                    .Select(surface => new NavigatorTreeItem(
+                        surface.SurfaceId,
+                        surface.Label,
+                        surface.WorkflowId,
+                        true,
+                        NavigatorTreeNodeKind.WorkflowSurface,
+                        []))
+                    .ToArray()));
+        }
+
+        return treeItems.ToArray();
     }
 
-    private static NavigatorTreeItem CreateGroupNode(string heading, NavigatorTreeItem[] children)
-    {
-        string detail = children.Length == 0
-            ? "No items available yet."
-            : $"{children.Length} item{(children.Length == 1 ? string.Empty : "s")}";
-        return new NavigatorTreeItem(
-            Id: heading,
-            Label: heading,
-            Detail: detail,
-            Enabled: false,
-            Kind: NavigatorTreeNodeKind.Group,
-            Children: children);
-    }
+    private static string NormalizeRulesetId(string? rulesetId)
+        => string.IsNullOrWhiteSpace(rulesetId)
+            ? "shared"
+            : RulesetDefaults.NormalizeRequired(rulesetId);
+
+    private static string BuildRulesetGroupLabel(string rulesetId)
+        => RulesetUiDirectiveCatalog.BuildOpenWorkspacesHeading(rulesetId);
 
     private static string BuildWorkspaceDetail(NavigatorWorkspaceItem workspace)
-        => $"Alias {workspace.Alias} · Ruleset {workspace.RulesetId} · {(workspace.HasSavedWorkspace ? "saved" : "unsaved")}";
+        => $"Alias {workspace.Alias} · {(workspace.HasSavedWorkspace ? "saved" : "unsaved")}";
 
     private static NavigatorTreeItem? ResolveSelectedTreeItem(
         IEnumerable<NavigatorTreeItem> items,

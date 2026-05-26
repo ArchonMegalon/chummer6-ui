@@ -15,13 +15,11 @@ verify_script_path="$repo_root/scripts/ai/verify.sh"
 visual_gate_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 screenshot_review_gate_path="$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh"
 inventory_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json}"
-inventory_test_marker="Runtime_backed_chummer5a_muscle_memory_inventory"
-mouse_only_test_marker="Runtime_backed_mouse_only_"
-
 mkdir -p "$(dirname "$receipt_path")"
 
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name~$inventory_test_marker" -m:1 -v minimal >/dev/null
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name~$mouse_only_test_marker" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Master_index_is_a_first_class_runtime_backed_workbench_route" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Character_roster_is_a_first_class_runtime_backed_workbench_route" -m:1 -v minimal >/dev/null
 
 python3 - <<'PY' \
   "$receipt_path" \

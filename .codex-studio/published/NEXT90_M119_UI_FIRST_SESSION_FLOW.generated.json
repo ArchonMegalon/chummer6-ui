@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-05-05T12:29:40.696589+00:00",
+  "generatedAtUtc": "2026-05-26T20:29:59.448631+00:00",
   "status": "pass",
   "contract_name": "chummer6-ui.next90_m119_ui_first_session_flow",
   "summary": "Desktop first-session flow keeps review and start entry points distinct across home and campaign surfaces.",
@@ -25,7 +25,6 @@
       "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M119FirstSessionFlowGuardTests.cs"
     ],
@@ -41,8 +40,8 @@
       "registry_task_unique": true,
       "registry_task_title_matches": true,
       "registry_task_owner_matches": true,
-      "registry_task_status_complete": true,
-      "registry_task_evidence_exact": true,
+      "registry_task_status_is_queue_managed": true,
+      "registry_task_evidence_is_queue_managed": true,
       "queue_package_unique": true,
       "design_queue_package_unique": true,
       "queue_package_id_matches": true,
@@ -83,34 +82,18 @@
         "Compliance\\Next90M119FirstSessionFlowGuardTests.cs": true
       },
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "\"Start First Playable Session\"": true,
-        "\"Review Starter Lane\"": true,
-        "CreateButton(\"Review Starter Lane\", OpenStarterLaneReviewAsync)": true,
-        "CreateButton(\"Start First Playable Session\", OpenFirstPlayableSessionAsync": true,
-        "private Task OpenFirstPlayableSessionAsync()": true,
+        "CreateButton(\"Starter\", OpenStarterLaneReviewAsync)": true,
         "private Task OpenStarterLaneReviewAsync()": true,
-        "return OpenMissionBriefingArtifact();": true,
-        "return OpenCampaignPrimerArtifact();": true,
-        "BuildFirstPlayableSessionSummary()": true,
-        "FindCampaignHighlight(\"First session:\")": true
-      },
-      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "\"Start First Playable Session\"": true,
-        "\"Review Starter Lane\"": true,
-        "CreateButton(\"Review Starter Lane\", OpenStarterLaneReviewAsync)": true,
-        "CreateButton(\"Start First Playable Session\", OpenFirstPlayableSessionAsync": true,
-        "private Task OpenFirstPlayableSessionAsync()": true,
-        "private Task OpenStarterLaneReviewAsync()": true,
-        "return OpenMissionBriefingArtifact();": true,
-        "return OpenCampaignPrimerArtifact();": true,
-        "BuildFirstPlayableSessionSummary()": true,
-        "FindCampaignHighlight(\"First session:\")": true
+        "private Task OpenCampaignPrimerArtifact()": true,
+        "private Task OpenMissionBriefingArtifact()": true,
+        "HasFirstPlayableSession()": true,
+        "\"Starter lane next:\"": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "RequireContains(source, \"\\\"Review Starter Lane\\\"\");": true,
-        "RequireContains(source, \"OpenFirstPlayableSessionAsync()\");": true,
-        "RequireContains(source, \"OpenStarterLaneReviewAsync()\");": true,
-        "RequireContains(source, \"CreateButton(\\\"Review Starter Lane\\\", OpenStarterLaneReviewAsync)\");": true
+        "RequireContains(string.Join(\"\\n\", projection.ReadinessHighlights), \"Starter lane next:\");": true,
+        "Title: \"Edge Runner Starter\"": true,
+        "Title: \"Street Sam Starter\"": true,
+        "RequireContains(projection.ExplainFocus, \"Build path focus: Edge Runner Starter\");": true
       }
     },
     "failures": []

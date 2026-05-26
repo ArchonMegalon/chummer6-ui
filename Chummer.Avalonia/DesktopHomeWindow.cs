@@ -698,12 +698,12 @@ internal sealed class DesktopHomeWindow : Window
     private string BuildFlagshipFacts()
     {
         string continuity = _recentWorkspaces.Count == 0
-            ? "No recent file open."
+            ? "No recent character yet."
             : $"Lead: {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
         string watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
         return string.IsNullOrWhiteSpace(watchout)
             ? continuity
-            : $"{continuity}\nWatchout: {watchout}";
+            : $"{continuity}\nHeads-up: {watchout}";
     }
 
     private string BuildInstallSummary()
@@ -716,12 +716,12 @@ internal sealed class DesktopHomeWindow : Window
 
         lines.Add(
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? $"Linked until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
+                ? $"Account link stays active until {_installState.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown")} UTC."
                 : "This copy is not linked yet.");
 
         if (!string.IsNullOrWhiteSpace(_installState.LastClaimError))
         {
-            lines.Add($"Claim issue: {_installState.LastClaimError}");
+            lines.Add($"Linking still needs attention: {_installState.LastClaimError}");
         }
 
         if (_installState.LastClaimAttemptUtc is DateTimeOffset lastClaimAttemptUtc)
@@ -842,7 +842,7 @@ internal sealed class DesktopHomeWindow : Window
     {
         if (_campaignServerPlane is null)
         {
-            return "Stale state: server continuity is unavailable, so the desktop home cockpit is showing the last local workspace list and claimed-install actions.";
+            return "Stale state: server continuity is unavailable, so this home view is keeping your last local workspace list and install actions visible.";
         }
 
         if (IsServerContinuityOlderThanLocalWorkspace(_recentWorkspaces, _campaignServerPlane))
@@ -851,10 +851,10 @@ internal sealed class DesktopHomeWindow : Window
                 .Select(static workspace => workspace.LastUpdatedUtc.ToUniversalTime())
                 .DefaultIfEmpty(DateTimeOffset.MinValue)
                 .Max();
-            return $"Stale state: local workspace changed at {latestLocalWorkspaceUpdate:yyyy-MM-dd HH:mm} UTC after server continuity {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
+            return $"Stale state: local workspace changed at {latestLocalWorkspaceUpdate:yyyy-MM-dd HH:mm} UTC after the last server continuity check at {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC, so local choices stay visible before anything is restored.";
         }
 
-        return $"Stale state: server continuity is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC; local workspace choices stay visible before any restore replaces desktop work.";
+        return $"Stale state: server continuity is current as of {_campaignServerPlane.GeneratedAtUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC, and local workspace choices stay visible before anything is restored.";
     }
 
     private string BuildCampaignConflictChoiceSummary()

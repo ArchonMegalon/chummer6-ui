@@ -252,6 +252,23 @@ def ensure_local_api(base_url: str) -> tuple[dict[str, object], bool]:
     return current_probe, current_ready
 
 
+def test_result_indicates_missing_api(trx_path: Path, output_text: str) -> bool:
+    missing_api_tokens = (
+        "Assert.Inconclusive failed. Chummer API runtime is not reachable",
+        "Chummer API runtime socket error",
+        "Chummer API runtime probe timed out",
+    )
+    if any(token in output_text for token in missing_api_tokens):
+        return True
+    if not trx_path.is_file():
+        return False
+    try:
+        trx_text = trx_path.read_text(encoding="utf-8-sig")
+    except OSError:
+        return False
+    return any(token in trx_text for token in missing_api_tokens)
+
+
 api_base_url = (
     str(
         os.environ.get("CHUMMER_API_BASE_URL")
@@ -309,6 +326,10 @@ if unique_tests:
                 )
                 if proc.returncode == 0:
                     break
+                if test_result_indicates_missing_api(per_test_trx, proc.stdout or ""):
+                    api_probe, api_surface_ready = ensure_local_api(api_base_url)
+                    if api_surface_ready:
+                        api_probe, api_surface_ready = warm_api_surface(api_base_url)
 
             if proc is None:
                 raise SystemExit(f"workflow-family dotnet test process did not start for {test_name}")

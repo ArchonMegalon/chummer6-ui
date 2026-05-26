@@ -13,17 +13,23 @@ find_mstest_runner_binary() {
   local project_path="$1"
   local configuration="$2"
   local framework="$3"
-  local project_dir project_name search_root candidate
+  local project_dir project_name candidate
+  local -a search_roots=()
 
   project_dir="$(cd "$(dirname "$project_path")" && pwd)"
   project_name="$(basename "$project_path")"
   project_name="${project_name%.*}"
-  search_root="$project_dir/bin/$configuration"
-  if [[ -n "$framework" ]]; then
-    search_root="$search_root/$framework"
-  fi
 
-  if [[ -d "$search_root" ]]; then
+  if [[ -n "$framework" ]]; then
+    search_roots+=("$project_dir/bin/$configuration/$framework")
+  fi
+  search_roots+=("$project_dir/bin/$configuration")
+
+  for search_root in "${search_roots[@]}"; do
+    if [[ ! -d "$search_root" ]]; then
+      continue
+    fi
+
     while IFS= read -r candidate; do
       case "$(basename "$candidate")" in
         "$project_name"|"$project_name".exe)
@@ -32,7 +38,7 @@ find_mstest_runner_binary() {
           ;;
       esac
     done < <(find "$search_root" -maxdepth 2 -type f \( -perm -111 -o -name '*.exe' \) | sort)
-  fi
+  done
 
   return 1
 }
@@ -267,9 +273,9 @@ rewrite_mstest_runner_args() {
   args=("${rewritten[@]}")
 }
 
-normalize_projectish_args
 capture_test_target_path
 detect_mstest_runner
+normalize_projectish_args
 
 if [[ "$use_mstest_runner" -eq 0 ]]; then
   rewrite_dotnet_test_target_args

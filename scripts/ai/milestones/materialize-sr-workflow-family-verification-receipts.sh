@@ -54,6 +54,7 @@ test_corpus = "\n".join(
         repo_root / "Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs",
         repo_root / "Chummer.Tests/Compliance/MigrationComplianceTests.cs",
         repo_root / "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs",
+        repo_root / "Chummer.Tests/Presentation/WorkflowParityGateTests.cs",
     ]
     if path.is_file()
 )

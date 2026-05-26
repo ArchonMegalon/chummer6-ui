@@ -207,6 +207,12 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal(BuildAccountPortalRelativePathForInstall(state));
     }
 
+    public static bool TryOpenClaimPortalForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortal(BuildClaimPortalRelativePathForInstall(state));
+    }
+
     public static bool TryOpenRelativePortal(string relativePath)
     {
         if (string.IsNullOrWhiteSpace(relativePath))
@@ -217,9 +223,50 @@ public static class DesktopInstallLinkingRuntime
         return TryOpenPublicPortal(relativePath.Trim());
     }
 
+    public static string BuildPublicPortalAbsoluteUri(string relativePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+        Uri uri = ResolvePublicWebAddress();
+        return new Uri(uri, relativePath.Trim()).ToString();
+    }
+
     public static bool TryOpenSupportPortal()
     {
         return TryOpenPublicPortal("/account/support");
+    }
+
+    public static string BuildShellWindowTitle(
+        string shellTitle,
+        string claimTitle,
+        DesktopInstallLinkingState state)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(shellTitle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(claimTitle);
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (!IsClaimed(state))
+        {
+            return claimTitle.Trim();
+        }
+
+        return $"{shellTitle.Trim()} · {ResolveLinkedUserLabel(state)}";
+    }
+
+    public static string ResolveLinkedUserLabel(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (!string.IsNullOrWhiteSpace(state.UserId))
+        {
+            return state.UserId.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.SubjectId))
+        {
+            return state.SubjectId.Trim();
+        }
+
+        return state.InstallationId;
     }
 
     public static IReadOnlyList<string> BuildSupportDiagnosticsReceiptLines(
@@ -385,6 +432,14 @@ public static class DesktopInstallLinkingRuntime
         return query.Count == 0
             ? "/account/access/install-link"
             : $"/account/access/install-link?{string.Join("&", query)}";
+    }
+
+    public static string BuildClaimPortalRelativePathForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        string next = BuildAccountPortalRelativePathForInstall(state);
+        return $"/auth/google/start?next={Uri.EscapeDataString(next)}";
     }
 
     public static string BuildSupportPortalRelativePathForUpdate(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus)

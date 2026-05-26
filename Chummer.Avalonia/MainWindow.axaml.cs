@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     private readonly MainWindowTransientStateCoordinator _transientStateCoordinator;
     private readonly MainWindowControls _controls;
     private DesktopPreferenceState _persistedPreferences;
+    private DesktopInstallLinkingState _installLinkingState;
 
     public MainWindow()
         : this(
@@ -50,10 +51,9 @@ public partial class MainWindow : Window
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
         DesktopPreferenceStateRuntime.SetCurrent(_persistedPreferences);
         DesktopLocalizationCatalog.SetCurrentLanguageOverride(_persistedPreferences.Language);
+        _installLinkingState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
         InitializeComponent();
-        Title = DesktopLocalizationCatalog.GetRequiredString(
-            "desktop.shell.window_title",
-            _persistedPreferences.Language);
+        ApplyInstallLinkingChrome(_installLinkingState);
         TryApplyWindowIcon();
 
         _shellPresenter = shellPresenter;
@@ -107,6 +107,7 @@ public partial class MainWindow : Window
             onWorkflowSurfaceSelected: NavigatorPane_OnWorkflowSurfaceSelected,
             onSectionQuickActionRequested: SectionHost_OnQuickActionRequested,
             onSectionAttributeEditRequested: SectionHost_OnAttributeEditRequested,
+            onCoachLaunchOpenRequested: CoachSidecar_OnOpenLaunchRequested,
             onCoachLaunchCopyRequested: CoachSidecar_OnCopyLaunchRequested,
             onCommandSelected: CommandDialogPane_OnCommandSelected,
             onDialogActionSelected: CommandDialogPane_OnDialogActionSelected,
@@ -169,6 +170,18 @@ public partial class MainWindow : Window
         {
             Window_OnKeyDown(this, e);
         }
+    }
+
+    internal void ApplyInstallLinkingChrome(DesktopInstallLinkingState state)
+    {
+        _installLinkingState = state;
+        string shellTitle = DesktopLocalizationCatalog.GetRequiredString(
+            "desktop.shell.window_title",
+            _persistedPreferences.Language);
+        string claimTitle = DesktopLocalizationCatalog.GetRequiredString(
+            "desktop.install_link.title",
+            _persistedPreferences.Language);
+        Title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(shellTitle, claimTitle, state);
     }
 
     internal DesktopDialogWindow? PeekDialogWindowForTesting()

@@ -1184,7 +1184,7 @@ required_test_names = [
     "Runtime_backed_menu_bar_preserves_classic_labels_and_clickable_primary_menus",
     "Runtime_backed_toolstrip_preserves_classic_labeled_workbench_actions",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
-    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Runtime_backed_shell_chrome_stays_enabled_after_runner_load",
     "Runtime_backed_file_menu_preserves_working_open_save_import_routes",
@@ -1686,16 +1686,15 @@ if not contacts_diary_method:
 elif not contacts_diary_method_has_rhythm:
     reasons.append("Contacts/diary familiarity is not proven: contact + diary action markers are missing from the dedicated test.")
 
-ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks")
+ruleset_orientation_method = extract_test_method(test_text, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks")
 required_ruleset_orientation_markers = [
     "RulesetDefaults.Sr4",
     "RulesetDefaults.Sr5",
     "RulesetDefaults.Sr6",
     "SetPreferredRulesetAsync(",
     "BuildOpenWorkspacesHeading",
-    "BuildNavigationTabsHeading",
-    "BuildSectionActionsHeading",
-    "BuildWorkflowSurfacesHeading",
+    "SnapshotRosterItems(rosterTree)",
+    "grouped roster empty until a workspace is opened",
 ]
 missing_ruleset_orientation_markers = [
     marker for marker in required_ruleset_orientation_markers if marker not in ruleset_orientation_method
@@ -1707,7 +1706,7 @@ if not ruleset_orientation_method:
     reasons.append("SR4/SR5/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is not present in test sources.")
 elif not ruleset_orientation_method_has_markers:
     reasons.append(
-        "SR4/SR5/SR6 codex orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
+        "SR4/SR5/SR6 roster orientation familiarity is not proven: the dedicated runtime-backed ruleset switch test is missing markers: "
         + ", ".join(missing_ruleset_orientation_markers)
     )
 legacy_familiarity_review_reasons = list(reasons[legacy_familiarity_review_start:])
@@ -1762,6 +1761,13 @@ reviews = {
             "contacts_diary_method_has_rhythm_markers",
             "ruleset_orientation_method_has_markers",
         ],
+    },
+    "muscleMemoryParityReview": {
+        "status": "pass" if not (source_anchor_review_reasons or legacy_familiarity_review_reasons) else "fail",
+        "reasonCount": len(source_anchor_review_reasons) + len(legacy_familiarity_review_reasons),
+        "reasons": source_anchor_review_reasons + legacy_familiarity_review_reasons,
+        "gateScript": "scripts/ai/milestones/chummer5a-muscle-memory-parity-gate.sh",
+        "sourceReviews": ["sourceAnchorReview", "legacyFamiliarityReview"],
     },
 }
 payload = {

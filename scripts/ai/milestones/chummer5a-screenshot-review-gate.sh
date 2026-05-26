@@ -91,6 +91,12 @@ feedback_sources = [
     repo_root / "feedback" / "2026-04-13-post-flagship-release-train-and-veteran-certification.md",
 ]
 frontier_ids = [3782970110, 2714856833, 1186439541, 4871476959, 1922169755]
+supplemental_route_local_screenshots = {
+    "18-import-dialog-light.png",
+    "19-workflow-file-menu-loaded-light.png",
+    "34-workflow-validate-section-light.png",
+    "35-workflow-rules-section-light.png",
+}
 review_jobs = {
     "dense_workbench_and_initiative": {
         "routeIds": ["menu:dice_roller_or_workflow:initiative_screenshot"],
@@ -138,6 +144,18 @@ review_jobs = {
         "evidenceKeys": [],
         "testMarkers": ["Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"],
     },
+    "print_export_exchange": {
+        "frontierId": 6764868619,
+        "screenshots": ["19-workflow-file-menu-loaded-light.png", "18-import-dialog-light.png"],
+        "evidenceKeys": [],
+        "testMarkers": ["Runtime_backed_file_menu_restores_classic_save_and_print_commands"],
+    },
+    "sr6_supplements_and_house_rules": {
+        "frontierId": 6764868619,
+        "screenshots": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
+        "evidenceKeys": [],
+        "testMarkers": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"],
+    },
 }
 
 route_local_receipts = {
@@ -150,6 +168,37 @@ route_local_receipts = {
         "screenshots": [
             "05-dense-section-light.png",
             "07-loaded-runner-tabs-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
+    },
+    "print_export_exchange": {
+        "routeIds": [
+            "screenshot:print_export_exchange",
+            "print_export_exchange",
+            "open_for_printing_menu_route",
+            "open_for_export_menu_route",
+            "print_multiple_menu_route",
+        ],
+        "workflowFamilyId": "create-open-import-save-save-as-print-export",
+        "screenshots": [
+            "19-workflow-file-menu-loaded-light.png",
+            "18-import-dialog-light.png",
+        ],
+        "reasons": [],
+        "status": "fail",
+    },
+    "sr6_supplements_and_house_rules": {
+        "routeIds": [
+            "screenshot:sr6_supplements_and_house_rules",
+            "sr6_rule_environment",
+            "sr6_supplements",
+            "house_rules",
+        ],
+        "workflowFamilyId": "improvements-explain-result-parity",
+        "screenshots": [
+            "34-workflow-validate-section-light.png",
+            "35-workflow-rules-section-light.png",
         ],
         "reasons": [],
         "status": "fail",
@@ -240,6 +289,7 @@ required_visual_review_keys = [
     "sourceAnchorReview",
     "screenCaptureReview",
     "legacyFamiliarityReview",
+    "muscleMemoryParityReview",
 ]
 missing_visual_review_keys = [
     key for key in required_visual_review_keys
@@ -332,7 +382,7 @@ for job_name, job in review_jobs.items():
     screenshots = list(job.get("screenshots") or [])
     job_reasons: list[str] = []
     for screenshot in screenshots:
-        if screenshot not in required_screenshots:
+        if screenshot not in required_screenshots and screenshot not in supplemental_route_local_screenshots:
             job_reasons.append(f"{screenshot} is not mandatory in DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.")
         if screenshot in missing_screenshots:
             job_reasons.append(f"{screenshot} is reported missing.")
@@ -393,6 +443,31 @@ if job_results["dense_builder"]["status"] != "pass":
 if not status_pass(visual_gate.get("status")):
     dense_workbench_and_initiative["reasons"].append("Desktop visual familiarity gate is not passing.")
 dense_workbench_and_initiative["status"] = "pass" if not dense_workbench_and_initiative["reasons"] else "fail"
+
+for route_name, required_job_names in {
+    "print_export_exchange": ["print_export_exchange", "hero_lab_importer"],
+    "sr6_supplements_and_house_rules": ["sr6_supplements_and_house_rules"],
+}.items():
+    route_receipt = route_local_receipts[route_name]
+    for screenshot in route_receipt["screenshots"]:
+        if screenshot not in required_screenshots and screenshot not in supplemental_route_local_screenshots:
+            route_receipt["reasons"].append(
+                f"{screenshot} is not mandatory in DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE."
+            )
+        if screenshot in missing_screenshots:
+            route_receipt["reasons"].append(f"{screenshot} is reported missing.")
+        if screenshot in invalid_screenshots:
+            route_receipt["reasons"].append(f"{screenshot} is reported corrupt or unreadable.")
+        if screenshot in undersized_screenshots:
+            route_receipt["reasons"].append(f"{screenshot} is below the review resolution floor.")
+        if screenshot_dir is not None and not (screenshot_dir / screenshot).is_file():
+            route_receipt["reasons"].append(f"{screenshot} is absent from the screenshot directory.")
+    for job_name in required_job_names:
+        if job_results[job_name]["status"] != "pass":
+            route_receipt["reasons"].append(f"{job_name} review job is not passing.")
+    if not status_pass(visual_gate.get("status")):
+        route_receipt["reasons"].append("Desktop visual familiarity gate is not passing.")
+    route_receipt["status"] = "pass" if not route_receipt["reasons"] else "fail"
 
 payload = {
     "generatedAt": now_iso(),

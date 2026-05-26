@@ -11,11 +11,10 @@ sr6_workflow_receipt_path="$repo_root/.codex-studio/published/SR6_DESKTOP_WORKFL
 inventory_receipt_path="${CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_INVENTORY.generated.json}"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 verify_script_path="$repo_root/scripts/ai/verify.sh"
-runtime_test_marker="Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract"
-
 mkdir -p "$(dirname "$receipt_path")"
 
-bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=$runtime_test_marker" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks" -m:1 -v minimal >/dev/null
+bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces" -m:1 -v minimal >/dev/null
 
 python3 - <<'PY' \
   "$receipt_path" \

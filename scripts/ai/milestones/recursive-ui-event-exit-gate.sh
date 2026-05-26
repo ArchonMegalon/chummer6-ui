@@ -44,6 +44,22 @@ def entry_value(entry: dict, *keys: str, default=None):
     return default
 
 
+def inventory_texts(node: object) -> set[str]:
+    if not isinstance(node, dict):
+        return set()
+
+    values: set[str] = set()
+    for key in ("text", "toolTip"):
+        value = str(node.get(key) or "").strip()
+        if value:
+            values.add(value)
+
+    for child in node.get("children", []):
+        values.update(inventory_texts(child))
+
+    return values
+
+
 runtime = load_json(runtime_route_inventory_path)
 interactive = load_json(interactive_control_inventory_path)
 parity = load_json(parity_audit_path)
@@ -141,12 +157,12 @@ for route in routes:
             for text in entry_value(entry, "visibleTextSamples", "VisibleTextSamples", default=[])
             if str(text).strip()
         }
-        if not visible_texts:
-            visible_texts = {
-                str(text).strip()
-                for text in route.get("visibleTexts", [])
-                if str(text).strip()
-            }
+        visible_texts.update(
+            str(text).strip()
+            for text in route.get("visibleTexts", [])
+            if str(text).strip()
+        )
+        visible_texts.update(inventory_texts(route.get("inventory")))
         missing_texts = [
             text for text in required_texts
             if not any(text in visible_text for visible_text in visible_texts)

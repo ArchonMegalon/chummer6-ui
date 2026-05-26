@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T08:30:32.968066Z",
+  "generatedAt": "2026-05-26T20:17:25.309272Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_parity_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family parity evidence is explicitly grounded for recovery-reload-migration-roundtrips.",

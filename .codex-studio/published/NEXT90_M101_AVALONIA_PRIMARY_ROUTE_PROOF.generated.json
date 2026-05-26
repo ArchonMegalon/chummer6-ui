@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.avalonia_primary_route_proof",
-  "generatedAt": "2026-04-21T20:27:08Z",
+  "generatedAt": "2026-05-26T20:23:54Z",
   "status": "pass",
   "primaryHead": "avalonia",
   "requiredPlatforms": [
@@ -11,7 +11,7 @@
   "fallbackHeadsExcludedFromPrimaryProof": [
     "blazor-desktop"
   ],
-  "fallbackInstallArtifactCount": 2,
+  "fallbackInstallArtifactCount": 0,
   "fallbackReceiptCount": 2,
   "platformProof": [
     {
@@ -19,9 +19,11 @@
       "head": "avalonia",
       "rid": "linux-x64",
       "artifactId": "avalonia-linux-x64-installer",
-      "artifactSha256": "84d5c3a7065666286c5e3a5feccbc2ee3c04117cf5afaa116c09e1e2d9e44643",
+      "artifactSha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
       "status": "pass",
-      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
+      "proofSource": "startup-smoke",
+      "proofSourcePath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
       "fallbackReceiptsAccepted": false,
       "reason": ""
     },
@@ -30,9 +32,11 @@
       "head": "avalonia",
       "rid": "osx-arm64",
       "artifactId": "avalonia-osx-arm64-installer",
-      "artifactSha256": "ca6c25f0cdaf48bddfe83e3e983ff87b8763d973e671100165248c9edcd044bd",
+      "artifactSha256": "282adc773f1a86f81a89aefa82d595e67d9f663e4eedab2cd45269d6ab0e9a45",
       "status": "pass",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "proofSource": "published-promotion",
+      "proofSourcePath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/release-evidence/public-promotion.json",
       "fallbackReceiptsAccepted": false,
       "reason": ""
     },
@@ -41,9 +45,11 @@
       "head": "avalonia",
       "rid": "win-x64",
       "artifactId": "avalonia-win-x64-installer",
-      "artifactSha256": "cb3493c1113c23b5e496dfe8a1e6de9afc43c802d7da865adc5255497341e5c4",
+      "artifactSha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
       "status": "pass",
-      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "proofSource": "startup-smoke",
+      "proofSourcePath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "fallbackReceiptsAccepted": false,
       "reason": ""
     }

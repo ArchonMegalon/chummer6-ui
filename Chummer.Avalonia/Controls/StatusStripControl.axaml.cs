@@ -61,15 +61,9 @@ public partial class StatusStripControl : UserControl
             "desktop.shell.status.character",
             language,
             DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language));
-        ServiceStateText.Text = DesktopLocalizationCatalog.GetRequiredFormattedString(
-            "desktop.shell.status.service",
-            language,
-            DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.online", language));
-        TimeStateText.Text = DesktopLocalizationCatalog.GetRequiredFormattedString(
-            "desktop.shell.status.time",
-            language,
-            DateTimeOffset.UtcNow.ToString("u"));
-        ComplianceStateText.Text = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.status.compliance_placeholder", language);
+        ServiceStateText.Text = "Services ready";
+        TimeStateText.Text = "Time appears after your first sync";
+        ComplianceStateText.Text = "Ruleset details appear with your character";
         WorkbenchProgressBar.IsVisible = true;
         WorkbenchProgressBar.IsIndeterminate = false;
         WorkbenchProgressBar.Value = 100d;

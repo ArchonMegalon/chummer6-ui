@@ -47,7 +47,7 @@ SOURCE_MARKERS = {
         "BuildResolutionReportCloseoutSummary()",
         "BLACK LEDGER consequence proof:",
         "Campaign adoption proof:",
-        "Review Campaign Adoption",
+        "Review campaign consequences before opening another restore surface.",
     ],
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
         "BuildCampaignAdoptionSummary()",
@@ -93,6 +93,10 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
 def block_for_package(text: str, package_id: str) -> str:
     marker = f"package_id: {package_id}"
     start = text.find(marker)
@@ -124,12 +128,46 @@ def yaml_list_after(block: str, key: str) -> list[str]:
     for line in block[start + len(marker):].splitlines():
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
+        if stripped.startswith("- title:"):
+            break
         if stripped.startswith("- ") and indent >= 2:
             items.append(stripped.removeprefix("- ").strip())
             continue
         if items and indent <= 2 and stripped and not stripped.startswith("- "):
             break
     return items
+
+
+def yaml_scalar_after(block: str, key: str) -> str:
+    marker = f"{key}:"
+    lines = block.splitlines()
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith(f"- {marker}"):
+            stripped = stripped.removeprefix("- ").strip()
+        elif not stripped.startswith(marker):
+            continue
+        first = stripped.removeprefix(marker).strip()
+        values = [first] if first else []
+        base_indent = len(line) - len(line.lstrip(" "))
+        for continuation in lines[index + 1:]:
+            continuation_indent = len(continuation) - len(continuation.lstrip(" "))
+            if continuation_indent <= base_indent:
+                break
+            continuation_text = continuation.lstrip(" ")
+            if continuation_text.startswith("- title:"):
+                break
+            if continuation_text.startswith("- "):
+                if values:
+                    break
+                continue
+            if ":" in continuation_text:
+                head = continuation_text.split(":", 1)[0]
+                if head.replace("_", "").replace("-", "").isalnum():
+                    break
+            values.append(continuation.strip())
+        return normalize_whitespace(" ".join(value for value in values if value))
+    raise AssertionError(f"missing {key}")
 
 
 registry_text = read_text(registry_path)
@@ -141,10 +179,10 @@ design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 
 checks = {
     "registry_has_task": TITLE in registry_task_block,
-    "queue_title_matches": f"title: {TITLE}" in queue_block,
-    "queue_task_matches": f"task: {TASK}" in queue_block,
-    "design_queue_title_matches": f"title: {TITLE}" in design_queue_block,
-    "design_queue_task_matches": f"task: {TASK}" in design_queue_block,
+    "queue_title_matches": yaml_scalar_after(queue_block, "title") == TITLE,
+    "queue_task_matches": yaml_scalar_after(queue_block, "task") == TASK,
+    "design_queue_title_matches": yaml_scalar_after(design_queue_block, "title") == TITLE,
+    "design_queue_task_matches": yaml_scalar_after(design_queue_block, "task") == TASK,
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,

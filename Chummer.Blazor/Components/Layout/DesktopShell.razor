@@ -2,6 +2,51 @@
 
 @namespace Chummer.Blazor.Components.Layout
 
+@if (ShowInstallClaimGate)
+{
+    <div class="desktop-shell classic-desktop-shell"
+         @ref="_shellRoot"
+         tabindex="0"
+         @onkeydown="OnShellKeyDown">
+        <main class="center-pane">
+            <section class="panel coach-panel" data-testid="desktop-install-claim-gate">
+                <div class="coach-header">
+                    <div>
+                        <h2>Please claim your app</h2>
+                        <p class="hint">This desktop stays locked until the signed-in install callback links this copy.</p>
+                    </div>
+                </div>
+
+                <dl class="coach-facts">
+                    <div><dt>Installation</dt><dd class="mono">@InstallLinkingState.InstallationId</dd></div>
+                    <div><dt>Head</dt><dd class="mono">@InstallLinkingState.HeadId</dd></div>
+                    <div><dt>Release</dt><dd>@InstallLinkingState.ChannelId @InstallLinkingState.ApplicationVersion</dd></div>
+                    <div><dt>Platform</dt><dd>@InstallLinkingState.Platform / @InstallLinkingState.Arch</dd></div>
+                </dl>
+
+                <div class="mini-grid">
+                    <a class="mini-btn"
+                       data-testid="desktop-install-claim-start"
+                       href="@BuildInstallClaimHref()">
+                        Claim this app on chummer.run
+                    </a>
+                    <a class="mini-btn"
+                       data-testid="desktop-install-claim-support"
+                       href="@BuildInstallSupportHref()">
+                        Open support
+                    </a>
+                    <a class="mini-btn"
+                       data-testid="desktop-install-claim-downloads"
+                       href="@BuildInstallDownloadsHref()">
+                        Open downloads
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+}
+else
+{
 <div class="desktop-shell classic-desktop-shell"
      @ref="_shellRoot"
      tabindex="0"
@@ -225,3 +270,4 @@
             ExecuteDialogActionRequested="@ExecuteDialogActionAsync"
             FieldInputRequested="@OnDialogFieldInputAsync"
             FieldCheckboxRequested="@OnDialogCheckboxChangedAsync" />
+}

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-05T08:12:56Z",
+  "generatedAt": "2026-05-26T20:29:59Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m115_ui_portable_dossier",
@@ -47,30 +47,11 @@
     },
     "sourceChecks": {
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "_portableExchangePreview": true,
-        "\"Review Portable Exchange\"": true,
-        "\"Open Replay After Action\"": true,
-        "\"Open Portable Export\"": true,
-        "OpenPortableExchangeAsync()": true,
-        "OpenReplayAfterActionAsync()": true,
-        "OpenPortableExportAsync()": true,
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
-        "/artifacts/replay-after-action": true,
-        "#portable-exchange": true
-      },
-      "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "_portableExchangePreview": true,
         "ResolveLeadCampaignId": true,
         "ReadPortableExchangePreviewAsync": true,
-        "\"Review Portable Exchange\"": true,
-        "\"Open Replay After Action\"": true,
-        "\"Open Portable Export\"": true,
         "OpenPortableExchangeAsync()": true,
         "OpenReplayAfterActionAsync()": true,
-        "OpenPortableExportAsync()": true,
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
-        "/artifacts/replay-after-action": true,
-        "#portable-exchange": true
+        "/artifacts/replay-after-action": true
       },
       "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": {
         "_portableExchangePreview": true,
@@ -86,21 +67,37 @@
         "/artifacts/replay-after-action": true,
         "#portable-exchange": true
       },
+      "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs": {
+        "_portableExchangePreview": true,
+        "ResolveLeadCampaignId": true,
+        "ReadPortableExchangePreviewAsync": true,
+        "\"Review Portable Exchange\"": true,
+        "\"Open Portable Export\"": true,
+        "OpenPortableExchangeAsync()": true,
+        "OpenPortableExportAsync()": true,
+        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
+        "#portable-exchange": true
+      },
+      "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs": {
+        "_portableExchangePreview": true,
+        "ResolveLeadCampaignId": true,
+        "ReadPortableExchangePreviewAsync": true,
+        "\"Review Portable Exchange\"": true,
+        "OpenPortableExchangeAsync()": true,
+        "#portable-exchange": true
+      },
       "Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs": {
         "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
         "_interactionCoordinator.SwitchWorkspaceAsync": true,
         "_interactionCoordinator.ExecuteCommandAsync": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "Review Portable Exchange": true,
-        "Open Replay After Action": true,
-        "Open Portable Export": true,
-        "OpenPortableExchangeAsync()": true,
-        "OpenReplayAfterActionAsync()": true,
-        "OpenPortableExportAsync()": true,
-        "OpenWorkspaceCommandFromDesktopSurfaceAsync": true,
-        "/artifacts/replay-after-action": true,
-        "#portable-exchange": true
+        "ReadPortableExchangePreviewAsync": true,
+        "Portable exchange:": true,
+        "Exchange context:": true,
+        "Exchange asset scope:": true,
+        "GetPortableExchangePreviewAsync": true,
+        "DesktopCreatorPublicationWindow.ShowAsync(": true
       }
     },
     "proofCommands": {
@@ -110,8 +107,9 @@
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",
-      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+      "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainWindow.DesktopSurfaceNavigation.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
       "/docker/chummercomplete/chummer-presentation/Chummer.Tests/Compliance/Next90M115PortableDossierGuardTests.cs",

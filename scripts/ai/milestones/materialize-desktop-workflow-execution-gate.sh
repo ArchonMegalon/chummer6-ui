@@ -132,6 +132,41 @@ record_dependency_refresh_attempt() {
     "$exit_code" >>"$dependency_refresh_report_path"
 }
 
+build_dependency_refresh_env() {
+  local dependency_label="$1"
+  local dependency_receipt_target="$2"
+
+  local env_args=(
+    "CHUMMER_HUB_REGISTRY_ROOT=$hub_registry_root"
+    "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH=$release_channel_path"
+    "CHUMMER_FLAGSHIP_UI_RELEASE_CHANNEL_PATH=$release_channel_path"
+    "CHUMMER_FLAGSHIP_UI_RELEASE_GATE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE=1"
+    "CHUMMER_DESKTOP_WORKFLOW_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE=1"
+  )
+
+  case "$dependency_label" in
+    ruleset_ui_adaptation)
+      env_args+=(
+        "CHUMMER_RULESET_UI_ADAPTATION_RECEIPT_PATH=$dependency_receipt_target"
+      )
+      ;;
+    next90_m141_direct_import_route_proof)
+      env_args+=(
+        "CHUMMER_NEXT90_M141_RELEASE_CHANNEL_PATH=$release_channel_path"
+        "CHUMMER_NEXT90_M141_UI_RECEIPT_PATH=$dependency_receipt_target"
+      )
+      ;;
+    next90_m142_direct_workflow_proof)
+      env_args+=(
+        "CHUMMER_NEXT90_M142_RELEASE_CHANNEL_PATH=$release_channel_path"
+        "CHUMMER_NEXT90_M142_UI_RECEIPT_PATH=$dependency_receipt_target"
+      )
+      ;;
+  esac
+
+  printf '%s\n' "${env_args[@]}"
+}
+
 refresh_receipt_generated_at_if_unchanged() {
   local target_path="$1"
   python3 - <<'PY' "$target_path"
@@ -217,15 +252,16 @@ if [[ "$refresh_dependency_receipts" == "1" ]]; then
     if [[ ! -f "$dependency_script" ]]; then
       continue
     fi
+    mapfile -t dependency_refresh_env < <(build_dependency_refresh_env "$dependency_label" "$dependency_receipt_target")
     before_generated_at="$(capture_receipt_generated_at "$dependency_receipt_target")"
     before_mtime="$(capture_receipt_mtime "$dependency_receipt_target")"
     dependency_exit_code=0
     set +e
     if command -v timeout >/dev/null 2>&1; then
-      timeout --foreground "${dependency_refresh_timeout_seconds}s" env "${flagship_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
+      timeout --foreground "${dependency_refresh_timeout_seconds}s" env "${flagship_refresh_env[@]}" "${dependency_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
       dependency_exit_code=$?
     else
-      env "${flagship_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
+      env "${flagship_refresh_env[@]}" "${dependency_refresh_env[@]}" bash "$dependency_script" >/dev/null 2>&1
       dependency_exit_code=$?
     fi
     set -e

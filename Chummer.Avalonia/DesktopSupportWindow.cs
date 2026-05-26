@@ -20,9 +20,9 @@ internal sealed class DesktopSupportWindow : Window
     private readonly TextBlock _releaseText;
     private readonly TextBlock _diagnosticsText;
     private readonly TextBlock _followThroughText;
-    private readonly StackPanel _caseActionsRow;
-    private readonly StackPanel _releaseActionsRow;
-    private readonly StackPanel _followThroughActionsRow;
+    private readonly WrapPanel _caseActionsRow;
+    private readonly WrapPanel _releaseActionsRow;
+    private readonly WrapPanel _followThroughActionsRow;
 
     private DesktopSupportWindow(
         DesktopInstallLinkingState installState,
@@ -186,7 +186,7 @@ internal sealed class DesktopSupportWindow : Window
         List<string> lines = [_supportProjection.Summary];
         if (_supportProjection.HasTrackedCase)
         {
-            lines.Add("Support choice: open the tracked case");
+            lines.Add("You already have a tracked support case. Open it to pick up where you left off.");
         }
 
         string? highlight = _supportProjection.Highlights.FirstOrDefault();
@@ -202,14 +202,18 @@ internal sealed class DesktopSupportWindow : Window
     {
         List<string> lines =
         [
-            $"Release: {_updateStatus.Status}",
-            _updateStatus.RecommendedAction,
-            $"Version {_installState.ApplicationVersion} · {_installState.ChannelId}"
+            $"Update status: {_updateStatus.Status}",
+            $"You are using version {_installState.ApplicationVersion} on the {_installState.ChannelId} channel."
         ];
+
+        if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
+        {
+            lines.Add(_updateStatus.RecommendedAction);
+        }
 
         if (!string.IsNullOrWhiteSpace(_updateStatus.LastError))
         {
-            lines.Add($"Issue: {_updateStatus.LastError}");
+            lines.Add($"Something still needs attention: {_updateStatus.LastError}");
         }
 
         return string.Join("\n", lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
@@ -243,7 +247,7 @@ internal sealed class DesktopSupportWindow : Window
 
         if (supportProjection.NeedsAttention)
         {
-            lines.Add("Diagnostics diff stays visible while support closure still needs attention.");
+            lines.Add("This diagnostics summary stays available while the support task still needs attention.");
         }
     }
 
@@ -276,7 +280,7 @@ internal sealed class DesktopSupportWindow : Window
             if (!string.IsNullOrWhiteSpace(_supportProjection.DetailHref)
                 && !string.Equals(_supportProjection.DetailHref, _supportProjection.PrimaryActionHref, StringComparison.OrdinalIgnoreCase))
             {
-                actions.Add(CreateButton(S("desktop.home.button.open_tracked_case"), OpenTrackedSupportCase));
+                actions.Add(CreateButton("View case timeline", OpenTrackedSupportCase));
             }
 
             return actions;
@@ -393,7 +397,15 @@ internal sealed class DesktopSupportWindow : Window
     private static Border CreateSection(string title, Control body, Control? actionContent)
     {
         ToolTip.SetTip(body, title);
-        StackPanel content = new() { Spacing = 0 };
+        StackPanel content = new() { Spacing = 8 };
+
+        content.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        content.Children.Add(body);
 
         if (actionContent is not null)
         {
@@ -411,27 +423,30 @@ internal sealed class DesktopSupportWindow : Window
         };
     }
 
-    private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
+    private static WrapPanel CreateActionRow(IReadOnlyList<Button> actions)
     {
-        StackPanel actionRow = new()
+        WrapPanel actionRow = new()
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 6
+            ItemHeight = 32,
+            ItemWidth = double.NaN
         };
 
         foreach (Button action in actions)
         {
+            action.Margin = new Thickness(0, 0, 6, 6);
             actionRow.Children.Add(action);
         }
 
         return actionRow;
     }
 
-    private static void ResetActionRow(StackPanel actionRow, IReadOnlyList<Button> actions)
+    private static void ResetActionRow(WrapPanel actionRow, IReadOnlyList<Button> actions)
     {
         actionRow.Children.Clear();
         foreach (Button action in actions)
         {
+            action.Margin = new Thickness(0, 0, 6, 6);
             actionRow.Children.Add(action);
         }
     }

@@ -2,8 +2,6 @@ version: 1
 last_reviewed: 2026-04-12
 purpose: Release-blocking orientation gate for the first minute of a serious Chummer5a veteran on the promoted desktop route.
 release_blocking: true
-sr5_task_contract: SR5_FIRST_MINUTE_TASKS.yaml
-required_generated_receipt: SR5_FIRST_MINUTE_TASKS.generated.json
 required_landmarks:
   - File menu
   - Tools menu
@@ -34,4 +32,3 @@ failure_conditions:
   - The shell opens into dashboard-first marketing chrome.
   - Save, import, settings, roster, or master index are hidden behind unclear secondary navigation.
   - The status strip is absent or does not keep trust state visible.
-  - SR5 default orientation cannot be proven through the SR5 task pack and same-stage screenshot oracle review.

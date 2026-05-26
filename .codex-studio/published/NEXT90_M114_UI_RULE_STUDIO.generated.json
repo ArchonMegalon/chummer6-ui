@@ -73,40 +73,35 @@
         "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio": true
       },
       "Chummer.Avalonia/Controls/ToolStripControl.axaml": {
-        "Content=\"Rules\"": true,
+        "Content=\"Rule Studio\"": true,
         "RuleEnvironmentStudioButton_OnClick": true,
         "x:Name=\"RuleEnvironmentStudioButton\"": true
       },
       "Chummer.Avalonia/Controls/ToolStripControl.axaml.cs": {
         "RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);": true,
-        "SetButtonLabel(RuleEnvironmentStudioButton, \"Open Rule Environment Studio\", \"Rules\");": true,
+        "SetButtonLabel(RuleEnvironmentStudioButton, \"Open Rule Environment Studio\");": true,
         "public event EventHandler? RuleEnvironmentStudioRequested;": true
       },
       "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs": {
-        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)": true,
-        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
+        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync));": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)": true,
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
         "_portabilityActivity": true
       },
       "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync)": true,
-        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
-        "_portabilityActivity": true,
-        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true
+        "public static Task ShowGmPrepAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
+        "public static Task ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true,
+        "public static Task ShowRosterMovementAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true
       },
       "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
-        "Import environment after:": true,
-        "Import environment before:": true,
-        "Import explain receipt:": true,
-        "Import rule environment:": true,
-        "Support reuse:": true,
-        "_portabilityActivity": true,
-        "actions.Add(CreateButton(\"Open Rule Environment Studio\", OpenRuleEnvironmentStudioAsync));": true
+        "CreateButton(\"Explain\", OpenRuleEnvironmentStudioAsync)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId)": true,
+        "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId)": true
       },
       "Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs": {
-        "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)": true,
-        "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId, _portabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)": true,
+        "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)": true,
         "_portabilityActivity": true
       },
       "Chummer.Avalonia/MainWindow.ControlBinding.cs": {
@@ -114,17 +109,16 @@
         "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;": true
       },
       "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
-        "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
-        "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
-        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true,
-        "DesktopHomeWindow.ShowAsync(this, \"avalonia\", _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")": true,
+        "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)": true,
+        "DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId)": true,
+        "DesktopHomeWindow.ShowAsync(this, \"avalonia\")": true,
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)": true
       },
       "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\", _adapter.State.LatestPortabilityActivity)": true,
+        "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\")": true,
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)": true,
-        "Import explain receipt:": true,
-        "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)": true
+        "Import explain receipt:": true
       }
     },
     "task": "Surface amend-package lifecycle, before-after diffs, and explain receipts in mechanical desktop workflows.",
@@ -132,7 +126,7 @@
     "wave": "W12",
     "workTaskId": "114.2"
   },
-  "generatedAt": "2026-05-05T10:18:21Z",
+  "generatedAt": "2026-05-26T19:12:17Z",
   "status": "pass",
   "unresolved": []
 }
