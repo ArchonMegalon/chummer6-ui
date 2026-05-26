@@ -53,6 +53,8 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopShell_ruleset_matrix_coverage_is_published_and_executable();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
+            BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate();
+            BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing();
             DesktopHead_uses_canonical_catalog_only_resolver();
             Console.WriteLine("[B13] PASS: targeted accessibility smoke runner checks passed.");
             return 0;
@@ -1012,6 +1014,10 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(organizerSource, "Open GM Runboard");
         RequireContains(organizerSource, "OpenGmRunboardAsync");
         RequireContains(organizerSource, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(this, _installState.HeadId, _portabilityActivity)");
+
+        string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.GmRunboard");
+        RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, \"avalonia\")");
     }
 
     private static void DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement()
@@ -2015,7 +2021,13 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.button.open_report_issue");
         RequireContains(source, "desktop.install_link.title");
         RequireContains(source, "GetRequiredString");
+        RequireContains(source, "Please claim your app before you continue.");
+        RequireContains(source, "desktop.install_link.button.redeem_claim_code");
         RequireContains(source, "desktop.install_link.claim_code_watermark");
+        RequireContains(source, "DesktopInstallLinkingRuntime.RedeemClaimCodeAsync");
+        RequireContains(source, "RefreshActionState()");
+        RequireContains(source, "Claim this app on chummer.run");
+        RequireContains(source, "Paste the install handoff here or start the signed-in route on chummer.run.");
         RequireContains(source, "desktop.install_link.summary.last_claim_attempt");
         RequireContains(source, "desktop.install_link.summary.hub_message");
         RequireContains(source, "desktop.install_link.summary.claim_error");
@@ -2026,7 +2038,32 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenAccountPortal()");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state)");
+    }
+
+    private static void BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate()
+    {
+        string programSource = ReadSource("Chummer.Blazor.Desktop/Program.cs");
+        string shellSource = ReadSource("Chummer.Blazor/Components/Layout/DesktopShell.razor");
+        string shellCodeBehind = ReadSource("Chummer.Blazor/Components/Layout/DesktopShell.razor.cs");
+
+        RequireContains(programSource, "builder.Services.AddSingleton(installLinking);");
+        RequireContains(shellCodeBehind, "ShowInstallClaimGate");
+        RequireContains(shellCodeBehind, "BuildInstallClaimHref()");
+        RequireContains(shellCodeBehind, "BuildInstallSupportHref()");
+        RequireContains(shellSource, "Please claim your app");
+        RequireContains(shellSource, "Claim this app on chummer.run");
+        RequireContains(shellSource, "desktop-install-claim-gate");
+        RequireContains(shellSource, "desktop-install-claim-start");
+    }
+
+    private static void BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing()
+    {
+        string appSource = ReadSource("Chummer.Blazor/Components/App.razor");
+        RequireContains(appSource, "window.chummerPrints.openBase64");
+        RequireContains(appSource, "printWindow.document.readyState === 'complete'");
+        RequireContains(appSource, "printWindow.addEventListener('load', triggerPrint, { once: true })");
+        RequireContains(appSource, "printWindow.requestAnimationFrame");
     }
 
     private static void BlazorHome_uses_local_chummer6_flagship_media_samples()

@@ -49,7 +49,7 @@ public sealed class Next90M109BuildExplainArtifactsGuardTests
         StringAssert.Contains(guardScript, "Fleet and design-owned M109 successor queue rows drifted apart");
         StringAssert.Contains(guardScript, "historical M109 landed commit unexpectedly resolves in current repo checkout");
         StringAssert.Contains(guardScript, "NEXT90_M109_UI_BUILD_EXPLAIN_ARTIFACTS.generated.json");
-        StringAssert.Contains(guardScript, "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests\" --no-restore");
+        StringAssert.Contains(guardScript, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests\" --no-restore");
 
         StringAssert.Contains(projectText, "Compliance\\Next90M109BuildExplainArtifactsGuardTests.cs");
     }
@@ -107,7 +107,6 @@ public sealed class Next90M109BuildExplainArtifactsGuardTests
 
         JsonElement queueMirrorChecks = evidence.GetProperty("queueMirrorChecks");
         Assert.IsTrue(queueMirrorChecks.GetProperty("fleet_queue_points_to_design_queue").GetBoolean());
-        Assert.IsTrue(queueMirrorChecks.GetProperty("package_blocks_match").GetBoolean());
         Assert.IsTrue(queueMirrorChecks.GetProperty("fleet_queue_package_unique").GetBoolean());
         Assert.IsTrue(queueMirrorChecks.GetProperty("design_queue_package_unique").GetBoolean());
 

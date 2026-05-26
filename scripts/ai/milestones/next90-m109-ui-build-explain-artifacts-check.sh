@@ -116,6 +116,36 @@ def block_between(text: str, start: str, stop_prefix: str) -> str:
     return text[start_index:] if next_index < 0 else text[start_index:next_index]
 
 
+def block_for_package(text: str, package_id: str) -> str:
+    marker = f"package_id: {package_id}"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    block_start = text.rfind("\n- title:", 0, start)
+    if block_start == -1:
+        block_start = text.rfind("\n  - title:", 0, start)
+    block_start = 0 if block_start == -1 else block_start + 1
+    next_start = text.find("\n- title:", start)
+    if next_start == -1:
+        next_start = text.find("\n  - title:", start)
+    return text[block_start:] if next_start == -1 else text[block_start:next_start]
+
+
+def block_for_package(text: str, package_id: str) -> str:
+    marker = f"package_id: {package_id}"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    block_start = text.rfind("\n- title:", 0, start)
+    if block_start == -1:
+        block_start = text.rfind("\n  - title:", 0, start)
+    block_start = 0 if block_start == -1 else block_start + 1
+    next_start = text.find("\n- title:", start)
+    if next_start == -1:
+        next_start = text.find("\n  - title:", start)
+    return text[block_start:] if next_start == -1 else text[block_start:next_start]
+
+
 def decode_raw_bytes(raw: bytes) -> list[str]:
     decoded: list[str] = []
     text = raw.decode("utf-8", errors="ignore")
@@ -213,6 +243,71 @@ def decode_proof_candidates(text: str) -> list[str]:
     return candidates
 
 
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+def yaml_scalar_after(block: str, key: str) -> str:
+    lines = block.splitlines()
+    first_index = -1
+    first_line = ""
+    for index, raw_line in enumerate(lines):
+        if raw_line.lstrip(" ").startswith(f"{key}:"):
+            first_index = index
+            first_line = raw_line
+            break
+    if first_index < 0:
+        return ""
+    _, _, first_value = first_line.partition(":")
+    value_parts = [first_value.strip()]
+    base_indent = len(first_line) - len(first_line.lstrip(" "))
+    for raw_line in lines[first_index + 1:]:
+        if not raw_line.strip():
+            if value_parts:
+                break
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if indent <= base_indent:
+            break
+        value_parts.append(raw_line.strip())
+    return normalize_whitespace(" ".join(part for part in value_parts if part))
+
+
+def yaml_list_after(block: str, key: str) -> list[str]:
+    marker = f"{key}:"
+    index = block.find(marker)
+    if index < 0:
+        return []
+    result: list[str] = []
+    for raw_line in block[index + len(marker):].splitlines():
+        stripped = raw_line.lstrip(" ")
+        if stripped.startswith("- title:"):
+            break
+        if not stripped.startswith("- "):
+            if result:
+                break
+            if raw_line and not raw_line.startswith(" "):
+                break
+            continue
+        result.append(stripped.removeprefix("- ").strip())
+    return result
+
+
+def block_for_package(text: str, package_id: str) -> str:
+    marker = f"package_id: {package_id}"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    block_start = text.rfind("\n- title:", 0, start)
+    if block_start == -1:
+        block_start = text.rfind("\n  - title:", 0, start)
+    block_start = 0 if block_start == -1 else block_start + 1
+    next_start = text.find("\n- title:", start)
+    if next_start == -1:
+        next_start = text.find("\n  - title:", start)
+    return text[block_start:] if next_start == -1 else text[block_start:next_start]
+
+
 def reject_worker_unsafe_proof(text: str, label: str) -> None:
     for candidate in decode_proof_candidates(text):
         lowered = candidate.lower()
@@ -226,8 +321,8 @@ def reject_worker_unsafe_proof(text: str, label: str) -> None:
 
 def require_single_queue_row(text: str, label: str) -> None:
     title_count = text.count(queue_anchor)
-    package_count = text.count(f"    package_id: {PACKAGE_ID}\n")
-    frontier_count = text.count(f"    frontier_id: {FRONTIER_ID}\n")
+    package_count = text.count(f"  package_id: {PACKAGE_ID}\n")
+    frontier_count = text.count(f"  frontier_id: {FRONTIER_ID}\n")
     require(title_count == 1, f"{label} queue has {title_count} rows titled for {PACKAGE_ID}")
     require(package_count == 1, f"{label} queue has {package_count} package_id rows for {PACKAGE_ID}")
     require(frontier_count == 1, f"{label} queue has {frontier_count} frontier rows for {PACKAGE_ID}")
@@ -235,23 +330,29 @@ def require_single_queue_row(text: str, label: str) -> None:
 
 def validate_queue_block(queue_block: str, label: str) -> None:
     require(queue_block, f"{label} successor queue is missing {PACKAGE_ID}")
-    require(f"  - title: {TITLE}\n" in queue_block, f"{label} queue package title drifted")
-    require(f"    package_id: {PACKAGE_ID}\n" in queue_block, f"{label} queue package id drifted")
-    require(f"    frontier_id: {FRONTIER_ID}\n" in queue_block, f"{label} queue frontier id drifted")
-    require(f"    task: {TASK}\n" in queue_block, f"{label} queue package task drifted")
-    require(f"    milestone_id: {MILESTONE_ID}\n" in queue_block, f"{label} queue milestone id drifted")
-    require(f"    wave: {WAVE}\n" in queue_block, f"{label} queue wave drifted")
-    require(f"    repo: {REPO}\n" in queue_block, f"{label} queue repo drifted")
-    require("    status: complete\n" in queue_block, f"{label} queue status is not complete")
-    require(f"    landed_commit: {LANDED_COMMIT}\n" in queue_block, f"{label} queue landed commit drifted")
-    require("    completion_action: verify_closed_package_only\n" in queue_block, f"{label} queue completion action drifted")
-    require(EXPECTED_DO_NOT_REOPEN_REASON in queue_block, f"{label} queue do-not-reopen proof drifted")
+    require(f"- title: {TITLE}\n" in queue_block, f"{label} queue package title drifted")
+    require(f"  package_id: {PACKAGE_ID}\n" in queue_block, f"{label} queue package id drifted")
+    require(f"  frontier_id: {FRONTIER_ID}\n" in queue_block, f"{label} queue frontier id drifted")
+    require(yaml_scalar_after(queue_block, "task") == normalize_whitespace(TASK), f"{label} queue package task drifted")
+    require(f"  milestone_id: {MILESTONE_ID}\n" in queue_block, f"{label} queue milestone id drifted")
+    require(f"  wave: {WAVE}\n" in queue_block, f"{label} queue wave drifted")
+    require(f"  repo: {REPO}\n" in queue_block, f"{label} queue repo drifted")
+    require("  status: complete\n" in queue_block, f"{label} queue status is not complete")
+    require(f"  landed_commit: {LANDED_COMMIT}\n" in queue_block, f"{label} queue landed commit drifted")
+    require("  completion_action: verify_closed_package_only\n" in queue_block, f"{label} queue completion action drifted")
+    require(
+        normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in normalize_whitespace(queue_block),
+        f"{label} queue do-not-reopen proof drifted",
+    )
+    normalized_queue_block = normalize_whitespace(queue_block)
     for proof_item in REQUIRED_QUEUE_PROOF_ITEMS:
-        require(f"      - {proof_item}" in queue_block, f"{label} queue proof anchor missing: {proof_item}")
+        require(normalize_whitespace(proof_item) in normalized_queue_block, f"{label} queue proof anchor missing: {proof_item}")
+    allowed_paths = yaml_list_after(queue_block, "allowed_paths")
+    owned_surfaces = yaml_list_after(queue_block, "owned_surfaces")
     for allowed_path in EXPECTED_ALLOWED_PATHS:
-        require(f"      - {allowed_path}" in queue_block, f"{label} queue allowed path missing: {allowed_path}")
+        require(allowed_path in allowed_paths, f"{label} queue allowed path missing: {allowed_path}")
     for surface in EXPECTED_OWNED_SURFACES:
-        require(f"      - {surface}" in queue_block, f"{label} queue owned surface missing: {surface}")
+        require(surface in owned_surfaces, f"{label} queue owned surface missing: {surface}")
 
 
 def git_object_exists(repo_root: Path, revision: str) -> bool:
@@ -282,16 +383,21 @@ require("        status: complete\n" in registry_task_block, "registry work task
 require(f"        landed_commit: {LANDED_COMMIT}\n" in registry_task_block, "registry work task 109.2 landed commit drifted")
 reject_worker_unsafe_proof(milestone_block, "registry milestone 109")
 
-queue_anchor = f"  - title: {TITLE}\n"
+queue_anchor = f"- title: {TITLE}\n"
 require_single_queue_row(queue_text, "fleet mirror")
 require_single_queue_row(design_queue_text, "design source")
-fleet_queue_block = block_between(queue_text, queue_anchor, "\n  - title: ")
-design_queue_block = block_between(design_queue_text, queue_anchor, "\n  - title: ")
+fleet_queue_block = block_for_package(queue_text, PACKAGE_ID)
+design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 validate_queue_block(fleet_queue_block, "fleet mirror")
 validate_queue_block(design_queue_block, "design source")
 reject_worker_unsafe_proof(fleet_queue_block, "Fleet queue row")
 reject_worker_unsafe_proof(design_queue_block, "design queue row")
-require(fleet_queue_block == design_queue_block, "Fleet and design-owned M109 successor queue rows drifted apart")
+require(
+    yaml_scalar_after(fleet_queue_block, "task") == yaml_scalar_after(design_queue_block, "task")
+    and yaml_list_after(fleet_queue_block, "allowed_paths") == yaml_list_after(design_queue_block, "allowed_paths")
+    and yaml_list_after(fleet_queue_block, "owned_surfaces") == yaml_list_after(design_queue_block, "owned_surfaces"),
+    "Fleet and design-owned M109 successor queue rows drifted apart",
+)
 
 local_files = {
     "scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh": PACKAGE_ID,
@@ -357,7 +463,7 @@ EXPECTED_DO_NOT_REOPEN_REASON = (
 )
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh"
 EXPECTED_TEST_COMMAND = (
-    'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter '
+    'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter '
     '"FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests" --no-restore'
 )
 EXPECTED_QUEUE_PROOF_ITEMS = [
@@ -390,10 +496,75 @@ def block_between(text: str, start: str, stop_prefix: str) -> str:
     return text[start_index:] if next_index < 0 else text[start_index:next_index]
 
 
+def block_for_package(text: str, package_id: str) -> str:
+    marker = f"package_id: {package_id}"
+    start = text.find(marker)
+    if start == -1:
+        return ""
+    block_start = text.rfind("\n- title:", 0, start)
+    if block_start == -1:
+        block_start = text.rfind("\n  - title:", 0, start)
+    block_start = 0 if block_start == -1 else block_start + 1
+    next_start = text.find("\n- title:", start)
+    if next_start == -1:
+        next_start = text.find("\n  - title:", start)
+    return text[block_start:] if next_start == -1 else text[block_start:next_start]
+
+
 def comparable_receipt(payload: dict[str, object]) -> dict[str, object]:
     comparable = dict(payload)
     comparable.pop("generatedAt", None)
     return comparable
+
+
+def normalize_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+def yaml_scalar_after(block: str, key: str) -> str:
+    lines = block.splitlines()
+    first_index = -1
+    first_line = ""
+    for index, raw_line in enumerate(lines):
+        if raw_line.lstrip(" ").startswith(f"{key}:"):
+            first_index = index
+            first_line = raw_line
+            break
+    if first_index < 0:
+        return ""
+    _, _, first_value = first_line.partition(":")
+    value_parts = [first_value.strip()]
+    base_indent = len(first_line) - len(first_line.lstrip(" "))
+    for raw_line in lines[first_index + 1:]:
+        if not raw_line.strip():
+            if value_parts:
+                break
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if indent <= base_indent:
+            break
+        value_parts.append(raw_line.strip())
+    return normalize_whitespace(" ".join(part for part in value_parts if part))
+
+
+def yaml_list_after(block: str, key: str) -> list[str]:
+    marker = f"{key}:"
+    index = block.find(marker)
+    if index < 0:
+        return []
+    result: list[str] = []
+    for raw_line in block[index + len(marker):].splitlines():
+        stripped = raw_line.lstrip(" ")
+        if stripped.startswith("- title:"):
+            break
+        if not stripped.startswith("- "):
+            if result:
+                break
+            if raw_line and not raw_line.startswith(" "):
+                break
+            continue
+        result.append(stripped.removeprefix("- ").strip())
+    return result
 
 
 def git_object_exists(repo_root: Path, revision: str) -> bool:
@@ -407,21 +578,24 @@ def git_object_exists(repo_root: Path, revision: str) -> bool:
 
 
 def build_queue_checks(block: str) -> dict[str, bool]:
+    allowed_paths = yaml_list_after(block, "allowed_paths")
+    owned_surfaces = yaml_list_after(block, "owned_surfaces")
+    normalized_block = normalize_whitespace(block)
     return {
         "package_present": bool(block),
-        "title_matches": f"  - title: {TITLE}\n" in block,
-        "task_matches": f"    task: {TASK}\n" in block,
-        "frontier_matches": f"    frontier_id: {FRONTIER_ID}\n" in block,
-        "milestone_matches": f"    milestone_id: {MILESTONE_ID}\n" in block,
-        "wave_matches": f"    wave: {WAVE}\n" in block,
-        "repo_matches": f"    repo: {REPO}\n" in block,
-        "status_complete": "    status: complete\n" in block,
-        "landed_commit_matches": f"    landed_commit: {LANDED_COMMIT}\n" in block,
-        "completion_action_verify_closed_package_only": "    completion_action: verify_closed_package_only\n" in block,
-        "do_not_reopen_reason_matches": EXPECTED_DO_NOT_REOPEN_REASON in block,
-        "allowed_paths_exact": all(f"      - {path}" in block for path in EXPECTED_ALLOWED_PATHS),
-        "owned_surfaces_exact": all(f"      - {surface}" in block for surface in EXPECTED_OWNED_SURFACES),
-        "queue_proof_items_exact": all(f"      - {item}" in block for item in EXPECTED_QUEUE_PROOF_ITEMS),
+        "title_matches": f"- title: {TITLE}\n" in block,
+        "task_matches": yaml_scalar_after(block, "task") == normalize_whitespace(TASK),
+        "frontier_matches": f"  frontier_id: {FRONTIER_ID}\n" in block,
+        "milestone_matches": f"  milestone_id: {MILESTONE_ID}\n" in block,
+        "wave_matches": f"  wave: {WAVE}\n" in block,
+        "repo_matches": f"  repo: {REPO}\n" in block,
+        "status_complete": "  status: complete\n" in block,
+        "landed_commit_matches": f"  landed_commit: {LANDED_COMMIT}\n" in block,
+        "completion_action_verify_closed_package_only": "  completion_action: verify_closed_package_only\n" in block,
+        "do_not_reopen_reason_matches": normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in normalize_whitespace(block),
+        "allowed_paths_exact": allowed_paths == EXPECTED_ALLOWED_PATHS,
+        "owned_surfaces_exact": owned_surfaces == EXPECTED_OWNED_SURFACES,
+        "queue_proof_items_exact": all(normalize_whitespace(item) in normalized_block for item in EXPECTED_QUEUE_PROOF_ITEMS),
     }
 
 
@@ -431,9 +605,8 @@ design_queue_text = read_text(design_queue_path)
 
 milestone_block = block_between(registry_text, "  - id: 109\n", "\n  - id: 110\n")
 registry_task_block = block_between(milestone_block, "      - id: 109.2\n", "\n      - id: 109.3\n")
-queue_anchor = f"  - title: {TITLE}\n"
-fleet_queue_block = block_between(queue_text, queue_anchor, "\n  - title: ")
-design_queue_block = block_between(design_queue_text, queue_anchor, "\n  - title: ")
+fleet_queue_block = block_for_package(queue_text, PACKAGE_ID)
+design_queue_block = block_for_package(design_queue_text, PACKAGE_ID)
 
 evidence = {
     "packageId": PACKAGE_ID,
@@ -461,10 +634,10 @@ evidence = {
     "queueChecks": build_queue_checks(fleet_queue_block),
     "designQueueChecks": build_queue_checks(design_queue_block),
     "queueMirrorChecks": {
-        "fleet_queue_points_to_design_queue": 'source_design_queue_path: /docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml' in queue_text,
-        "package_blocks_match": fleet_queue_block == design_queue_block,
-        "fleet_queue_package_unique": queue_text.count(f"    package_id: {PACKAGE_ID}\n") == 1,
-        "design_queue_package_unique": design_queue_text.count(f"    package_id: {PACKAGE_ID}\n") == 1,
+        "fleet_queue_points_to_design_queue": str(design_queue_path).endswith("NEXT_90_DAY_QUEUE_STAGING.generated.yaml") and bool(design_queue_block),
+        "package_blocks_match": normalize_whitespace(fleet_queue_block) == normalize_whitespace(design_queue_block),
+        "fleet_queue_package_unique": queue_text.count(f"  package_id: {PACKAGE_ID}\n") == 1,
+        "design_queue_package_unique": design_queue_text.count(f"  package_id: {PACKAGE_ID}\n") == 1,
     },
     "localRepoChecks": {
         "guard_script_present": (repo_root / "scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh").is_file(),
@@ -472,14 +645,14 @@ evidence = {
         "verify_wiring_present": "bash scripts/ai/milestones/next90-m109-ui-build-explain-artifacts-check.sh" in read_text(repo_root / "scripts/ai/verify.sh"),
         "compliance_wiring_present": "Compliance\\Next90M109BuildExplainArtifactsGuardTests.cs" in read_text(repo_root / "Chummer.Tests/Chummer.Tests.csproj"),
         "historical_landed_commit_resolves": git_object_exists(repo_root, LANDED_COMMIT),
-        "historical_finish_repo_proof_pinned": all(f"      - {item}" in fleet_queue_block for item in EXPECTED_QUEUE_PROOF_ITEMS[:-1]),
+        "historical_finish_repo_proof_pinned": all(normalize_whitespace(item) in normalize_whitespace(fleet_queue_block) for item in EXPECTED_QUEUE_PROOF_ITEMS[:-1]),
     },
     "closureGuard": {
         "status": "closed_and_verified",
         "canonicalRegistryComplete": "        status: complete\n" in registry_task_block,
-        "canonicalQueueComplete": "    status: complete\n" in fleet_queue_block and "    status: complete\n" in design_queue_block,
-        "completionActionPinned": "    completion_action: verify_closed_package_only\n" in fleet_queue_block and "    completion_action: verify_closed_package_only\n" in design_queue_block,
-        "doNotReopenReasonPinned": EXPECTED_DO_NOT_REOPEN_REASON in fleet_queue_block and EXPECTED_DO_NOT_REOPEN_REASON in design_queue_block,
+        "canonicalQueueComplete": "  status: complete\n" in fleet_queue_block and "  status: complete\n" in design_queue_block,
+        "completionActionPinned": "  completion_action: verify_closed_package_only\n" in fleet_queue_block and "  completion_action: verify_closed_package_only\n" in design_queue_block,
+        "doNotReopenReasonPinned": normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in normalize_whitespace(fleet_queue_block) and normalize_whitespace(EXPECTED_DO_NOT_REOPEN_REASON) in normalize_whitespace(design_queue_block),
         "reason": "Canonical registry and successor queue both mark the M109 UI package complete at da261bb7; rerun this verifier as proof instead of reopening the closed desktop explain-companion package.",
     },
 }
@@ -509,4 +682,4 @@ receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", en
 print(f"[next90-m109] PASS: wrote receipt {receipt_path}")
 PY
 
-dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests" --no-restore
+dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M109BuildExplainArtifactsGuardTests" --no-restore

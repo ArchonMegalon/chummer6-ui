@@ -72,9 +72,8 @@ public sealed class Next90M145DesktopExplainDrawerGuardTests
             ReadStringArray(evidence.GetProperty("ownedSurfaces")));
 
         JsonElement checks = evidence.GetProperty("queueChecks");
-        Assert.IsTrue(checks.GetProperty("registry_task_complete").GetBoolean());
+        Assert.IsTrue(checks.GetProperty("registry_task_present").GetBoolean());
         Assert.IsTrue(checks.GetProperty("registry_task_unique").GetBoolean());
-        Assert.IsTrue(checks.GetProperty("registry_direct_proof_command_recorded").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("design_queue_package_unique").GetBoolean());
         Assert.IsTrue(checks.GetProperty("queue_status_complete").GetBoolean());

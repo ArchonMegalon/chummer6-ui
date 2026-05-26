@@ -145,15 +145,7 @@ public partial class App : global::Avalonia.Application
             }
 
             DesktopInstallLinkingState currentInstallState = DesktopInstallLinkingRuntime.LoadOrCreateState(installLinkingContext.State.HeadId);
-            if (!DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))
-            {
-                if (Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime lifetime)
-                {
-                    lifetime.Shutdown();
-                }
-
-                return;
-            }
+            owner.ApplyInstallLinkingChrome(currentInstallState);
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
@@ -177,6 +169,17 @@ public partial class App : global::Avalonia.Application
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Failed to display the desktop GM prep packets window: {ex}");
+            }
+        }
+        else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.GmRunboard))
+        {
+            try
+            {
+                await DesktopCampaignWorkspaceWindow.ShowGmRunboardAsync(owner, "avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop GM runboard window: {ex}");
             }
         }
         else if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.RosterMovement))
