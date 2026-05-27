@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:05:21.8169251Z",
+  "generatedAt": "2026-05-27T06:26:55.5401348Z",
   "workflowCoverage": [
     {
       "workflowFamilyId": "create-open-import-save-save-as-print-export",
@@ -272,8 +272,8 @@
           "Name": "ExpandCollapseChevron",
           "ControlType": "Path",
           "Text": "",
-          "X": 338.9259164294707,
-          "Y": 438.67411272604966,
+          "X": 337.53813733251684,
+          "Y": 438.8115048584642,
           "Width": 14,
           "Height": 7
         },

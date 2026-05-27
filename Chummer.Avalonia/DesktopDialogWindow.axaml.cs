@@ -2382,7 +2382,7 @@ public partial class DesktopDialogWindow : Window
         _preferredFocusControlName = null;
         _preferredFocusSelectionStart = null;
 
-        if (FocusManager.GetFocusedElement() is not Control focusedControl)
+        if (GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Control focusedControl)
         {
             return;
         }

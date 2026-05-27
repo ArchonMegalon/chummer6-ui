@@ -40,6 +40,7 @@ public class DualHeadAcceptanceTests
     private static readonly Regex WorkspaceFileNameRegex = new("^[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex WorkspaceFileTokenRegex = new("[a-f0-9]{32}(?:-[a-f0-9]{4}){0,4}\\.(?:chum5|json)", RegexOptions.Compiled | RegexOptions.IgnoreCase);
     private static readonly Regex RuntimeGeneratedAtRegex = new(@"Generated:\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}Z", RegexOptions.Compiled);
+    private static readonly Regex RosterOpenedAtRegex = new(@"opened \d{2}-\d{2} \d{2}:\d{2} UTC", RegexOptions.Compiled);
     private static bool? _isRuntimeReachable;
     private static string _runtimeReachabilityFailure = "Chummer API runtime is not reachable.";
     private static readonly TimeSpan RuntimeProbeTimeout = TimeSpan.FromSeconds(2);
@@ -1493,6 +1494,9 @@ public class DualHeadAcceptanceTests
 
         if (string.Equals(fieldId, "rosterSnapshot", StringComparison.Ordinal))
             return NormalizeRosterSnapshotValue(value);
+
+        if (string.Equals(fieldId, "rosterEntries", StringComparison.Ordinal))
+            return RosterOpenedAtRegex.Replace(value, "opened <timestamp> UTC");
 
         if (string.Equals(fieldId, "rosterSelectedRunner", StringComparison.Ordinal))
             return Regex.Replace(value, "(?<=File Path \\| )[A-Za-z0-9-]+", "<workspace>", RegexOptions.CultureInvariant);

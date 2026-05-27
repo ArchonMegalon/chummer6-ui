@@ -1,0 +1,1981 @@
+{
+  "generatedAt": "2026-05-26T21:39:16.887321Z",
+  "contractName": "chummer6-ui.chummer5a_human_parity_acceptance_matrix",
+  "status": "pass",
+  "summary": "Element-level Chummer5A parity rows are materialized for every required family, surface, dialog, and reviewed Chummer6-only control.",
+  "requiredFields": [
+    "family_id",
+    "surface_id",
+    "dialog_id",
+    "element_id",
+    "element_label",
+    "present_in_chummer5a",
+    "present_in_chummer6",
+    "visual_parity",
+    "behavioral_parity",
+    "removable_if_not_in_chummer5a",
+    "reason",
+    "screenshot_refs",
+    "runtime_receipt_refs",
+    "test_refs"
+  ],
+  "designMatrixPath": "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
+  "rowCount": 79,
+  "familyCount": 8,
+  "families": [
+    "catalog_only_controls",
+    "dense_builder_and_career",
+    "dice_initiative_and_table_utilities",
+    "identity_contacts_lifestyles_history",
+    "legacy_and_adjacent_import_oracles",
+    "sheet_export_print_viewer_exchange",
+    "sr6_supplements_designers_house_rules",
+    "translator_xml_bridge"
+  ],
+  "rows": [
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "translator_dialog",
+      "dialog_id": "translator_dialog",
+      "element_id": "translator_title",
+      "element_label": "Translator Title",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "translator_dialog",
+      "dialog_id": "translator_dialog",
+      "element_id": "language_inventory",
+      "element_label": "Language Inventory",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "translator_dialog",
+      "dialog_id": "translator_dialog",
+      "element_id": "overlay_or_corpus_posture",
+      "element_label": "Overlay Or Corpus Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "translator_dialog",
+      "dialog_id": "translator_dialog",
+      "element_id": "search_or_filter",
+      "element_label": "Search Or Filter",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "translator_dialog",
+      "dialog_id": "translator_dialog",
+      "element_id": "direct_bridge_handoff",
+      "element_label": "Direct Bridge Handoff",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "xml_amendment_editor",
+      "dialog_id": "xml_amendment_editor",
+      "element_id": "amendment_scope",
+      "element_label": "Amendment Scope",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "xml_amendment_editor",
+      "dialog_id": "xml_amendment_editor",
+      "element_id": "file_or_overlay_target",
+      "element_label": "File Or Overlay Target",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "xml_amendment_editor",
+      "dialog_id": "xml_amendment_editor",
+      "element_id": "change_visibility",
+      "element_label": "Change Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "xml_amendment_editor",
+      "dialog_id": "xml_amendment_editor",
+      "element_id": "save_apply_posture",
+      "element_label": "Save Apply Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "custom_data_bridge",
+      "dialog_id": "custom_data_bridge",
+      "element_id": "explicit_custom_data_route",
+      "element_label": "Explicit Custom Data Route",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+        "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "custom_data_bridge",
+      "dialog_id": "custom_data_bridge",
+      "element_id": "enabled_overlay_visibility",
+      "element_label": "Enabled Overlay Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+        "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "custom_data_bridge",
+      "dialog_id": "custom_data_bridge",
+      "element_id": "governed_or_stale_posture",
+      "element_label": "Governed Or Stale Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+        "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "surface_id": "custom_data_bridge",
+      "dialog_id": "custom_data_bridge",
+      "element_id": "translator_or_amendment_handoff",
+      "element_label": "Translator Or Amendment Handoff",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+        "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "attributes_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "direct_attribute_editing",
+      "element_label": "Direct Attribute Editing",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "attributes_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "current_totals",
+      "element_label": "Current Totals",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "attributes_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "spend_or_consequence_visibility",
+      "element_label": "Spend Or Consequence Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "skills_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "searchable_skill_list",
+      "element_label": "Searchable Skill List",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "skills_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "rating_state",
+      "element_label": "Rating State",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "skills_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "category_grouping",
+      "element_label": "Category Grouping",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "skills_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "direct_edit_posture",
+      "element_label": "Direct Edit Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "qualities_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "add_remove_flow",
+      "element_label": "Add Remove Flow",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "qualities_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "active_quality_list",
+      "element_label": "Active Quality List",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "qualities_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "validation_posture",
+      "element_label": "Validation Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "qualities_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "source_anchor_visibility",
+      "element_label": "Source Anchor Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "gear_and_augment_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "dense_list",
+      "element_label": "Dense List",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/25-workflow-gear-add-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "gear_and_augment_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "affordability_or_legality_posture",
+      "element_label": "Affordability Or Legality Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/25-workflow-gear-add-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "gear_and_augment_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "equip_manage_flow",
+      "element_label": "Equip Manage Flow",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/25-workflow-gear-add-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "gear_and_augment_workspace",
+      "dialog_id": "character_workbench",
+      "element_id": "direct_compare_posture",
+      "element_label": "Direct Compare Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/25-workflow-gear-add-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+        "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "magic_matrix_vehicle_tabs",
+      "dialog_id": "character_workbench",
+      "element_id": "ruleset_specific_dense_work_surface",
+      "element_label": "Ruleset Specific Dense Work Surface",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Ruleset-specific tabs still deliver dense direct state editing for magic, matrix, vehicles, and specialist lanes.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/32-workflow-adept-power-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/33-workflow-complex-form-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "surface_id": "magic_matrix_vehicle_tabs",
+      "dialog_id": "character_workbench",
+      "element_id": "direct_state_editing",
+      "element_label": "Direct State Editing",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Ruleset-specific tabs still deliver dense direct state editing for magic, matrix, vehicles, and specialist lanes.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/32-workflow-adept-power-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/33-workflow-complex-form-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+        "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "dice_roller",
+      "dialog_id": "dice_roller",
+      "element_id": "direct_dice_input",
+      "element_label": "Direct Dice Input",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "dice_roller",
+      "dialog_id": "dice_roller",
+      "element_id": "result_visibility",
+      "element_label": "Result Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "dice_roller",
+      "dialog_id": "dice_roller",
+      "element_id": "repeatable_roll_posture",
+      "element_label": "Repeatable Roll Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "initiative_utility",
+      "dialog_id": "initiative_utility",
+      "element_id": "initiative_calculation",
+      "element_label": "Initiative Calculation",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "DesktopStartupSurfaceCatalog.GmRunboard"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "initiative_utility",
+      "dialog_id": "initiative_utility",
+      "element_id": "pass_or_order_preview",
+      "element_label": "Pass Or Order Preview",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "DesktopStartupSurfaceCatalog.GmRunboard"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "initiative_utility",
+      "dialog_id": "initiative_utility",
+      "element_id": "roster_context",
+      "element_label": "Roster Context",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "DesktopStartupSurfaceCatalog.GmRunboard"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "surface_id": "table_utility_surface",
+      "dialog_id": "gm_runboard",
+      "element_id": "quick_utility_access_without_campaign_detour",
+      "element_label": "Quick Utility Access Without Campaign Detour",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Quick utility access stays adjacent to the workbench and roster context instead of moving to a campaign detour.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json"
+      ],
+      "test_refs": [
+        "AccessibilitySignoffSmokeTests"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "identity_and_licenses",
+      "dialog_id": "contacts_and_identity",
+      "element_id": "sin_posture",
+      "element_label": "Sin Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "identity_and_licenses",
+      "dialog_id": "contacts_and_identity",
+      "element_id": "license_posture",
+      "element_label": "License Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "identity_and_licenses",
+      "dialog_id": "contacts_and_identity",
+      "element_id": "identity_editability",
+      "element_label": "Identity Editability",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "contacts_dialog",
+      "dialog_id": "contacts_dialog",
+      "element_id": "contacts_list",
+      "element_label": "Contacts List",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "contacts_dialog",
+      "dialog_id": "contacts_dialog",
+      "element_id": "relationship_or_role_fields",
+      "element_label": "Relationship Or Role Fields",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "contacts_dialog",
+      "dialog_id": "contacts_dialog",
+      "element_id": "direct_add_edit_posture",
+      "element_label": "Direct Add Edit Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "lifestyles_dialog",
+      "dialog_id": "lifestyles_dialog",
+      "element_id": "lifestyle_entries",
+      "element_label": "Lifestyle Entries",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "lifestyles_dialog",
+      "dialog_id": "lifestyles_dialog",
+      "element_id": "costs_or_durations",
+      "element_label": "Costs Or Durations",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "lifestyles_dialog",
+      "dialog_id": "lifestyles_dialog",
+      "element_id": "direct_edit_posture",
+      "element_label": "Direct Edit Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "history_or_journal",
+      "dialog_id": "history_or_journal",
+      "element_id": "visible_change_history",
+      "element_label": "Visible Change History",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "history_or_journal",
+      "dialog_id": "history_or_journal",
+      "element_id": "continuity_memory",
+      "element_label": "Continuity Memory",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "surface_id": "history_or_journal",
+      "dialog_id": "history_or_journal",
+      "element_id": "direct_review_posture",
+      "element_label": "Direct Review Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "hero_lab_import",
+      "dialog_id": "hero_lab_importer",
+      "element_id": "direct_import_entry_point",
+      "element_label": "Direct Import Entry Point",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "hero_lab_import",
+      "dialog_id": "hero_lab_importer",
+      "element_id": "file_or_bundle_target",
+      "element_label": "File Or Bundle Target",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "hero_lab_import",
+      "dialog_id": "hero_lab_importer",
+      "element_id": "import_verdict_visibility",
+      "element_label": "Import Verdict Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+        "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "legacy_import_matrix",
+      "dialog_id": "legacy_import_matrix",
+      "element_id": "explicit_chummer4_oracle_posture",
+      "element_label": "Explicit Chummer4 Oracle Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "legacy_import_matrix",
+      "dialog_id": "legacy_import_matrix",
+      "element_id": "explicit_chummer5a_oracle_posture",
+      "element_label": "Explicit Chummer5A Oracle Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "legacy_import_matrix",
+      "dialog_id": "legacy_import_matrix",
+      "element_id": "explicit_adjacent_sr6_oracle_posture",
+      "element_label": "Explicit Adjacent Sr6 Oracle Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "migration_confidence_review",
+      "dialog_id": "migration_confidence_review",
+      "element_id": "bounded_loss_visibility",
+      "element_label": "Bounded Loss Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "migration_confidence_review",
+      "dialog_id": "migration_confidence_review",
+      "element_id": "manual_review_visibility",
+      "element_label": "Manual Review Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "surface_id": "migration_confidence_review",
+      "dialog_id": "migration_confidence_review",
+      "element_id": "provenance_visibility",
+      "element_label": "Provenance Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "sheet_viewer",
+      "dialog_id": "sheet_viewer",
+      "element_id": "visible_sheet_preview_route",
+      "element_label": "Visible Sheet Preview Route",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "sheet_viewer",
+      "dialog_id": "sheet_viewer",
+      "element_id": "chosen_sheet_posture",
+      "element_label": "Chosen Sheet Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "sheet_viewer",
+      "dialog_id": "sheet_viewer",
+      "element_id": "first_class_review_surface",
+      "element_label": "First Class Review Surface",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "print_multiple",
+      "dialog_id": "print_multiple",
+      "element_id": "multi_runner_print_posture",
+      "element_label": "Multi Runner Print Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "print_multiple",
+      "dialog_id": "print_multiple",
+      "element_id": "target_selection",
+      "element_label": "Target Selection",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "print_multiple",
+      "dialog_id": "print_multiple",
+      "element_id": "print_readiness",
+      "element_label": "Print Readiness",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "export_exchange",
+      "dialog_id": "export_exchange",
+      "element_id": "explicit_pdf_target",
+      "element_label": "Explicit Pdf Target",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "export_exchange",
+      "dialog_id": "export_exchange",
+      "element_id": "explicit_json_target",
+      "element_label": "Explicit Json Target",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "export_exchange",
+      "dialog_id": "export_exchange",
+      "element_id": "explicit_foundry_target",
+      "element_label": "Explicit Foundry Target",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "surface_id": "export_exchange",
+      "dialog_id": "export_exchange",
+      "element_id": "explicit_exchange_posture",
+      "element_label": "Explicit Exchange Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "supplement_posture",
+      "dialog_id": "rule_environment",
+      "element_id": "supplement_coverage_visibility",
+      "element_label": "Supplement Coverage Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "SR6 supplement posture remains visible and tied to the rules lane rather than hidden under generalized settings.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "supplement_posture",
+      "dialog_id": "rule_environment",
+      "element_id": "selection_posture",
+      "element_label": "Selection Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "SR6 supplement posture remains visible and tied to the rules lane rather than hidden under generalized settings.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "designer_tools_catalog",
+      "dialog_id": "rule_environment",
+      "element_id": "explicit_designer_tool_posture",
+      "element_label": "Explicit Designer Tool Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Designer tools remain discoverable through the explicit rules lane instead of polluting the default shell.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "designer_tools_catalog",
+      "dialog_id": "rule_environment",
+      "element_id": "tool_family_visibility",
+      "element_label": "Tool Family Visibility",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "Designer tools remain discoverable through the explicit rules lane instead of polluting the default shell.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "house_rule_overlay",
+      "dialog_id": "rule_environment",
+      "element_id": "visible_house_rule_posture",
+      "element_label": "Visible House Rule Posture",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "house_rule_overlay",
+      "dialog_id": "rule_environment",
+      "element_id": "overlay_counts",
+      "element_label": "Overlay Counts",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "surface_id": "house_rule_overlay",
+      "dialog_id": "rule_environment",
+      "element_id": "activation_truth",
+      "element_label": "Activation Truth",
+      "present_in_chummer5a": "yes",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "no",
+      "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "tab-create",
+      "element_label": "Create tab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Catalog-only creation tab is hidden from the default public-stable parity shell because Chummer5A parity does not depend on a separate create catalog surface.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "tab-rules",
+      "element_label": "Rules tab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Catalog-only rules tab stays off the default public-stable shell because rule-environment work is covered by explicit SR6 rule-studio routes, not a parity-shell launcher.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "build-lab",
+      "element_label": "Build Lab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Build Lab remains a Chummer6-only catalog surface and is hidden from the default public-stable shell because the parity workbench already covers the veteran build path directly.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/DENSE_WORKBENCH_RECOVERY_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "data_exporter",
+      "element_label": "Data Exporter",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Data Exporter is hidden from the default public-stable shell because export parity is already served by the classic print/export routes without introducing a Chummer6-only launcher.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    }
+  ],
+  "supportingReceipts": {
+    "uiElementParityAudit": "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "flagshipGate": "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    "visualFamiliarityGate": "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+    "workflowParityGate": "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "screenshotReviewGate": "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "veteranTaskTimeGate": "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+  },
+  "reasons": []
+}

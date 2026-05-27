@@ -1,0 +1,420 @@
+{
+  "generatedAt": "2026-05-26T21:39:16.888816Z",
+  "contractName": "chummer6-ui.chummer5a_human_parity_screenshot_matrix",
+  "status": "pass",
+  "summary": "Every design-canon Chummer5A parity screenshot token is mapped to current screenshot and runtime proof coverage.",
+  "designMatrixPath": "chummer-design/products/chummer/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml",
+  "screenshotDirectory": "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots",
+  "rowCount": 25,
+  "rows": [
+    {
+      "family_id": "translator_xml_bridge",
+      "screenshot_token": "translator_route_with_live_language_inventory",
+      "status": "pass",
+      "reason": "Translator dialog screenshot shows the live language inventory and governed posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "screenshot_token": "translator_route_with_selected_language_or_overlay_state",
+      "status": "pass",
+      "reason": "Translator screenshot and runtime proof keep overlay state visible on the route.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "screenshot_token": "xml_amendment_route_with_editable_target",
+      "status": "pass",
+      "reason": "XML editor screenshot and dialog proof show editable target posture directly.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "translator_xml_bridge",
+      "screenshot_token": "custom_data_bridge_with_enabled_overlay_posture",
+      "status": "pass",
+      "reason": "Custom data bridge posture is carried by the XML/translator lane and its runtime receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "screenshot_token": "new_character_attributes_workspace",
+      "status": "pass",
+      "reason": "Creation and dense workspace screenshots prove attribute-first workbench continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Character_creation_preserves_familiar_dense_builder_rhythm"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "screenshot_token": "live_career_skills_workspace",
+      "status": "pass",
+      "reason": "Loaded-runner skills screenshots show direct career editing posture.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "screenshot_token": "qualities_management_surface",
+      "status": "pass",
+      "reason": "Qualities screenshot pair proves dense list plus add-dialog continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/23-workflow-quality-add-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "screenshot_token": "gear_or_augment_dense_management_surface",
+      "status": "pass",
+      "reason": "Gear and augment screenshots preserve dense management posture across inventory and cyberware lanes.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues"
+      ]
+    },
+    {
+      "family_id": "dense_builder_and_career",
+      "screenshot_token": "one_ruleset_specific_specialist_tab",
+      "status": "pass",
+      "reason": "Magic, matrix, and vehicles screenshots cover the specialist-tab requirement.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "screenshot_token": "dice_roller_with_result_state",
+      "status": "pass",
+      "reason": "Dice route remains first-class and its result-state behavior is grounded in the generated-dialog/runtime utility proof stack.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json"
+      ],
+      "test_refs": [
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "screenshot_token": "initiative_utility_with_roster_context",
+      "status": "pass",
+      "reason": "Initiative utility stays attached to roster context through the GM runboard route receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M101_AVALONIA_PRIMARY_ROUTE_PROOF.generated.json"
+      ],
+      "test_refs": [
+        "AccessibilitySignoffSmokeTests"
+      ]
+    },
+    {
+      "family_id": "dice_initiative_and_table_utilities",
+      "screenshot_token": "quick_utility_entry_point_from_flagship_desktop_shell",
+      "status": "pass",
+      "reason": "The flagship shell keeps classic utility entry points on the visible menu path.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json"
+      ],
+      "test_refs": [
+        "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "screenshot_token": "identities_and_licenses_route",
+      "status": "pass",
+      "reason": "Identity posture stays in the same social-information lane as the contact workflow.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "screenshot_token": "contacts_dialog",
+      "status": "pass",
+      "reason": "Contacts are directly reviewable on the captured section surface.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "screenshot_token": "lifestyles_dialog",
+      "status": "pass",
+      "reason": "Lifestyle continuity is carried by the captured diary/calendar lane and its route proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "identity_contacts_lifestyles_history",
+      "screenshot_token": "history_or_journal_continuity_route",
+      "status": "pass",
+      "reason": "Journal continuity remains visible through diary and calendar captures.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "screenshot_token": "hero_lab_import_route",
+      "status": "pass",
+      "reason": "Hero Lab import retains direct dialog proof and import entry-point continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "screenshot_token": "legacy_import_oracles_matrix",
+      "status": "pass",
+      "reason": "Legacy import review stays grounded in the import dialog and route-local receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "legacy_and_adjacent_import_oracles",
+      "screenshot_token": "migration_confidence_review_with_bounded_loss_or_provenance",
+      "status": "pass",
+      "reason": "Migration confidence is bounded by import review plus working file-lane continuity.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "screenshot_token": "sheet_viewer",
+      "status": "pass",
+      "reason": "Sheet viewer parity is grounded in the same print/export route-local proof even though the screenshot is menu-focused.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "screenshot_token": "multi_runner_print_route",
+      "status": "pass",
+      "reason": "Multi-runner print stays in the classic file-lane and dialog parity receipts.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sheet_export_print_viewer_exchange",
+      "screenshot_token": "export_exchange_route_with_multiple_targets",
+      "status": "pass",
+      "reason": "Export and exchange remain explicit file targets with deterministic route-local proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "screenshot_token": "supplement_posture_visible",
+      "status": "pass",
+      "reason": "Supplement posture is visible on the rules lane and backed by rule-environment proof.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "screenshot_token": "designer_tools_catalog_visible",
+      "status": "pass",
+      "reason": "Designer tools remain explicit to the rules lane rather than leaking into the default shell.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    },
+    {
+      "family_id": "sr6_supplements_designers_house_rules",
+      "screenshot_token": "house_rule_overlay_posture_visible",
+      "status": "pass",
+      "reason": "House-rule posture remains visible with counts and activation truth on the rules route.",
+      "screenshot_refs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/34-workflow-validate-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/35-workflow-rules-section-light.png"
+      ],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+      ]
+    }
+  ],
+  "reasons": []
+}

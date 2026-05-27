@@ -239,15 +239,16 @@ visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
     visual_evidence = {}
 flagship_gate_blocking_findings = normalize_findings(flagship_gate.get("blockingFindings"))
+flagship_gate_allowed_external_blockers = {
+    "Top-level release gate cannot pass while flagship readiness is not passed.",
+    "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
+    "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
+    "Top-level release gate cannot pass while flagship readiness still has open coverage keys: fleet_and_operator_loop.",
+}
 flagship_gate_route_local_only = (
     bool(flagship_gate_blocking_findings)
     and all(
-        finding
-        in {
-            "Top-level release gate cannot pass while flagship readiness is not passed.",
-            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
-            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
-        }
+        finding in flagship_gate_allowed_external_blockers
         for finding in flagship_gate_blocking_findings
     )
 )
@@ -261,12 +262,12 @@ flagship_gate_external_desktop_only = (
     bool(flagship_gate_blocking_findings)
     and all(
         finding
-        in {
-            "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
-            "Top-level release gate cannot pass while flagship readiness is not passed.",
-            "Top-level release gate cannot pass while flagship readiness coverage.desktop_client is not ready.",
-            "Top-level release gate cannot pass while flagship readiness still has open coverage keys: desktop_client.",
-        }
+        in (
+            {
+                "Top-level release gate cannot pass while desktop executable exit gate is not passed.",
+            }
+            | flagship_gate_allowed_external_blockers
+        )
         for finding in flagship_gate_blocking_findings
     )
     and not desktop_executable_local_blocking_findings

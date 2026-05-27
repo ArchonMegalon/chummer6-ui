@@ -316,6 +316,15 @@ PY
   fi
 fi
 
+trusted_worktree_roots=""
+if git -C "$repo_root" rev-parse --git-common-dir >/dev/null 2>&1; then
+  trusted_worktree_roots="$(
+    git -C "$repo_root" worktree list --porcelain 2>/dev/null \
+      | awk '/^worktree /{sub(/^worktree /, ""); print}'
+  )"
+fi
+
+CHUMMER_DESKTOP_EXECUTABLE_TRUSTED_WORKTREE_ROOTS="$trusted_worktree_roots" \
 python3 - <<'PY' "$receipt_path" "$release_channel_path" "$linux_avalonia_gate_path" "$linux_blazor_gate_path" "$windows_gate_path_default" "$flagship_gate_path" "$visual_familiarity_gate_path" "$workflow_execution_gate_path" "$repo_root" "$hub_registry_root" "$release_gate_lock_blocked" "$release_gate_lock_stale_removed" "$release_gate_lock_stale_reason"
 from __future__ import annotations
 
@@ -3386,6 +3395,11 @@ release_gate_lock_stale_removed = str(sys.argv[12]).strip() == "1" if len(sys.ar
 release_gate_lock_stale_reason = str(sys.argv[13]).strip() if len(sys.argv) > 13 else ""
 hub_registry_root = Path(hub_registry_root_raw) if hub_registry_root_raw else None
 trusted_roots = [repo_root]
+trusted_worktree_roots_raw = os.environ.get("CHUMMER_DESKTOP_EXECUTABLE_TRUSTED_WORKTREE_ROOTS", "")
+for raw_root in trusted_worktree_roots_raw.splitlines():
+    raw_root = raw_root.strip()
+    if raw_root:
+        trusted_roots.append(Path(raw_root))
 hub_registry_release_channel_path = None
 hub_registry_root_trusted = False
 if hub_registry_root is not None:

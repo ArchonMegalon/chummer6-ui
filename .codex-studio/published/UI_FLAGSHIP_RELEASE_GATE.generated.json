@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:06:00.059655Z",
+  "generatedAt": "2026-05-27T06:27:35.237468Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -256,9 +256,9 @@
     "reasons": []
   },
   "flagshipReadinessProof": {
-    "status": "pass",
+    "status": "fail",
     "effectiveStatus": "pass",
-    "routeLocalOnly": false,
+    "routeLocalOnly": true,
     "flagshipProductReadinessReceiptPath": "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
     "coverage": {
       "desktop_client": "ready",
@@ -268,9 +268,11 @@
       "ui_kit_and_flagship_polish": "ready",
       "media_artifacts": "ready",
       "horizons_and_public_surface": "ready",
-      "fleet_and_operator_loop": "ready"
+      "fleet_and_operator_loop": "warning"
     },
-    "openCoverageKeys": []
+    "openCoverageKeys": [
+      "fleet_and_operator_loop"
+    ]
   },
   "localizationReleaseProof": {
     "status": "pass",

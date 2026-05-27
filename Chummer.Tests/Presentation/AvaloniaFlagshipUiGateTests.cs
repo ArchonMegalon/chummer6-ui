@@ -1445,6 +1445,78 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default()
+    {
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        string? priorSampleOverride = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", null);
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+
+                Assert.IsFalse(
+                    harness.FindControlOrDefault<Button>("LoadDemoRunnerButton")?.IsVisible ?? false,
+                    "Public stable shell must hide the default demo launcher.");
+                Assert.IsFalse(
+                    harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible ?? false,
+                    "Public stable shell must not surface the quick-start demo band.");
+
+                string[] visibleTextSamples = harness.Window.GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .Where(static control => control.IsVisible)
+                    .Select(control => control.Text ?? string.Empty)
+                    .Where(static value => !string.IsNullOrWhiteSpace(value))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+                CollectionAssert.DoesNotContain(visibleTextSamples, "Open Demo");
+                CollectionAssert.DoesNotContain(visibleTextSamples, "Demo");
+                Assert.IsFalse(
+                    visibleTextSamples.Any(text =>
+                        text.Contains("Codex", StringComparison.OrdinalIgnoreCase)
+                        || text.Contains("provider", StringComparison.OrdinalIgnoreCase)
+                        || text.Contains("Living World", StringComparison.OrdinalIgnoreCase)
+                        || text.Contains("Signal Deck", StringComparison.OrdinalIgnoreCase)
+                        || text.Contains("Black Ledger", StringComparison.OrdinalIgnoreCase)),
+                    "Public stable shell must stay free of developer, provider, or public-web noise.");
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleOverride);
+        }
+    }
+
+    [TestMethod]
+    public void Public_stable_shell_allows_internal_sample_override_for_operator_and_test_access()
+    {
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        string? priorSampleOverride = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", "1");
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+                Assert.IsTrue(
+                    harness.FindControl<Button>("LoadDemoRunnerButton").IsVisible,
+                    "Public stable shell may expose the sample route only behind the explicit operator/test override.");
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleOverride);
+        }
+    }
+
+    [TestMethod]
     public void Standalone_toolstrip_buttons_raise_expected_events()
     {
         WithStandaloneControl<ToolStripControl>(control =>

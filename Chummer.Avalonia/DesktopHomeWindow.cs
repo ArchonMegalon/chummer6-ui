@@ -700,7 +700,7 @@ internal sealed class DesktopHomeWindow : Window
         string continuity = _recentWorkspaces.Count == 0
             ? "No recent character yet."
             : $"Lead: {FormatFlagshipWorkspace(_recentWorkspaces[0])}.";
-        string watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
+        string? watchout = _buildExplainProjection.Watchouts.FirstOrDefault();
         return string.IsNullOrWhiteSpace(watchout)
             ? continuity
             : $"{continuity}\nHeads-up: {watchout}";

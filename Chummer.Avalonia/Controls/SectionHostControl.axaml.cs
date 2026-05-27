@@ -440,7 +440,7 @@ public partial class SectionHostControl : UserControl
     private static bool TryBuildAttributeParityRows(string? sectionId, string previewJson, out AttributeParityRowState[] rows)
     {
         rows = [];
-        string normalizedSectionId = NormalizeSectionId(sectionId);
+        string? normalizedSectionId = NormalizeSectionId(sectionId);
         if (!string.Equals(normalizedSectionId, "attributes", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(normalizedSectionId, "attributedetails", StringComparison.OrdinalIgnoreCase))
         {

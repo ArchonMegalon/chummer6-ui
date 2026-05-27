@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-05-26T20:24:19Z",
+  "generatedAt": "2026-05-27T06:46:49Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps desktop restore continuation, stale-state visibility, and conflict-safe workspace choices visible on the Avalonia primary route.",
@@ -169,9 +169,9 @@
         "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "c8027d8d",
-        "subject": "presentation: close flagship parity and proof gates",
-        "sha": "c8027d8df7ef70c9a04a3a6143cf7eec1f608caa",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "Chummer.Avalonia/DesktopHomeWindow.cs"
         ],
@@ -211,9 +211,9 @@
         "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "feb46fab",
-        "subject": "presentation: remove desktop explanatory chrome",
-        "sha": "feb46fab5984723ec4f4e102e75082df2b8fb0e0",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
         ],
@@ -225,9 +225,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "0b924a9e",
-        "subject": "presentation: require install linking at startup",
-        "sha": "0b924a9e2f4ab04abfc711c1d8bbd32d2d59aa85",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -239,9 +239,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "0b924a9e",
-        "subject": "presentation: require install linking at startup",
-        "sha": "0b924a9e2f4ab04abfc711c1d8bbd32d2d59aa85",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -253,9 +253,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "c8027d8d",
-        "subject": "presentation: close flagship parity and proof gates",
-        "sha": "c8027d8df7ef70c9a04a3a6143cf7eec1f608caa",
+        "commit": "a9a4e329",
+        "subject": "Harden vapor milestone gates and explain drawer coverage",
+        "sha": "a9a4e329b6b36c535c4a624bafe5756b5dd6fd6a",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -281,9 +281,9 @@
         "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "a6a90fa1",
-        "subject": "Audit: sync campaign OS canon and fleet oversight",
-        "sha": "a6a90fa165d17917a7c1a25b0fcfe0a7ebcc20f1",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
         ],
@@ -295,9 +295,9 @@
         "path": "scripts/ai/verify.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "10558810",
-        "subject": "ui: widen flagship proof and black ledger slice",
-        "sha": "10558810ecd1c6deeff2d4a35e19bb8f45944aa7",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           "scripts/ai/verify.sh"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "a6a90fa1",
-        "subject": "Audit: sync campaign OS canon and fleet oversight",
-        "sha": "a6a90fa165d17917a7c1a25b0fcfe0a7ebcc20f1",
+        "commit": "d261e6fe",
+        "subject": "Land full vapor closeout and release proof refresh",
+        "sha": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -391,43 +391,10 @@
         "scripts/ai/verify.sh",
         ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
       ],
-      "has_relevant_changes": true,
-      "changes": [
-        {
-          "status": " M",
-          "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Avalonia/DesktopHomeWindow.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
-        },
-        {
-          "status": " M",
-          "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
-        },
-        {
-          "status": " M",
-          "path": "scripts/ai/verify.sh"
-        }
-      ]
+      "has_relevant_changes": false,
+      "changes": []
     },
-    "headCommit": "26ef2727ae67ae438e5106fcff4dd9c359a37f06",
+    "headCommit": "d261e6fedd66e21f9df5f8bc849f3d36c501d078",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",

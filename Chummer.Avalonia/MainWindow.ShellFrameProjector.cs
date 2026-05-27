@@ -7,12 +7,15 @@ using Chummer.Presentation.Overview;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
 using Chummer.Presentation.UiKit;
+using System.Reflection;
 using System.Text.Json;
 
 namespace Chummer.Avalonia;
 
 internal static class MainWindowShellFrameProjector
 {
+    private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
+    private const string SampleControlsEnvironmentVariable = "CHUMMER_DESKTOP_ENABLE_SAMPLES";
     // Conflict choices: save local work, review Campaign Workspace, open workspace support
     private const string RestoreConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
     private const string RestoreConflictChoiceFallback = "Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work.";
@@ -78,6 +81,7 @@ internal static class MainWindowShellFrameProjector
             || state.ActiveBuildLab is not null
             || state.ActiveBrowseWorkspace is not null
             || state.ActiveNpcPersonaStudio is not null;
+        bool showSampleControls = ShouldShowSampleControls();
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
@@ -97,7 +101,7 @@ internal static class MainWindowShellFrameProjector
                     ShowGmPrep: true,
                     ShowRosterMovement: true,
                     ShowCampaignWorkspace: false,
-                    ShowLoadDemoRunner: !hasOpenWorkspace),
+                    ShowLoadDemoRunner: !hasOpenWorkspace && showSampleControls),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
@@ -107,7 +111,7 @@ internal static class MainWindowShellFrameProjector
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
                     BuildWorkspaceStripText(workspaceContext, language),
-                    ShowQuickStartAction: !hasOpenWorkspace),
+                    ShowQuickStartAction: !hasOpenWorkspace && showSampleControls),
                 SummaryHeader: new SummaryHeaderState(
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
@@ -170,6 +174,52 @@ internal static class MainWindowShellFrameProjector
                 WorkflowSurfacesHeading: RulesetUiDirectiveCatalog.BuildWorkflowSurfacesHeading(shellSurface.ActiveRulesetId),
                 WorkflowSurfaces: ProjectWorkflowSurfaces(shellSurface)),
             WorkspaceActionsById: workspaceActionsById);
+    }
+
+    private static bool ShouldShowSampleControls()
+    {
+        if (IsEnabledEnvironmentFlag(SampleControlsEnvironmentVariable))
+        {
+            return true;
+        }
+
+        return !string.Equals(ResolveReleaseChannel(), "public_stable", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string ResolveReleaseChannel()
+    {
+        string? overrideChannel = Environment.GetEnvironmentVariable(ReleaseChannelEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(overrideChannel))
+        {
+            return overrideChannel.Trim();
+        }
+
+        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        return assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => string.Equals(attribute.Key, "ChummerDesktopReleaseChannel", StringComparison.Ordinal))?
+            .Value?
+            .Trim()
+            ?? "local";
+    }
+
+    private static bool IsEnabledEnvironmentFlag(string variableName)
+    {
+        string? raw = Environment.GetEnvironmentVariable(variableName);
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        string normalized = raw.Trim();
+        return normalized switch
+        {
+            "1" => true,
+            _ when string.Equals(normalized, "true", StringComparison.OrdinalIgnoreCase) => true,
+            _ when string.Equals(normalized, "yes", StringComparison.OrdinalIgnoreCase) => true,
+            _ when string.Equals(normalized, "on", StringComparison.OrdinalIgnoreCase) => true,
+            _ => false
+        };
     }
 
     private static string BuildSectionNotice(CharacterOverviewState state, ShellSurfaceState shellSurface)

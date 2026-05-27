@@ -25,6 +25,9 @@ queue_path = Path(sys.argv[2])
 design_queue_path = Path(sys.argv[3])
 receipt_path = Path(sys.argv[4])
 repo_root = Path(sys.argv[5])
+canonical_ui_root = Path("/docker/chummercomplete/chummer-presentation")
+if not canonical_ui_root.is_dir():
+    canonical_ui_root = repo_root
 
 PACKAGE_ID = "next90-m143-ui-capture-direct-screenshot-and-runtime-proof-for-print-export-exchange-sr6"
 TITLE = "Capture direct screenshot and runtime proof for print, export, exchange, SR6 supplement, and house-rule workflows."
@@ -54,48 +57,48 @@ EXPECTED_TARGETED_TEST_COMMAND = (
     'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M143DirectOutputProofGuardTests" --no-restore'
 )
 EXPECTED_PROOF = [
-    f"{repo_root}/Chummer.Tests/Compliance/Next90M143DirectOutputProofGuardTests.cs",
-    f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj",
-    f"{repo_root}/scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh",
-    f"{repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
-    f"{repo_root}/scripts/ai/milestones/section-host-ruleset-parity-check.sh",
-    f"{repo_root}/scripts/ai/milestones/generated-dialog-element-parity-check.sh",
-    f"{repo_root}/scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh",
-    f"{repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
-    f"{repo_root}/scripts/ai/verify.sh",
-    f"{repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    f"{repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-    f"{repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-    f"{repo_root}/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-    f"{repo_root}/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-    f"{repo_root}/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-    f"{repo_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json",
+    f"{canonical_ui_root}/Chummer.Tests/Compliance/Next90M143DirectOutputProofGuardTests.cs",
+    f"{canonical_ui_root}/Chummer.Tests/Chummer.Tests.csproj",
+    f"{canonical_ui_root}/scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh",
+    f"{canonical_ui_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh",
+    f"{canonical_ui_root}/scripts/ai/milestones/section-host-ruleset-parity-check.sh",
+    f"{canonical_ui_root}/scripts/ai/milestones/generated-dialog-element-parity-check.sh",
+    f"{canonical_ui_root}/scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh",
+    f"{canonical_ui_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh",
+    f"{canonical_ui_root}/scripts/ai/verify.sh",
+    f"{canonical_ui_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+    f"{canonical_ui_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json",
 ]
 EXPECTED_REGISTRY_EVIDENCE = [
     (
-        f"{repo_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh, "
-        f"{repo_root}/scripts/ai/milestones/section-host-ruleset-parity-check.sh, "
-        f"{repo_root}/scripts/ai/milestones/generated-dialog-element-parity-check.sh, and "
-        f"{repo_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh keep print/export/exchange plus SR6 supplement/house-rule proof "
+        f"{canonical_ui_root}/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh, "
+        f"{canonical_ui_root}/scripts/ai/milestones/section-host-ruleset-parity-check.sh, "
+        f"{canonical_ui_root}/scripts/ai/milestones/generated-dialog-element-parity-check.sh, and "
+        f"{canonical_ui_root}/scripts/ai/milestones/b14-flagship-ui-release-gate.sh keep print/export/exchange plus SR6 supplement/house-rule proof "
         "bound to direct screenshot-backed and runtime-backed route receipts instead of family prose."
     ),
     (
-        f"{repo_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json, "
-        f"{repo_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json, "
-        f"{repo_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json, "
-        f"{repo_root}/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json, "
-        f"{repo_root}/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json, "
-        f"{repo_root}/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json, and "
-        f"{repo_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json keep the milestone-143 parity families aligned to route-local output proof."
+        f"{canonical_ui_root}/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json, "
+        f"{canonical_ui_root}/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json, "
+        f"{canonical_ui_root}/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json, "
+        f"{canonical_ui_root}/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json, "
+        f"{canonical_ui_root}/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json, "
+        f"{canonical_ui_root}/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json, and "
+        f"{canonical_ui_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json keep the milestone-143 parity families aligned to route-local output proof."
     ),
     (
-        f"{repo_root}/Chummer.Tests/Compliance/Next90M143DirectOutputProofGuardTests.cs, "
-        f"{repo_root}/Chummer.Tests/Chummer.Tests.csproj, "
-        f"{repo_root}/scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh, and "
-        f"{repo_root}/scripts/ai/verify.sh fail closed when canonical registry rows, queue mirrors, route-local receipts, or verify wiring drift from the completed package contract."
+        f"{canonical_ui_root}/Chummer.Tests/Compliance/Next90M143DirectOutputProofGuardTests.cs, "
+        f"{canonical_ui_root}/Chummer.Tests/Chummer.Tests.csproj, "
+        f"{canonical_ui_root}/scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh, and "
+        f"{canonical_ui_root}/scripts/ai/verify.sh fail closed when canonical registry rows, queue mirrors, route-local receipts, or verify wiring drift from the completed package contract."
     ),
     (
-        f"{repo_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json records the closed-package receipt for "
+        f"{canonical_ui_root}/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json records the closed-package receipt for "
         f"`{PACKAGE_ID}`."
     ),
 ]
@@ -370,14 +373,14 @@ for row_id in EXPECTED_PARITY_ROW_IDS:
     evidence_list = row.get("evidence") if isinstance(row.get("evidence"), list) else []
     if row_id == "family:sheet_export_print_viewer_and_exchange":
         required_evidence = [
-            str(repo_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"),
-            str(repo_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"),
-            str(repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+            str(canonical_ui_root / ".codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"),
+            str(canonical_ui_root / ".codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"),
+            str(canonical_ui_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
         ]
     else:
         required_evidence = [
-            str(repo_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
-            str(repo_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"),
+            str(canonical_ui_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
+            str(canonical_ui_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"),
         ]
     parity_checks[f"{key_prefix}_evidence_present"] = all(item in evidence_list for item in required_evidence)
 payload["evidence"]["parityAuditChecks"] = parity_checks

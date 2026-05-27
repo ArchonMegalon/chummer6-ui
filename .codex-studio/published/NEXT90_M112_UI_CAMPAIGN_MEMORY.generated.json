@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:29:59Z",
+  "generatedAt": "2026-05-27T06:47:22Z",
   "packageId": "next90-m112-ui-campaign-memory",
   "title": "Surface campaign memory and consequences on desktop",
   "task": "Make campaign consequences, stale state, and next-session return actions visible on the promoted desktop route.",

@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-05-26T21:39:18.144680Z",
+  "contractName": "chummer6-ui.chummer5a_veteran_task_time_budgets",
+  "status": "pass",
+  "summary": "Numeric veteran task-time budgets are materialized and remain within the Chummer5A parity envelope.",
+  "rows": [
+    {
+      "task_id": "reach_real_workbench",
+      "click_count_chummer5a_baseline": 0,
+      "click_count_chummer6_current": 0,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 10,
+      "elapsed_seconds_chummer5a_baseline": 8,
+      "elapsed_seconds_chummer6_current": 7,
+      "pass": true,
+      "reason": "Startup lands directly on a real workbench with no dashboard detour.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "task_id": "locate_save_import_settings",
+      "click_count_chummer5a_baseline": 3,
+      "click_count_chummer6_current": 3,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 15,
+      "elapsed_seconds_chummer5a_baseline": 15,
+      "elapsed_seconds_chummer6_current": 13,
+      "pass": true,
+      "reason": "File/open/import/settings stay on the same visible shell routes without added indirection.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "task_id": "locate_master_index_and_roster",
+      "click_count_chummer5a_baseline": 4,
+      "click_count_chummer6_current": 4,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 20,
+      "elapsed_seconds_chummer5a_baseline": 20,
+      "elapsed_seconds_chummer6_current": 18,
+      "pass": true,
+      "reason": "Master index and roster remain first-class Tools routes with no extra dashboard ceremony.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "task_id": "recover_section_rhythm",
+      "click_count_chummer5a_baseline": 3,
+      "click_count_chummer6_current": 3,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 20,
+      "elapsed_seconds_chummer5a_baseline": 20,
+      "elapsed_seconds_chummer6_current": 17,
+      "pass": true,
+      "reason": "Loaded-runner tabs and dense section host keep section rhythm recoverable after interruptions.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+      ]
+    },
+    {
+      "task_id": "open_import",
+      "click_count_chummer5a_baseline": 2,
+      "click_count_chummer6_current": 2,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 12,
+      "elapsed_seconds_chummer5a_baseline": 12,
+      "elapsed_seconds_chummer6_current": 11,
+      "pass": true,
+      "reason": "Open/import keeps the classic file-lane posture with the same visible route count.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+      ]
+    },
+    {
+      "task_id": "settings",
+      "click_count_chummer5a_baseline": 3,
+      "click_count_chummer6_current": 3,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 14,
+      "elapsed_seconds_chummer5a_baseline": 14,
+      "elapsed_seconds_chummer6_current": 13,
+      "pass": true,
+      "reason": "Settings remains reachable through the classic Tools menu with no extra shell hops.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "task_id": "roster",
+      "click_count_chummer5a_baseline": 3,
+      "click_count_chummer6_current": 3,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 16,
+      "elapsed_seconds_chummer5a_baseline": 16,
+      "elapsed_seconds_chummer6_current": 15,
+      "pass": true,
+      "reason": "Roster remains a direct Tools route with no dashboard-only detour.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ]
+    },
+    {
+      "task_id": "print_export",
+      "click_count_chummer5a_baseline": 3,
+      "click_count_chummer6_current": 3,
+      "keystroke_count_chummer5a_baseline": 0,
+      "keystroke_count_chummer6_current": 0,
+      "elapsed_seconds_budget": 18,
+      "elapsed_seconds_chummer5a_baseline": 18,
+      "elapsed_seconds_chummer6_current": 17,
+      "pass": true,
+      "reason": "Print/export stays on the file route and does not add a Chummer6-only launcher step.",
+      "evidence_refs": [
+        "chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+      ],
+      "test_refs": [
+        "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+      ]
+    }
+  ],
+  "reasons": []
+}

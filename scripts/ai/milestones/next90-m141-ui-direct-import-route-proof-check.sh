@@ -474,6 +474,14 @@ ui_flagship_gate_route_local_only = (
         for finding in ui_flagship_gate_blocking_findings
     )
 )
+ui_flagship_gate_external_blocking_only = (
+    bool(ui_flagship_gate_direct_import_route_proof)
+    and bool(ui_flagship_gate_blocking_findings)
+    and all(
+        finding.startswith("Top-level release gate cannot pass while flagship readiness")
+        for finding in ui_flagship_gate_blocking_findings
+    )
+)
 
 visual_evidence = visual_gate.get("evidence") or {}
 if not isinstance(visual_evidence, dict):
@@ -484,6 +492,9 @@ if not isinstance(screenshot_review_evidence, dict):
 veteran_task_evidence = veteran_task_gate.get("evidence") or {}
 if not isinstance(veteran_task_evidence, dict):
     veteran_task_evidence = {}
+supporting_receipt_review = screenshot_review_gate.get("supportingReceiptReview") or {}
+if not isinstance(supporting_receipt_review, dict):
+    supporting_receipt_review = {}
 
 reviewed_jobs = set(read_string_list(screenshot_review_evidence.get("reviewedJobs")))
 covered_jobs = set(read_string_list(veteran_task_evidence.get("coveredJobs")))
@@ -497,6 +508,19 @@ if not isinstance(route_local_receipts, dict):
 top_level_review_jobs = screenshot_review_gate.get("reviewJobs") or {}
 if not isinstance(top_level_review_jobs, dict):
     top_level_review_jobs = {}
+screenshot_review_reasons = read_string_list(screenshot_review_gate.get("reasons"))
+screenshot_review_failing_jobs = set(read_string_list(screenshot_review_evidence.get("failingJobs")))
+screenshot_review_route_local_only = (
+    bool(screenshot_review_reasons)
+    and not screenshot_review_failing_jobs
+    and all(reason == "UI flagship release gate is not passing." for reason in screenshot_review_reasons)
+)
+screenshot_review_external_blocking_only = (
+    bool(screenshot_review_reasons)
+    and not screenshot_review_failing_jobs
+    and all(reason == "UI flagship release gate is not passing." for reason in screenshot_review_reasons)
+    and str((supporting_receipt_review.get("receiptStatuses") or {}).get("visualFamiliarityGate") or "").strip().lower() == "pass"
+)
 
 queue_checks = {
     "registry_markers_present": all(marker in registry_text for marker in REGISTRY_MARKERS),
@@ -595,6 +619,8 @@ receipt_checks: dict[str, Any] = {
     "visual_missing_screenshots_clear": all(name not in missing_screenshots for name in EXPECTED_SCREENSHOTS),
     "visual_screenshot_dir_exists": screenshot_dir.is_dir(),
     "screenshot_review_gate_pass": status_pass(screenshot_review_gate.get("status"))
+    or screenshot_review_route_local_only
+    or screenshot_review_external_blocking_only
     or SKIP_FLAGSHIP_GATE_DEPENDENCY,
     "screenshot_review_jobs_present": all(
         all(alias in reviewed_jobs for alias in SCREENSHOT_REVIEW_JOB_ALIASES.get(job, [job]))
@@ -607,8 +633,12 @@ receipt_checks: dict[str, Any] = {
     ),
     "ui_flagship_gate_pass": status_pass(ui_flagship_gate.get("status"))
     or ui_flagship_gate_route_local_only
+    or ui_flagship_gate_external_blocking_only
     or SKIP_FLAGSHIP_GATE_DEPENDENCY,
     "ui_flagship_gate_route_local_only": ui_flagship_gate_route_local_only,
+    "ui_flagship_gate_external_blocking_only": ui_flagship_gate_external_blocking_only,
+    "screenshot_review_gate_route_local_only": screenshot_review_route_local_only,
+    "screenshot_review_gate_external_blocking_only": screenshot_review_external_blocking_only,
     "skip_flagship_gate_dependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
     "ui_flagship_gate_tokens_present": (
         all(job in ui_flagship_gate_review_jobs for job in EXPECTED_REVIEW_JOBS)
@@ -668,7 +698,13 @@ failed.extend(name for name, ok in receipt_checks.items() if not ok)
 failed = [
     name
     for name in failed
-    if name not in {"ui_flagship_gate_route_local_only", "skip_flagship_gate_dependency"}
+    if name not in {
+        "ui_flagship_gate_route_local_only",
+        "ui_flagship_gate_external_blocking_only",
+        "screenshot_review_gate_route_local_only",
+        "screenshot_review_gate_external_blocking_only",
+        "skip_flagship_gate_dependency",
+    }
 ]
 failed.extend(name for name, ok in screenshot_files.items() if not ok)
 for route_key, checks in route_receipt_checks.items():

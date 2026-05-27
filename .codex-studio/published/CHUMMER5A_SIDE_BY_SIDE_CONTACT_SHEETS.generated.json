@@ -1,0 +1,224 @@
+{
+  "generatedAt": "2026-05-26T21:39:18.144182Z",
+  "contractName": "chummer6-ui.chummer5a_side_by_side_contact_sheets",
+  "status": "pass",
+  "summary": "Side-by-side review sheets pair the canonical Chummer5A oracle anchors with current Chummer6 screenshots for every required surface family.",
+  "contactSheetDirectory": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets",
+  "rows": [
+    {
+      "sheetId": "initial-shell",
+      "title": "Initial Shell",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/initial-shell.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "menu-toolstrip",
+      "title": "Menu And Toolstrip",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/menu-toolstrip.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "settings",
+      "title": "Settings",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/settings.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "sourcebooks-master-index",
+      "title": "Sourcebooks And Master Index",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/sourcebooks-master-index.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "roster",
+      "title": "Roster",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/roster.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "character-creation",
+      "title": "Character Creation",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/character-creation.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/36-workflow-new-character-dialog-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "career-attributes-skills-qualities",
+      "title": "Career Attributes Skills Qualities",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/career-attributes-skills-qualities.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "gear-armor-weapons",
+      "title": "Gear Armor Weapons",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/gear-armor-weapons.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/24-workflow-gear-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/26-workflow-weapons-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/28-workflow-armor-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "vehicles-drones",
+      "title": "Vehicles And Drones",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/vehicles-drones.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "cyberware-bioware",
+      "title": "Cyberware And Bioware",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/cyberware-bioware.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/30-workflow-cyberware-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "magic-matrix",
+      "title": "Magic And Matrix",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/magic-matrix.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "contacts-identities-lifestyles",
+      "title": "Contacts Identities Lifestyles",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/contacts-identities-lifestyles.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "notes-history-diary",
+      "title": "Notes History Diary",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/notes-history-diary.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/Utility Forms/CharacterRoster.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/37-workflow-calendar-section-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "dice-initiative",
+      "title": "Dice And Initiative",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/dice-initiative.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    },
+    {
+      "sheetId": "print-export-import",
+      "title": "Print Export Import Hero Lab Xml Translator",
+      "sheetPath": "chummer-presentation/.codex-studio/published/chummer5a-side-by-side-contact-sheets/print-export-import.png",
+      "legacyAnchorRefs": [
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs",
+        "/docker/chummer5a/Chummer/Forms/ChummerMainForm.Designer.cs"
+      ],
+      "currentScreenshotRefs": [
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/18-import-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/19-workflow-file-menu-loaded-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/38-translator-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/39-xml-editor-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/40-hero-lab-importer-dialog-light.png"
+      ],
+      "legacySourceMode": "oracle_anchor_sheet",
+      "status": "pass"
+    }
+  ],
+  "reasons": []
+}

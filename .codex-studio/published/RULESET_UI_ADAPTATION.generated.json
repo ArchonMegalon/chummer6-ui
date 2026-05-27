@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:21:17.272414Z",
+  "generatedAt": "2026-05-27T06:43:17.748712Z",
   "contract_name": "chummer6-ui.ruleset_ui_adaptation_frontier",
   "channelId": "public_stable",
   "status": "pass",
@@ -32,7 +32,7 @@
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
     "releaseChannelGeneratedAt": "2026-05-26T09:56:34Z",
-    "releaseChannelAgeSeconds": 37483,
+    "releaseChannelAgeSeconds": 74803,
     "releaseChannelFutureSkewSeconds": 0,
     "testExecutionAttempted": true,
     "failureCount": 0
@@ -84,7 +84,7 @@
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
     "generatedAt": "2026-05-26T09:56:34Z",
-    "ageSeconds": 37483,
+    "ageSeconds": 74803,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300

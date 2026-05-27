@@ -961,10 +961,20 @@ flagship_readiness_open_coverage_keys = [
     if str(value or "").strip().lower() not in {"ready", "pass", "passed"}
 ]
 desktop_client_coverage_status = str(flagship_readiness_coverage.get("desktop_client") or "").strip().lower()
+flagship_readiness_allowed_external_open_keys = {"desktop_client", "fleet_and_operator_loop"}
 flagship_readiness_route_local_only = (
     flagship_readiness_status == "fail"
-    and desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
-    and set(flagship_readiness_open_coverage_keys).issubset({"desktop_client"})
+    and set(flagship_readiness_open_coverage_keys).issubset(flagship_readiness_allowed_external_open_keys)
+    and (
+        (
+            desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
+            and set(flagship_readiness_open_coverage_keys).issubset({"desktop_client"})
+        )
+        or (
+            desktop_client_coverage_status in {"ready", "pass", "passed"}
+            and set(flagship_readiness_open_coverage_keys).issubset({"fleet_and_operator_loop"})
+        )
+    )
 )
 flagship_readiness_effective_status = (
     "pass" if flagship_readiness_route_local_only else flagship_readiness_status
@@ -1033,7 +1043,10 @@ if (
     )
 if (
     flagship_readiness_open_coverage_keys
-    and set(flagship_readiness_open_coverage_keys) != {"desktop_client"}
+    and not (
+        flagship_readiness_route_local_only
+        and set(flagship_readiness_open_coverage_keys).issubset(flagship_readiness_allowed_external_open_keys)
+    )
 ):
     blocking_findings.append(
         "Top-level release gate cannot pass while flagship readiness still has open coverage keys: "

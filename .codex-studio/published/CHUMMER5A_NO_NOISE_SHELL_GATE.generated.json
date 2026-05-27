@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-05-26T21:39:16.887979Z",
+  "contractName": "chummer6-ui.chummer5a_no_noise_shell_gate",
+  "channelId": "public_stable",
+  "status": "pass",
+  "summary": "Public-stable shell hides demo/sample noise by default and requires an explicit internal override before sample controls reappear.",
+  "forbiddenControls": [
+    "LoadDemoRunnerButton",
+    "QuickStartContainer"
+  ],
+  "forbiddenVisibleCopy": [
+    "Open Demo",
+    "Living World",
+    "Signal Deck",
+    "Black Ledger",
+    "provider",
+    "Codex",
+    "repo"
+  ],
+  "hiddenCatalogControls": [
+    "tab-create",
+    "tab-rules",
+    "build-lab",
+    "data_exporter"
+  ],
+  "sourceRefs": [
+    "chummer-presentation/Chummer.Avalonia/MainWindow.ShellFrameProjector.cs",
+    "chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
+    "chummer-presentation/Chummer.Avalonia/Controls/WorkspaceStripControl.axaml"
+  ],
+  "testRefs": [
+    "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default",
+    "Public_stable_shell_allows_internal_sample_override_for_operator_and_test_access"
+  ],
+  "reasons": []
+}

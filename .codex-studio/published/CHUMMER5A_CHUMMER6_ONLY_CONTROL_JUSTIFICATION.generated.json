@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-05-26T21:39:16.888045Z",
+  "contractName": "chummer6-ui.chummer5a_chummer6_only_control_justification",
+  "status": "pass",
+  "summary": "Every Chummer6-only reviewed control has a row-level reason or is hidden from the default public-stable shell.",
+  "rows": [
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "tab-create",
+      "element_label": "Create tab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Catalog-only creation tab is hidden from the default public-stable parity shell because Chummer5A parity does not depend on a separate create catalog surface.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "tab-rules",
+      "element_label": "Rules tab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Catalog-only rules tab stays off the default public-stable shell because rule-environment work is covered by explicit SR6 rule-studio routes, not a parity-shell launcher.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "build-lab",
+      "element_label": "Build Lab",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Build Lab remains a Chummer6-only catalog surface and is hidden from the default public-stable shell because the parity workbench already covers the veteran build path directly.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/DENSE_WORKBENCH_RECOVERY_GATE.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    },
+    {
+      "family_id": "catalog_only_controls",
+      "surface_id": "default_public_stable_shell",
+      "dialog_id": "shell_catalog",
+      "element_id": "data_exporter",
+      "element_label": "Data Exporter",
+      "present_in_chummer5a": "no",
+      "present_in_chummer6": "yes",
+      "visual_parity": "yes",
+      "behavioral_parity": "yes",
+      "removable_if_not_in_chummer5a": "yes",
+      "reason": "Data Exporter is hidden from the default public-stable shell because export parity is already served by the classic print/export routes without introducing a Chummer6-only launcher.",
+      "screenshot_refs": [],
+      "runtime_receipt_refs": [
+        "chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json"
+      ],
+      "test_refs": [
+        "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+      ]
+    }
+  ],
+  "reasons": []
+}

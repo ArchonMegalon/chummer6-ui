@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T20:21:17Z",
+  "generatedAt": "2026-05-27T06:43:17Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
@@ -165,6 +165,9 @@
       "veteran_task_screenshot_jobs_present": true,
       "ui_flagship_gate_pass": true,
       "ui_flagship_gate_route_local_only": false,
+      "ui_flagship_gate_external_blocking_only": false,
+      "screenshot_review_gate_route_local_only": false,
+      "screenshot_review_gate_external_blocking_only": false,
       "skip_flagship_gate_dependency": false,
       "ui_flagship_gate_tokens_present": true
     },
