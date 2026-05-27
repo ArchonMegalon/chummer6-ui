@@ -322,27 +322,27 @@
         "avalonia_import_receipt_surface": {
           "markers": [
             {
-              "line": 251,
+              "line": 252,
               "marker": "Import rule environment:",
               "present": true
             },
             {
-              "line": 255,
+              "line": 256,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 256,
+              "line": 257,
               "marker": "Import environment after:",
               "present": true
             },
             {
-              "line": 260,
+              "line": 261,
               "marker": "Import explain receipt:",
               "present": true
             },
             {
-              "line": 266,
+              "line": 267,
               "marker": "Support reuse:",
               "present": true
             }
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-05-27T06:46:48Z",
+  "generatedAt": "2026-05-27T20:05:50Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

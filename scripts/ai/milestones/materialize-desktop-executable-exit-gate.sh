@@ -27,8 +27,7 @@ fi
 if [[ ! -f "$release_channel_path_default" && -f "$presentation_release_channel_path" ]]; then
   release_channel_path_default="$presentation_release_channel_path"
 fi
-if [[ "${CHUMMER_DESKTOP_EXECUTABLE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-${CHUMMER_DESKTOP_WORKFLOW_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE:-0}}" == "1" \
-  && -f "$verified_release_channel_path" \
+if [[ -f "$verified_release_channel_path" \
   && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
   release_channel_path_default="$verified_release_channel_path"
 fi

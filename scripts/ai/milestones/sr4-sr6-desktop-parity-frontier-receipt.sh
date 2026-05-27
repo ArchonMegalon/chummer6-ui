@@ -12,10 +12,15 @@ ruleset_ui_adaptation_receipt_path="$repo_root/.codex-studio/published/RULESET_U
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
   release_channel_path_default="$default_release_channel_path"
+fi
+if [[ -f "$verified_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 skip_sr4_refresh="${CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE:-0}"
@@ -160,6 +165,16 @@ def generated_at_fields(record: dict) -> tuple[str, datetime | None]:
     return "", None
 
 
+def normalize_path(value: object) -> str:
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    try:
+        return str(Path(raw).expanduser().resolve())
+    except OSError:
+        return raw
+
+
 def count_mapping_entries(value: object) -> int:
     return len(value) if isinstance(value, dict) else 0
 
@@ -278,7 +293,10 @@ for key, (label, receipt) in receipt_specs.items():
     evidence = receipt.get("evidence") if isinstance(receipt.get("evidence"), dict) else {}
     release_channel_receipt_path = str(evidence.get("releaseChannelPath") or "").strip()
     receipt_release_channel_paths[key] = release_channel_receipt_path
-    if release_channel_receipt_path and release_channel_receipt_path != str(release_channel_path):
+    if (
+        release_channel_receipt_path
+        and normalize_path(release_channel_receipt_path) != normalize_path(release_channel_path)
+    ):
         append_reason(
             f"{label} receipt releaseChannelPath does not match the frontier release channel path.",
             channel_alignment_reasons,

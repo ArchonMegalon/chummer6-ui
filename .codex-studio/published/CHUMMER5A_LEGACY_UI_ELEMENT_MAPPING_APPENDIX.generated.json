@@ -1,0 +1,3145 @@
+{
+  "generatedAt": "2026-05-27T20:06:55.480571Z",
+  "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
+  "status": "pass",
+  "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",
+  "sourceArtifacts": {
+    "legacyUiElementParity": "chummer-presentation/.codex-studio/published/CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json",
+    "uiElementParityAudit": "chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+    "humanParityAcceptanceMatrix": "chummer-presentation/.codex-studio/published/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.generated.json"
+  },
+  "legacyExtractionSummary": {
+    "designerEventHookCount": 1755,
+    "runtimeEventHookCount": 336,
+    "dynamicInteractiveElementCount": 765
+  },
+  "legacyDispositionSummary": {
+    "legacyElementDispositionCount": 2856,
+    "missingLegacyElementDispositionCount": 0,
+    "familyFallbackLegacyElementDispositionCount": 0
+  },
+  "dynamicElementSummary": {
+    "legacyDynamicInteractiveElementCount": 765,
+    "currentDynamicInteractiveElementCount": 57,
+    "currentNamedAxamlInteractiveElementCount": 42
+  },
+  "familyRowCount": 29,
+  "dialogRowCount": 27,
+  "familyRows": [
+    {
+      "family_id": "add_create",
+      "status": "pass",
+      "legacy_event_count": 13,
+      "legacy_dynamic_element_count": 6,
+      "mapped_current_ids": [
+        "ui:create_entry",
+        "ui:gear_add",
+        "ui:quality_add"
+      ],
+      "available_current_ids": [
+        "ui:create_entry",
+        "ui:gear_add",
+        "ui:quality_add"
+      ],
+      "proof_markers": [
+        "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "browse_select",
+      "status": "pass",
+      "legacy_event_count": 118,
+      "legacy_dynamic_element_count": 69,
+      "mapped_current_ids": [
+        "action:tab-gear.inventory",
+        "action:tab-combat.weapons",
+        "action:tab-contacts.contacts"
+      ],
+      "available_current_ids": [
+        "action:tab-gear.inventory",
+        "action:tab-combat.weapons",
+        "action:tab-contacts.contacts"
+      ],
+      "proof_markers": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "cancel_close",
+      "status": "pass",
+      "legacy_event_count": 61,
+      "legacy_dynamic_element_count": 159,
+      "mapped_current_ids": [
+        "dialog-action:cancel",
+        "dialog-action:close"
+      ],
+      "available_current_ids": [
+        "dialog-action:cancel",
+        "dialog-action:close"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "character_creation",
+      "status": "pass",
+      "legacy_event_count": 376,
+      "legacy_dynamic_element_count": 164,
+      "mapped_current_ids": [
+        "command:new_character",
+        "action:tab-info.attributes",
+        "action:tab-skills.skills"
+      ],
+      "available_current_ids": [
+        "command:new_character",
+        "action:tab-info.attributes",
+        "action:tab-skills.skills"
+      ],
+      "proof_markers": [
+        "File_menu_new_character_completes_into_visible_runtime_workspace",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "combat",
+      "status": "pass",
+      "legacy_event_count": 181,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "ui:combat_reload",
+        "ui:combat_damage_track"
+      ],
+      "available_current_ids": [
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "ui:combat_reload",
+        "ui:combat_damage_track"
+      ],
+      "proof_markers": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "confirm_submit",
+      "status": "pass",
+      "legacy_event_count": 105,
+      "legacy_dynamic_element_count": 34,
+      "mapped_current_ids": [
+        "dialog-action:ok",
+        "dialog-action:apply",
+        "dialog-action:save_global_settings",
+        "dialog-action:create_character"
+      ],
+      "available_current_ids": [
+        "dialog-action:ok",
+        "dialog-action:apply",
+        "dialog-action:create_character"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "contacts",
+      "status": "pass",
+      "legacy_event_count": 23,
+      "legacy_dynamic_element_count": 4,
+      "mapped_current_ids": [
+        "ui:contact_add",
+        "ui:contact_edit",
+        "ui:contact_remove",
+        "ui:contact_connection"
+      ],
+      "available_current_ids": [
+        "ui:contact_add",
+        "ui:contact_edit",
+        "ui:contact_remove",
+        "ui:contact_connection"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "delete_remove",
+      "status": "pass",
+      "legacy_event_count": 5,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "ui:delete_entry",
+        "ui:gear_delete",
+        "ui:quality_delete"
+      ],
+      "available_current_ids": [
+        "ui:delete_entry",
+        "ui:gear_delete",
+        "ui:quality_delete"
+      ],
+      "proof_markers": [
+        "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "edit_update",
+      "status": "pass",
+      "legacy_event_count": 11,
+      "legacy_dynamic_element_count": 1,
+      "mapped_current_ids": [
+        "ui:edit_entry",
+        "ui:gear_edit",
+        "ui:contact_edit"
+      ],
+      "available_current_ids": [
+        "ui:edit_entry",
+        "ui:gear_edit",
+        "ui:contact_edit"
+      ],
+      "proof_markers": [
+        "HandleUiControlAsync_all_catalog_controls_are_non_generic"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "file_exit",
+      "status": "pass",
+      "legacy_event_count": 1,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "command:exit"
+      ],
+      "available_current_ids": [
+        "command:exit"
+      ],
+      "proof_markers": [
+        "ExecuteCommandAsync_all_catalog_commands_are_handled"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "file_new",
+      "status": "pass",
+      "legacy_event_count": 4,
+      "legacy_dynamic_element_count": 3,
+      "mapped_current_ids": [
+        "command:new_character",
+        "command:new_critter"
+      ],
+      "available_current_ids": [
+        "command:new_character",
+        "command:new_critter"
+      ],
+      "proof_markers": [
+        "File_menu_new_character_creates_runtime_workspace",
+        "ExecuteCommandAsync_all_catalog_commands_are_handled"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "file_open",
+      "status": "pass",
+      "legacy_event_count": 54,
+      "legacy_dynamic_element_count": 18,
+      "mapped_current_ids": [
+        "command:open_character",
+        "command:open_for_printing",
+        "command:open_for_export"
+      ],
+      "available_current_ids": [
+        "command:open_character",
+        "command:open_for_printing",
+        "command:open_for_export"
+      ],
+      "proof_markers": [
+        "Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "file_print_export",
+      "status": "pass",
+      "legacy_event_count": 25,
+      "legacy_dynamic_element_count": 8,
+      "mapped_current_ids": [
+        "command:print_character",
+        "command:export_character",
+        "command:print_multiple",
+        "command:print_setup"
+      ],
+      "available_current_ids": [
+        "command:print_character",
+        "command:export_character",
+        "command:print_multiple",
+        "command:print_setup"
+      ],
+      "proof_markers": [
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "file_save",
+      "status": "pass",
+      "legacy_event_count": 9,
+      "legacy_dynamic_element_count": 12,
+      "mapped_current_ids": [
+        "command:save_character",
+        "command:save_character_as"
+      ],
+      "available_current_ids": [
+        "command:save_character",
+        "command:save_character_as"
+      ],
+      "proof_markers": [
+        "ExecuteCommandAsync_all_catalog_commands_are_handled"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "help_external",
+      "status": "pass",
+      "legacy_event_count": 10,
+      "legacy_dynamic_element_count": 8,
+      "mapped_current_ids": [
+        "command:wiki",
+        "command:discord",
+        "command:revision_history",
+        "command:dumpshock",
+        "command:about",
+        "command:report_bug"
+      ],
+      "available_current_ids": [
+        "command:wiki",
+        "command:discord",
+        "command:revision_history",
+        "command:dumpshock",
+        "command:about",
+        "command:report_bug"
+      ],
+      "proof_markers": [
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "inventory_progression",
+      "status": "pass",
+      "legacy_event_count": 143,
+      "legacy_dynamic_element_count": 27,
+      "mapped_current_ids": [
+        "ui:gear_add",
+        "ui:gear_edit",
+        "ui:gear_delete",
+        "ui:create_entry",
+        "action:tab-gear.inventory"
+      ],
+      "available_current_ids": [
+        "ui:gear_add",
+        "ui:gear_edit",
+        "ui:gear_delete",
+        "ui:create_entry",
+        "action:tab-gear.inventory"
+      ],
+      "proof_markers": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "magic_matrix",
+      "status": "pass",
+      "legacy_event_count": 44,
+      "legacy_dynamic_element_count": 2,
+      "mapped_current_ids": [
+        "ui:spell_add",
+        "ui:adept_power_add",
+        "ui:complex_form_add",
+        "ui:spirit_add",
+        "ui:matrix_program_add"
+      ],
+      "available_current_ids": [
+        "ui:spell_add",
+        "ui:adept_power_add",
+        "ui:complex_form_add",
+        "ui:spirit_add",
+        "ui:matrix_program_add"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "notes",
+      "status": "pass",
+      "legacy_event_count": 60,
+      "legacy_dynamic_element_count": 39,
+      "mapped_current_ids": [
+        "ui:open_notes",
+        "action:tab-notes.metadata"
+      ],
+      "available_current_ids": [
+        "ui:open_notes",
+        "action:tab-notes.metadata"
+      ],
+      "proof_markers": [
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections",
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "qualities",
+      "status": "pass",
+      "legacy_event_count": 3,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "ui:quality_add",
+        "ui:quality_delete",
+        "action:tab-qualities.qualities"
+      ],
+      "available_current_ids": [
+        "ui:quality_add",
+        "ui:quality_delete",
+        "action:tab-qualities.qualities"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "search_filter_category",
+      "status": "pass",
+      "legacy_event_count": 421,
+      "legacy_dynamic_element_count": 61,
+      "mapped_current_ids": [
+        "ui:gear_add",
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "command:master_index"
+      ],
+      "available_current_ids": [
+        "ui:gear_add",
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "command:master_index"
+      ],
+      "proof_markers": [
+        "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions",
+        "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "selection_dialog",
+      "status": "pass",
+      "legacy_event_count": 3,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "ui:gear_add",
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "ui:cyberware_add"
+      ],
+      "available_current_ids": [
+        "ui:gear_add",
+        "ui:combat_add_weapon",
+        "ui:combat_add_armor",
+        "ui:cyberware_add"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "session_dashboard",
+      "status": "pass",
+      "legacy_event_count": 25,
+      "legacy_dynamic_element_count": 29,
+      "mapped_current_ids": [
+        "command:dice_roller",
+        "command:character_roster",
+        "action:tab-info.summary"
+      ],
+      "available_current_ids": [
+        "command:dice_roller",
+        "command:character_roster",
+        "action:tab-info.summary"
+      ],
+      "proof_markers": [
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions",
+        "Avalonia_and_Blazor_workspace_action_summary_matches"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "settings_character",
+      "status": "pass",
+      "legacy_event_count": 173,
+      "legacy_dynamic_element_count": 24,
+      "mapped_current_ids": [
+        "command:character_settings"
+      ],
+      "available_current_ids": [
+        "command:character_settings"
+      ],
+      "proof_markers": [
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "settings_global",
+      "status": "pass",
+      "legacy_event_count": 69,
+      "legacy_dynamic_element_count": 27,
+      "mapped_current_ids": [
+        "command:global_settings"
+      ],
+      "available_current_ids": [
+        "command:global_settings"
+      ],
+      "proof_markers": [
+        "Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome",
+        "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "skills",
+      "status": "pass",
+      "legacy_event_count": 14,
+      "legacy_dynamic_element_count": 1,
+      "mapped_current_ids": [
+        "ui:skill_add",
+        "ui:skill_specialize",
+        "ui:skill_remove",
+        "ui:skill_group",
+        "action:tab-skills.skills"
+      ],
+      "available_current_ids": [
+        "ui:skill_add",
+        "ui:skill_specialize",
+        "ui:skill_remove",
+        "ui:skill_group",
+        "action:tab-skills.skills"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions",
+        "Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "source_reference",
+      "status": "pass",
+      "legacy_event_count": 41,
+      "legacy_dynamic_element_count": 29,
+      "mapped_current_ids": [
+        "ui:show_source",
+        "ui:gear_source",
+        "ui:magic_source"
+      ],
+      "available_current_ids": [
+        "ui:show_source",
+        "ui:gear_source",
+        "ui:magic_source"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "tools_utilities",
+      "status": "pass",
+      "legacy_event_count": 51,
+      "legacy_dynamic_element_count": 37,
+      "mapped_current_ids": [
+        "command:dice_roller",
+        "command:master_index",
+        "command:character_roster",
+        "command:global_settings",
+        "command:character_settings"
+      ],
+      "available_current_ids": [
+        "command:dice_roller",
+        "command:master_index",
+        "command:character_roster",
+        "command:global_settings",
+        "command:character_settings"
+      ],
+      "proof_markers": [
+        "CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "vehicles",
+      "status": "pass",
+      "legacy_event_count": 41,
+      "legacy_dynamic_element_count": 0,
+      "mapped_current_ids": [
+        "ui:vehicle_add",
+        "ui:vehicle_edit",
+        "ui:vehicle_delete",
+        "ui:vehicle_mod_add"
+      ],
+      "available_current_ids": [
+        "ui:vehicle_add",
+        "ui:vehicle_edit",
+        "ui:vehicle_delete",
+        "ui:vehicle_mod_add"
+      ],
+      "proof_markers": [
+        "CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions"
+      ],
+      "missing_proof_markers": []
+    },
+    {
+      "family_id": "window_management",
+      "status": "pass",
+      "legacy_event_count": 7,
+      "legacy_dynamic_element_count": 3,
+      "mapped_current_ids": [
+        "command:new_window",
+        "command:close_window",
+        "command:close_all"
+      ],
+      "available_current_ids": [
+        "command:new_window",
+        "command:close_window",
+        "command:close_all"
+      ],
+      "proof_markers": [
+        "ExecuteCommandAsync_all_catalog_commands_are_handled"
+      ],
+      "missing_proof_markers": []
+    }
+  ],
+  "dialogRows": [
+    {
+      "dialog_id": "audit_baseline_surface",
+      "element_count": 6,
+      "sample_rows": [
+        {
+          "element_id": "baseline:character_roster_multi_character_flow",
+          "element_label": "Character Roster Multi Character Flow",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:character_roster_multi_character_flow"
+          ]
+        },
+        {
+          "element_id": "baseline:first_launch_workbench_or_restore",
+          "element_label": "First Launch Workbench Or Restore",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:first_launch_workbench_or_restore"
+          ]
+        },
+        {
+          "element_id": "baseline:master_index_dense_reference_flow",
+          "element_label": "Master Index Dense Reference Flow",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:master_index_dense_reference_flow"
+          ]
+        },
+        {
+          "element_id": "baseline:menu_file_open_save_import",
+          "element_label": "Menu File Open Save Import",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:menu_file_open_save_import"
+          ]
+        },
+        {
+          "element_id": "baseline:menu_tools_settings_masterindex_roster",
+          "element_label": "Menu Tools Settings Masterindex Roster",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:menu_tools_settings_masterindex_roster"
+          ]
+        },
+        {
+          "element_id": "baseline:menu_windows_help_liveness",
+          "element_label": "Menu Windows Help Liveness",
+          "family_id": "baseline_surface",
+          "surface_id": "baseline",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
+          "test_refs": [
+            "parity_audit::baseline:menu_windows_help_liveness"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_captured_surface",
+      "element_count": 18,
+      "sample_rows": [
+        {
+          "element_id": "screenshot:14-advancement-dialog-light.png",
+          "element_label": "Advancement dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:14-advancement-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:17-character-roster-dialog-light.png",
+          "element_label": "Character Roster dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:17-character-roster-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:15-creation-section-light.png",
+          "element_label": "Character creation section",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:15-creation-section-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:10-contacts-section-light.png",
+          "element_label": "Contacts section",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:10-contacts-section-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:08-cyberware-dialog-light.png",
+          "element_label": "Cyberware dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:08-cyberware-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:06-dense-section-dark.png",
+          "element_label": "Dense builder section (dark)",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:06-dense-section-dark.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:05-dense-section-light.png",
+          "element_label": "Dense builder section (light)",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:05-dense-section-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:11-diary-dialog-light.png",
+          "element_label": "Diary dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:11-diary-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:02-menu-open-light.png",
+          "element_label": "File/open/import menu surface",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:02-menu-open-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:18-import-dialog-light.png",
+          "element_label": "Import dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:18-import-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:01-initial-shell-light.png",
+          "element_label": "Initial workbench shell",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:01-initial-shell-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:07-loaded-runner-tabs-light.png",
+          "element_label": "Loaded runner tab strip",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:07-loaded-runner-tabs-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:04-loaded-runner-light.png",
+          "element_label": "Loaded runner workbench",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:04-loaded-runner-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:12-magic-dialog-light.png",
+          "element_label": "Magic dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:12-magic-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:16-master-index-dialog-light.png",
+          "element_label": "Master Index dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:16-master-index-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:13-matrix-dialog-light.png",
+          "element_label": "Matrix dialog",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:13-matrix-dialog-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:03-settings-open-light.png",
+          "element_label": "Settings surface",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:03-settings-open-light.png"
+          ]
+        },
+        {
+          "element_id": "screenshot:09-vehicles-section-light.png",
+          "element_label": "Vehicles and drones section",
+          "family_id": "captured_surface",
+          "surface_id": "screenshot",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
+          "test_refs": [
+            "parity_audit::screenshot:09-vehicles-section-light.png"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_dense_workbench_landmark",
+      "element_count": 10,
+      "sample_rows": [
+        {
+          "element_id": "legacy_marker:StatusStrip",
+          "element_label": "StatusStrip",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:StatusStrip"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:pgbProgress",
+          "element_label": "pgbProgress",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:pgbProgress"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:tabCharacterTabs",
+          "element_label": "tabCharacterTabs",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:tabCharacterTabs"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:tabInfo",
+          "element_label": "tabInfo",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:tabInfo"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treArmor",
+          "element_label": "treArmor",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treArmor"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treCyberware",
+          "element_label": "treCyberware",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treCyberware"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treGear",
+          "element_label": "treGear",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treGear"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treQualities",
+          "element_label": "treQualities",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treQualities"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treVehicles",
+          "element_label": "treVehicles",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treVehicles"
+          ]
+        },
+        {
+          "element_id": "legacy_marker:treWeapons",
+          "element_label": "treWeapons",
+          "family_id": "dense_workbench_landmark",
+          "surface_id": "legacy_marker",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
+          "test_refs": [
+            "parity_audit::legacy_marker:treWeapons"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_legacy_source_anchor",
+      "element_count": 16,
+      "sample_rows": [
+        {
+          "element_id": "source:character_roster_form_title",
+          "element_label": "Character Roster dialog title",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:character_roster_form_title"
+          ]
+        },
+        {
+          "element_id": "source:character_roster_tree",
+          "element_label": "Character Roster tree",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:character_roster_tree"
+          ]
+        },
+        {
+          "element_id": "source:character_roster_route",
+          "element_label": "Character roster route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:character_roster_route"
+          ]
+        },
+        {
+          "element_id": "source:file_menu",
+          "element_label": "File menu",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:file_menu"
+          ]
+        },
+        {
+          "element_id": "source:global_settings_route",
+          "element_label": "Global settings route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed settings-route parity is directly covered by the current file/settings proof.",
+          "test_refs": [
+            "parity_audit::source:global_settings_route"
+          ]
+        },
+        {
+          "element_id": "source:help_menu",
+          "element_label": "Help menu",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:help_menu"
+          ]
+        },
+        {
+          "element_id": "source:hero_lab_importer_route",
+          "element_label": "Hero Lab importer route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Catalog, dialog-factory, and dialog-coordinator proofs directly cover the Hero Lab importer route.",
+          "test_refs": [
+            "parity_audit::source:hero_lab_importer_route"
+          ]
+        },
+        {
+          "element_id": "source:master_index_form_title",
+          "element_label": "Master Index dialog title",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:master_index_form_title"
+          ]
+        },
+        {
+          "element_id": "source:master_index_source_click_reminder",
+          "element_label": "Master Index source click reminder",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:master_index_source_click_reminder"
+          ]
+        },
+        {
+          "element_id": "source:master_index_route",
+          "element_label": "Master index route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:master_index_route"
+          ]
+        },
+        {
+          "element_id": "source:open_for_export_route",
+          "element_label": "Open for export route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed open-for-export route parity is directly covered by the current file-menu proof.",
+          "test_refs": [
+            "parity_audit::source:open_for_export_route"
+          ]
+        },
+        {
+          "element_id": "source:open_route",
+          "element_label": "Open route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed open-route parity is directly covered by the current file-menu proof.",
+          "test_refs": [
+            "parity_audit::source:open_route"
+          ]
+        },
+        {
+          "element_id": "source:tools_menu",
+          "element_label": "Tools menu",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:tools_menu"
+          ]
+        },
+        {
+          "element_id": "source:translator_route",
+          "element_label": "Translator route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the Translator route.",
+          "test_refs": [
+            "parity_audit::source:translator_route"
+          ]
+        },
+        {
+          "element_id": "source:windows_menu",
+          "element_label": "Windows menu",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
+          "test_refs": [
+            "parity_audit::source:windows_menu"
+          ]
+        },
+        {
+          "element_id": "source:xml_amendment_editor_route",
+          "element_label": "XML amendment editor route",
+          "family_id": "legacy_source_anchor",
+          "surface_id": "source",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the XML Amendment Editor route.",
+          "test_refs": [
+            "parity_audit::source:xml_amendment_editor_route"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_non_negotiable",
+      "element_count": 8,
+      "sample_rows": [
+        {
+          "element_id": "non_negotiable:character_roster_first_class",
+          "element_label": "Character Roster is first-class",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:character_roster_first_class"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:claim_restore_in_installer_or_in_app",
+          "element_label": "Claim restore is in-app or installer-backed",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:claim_restore_in_installer_or_in_app"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:file_menu_live",
+          "element_label": "File menu stays live",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:file_menu_live"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:guided_product_installer_happy_path",
+          "element_label": "Guided product installer happy path",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:guided_product_installer_happy_path"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:master_index_first_class",
+          "element_label": "Master Index is first-class",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:master_index_first_class"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:no_browser_only_claim_code_ritual",
+          "element_label": "No browser-only claim code ritual",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:no_browser_only_claim_code_ritual"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:no_generic_shell_or_dashboard_first",
+          "element_label": "No generic shell or dashboard first",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:no_generic_shell_or_dashboard_first"
+          ]
+        },
+        {
+          "element_id": "non_negotiable:startup_is_workbench_or_restore",
+          "element_label": "Startup lands in workbench or restore",
+          "family_id": "non_negotiable",
+          "surface_id": "non_negotiable",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
+          "test_refs": [
+            "parity_audit::non_negotiable:startup_is_workbench_or_restore"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_required_landmark",
+      "element_count": 11,
+      "sample_rows": [
+        {
+          "element_id": "landmark:bottom_status_strip",
+          "element_label": "Bottom status strip",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:bottom_status_strip"
+          ]
+        },
+        {
+          "element_id": "landmark:character_roster_route",
+          "element_label": "Character roster route",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:character_roster_route"
+          ]
+        },
+        {
+          "element_id": "landmark:file_menu",
+          "element_label": "File menu",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:file_menu"
+          ]
+        },
+        {
+          "element_id": "landmark:help_menu",
+          "element_label": "Help menu",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:help_menu"
+          ]
+        },
+        {
+          "element_id": "landmark:immediate_toolstrip",
+          "element_label": "Immediate toolstrip",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:immediate_toolstrip"
+          ]
+        },
+        {
+          "element_id": "landmark:import_route",
+          "element_label": "Import route",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:import_route"
+          ]
+        },
+        {
+          "element_id": "landmark:master_index_route",
+          "element_label": "Master index route",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:master_index_route"
+          ]
+        },
+        {
+          "element_id": "landmark:save_or_open_route",
+          "element_label": "Save or open route",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:save_or_open_route"
+          ]
+        },
+        {
+          "element_id": "landmark:settings_route",
+          "element_label": "Settings route",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:settings_route"
+          ]
+        },
+        {
+          "element_id": "landmark:tools_menu",
+          "element_label": "Tools menu",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:tools_menu"
+          ]
+        },
+        {
+          "element_id": "landmark:windows_menu",
+          "element_label": "Windows menu",
+          "family_id": "required_landmark",
+          "surface_id": "landmark",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
+          "test_refs": [
+            "parity_audit::landmark:windows_menu"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_veteran_task",
+      "element_count": 4,
+      "sample_rows": [
+        {
+          "element_id": "task:locate_master_index_and_roster",
+          "element_label": "Locate Master Index And Roster",
+          "family_id": "veteran_task",
+          "surface_id": "task",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+          "test_refs": [
+            "parity_audit::task:locate_master_index_and_roster"
+          ]
+        },
+        {
+          "element_id": "task:locate_save_import_settings",
+          "element_label": "Locate Save Import Settings",
+          "family_id": "veteran_task",
+          "surface_id": "task",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+          "test_refs": [
+            "parity_audit::task:locate_save_import_settings"
+          ]
+        },
+        {
+          "element_id": "task:reach_real_workbench",
+          "element_label": "Reach Real Workbench",
+          "family_id": "veteran_task",
+          "surface_id": "task",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+          "test_refs": [
+            "parity_audit::task:reach_real_workbench"
+          ]
+        },
+        {
+          "element_id": "task:recover_section_rhythm",
+          "element_label": "Recover Section Rhythm",
+          "family_id": "veteran_task",
+          "surface_id": "task",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
+          "test_refs": [
+            "parity_audit::task:recover_section_rhythm"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "audit_workflow_family",
+      "element_count": 11,
+      "sample_rows": [
+        {
+          "element_id": "family:custom_data_xml_and_translator_bridge",
+          "element_label": "Custom Data Xml And Translator Bridge",
+          "family_id": "custom_data_xml_and_translator_bridge",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:translator', 'menu:xml_editor'].",
+          "test_refs": [
+            "parity_audit::family:custom_data_xml_and_translator_bridge"
+          ]
+        },
+        {
+          "element_id": "family:dense_builder_and_career_workflows",
+          "element_label": "Dense Builder And Career Workflows",
+          "family_id": "dense_builder_and_career_workflows",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Route-local dense workbench proof cites ruleset tabs, workspace actions, screenshot review, and the published flagship workflow receipts directly.",
+          "test_refs": [
+            "parity_audit::family:dense_builder_and_career_workflows"
+          ]
+        },
+        {
+          "element_id": "family:dice_initiative_and_table_utilities",
+          "element_label": "Dice Initiative And Table Utilities",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and closed-package direct workflow receipts directly.",
+          "test_refs": [
+            "parity_audit::family:dice_initiative_and_table_utilities"
+          ]
+        },
+        {
+          "element_id": "family:identity_contacts_lifestyles_history",
+          "element_label": "Identity Contacts Lifestyles History",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and closed-package workflow-state receipts directly.",
+          "test_refs": [
+            "parity_audit::family:identity_contacts_lifestyles_history"
+          ]
+        },
+        {
+          "element_id": "family:legacy_and_adjacent_import_oracles",
+          "element_label": "Legacy And Adjacent Import Oracles",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:hero_lab_importer', 'workflow:import_oracle'].",
+          "test_refs": [
+            "parity_audit::family:legacy_and_adjacent_import_oracles"
+          ]
+        },
+        {
+          "element_id": "family:roster_dashboards_and_multi_character_ops",
+          "element_label": "Roster Dashboards And Multi Character Ops",
+          "family_id": "roster_dashboards_and_multi_character_ops",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:character_roster_multi_character_flow', 'workflow:multi_character'].",
+          "test_refs": [
+            "parity_audit::family:roster_dashboards_and_multi_character_ops"
+          ]
+        },
+        {
+          "element_id": "family:settings_and_rules_environment_authoring",
+          "element_label": "Settings And Rules Environment Authoring",
+          "family_id": "settings_and_rules_environment_authoring",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:rules', 'workflow:sources', 'baseline:menu_tools_settings_masterindex_roster'].",
+          "test_refs": [
+            "parity_audit::family:settings_and_rules_environment_authoring"
+          ]
+        },
+        {
+          "element_id": "family:sheet_export_print_viewer_and_exchange",
+          "element_label": "Sheet Export Print Viewer And Exchange",
+          "family_id": "sheet_export_print_viewer_and_exchange",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Route-local print, export, and exchange proof cites menu parity, screenshot review markers, and deterministic workspace-exchange receipts directly.",
+          "test_refs": [
+            "parity_audit::family:sheet_export_print_viewer_and_exchange"
+          ]
+        },
+        {
+          "element_id": "family:shell_workbench_orientation",
+          "element_label": "Shell Workbench Orientation",
+          "family_id": "shell_workbench_orientation",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:first_launch_workbench_or_restore', 'baseline:menu_windows_help_liveness'].",
+          "test_refs": [
+            "parity_audit::family:shell_workbench_orientation"
+          ]
+        },
+        {
+          "element_id": "family:sourcebooks_reference_and_master_index",
+          "element_label": "Sourcebooks Reference And Master Index",
+          "family_id": "sourcebooks_reference_and_master_index",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:master_index_dense_reference_flow', 'workflow:sources'].",
+          "test_refs": [
+            "parity_audit::family:sourcebooks_reference_and_master_index"
+          ]
+        },
+        {
+          "element_id": "family:sr6_supplements_designers_and_house_rules",
+          "element_label": "Sr6 Supplements Designers And House Rules",
+          "family_id": "sr6_supplements_designers_and_house_rules",
+          "surface_id": "family",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Route-local SR6 supplement and house-rule proof cites screenshot review markers, rule studio surface proof, and deterministic successor-lane receipts directly.",
+          "test_refs": [
+            "parity_audit::family:sr6_supplements_designers_and_house_rules"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "character_workbench",
+      "element_count": 17,
+      "sample_rows": [
+        {
+          "element_id": "direct_attribute_editing",
+          "element_label": "Direct Attribute Editing",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "attributes_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+          "test_refs": [
+            "Character_creation_preserves_familiar_dense_builder_rhythm",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "current_totals",
+          "element_label": "Current Totals",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "attributes_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+          "test_refs": [
+            "Character_creation_preserves_familiar_dense_builder_rhythm",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "spend_or_consequence_visibility",
+          "element_label": "Spend Or Consequence Visibility",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "attributes_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Attribute editing remains dense, immediate, and anchored in the same workbench rhythm Chummer5A veterans expect.",
+          "test_refs": [
+            "Character_creation_preserves_familiar_dense_builder_rhythm",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "searchable_skill_list",
+          "element_label": "Searchable Skill List",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "skills_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "rating_state",
+          "element_label": "Rating State",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "skills_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "category_grouping",
+          "element_label": "Category Grouping",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "skills_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "direct_edit_posture",
+          "element_label": "Direct Edit Posture",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "skills_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Skills stay searchable, grouped, and directly editable on the primary workbench instead of being rerouted through review chrome.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head",
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "add_remove_flow",
+          "element_label": "Add Remove Flow",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "qualities_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+          ]
+        },
+        {
+          "element_id": "active_quality_list",
+          "element_label": "Active Quality List",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "qualities_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+          ]
+        },
+        {
+          "element_id": "validation_posture",
+          "element_label": "Validation Posture",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "qualities_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+          ]
+        },
+        {
+          "element_id": "source_anchor_visibility",
+          "element_label": "Source Anchor Visibility",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "qualities_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Quality management preserves add/remove and validation posture through the dense section host and runtime-backed dialogs.",
+          "test_refs": [
+            "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head"
+          ]
+        },
+        {
+          "element_id": "dense_list",
+          "element_label": "Dense List",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "gear_and_augment_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+          "test_refs": [
+            "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+            "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "affordability_or_legality_posture",
+          "element_label": "Affordability Or Legality Posture",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "gear_and_augment_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+          "test_refs": [
+            "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+            "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "equip_manage_flow",
+          "element_label": "Equip Manage Flow",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "gear_and_augment_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+          "test_refs": [
+            "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+            "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "direct_compare_posture",
+          "element_label": "Direct Compare Posture",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "gear_and_augment_workspace",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Gear, augment, and dense inventory routes stay first-class with direct compare, add, and edit posture.",
+          "test_refs": [
+            "Cyberware_and_cyberlimb_builder_preserve_legacy_dialog_familiarity_cues",
+            "Runtime_loaded_runner_quick_action_workflows_materialize_dialog_contracts_and_continuations_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "ruleset_specific_dense_work_surface",
+          "element_label": "Ruleset Specific Dense Work Surface",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "magic_matrix_vehicle_tabs",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Ruleset-specific tabs still deliver dense direct state editing for magic, matrix, vehicles, and specialist lanes.",
+          "test_refs": [
+            "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+            "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm"
+          ]
+        },
+        {
+          "element_id": "direct_state_editing",
+          "element_label": "Direct State Editing",
+          "family_id": "dense_builder_and_career",
+          "surface_id": "magic_matrix_vehicle_tabs",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Ruleset-specific tabs still deliver dense direct state editing for magic, matrix, vehicles, and specialist lanes.",
+          "test_refs": [
+            "Magic_workflows_execute_with_specific_dialog_fields_and_confirm_actions",
+            "Vehicles_and_drones_builder_preserves_familiar_browse_detail_confirm_rhythm"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "contacts_and_identity",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "sin_posture",
+          "element_label": "Sin Posture",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "identity_and_licenses",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "license_posture",
+          "element_label": "License Posture",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "identity_and_licenses",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "identity_editability",
+          "element_label": "Identity Editability",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "identity_and_licenses",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Identity and license posture remains anchored in the dense social-information lane rather than hidden behind setup chrome.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "contacts_dialog",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "contacts_list",
+          "element_label": "Contacts List",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "contacts_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "relationship_or_role_fields",
+          "element_label": "Relationship Or Role Fields",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "contacts_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "direct_add_edit_posture",
+          "element_label": "Direct Add Edit Posture",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "contacts_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Contacts remain directly editable with relationship fields and immediate add/edit posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "custom_data_bridge",
+      "element_count": 4,
+      "sample_rows": [
+        {
+          "element_id": "explicit_custom_data_route",
+          "element_label": "Explicit Custom Data Route",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "custom_data_bridge",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+          "test_refs": [
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+            "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+          ]
+        },
+        {
+          "element_id": "enabled_overlay_visibility",
+          "element_label": "Enabled Overlay Visibility",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "custom_data_bridge",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+          "test_refs": [
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+            "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+          ]
+        },
+        {
+          "element_id": "governed_or_stale_posture",
+          "element_label": "Governed Or Stale Posture",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "custom_data_bridge",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+          "test_refs": [
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+            "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+          ]
+        },
+        {
+          "element_id": "translator_or_amendment_handoff",
+          "element_label": "Translator Or Amendment Handoff",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "custom_data_bridge",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Custom data overlay posture remains explicit and directly bridged from the translator/XML route instead of disappearing behind generic settings prose.",
+          "test_refs": [
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture",
+            "Avalonia_and_Blazor_translator_and_xml_editor_dialogs_preserve_matching_lane_posture"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "dice_roller",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "direct_dice_input",
+          "element_label": "Direct Dice Input",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "dice_roller",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+          "test_refs": [
+            "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+          ]
+        },
+        {
+          "element_id": "result_visibility",
+          "element_label": "Result Visibility",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "dice_roller",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+          "test_refs": [
+            "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+          ]
+        },
+        {
+          "element_id": "repeatable_roll_posture",
+          "element_label": "Repeatable Roll Posture",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "dice_roller",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Dice remains reachable from the classic tool path, with result-state behavior grounded in generated-dialog and runboard proof.",
+          "test_refs": [
+            "Standalone_menu_bar_buttons_and_menu_commands_raise_expected_events"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "export_exchange",
+      "element_count": 4,
+      "sample_rows": [
+        {
+          "element_id": "explicit_pdf_target",
+          "element_label": "Explicit Pdf Target",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "export_exchange",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "explicit_json_target",
+          "element_label": "Explicit Json Target",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "export_exchange",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "explicit_foundry_target",
+          "element_label": "Explicit Foundry Target",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "export_exchange",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "explicit_exchange_posture",
+          "element_label": "Explicit Exchange Posture",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "export_exchange",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Export and exchange remain explicit file-lane targets with deterministic route-local proof rather than hidden sidecars.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "gm_runboard",
+      "element_count": 1,
+      "sample_rows": [
+        {
+          "element_id": "quick_utility_access_without_campaign_detour",
+          "element_label": "Quick Utility Access Without Campaign Detour",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "table_utility_surface",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Quick utility access stays adjacent to the workbench and roster context instead of moving to a campaign detour.",
+          "test_refs": [
+            "AccessibilitySignoffSmokeTests"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "hero_lab_importer",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "direct_import_entry_point",
+          "element_label": "Direct Import Entry Point",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "hero_lab_import",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+          ]
+        },
+        {
+          "element_id": "file_or_bundle_target",
+          "element_label": "File Or Bundle Target",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "hero_lab_import",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+          ]
+        },
+        {
+          "element_id": "import_verdict_visibility",
+          "element_label": "Import Verdict Visibility",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "hero_lab_import",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Hero Lab import remains a direct first-class import route with explicit compatibility posture and bounded review.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_hero_lab_importer_uses_xml_compatibility_fields"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "history_or_journal",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "visible_change_history",
+          "element_label": "Visible Change History",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "history_or_journal",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "continuity_memory",
+          "element_label": "Continuity Memory",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "history_or_journal",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "direct_review_posture",
+          "element_label": "Direct Review Posture",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "history_or_journal",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "History, diary, and continuity memory remain explicit instead of being replaced with abstract recap prose.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "initiative_utility",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "initiative_calculation",
+          "element_label": "Initiative Calculation",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "initiative_utility",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+          "test_refs": [
+            "DesktopStartupSurfaceCatalog.GmRunboard"
+          ]
+        },
+        {
+          "element_id": "pass_or_order_preview",
+          "element_label": "Pass Or Order Preview",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "initiative_utility",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+          "test_refs": [
+            "DesktopStartupSurfaceCatalog.GmRunboard"
+          ]
+        },
+        {
+          "element_id": "roster_context",
+          "element_label": "Roster Context",
+          "family_id": "dice_initiative_and_table_utilities",
+          "surface_id": "initiative_utility",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Initiative remains a first-class roster-context utility through the GM runboard route rather than a detached dashboard card.",
+          "test_refs": [
+            "DesktopStartupSurfaceCatalog.GmRunboard"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "legacy_import_matrix",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "explicit_chummer4_oracle_posture",
+          "element_label": "Explicit Chummer4 Oracle Posture",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "legacy_import_matrix",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        },
+        {
+          "element_id": "explicit_chummer5a_oracle_posture",
+          "element_label": "Explicit Chummer5A Oracle Posture",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "legacy_import_matrix",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        },
+        {
+          "element_id": "explicit_adjacent_sr6_oracle_posture",
+          "element_label": "Explicit Adjacent Sr6 Oracle Posture",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "legacy_import_matrix",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Legacy import oracles stay explicit through the import lane instead of being collapsed into generic migration prose.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "lifestyles_dialog",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "lifestyle_entries",
+          "element_label": "Lifestyle Entries",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "lifestyles_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "costs_or_durations",
+          "element_label": "Costs Or Durations",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "lifestyles_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        },
+        {
+          "element_id": "direct_edit_posture",
+          "element_label": "Direct Edit Posture",
+          "family_id": "identity_contacts_lifestyles_history",
+          "surface_id": "lifestyles_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Lifestyle and continuity routes stay on the same dense workbench lane with visible durations and review posture.",
+          "test_refs": [
+            "Runtime_loaded_runner_tabpanel_covers_legacy_tabs_actions_and_backed_quick_actions_across_sr4_sr5_and_sr6"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "migration_confidence_review",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "bounded_loss_visibility",
+          "element_label": "Bounded Loss Visibility",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "migration_confidence_review",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        },
+        {
+          "element_id": "manual_review_visibility",
+          "element_label": "Manual Review Visibility",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "migration_confidence_review",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        },
+        {
+          "element_id": "provenance_visibility",
+          "element_label": "Provenance Visibility",
+          "family_id": "legacy_and_adjacent_import_oracles",
+          "surface_id": "migration_confidence_review",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Migration confidence remains bounded and inspectable through direct import review and working file-menu continuity.",
+          "test_refs": [
+            "Runtime_backed_file_menu_preserves_working_open_save_import_routes"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "print_multiple",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "multi_runner_print_posture",
+          "element_label": "Multi Runner Print Posture",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "print_multiple",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "target_selection",
+          "element_label": "Target Selection",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "print_multiple",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "print_readiness",
+          "element_label": "Print Readiness",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "print_multiple",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Multi-runner print remains first-class through the file-menu lineage and generated dialog parity receipts.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "rule_environment",
+      "element_count": 7,
+      "sample_rows": [
+        {
+          "element_id": "supplement_coverage_visibility",
+          "element_label": "Supplement Coverage Visibility",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "supplement_posture",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "SR6 supplement posture remains visible and tied to the rules lane rather than hidden under generalized settings.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "selection_posture",
+          "element_label": "Selection Posture",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "supplement_posture",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "SR6 supplement posture remains visible and tied to the rules lane rather than hidden under generalized settings.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "explicit_designer_tool_posture",
+          "element_label": "Explicit Designer Tool Posture",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "designer_tools_catalog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Designer tools remain discoverable through the explicit rules lane instead of polluting the default shell.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "tool_family_visibility",
+          "element_label": "Tool Family Visibility",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "designer_tools_catalog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Designer tools remain discoverable through the explicit rules lane instead of polluting the default shell.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "visible_house_rule_posture",
+          "element_label": "Visible House Rule Posture",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "house_rule_overlay",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "overlay_counts",
+          "element_label": "Overlay Counts",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "house_rule_overlay",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        },
+        {
+          "element_id": "activation_truth",
+          "element_label": "Activation Truth",
+          "family_id": "sr6_supplements_designers_house_rules",
+          "surface_id": "house_rule_overlay",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
+          "test_refs": [
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "sheet_viewer",
+      "element_count": 3,
+      "sample_rows": [
+        {
+          "element_id": "visible_sheet_preview_route",
+          "element_label": "Visible Sheet Preview Route",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "sheet_viewer",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "chosen_sheet_posture",
+          "element_label": "Chosen Sheet Posture",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "sheet_viewer",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        },
+        {
+          "element_id": "first_class_review_surface",
+          "element_label": "First Class Review Surface",
+          "family_id": "sheet_export_print_viewer_exchange",
+          "surface_id": "sheet_viewer",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Sheet review stays grounded in the same print/export lane veterans expect, with direct route proof even when the screenshot is menu-centric.",
+          "test_refs": [
+            "Runtime_backed_file_menu_restores_classic_save_and_print_commands"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "shell_catalog",
+      "element_count": 6,
+      "sample_rows": [
+        {
+          "element_id": "tab-create",
+          "element_label": "Create tab",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Catalog-only creation tab is hidden from the default public-stable parity shell because Chummer5A parity does not depend on a separate create catalog surface.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        },
+        {
+          "element_id": "tab-rules",
+          "element_label": "Rules tab",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Catalog-only rules tab stays off the default public-stable shell because rule-environment work is covered by explicit SR6 rule-studio routes, not a parity-shell launcher.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        },
+        {
+          "element_id": "build-lab",
+          "element_label": "Build Lab",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Build Lab remains a Chummer6-only catalog surface and is hidden from the default public-stable shell because the parity workbench already covers the veteran build path directly.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        },
+        {
+          "element_id": "gm_prep",
+          "element_label": "GM Prep",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "GM Prep remains a supported desktop route, but its shell launcher is hidden from the default public-stable parity shell because it is a Chummer6-only organizer affordance rather than a Chummer5A first-minute control.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        },
+        {
+          "element_id": "roster_movement",
+          "element_label": "Roster Movement",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Roster Movement remains a supported desktop route, but its shell launcher is hidden from the default public-stable parity shell because it is a Chummer6-only organizer affordance rather than a Chummer5A first-minute control.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        },
+        {
+          "element_id": "data_exporter",
+          "element_label": "Data Exporter",
+          "family_id": "catalog_only_controls",
+          "surface_id": "default_public_stable_shell",
+          "present_in_chummer5a": "no",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Data Exporter is hidden from the default public-stable shell because export parity is already served by the classic print/export routes without introducing a Chummer6-only launcher.",
+          "test_refs": [
+            "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "translator_dialog",
+      "element_count": 5,
+      "sample_rows": [
+        {
+          "element_id": "translator_title",
+          "element_label": "Translator Title",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "translator_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+          ]
+        },
+        {
+          "element_id": "language_inventory",
+          "element_label": "Language Inventory",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "translator_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+          ]
+        },
+        {
+          "element_id": "overlay_or_corpus_posture",
+          "element_label": "Overlay Or Corpus Posture",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "translator_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+          ]
+        },
+        {
+          "element_id": "search_or_filter",
+          "element_label": "Search Or Filter",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "translator_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+          ]
+        },
+        {
+          "element_id": "direct_bridge_handoff",
+          "element_label": "Direct Bridge Handoff",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "translator_dialog",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "Translator remains a first-class Chummer5A-adjacent desktop route with governed language inventory and direct bridge posture.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "ExecuteCommandAsync_translator_opens_dialog_with_master_index_lane_posture"
+          ]
+        }
+      ]
+    },
+    {
+      "dialog_id": "xml_amendment_editor",
+      "element_count": 4,
+      "sample_rows": [
+        {
+          "element_id": "amendment_scope",
+          "element_label": "Amendment Scope",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "xml_amendment_editor",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+          ]
+        },
+        {
+          "element_id": "file_or_overlay_target",
+          "element_label": "File Or Overlay Target",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "xml_amendment_editor",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+          ]
+        },
+        {
+          "element_id": "change_visibility",
+          "element_label": "Change Visibility",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "xml_amendment_editor",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+          ]
+        },
+        {
+          "element_id": "save_apply_posture",
+          "element_label": "Save Apply Posture",
+          "family_id": "translator_xml_bridge",
+          "surface_id": "xml_amendment_editor",
+          "present_in_chummer5a": "yes",
+          "present_in_chummer6": "yes",
+          "visual_parity": "yes",
+          "behavioral_parity": "yes",
+          "reason": "XML amendment editing stays directly inspectable with editable target, governed posture, and save/apply affordances.",
+          "test_refs": [
+            "Runtime_backed_translator_xml_editor_and_hero_lab_importer_routes_surface_governed_posture",
+            "CreateCommandDialog_xml_editor_surfaces_xml_bridge_and_custom_data_posture"
+          ]
+        }
+      ]
+    }
+  ],
+  "auditRowCount": 84,
+  "reasons": []
+}

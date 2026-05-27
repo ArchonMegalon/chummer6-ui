@@ -179,7 +179,8 @@
                    AcceptsReturn="True"
                    TextWrapping="Wrap"
                    IsReadOnly="True"
-                   MinHeight="120" />
+                   MinHeight="80"
+                   MaxHeight="120" />
         </Expander>
         <Border Grid.Row="6"
                 x:Name="SectionQuickActionsBorder"

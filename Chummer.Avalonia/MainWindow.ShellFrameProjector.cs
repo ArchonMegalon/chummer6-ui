@@ -98,8 +98,8 @@ internal static class MainWindowShellFrameProjector
                 ToolStrip: new ToolStripState(
                     BuildToolStripStatusText(state, shellSurface, workspaceContext, language),
                     ShowOpenForExport: true,
-                    ShowGmPrep: true,
-                    ShowRosterMovement: true,
+                    ShowGmPrep: showSampleControls,
+                    ShowRosterMovement: showSampleControls,
                     ShowCampaignWorkspace: false,
                     ShowLoadDemoRunner: !hasOpenWorkspace && showSampleControls),
                 MenuBar: new MenuBarState(

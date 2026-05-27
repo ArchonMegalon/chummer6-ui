@@ -21,6 +21,7 @@ CONTACT_SHEET_DIR = PUBLISHED_ROOT / "chummer5a-side-by-side-contact-sheets"
 
 MATRIX_DESIGN_PATH = DESIGN_ROOT / "CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.yaml"
 PARITY_AUDIT_PATH = PUBLISHED_ROOT / "CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json"
+LEGACY_PARITY_PATH = PUBLISHED_ROOT / "CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json"
 SCREENSHOT_GATE_PATH = PUBLISHED_ROOT / "CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"
 SCREENSHOT_EVIDENCE_PATH = SCREENSHOT_DIR / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
 VETERAN_GATE_PATH = PUBLISHED_ROOT / "VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
@@ -44,6 +45,7 @@ CONTROL_REASON_OUTPUT_PATH = PUBLISHED_ROOT / "CHUMMER5A_CHUMMER6_ONLY_CONTROL_J
 SCREENSHOT_MATRIX_OUTPUT_PATH = PUBLISHED_ROOT / "CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
 CONTACT_SHEET_OUTPUT_PATH = PUBLISHED_ROOT / "CHUMMER5A_SIDE_BY_SIDE_CONTACT_SHEETS.generated.json"
 TASK_BUDGET_OUTPUT_PATH = PUBLISHED_ROOT / "CHUMMER5A_VETERAN_TASK_TIME_BUDGETS.generated.json"
+LEGACY_APPENDIX_OUTPUT_PATH = PUBLISHED_ROOT / "CHUMMER5A_LEGACY_UI_ELEMENT_MAPPING_APPENDIX.generated.json"
 VERDICT_OUTPUT_PATH = PUBLISHED_ROOT / "FULL_CHUMMER5A_UI_PARITY_VERDICT.md"
 
 REQUIRED_MATRIX_FIELDS = [
@@ -518,6 +520,40 @@ CATALOG_ONLY_ROWS = [
         "family_id": "catalog_only_controls",
         "surface_id": "default_public_stable_shell",
         "dialog_id": "shell_catalog",
+        "element_id": "gm_prep",
+        "element_label": "GM Prep",
+        "present_in_chummer5a": "no",
+        "present_in_chummer6": "yes",
+        "visual_parity": "yes",
+        "behavioral_parity": "yes",
+        "removable_if_not_in_chummer5a": "yes",
+        "reason": "GM Prep remains a supported desktop route, but its shell launcher is hidden from the default public-stable parity shell because it is a Chummer6-only organizer affordance rather than a Chummer5A first-minute control.",
+        "screenshot_refs": [],
+        "runtime_receipt_refs": [GM_RUNBOARD_PATH, PRIMARY_ROUTE_PATH],
+        "test_refs": ["Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"],
+        "visibility_policy": "hidden_by_default_public_stable",
+    },
+    {
+        "family_id": "catalog_only_controls",
+        "surface_id": "default_public_stable_shell",
+        "dialog_id": "shell_catalog",
+        "element_id": "roster_movement",
+        "element_label": "Roster Movement",
+        "present_in_chummer5a": "no",
+        "present_in_chummer6": "yes",
+        "visual_parity": "yes",
+        "behavioral_parity": "yes",
+        "removable_if_not_in_chummer5a": "yes",
+        "reason": "Roster Movement remains a supported desktop route, but its shell launcher is hidden from the default public-stable parity shell because it is a Chummer6-only organizer affordance rather than a Chummer5A first-minute control.",
+        "screenshot_refs": [],
+        "runtime_receipt_refs": [PRIMARY_ROUTE_PATH],
+        "test_refs": ["Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default"],
+        "visibility_policy": "hidden_by_default_public_stable",
+    },
+    {
+        "family_id": "catalog_only_controls",
+        "surface_id": "default_public_stable_shell",
+        "dialog_id": "shell_catalog",
         "element_id": "data_exporter",
         "element_label": "Data Exporter",
         "present_in_chummer5a": "no",
@@ -679,6 +715,40 @@ def ensure_output_dir() -> None:
     CONTACT_SHEET_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def audit_row_to_matrix_row(audit_row: dict[str, Any]) -> dict[str, Any]:
+    element_id = str(audit_row.get("id") or "").strip()
+    category = str(audit_row.get("category") or "").strip() or "audit"
+    label = str(audit_row.get("label") or humanize(element_id)).strip()
+    screenshot_files: list[str] = []
+    if element_id.startswith("screenshot:"):
+        screenshot_files.append(element_id.split(":", 1)[1])
+    runtime_receipt_refs = path_list(
+        [
+            Path(value)
+            for value in audit_row.get("evidence") or []
+            if isinstance(value, str) and value and not value.lower().endswith(".png")
+        ]
+    )
+    family_id = element_id.split(":", 1)[1] if element_id.startswith("family:") else category
+    surface_id = element_id.split(":", 1)[0] if ":" in element_id else category
+    return {
+        "family_id": family_id,
+        "surface_id": surface_id,
+        "dialog_id": f"audit_{category}",
+        "element_id": element_id,
+        "element_label": label,
+        "present_in_chummer5a": str(audit_row.get("present_in_chummer5a") or "no").strip(),
+        "present_in_chummer6": str(audit_row.get("present_in_chummer6") or "no").strip(),
+        "visual_parity": str(audit_row.get("visual_parity") or "no").strip(),
+        "behavioral_parity": str(audit_row.get("behavioral_parity") or "no").strip(),
+        "removable_if_not_in_chummer5a": str(audit_row.get("removable_if_not_in_chummer5a") or "no").strip(),
+        "reason": str(audit_row.get("reason") or f"Imported from parity audit category '{category}'.").strip(),
+        "screenshot_refs": screenshot_ref_list(screenshot_files),
+        "runtime_receipt_refs": runtime_receipt_refs,
+        "test_refs": [f"parity_audit::{element_id}"],
+    }
+
+
 def build_matrix_rows(matrix_design: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for family in matrix_design.get("families") or []:
@@ -722,6 +792,17 @@ def build_matrix_rows(matrix_design: dict[str, Any]) -> list[dict[str, Any]]:
                 "screenshot_refs": screenshot_ref_list(list(row.get("screenshot_refs") or [])),
             }
         )
+
+    parity_audit = load_json(PARITY_AUDIT_PATH) or {}
+    existing_ids = {str(row.get("element_id") or "").strip() for row in rows}
+    for audit_row in parity_audit.get("rows") or []:
+        if not isinstance(audit_row, dict):
+            continue
+        audit_id = str(audit_row.get("id") or "").strip()
+        if not audit_id or audit_id in existing_ids:
+            continue
+        rows.append(audit_row_to_matrix_row(audit_row))
+        existing_ids.add(audit_id)
 
     return rows
 
@@ -769,6 +850,7 @@ def build_matrix_artifact(matrix_design: dict[str, Any], rows: list[dict[str, An
 def build_no_noise_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]:
     projector_text = (REPO_ROOT / "Chummer.Avalonia" / "MainWindow.ShellFrameProjector.cs").read_text(encoding="utf-8")
     flagship_tests_text = (REPO_ROOT / "Chummer.Tests" / "Presentation" / "AvaloniaFlagshipUiGateTests.cs").read_text(encoding="utf-8")
+    screenshot_evidence = load_json(SCREENSHOT_EVIDENCE_PATH) or {}
 
     reasons: list[str] = []
     required_projector_markers = [
@@ -790,9 +872,11 @@ def build_no_noise_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]
     if missing_test_markers:
         reasons.append(f"AvaloniaFlagshipUiGateTests.cs missing no-noise proof tests: {missing_test_markers}")
 
-    forbidden_controls = ["LoadDemoRunnerButton", "QuickStartContainer"]
+    forbidden_controls = ["LoadDemoRunnerButton", "QuickStartContainer", "GmPrepButton", "RosterMovementButton"]
     forbidden_copy = [
         "Open Demo",
+        "Open GM Prep Packets",
+        "Open Roster Movement",
         "Living World",
         "Signal Deck",
         "Black Ledger",
@@ -813,6 +897,46 @@ def build_no_noise_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]
     if unjustified_visible_controls:
         reasons.append(f"Chummer6-only controls missing row-level reason: {sorted(unjustified_visible_controls)}")
 
+    screenshot_entries = screenshot_evidence.get("entries") if isinstance(screenshot_evidence.get("entries"), list) else []
+    initial_shell_entry = next(
+        (
+            entry for entry in screenshot_entries
+            if isinstance(entry, dict)
+            and str(entry.get("screenshot") or entry.get("Screenshot") or "").strip() == "01-initial-shell-light.png"
+        ),
+        None,
+    )
+    if initial_shell_entry is None:
+        reasons.append("SCREENSHOT_CONTROL_EVIDENCE is missing 01-initial-shell-light.png for public-stable no-noise runtime proof.")
+    else:
+        visible_named_control_ids = {
+            str(value).strip()
+            for value in (initial_shell_entry.get("visibleNamedControlIds") or initial_shell_entry.get("VisibleNamedControlIds") or [])
+            if str(value).strip()
+        }
+        visible_text_samples = {
+            str(value).strip()
+            for value in (initial_shell_entry.get("visibleTextSamples") or initial_shell_entry.get("VisibleTextSamples") or [])
+            if str(value).strip()
+        }
+        visible_menu_command_ids = {
+            str(value).strip()
+            for value in (initial_shell_entry.get("visibleMenuCommandIds") or initial_shell_entry.get("VisibleMenuCommandIds") or [])
+            if str(value).strip()
+        }
+        forbidden_visible_controls = sorted(control for control in forbidden_controls if control in visible_named_control_ids)
+        if forbidden_visible_controls:
+            reasons.append(f"Initial shell screenshot still exposes forbidden controls: {forbidden_visible_controls}")
+        forbidden_visible_copy = sorted(
+            token for token in forbidden_copy
+            if any(token.casefold() in sample.casefold() for sample in visible_text_samples)
+        )
+        if forbidden_visible_copy:
+            reasons.append(f"Initial shell screenshot still exposes forbidden shell copy: {forbidden_visible_copy}")
+        forbidden_menu_ids = sorted(menu_id for menu_id in ("update", "report_bug", "data_exporter") if menu_id in visible_menu_command_ids)
+        if forbidden_menu_ids:
+            reasons.append(f"Initial shell screenshot still exposes unsupported menu commands: {forbidden_menu_ids}")
+
     status = "pass" if not reasons else "fail"
     return {
         "generatedAt": now_iso(),
@@ -832,6 +956,7 @@ def build_no_noise_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]
             rel(REPO_ROOT / "Chummer.Avalonia" / "Controls" / "ToolStripControl.axaml"),
             rel(REPO_ROOT / "Chummer.Avalonia" / "Controls" / "WorkspaceStripControl.axaml"),
         ],
+        "runtimeScreenshotProof": rel(SCREENSHOT_EVIDENCE_PATH),
         "testRefs": required_test_markers,
         "reasons": reasons,
     }
@@ -842,6 +967,11 @@ def build_control_justification_artifact(rows: list[dict[str, Any]]) -> dict[str
         row for row in rows
         if row["present_in_chummer5a"] == "no" and row["present_in_chummer6"] == "yes"
     ]
+    required_hidden_catalog_controls = sorted(
+        row["element_id"]
+        for row in CATALOG_ONLY_ROWS
+        if row["visibility_policy"] == "hidden_by_default_public_stable"
+    )
     reasons = [
         row["element_id"]
         for row in chummer6_only_rows
@@ -857,6 +987,7 @@ def build_control_justification_artifact(rows: list[dict[str, Any]]) -> dict[str
             if status == "pass"
             else "Some Chummer6-only controls still lack row-level justification."
         ),
+        "requiredHiddenCatalogControls": required_hidden_catalog_controls,
         "rows": chummer6_only_rows,
         "reasons": reasons,
     }
@@ -993,7 +1124,9 @@ def build_contact_sheet_artifact(parity_lab_capture_pack: dict[str, Any]) -> dic
             if status == "pass"
             else "One or more side-by-side contact sheets failed to materialize."
         ),
+        "parityLabCapturePack": rel(PARITY_LAB_CAPTURE_PACK_PATH),
         "contactSheetDirectory": rel(CONTACT_SHEET_DIR),
+        "rowCount": len(rows),
         "rows": rows,
         "reasons": failures,
     }
@@ -1039,7 +1172,141 @@ def build_task_budget_artifact(veteran_pack: dict[str, Any]) -> dict[str, Any]:
             if status == "pass"
             else "One or more veteran task-time budgets exceed the parity envelope."
         ),
+        "sourceVeteranPack": rel(VETERAN_PACK_PATH),
+        "requiredTaskIds": sorted(budget_seconds.keys()),
+        "rowCount": len(rows),
         "rows": rows,
+        "reasons": failures,
+    }
+
+
+def build_legacy_mapping_appendix_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    legacy_parity = load_json(LEGACY_PARITY_PATH)
+    parity_audit = load_json(PARITY_AUDIT_PATH)
+
+    family_reviews = (
+        legacy_parity.get("currentMappingReview", {}).get("familyReviews", {})
+        if isinstance(legacy_parity.get("currentMappingReview"), dict)
+        else {}
+    )
+    legacy_disposition_review = (
+        legacy_parity.get("legacyElementDispositionReview", {})
+        if isinstance(legacy_parity.get("legacyElementDispositionReview"), dict)
+        else {}
+    )
+    legacy_extraction_review = (
+        legacy_parity.get("legacyExtractionReview", {})
+        if isinstance(legacy_parity.get("legacyExtractionReview"), dict)
+        else {}
+    )
+    dynamic_element_review = (
+        legacy_parity.get("dynamicElementReview", {})
+        if isinstance(legacy_parity.get("dynamicElementReview"), dict)
+        else {}
+    )
+    audit_rows = parity_audit.get("rows") if isinstance(parity_audit.get("rows"), list) else []
+
+    failures: list[str] = []
+    if str(legacy_parity.get("status") or "").strip().lower() != "pass":
+        failures.append("CHUMMER5A_LEGACY_UI_ELEMENT_PARITY.generated.json is not passing.")
+    if str(parity_audit.get("status") or "").strip().lower() != "pass":
+        failures.append("CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json is not passing.")
+    if int(legacy_disposition_review.get("missingLegacyElementDispositionCount") or 0) != 0:
+        failures.append("Legacy element disposition review still has undispositioned legacy elements.")
+    if int(legacy_disposition_review.get("familyFallbackLegacyElementDispositionCount") or 0) != 0:
+        failures.append("Legacy element disposition review still relies on family-fallback dispositions.")
+    if not isinstance(family_reviews, dict) or not family_reviews:
+        failures.append("Legacy family reviews are missing.")
+
+    family_rows: list[dict[str, Any]] = []
+    for family_id in sorted(family_reviews):
+        review = family_reviews[family_id]
+        if not isinstance(review, dict):
+            failures.append(f"Legacy family review {family_id} is not an object.")
+            continue
+        family_status = str(review.get("status") or "").strip().lower()
+        if family_status != "pass":
+            failures.append(f"Legacy family review {family_id} is not passing.")
+        family_rows.append(
+            {
+                "family_id": family_id,
+                "status": family_status or "fail",
+                "legacy_event_count": int(review.get("legacyEventCount") or 0),
+                "legacy_dynamic_element_count": int(review.get("legacyDynamicElementCount") or 0),
+                "mapped_current_ids": list(review.get("mappedCurrentIds") or []),
+                "available_current_ids": list(review.get("availableCurrentIds") or []),
+                "proof_markers": list(review.get("proofMarkers") or []),
+                "missing_proof_markers": list(review.get("missingProofMarkers") or []),
+            }
+        )
+
+    dialog_rows: list[dict[str, Any]] = []
+    dialog_ids = sorted({str(row.get("dialog_id") or "").strip() for row in matrix_rows if str(row.get("dialog_id") or "").strip()})
+    for dialog_id in dialog_ids:
+        matching_matrix_rows = [row for row in matrix_rows if str(row.get("dialog_id") or "").strip() == dialog_id]
+        if not matching_matrix_rows:
+            failures.append(f"Matrix rows are missing for dialog {dialog_id}.")
+            continue
+        dialog_rows.append(
+            {
+                "dialog_id": dialog_id,
+                "element_count": len(matching_matrix_rows),
+                "sample_rows": [
+                    {
+                        "element_id": str(row.get("element_id") or "").strip(),
+                        "element_label": str(row.get("element_label") or "").strip(),
+                        "family_id": str(row.get("family_id") or "").strip(),
+                        "surface_id": str(row.get("surface_id") or "").strip(),
+                        "present_in_chummer5a": str(row.get("present_in_chummer5a") or "").strip(),
+                        "present_in_chummer6": str(row.get("present_in_chummer6") or "").strip(),
+                        "visual_parity": str(row.get("visual_parity") or "").strip(),
+                        "behavioral_parity": str(row.get("behavioral_parity") or "").strip(),
+                        "reason": str(row.get("reason") or "").strip(),
+                        "test_refs": list(row.get("test_refs") or []),
+                    }
+                    for row in matching_matrix_rows
+                ],
+            }
+        )
+
+    if not audit_rows:
+        failures.append("Parity audit rows are missing from CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json.")
+
+    status = "pass" if not failures else "fail"
+    return {
+        "generatedAt": now_iso(),
+        "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
+        "status": status,
+        "summary": (
+            "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review."
+            if status == "pass"
+            else "Legacy Chummer5A element-level mapping appendix still has coverage or proof gaps."
+        ),
+        "sourceArtifacts": {
+            "legacyUiElementParity": rel(LEGACY_PARITY_PATH),
+            "uiElementParityAudit": rel(PARITY_AUDIT_PATH),
+            "humanParityAcceptanceMatrix": rel(MATRIX_OUTPUT_PATH),
+        },
+        "legacyExtractionSummary": {
+            "designerEventHookCount": int(legacy_extraction_review.get("designerEventHookCount") or 0),
+            "runtimeEventHookCount": int(legacy_extraction_review.get("runtimeEventHookCount") or 0),
+            "dynamicInteractiveElementCount": int(legacy_extraction_review.get("dynamicInteractiveElementCount") or 0),
+        },
+        "legacyDispositionSummary": {
+            "legacyElementDispositionCount": int(legacy_disposition_review.get("legacyElementDispositionCount") or 0),
+            "missingLegacyElementDispositionCount": int(legacy_disposition_review.get("missingLegacyElementDispositionCount") or 0),
+            "familyFallbackLegacyElementDispositionCount": int(legacy_disposition_review.get("familyFallbackLegacyElementDispositionCount") or 0),
+        },
+        "dynamicElementSummary": {
+            "legacyDynamicInteractiveElementCount": int(dynamic_element_review.get("legacyDynamicInteractiveElementCount") or 0),
+            "currentDynamicInteractiveElementCount": int(dynamic_element_review.get("currentDynamicInteractiveElementCount") or 0),
+            "currentNamedAxamlInteractiveElementCount": int(dynamic_element_review.get("currentNamedAxamlInteractiveElementCount") or 0),
+        },
+        "familyRowCount": len(family_rows),
+        "dialogRowCount": len(dialog_rows),
+        "familyRows": family_rows,
+        "dialogRows": dialog_rows,
+        "auditRowCount": len(audit_rows),
         "reasons": failures,
     }
 
@@ -1061,6 +1328,7 @@ def main() -> int:
     screenshot_matrix_artifact = build_screenshot_matrix_artifact(matrix_design)
     contact_sheet_artifact = build_contact_sheet_artifact(parity_lab_capture_pack)
     task_budget_artifact = build_task_budget_artifact(veteran_pack)
+    legacy_mapping_appendix_artifact = build_legacy_mapping_appendix_artifact(rows)
 
     write_json(MATRIX_OUTPUT_PATH, matrix_artifact)
     write_json(NO_NOISE_OUTPUT_PATH, no_noise_artifact)
@@ -1068,6 +1336,7 @@ def main() -> int:
     write_json(SCREENSHOT_MATRIX_OUTPUT_PATH, screenshot_matrix_artifact)
     write_json(CONTACT_SHEET_OUTPUT_PATH, contact_sheet_artifact)
     write_json(TASK_BUDGET_OUTPUT_PATH, task_budget_artifact)
+    write_json(LEGACY_APPENDIX_OUTPUT_PATH, legacy_mapping_appendix_artifact)
 
     artifacts = [
         matrix_artifact,
@@ -1076,6 +1345,7 @@ def main() -> int:
         screenshot_matrix_artifact,
         contact_sheet_artifact,
         task_budget_artifact,
+        legacy_mapping_appendix_artifact,
     ]
     all_pass = all(str(artifact.get("status") or "").strip().lower() == "pass" for artifact in artifacts)
     VERDICT_OUTPUT_PATH.write_text(

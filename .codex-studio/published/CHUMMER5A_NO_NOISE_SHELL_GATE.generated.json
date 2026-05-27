@@ -1,15 +1,19 @@
 {
-  "generatedAt": "2026-05-26T21:39:16.887979Z",
+  "generatedAt": "2026-05-27T20:06:54.265962Z",
   "contractName": "chummer6-ui.chummer5a_no_noise_shell_gate",
   "channelId": "public_stable",
   "status": "pass",
   "summary": "Public-stable shell hides demo/sample noise by default and requires an explicit internal override before sample controls reappear.",
   "forbiddenControls": [
     "LoadDemoRunnerButton",
-    "QuickStartContainer"
+    "QuickStartContainer",
+    "GmPrepButton",
+    "RosterMovementButton"
   ],
   "forbiddenVisibleCopy": [
     "Open Demo",
+    "Open GM Prep Packets",
+    "Open Roster Movement",
     "Living World",
     "Signal Deck",
     "Black Ledger",
@@ -21,6 +25,8 @@
     "tab-create",
     "tab-rules",
     "build-lab",
+    "gm_prep",
+    "roster_movement",
     "data_exporter"
   ],
   "sourceRefs": [
@@ -28,6 +34,7 @@
     "chummer-presentation/Chummer.Avalonia/Controls/ToolStripControl.axaml",
     "chummer-presentation/Chummer.Avalonia/Controls/WorkspaceStripControl.axaml"
   ],
+  "runtimeScreenshotProof": "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
   "testRefs": [
     "Public_stable_shell_hides_demo_runner_and_quick_start_noise_by_default",
     "Public_stable_shell_allows_internal_sample_override_for_operator_and_test_access"

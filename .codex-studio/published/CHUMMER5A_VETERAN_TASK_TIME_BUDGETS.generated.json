@@ -1,8 +1,16 @@
 {
-  "generatedAt": "2026-05-26T21:39:18.144680Z",
+  "generatedAt": "2026-05-27T20:06:55.478530Z",
   "contractName": "chummer6-ui.chummer5a_veteran_task_time_budgets",
   "status": "pass",
   "summary": "Numeric veteran task-time budgets are materialized and remain within the Chummer5A parity envelope.",
+  "sourceVeteranPack": "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
+  "requiredTaskIds": [
+    "locate_master_index_and_roster",
+    "locate_save_import_settings",
+    "reach_real_workbench",
+    "recover_section_rhythm"
+  ],
+  "rowCount": 8,
   "rows": [
     {
       "task_id": "reach_real_workbench",

@@ -1016,6 +1016,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "Translator",
                     StringComparison.Ordinal));
+            AssertDialogMouseReachabilityOrScrollContainment(harness.Window, "Translator");
             AssertDialogContainsAll(
                 harness,
                 "Translator",
@@ -1036,6 +1037,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "XML Editor",
                     StringComparison.Ordinal));
+            AssertDialogMouseReachabilityOrScrollContainment(harness.Window, "XML Editor");
             AssertDialogContainsAll(
                 harness,
                 "XML Editor",
@@ -1055,6 +1057,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "Hero Lab Importer",
                     StringComparison.Ordinal));
+            AssertDialogMouseReachabilityOrScrollContainment(harness.Window, "Hero Lab Importer");
             AssertDialogContainsAll(
                 harness,
                 "Hero Lab Importer",
@@ -3114,6 +3117,29 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Runtime_backed_mouse_only_first_minute_controls_stay_inside_flagship_viewport_without_scroll_dependency()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            AssertMouseReachabilityWithinFlagshipViewport(
+                harness.Window,
+                "first-minute flagship shell");
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_mouse_only_loaded_runner_controls_stay_inside_flagship_viewport_without_scroll_dependency()
+    {
+        WithLoadedRunnerHarness(harness =>
+        {
+            AssertMouseReachabilityWithinFlagshipViewport(
+                harness.Window,
+                "loaded-runner flagship workbench");
+        });
+    }
+
+    [TestMethod]
     public void Master_index_is_a_first_class_runtime_backed_workbench_route()
     {
         // Runtime_backed_mouse_only_master_index_source_click_executes_open_source_action
@@ -3617,15 +3643,34 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         try
         {
-            Dictionary<string, ScreenshotProofCapture> screenshots = WithHarness(harness =>
+            Dictionary<string, ScreenshotProofCapture> screenshots = new(StringComparer.Ordinal);
+
+            string? priorReleaseChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+            string? priorSampleControls = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES");
+            try
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", null);
+                screenshots[expectedFiles[0]] = WithHarness(harness =>
+                {
+                    harness.WaitForReady();
+                    harness.SetTheme(ThemeVariant.Light);
+                    return CaptureScreenshotProof(harness, expectedFiles[0]);
+                });
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorReleaseChannel);
+                Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleControls);
+            }
+
+            Dictionary<string, ScreenshotProofCapture> veteranWorkflowScreenshots = WithHarness(harness =>
             {
                 Dictionary<string, ScreenshotProofCapture> captured = new(StringComparer.Ordinal);
 
                 harness.WaitForReady();
 
                 harness.SetTheme(ThemeVariant.Light);
-                captured[expectedFiles[0]] = CaptureScreenshotProof(harness, expectedFiles[0]);
-
                 harness.Click("FileMenuButton");
                 harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
                 captured[expectedFiles[1]] = CaptureScreenshotProof(harness, expectedFiles[1]);
@@ -4093,6 +4138,11 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 return captured;
             });
+
+            foreach ((string screenshotName, ScreenshotProofCapture capture) in veteranWorkflowScreenshots)
+            {
+                screenshots[screenshotName] = capture;
+            }
 
             foreach ((string fileName, ScreenshotProofCapture capture) in screenshots)
             {
@@ -5298,9 +5348,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, string screenshotFileName)
     {
+        TopLevel root = harness.Window;
         Control[] visibleNamedControls = harness.Window.GetVisualDescendants()
             .OfType<Control>()
-            .Where(static control => control.IsVisible && !string.IsNullOrWhiteSpace(control.Name))
+            .Where(control => IsEffectivelyVisibleForScreenshotEvidence(control, root) && !string.IsNullOrWhiteSpace(control.Name))
             .OrderBy(control => control.Name, StringComparer.Ordinal)
             .ToArray();
 
@@ -5375,7 +5426,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             .ToArray();
         string[] visibleTextSamples = harness.Window.GetVisualDescendants()
             .OfType<TextBlock>()
-            .Where(static control => control.IsVisible)
+            .Where(control => IsEffectivelyVisibleForScreenshotEvidence(control, root))
             .Select(control => control.Text ?? string.Empty)
             .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.Ordinal)
@@ -5387,7 +5438,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        string[] visibleTabLabels = harness.FindControlOrDefault<TabStrip>("LoadedRunnerTabStrip")?.Items is IEnumerable tabItems
+        string[] visibleTabLabels = harness.FindControlOrDefault<TabStrip>("LoadedRunnerTabStrip") is { } loadedRunnerTabStrip
+            && IsEffectivelyVisibleForScreenshotEvidence(loadedRunnerTabStrip, root)
+            && loadedRunnerTabStrip.Items is IEnumerable tabItems
             ? tabItems
                 .OfType<NavigatorTabItem>()
                 .Select(item => item.Label ?? string.Empty)
@@ -5402,13 +5455,13 @@ public sealed class AvaloniaFlagshipUiGateTests
             .ToArray();
         string[] selectedListRowTexts = harness.Window.GetVisualDescendants()
             .OfType<ListBox>()
-            .Where(static listBox => listBox.IsVisible && listBox.SelectedItem is not null)
+            .Where(listBox => IsEffectivelyVisibleForScreenshotEvidence(listBox, root) && listBox.SelectedItem is not null)
             .Select(listBox => listBox.SelectedItem?.ToString() ?? string.Empty)
             .Where(static value => !string.IsNullOrWhiteSpace(value))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         ScreenshotVisibleNamedControlEntry[] visibleNamedControlEntries = visibleNamedControls
-            .Select(control => BuildVisibleNamedControlEntry(control, harness.Window))
+            .Select(control => BuildVisibleNamedControlEntry(control, root))
             .ToArray();
 
         string theme = (harness.Window.ActualThemeVariant ?? harness.Window.RequestedThemeVariant ?? ThemeVariant.Default).ToString();
@@ -5431,6 +5484,161 @@ public sealed class AvaloniaFlagshipUiGateTests
             VisibleSectionQuickActionIds: visibleSectionQuickActionIds,
             SelectedListRowTexts: selectedListRowTexts,
             PreviewText: previewText);
+    }
+
+    private static bool IsEffectivelyVisibleForScreenshotEvidence(Control control, TopLevel root)
+    {
+        if (!control.IsVisible)
+        {
+            return false;
+        }
+
+        if (control.Bounds.Width <= 0 || control.Bounds.Height <= 0)
+        {
+            return false;
+        }
+
+        if (control.TranslatePoint(default, root) is null)
+        {
+            return false;
+        }
+
+        return control.GetVisualAncestors().All(static ancestor => ancestor.IsVisible);
+    }
+
+    private static void AssertMouseReachabilityWithinFlagshipViewport(TopLevel root, string surfaceLabel)
+    {
+        Rect viewport = new(0d, 0d, root.Bounds.Width, root.Bounds.Height);
+        string[] failures = root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control => IsFlagshipMouseTargetControl(control, root))
+            .Select(control => DescribeMouseReachabilityFailure(control, root, viewport))
+            .Where(static failure => !string.IsNullOrWhiteSpace(failure))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+
+        Assert.AreEqual(
+            0,
+            failures.Length,
+            $"{surfaceLabel} must keep every visible mouse target inside the desktop viewport without relying on offscreen scroll-only reachability. Failures:{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
+    }
+
+    private static void AssertControlMouseReachable(Control control, TopLevel root)
+    {
+        Rect viewport = new(0d, 0d, root.Bounds.Width, root.Bounds.Height);
+        string? failure = DescribeMouseReachabilityFailure(control, root, viewport);
+        Assert.IsTrue(
+            string.IsNullOrWhiteSpace(failure),
+            failure ?? $"Control '{control.Name ?? control.GetType().Name}' must be mouse reachable.");
+    }
+
+    private static void AssertDialogMouseReachabilityOrScrollContainment(TopLevel root, string dialogTitle)
+    {
+        Rect viewport = new(0d, 0d, root.Bounds.Width, root.Bounds.Height);
+        string[] failures = root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control => IsFlagshipMouseTargetControl(control, root))
+            .Select(control => DescribeDialogReachabilityFailure(control, root, viewport))
+            .Where(static failure => !string.IsNullOrWhiteSpace(failure))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+
+        Assert.AreEqual(
+            0,
+            failures.Length,
+            $"{dialogTitle} must keep every visible mouse target onscreen or inside a visible scroll host. Failures:{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
+    }
+
+    private static TopLevel GetMouseInteractionRoot(Control control, TopLevel fallbackRoot)
+        => TopLevel.GetTopLevel(control) ?? fallbackRoot;
+
+    private static ScrollViewer? FindVisibleScrollHost(Control control)
+        => control.GetVisualAncestors()
+            .OfType<ScrollViewer>()
+            .FirstOrDefault(static candidate => candidate.IsVisible);
+
+    private static bool IsFlagshipMouseTargetControl(Control control, TopLevel root)
+    {
+        if (!IsEffectivelyVisibleForScreenshotEvidence(control, root))
+        {
+            return false;
+        }
+
+        string name = control.Name ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(name) || name.StartsWith("PART_", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return control is Button
+            or MenuItem
+            or TabStrip
+            or TreeView
+            or ListBox
+            or ComboBox
+            or CheckBox
+            or TextBox
+            or ToggleButton
+            or Expander;
+    }
+
+    private static string? DescribeMouseReachabilityFailure(Control control, TopLevel root, Rect viewport)
+    {
+        Point? translated = control.TranslatePoint(
+            new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
+            root);
+        if (translated is null)
+        {
+            return $"{control.Name} ({control.GetType().Name}) could not translate its mouse target into window coordinates.";
+        }
+
+        Point center = translated.Value;
+        bool withinViewport =
+            center.X >= viewport.X
+            && center.Y >= viewport.Y
+            && center.X <= viewport.X + viewport.Width
+            && center.Y <= viewport.Y + viewport.Height;
+        if (withinViewport)
+        {
+            return null;
+        }
+
+        ScrollViewer? scrollHost = FindVisibleScrollHost(control);
+        string hostChain = string.Join(
+            " -> ",
+            control.GetVisualAncestors()
+                .OfType<Control>()
+                .Take(6)
+                .Select(static ancestor => $"{ancestor.Name ?? ancestor.GetType().Name}[{ancestor.Bounds.Width:F0}x{ancestor.Bounds.Height:F0}]"));
+        return scrollHost is null
+            ? $"{control.Name} ({control.GetType().Name}) is offscreen at ({center.X:F1}, {center.Y:F1}) without a visible scroll host. Control={control.Bounds.Width:F0}x{control.Bounds.Height:F0}, Root={root.Bounds.Width:F0}x{root.Bounds.Height:F0}, Ancestors={hostChain}."
+            : $"{control.Name} ({control.GetType().Name}) is offscreen at ({center.X:F1}, {center.Y:F1}) and only reachable through scroll host '{scrollHost.Name ?? scrollHost.GetType().Name}'. Control={control.Bounds.Width:F0}x{control.Bounds.Height:F0}, Root={root.Bounds.Width:F0}x{root.Bounds.Height:F0}, Ancestors={hostChain}.";
+    }
+
+    private static string? DescribeDialogReachabilityFailure(Control control, TopLevel root, Rect viewport)
+    {
+        Point? translated = control.TranslatePoint(
+            new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
+            root);
+        if (translated is null)
+        {
+            return $"{control.Name} ({control.GetType().Name}) could not translate its mouse target into window coordinates.";
+        }
+
+        Point center = translated.Value;
+        bool withinViewport =
+            center.X >= viewport.X
+            && center.Y >= viewport.Y
+            && center.X <= viewport.X + viewport.Width
+            && center.Y <= viewport.Y + viewport.Height;
+        if (withinViewport)
+        {
+            return null;
+        }
+
+        return FindVisibleScrollHost(control) is null
+            ? $"{control.Name} ({control.GetType().Name}) is offscreen at ({center.X:F1}, {center.Y:F1}) without a visible scroll host. Control={control.Bounds.Width:F0}x{control.Bounds.Height:F0}, Root={root.Bounds.Width:F0}x{root.Bounds.Height:F0}."
+            : null;
     }
 
     private static ScreenshotVisibleNamedControlEntry BuildVisibleNamedControlEntry(Control control, TopLevel root)
@@ -5547,6 +5755,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                 expectedTitle,
                 StringComparison.Ordinal));
+        AssertDialogMouseReachabilityOrScrollContainment(
+            harness.Window,
+            expectedTitle);
 
         string[] fieldLines = harness.FindDialogFieldTexts();
         Assert.IsTrue(
@@ -6150,6 +6361,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void Click(string controlName)
         {
             Control control = FindControl<Control>(controlName);
+            TopLevel root = GetMouseInteractionRoot(control, Window);
+            if (!string.IsNullOrWhiteSpace(DescribeMouseReachabilityFailure(control, root, new Rect(0d, 0d, root.Bounds.Width, root.Bounds.Height)))
+                && FindVisibleScrollHost(control) is not null)
+            {
+                control.BringIntoView();
+                Pump();
+                root = GetMouseInteractionRoot(control, Window);
+            }
+            AssertControlMouseReachable(control, root);
             if (control is Button button)
             {
                 Assert.IsTrue(button.IsEnabled, $"Control '{controlName}' must be enabled.");
@@ -6167,13 +6387,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
-                Window);
+                root);
             Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
 
             Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            root.MouseMove(location, RawInputModifiers.None);
+            root.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+            root.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
             Pump();
         }
 
@@ -6322,9 +6542,28 @@ public sealed class AvaloniaFlagshipUiGateTests
         public T? FindControlOrDefault<T>(string name)
             where T : Control
         {
-            return Window.GetVisualDescendants()
+            T[] matches = Window.GetVisualDescendants()
                 .OfType<T>()
-                .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
+                .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length <= 1)
+            {
+                return matches.FirstOrDefault();
+            }
+
+            return matches
+                .OrderByDescending(control =>
+                {
+                    TopLevel root = GetMouseInteractionRoot(control, Window);
+                    return IsEffectivelyVisibleForScreenshotEvidence(control, root);
+                })
+                .ThenBy(control =>
+                {
+                    TopLevel root = GetMouseInteractionRoot(control, Window);
+                    Point? translated = control.TranslatePoint(default, root);
+                    return translated?.Y ?? double.MaxValue;
+                })
+                .FirstOrDefault();
         }
 
         public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000)
@@ -6443,6 +6682,15 @@ public sealed class AvaloniaFlagshipUiGateTests
         public void Click(string controlName)
         {
             Control control = FindControl<Control>(controlName);
+            TopLevel root = GetMouseInteractionRoot(control, Window);
+            if (!string.IsNullOrWhiteSpace(DescribeMouseReachabilityFailure(control, root, new Rect(0d, 0d, root.Bounds.Width, root.Bounds.Height)))
+                && FindVisibleScrollHost(control) is not null)
+            {
+                control.BringIntoView();
+                Pump();
+                root = GetMouseInteractionRoot(control, Window);
+            }
+            AssertControlMouseReachable(control, root);
             if (control is Button button)
             {
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -6459,13 +6707,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Point? translated = control.TranslatePoint(
                 new Point(control.Bounds.Width / 2d, control.Bounds.Height / 2d),
-                Window);
+                root);
             Assert.IsNotNull(translated, $"Unable to translate control '{controlName}' to window coordinates.");
 
             Point location = translated!.Value;
-            Window.MouseMove(location, RawInputModifiers.None);
-            Window.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
-            Window.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
+            root.MouseMove(location, RawInputModifiers.None);
+            root.MouseDown(location, MouseButton.Left, RawInputModifiers.LeftMouseButton);
+            root.MouseUp(location, MouseButton.Left, RawInputModifiers.None);
             Pump();
         }
 
@@ -6518,9 +6766,28 @@ public sealed class AvaloniaFlagshipUiGateTests
         public T? FindControlOrDefault<T>(string name)
             where T : Control
         {
-            return Window.GetVisualDescendants()
+            T[] matches = Window.GetVisualDescendants()
                 .OfType<T>()
-                .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
+                .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal))
+                .ToArray();
+            if (matches.Length <= 1)
+            {
+                return matches.FirstOrDefault();
+            }
+
+            return matches
+                .OrderByDescending(control =>
+                {
+                    TopLevel root = GetMouseInteractionRoot(control, Window);
+                    return IsEffectivelyVisibleForScreenshotEvidence(control, root);
+                })
+                .ThenBy(control =>
+                {
+                    TopLevel root = GetMouseInteractionRoot(control, Window);
+                    Point? translated = control.TranslatePoint(default, root);
+                    return translated?.Y ?? double.MaxValue;
+                })
+                .FirstOrDefault();
         }
 
         public byte[] CaptureScreenshotBytes()

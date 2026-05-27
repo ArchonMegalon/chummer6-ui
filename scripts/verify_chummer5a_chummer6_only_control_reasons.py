@@ -7,7 +7,6 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = REPO_ROOT / ".codex-studio" / "published" / "CHUMMER5A_CHUMMER6_ONLY_CONTROL_JUSTIFICATION.generated.json"
-REQUIRED_CONTROLS = {"tab-create", "tab-rules", "build-lab", "data_exporter"}
 
 
 def main() -> int:
@@ -30,7 +29,19 @@ def main() -> int:
         if not str(row.get("reason") or "").strip():
             raise SystemExit(f"control {element_id} is missing a row-level reason")
 
-    missing = sorted(REQUIRED_CONTROLS - seen_controls)
+    required_controls = payload.get("requiredHiddenCatalogControls")
+    if not isinstance(required_controls, list) or not required_controls:
+        raise SystemExit("requiredHiddenCatalogControls are missing")
+
+    normalized_required_controls = {
+        str(value).strip()
+        for value in required_controls
+        if str(value).strip()
+    }
+    if not normalized_required_controls:
+        raise SystemExit("requiredHiddenCatalogControls are empty")
+
+    missing = sorted(normalized_required_controls - seen_controls)
     if missing:
         raise SystemExit(f"required catalog-only controls missing from justification artifact: {missing}")
 

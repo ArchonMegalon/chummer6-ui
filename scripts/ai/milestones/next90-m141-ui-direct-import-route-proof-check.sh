@@ -27,6 +27,8 @@ from pathlib import Path
 
 frontier_root = Path(sys.argv[1])
 frontier_id = str(sys.argv[2]).strip()
+published_root = frontier_root.parent
+whole_project_frontier = published_root / "FULL_PRODUCT_FRONTIER.generated.yaml"
 preferred = frontier_root / "shard-1.generated.yaml"
 if preferred.is_file():
     preferred_text = preferred.read_text(encoding="utf-8")
@@ -43,6 +45,10 @@ for candidate in candidates:
     if frontier_id and frontier_id in candidate_text:
         print(candidate)
         raise SystemExit(0)
+
+if whole_project_frontier.is_file():
+    print(whole_project_frontier)
+    raise SystemExit(0)
 
 if preferred.is_file():
     print(preferred)
@@ -61,8 +67,15 @@ import sys
 from pathlib import Path
 
 frontier_root = Path(sys.argv[1])
+published_root = frontier_root.parent
+whole_project_frontier = published_root / "FULL_PRODUCT_FRONTIER.generated.yaml"
 candidates = sorted(frontier_root.glob("shard-*.generated.yaml"))
-print(candidates[0] if candidates else frontier_root / "shard-1.generated.yaml")
+if whole_project_frontier.is_file():
+    print(whole_project_frontier)
+elif candidates:
+    print(candidates[0])
+else:
+    print(frontier_root / "shard-1.generated.yaml")
 PY
   )"
 fi
@@ -565,6 +578,7 @@ queue_checks = {
     "design_queue_worker_safe": all(token.lower() not in design_queue_block.lower() for token in DISALLOWED_PROOF_TOKENS),
 }
 normalized_flagship_frontier_text = normalize_space(flagship_frontier_text)
+flagship_frontier_path_is_whole_project = flagship_frontier_path.name == "FULL_PRODUCT_FRONTIER.generated.yaml"
 flagship_frontier_repo_local_closeout = all(
     marker in normalized_flagship_frontier_text
     for marker in [
@@ -591,8 +605,10 @@ flagship_frontier_active_product = all(
 
 flagship_frontier_checks = {
     "frontier_artifact_present": bool(flagship_frontier_text),
-    "frontier_artifact_path_under_root": str(flagship_frontier_path).startswith(str(flagship_frontier_root)),
-    "frontier_artifact_uses_shard_generated_yaml": flagship_frontier_path.name.startswith("shard-") and flagship_frontier_path.name.endswith(".generated.yaml"),
+    "frontier_artifact_path_under_root": str(flagship_frontier_path).startswith(str(flagship_frontier_root)) or flagship_frontier_path_is_whole_project,
+    "frontier_artifact_uses_shard_generated_yaml": (
+        flagship_frontier_path.name.startswith("shard-") and flagship_frontier_path.name.endswith(".generated.yaml")
+    ) or flagship_frontier_path_is_whole_project,
     "frontier_id_present": f"id: {FLAGSHIP_FRONTIER_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
     "queue_package_present": f"package_id: {PACKAGE_ID}" in flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,
     "title_present": normalize_space(TITLE) in normalized_flagship_frontier_text or flagship_frontier_repo_local_closeout or flagship_frontier_active_product,

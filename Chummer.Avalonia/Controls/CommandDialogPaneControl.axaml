@@ -3,92 +3,94 @@
              x:Class="Chummer.Avalonia.Controls.CommandDialogPaneControl">
   <Border Classes="shell-card"
           Padding="0">
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto"
-          RowSpacing="0">
-      <Border Grid.Row="0"
-              Background="{DynamicResource ChummerShellDialogHeaderBrush}"
-              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
-              BorderThickness="0,0,0,1"
-              Padding="0"
-              IsVisible="False">
-        <TextBlock x:Name="DialogTitleText"
-                   Text=""
-                   FontWeight="SemiBold"
-                   TextWrapping="Wrap" />
-      </Border>
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+            RowSpacing="0">
+        <Border Grid.Row="0"
+                Background="{DynamicResource ChummerShellDialogHeaderBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="0"
+                IsVisible="False">
+          <TextBlock x:Name="DialogTitleText"
+                     Text=""
+                     FontWeight="SemiBold"
+                     TextWrapping="Wrap" />
+        </Border>
 
-      <Border Grid.Row="1"
-              x:Name="DialogMessageBorder"
-              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
-              BorderThickness="0,0,0,1"
-              Padding="6,3"
-              IsVisible="False">
-        <TextBlock x:Name="DialogMessageText"
-                   Classes="shell-caption"
-                   Text=""
-                   TextWrapping="Wrap" />
-      </Border>
-
-      <Border Grid.Row="2"
-              x:Name="DialogTrustReceiptBorder"
-              Classes="shell-panel subtle"
-              Padding="6,3"
-              IsVisible="False">
-        <StackPanel Spacing="4">
-          <TextBlock Text="Why This Action Is Here"
-                     Classes="shell-section-title" />
-          <TextBlock x:Name="DialogTrustReceiptText"
+        <Border Grid.Row="1"
+                x:Name="DialogMessageBorder"
+                BorderBrush="{DynamicResource ChummerShellBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="6,3"
+                IsVisible="False">
+          <TextBlock x:Name="DialogMessageText"
                      Classes="shell-caption"
                      Text=""
                      TextWrapping="Wrap" />
-        </StackPanel>
-      </Border>
+        </Border>
 
-      <ScrollViewer Grid.Row="3"
-                    VerticalScrollBarVisibility="Auto"
-                    Padding="6,4">
-        <StackPanel x:Name="DialogFieldsHost" Spacing="6" />
-      </ScrollViewer>
+        <Border Grid.Row="2"
+                x:Name="DialogTrustReceiptBorder"
+                Classes="shell-panel subtle"
+                Padding="6,3"
+                IsVisible="False">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Why This Action Is Here"
+                       Classes="shell-section-title" />
+            <TextBlock x:Name="DialogTrustReceiptText"
+                       Classes="shell-caption"
+                       Text=""
+                       TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
 
-      <Border Grid.Row="4"
-              x:Name="DialogActionsBorder"
-              Background="{DynamicResource ChummerShellChromeBrush}"
-              BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
-              BorderThickness="0,1,0,0"
-              Padding="6,4"
-              IsVisible="False">
-        <WrapPanel x:Name="DialogActionsHost"
-                   Orientation="Horizontal"
-                   HorizontalAlignment="Right"
-                   ItemHeight="26" />
-      </Border>
+        <Border Grid.Row="3"
+                Padding="6,4">
+          <StackPanel x:Name="DialogFieldsHost" Spacing="6" />
+        </Border>
 
-      <Border Grid.Row="5"
-              x:Name="CommandsHostBorder"
-              Classes="shell-panel subtle"
-              Padding="3,2"
-              IsVisible="False">
-        <ListBox x:Name="CommandsList">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
-                <TextBlock Grid.Column="0"
-                           Classes="shell-caption"
-                           Text="{Binding Label}" />
-                <TextBlock Grid.Column="1"
-                           Classes="shell-caption"
-                           Text="{Binding Group}"
-                           IsVisible="False" />
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-          <ListBox.ItemsPanel>
-            <ItemsPanelTemplate>
-              <VirtualizingStackPanel />
-            </ItemsPanelTemplate>
-          </ListBox.ItemsPanel>
-        </ListBox>
-      </Border>
-    </Grid>
+        <Border Grid.Row="4"
+                x:Name="DialogActionsBorder"
+                Background="{DynamicResource ChummerShellChromeBrush}"
+                BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="6,4"
+                IsVisible="False">
+          <WrapPanel x:Name="DialogActionsHost"
+                     Orientation="Horizontal"
+                     HorizontalAlignment="Right"
+                     ItemHeight="26" />
+        </Border>
+
+        <Border Grid.Row="5"
+                x:Name="CommandsHostBorder"
+                Classes="shell-panel subtle"
+                Padding="3,2"
+                IsVisible="False">
+          <ListBox x:Name="CommandsList">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                  <TextBlock Grid.Column="0"
+                             Classes="shell-caption"
+                             Text="{Binding Label}" />
+                  <TextBlock Grid.Column="1"
+                             Classes="shell-caption"
+                             Text="{Binding Group}"
+                             IsVisible="False" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+          </ListBox>
+        </Border>
+      </Grid>
+    </ScrollViewer>
   </Border>
 </UserControl>

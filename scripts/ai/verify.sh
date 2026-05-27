@@ -1097,6 +1097,33 @@ bash scripts/ai/milestones/b12-generated-asset-dispatch-check.sh
 echo "[verify] checking B9 campaign journal planner/calendar guard..."
 bash scripts/ai/milestones/b9-campaign-journal-check.sh
 
+echo "[verify] materializing full Chummer5A human-parity closeout artifacts..."
+python3 scripts/materialize_chummer5a_full_ui_parity_artifacts.py
+
+echo "[verify] checking Chummer5A human-parity acceptance matrix..."
+python3 scripts/verify_chummer5a_human_parity_matrix.py
+
+echo "[verify] checking Chummer5A no-noise shell gate..."
+python3 scripts/verify_chummer5a_no_noise_shell.py
+
+echo "[verify] checking Chummer5A Chummer6-only control justification..."
+python3 scripts/verify_chummer5a_chummer6_only_control_reasons.py
+
+echo "[verify] checking Chummer5A screenshot matrix..."
+python3 scripts/verify_chummer5a_human_parity_screenshot_matrix.py
+
+echo "[verify] checking Chummer5A side-by-side contact sheets..."
+python3 scripts/verify_chummer5a_side_by_side_contact_sheets.py
+
+echo "[verify] checking Chummer5A veteran task-time budgets..."
+python3 scripts/verify_chummer5a_veteran_task_time_budgets.py
+
+echo "[verify] checking Chummer5A legacy UI element mapping appendix..."
+python3 scripts/verify_legacy_ui_element_mapping_appendix.py
+
+echo "[verify] checking full Chummer5A UI parity verdict..."
+python3 scripts/verify_chummer5a_ui_parity_verdict.py
+
 if ! rg -n 'BuildLabHandoffPanel|RulesNavigatorPanel|CreatorPublicationPanel' \
   Chummer.Blazor/Components/Pages/Showcase.razor >/dev/null; then
   echo "[verify] FAIL: showcase surface must compose the Build Lab handoff, Rules Navigator, and creator publication panels."

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-05-27T06:46:19Z",
+  "generated_at": "2026-05-27T20:05:20Z",
   "channelId": "public_stable",
   "releaseVersion": "run-20260518-220935",
   "status": "passed",
@@ -29,11 +29,12 @@
     "receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
     "candidate_paths": [
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
     ],
     "ready_checkpoint": "pre_ui_event_loop",
@@ -48,13 +49,13 @@
     "artifact_path": "files/chummer-avalonia-osx-arm64-installer.dmg",
     "artifact_path_candidates": [
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-osx-arm64-installer.dmg",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "/docker/chummercomplete/chummer6-ui/.tmp/files/chummer-avalonia-osx-arm64-installer.dmg",
       "/docker/chummercomplete/chummer6-ui/files/chummer-avalonia-osx-arm64-installer.dmg",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
     ],
     "receipt_recorded_at": "2026-05-18T22:12:25.078065+00:00",
-    "receipt_age_seconds": 722034,
+    "receipt_age_seconds": 769975,
     "receipt_max_age_seconds": 604800,
     "receipt_max_future_skew_seconds": 300,
     "external_blocker": "",
@@ -88,7 +89,7 @@
     "receipt_stale": true
   },
   "checks": {
-    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "app_key": "avalonia",
     "rid": "osx-arm64",
     "launch_target": "Chummer.Avalonia",
@@ -118,8 +119,8 @@
       "channel": "public_stable",
       "version": "run-20260518-220935",
       "releaseVersion": "run-20260518-220935",
-      "generated_at": "2026-05-26T09:56:34Z",
-      "generatedAt": "2026-05-26T09:56:34Z",
+      "generated_at": "2026-05-27T19:42:10Z",
+      "generatedAt": "2026-05-27T19:42:10Z",
       "id": "avalonia-osx-arm64-installer"
     },
     "artifact": {
@@ -136,11 +137,12 @@
     },
     "startup_smoke_candidate_paths": [
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
     ],
     "startup_smoke": {
@@ -148,11 +150,12 @@
       "receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
       "candidate_paths": [
         "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer6-ui/.tmp/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer6-ui/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "/docker/chummercomplete/chummer-hub-registry/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json"
       ],
       "ready_checkpoint": "pre_ui_event_loop",
@@ -167,13 +170,13 @@
       "artifact_path": "files/chummer-avalonia-osx-arm64-installer.dmg",
       "artifact_path_candidates": [
         "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
-        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-osx-arm64-installer.dmg",
-        "/docker/chummercomplete/chummer-hub-registry/.codex-studio/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "/docker/chummercomplete/chummer6-ui/.tmp/files/chummer-avalonia-osx-arm64-installer.dmg",
         "/docker/chummercomplete/chummer6-ui/files/chummer-avalonia-osx-arm64-installer.dmg",
         "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
       ],
       "receipt_recorded_at": "2026-05-18T22:12:25.078065+00:00",
-      "receipt_age_seconds": 722034,
+      "receipt_age_seconds": 769975,
       "receipt_max_age_seconds": 604800,
       "receipt_max_future_skew_seconds": 300,
       "external_blocker": "",
