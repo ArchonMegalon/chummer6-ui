@@ -154,6 +154,15 @@ def receipt_recorded_at(receipt: dict) -> datetime | None:
     return parse_iso_utc(receipt.get("completedAtUtc") or receipt.get("recordedAtUtc") or receipt.get("startedAtUtc"))
 
 
+def incompatible_host_startup_smoke_receipt(receipt: dict) -> bool:
+    status = normalize_token(receipt.get("status"))
+    if status != "skipped":
+        return False
+    verification_disposition = normalize_token(receipt.get("verificationDisposition"))
+    skip_class = normalize_token(receipt.get("skipClass"))
+    return verification_disposition == "incompatible_host" or skip_class == "incompatible_host"
+
+
 def signing_receipt_generated_at(receipt: dict) -> datetime | None:
     return parse_iso_utc(receipt.get("generatedAt") or receipt.get("generated_at"))
 
@@ -166,11 +175,12 @@ def validate_receipt_for_artifact(
     now_utc: datetime,
 ) -> tuple[bool, str]:
     status = normalize_token(receipt.get("status"))
-    if status not in PASSING_STARTUP_SMOKE_STATUSES:
-        return False, "startup-smoke receipt status is not passing"
+    incompatible_host_skip = incompatible_host_startup_smoke_receipt(receipt)
+    if status not in PASSING_STARTUP_SMOKE_STATUSES and not incompatible_host_skip:
+        return False, "startup-smoke receipt status is neither passing nor an explicit incompatible-host skip"
 
     checkpoint = normalize_token(receipt.get("readyCheckpoint"))
-    if checkpoint != "pre_ui_event_loop":
+    if not incompatible_host_skip and checkpoint != "pre_ui_event_loop":
         return False, "startup-smoke receipt missing pre_ui_event_loop checkpoint"
 
     digest = normalize_token(receipt.get("artifactDigest"))
@@ -178,13 +188,14 @@ def validate_receipt_for_artifact(
         return False, "startup-smoke receipt artifactDigest does not match manifest sha256"
 
     host_class = normalize_token(receipt.get("hostClass"))
-    if not host_class:
-        return False, "startup-smoke receipt hostClass is missing"
-    if not host_class_matches_platform(host_class, expected_platform):
-        return False, f"startup-smoke receipt hostClass does not identify the {expected_platform} host"
+    if not incompatible_host_skip:
+        if not host_class:
+            return False, "startup-smoke receipt hostClass is missing"
+        if not host_class_matches_platform(host_class, expected_platform):
+            return False, f"startup-smoke receipt hostClass does not identify the {expected_platform} host"
 
     operating_system = str(receipt.get("operatingSystem") or "").strip()
-    if not operating_system:
+    if not incompatible_host_skip and not operating_system:
         return False, "startup-smoke receipt operatingSystem is missing"
 
     receipt_rid = normalize_token(receipt.get("rid"))
@@ -208,7 +219,7 @@ def validate_receipt_for_artifact(
     elif age_delta_seconds > STARTUP_SMOKE_MAX_AGE_SECONDS and not PUBLIC_SKIP_STARTUP_SMOKE_FILTER:
         return False, f"startup-smoke receipt is stale ({age_delta_seconds}s old)"
 
-    return True, ""
+    return True, "incompatible-host skip accepted" if incompatible_host_skip else ""
 
 
 def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetime) -> tuple[dict | None, str]:
@@ -347,7 +358,7 @@ def allowed_mac_statuses(channel: str) -> tuple[str, str]:
 
 
 def compute_promotion_status(platform: str, channel: str, startup_smoke_status: str, signing_status: str | None, notarization_status: str | None) -> str:
-    if startup_smoke_status != "pass":
+    if startup_smoke_status not in {"pass", "skipped_incompatible_host"}:
         return "fail"
 
     if platform == "windows":
@@ -398,7 +409,14 @@ def main() -> int:
         receipt = None
         if installer:
             receipt, startup_smoke_reason = find_matching_receipt(artifact, receipts, now_utc)
-        startup_smoke_status = "pass" if (not installer or receipt is not None) else "fail"
+        if not installer:
+            startup_smoke_status = "pass"
+        elif receipt is None:
+            startup_smoke_status = "fail"
+        elif incompatible_host_startup_smoke_receipt(receipt):
+            startup_smoke_status = "skipped_incompatible_host"
+        else:
+            startup_smoke_status = "pass"
 
         signing_status: str | None = None
         notarization_status: str | None = None

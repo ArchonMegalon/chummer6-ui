@@ -1705,7 +1705,7 @@ for artifact in artifacts:
     if kind not in {"installer", "dmg", "pkg", "msix"}:
         continue
     startup_status = str(artifact.get("startupSmokeStatus") or "").strip().lower()
-    if startup_status == "pass":
+    if startup_status in {"pass", "skipped_incompatible_host"}:
         continue
     file_name = str(artifact.get("fileName") or "").strip() or str(artifact.get("artifactId") or "unknown-artifact")
     reason = str(artifact.get("startupSmokeReason") or "startup smoke proof missing").strip()
