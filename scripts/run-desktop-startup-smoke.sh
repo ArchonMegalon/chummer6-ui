@@ -99,6 +99,133 @@ print(hasher.hexdigest())
 PY
 }
 
+host_machine() {
+  local machine=""
+  machine="$(uname -m 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
+  if [[ -n "$machine" ]]; then
+    printf '%s\n' "$machine"
+    return
+  fi
+
+  if [[ -n "${PROCESSOR_ARCHITECTURE:-}" ]]; then
+    printf '%s\n' "${PROCESSOR_ARCHITECTURE,,}"
+    return
+  fi
+
+  printf 'unknown\n'
+}
+
+host_can_execute_windows_arm64() {
+  local arch_primary="${PROCESSOR_ARCHITECTURE:-}"
+  local arch_secondary="${PROCESSOR_ARCHITEW6432:-}"
+  arch_primary="${arch_primary^^}"
+  arch_secondary="${arch_secondary^^}"
+  [[ "$arch_primary" == "ARM64" || "$arch_secondary" == "ARM64" ]]
+}
+
+host_can_execute_linux_arm64() {
+  local machine
+  machine="$(host_machine)"
+  case "$machine" in
+    aarch64|arm64)
+      return 0
+      ;;
+  esac
+
+  command -v qemu-aarch64-static >/dev/null 2>&1 || command -v qemu-aarch64 >/dev/null 2>&1
+}
+
+emit_incompatible_host_receipt() {
+  local reason="$1"
+  local platform
+  platform="$(platform_from_rid "$RID")"
+  local arch
+  arch="$(arch_from_rid "$RID")"
+  local artifact_sha
+  artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
+  local machine
+  machine="$(host_machine)"
+
+  python3 - "$RECEIPT_PATH" "$ARTIFACT_PATH" "$artifact_sha" "$APP_KEY" "$RID" "$VERSION_HINT" "$CHANNEL_HINT" "$HOST_CLASS" "$platform" "$arch" "$reason" "$machine" <<'PY'
+import datetime as dt
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+artifact_path = pathlib.Path(sys.argv[2])
+artifact_sha = str(sys.argv[3]).strip().lower()
+app_key = str(sys.argv[4]).strip()
+rid = str(sys.argv[5]).strip()
+version_hint = str(sys.argv[6]).strip()
+channel_hint = str(sys.argv[7]).strip()
+host_class = str(sys.argv[8]).strip()
+platform = str(sys.argv[9]).strip()
+arch = str(sys.argv[10]).strip()
+reason = str(sys.argv[11]).strip()
+host_machine = str(sys.argv[12]).strip()
+now = dt.datetime.now(dt.timezone.utc).isoformat()
+
+artifact_file_name = artifact_path.name
+artifact_relative_path = artifact_file_name
+if artifact_path.parent.name:
+    artifact_relative_path = f"{artifact_path.parent.name}/{artifact_file_name}"
+
+payload = {
+    "status": "skipped",
+    "headId": app_key,
+    "version": version_hint,
+    "releaseVersion": version_hint,
+    "channelId": channel_hint,
+    "platform": platform,
+    "arch": arch,
+    "rid": rid,
+    "hostClass": host_class,
+    "processPath": None,
+    "artifactDigest": f"sha256:{artifact_sha}",
+    "artifactDigestSource": "environment",
+    "recordedAtUtc": now,
+    "startedAtUtc": now,
+    "completedAtUtc": now,
+    "artifactPath": str(artifact_path),
+    "artifactFileName": artifact_file_name,
+    "fileName": artifact_file_name,
+    "artifactRelativePath": artifact_relative_path,
+    "artifactSha256": artifact_sha,
+    "artifactId": f"{app_key}-{rid}-installer",
+    "skipReason": reason,
+    "skipClass": "incompatible_host",
+    "verificationDisposition": "incompatible_host",
+    "hostMachine": host_machine,
+}
+receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+
+  printf 'startup smoke skipped for %s %s: %s\n' "$APP_KEY" "$RID" "$reason" | tee -a "$LOG_PATH" >&2
+}
+
+receipt_status() {
+  python3 - "$RECEIPT_PATH" <<'PY'
+import json
+import pathlib
+import sys
+
+receipt_path = pathlib.Path(sys.argv[1])
+if not receipt_path.exists() or not receipt_path.is_file():
+    raise SystemExit(1)
+
+payload = json.loads(receipt_path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(1)
+
+status = str(payload.get("status") or "").strip().lower()
+if not status:
+    raise SystemExit(1)
+
+print(status)
+PY
+}
+
 to_native_path() {
   local input_path="$1"
 
@@ -276,6 +403,12 @@ run_head_smoke() {
 }
 
 run_windows_smoke() {
+  if [[ "$RID" == "win-arm64" ]] && ! host_can_execute_windows_arm64; then
+    emit_incompatible_host_receipt \
+      "Windows startup smoke requires a Windows ARM64 host; current host cannot execute win-arm64 installer smoke."
+    return 0
+  fi
+
   INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-win-smoke.XXXXXX")"
   local native_install_root
   native_install_root="$(to_native_path "$INSTALL_ROOT")"
@@ -609,6 +742,12 @@ run_linux_smoke_deb() {
   if ! command -v dpkg >/dev/null 2>&1; then
     echo "dpkg is required for Linux .deb startup smoke." >&2
     return 1
+  fi
+
+  if [[ "$RID" == "linux-arm64" ]] && ! host_can_execute_linux_arm64; then
+    emit_incompatible_host_receipt \
+      "Linux startup smoke requires a Linux ARM64 host or qemu-aarch64 user emulation; current host cannot execute linux-arm64 installer smoke."
+    return 0
   fi
 
   INSTALL_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/chummer-linux-smoke.XXXXXX")"
@@ -952,5 +1091,10 @@ if [[ "$status" -ne 0 ]]; then
 fi
 
 attach_release_artifact_metadata_to_receipt
+if [[ "$(receipt_status 2>/dev/null || true)" == "skipped" ]]; then
+  echo "startup smoke skipped for $APP_KEY $RID; receipt: $RECEIPT_PATH"
+  exit 0
+fi
+
 set_receipt_status "pass"
 echo "startup smoke passed for $APP_KEY $RID; receipt: $RECEIPT_PATH"
