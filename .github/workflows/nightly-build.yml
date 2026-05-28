@@ -310,12 +310,27 @@ jobs:
     - name: Build solution
       if: steps.check_commit.outputs.skip != 'true'
       shell: bash
-      run: bash scripts/ai/with-package-plane.sh build Chummer.sln --configuration Release --no-restore --verbosity minimal
+      run: |
+        set -euo pipefail
+        projects=(
+          "Chummer/Chummer.csproj"
+          "Chummer.Avalonia/Chummer.Avalonia.csproj"
+          "Chummer.Blazor/Chummer.Blazor.csproj"
+          "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+          "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
+          "Chummer.Presentation/Chummer.Presentation.csproj"
+          "Chummer.Avalonia.Browser/Chummer.Avalonia.Browser.csproj"
+          "Translator/Translator.csproj"
+        )
+
+        for project in "${projects[@]}"; do
+          bash scripts/ai/with-package-plane.sh build "$project" --configuration Release --no-restore --verbosity minimal
+        done
     
     - name: Run tests
       if: steps.check_commit.outputs.skip != 'true'
       shell: bash
-      run: bash scripts/ai/with-package-plane.sh test Chummer.sln --configuration Release --no-build --verbosity minimal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+      run: bash scripts/ai/with-package-plane.sh test Chummer.Tests/Chummer.Tests.csproj --configuration Release --no-restore --verbosity minimal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
       continue-on-error: true
     
     - name: Publish test results
