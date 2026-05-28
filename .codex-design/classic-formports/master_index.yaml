@@ -1,0 +1,14 @@
+surface_id: master_index
+title: Master Index Classic
+legacy_form: Chummer/Forms/Utility Forms/MasterIndex.Designer.cs
+mode: Classic
+port_class: MasterIndexClassicPort
+designer_sources:
+  - Chummer/Forms/Utility Forms/MasterIndex.Designer.cs
+legacy_tabs:
+  - Browse
+  - Search
+  - Source
+runtime_route_tokens:
+  - index
+  - master

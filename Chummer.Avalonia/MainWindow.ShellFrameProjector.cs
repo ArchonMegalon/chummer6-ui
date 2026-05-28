@@ -183,6 +183,16 @@ internal static class MainWindowShellFrameProjector
             return true;
         }
 
+        if (ClassicModePolicy.ShouldShowSampleControls())
+        {
+            return true;
+        }
+
+        if (ClassicModePolicy.IsClassicDefault())
+        {
+            return false;
+        }
+
         return !string.Equals(ResolveReleaseChannel(), "public_stable", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -611,6 +621,12 @@ internal static class MainWindowShellFrameProjector
     private static bool IsStateVisibleMenuCommand(CharacterOverviewState state, string menuId, string commandId)
     {
         if (!IsVisibleMenuCommand(menuId, commandId))
+        {
+            return false;
+        }
+
+        if (ClassicModePolicy.ResolveCurrentMode() == DesktopUiMode.Classic
+            && string.Equals(commandId, "xml_editor", StringComparison.Ordinal))
         {
             return false;
         }

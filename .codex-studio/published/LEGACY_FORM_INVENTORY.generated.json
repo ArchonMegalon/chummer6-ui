@@ -1,0 +1,2218 @@
+{
+  "generated_at": "2026-05-28T06:18:31Z",
+  "status": "pass",
+  "forms": [
+    {
+      "form_name": "CharacterCareer",
+      "designer_path": "/docker/chummercomplete/chummer-presentation/Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
+      "control_count": 1338,
+      "root_controls": [
+        "splitMain",
+        "StatusStrip",
+        "tsMain",
+        "mnuCreateMenu"
+      ],
+      "tabs": [
+        "tabAdept",
+        "tabAdvancedPrograms",
+        "tabArmor",
+        "tabArmorMatrixCM",
+        "tabBackground",
+        "tabCalendar",
+        "tabCharacterInfo",
+        "tabCharacterNotes",
+        "tabCommon",
+        "tabConcept",
+        "tabConditionMonitor",
+        "tabContacts",
+        "tabCritter",
+        "tabCyberware",
+        "tabCyberwareMatrixCM",
+        "tabDefenses",
+        "tabDescription",
+        "tabDrugs",
+        "tabEnemies",
+        "tabGear",
+        "tabGearMatrixCM",
+        "tabImprovements",
+        "tabInitiation",
+        "tabKarma",
+        "tabLifestyle",
+        "tabLimits",
+        "tabMagician",
+        "tabMartialArts",
+        "tabNotes",
+        "tabOtherInfo",
+        "tabPets",
+        "tabRelationships",
+        "tabSkills",
+        "tabStreetGear",
+        "tabTechnomancer",
+        "tabVehicleMatrixCM",
+        "tabVehiclePhysicalCM",
+        "tabVehicles",
+        "tabWeaponMatrixCM",
+        "tabWeapons"
+      ],
+      "groups": [
+        "gpbArmorCommon",
+        "gpbArmorLocation",
+        "gpbArmorMatrix",
+        "gpbCyberwareCommon",
+        "gpbCyberwareMatrix",
+        "gpbDrugsCommon",
+        "gpbEssenceConsumption",
+        "gpbGearBondedFoci",
+        "gpbGearCommon",
+        "gpbGearMatrix",
+        "gpbInitiationGroup",
+        "gpbInitiationType",
+        "gpbLifestyleCommon",
+        "gpbMagicianMentorSpirit",
+        "gpbMagicianSpell",
+        "gpbMagicianTradition",
+        "gpbTechnomancerComplexForm",
+        "gpbTechnomancerParagon",
+        "gpbTechnomancerStream",
+        "gpbVehiclesCommon",
+        "gpbVehiclesMatrix",
+        "gpbVehiclesVehicle",
+        "gpbVehiclesWeapon",
+        "gpbWeaponsCommon",
+        "gpbWeaponsMatrix",
+        "gpbWeaponsWeapon",
+        "grpCMEdge",
+        "grpCMStun",
+        "grpPhysicalCM"
+      ],
+      "toolstrips": [],
+      "context_menus": [
+        "cmsAddContact",
+        "cmsAdvancedLifestyle",
+        "cmsAdvancedProgram",
+        "cmsAmmoExpense",
+        "cmsArmor",
+        "cmsArmorGear",
+        "cmsArmorLocation",
+        "cmsArmorMod",
+        "cmsBioware",
+        "cmsComplexForm",
+        "cmsCritterPowers",
+        "cmsCyberware",
+        "cmsCyberwareGear",
+        "cmsDeleteArmor",
+        "cmsDeleteCyberware",
+        "cmsDeleteGear",
+        "cmsDeleteVehicle",
+        "cmsDeleteWeapon",
+        "cmsGear",
+        "cmsGearButton",
+        "cmsGearLocation",
+        "cmsGearPlugin",
+        "cmsImprovement",
+        "cmsImprovementLocation",
+        "cmsInitiationNotes",
+        "cmsLifestyle",
+        "cmsLifestyleNotes",
+        "cmsMartialArts",
+        "cmsMetamagic",
+        "cmsQuality",
+        "cmsSpell",
+        "cmsSpellButton",
+        "cmsTechnique",
+        "cmsUndoKarmaExpense",
+        "cmsUndoNuyenExpense",
+        "cmsVehicle",
+        "cmsVehicleCyberware",
+        "cmsVehicleCyberwareGear",
+        "cmsVehicleGear",
+        "cmsVehicleLocation",
+        "cmsVehicleWeapon",
+        "cmsVehicleWeaponAccessory",
+        "cmsVehicleWeaponAccessoryGear",
+        "cmsWeapon",
+        "cmsWeaponAccessory",
+        "cmsWeaponAccessoryGear",
+        "cmsWeaponLocation",
+        "cmsWeaponMount"
+      ],
+      "event_handler_count": 597,
+      "sample_event_handlers": [
+        {
+          "control": "lblTraditionSource",
+          "event": "Click",
+          "handler": "OpenSourceFromLabel"
+        },
+        {
+          "control": "cmdEdgeGained",
+          "event": "Click",
+          "handler": "cmdEdgeGained_Click"
+        },
+        {
+          "control": "cmdEdgeSpent",
+          "event": "Click",
+          "handler": "cmdEdgeSpent_Click"
+        },
+        {
+          "control": "cmdBurnStreetCred",
+          "event": "Click",
+          "handler": "cmdBurnStreetCred_Click"
+        },
+        {
+          "control": "cmdVehicleGearReduceQty",
+          "event": "Click",
+          "handler": "cmdVehicleGearReduceQty_Click"
+        },
+        {
+          "control": "cmdVehicleMoveToInventory",
+          "event": "Click",
+          "handler": "cmdVehicleMoveToInventory_Click"
+        },
+        {
+          "control": "chkVehicleWeaponAccessoryInstalled",
+          "event": "CheckedChanged",
+          "handler": "chkVehicleWeaponAccessoryInstalled_CheckedChanged"
+        },
+        {
+          "control": "tsMartialArtsAddTechnique",
+          "event": "Click",
+          "handler": "tsMartialArtsAddTechnique_Click"
+        },
+        {
+          "control": "tsMartialArtsNotes",
+          "event": "Click",
+          "handler": "tsMartialArtsNotes_Click"
+        },
+        {
+          "control": "tsMartialArtsReapplyImprovements",
+          "event": "Click",
+          "handler": "tsMartialArtsReapplyImprovements_Click"
+        },
+        {
+          "control": "tsCreateSpell",
+          "event": "Click",
+          "handler": "tsCreateSpell_Click"
+        },
+        {
+          "control": "tsComplexFormNotes",
+          "event": "Click",
+          "handler": "tsComplexFormNotes_Click"
+        },
+        {
+          "control": "tsComplexFormReapplyImprovements",
+          "event": "Click",
+          "handler": "tsComplexFormReapplyImprovements_Click"
+        },
+        {
+          "control": "tsCyberwareAddAsPlugin",
+          "event": "Click",
+          "handler": "tsCyberwareAddAsPlugin_Click"
+        },
+        {
+          "control": "tsCyberwareAddGear",
+          "event": "Click",
+          "handler": "tsCyberwareAddGear_Click"
+        },
+        {
+          "control": "tsCyberwareNotes",
+          "event": "Click",
+          "handler": "tsCyberwareNotes_Click"
+        },
+        {
+          "control": "tsCyberwareReapplyImprovements",
+          "event": "Click",
+          "handler": "tsCyberwareReapplyImprovements_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareAddAsPlugin",
+          "event": "Click",
+          "handler": "tsVehicleCyberwareAddAsPlugin_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareAddGear",
+          "event": "Click",
+          "handler": "tsVehicleCyberwareAddGear_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareNotes",
+          "event": "Click",
+          "handler": "tsVehicleNotes_Click"
+        },
+        {
+          "control": "tsCyberwareSell",
+          "event": "Click",
+          "handler": "tsCyberwareSell_Click"
+        },
+        {
+          "control": "tsCyberwareUpgrade",
+          "event": "Click",
+          "handler": "tsCyberwareUpgrade_Click"
+        },
+        {
+          "control": "tsAdvancedLifestyle",
+          "event": "Click",
+          "handler": "tsAdvancedLifestyle_Click"
+        },
+        {
+          "control": "tsAddArmorMod",
+          "event": "Click",
+          "handler": "tsAddArmorMod_Click"
+        }
+      ],
+      "hierarchy": [
+        {
+          "parent": "tabInfo",
+          "child": "tabConditionMonitor"
+        },
+        {
+          "parent": "tabInfo",
+          "child": "tabOtherInfo"
+        },
+        {
+          "parent": "tabInfo",
+          "child": "tabDefenses"
+        },
+        {
+          "parent": "tabConditionMonitor",
+          "child": "tlpCMTab"
+        },
+        {
+          "parent": "grpCMStun",
+          "child": "tlpStunCMBoxes"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM1"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM2"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM3"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM4"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM5"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM6"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM7"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM8"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM9"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM10"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM11"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM12"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM13"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM14"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM15"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM16"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM17"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM18"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM19"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM20"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM21"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM22"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM23"
+        },
+        {
+          "parent": "panStunCM",
+          "child": "chkStunCM24"
+        },
+        {
+          "parent": "grpPhysicalCM",
+          "child": "tlpPhysicalCMBoxes"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM1"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM2"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM3"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM4"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM5"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM6"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM7"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM8"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM9"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM10"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM11"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM12"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM13"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM14"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM15"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM16"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM17"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM18"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM19"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM20"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM21"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM22"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM23"
+        },
+        {
+          "parent": "panPhysicalCM",
+          "child": "chkPhysicalCM24"
+        },
+        {
+          "parent": "grpCMEdge",
+          "child": "flpCMEdge"
+        },
+        {
+          "parent": "flpCMEdge",
+          "child": "lblEDGInfo"
+        },
+        {
+          "parent": "flpCMEdge",
+          "child": "cmdEdgeGained"
+        },
+        {
+          "parent": "flpCMEdge",
+          "child": "cmdEdgeSpent"
+        },
+        {
+          "parent": "tabOtherInfo",
+          "child": "tlpInfo"
+        },
+        {
+          "parent": "tabDefenses",
+          "child": "tlpSpellDefense"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCommon"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabSkills"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabLimits"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabMartialArts"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabMagician"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabAdept"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabTechnomancer"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabAdvancedPrograms"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCritter"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabInitiation"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCyberware"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabStreetGear"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabVehicles"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCharacterInfo"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabKarma"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCalendar"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabNotes"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabImprovements"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabRelationships"
+        },
+        {
+          "parent": "tabCommon",
+          "child": "tlpCommon"
+        },
+        {
+          "parent": "flpMysticAdeptMAGAdept",
+          "child": "lblMysticAdeptMAGAdept"
+        },
+        {
+          "parent": "flpMysticAdeptMAGAdept",
+          "child": "cmdIncreasePowerPoints"
+        },
+        {
+          "parent": "tabSkills",
+          "child": "tabSkillsUc"
+        },
+        {
+          "parent": "tabLimits",
+          "child": "lmtControl"
+        },
+        {
+          "parent": "tabMartialArts",
+          "child": "tlpMartialArts"
+        },
+        {
+          "parent": "tabMagician",
+          "child": "splitMagician"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianSpell"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianTradition"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianMentorSpirit"
+        },
+        {
+          "parent": "gpbMagicianSpell",
+          "child": "tlpMagicianSpell"
+        },
+        {
+          "parent": "flpMagicianSpellButtons",
+          "child": "cmdQuickenSpell"
+        },
+        {
+          "parent": "flpMagicianSpellButtons",
+          "child": "cmdAddSustainedSpell"
+        },
+        {
+          "parent": "gpbMagicianTradition",
+          "child": "tlpMagicianTradition"
+        },
+        {
+          "parent": "gpbMagicianMentorSpirit",
+          "child": "tlpMagicianMentorSpirit"
+        },
+        {
+          "parent": "tabAdept",
+          "child": "tabPowerUc"
+        },
+        {
+          "parent": "tabTechnomancer",
+          "child": "splitTechnomancer"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerComplexForm"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerStream"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerParagon"
+        },
+        {
+          "parent": "gpbTechnomancerComplexForm",
+          "child": "tlpTechnomancerComplexForm"
+        },
+        {
+          "parent": "gpbTechnomancerStream",
+          "child": "tlpTechnomancerStream"
+        },
+        {
+          "parent": "flpFadingAttributesValue",
+          "child": "lblFadingAttributes"
+        },
+        {
+          "parent": "flpFadingAttributesValue",
+          "child": "dpcFadingAttributes"
+        },
+        {
+          "parent": "gpbTechnomancerParagon",
+          "child": "tlpTechnomancerParagon"
+        },
+        {
+          "parent": "tabAdvancedPrograms",
+          "child": "tlpAdvancedPrograms"
+        },
+        {
+          "parent": "tabCritter",
+          "child": "tlpCritter"
+        },
+        {
+          "parent": "tabInitiation",
+          "child": "tlpInitiation"
+        },
+        {
+          "parent": "flpInitiation",
+          "child": "gpbInitiationType"
+        },
+        {
+          "parent": "flpInitiation",
+          "child": "gpbInitiationGroup"
+        },
+        {
+          "parent": "gpbInitiationType",
+          "child": "flpInitiationCheckboxes"
+        },
+        {
+          "parent": "flpInitiationCheckboxes",
+          "child": "chkInitiationOrdeal"
+        },
+        {
+          "parent": "flpInitiationCheckboxes",
+          "child": "chkInitiationSchooling"
+        },
+        {
+          "parent": "gpbInitiationGroup",
+          "child": "tlpInitiationGroup"
+        },
+        {
+          "parent": "tabCyberware",
+          "child": "tlpCyberware"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbEssenceConsumption"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbCyberwareCommon"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbCyberwareMatrix"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "tabCyberwareCM"
+        },
+        {
+          "parent": "gpbEssenceConsumption",
+          "child": "tlpCyberwareEssenceConsumption"
+        },
+        {
+          "parent": "gpbCyberwareCommon",
+          "child": "tlpCyberwareCommon"
+        },
+        {
+          "parent": "gpbCyberwareMatrix",
+          "child": "tlpCyberwareMatrix"
+        },
+        {
+          "parent": "flpCyberwareMatrixCheckBoxes",
+          "child": "chkCyberwareHomeNode"
+        },
+        {
+          "parent": "flpCyberwareMatrixCheckBoxes",
+          "child": "chkCyberwareActiveCommlink"
+        },
+        {
+          "parent": "flpCyberwareMatrixCheckBoxes",
+          "child": "chkCyberwareWireless"
+        },
+        {
+          "parent": "tabCyberwareCM",
+          "child": "tabCyberwareMatrixCM"
+        },
+        {
+          "parent": "tabCyberwareMatrixCM",
+          "child": "panCyberwareMatrixCM"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM1"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM2"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM3"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM4"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM5"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM6"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM7"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM8"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM9"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM10"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM11"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM12"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM13"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM14"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM16"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM17"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM18"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM19"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM20"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM21"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM22"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM23"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM24"
+        },
+        {
+          "parent": "panCyberwareMatrixCM",
+          "child": "chkCyberwareMatrixCM15"
+        },
+        {
+          "parent": "tabStreetGear",
+          "child": "tabStreetGearTabs"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabGear"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabArmor"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabWeapons"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabDrugs"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabLifestyle"
+        },
+        {
+          "parent": "tabGear",
+          "child": "tlpGear"
+        },
+        {
+          "parent": "flpGear",
+          "child": "gpbGearCommon"
+        },
+        {
+          "parent": "flpGear",
+          "child": "gpbGearMatrix"
+        },
+        {
+          "parent": "flpGear",
+          "child": "tabGearCM"
+        }
+      ]
+    },
+    {
+      "form_name": "CharacterCreate",
+      "designer_path": "/docker/chummercomplete/chummer-presentation/Chummer/Forms/Character Forms/CharacterCreate.Designer.cs",
+      "control_count": 1037,
+      "root_controls": [
+        "splitMain",
+        "StatusStrip",
+        "tsMain",
+        "mnuCreateMenu"
+      ],
+      "tabs": [
+        "tabAdept",
+        "tabAdvancedPrograms",
+        "tabArmor",
+        "tabBPSummary",
+        "tabBackground",
+        "tabCharacterInfo",
+        "tabCharacterNotes",
+        "tabCommon",
+        "tabConcept",
+        "tabContacts",
+        "tabCritter",
+        "tabCyberware",
+        "tabDefenses",
+        "tabDescription",
+        "tabDrugs",
+        "tabEnemies",
+        "tabGear",
+        "tabInitiation",
+        "tabLifestyle",
+        "tabLimits",
+        "tabMagician",
+        "tabMartialArts",
+        "tabOtherInfo",
+        "tabPets",
+        "tabRelationships",
+        "tabSkills",
+        "tabStreetGear",
+        "tabTechnomancer",
+        "tabVehicles",
+        "tabWeapons"
+      ],
+      "groups": [
+        "gpbArmorCommon",
+        "gpbArmorLocation",
+        "gpbArmorMatrix",
+        "gpbCyberwareCommon",
+        "gpbCyberwareMatrix",
+        "gpbDrugsCommon",
+        "gpbEssenceConsumption",
+        "gpbGearBondedFoci",
+        "gpbGearCommon",
+        "gpbGearMatrix",
+        "gpbInitiationGroup",
+        "gpbInitiationType",
+        "gpbLifestyleCommon",
+        "gpbMagicianMentorSpirit",
+        "gpbMagicianSpell",
+        "gpbMagicianTradition",
+        "gpbTechnomancerComplexForm",
+        "gpbTechnomancerParagon",
+        "gpbTechnomancerStream",
+        "gpbVehiclesCommon",
+        "gpbVehiclesMatrix",
+        "gpbVehiclesVehicle",
+        "gpbVehiclesWeapon",
+        "gpbWeaponsCommon",
+        "gpbWeaponsMatrix",
+        "gpbWeaponsWeapon"
+      ],
+      "toolstrips": [],
+      "context_menus": [
+        "cmsAddContact",
+        "cmsAdvancedLifestyle",
+        "cmsAdvancedProgram",
+        "cmsArmor",
+        "cmsArmorGear",
+        "cmsArmorLocation",
+        "cmsArmorMod",
+        "cmsBioware",
+        "cmsComplexForm",
+        "cmsCritterPowers",
+        "cmsCyberware",
+        "cmsCyberwareGear",
+        "cmsGear",
+        "cmsGearAllowRename",
+        "cmsGearButton",
+        "cmsGearLocation",
+        "cmsInitiationNotes",
+        "cmsLifestyle",
+        "cmsLifestyleNotes",
+        "cmsMartialArts",
+        "cmsMetamagic",
+        "cmsQuality",
+        "cmsSpell",
+        "cmsSpellButton",
+        "cmsTechnique",
+        "cmsVehicle",
+        "cmsVehicleCyberware",
+        "cmsVehicleCyberwareGear",
+        "cmsVehicleGear",
+        "cmsVehicleLocation",
+        "cmsVehicleWeapon",
+        "cmsVehicleWeaponAccessory",
+        "cmsVehicleWeaponAccessoryGear",
+        "cmsWeapon",
+        "cmsWeaponAccessory",
+        "cmsWeaponAccessoryGear",
+        "cmsWeaponLocation",
+        "cmsWeaponMount"
+      ],
+      "event_handler_count": 329,
+      "sample_event_handlers": [
+        {
+          "control": "chkArmorEquipped",
+          "event": "CheckedChanged",
+          "handler": "chkArmorEquipped_CheckedChanged"
+        },
+        {
+          "control": "chkWeaponEquipped",
+          "event": "CheckedChanged",
+          "handler": "chkWeaponEquipped_CheckedChanged"
+        },
+        {
+          "control": "tsMartialArtsAddTechnique",
+          "event": "Click",
+          "handler": "tsMartialArtsAddTechnique_Click"
+        },
+        {
+          "control": "tsMartialArtsNotes",
+          "event": "Click",
+          "handler": "tsMartialArtsNotes_Click"
+        },
+        {
+          "control": "tsMartialArtsReapplyImprovements",
+          "event": "Click",
+          "handler": "tsMartialArtsReapplyImprovements_Click"
+        },
+        {
+          "control": "tsCreateSpell",
+          "event": "Click",
+          "handler": "tsCreateSpell_Click"
+        },
+        {
+          "control": "tsComplexFormNotes",
+          "event": "Click",
+          "handler": "tsComplexFormNotes_Click"
+        },
+        {
+          "control": "tsComplexFormReapplyImprovements",
+          "event": "Click",
+          "handler": "tsComplexFormReapplyImprovements_Click"
+        },
+        {
+          "control": "tsCyberwareAddAsPlugin",
+          "event": "Click",
+          "handler": "tsCyberwareAddAsPlugin_Click"
+        },
+        {
+          "control": "tsCyberwareAddGear",
+          "event": "Click",
+          "handler": "tsCyberwareAddGear_Click"
+        },
+        {
+          "control": "tsCyberwareNotes",
+          "event": "Click",
+          "handler": "tsCyberwareNotes_Click"
+        },
+        {
+          "control": "tsCyberwareReapplyImprovements",
+          "event": "Click",
+          "handler": "tsCyberwareReapplyImprovements_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareAddAsPlugin",
+          "event": "Click",
+          "handler": "tsVehicleCyberwareAddAsPlugin_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareAddGear",
+          "event": "Click",
+          "handler": "tsVehicleCyberwareAddGear_Click"
+        },
+        {
+          "control": "tsVehicleCyberwareNotes",
+          "event": "Click",
+          "handler": "tsVehicleNotes_Click"
+        },
+        {
+          "control": "tsAdvancedLifestyle",
+          "event": "Click",
+          "handler": "tsAdvancedLifestyle_Click"
+        },
+        {
+          "control": "tsAddArmorMod",
+          "event": "Click",
+          "handler": "tsAddArmorMod_Click"
+        },
+        {
+          "control": "tsAddArmorGear",
+          "event": "Click",
+          "handler": "tsAddArmorGear_Click"
+        },
+        {
+          "control": "tsArmorName",
+          "event": "Click",
+          "handler": "tsArmorName_Click"
+        },
+        {
+          "control": "tsArmorNotes",
+          "event": "Click",
+          "handler": "tsArmorNotes_Click"
+        },
+        {
+          "control": "tsArmorReapplyImprovements",
+          "event": "Click",
+          "handler": "tsArmorReapplyImprovements_Click"
+        },
+        {
+          "control": "tsCreateNaturalWeapon",
+          "event": "Click",
+          "handler": "tsCreateNaturalWeapon_Click"
+        },
+        {
+          "control": "tsWeaponAddAccessory",
+          "event": "Click",
+          "handler": "tsWeaponAddAccessory_Click"
+        },
+        {
+          "control": "tsWeaponAddUnderbarrel",
+          "event": "Click",
+          "handler": "tsWeaponAddUnderbarrel_Click"
+        }
+      ],
+      "hierarchy": [
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCommon"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabSkills"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabLimits"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabMartialArts"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabMagician"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabAdept"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabTechnomancer"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabAdvancedPrograms"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCritter"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabInitiation"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCyberware"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabStreetGear"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabVehicles"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabCharacterInfo"
+        },
+        {
+          "parent": "tabCharacterTabs",
+          "child": "tabRelationships"
+        },
+        {
+          "parent": "tabCommon",
+          "child": "tlpCommon"
+        },
+        {
+          "parent": "flpNuyen",
+          "child": "nudNuyen"
+        },
+        {
+          "parent": "flpNuyen",
+          "child": "lblNuyenTotal"
+        },
+        {
+          "parent": "tabSkills",
+          "child": "tabSkillsUc"
+        },
+        {
+          "parent": "tabLimits",
+          "child": "lmtControl"
+        },
+        {
+          "parent": "tabMartialArts",
+          "child": "tlpMartialArts"
+        },
+        {
+          "parent": "tabMagician",
+          "child": "splitMagician"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianSpell"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianTradition"
+        },
+        {
+          "parent": "flpMagician",
+          "child": "gpbMagicianMentorSpirit"
+        },
+        {
+          "parent": "gpbMagicianSpell",
+          "child": "tlpMagicianSpell"
+        },
+        {
+          "parent": "gpbMagicianTradition",
+          "child": "tlpMagicianTradition"
+        },
+        {
+          "parent": "gpbMagicianMentorSpirit",
+          "child": "tlpMagicianMentorSpirit"
+        },
+        {
+          "parent": "tabAdept",
+          "child": "tabPowerUc"
+        },
+        {
+          "parent": "tabTechnomancer",
+          "child": "splitTechnomancer"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerComplexForm"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerStream"
+        },
+        {
+          "parent": "flpTechnomancer",
+          "child": "gpbTechnomancerParagon"
+        },
+        {
+          "parent": "gpbTechnomancerComplexForm",
+          "child": "tlpTechnomancerComplexForm"
+        },
+        {
+          "parent": "gpbTechnomancerStream",
+          "child": "tlpTechnomancerStream"
+        },
+        {
+          "parent": "flpFadingAttributesValue",
+          "child": "lblFadingAttributes"
+        },
+        {
+          "parent": "flpFadingAttributesValue",
+          "child": "lblFadingAttributesValue"
+        },
+        {
+          "parent": "gpbTechnomancerParagon",
+          "child": "tlpTechnomancerParagon"
+        },
+        {
+          "parent": "tabAdvancedPrograms",
+          "child": "tlpAdvancedPrograms"
+        },
+        {
+          "parent": "tabCritter",
+          "child": "tlpCritter"
+        },
+        {
+          "parent": "tabInitiation",
+          "child": "tlpInitiation"
+        },
+        {
+          "parent": "flpInitiation",
+          "child": "gpbInitiationType"
+        },
+        {
+          "parent": "flpInitiation",
+          "child": "gpbInitiationGroup"
+        },
+        {
+          "parent": "gpbInitiationType",
+          "child": "flpInitiationCheckBoxes"
+        },
+        {
+          "parent": "flpInitiationCheckBoxes",
+          "child": "chkInitiationOrdeal"
+        },
+        {
+          "parent": "flpInitiationCheckBoxes",
+          "child": "chkInitiationSchooling"
+        },
+        {
+          "parent": "gpbInitiationGroup",
+          "child": "tlpInitiationGroup"
+        },
+        {
+          "parent": "tabCyberware",
+          "child": "tlpCyberware"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbEssenceConsumption"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbCyberwareCommon"
+        },
+        {
+          "parent": "flpCyberware",
+          "child": "gpbCyberwareMatrix"
+        },
+        {
+          "parent": "gpbEssenceConsumption",
+          "child": "tlpCyberwareEssenceConsumption"
+        },
+        {
+          "parent": "gpbCyberwareCommon",
+          "child": "tlpCyberwareCommon"
+        },
+        {
+          "parent": "flpCyberwareCommonCheckBoxes",
+          "child": "cmdCyberwareChangeMount"
+        },
+        {
+          "parent": "flpCyberwareCommonCheckBoxes",
+          "child": "chkCyberwareStolen"
+        },
+        {
+          "parent": "flpCyberwareCommonCheckBoxes",
+          "child": "chkCyberwareBlackMarketDiscount"
+        },
+        {
+          "parent": "flpCyberwareCommonCheckBoxes",
+          "child": "chkPrototypeTranshuman"
+        },
+        {
+          "parent": "gpbCyberwareMatrix",
+          "child": "tlpCyberwareMatrix"
+        },
+        {
+          "parent": "flpCyberwareMatrixCheckBoxes",
+          "child": "chkCyberwareHomeNode"
+        },
+        {
+          "parent": "flpCyberwareMatrixCheckBoxes",
+          "child": "chkCyberwareActiveCommlink"
+        },
+        {
+          "parent": "tabStreetGear",
+          "child": "tabStreetGearTabs"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabGear"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabArmor"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabWeapons"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabDrugs"
+        },
+        {
+          "parent": "tabStreetGearTabs",
+          "child": "tabLifestyle"
+        },
+        {
+          "parent": "tabGear",
+          "child": "tlpGear"
+        },
+        {
+          "parent": "flpGear",
+          "child": "gpbGearCommon"
+        },
+        {
+          "parent": "flpGear",
+          "child": "gpbGearMatrix"
+        },
+        {
+          "parent": "flpGear",
+          "child": "gpbGearBondedFoci"
+        },
+        {
+          "parent": "gpbGearCommon",
+          "child": "tlpGearCommon"
+        },
+        {
+          "parent": "flpGearCommonCheckBoxes",
+          "child": "chkGearEquipped"
+        },
+        {
+          "parent": "flpGearCommonCheckBoxes",
+          "child": "chkGearStolen"
+        },
+        {
+          "parent": "flpGearCommonCheckBoxes",
+          "child": "chkGearBlackMarketDiscount"
+        },
+        {
+          "parent": "gpbGearMatrix",
+          "child": "tlpGearMatrix"
+        },
+        {
+          "parent": "flpGearMatrixCheckBoxes",
+          "child": "chkGearHomeNode"
+        },
+        {
+          "parent": "flpGearMatrixCheckBoxes",
+          "child": "chkGearActiveCommlink"
+        },
+        {
+          "parent": "gpbGearBondedFoci",
+          "child": "tlpGearBondedFoci"
+        },
+        {
+          "parent": "tabArmor",
+          "child": "tlpArmor"
+        },
+        {
+          "parent": "flpArmor",
+          "child": "gpbArmorCommon"
+        },
+        {
+          "parent": "flpArmor",
+          "child": "gpbArmorMatrix"
+        },
+        {
+          "parent": "flpArmor",
+          "child": "gpbArmorLocation"
+        },
+        {
+          "parent": "gpbArmorCommon",
+          "child": "tlpArmorCommon"
+        },
+        {
+          "parent": "flpArmorCommonCheckBoxes",
+          "child": "chkArmorEquipped"
+        },
+        {
+          "parent": "flpArmorCommonCheckBoxes",
+          "child": "chkIncludedInArmor"
+        },
+        {
+          "parent": "flpArmorCommonCheckBoxes",
+          "child": "chkArmorStolen"
+        },
+        {
+          "parent": "flpArmorCommonCheckBoxes",
+          "child": "chkArmorBlackMarketDiscount"
+        },
+        {
+          "parent": "gpbArmorMatrix",
+          "child": "tlpArmorMatrix"
+        },
+        {
+          "parent": "flpArmorMatrixCheckBoxes",
+          "child": "chkArmorHomeNode"
+        },
+        {
+          "parent": "flpArmorMatrixCheckBoxes",
+          "child": "chkArmorActiveCommlink"
+        },
+        {
+          "parent": "gpbArmorLocation",
+          "child": "tlpArmorLocation"
+        },
+        {
+          "parent": "tabWeapons",
+          "child": "tlpWeapons"
+        },
+        {
+          "parent": "flpWeapons",
+          "child": "gpbWeaponsCommon"
+        },
+        {
+          "parent": "flpWeapons",
+          "child": "gpbWeaponsWeapon"
+        },
+        {
+          "parent": "flpWeapons",
+          "child": "gpbWeaponsMatrix"
+        },
+        {
+          "parent": "gpbWeaponsCommon",
+          "child": "tlpWeaponsCommon"
+        },
+        {
+          "parent": "flpWeaponsCommonCheckBoxes",
+          "child": "chkWeaponEquipped"
+        },
+        {
+          "parent": "flpWeaponsCommonCheckBoxes",
+          "child": "chkIncludedInWeapon"
+        },
+        {
+          "parent": "flpWeaponsCommonCheckBoxes",
+          "child": "chkWeaponStolen"
+        },
+        {
+          "parent": "flpWeaponsCommonCheckBoxes",
+          "child": "chkWeaponBlackMarketDiscount"
+        },
+        {
+          "parent": "gpbWeaponsWeapon",
+          "child": "flpWeaponsWeapon"
+        },
+        {
+          "parent": "flpWeaponsWeapon",
+          "child": "tlpWeaponsWeapon"
+        },
+        {
+          "parent": "flpWeaponsWeapon",
+          "child": "tlpWeaponsRanges"
+        },
+        {
+          "parent": "gpbWeaponsMatrix",
+          "child": "tlpWeaponsMatrix"
+        },
+        {
+          "parent": "flpWeaponMatrixCheckBoxes",
+          "child": "chkWeaponHomeNode"
+        },
+        {
+          "parent": "flpWeaponMatrixCheckBoxes",
+          "child": "chkWeaponActiveCommlink"
+        },
+        {
+          "parent": "tabDrugs",
+          "child": "tlpDrugInfo"
+        },
+        {
+          "parent": "flpDrugs",
+          "child": "gpbDrugsCommon"
+        },
+        {
+          "parent": "gpbDrugsCommon",
+          "child": "tlpDrugsCommon"
+        },
+        {
+          "parent": "flpDrugCheckboxes",
+          "child": "chkDrugStolen"
+        },
+        {
+          "parent": "tabLifestyle",
+          "child": "tlpLifestyleDetails"
+        },
+        {
+          "parent": "flpLifestyleDetails",
+          "child": "gpbLifestyleCommon"
+        },
+        {
+          "parent": "gpbLifestyleCommon",
+          "child": "tlpLifestyleCommon"
+        },
+        {
+          "parent": "tabVehicles",
+          "child": "tlpVehicles"
+        },
+        {
+          "parent": "flpVehicles",
+          "child": "gpbVehiclesCommon"
+        },
+        {
+          "parent": "flpVehicles",
+          "child": "gpbVehiclesVehicle"
+        },
+        {
+          "parent": "flpVehicles",
+          "child": "gpbVehiclesWeapon"
+        },
+        {
+          "parent": "flpVehicles",
+          "child": "gpbVehiclesMatrix"
+        },
+        {
+          "parent": "gpbVehiclesCommon",
+          "child": "tlpVehiclesCommon"
+        },
+        {
+          "parent": "flpVehiclesCommonCheckBoxes",
+          "child": "chkVehicleWeaponAccessoryInstalled"
+        },
+        {
+          "parent": "flpVehiclesCommonCheckBoxes",
+          "child": "chkVehicleIncludedInWeapon"
+        },
+        {
+          "parent": "flpVehiclesCommonCheckBoxes",
+          "child": "chkVehicleStolen"
+        },
+        {
+          "parent": "flpVehiclesCommonCheckBoxes",
+          "child": "chkVehicleBlackMarketDiscount"
+        },
+        {
+          "parent": "gpbVehiclesVehicle",
+          "child": "tlpVehiclesVehicle"
+        },
+        {
+          "parent": "gpbVehiclesWeapon",
+          "child": "flpVehiclesWeapon"
+        },
+        {
+          "parent": "flpVehiclesWeapon",
+          "child": "tlpVehiclesWeaponCommon"
+        },
+        {
+          "parent": "flpVehiclesWeapon",
+          "child": "tlpVehiclesWeaponRanges"
+        },
+        {
+          "parent": "gpbVehiclesMatrix",
+          "child": "tlpVehiclesMatrix"
+        },
+        {
+          "parent": "flpVehiclesMatrixCheckBoxes",
+          "child": "chkVehicleHomeNode"
+        },
+        {
+          "parent": "flpVehiclesMatrixCheckBoxes",
+          "child": "chkVehicleActiveCommlink"
+        },
+        {
+          "parent": "tabCharacterInfo",
+          "child": "tlpCharacterInfo"
+        },
+        {
+          "parent": "tabLongTexts",
+          "child": "tabDescription"
+        },
+        {
+          "parent": "tabLongTexts",
+          "child": "tabBackground"
+        },
+        {
+          "parent": "tabLongTexts",
+          "child": "tabConcept"
+        },
+        {
+          "parent": "tabLongTexts",
+          "child": "tabCharacterNotes"
+        },
+        {
+          "parent": "tabDescription",
+          "child": "rtfDescription"
+        },
+        {
+          "parent": "tabBackground",
+          "child": "rtfBackground"
+        },
+        {
+          "parent": "tabConcept",
+          "child": "rtfConcept"
+        },
+        {
+          "parent": "tabCharacterNotes",
+          "child": "rtfNotes"
+        },
+        {
+          "parent": "tabRelationships",
+          "child": "tabPeople"
+        },
+        {
+          "parent": "tabPeople",
+          "child": "tabContacts"
+        },
+        {
+          "parent": "tabPeople",
+          "child": "tabEnemies"
+        },
+        {
+          "parent": "tabPeople",
+          "child": "tabPets"
+        },
+        {
+          "parent": "tabContacts",
+          "child": "tlpContacts"
+        },
+        {
+          "parent": "tabEnemies",
+          "child": "tlpEnemies"
+        },
+        {
+          "parent": "tabPets",
+          "child": "tlpPets"
+        },
+        {
+          "parent": "tabInfo",
+          "child": "tabBPSummary"
+        },
+        {
+          "parent": "tabInfo",
+          "child": "tabOtherInfo"
+        },
+        {
+          "parent": "tabInfo",
+          "child": "tabDefenses"
+        },
+        {
+          "parent": "tabBPSummary",
+          "child": "tlpKarmaSummary"
+        },
+        {
+          "parent": "tabOtherInfo",
+          "child": "tlpOtherInfo"
+        },
+        {
+          "parent": "tabDefenses",
+          "child": "tlpSpellDefense"
+        }
+      ]
+    },
+    {
+      "form_name": "EditGlobalSettings",
+      "designer_path": "/docker/chummercomplete/chummer-presentation/Chummer/Forms/EditGlobalSettings.Designer.cs",
+      "control_count": 146,
+      "root_controls": [
+        "tlpOptions"
+      ],
+      "tabs": [
+        "tabCustomDataDirectories",
+        "tabGitHubIssues",
+        "tabGlobal",
+        "tabPlugins"
+      ],
+      "groups": [
+        "gbpDirectoryInfoDependencies",
+        "gbpDirectoryInfoIncompatibilities",
+        "gpbDirectoryAuthors",
+        "gpbDirectoryInfo",
+        "gpbEditSourcebookInfo",
+        "grpAvailablePlugins",
+        "grpDateFormat",
+        "grpSelectedSourcebook",
+        "grpTimeFormat"
+      ],
+      "toolstrips": [],
+      "context_menus": [],
+      "event_handler_count": 68,
+      "sample_event_handlers": [
+        {
+          "control": "cmdScanForPDFs",
+          "event": "Click",
+          "handler": "bScanForPDFs_Click"
+        },
+        {
+          "control": "txtPDFLocation",
+          "event": "TextChanged",
+          "handler": "txtPDFLocation_TextChanged"
+        },
+        {
+          "control": "cmdPDFLocation",
+          "event": "Click",
+          "handler": "cmdPDFLocation_Click"
+        },
+        {
+          "control": "nudPDFOffset",
+          "event": "ValueChanged",
+          "handler": "nudPDFOffset_ValueChanged"
+        },
+        {
+          "control": "cmdPDFTest",
+          "event": "Click",
+          "handler": "cmdPDFTest_Click"
+        },
+        {
+          "control": "cmdRemovePDFLocation",
+          "event": "Click",
+          "handler": "cmdRemovePDFLocation_Click"
+        },
+        {
+          "control": "cboDefaultMasterIndexSetting",
+          "event": "SelectedIndexChanged",
+          "handler": "OptionsChanged"
+        },
+        {
+          "control": "cboDpiScalingMethod",
+          "event": "SelectedIndexChanged",
+          "handler": "OptionsChanged"
+        },
+        {
+          "control": "chkUseLogging",
+          "event": "CheckedChanged",
+          "handler": "chkUseLogging_CheckedChanged"
+        },
+        {
+          "control": "chkAutomaticUpdate",
+          "event": "CheckedChanged",
+          "handler": "OptionsChanged"
+        },
+        {
+          "control": "txtDateFormat",
+          "event": "TextChanged",
+          "handler": "txtDateFormat_TextChanged"
+        },
+        {
+          "control": "txtTimeFormat",
+          "event": "TextChanged",
+          "handler": "txtTimeFormat_TextChanged"
+        },
+        {
+          "control": "chkCustomDateTimeFormats",
+          "event": "CheckedChanged",
+          "handler": "chkCustomDateTimeFormats_CheckedChanged"
+        },
+        {
+          "control": "cboSheetLanguage",
+          "event": "SelectedIndexChanged",
+          "handler": "cboSheetLanguage_SelectedIndexChanged"
+        },
+        {
+          "control": "cboXSLT",
+          "event": "SelectedIndexChanged",
+          "handler": "OptionsChanged"
+        },
+        {
+          "control": "cboLanguage",
+          "event": "SelectedIndexChanged",
+          "handler": "cboLanguage_SelectedIndexChanged"
+        },
+        {
+          "control": "cmdVerify",
+          "event": "Click",
+          "handler": "cmdVerify_Click"
+        },
+        {
+          "control": "cmdVerifyData",
+          "event": "Click",
+          "handler": "cmdVerifyData_Click"
+        },
+        {
+          "control": "cboUseLoggingApplicationInsights",
+          "event": "SelectedIndexChanged",
+          "handler": "cboUseLoggingApplicationInsights_SelectedIndexChanged"
+        },
+        {
+          "control": "cmdUseLoggingHelp",
+          "event": "Click",
+          "handler": "cboUseLoggingHelp_Click"
+        },
+        {
+          "control": "cmdCharacterRoster",
+          "event": "Click",
+          "handler": "cmdCharacterRoster_Click"
+        },
+        {
+          "control": "txtCharacterRosterPath",
+          "event": "TextChanged",
+          "handler": "OptionsChanged"
+        },
+        {
+          "control": "cmdRemoveCharacterRoster",
+          "event": "Click",
+          "handler": "cmdRemoveCharacterRoster_Click"
+        },
+        {
+          "control": "txtPDFAppPath",
+          "event": "TextChanged",
+          "handler": "txtPDFAppPath_TextChanged"
+        }
+      ],
+      "hierarchy": [
+        {
+          "parent": "tabOptions",
+          "child": "tabGlobal"
+        },
+        {
+          "parent": "tabOptions",
+          "child": "tabCustomDataDirectories"
+        },
+        {
+          "parent": "tabOptions",
+          "child": "tabGitHubIssues"
+        },
+        {
+          "parent": "tabOptions",
+          "child": "tabPlugins"
+        },
+        {
+          "parent": "tabGlobal",
+          "child": "tlpGlobal"
+        },
+        {
+          "parent": "grpSelectedSourcebook",
+          "child": "tlpSelectedSourcebook"
+        },
+        {
+          "parent": "flpPDFOffset",
+          "child": "nudPDFOffset"
+        },
+        {
+          "parent": "flpPDFOffset",
+          "child": "cmdPDFTest"
+        },
+        {
+          "parent": "grpDateFormat",
+          "child": "tlpDateFormat"
+        },
+        {
+          "parent": "grpTimeFormat",
+          "child": "tlpTimeFormat"
+        },
+        {
+          "parent": "flpEnablePlugins",
+          "child": "chkEnablePlugins"
+        },
+        {
+          "parent": "flpEnablePlugins",
+          "child": "cmdPluginsHelp"
+        },
+        {
+          "parent": "flpBrowserVersion",
+          "child": "lblBrowserVersion"
+        },
+        {
+          "parent": "flpBrowserVersion",
+          "child": "nudBrowserVersion"
+        },
+        {
+          "parent": "gpbEditSourcebookInfo",
+          "child": "lstGlobalSourcebookInfos"
+        },
+        {
+          "parent": "tabCustomDataDirectories",
+          "child": "tlpOptionalRules"
+        },
+        {
+          "parent": "gpbDirectoryInfo",
+          "child": "tlpDirectoryInfo"
+        },
+        {
+          "parent": "gbpDirectoryInfoDependencies",
+          "child": "pnlDirectoryDependencies"
+        },
+        {
+          "parent": "pnlDirectoryDependencies",
+          "child": "lblDependencies"
+        },
+        {
+          "parent": "gbpDirectoryInfoIncompatibilities",
+          "child": "pnlDirectoryIncompatibilities"
+        },
+        {
+          "parent": "pnlDirectoryIncompatibilities",
+          "child": "lblIncompatibilities"
+        },
+        {
+          "parent": "gpbDirectoryAuthors",
+          "child": "pnlDirectoryAuthors"
+        },
+        {
+          "parent": "pnlDirectoryAuthors",
+          "child": "lblDirectoryAuthors"
+        },
+        {
+          "parent": "tabGitHubIssues",
+          "child": "cmdUploadPastebin"
+        },
+        {
+          "parent": "tabPlugins",
+          "child": "tlpPlugins"
+        },
+        {
+          "parent": "grpAvailablePlugins",
+          "child": "clbPlugins"
+        }
+      ]
+    },
+    {
+      "form_name": "MasterIndex",
+      "designer_path": "/docker/chummercomplete/chummer-presentation/Chummer/Forms/Utility Forms/MasterIndex.Designer.cs",
+      "control_count": 19,
+      "root_controls": [
+        "tlpMain"
+      ],
+      "tabs": [],
+      "groups": [],
+      "toolstrips": [],
+      "context_menus": [],
+      "event_handler_count": 6,
+      "sample_event_handlers": [
+        {
+          "control": "txtSearch",
+          "event": "TextChanged",
+          "handler": "RefreshList"
+        },
+        {
+          "control": "lblSource",
+          "event": "Click",
+          "handler": "lblSource_Click"
+        },
+        {
+          "control": "cboFile",
+          "event": "SelectedIndexChanged",
+          "handler": "RefreshList"
+        },
+        {
+          "control": "lstItems",
+          "event": "SelectedIndexChanged",
+          "handler": "lstItems_SelectedIndexChanged"
+        },
+        {
+          "control": "cmdEditCharacterSetting",
+          "event": "Click",
+          "handler": "cmdEditCharacterSetting_Click"
+        },
+        {
+          "control": "cboCharacterSetting",
+          "event": "SelectedIndexChanged",
+          "handler": "cboCharacterSetting_SelectedIndexChanged"
+        }
+      ],
+      "hierarchy": []
+    },
+    {
+      "form_name": "SelectGear",
+      "designer_path": "/docker/chummercomplete/chummer-presentation/Chummer/Forms/Selection Forms/SelectGear.Designer.cs",
+      "control_count": 55,
+      "root_controls": [
+        "tlpMain"
+      ],
+      "tabs": [],
+      "groups": [
+        "gpbCostFilter"
+      ],
+      "toolstrips": [],
+      "context_menus": [],
+      "event_handler_count": 21,
+      "sample_event_handlers": [
+        {
+          "control": "cmdCancel",
+          "event": "Click",
+          "handler": "cmdCancel_Click"
+        },
+        {
+          "control": "cmdOK",
+          "event": "Click",
+          "handler": "cmdOK_Click"
+        },
+        {
+          "control": "lstGear",
+          "event": "SelectedIndexChanged",
+          "handler": "lstGear_SelectedIndexChanged"
+        },
+        {
+          "control": "lstGear",
+          "event": "DoubleClick",
+          "handler": "cmdOK_Click"
+        },
+        {
+          "control": "cboCategory",
+          "event": "SelectedIndexChanged",
+          "handler": "cboCategory_SelectedIndexChanged"
+        },
+        {
+          "control": "nudRating",
+          "event": "ValueChanged",
+          "handler": "nudRating_ValueChanged"
+        },
+        {
+          "control": "txtSearch",
+          "event": "TextChanged",
+          "handler": "txtSearch_TextChanged"
+        },
+        {
+          "control": "txtSearch",
+          "event": "KeyDown",
+          "handler": "txtSearch_KeyDown"
+        },
+        {
+          "control": "txtSearch",
+          "event": "KeyUp",
+          "handler": "txtSearch_KeyUp"
+        },
+        {
+          "control": "cmdOKAdd",
+          "event": "Click",
+          "handler": "cmdOKAdd_Click"
+        },
+        {
+          "control": "lblSource",
+          "event": "Click",
+          "handler": "OpenSourceFromLabel"
+        },
+        {
+          "control": "nudGearQty",
+          "event": "ValueChanged",
+          "handler": "nudGearQty_ValueChanged"
+        },
+        {
+          "control": "chkFreeItem",
+          "event": "CheckedChanged",
+          "handler": "chkFreeItem_CheckedChanged"
+        },
+        {
+          "control": "chkDoItYourself",
+          "event": "CheckedChanged",
+          "handler": "chkDoItYourself_CheckedChanged"
+        },
+        {
+          "control": "nudMarkup",
+          "event": "ValueChanged",
+          "handler": "nudMarkup_ValueChanged"
+        },
+        {
+          "control": "chkBlackMarketDiscount",
+          "event": "CheckedChanged",
+          "handler": "chkBlackMarketDiscount_CheckedChanged"
+        },
+        {
+          "control": "chkHideOverAvailLimit",
+          "event": "CheckedChanged",
+          "handler": "RefreshCurrentList"
+        },
+        {
+          "control": "chkShowOnlyAffordItems",
+          "event": "CheckedChanged",
+          "handler": "RefreshCurrentList"
+        },
+        {
+          "control": "nudMinimumCost",
+          "event": "ValueChanged",
+          "handler": "CostFilter"
+        },
+        {
+          "control": "nudMaximumCost",
+          "event": "ValueChanged",
+          "handler": "CostFilter"
+        },
+        {
+          "control": "nudExactCost",
+          "event": "ValueChanged",
+          "handler": "CostFilter"
+        }
+      ],
+      "hierarchy": [
+        {
+          "parent": "gpbCostFilter",
+          "child": "tlpCostFilter"
+        },
+        {
+          "parent": "flpCheckBoxes",
+          "child": "chkFreeItem"
+        },
+        {
+          "parent": "flpCheckBoxes",
+          "child": "chkBlackMarketDiscount"
+        },
+        {
+          "parent": "flpCheckBoxes",
+          "child": "chkDoItYourself"
+        },
+        {
+          "parent": "flpQty",
+          "child": "nudGearQty"
+        },
+        {
+          "parent": "flpQty",
+          "child": "chkStack"
+        },
+        {
+          "parent": "flpRating",
+          "child": "nudRating"
+        },
+        {
+          "parent": "flpRating",
+          "child": "lblRatingNALabel"
+        },
+        {
+          "parent": "flpMarkup",
+          "child": "nudMarkup"
+        },
+        {
+          "parent": "flpMarkup",
+          "child": "lblMarkupPercentLabel"
+        }
+      ]
+    }
+  ],
+  "form_count": 5
+}

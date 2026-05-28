@@ -57,11 +57,23 @@ public partial class MainWindow
         bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
         bool showCommandSurface = !string.IsNullOrWhiteSpace(_shellPresenter.State.OpenMenuId)
             || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
+        bool showClassicFormPort = ClassicModePolicy.ShouldUseClassicFormPort(
+            shellFrame.SectionHostState.SectionId,
+            shellFrame.CommandDialogPaneState.SelectedCommandId);
+        bool commandPromotedToClassicFormPort =
+            showClassicFormPort
+            && string.IsNullOrWhiteSpace(shellFrame.SectionHostState.SectionId)
+            && !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
         bool showRightShell = !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogTitle)
             || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogMessage)
             || shellFrame.CommandDialogPaneState.Fields.Length > 0
             || shellFrame.CommandDialogPaneState.Actions.Length > 0
             || showCommandSurface;
+
+        if (commandPromotedToClassicFormPort)
+        {
+            showRightShell = false;
+        }
 
         RosterPaneRegion.IsVisible = showRosterPane;
         RosterPaneRegion.IsHitTestVisible = showRosterPane;
@@ -69,6 +81,10 @@ public partial class MainWindow
         LeftNavigatorRegion.IsHitTestVisible = showNavigatorPane;
         SummaryHeaderRegion.IsVisible = showSummaryHeader;
         SummaryHeaderRegion.IsHitTestVisible = showSummaryHeader;
+        ClassicFormPortHostControl.IsVisible = showClassicFormPort;
+        ClassicFormPortHostControl.IsHitTestVisible = showClassicFormPort;
+        SectionHostControl.IsVisible = !showClassicFormPort;
+        SectionHostControl.IsHitTestVisible = !showClassicFormPort;
         RightShellRegion.IsVisible = showRightShell;
         RightShellRegion.IsHitTestVisible = showRightShell;
         RightShellRegion.Opacity = showRightShell ? 1 : 0;

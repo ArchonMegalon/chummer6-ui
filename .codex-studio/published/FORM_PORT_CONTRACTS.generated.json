@@ -1,0 +1,116 @@
+{
+  "generated_at": "2026-05-28T06:18:31Z",
+  "status": "pass",
+  "contract_count": 5,
+  "contracts": [
+    {
+      "contract_path": "/docker/chummercomplete/chummer-presentation/.codex-design/classic-formports/character_career.yaml",
+      "surface_id": "character_career",
+      "title": "Character Career Classic",
+      "legacy_form": "Chummer/Forms/Character Forms/CharacterCareer.Designer.cs",
+      "mode": "Classic",
+      "port_class": "CharacterCareerClassicPort",
+      "designer_sources": [
+        "Chummer/Forms/Character Forms/CharacterCareer.Designer.cs"
+      ],
+      "legacy_tabs": [
+        "Character",
+        "Gear",
+        "Armor",
+        "Weapons",
+        "Contacts",
+        "Notes"
+      ],
+      "runtime_route_tokens": [
+        "career",
+        "advancement",
+        "karma"
+      ]
+    },
+    {
+      "contract_path": "/docker/chummercomplete/chummer-presentation/.codex-design/classic-formports/character_create.yaml",
+      "surface_id": "character_create",
+      "title": "Character Create Classic",
+      "legacy_form": "Chummer/Forms/Character Forms/CharacterCreate.Designer.cs",
+      "mode": "Classic",
+      "port_class": "CharacterCreateClassicPort",
+      "designer_sources": [
+        "Chummer/Forms/Character Forms/CharacterCreate.Designer.cs"
+      ],
+      "legacy_tabs": [
+        "Priorities",
+        "Attributes",
+        "Skills",
+        "Gear",
+        "Spells",
+        "Final"
+      ],
+      "runtime_route_tokens": [
+        "create",
+        "metatype",
+        "priority"
+      ]
+    },
+    {
+      "contract_path": "/docker/chummercomplete/chummer-presentation/.codex-design/classic-formports/gear.yaml",
+      "surface_id": "gear",
+      "title": "Gear Classic",
+      "legacy_form": "Chummer/Forms/Selection Forms/SelectGear.Designer.cs",
+      "mode": "Classic",
+      "port_class": "GearClassicPort",
+      "designer_sources": [
+        "Chummer/Forms/Selection Forms/SelectGear.Designer.cs"
+      ],
+      "legacy_tabs": [
+        "Category",
+        "Filters",
+        "Details",
+        "Purchase"
+      ],
+      "runtime_route_tokens": [
+        "gear"
+      ]
+    },
+    {
+      "contract_path": "/docker/chummercomplete/chummer-presentation/.codex-design/classic-formports/master_index.yaml",
+      "surface_id": "master_index",
+      "title": "Master Index Classic",
+      "legacy_form": "Chummer/Forms/Utility Forms/MasterIndex.Designer.cs",
+      "mode": "Classic",
+      "port_class": "MasterIndexClassicPort",
+      "designer_sources": [
+        "Chummer/Forms/Utility Forms/MasterIndex.Designer.cs"
+      ],
+      "legacy_tabs": [
+        "Browse",
+        "Search",
+        "Source"
+      ],
+      "runtime_route_tokens": [
+        "index",
+        "master"
+      ]
+    },
+    {
+      "contract_path": "/docker/chummercomplete/chummer-presentation/.codex-design/classic-formports/settings.yaml",
+      "surface_id": "settings",
+      "title": "Global Settings Classic",
+      "legacy_form": "Chummer/Forms/EditGlobalSettings.Designer.cs",
+      "mode": "Classic",
+      "port_class": "SettingsClassicPort",
+      "designer_sources": [
+        "Chummer/Forms/EditGlobalSettings.Designer.cs"
+      ],
+      "legacy_tabs": [
+        "Global",
+        "Custom Data",
+        "GitHub Issues",
+        "Plugins"
+      ],
+      "runtime_route_tokens": [
+        "settings",
+        "global"
+      ]
+    }
+  ]
+}

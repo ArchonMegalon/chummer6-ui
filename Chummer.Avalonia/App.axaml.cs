@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Chummer.Desktop.Runtime;
@@ -29,7 +30,7 @@ public partial class App : global::Avalonia.Application
         {
             _serviceProvider = BuildServiceProvider();
             Services = _serviceProvider;
-            desktop.MainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            desktop.MainWindow = CreateDesktopWindow(_serviceProvider);
             desktop.MainWindow.Opened += MainWindow_OnOpened;
             desktop.Exit += (_, _) =>
             {
@@ -46,6 +47,29 @@ public partial class App : global::Avalonia.Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static Window CreateDesktopWindow(IServiceProvider services)
+    {
+        MainWindow window = services.GetRequiredService<MainWindow>();
+        DesktopUiMode mode = ClassicModePolicy.ResolveCurrentMode();
+        switch (mode)
+        {
+            case DesktopUiMode.Classic:
+                window.Title = "Chummer Desktop Classic";
+                break;
+            case DesktopUiMode.Modern:
+                window.Title = "Chummer Desktop Modern";
+                break;
+            case DesktopUiMode.SupportRecovery:
+                window.Title = "Chummer Desktop Support/Recovery";
+                break;
+            case DesktopUiMode.Developer:
+                window.Title = "Chummer Desktop Developer";
+                break;
+        }
+
+        return window;
     }
 
     private static ServiceProvider BuildServiceProvider()
@@ -149,7 +173,12 @@ public partial class App : global::Avalonia.Application
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
-        if (DesktopStartupSurfaceCatalog.Matches(startupSurface, "campaign_workspace"))
+        if (!IsStartupSurfaceAllowedInCurrentMode(startupSurface))
+        {
+            return;
+        }
+
+        if (DesktopStartupSurfaceCatalog.Matches(startupSurface, DesktopStartupSurfaceCatalog.CampaignWorkspace))
         {
             try
             {
@@ -328,5 +357,30 @@ public partial class App : global::Avalonia.Application
                 Console.Error.WriteLine($"Failed to display the desktop settings command surface: {ex}");
             }
         }
+    }
+
+    private static bool IsStartupSurfaceAllowedInCurrentMode(string? startupSurface)
+    {
+        if (string.IsNullOrWhiteSpace(startupSurface))
+        {
+            return true;
+        }
+
+        if (ClassicModePolicy.ResolveCurrentMode() != DesktopUiMode.Classic)
+        {
+            return true;
+        }
+
+        return startupSurface.Trim().ToLowerInvariant() switch
+        {
+            DesktopStartupSurfaceCatalog.Settings => true,
+            DesktopStartupSurfaceCatalog.Update => true,
+            DesktopStartupSurfaceCatalog.Support => true,
+            DesktopStartupSurfaceCatalog.SupportCase => true,
+            DesktopStartupSurfaceCatalog.DevicesAccess => true,
+            DesktopStartupSurfaceCatalog.ReportIssue => true,
+            DesktopStartupSurfaceCatalog.CrashRecovery => true,
+            _ => false
+        };
     }
 }

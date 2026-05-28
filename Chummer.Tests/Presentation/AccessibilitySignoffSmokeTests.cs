@@ -994,7 +994,7 @@ internal static class AccessibilitySignoffSmokeTests
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "CHUMMER_DESKTOP_STARTUP_SURFACE");
-        RequireContains(appSource, "campaign_workspace");
+        RequireContains(appSource, "DesktopStartupSurfaceCatalog.CampaignWorkspace");
         RequireContains(appSource, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, \"avalonia\")");
     }
 
@@ -1948,7 +1948,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopReportIssueWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopInstallLinkingWindow.ShowAsync(this, \"avalonia\")");
-        RequireContains(eventHandlerSource, "_interactionCoordinator.ExecuteCommandAsync(\"global_settings\", CancellationToken.None)");
+        RequireContains(eventHandlerSource, "OpenDesktopCommandFromSurfaceAsync(\"global_settings\", \"open global settings\")");
 
         string desktopHomeSource = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
         RequireContains(desktopHomeSource, "public static async Task ShowAsync(Window owner, string headId)");

@@ -1,0 +1,15 @@
+surface_id: settings
+title: Global Settings Classic
+legacy_form: Chummer/Forms/EditGlobalSettings.Designer.cs
+mode: Classic
+port_class: SettingsClassicPort
+designer_sources:
+  - Chummer/Forms/EditGlobalSettings.Designer.cs
+legacy_tabs:
+  - Global
+  - Custom Data
+  - GitHub Issues
+  - Plugins
+runtime_route_tokens:
+  - settings
+  - global

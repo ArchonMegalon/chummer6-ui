@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-05-28T06:18:31Z",
+  "status": "pass",
+  "mode": "Classic",
+  "budgets_minutes": {
+    "character_create": 14,
+    "character_career": 11,
+    "settings": 4,
+    "master_index": 3,
+    "gear": 6
+  },
+  "source": "classic_formport_estimate_seed_v1"
+}

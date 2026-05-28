@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-27T20:06:55.480571Z",
+  "generatedAt": "2026-05-28T06:20:30.144335Z",
   "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
   "status": "pass",
   "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",

@@ -571,7 +571,6 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             (string ButtonName, string ExpectedLabel)[] expectedButtons =
             [
-                ("LoadDemoRunnerButton", "Demo"),
                 ("ImportFileButton", "Open"),
                 ("SaveButton", "Save"),
                 ("PrintButton", "Print"),
@@ -600,6 +599,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             Button importRawButton = harness.FindControl<Button>("ImportRawButton");
             Assert.IsFalse(importRawButton.IsVisible, "Raw XML import must stay off the primary classic toolbar.");
+            Assert.IsFalse(
+                harness.FindControl<Button>("LoadDemoRunnerButton").IsVisible,
+                "The Chummer5A public-stable toolbar must hide the demo launcher by default.");
             foreach (string buttonName in new[] { "DesktopHomeButton", "CampaignWorkspaceButton", "UpdateStatusButton", "InstallLinkingButton", "SupportButton", "ReportIssueButton" })
             {
                 Assert.IsFalse(harness.FindControl<Button>(buttonName).IsVisible, $"Secondary chrome '{buttonName}' must stay out of the default dense toolbar.");
@@ -904,33 +906,34 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive()
     {
-        WithHarness(harness =>
+        string? priorMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MODE");
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        try
         {
-            harness.WaitForReady();
-            harness.Click("SettingsButton");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", "classic");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
 
-            harness.WaitUntil(() =>
+            WithRuntimeHarness(harness =>
             {
-                TextBlock? title = harness.FindControlOrDefault<TextBlock>("DialogTitleText");
-                Panel? fields = harness.FindControlOrDefault<Panel>("DialogFieldsHost");
-                Panel? actions = harness.FindControlOrDefault<Panel>("DialogActionsHost");
-                return string.Equals(title?.Text, "Global Settings", StringComparison.Ordinal)
-                    && fields is not null
-                    && fields.Children.Count > 0
-                    && actions is not null
-                    && actions.Children.OfType<Button>().Any();
+                harness.WaitForReady();
+                OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "global_settings");
+                harness.ClickMenuCommand("global_settings");
+
+                harness.WaitUntil(() =>
+                {
+                    return string.Equals(harness.ShellPresenter.State.LastCommandId, "global_settings", StringComparison.Ordinal)
+                        || string.Equals(harness.Presenter.State.LastCommandId, "global_settings", StringComparison.Ordinal);
+                }, context: "settings command route should execute");
+
+                harness.Click("FileMenuButton");
+                harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
             });
-
-            Panel fieldsHost = harness.FindControl<Panel>("DialogFieldsHost");
-            Panel actionsHost = harness.FindControl<Panel>("DialogActionsHost");
-
-            Assert.IsTrue(fieldsHost.Children.OfType<Control>().Any());
-            Assert.IsTrue(actionsHost.Children.OfType<Button>().Any(button =>
-                string.Equals(button.Content?.ToString(), "Save", StringComparison.OrdinalIgnoreCase)));
-
-            harness.Click("FileMenuButton");
-            harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
-        });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", priorMode);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
+        }
     }
 
     [TestMethod]
@@ -1425,9 +1428,14 @@ public sealed class AvaloniaFlagshipUiGateTests
         Directory.CreateDirectory(sampleRoot);
         string targetPath = Path.Combine(sampleRoot, "Soma-Career.chum5");
         File.Copy(FindTestFilePath("Soma (Career).chum5"), targetPath, overwrite: true);
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        string? priorSampleOverride = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES");
 
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", "1");
+
             WithRuntimeHarness(harness =>
             {
                 harness.WaitForReady();
@@ -1440,6 +1448,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleOverride);
+
             if (File.Exists(targetPath))
             {
                 File.Delete(targetPath);
@@ -1516,6 +1527,35 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_ENABLE_SAMPLES", priorSampleOverride);
+        }
+    }
+
+    [TestMethod]
+    public void Classic_mode_routes_settings_surface_through_formport_host_and_hides_generic_section_host()
+    {
+        string? priorMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MODE");
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", "classic");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+                harness.Presenter.ExecuteCommandAsync("global_settings", CancellationToken.None).GetAwaiter().GetResult();
+                harness.WaitUntil(() => !harness.State.IsBusy);
+
+                Control formPortHost = harness.FindControl<Control>("ClassicFormPortHostControl");
+                Control sectionHost = harness.FindControl<Control>("SectionHostControl");
+                Assert.IsTrue(formPortHost.IsVisible, "Classic mode should surface the FormPort host for settings.");
+                Assert.IsFalse(sectionHost.IsVisible, "Classic mode should hide the generic SectionHost when a W1 FormPort is active.");
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", priorMode);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
         }
     }
 

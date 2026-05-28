@@ -13,6 +13,12 @@ public partial class MainWindow
 {
     private async void ToolStrip_OnImportRawRequested(object? sender, EventArgs e)
     {
+        if (ClassicModePolicy.ResolveCurrentMode() == DesktopUiMode.Classic)
+        {
+            MainWindowFeedbackCoordinator.ShowImportRawRequired(_controls.ToolStrip);
+            return;
+        }
+
         string importText = _controls.SectionHostInputText;
         if (string.IsNullOrWhiteSpace(importText))
         {
@@ -206,13 +212,8 @@ public partial class MainWindow
 
     private async void ToolStrip_OnSettingsRequested(object? sender, EventArgs e)
     {
-        await RunUiActionAsync(
-            async () =>
-            {
-                await _interactionCoordinator.ExecuteCommandAsync("global_settings", CancellationToken.None);
-                MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
-            },
-            "open global settings");
+        await OpenDesktopCommandFromSurfaceAsync("global_settings", "open global settings");
+        MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
     }
 
     private async void SummaryHeader_OnRuntimeInspectorRequested(object? sender, EventArgs e)

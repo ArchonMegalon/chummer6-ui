@@ -1,0 +1,18 @@
+surface_id: character_career
+title: Character Career Classic
+legacy_form: Chummer/Forms/Character Forms/CharacterCareer.Designer.cs
+mode: Classic
+port_class: CharacterCareerClassicPort
+designer_sources:
+  - Chummer/Forms/Character Forms/CharacterCareer.Designer.cs
+legacy_tabs:
+  - Character
+  - Gear
+  - Armor
+  - Weapons
+  - Contacts
+  - Notes
+runtime_route_tokens:
+  - career
+  - advancement
+  - karma

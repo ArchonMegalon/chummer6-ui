@@ -74,6 +74,7 @@ public partial class MainWindow : Window
             menuBar: ShellMenuBarControl,
             characterRoster: CharacterRosterControl,
             navigatorPane: NavigatorPaneControl,
+            classicFormPortHost: ClassicFormPortHostControl,
             sectionHost: SectionHostControl,
             commandDialogPane: CommandDialogPaneControl,
             coachSidecar: CoachSidecarControl,

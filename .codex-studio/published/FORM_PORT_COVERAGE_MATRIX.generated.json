@@ -1,0 +1,83 @@
+{
+  "generated_at": "2026-05-28T06:18:31Z",
+  "status": "pass",
+  "w1_surface_count": 5,
+  "coverage": [
+    {
+      "surface_id": "character_career",
+      "port_class": "CharacterCareerClassicPort",
+      "port_file": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicFormPorts/CharacterCareerClassicPort.cs",
+      "port_exists": true,
+      "runtime_route_tokens": [
+        "career",
+        "advancement",
+        "karma"
+      ],
+      "route_tokens_present_in_policy": true,
+      "parser_backed_from_designer": true,
+      "generic_section_host_fallback": false,
+      "coverage_reason": "W1 port is routed natively.",
+      "real_form_native_surface": true
+    },
+    {
+      "surface_id": "character_create",
+      "port_class": "CharacterCreateClassicPort",
+      "port_file": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicFormPorts/CharacterCreateClassicPort.cs",
+      "port_exists": true,
+      "runtime_route_tokens": [
+        "create",
+        "metatype",
+        "priority"
+      ],
+      "route_tokens_present_in_policy": true,
+      "parser_backed_from_designer": true,
+      "generic_section_host_fallback": false,
+      "coverage_reason": "W1 port is routed natively.",
+      "real_form_native_surface": true
+    },
+    {
+      "surface_id": "gear",
+      "port_class": "GearClassicPort",
+      "port_file": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicFormPorts/GearClassicPort.cs",
+      "port_exists": true,
+      "runtime_route_tokens": [
+        "gear"
+      ],
+      "route_tokens_present_in_policy": true,
+      "parser_backed_from_designer": true,
+      "generic_section_host_fallback": false,
+      "coverage_reason": "W1 port is routed natively.",
+      "real_form_native_surface": true
+    },
+    {
+      "surface_id": "master_index",
+      "port_class": "MasterIndexClassicPort",
+      "port_file": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicFormPorts/MasterIndexClassicPort.cs",
+      "port_exists": true,
+      "runtime_route_tokens": [
+        "index",
+        "master"
+      ],
+      "route_tokens_present_in_policy": true,
+      "parser_backed_from_designer": true,
+      "generic_section_host_fallback": false,
+      "coverage_reason": "W1 port is routed natively.",
+      "real_form_native_surface": true
+    },
+    {
+      "surface_id": "settings",
+      "port_class": "SettingsClassicPort",
+      "port_file": "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicFormPorts/SettingsClassicPort.cs",
+      "port_exists": true,
+      "runtime_route_tokens": [
+        "settings",
+        "global"
+      ],
+      "route_tokens_present_in_policy": true,
+      "parser_backed_from_designer": true,
+      "generic_section_host_fallback": false,
+      "coverage_reason": "W1 port is routed natively.",
+      "real_form_native_surface": true
+    }
+  ]
+}

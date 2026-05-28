@@ -1,0 +1,18 @@
+surface_id: character_create
+title: Character Create Classic
+legacy_form: Chummer/Forms/Character Forms/CharacterCreate.Designer.cs
+mode: Classic
+port_class: CharacterCreateClassicPort
+designer_sources:
+  - Chummer/Forms/Character Forms/CharacterCreate.Designer.cs
+legacy_tabs:
+  - Priorities
+  - Attributes
+  - Skills
+  - Gear
+  - Spells
+  - Final
+runtime_route_tokens:
+  - create
+  - metatype
+  - priority

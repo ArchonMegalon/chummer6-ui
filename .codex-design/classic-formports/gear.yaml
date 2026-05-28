@@ -1,0 +1,14 @@
+surface_id: gear
+title: Gear Classic
+legacy_form: Chummer/Forms/Selection Forms/SelectGear.Designer.cs
+mode: Classic
+port_class: GearClassicPort
+designer_sources:
+  - Chummer/Forms/Selection Forms/SelectGear.Designer.cs
+legacy_tabs:
+  - Category
+  - Filters
+  - Details
+  - Purchase
+runtime_route_tokens:
+  - gear

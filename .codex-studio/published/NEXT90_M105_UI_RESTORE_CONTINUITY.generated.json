@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-05-27T20:05:50Z",
+  "generatedAt": "2026-05-27T20:42:03Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps desktop restore continuation, stale-state visibility, and conflict-safe workspace choices visible on the Avalonia primary route.",
@@ -295,9 +295,9 @@
         "path": "scripts/ai/verify.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "89d2ce65",
-        "subject": "Land full vapor closeout and release proof refresh",
-        "sha": "89d2ce6537b86a1de7928d597045f17cffd7f705",
+        "commit": "615409e6",
+        "subject": "Harden flagship reachability and parity proof gates",
+        "sha": "615409e6ab52a7065b4ff46df3ea408368c665eb",
         "paths": [
           "scripts/ai/verify.sh"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "e9444152",
-        "subject": "Close vapor parity and refresh verification receipts",
-        "sha": "e944415259f3a6a6d41cfdb6f975c6c36c7e38f5",
+        "commit": "615409e6",
+        "subject": "Harden flagship reachability and parity proof gates",
+        "sha": "615409e6ab52a7065b4ff46df3ea408368c665eb",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -391,15 +391,10 @@
         "scripts/ai/verify.sh",
         ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
       ],
-      "has_relevant_changes": true,
-      "changes": [
-        {
-          "status": " M",
-          "path": "scripts/ai/verify.sh"
-        }
-      ]
+      "has_relevant_changes": false,
+      "changes": []
     },
-    "headCommit": "edaee2e0cbc552c471876b689bddc239322828df",
+    "headCommit": "615409e6ab52a7065b4ff46df3ea408368c665eb",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",

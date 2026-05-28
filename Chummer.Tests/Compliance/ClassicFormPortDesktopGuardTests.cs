@@ -1,0 +1,82 @@
+#nullable enable annotations
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.Json;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Chummer.Tests.Compliance;
+
+[TestClass]
+public sealed class ClassicFormPortDesktopGuardTests
+{
+    [TestMethod]
+    public void Classic_formport_receipts_are_all_green()
+    {
+        string repoRoot = FindRepoRoot();
+        string publishedRoot = Path.Combine(repoRoot, ".codex-studio", "published");
+
+        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_MODE_BOUNDARY.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "LEGACY_FORM_INVENTORY.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "FORM_PORT_CONTRACTS.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "FORM_PORT_COVERAGE_MATRIX.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_MODE_NO_NOISE_GATE.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_PIXEL_CONTACT_SHEETS.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_VETERAN_TASK_TIME_BUDGETS.generated.json", "pass");
+
+        string humanReview = File.ReadAllText(Path.Combine(publishedRoot, "CLASSIC_FORM_PORT_HUMAN_REVIEW.md"));
+        StringAssert.Contains(humanReview, "PASS");
+        StringAssert.Contains(humanReview, "CLASSIC_FORM_PORT_DESKTOP_READY");
+
+        string verdict = File.ReadAllText(Path.Combine(publishedRoot, "CLASSIC_FORM_PORT_DESKTOP_VERDICT.md")).Trim();
+        Assert.AreEqual("CLASSIC_FORM_PORT_DESKTOP_READY", verdict);
+    }
+
+    [TestMethod]
+    public void Classic_formport_source_contract_stays_wired()
+    {
+        string repoRoot = FindRepoRoot();
+        string appText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml.cs"));
+        string policyText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "ClassicModePolicy.cs"));
+        string refreshText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.StateRefresh.cs"));
+        string parserText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormDesignerParser.cs"));
+        string hostText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPortHostControl.axaml.cs"));
+
+        StringAssert.Contains(policyText, "DesktopUiMode.Classic");
+        StringAssert.Contains(policyText, "return DesktopUiMode.Classic;");
+        StringAssert.Contains(appText, "CreateDesktopWindow");
+        StringAssert.Contains(appText, "ClassicModePolicy.ResolveCurrentMode()");
+        StringAssert.Contains(refreshText, "ClassicFormPortHostControl.IsVisible = showClassicFormPort;");
+        StringAssert.Contains(refreshText, "SectionHostControl.IsVisible = !showClassicFormPort;");
+        StringAssert.Contains(parserText, "Parse(string relativeDesignerPath)");
+        StringAssert.Contains(hostText, "CharacterCareerClassicPort");
+        StringAssert.Contains(hostText, "CharacterCreateClassicPort");
+        StringAssert.Contains(hostText, "SettingsClassicPort");
+        StringAssert.Contains(hostText, "MasterIndexClassicPort");
+        StringAssert.Contains(hostText, "GearClassicPort");
+    }
+
+    private static void AssertPublishedJsonStatus(string publishedRoot, string fileName, string expectedStatus)
+    {
+        string path = Path.Combine(publishedRoot, fileName);
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(path));
+        Assert.AreEqual(expectedStatus, document.RootElement.GetProperty("status").GetString(), fileName);
+    }
+
+    private static string FindRepoRoot()
+    {
+        string directory = AppContext.BaseDirectory;
+        while (!string.IsNullOrWhiteSpace(directory))
+        {
+            if (File.Exists(Path.Combine(directory, "Chummer.sln")))
+            {
+                return directory;
+            }
+
+            directory = Directory.GetParent(directory)?.FullName ?? string.Empty;
+        }
+
+        throw new InvalidOperationException("Could not locate repository root.");
+    }
+}

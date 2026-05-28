@@ -50,7 +50,11 @@
 
       <Grid x:Name="CenterShellRegion" Grid.Column="1">
         <Border x:Name="SectionRegion" Classes="shell-panel" Padding="0">
-          <controls:SectionHostControl x:Name="SectionHostControl" />
+          <Grid>
+            <controls:ClassicFormPortHostControl x:Name="ClassicFormPortHostControl"
+                                                 IsVisible="False" />
+            <controls:SectionHostControl x:Name="SectionHostControl" />
+          </Grid>
         </Border>
       </Grid>
 

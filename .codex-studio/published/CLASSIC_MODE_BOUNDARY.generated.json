@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-05-28T06:18:31Z",
+  "status": "pass",
+  "default_mode": "Classic",
+  "available_modes": [
+    "Classic",
+    "Modern",
+    "Support/Recovery",
+    "Developer"
+  ],
+  "files": [
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/MainClassicWindow.axaml",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Controls/ClassicStatusStrip.axaml",
+    "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/ClassicModePolicy.cs"
+  ],
+  "missing_files": [],
+  "section_host_fallback_present": true
+}

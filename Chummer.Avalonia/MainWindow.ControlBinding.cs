@@ -14,6 +14,7 @@ internal static class MainWindowControlBinder
         ShellMenuBarControl menuBar,
         CharacterRosterControl characterRoster,
         NavigatorPaneControl navigatorPane,
+        ClassicFormPortHostControl classicFormPortHost,
         SectionHostControl sectionHost,
         CommandDialogPaneControl commandDialogPane,
         CoachSidecarControl coachSidecar,
@@ -102,6 +103,7 @@ internal static class MainWindowControlBinder
             menuBar,
             characterRoster,
             navigatorPane,
+            classicFormPortHost,
             sectionHost,
             commandDialogPane,
             coachSidecar,
@@ -115,6 +117,7 @@ internal sealed record MainWindowControls(
     ShellMenuBarControl MenuBar,
     CharacterRosterControl CharacterRoster,
     NavigatorPaneControl NavigatorPane,
+    ClassicFormPortHostControl ClassicFormPortHost,
     SectionHostControl SectionHost,
     CommandDialogPaneControl CommandDialogPane,
     CoachSidecarControl CoachSidecar,
@@ -132,6 +135,7 @@ internal sealed record MainWindowControls(
         CharacterRoster.SetState(shellFrame.RosterPaneState);
         CommandDialogPane.SetState(shellFrame.CommandDialogPaneState);
         NavigatorPane.SetState(shellFrame.NavigatorPaneState);
+        ClassicFormPortHost.SetState(shellFrame.SectionHostState, shellFrame.CommandDialogPaneState.SelectedCommandId);
         SectionHost.SetState(shellFrame.SectionHostState);
     }
 
