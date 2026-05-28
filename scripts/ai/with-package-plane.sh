@@ -43,15 +43,16 @@ if [[ "${CHUMMER_PACKAGE_PLANE_SERIALIZE:-1}" == "1" ]] && [[ -z "${CHUMMER_PACK
   fi
 fi
 
-contracts_project="$workspace_root/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj"
-engine_contracts_bootstrap_script="$workspace_root/chummer-core-engine/scripts/ai/bootstrap-contracts-feed.sh"
-engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$workspace_root/chummer-core-engine/.tmp/ai/local-nuget}"
-campaign_contracts_project="$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj"
-play_contracts_project="$workspace_root/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj"
-run_contracts_project="$workspace_root/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj"
-hub_registry_contracts_project="$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj"
-ui_kit_project="$workspace_root/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj"
-media_contracts_project="$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj"
+contracts_project="${CHUMMER_LOCAL_CONTRACTS_PROJECT:-$workspace_root/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj}"
+engine_contracts_root="$(cd "$(dirname "$contracts_project")/.." && pwd)"
+engine_contracts_bootstrap_script="${CHUMMER_BOOTSTRAP_ENGINE_CONTRACTS_SCRIPT:-$engine_contracts_root/scripts/ai/bootstrap-contracts-feed.sh}"
+engine_contracts_feed_root="${CHUMMER_ENGINE_CONTRACTS_FEED:-$engine_contracts_root/.tmp/ai/local-nuget}"
+campaign_contracts_project="${CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj}"
+play_contracts_project="${CHUMMER_LOCAL_PLAY_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj}"
+run_contracts_project="${CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT:-$workspace_root/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj}"
+hub_registry_contracts_project="${CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT:-$workspace_root/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj}"
+ui_kit_project="${CHUMMER_LOCAL_UI_KIT_PROJECT:-$workspace_root/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj}"
+media_contracts_project="${CHUMMER_LOCAL_MEDIA_CONTRACTS_PROJECT:-$workspace_root/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj}"
 presentation_project="$repo_root/Chummer.Presentation/Chummer.Presentation.csproj"
 desktop_runtime_project="$repo_root/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
 
