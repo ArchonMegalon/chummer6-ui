@@ -32,8 +32,7 @@ public static class WorkspaceEndpoints
                 RulesetId: imported.RulesetId,
                 ImportReceiptId: imported.ImportReceiptId,
                 ImportedAtUtc: imported.ImportedAtUtc,
-                Portability: imported.Portability,
-                WorkflowDeterministicReceipt: imported.WorkflowDeterministicReceipt));
+                Portability: imported.Portability));
         });
 
         app.MapGet("/api/workspaces", async (int? maxCount, IChummerClient client, CancellationToken ct) =>
