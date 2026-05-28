@@ -183,7 +183,21 @@ jobs:
       run: |
         set -euo pipefail
         echo "Run, Build Application using compatibility package plane"
-        bash scripts/ai/with-package-plane.sh build ./Chummer.sln -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false
+        projects=(
+          "Chummer/Chummer.csproj"
+          "Chummer.Avalonia/Chummer.Avalonia.csproj"
+          "Chummer.Blazor/Chummer.Blazor.csproj"
+          "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
+          "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
+          "Chummer.Presentation/Chummer.Presentation.csproj"
+          "Chummer.Tests/Chummer.Tests.csproj"
+          "Chummer.Avalonia.Browser/Chummer.Avalonia.Browser.csproj"
+          "Translator/Translator.csproj"
+        )
+
+        for project in "${projects[@]}"; do
+          bash scripts/ai/with-package-plane.sh build "$project" -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false
+        done
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
