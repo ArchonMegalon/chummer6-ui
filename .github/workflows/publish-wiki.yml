@@ -21,11 +21,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Detect GitHub Wiki repository
+        id: detect_wiki
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git ls-remote "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" HEAD >/dev/null 2>&1; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
         
       - name: Publish to GitHub Wiki
+        if: steps.detect_wiki.outputs.enabled == 'true'
         uses: Andrew-Chen-Wang/github-wiki-action@v5
         with:
           path: Chummer/docs/wiki
           commit-message: "Update wiki from Chummer/docs/wiki - ${{ github.sha }}"
           preprocess: true
           disable-empty-commits: true
+
+      - name: Skip summary when wiki is disabled
+        if: steps.detect_wiki.outputs.enabled != 'true'
+        shell: bash
+        run: |
+          {
+            echo "## Wiki Publish"
+            echo
+            echo "Skipped because ${GITHUB_REPOSITORY}.wiki.git is not available."
+          } >> "$GITHUB_STEP_SUMMARY"
