@@ -78,6 +78,17 @@ jobs:
       shell: powershell
       run: |
         $compatRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
+        foreach ($path in @(
+          "${env:GITHUB_WORKSPACE}\\chummer-core-engine",
+          "${env:GITHUB_WORKSPACE}\\chummer.run-services",
+          "${env:GITHUB_WORKSPACE}\\chummer-hub-registry",
+          "${env:GITHUB_WORKSPACE}\\chummer-ui-kit",
+          (Join-Path $compatRoot "fleet\\repos\\chummer-media-factory")
+        )) {
+          if (Test-Path $path) {
+            Remove-Item $path -Force -Recurse
+          }
+        }
         New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-core-engine" -Target "${env:GITHUB_WORKSPACE}\\c" | Out-Null
         New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer.run-services" -Target "${env:GITHUB_WORKSPACE}\\h" | Out-Null
         New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-hub-registry" -Target "${env:GITHUB_WORKSPACE}\\g" | Out-Null
