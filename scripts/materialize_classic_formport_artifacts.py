@@ -33,11 +33,19 @@ DESIGNER_TARGETS = {
 }
 
 PORT_RUNTIME_FILES = {
-    "character_career": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCareerClassicPort.cs",
-    "character_create": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCreateClassicPort.cs",
-    "settings": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "SettingsClassicPort.cs",
-    "master_index": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "MasterIndexClassicPort.cs",
-    "gear": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "GearClassicPort.cs",
+    "character_career": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCareerClassicPort.axaml.cs",
+    "character_create": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCreateClassicPort.axaml.cs",
+    "settings": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "SettingsClassicPort.axaml.cs",
+    "master_index": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "MasterIndexClassicPort.axaml.cs",
+    "gear": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "GearClassicPort.axaml.cs",
+}
+
+PORT_RUNTIME_AXAML_FILES = {
+    "character_career": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCareerClassicPort.axaml",
+    "character_create": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "CharacterCreateClassicPort.axaml",
+    "settings": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "SettingsClassicPort.axaml",
+    "master_index": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "MasterIndexClassicPort.axaml",
+    "gear": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "GearClassicPort.axaml",
 }
 
 BOUNDARY_FILES = [
@@ -213,6 +221,15 @@ def main() -> int:
     coverage_rows = []
     fully_real = True
     state_refresh_text = (ROOT / "Chummer.Avalonia" / "MainWindow.StateRefresh.cs").read_text(encoding="utf-8")
+    classic_surface_text = (ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "ClassicFormPortSurfaceControl.cs").read_text(encoding="utf-8")
+    generic_placeholder_tokens = [
+        "Classic form-native projection",
+        "snapshot.EventHandlers",
+        "state.Rows",
+        "IsEnabled = false",
+        "BuildTabSummary",
+    ]
+    generic_placeholder_hits = [token for token in generic_placeholder_tokens if token in classic_surface_text]
     formport_runtime_switch = (
         "ClassicFormPortHostControl.IsVisible = showClassicFormPort" in state_refresh_text
         and "SectionHostControl.IsVisible = !showClassicFormPort" in state_refresh_text
@@ -223,10 +240,18 @@ def main() -> int:
         route_tokens = [str(token).strip() for token in contract.get("runtime_route_tokens", [])]
         designer_sources = [str(source).strip() for source in contract.get("designer_sources", [])]
         port_exists = bool(runtime_file and runtime_file.is_file())
+        xaml_exists = bool(PORT_RUNTIME_AXAML_FILES.get(surface_id) and PORT_RUNTIME_AXAML_FILES[surface_id].is_file())
         route_bound = all(token in classic_policy_text.lower() for token in route_tokens)
         parser_backed = bool(designer_sources) and all((ROOT / source).is_file() for source in designer_sources)
         generic_fallback = not formport_runtime_switch
-        is_real_form_native = port_exists and route_bound and parser_backed and formport_runtime_switch
+        is_real_form_native = (
+            port_exists
+            and xaml_exists
+            and route_bound
+            and parser_backed
+            and formport_runtime_switch
+            and not generic_placeholder_hits
+        )
         fully_real = fully_real and is_real_form_native
         coverage_rows.append(
             {
@@ -234,6 +259,8 @@ def main() -> int:
                 "port_class": contract.get("port_class"),
                 "port_file": str(runtime_file) if runtime_file else None,
                 "port_exists": port_exists,
+                "xaml_file": str(PORT_RUNTIME_AXAML_FILES.get(surface_id)) if PORT_RUNTIME_AXAML_FILES.get(surface_id) else None,
+                "xaml_exists": xaml_exists,
                 "runtime_route_tokens": route_tokens,
                 "route_tokens_present_in_policy": route_bound,
                 "parser_backed_from_designer": parser_backed,
@@ -242,6 +269,7 @@ def main() -> int:
                 if not is_real_form_native
                 else "W1 port is routed natively.",
                 "real_form_native_surface": is_real_form_native,
+                "generic_placeholder_hits": generic_placeholder_hits,
             }
         )
 
@@ -318,6 +346,7 @@ def main() -> int:
                 "- Classic Mode is now modeled explicitly and W1 FormPort scaffolding exists.",
                 "- The default desktop now gates sample controls, raw XML, and modern startup surfaces more tightly.",
                 "- W1 ports are parser-backed from the legacy WinForms designer files and route through the Classic FormPort host in default Classic Mode." if human_review_pass else "- W1 ports are not yet proven as fully form-native replacements for the legacy forms.",
+                f"- Generic scaffold tokens still present in ClassicFormPortSurfaceControl: {', '.join(generic_placeholder_hits)}." if generic_placeholder_hits else "- No generic scaffold tokens were detected in ClassicFormPortSurfaceControl.",
                 "- Classic screenshot contact sheets now resolve to the flagship screenshot pack for comparison." if human_review_pass else "- No classic pixel contact sheets were rendered for human comparison.",
                 "",
                 "CLASSIC_FORM_PORT_DESKTOP_READY" if human_review_pass else "NOT_READY",

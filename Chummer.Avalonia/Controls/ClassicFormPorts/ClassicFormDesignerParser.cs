@@ -116,7 +116,7 @@ internal static partial class ClassicFormDesignerParser
     private static partial Regex EventHandlerRegex();
 }
 
-internal sealed record ClassicFormDesignerSnapshot(
+public sealed record ClassicFormDesignerSnapshot(
     string SourcePath,
     bool Exists,
     IReadOnlyList<string> Controls,
@@ -127,7 +127,7 @@ internal sealed record ClassicFormDesignerSnapshot(
     IReadOnlyList<string> ContextMenus,
     IReadOnlyList<ClassicFormEventHandlerSnapshot> EventHandlers);
 
-internal sealed record ClassicFormEventHandlerSnapshot(
+public sealed record ClassicFormEventHandlerSnapshot(
     string Control,
     string EventName,
     string HandlerName);

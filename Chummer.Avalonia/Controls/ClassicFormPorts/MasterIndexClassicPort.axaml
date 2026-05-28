@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Chummer.Avalonia.Controls.MasterIndexClassicPort">
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto">
+    <Grid RowDefinitions="Auto,Auto,Auto,*"
+          RowSpacing="10">
+      <TextBlock x:Name="IndexNoticeText"
+                 TextWrapping="Wrap"
+                 Opacity="0.8" />
+      <WrapPanel x:Name="IndexTabsPanel"
+                 Grid.Row="1"
+                 Orientation="Horizontal" />
+      <WrapPanel x:Name="IndexFactsPanel"
+                 Grid.Row="2"
+                 Orientation="Horizontal" />
+      <Grid Grid.Row="3"
+            ColumnDefinitions="2*,2*,3*"
+            ColumnSpacing="10">
+        <StackPanel x:Name="IndexBrowsePanel"
+                    Spacing="10" />
+        <StackPanel x:Name="IndexSearchPanel"
+                    Grid.Column="1"
+                    Spacing="10" />
+        <StackPanel x:Name="IndexSourcePanel"
+                    Grid.Column="2"
+                    Spacing="10" />
+      </Grid>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

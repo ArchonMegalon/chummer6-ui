@@ -41,6 +41,7 @@ public sealed class ClassicFormPortDesktopGuardTests
         string policyText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "ClassicModePolicy.cs"));
         string refreshText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.StateRefresh.cs"));
         string parserText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormDesignerParser.cs"));
+        string classicSurfaceText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
         string hostText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPortHostControl.axaml.cs"));
 
         StringAssert.Contains(policyText, "DesktopUiMode.Classic");
@@ -55,6 +56,15 @@ public sealed class ClassicFormPortDesktopGuardTests
         StringAssert.Contains(hostText, "SettingsClassicPort");
         StringAssert.Contains(hostText, "MasterIndexClassicPort");
         StringAssert.Contains(hostText, "GearClassicPort");
+        Assert.IsFalse(classicSurfaceText.Contains("Classic form-native projection", StringComparison.Ordinal));
+        Assert.IsFalse(classicSurfaceText.Contains("snapshot.EventHandlers", StringComparison.Ordinal));
+        Assert.IsFalse(classicSurfaceText.Contains("state.Rows", StringComparison.Ordinal));
+        Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));
+        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCareerClassicPort.axaml")));
+        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCreateClassicPort.axaml")));
+        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "SettingsClassicPort.axaml")));
+        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "MasterIndexClassicPort.axaml")));
+        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "GearClassicPort.axaml")));
     }
 
     private static void AssertPublishedJsonStatus(string publishedRoot, string fileName, string expectedStatus)
