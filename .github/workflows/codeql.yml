@@ -190,7 +190,6 @@ jobs:
           "Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj"
           "Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj"
           "Chummer.Presentation/Chummer.Presentation.csproj"
-          "Chummer.Tests/Chummer.Tests.csproj"
           "Chummer.Avalonia.Browser/Chummer.Avalonia.Browser.csproj"
           "Translator/Translator.csproj"
         )
