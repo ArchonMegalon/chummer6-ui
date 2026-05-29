@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-19T09:22:48.242183Z",
+  "generatedAt": "2026-05-29T14:00:24.234027Z",
   "contractName": "chummer6-ui.ui_parity_audit",
   "status": "pass",
   "summary": "The active UI parity gate stack passes across legacy parity, runtime inventory, startup survival, and SR6 sophistication.",
@@ -15,49 +15,73 @@
         "gate": "scripts/ai/milestones/design-mirror-completeness-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[design-mirror-completeness] PASS: flagship design mirror inputs are present.\n[design-mirror-completeness] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json",
+        "receiptGeneratedAt": "2026-05-29T07:36:21.104640Z",
+        "summary": "Flagship design mirror inputs are present and carry the required product bar markers.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/chummer5a-layout-hard-gate.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[chummer5a-layout-hard-gate] PASS"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:02:23.426052Z",
+        "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/generated-dialog-element-parity-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[generated-dialog] PASS: generated dialog command/control parity is inventoried, executable, and fail-closing.\n[generated-dialog] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:03:26.291868Z",
+        "summary": "Generated dialog command/control inventories are locked, exhaustively shape-tested, and wired into standard verification.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/section-host-ruleset-parity-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[section-host-ruleset] PASS: section-host quick actions and ruleset-conditioned subflows are locked and executable.\n[section-host-ruleset] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:04:02.236919Z",
+        "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/interactive-control-inventory-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[interactive-control-inventory] PASS: standalone control inventory and main-window interaction routes are executable and fail-closing.\n[interactive-control-inventory] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:04:23.603733Z",
+        "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/startup-workbench-survival-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": "[startup-workbench-survival] PASS: startup stays on the workbench and survives first paint.\n[startup-workbench-survival] evidence: /docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json"
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:05:41.146029Z",
+        "summary": "Avalonia startup survives first paint and stays on the workbench by default.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/design-authorized-parity-softening-check.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": ""
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json",
+        "receiptGeneratedAt": "2026-05-28T18:10:24.540693Z",
+        "summary": "Parity softening is only allowed when the local Chummer6 design explicitly authorizes and explains the divergence.",
+        "reusedPassingReceipt": true
       },
       {
         "gate": "scripts/ai/milestones/sr6-ruleset-ui-sophistication-gate.sh",
         "status": "pass",
         "exitCode": 0,
-        "outputTail": ""
+        "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
+        "receiptGeneratedAt": "2026-05-29T10:50:02.374232Z",
+        "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by runtime inventory, workflow parity, and shared muscle-memory proof.",
+        "reusedPassingReceipt": true
       }
     ]
   }
