@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-05-29T13:42:12.648043Z",
+  "contractName": "chummer6.sr456_parity_frontier",
+  "status": "pass",
+  "summary": "SR4, SR5, and SR6 UI/mouse parity receipts are green; SR4 and SR6 remain rule-authority NOT_READY until table, errata, and human-review work is complete.",
+  "fullReadyRulesetCount": 1,
+  "rows": [
+    {
+      "ruleset": "sr4",
+      "full_ready": false,
+      "rule_status": "partial_seed_not_ready",
+      "rule_verdict": "NOT_READY",
+      "table_import": {
+        "status": "structured_legacy_data_indexed_pending_human_review",
+        "file_count": 27,
+        "row_count": 6989,
+        "remaining_gate": "human review must confirm licenses, edition fit, errata, and row-level mappings before READY"
+      },
+      "visual_mouse_parity_status": "pass",
+      "visual_receipts": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER4_SR4_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+      ],
+      "missing_visual_receipts": [],
+      "remaining_blockers": [
+        "legacy structured SR4 table evidence indexed; row-level mapping review still required",
+        "errata profile application",
+        "human rule review"
+      ]
+    },
+    {
+      "ruleset": "sr5",
+      "full_ready": true,
+      "rule_status": "accepted",
+      "rule_verdict": "allowed",
+      "table_import": {
+        "status": "accepted_sr5_structured_data_indexed",
+        "file_count": 42,
+        "row_count": 9297,
+        "remaining_gate": "none under current SR5 acceptance proof"
+      },
+      "visual_mouse_parity_status": "pass",
+      "visual_receipts": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_PARITY_AUDIT.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_HUMAN_PARITY_ACCEPTANCE_MATRIX.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+      ],
+      "missing_visual_receipts": [],
+      "remaining_blockers": []
+    },
+    {
+      "ruleset": "sr6",
+      "full_ready": false,
+      "rule_status": "partial_seed_not_ready",
+      "rule_verdict": "NOT_READY",
+      "table_import": {
+        "status": "private_pdf_line_hash_import_indexed_pending_review",
+        "sourcebook_count": 4,
+        "remaining_gate": "human review must map hashed candidate rows into normalized data records before SR6_RULE_AUTHORITY_READY"
+      },
+      "visual_mouse_parity_status": "pass",
+      "visual_receipts": [
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_SHARED_MUSCLE_MEMORY_PARITY_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
+      ],
+      "missing_visual_receipts": [],
+      "remaining_blockers": [
+        "private SR6 PDF row-hash import indexed; row-level normalized mapping review still required",
+        "errata/profile review",
+        "human rule review"
+      ]
+    }
+  ]
+}
