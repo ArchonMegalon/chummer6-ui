@@ -774,7 +774,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks()
+    public void Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks()
     {
         // Runtime_backed_sr4_switch_ruleset_dialog_preserves_compact_combo_posture
         // Runtime_backed_sr6_shared_muscle_memory_inventory_receipt_matches_promoted_surface_contract

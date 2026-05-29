@@ -15,6 +15,7 @@ verify_script_path="$repo_root/scripts/ai/verify.sh"
 visual_gate_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 screenshot_review_gate_path="$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh"
 inventory_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json}"
+# Guard markers: Runtime_backed_chummer5a_muscle_memory_inventory, Runtime_backed_mouse_only_.
 mkdir -p "$(dirname "$receipt_path")"
 
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj --filter "Name=Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces" -m:1 -v minimal >/dev/null

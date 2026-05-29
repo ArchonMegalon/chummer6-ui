@@ -172,7 +172,7 @@ SOURCE_MARKERS = {
     ],
     "Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs": [
         "Runtime_backed_file_menu_restores_classic_save_and_print_commands",
-        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         '"18-import-dialog-light.png"',
         '"19-workflow-file-menu-loaded-light.png"',
         '"34-workflow-validate-section-light.png"',

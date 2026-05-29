@@ -59,7 +59,7 @@
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
-      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks": true
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
     },
     "blazorKeyboardTests": {
       "SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation": true
@@ -273,7 +273,7 @@
           "--no-build",
           "--no-restore",
           "--filter",
-          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
           "--verbosity",
           "minimal"
         ],
@@ -354,7 +354,7 @@
         "--no-build",
         "--no-restore",
         "--filter",
-        "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+        "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         "--verbosity",
         "minimal"
       ],
@@ -453,7 +453,7 @@
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
-      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks": true
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
     }
   },
   "keyboardAndTooltipReview": {
@@ -586,7 +586,7 @@
           "--no-build",
           "--no-restore",
           "--filter",
-          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
           "--verbosity",
           "minimal"
         ],

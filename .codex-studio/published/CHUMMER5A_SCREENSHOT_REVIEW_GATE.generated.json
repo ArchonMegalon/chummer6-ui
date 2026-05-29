@@ -230,7 +230,7 @@
       ],
       "evidenceKeys": [],
       "testMarkers": [
-        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+        "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
       ],
       "reasons": []
     }

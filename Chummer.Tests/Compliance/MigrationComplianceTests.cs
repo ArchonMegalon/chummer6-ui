@@ -3623,7 +3623,7 @@ public class MigrationComplianceTests
             "if [[ ! -f \"$release_channel_path_default\" && -f \"$presentation_release_channel_path\" ]]; then");
         StringAssert.Contains(
             executableGateScriptText,
-            "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-$release_channel_path_default}\"");
+            "release_channel_path=\"${CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH:-${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}}\"");
         StringAssert.Contains(
             executableGateScriptText,
             "python3 - <<'PY' \"$receipt_path\" \"$release_channel_path\" \"$linux_avalonia_gate_path\" \"$linux_blazor_gate_path\" \"$windows_gate_path_default\" \"$flagship_gate_path\" \"$visual_familiarity_gate_path\" \"$workflow_execution_gate_path\" \"$repo_root\" \"$hub_registry_root\"");
@@ -3990,7 +3990,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_version_uses_unpublished_sentinel");
         StringAssert.Contains(executableGateScriptText, "Release channel version cannot be the unpublished sentinel when status is publishable.");
         StringAssert.Contains(executableGateScriptText, "release_channel_desktop_install_artifacts_invalid_generated_at");
@@ -4472,7 +4472,7 @@ public class MigrationComplianceTests
         using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
         JsonElement root = receipt.RootElement;
 
-        Assert.AreEqual("preview", root.GetProperty("channelId").GetString());
+        Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
         Assert.IsFalse(string.IsNullOrWhiteSpace(root.GetProperty("releaseVersion").GetString()));
 
         JsonElement reviewJobs = root.GetProperty("reviewJobs");
@@ -6487,7 +6487,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(generatorText, "artifact[\"generated_at\"] = release_generated_at");
         StringAssert.Contains(generatorText, "artifact[\"generatedAt\"] = release_generated_at");
         StringAssert.Contains(generatorText, "run_materializer \"$CANONICAL_MANIFEST_PATH\"");
-        StringAssert.Contains(generatorText, "payload[\"artifactIdentityRegistry\"] = verifier.expected_artifact_identity_registry_rows(payload)");
+        StringAssert.Contains(generatorText, "payload[\"artifactIdentityRegistry\"] = derive_verifier_owned_value(");
+        StringAssert.Contains(generatorText, "\"expected_artifact_identity_registry_rows\"");
         StringAssert.Contains(generatorText, "trust_release_channel = payload.get(\"publicTrustMetrics\", {}).get(\"releaseChannel\", {})");
         StringAssert.Contains(generatorText, "payload[\"supportabilityState\"] = trust_supportability_state");
         StringAssert.Contains(generatorText, "--compat-output");
@@ -6823,6 +6824,7 @@ public class MigrationComplianceTests
                     ["RELEASE_PUBLISHED_AT"] = generatedAt,
                     ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
                     ["CHUMMER_EXTERNAL_PROOF_BASE_URL"] = "https://chummer.run",
+                    ["CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE"] = "0",
                 });
 
             Assert.AreEqual(0, result.ExitCode, result.Output);
@@ -6833,9 +6835,10 @@ public class MigrationComplianceTests
 
             Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
             Assert.AreEqual(sourceVersion, root.GetProperty("version").GetString());
-            Assert.AreEqual("public_stable", root.GetProperty("rolloutState").GetString());
+            Assert.AreEqual("coverage_incomplete", root.GetProperty("rolloutState").GetString());
+            Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
 
-            string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-win-x64.receipt.json");
+            string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-linux-x64.receipt.json");
             using JsonDocument startupSmokeReceipt = JsonDocument.Parse(File.ReadAllText(startupSmokeReceiptPath));
             Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channelId").GetString());
             Assert.AreEqual("public_stable", startupSmokeReceipt.RootElement.GetProperty("channel").GetString());
@@ -7173,11 +7176,15 @@ public class MigrationComplianceTests
         Assert.IsFalse(codeText.Contains("private readonly NavigatorPaneControl _navigatorPane;", StringComparison.Ordinal));
         Assert.IsFalse(codeText.Contains("private readonly CommandDialogPaneControl _commandDialogPane;", StringComparison.Ordinal));
         StringAssert.Contains(controlBindingText, "internal static class MainWindowControlBinder");
-        StringAssert.Contains(controlBindingText, "toolStrip.ImportFileRequested +=");
-        StringAssert.Contains(controlBindingText, "toolStrip.OpenForPrintingRequested +=");
-        StringAssert.Contains(controlBindingText, "toolStrip.OpenForExportRequested +=");
-        StringAssert.Contains(controlBindingText, "toolStrip.ImportRawRequested +=");
-        StringAssert.Contains(controlBindingText, "menuBar.MenuSelected +=");
+        StringAssert.Contains(controlBindingText, "AttachToolStripHandlers(toolStrip);");
+        StringAssert.Contains(controlBindingText, "AttachToolStripHandlers(classicToolStrip);");
+        StringAssert.Contains(controlBindingText, "surface.ImportFileRequested += onImportFileRequested;");
+        StringAssert.Contains(controlBindingText, "surface.OpenForPrintingRequested += onOpenForPrintingRequested;");
+        StringAssert.Contains(controlBindingText, "surface.OpenForExportRequested += onOpenForExportRequested;");
+        StringAssert.Contains(controlBindingText, "surface.ImportRawRequested += onImportRawRequested;");
+        StringAssert.Contains(controlBindingText, "AttachMenuBarHandlers(menuBar);");
+        StringAssert.Contains(controlBindingText, "AttachMenuBarHandlers(classicMenuBar);");
+        StringAssert.Contains(controlBindingText, "surface.MenuSelected += onMenuSelected;");
         StringAssert.Contains(controlBindingText, "navigatorPane.WorkspaceSelected +=");
         StringAssert.Contains(controlBindingText, "commandDialogPane.CommandSelected +=");
         StringAssert.Contains(controlBindingText, "internal sealed record MainWindowControls(");

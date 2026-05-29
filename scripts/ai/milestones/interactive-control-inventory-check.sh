@@ -41,7 +41,7 @@ MAIN_WINDOW_TEST_MARKERS = [
     "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters",
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
-    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+    "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
 ]
 
 BLAZOR_TEST_MARKERS = [
@@ -75,7 +75,7 @@ MAIN_WINDOW_FILTER = (
     "|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters"
     "|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
-    "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"
+    "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
 )
 
 BLAZOR_KEYBOARD_FILTER = "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation"

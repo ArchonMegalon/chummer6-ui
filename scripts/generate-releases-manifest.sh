@@ -1480,8 +1480,8 @@ for raw_path in sys.argv[2:]:
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 canonical_startup_smoke_dir="$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke"
-if [[ -d "$STARTUP_SMOKE_DIR" ]]; then
-  resolved_startup_smoke_dir="$(realpath "$STARTUP_SMOKE_DIR")"
+if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
+  resolved_startup_smoke_dir="$(realpath -m "$STARTUP_SMOKE_DIR")"
   resolved_canonical_startup_smoke_dir="$(realpath -m "$canonical_startup_smoke_dir")"
   if [[ "$resolved_startup_smoke_dir" != "$resolved_canonical_startup_smoke_dir" ]]; then
     mkdir -p "$canonical_startup_smoke_dir"

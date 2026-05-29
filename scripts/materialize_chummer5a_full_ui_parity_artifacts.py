@@ -287,7 +287,7 @@ SURFACE_EVIDENCE: dict[str, dict[str, Any]] = {
         "screenshot_refs": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [SCREENSHOT_GATE_PATH, RULE_STUDIO_PATH, SECTION_HOST_PATH],
         "test_refs": [
-            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         ],
         "reason": "SR6 supplement posture remains visible and tied to the rules lane rather than hidden under generalized settings.",
     },
@@ -296,7 +296,7 @@ SURFACE_EVIDENCE: dict[str, dict[str, Any]] = {
         "screenshot_refs": ["35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [SCREENSHOT_GATE_PATH, RULE_STUDIO_PATH],
         "test_refs": [
-            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         ],
         "reason": "Designer tools remain discoverable through the explicit rules lane instead of polluting the default shell.",
     },
@@ -305,7 +305,7 @@ SURFACE_EVIDENCE: dict[str, dict[str, Any]] = {
         "screenshot_refs": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [SCREENSHOT_GATE_PATH, RULE_STUDIO_PATH],
         "test_refs": [
-            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks",
+            "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
         ],
         "reason": "House-rule overlays remain visible, counted, and activation-backed through the rule environment studio and route-local screenshots.",
     },
@@ -447,19 +447,19 @@ SCREENSHOT_TOKEN_COVERAGE: dict[str, dict[str, Any]] = {
     "supplement_posture_visible": {
         "screenshot_refs": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [RULE_STUDIO_PATH, SCREENSHOT_GATE_PATH],
-        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"],
+        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"],
         "reason": "Supplement posture is visible on the rules lane and backed by rule-environment proof.",
     },
     "designer_tools_catalog_visible": {
         "screenshot_refs": ["35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [RULE_STUDIO_PATH],
-        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"],
+        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"],
         "reason": "Designer tools remain explicit to the rules lane rather than leaking into the default shell.",
     },
     "house_rule_overlay_posture_visible": {
         "screenshot_refs": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
         "runtime_receipt_refs": [RULE_STUDIO_PATH],
-        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"],
+        "test_refs": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"],
         "reason": "House-rule posture remains visible with counts and activation truth on the rules route.",
     },
 }

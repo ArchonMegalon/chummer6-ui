@@ -1,13 +1,13 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-05-29T10:18:43Z",
-  "manifest_path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
-  "downloads_dir": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files",
-  "startup_smoke_dir": "/tmp/tmp.llPZM6hS0I",
+  "generated_at": "2026-05-29T18:24:14Z",
+  "manifest_path": "/tmp/chummer-publish-complete-test-409Vqr/RELEASE_CHANNEL.generated.json",
+  "downloads_dir": "/tmp/tmp.DcUHtAeaDT",
+  "startup_smoke_dir": "/tmp/tmp.YmJPWh8wRE",
   "base_url": "https://chummer.run",
   "timeout_seconds": 10,
   "max_receipt_age_seconds": 604800,
-  "release_published_at": "2026-05-29T10:18:35Z",
+  "release_published_at": "2026-05-29T18:24:08Z",
   "status": "blocked",
   "missing_required_platform_head_rid_tuples": [
     "avalonia:osx-arm64:macos",
@@ -40,10 +40,10 @@
       "expectedInstallerSha256": "282adc773f1a86f81a89aefa82d595e67d9f663e4eedab2cd45269d6ab0e9a45",
       "startupSmokeReceiptPresent": true,
       "startupSmokeReceiptRecordedAtUtc": "2026-05-18T22:12:25.078057+00:00",
-      "startupSmokeReceiptAgeSeconds": 907577,
+      "startupSmokeReceiptAgeSeconds": 936709,
       "startupSmokeReceiptStatus": "pass",
-      "startupSmokeReceiptChannelId": "docker",
-      "startupSmokeReceiptVersion": "run-20260518-220935",
+      "startupSmokeReceiptChannelId": "public_stable",
+      "startupSmokeReceiptVersion": "run-20260529-windows-public",
       "publicRouteProbe": {
         "checked": true,
         "url": "https://chummer.run/downloads/install/avalonia-osx-arm64-installer",
@@ -60,8 +60,8 @@
         "public_route_unhealthy"
       ],
       "blockerMessages": [
-        "startup smoke receipt is stale (age_seconds=907577, max_age_seconds=604800)",
-        "startup smoke receipt was captured before the current release channel was published (receipt_recorded_at=2026-05-18T22:12:25Z, release_published_at=2026-05-29T10:18:35Z)",
+        "startup smoke receipt is stale (age_seconds=936709, max_age_seconds=604800)",
+        "startup smoke receipt was captured before the current release channel was published (receipt_recorded_at=2026-05-18T22:12:25Z, release_published_at=2026-05-29T18:24:08Z)",
         "public install route unhealthy (status=403, error=http_403)"
       ],
       "ready": false
@@ -83,10 +83,10 @@
       "expectedInstallerSha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
       "startupSmokeReceiptPresent": true,
       "startupSmokeReceiptRecordedAtUtc": "2026-05-21T19:52:05.2855129+00:00",
-      "startupSmokeReceiptAgeSeconds": 656797,
+      "startupSmokeReceiptAgeSeconds": 685929,
       "startupSmokeReceiptStatus": "pass",
-      "startupSmokeReceiptChannelId": "docker",
-      "startupSmokeReceiptVersion": "run-20260518-220935",
+      "startupSmokeReceiptChannelId": "public_stable",
+      "startupSmokeReceiptVersion": "run-20260529-windows-public",
       "publicRouteProbe": {
         "checked": true,
         "url": "https://chummer.run/downloads/install/avalonia-win-x64-installer",
@@ -102,8 +102,8 @@
         "receipt_precedes_release_publication"
       ],
       "blockerMessages": [
-        "startup smoke receipt is stale (age_seconds=656797, max_age_seconds=604800)",
-        "startup smoke receipt was captured before the current release channel was published (receipt_recorded_at=2026-05-21T19:52:05Z, release_published_at=2026-05-29T10:18:35Z)"
+        "startup smoke receipt is stale (age_seconds=685929, max_age_seconds=604800)",
+        "startup smoke receipt was captured before the current release channel was published (receipt_recorded_at=2026-05-21T19:52:05Z, release_published_at=2026-05-29T18:24:08Z)"
       ],
       "ready": false
     }

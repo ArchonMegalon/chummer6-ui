@@ -154,7 +154,7 @@ review_jobs = {
         "frontierId": 6764868619,
         "screenshots": ["34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"],
         "evidenceKeys": [],
-        "testMarkers": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_roster_landmarks"],
+        "testMarkers": ["Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"],
     },
 }
 

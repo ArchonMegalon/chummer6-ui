@@ -137,6 +137,8 @@ append_unique_downloads_mirror_dir() {
 
 discover_live_downloads_mirror_dirs() {
   local configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"
+  local deploy_dir_physical=""
+  local canonical_downloads_physical=""
   local candidate=""
   local sibling_root=""
 
@@ -148,6 +150,12 @@ discover_live_downloads_mirror_dirs() {
       [[ -n "$candidate" ]] || continue
       append_unique_downloads_mirror_dir "$candidate"
     done
+  fi
+
+  deploy_dir_physical="$(realpath -m "$DEPLOY_DIR")"
+  canonical_downloads_physical="$(realpath -m "$REPO_ROOT/Docker/Downloads")"
+  if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then
+    return 0
   fi
 
   for sibling_root in \
@@ -215,7 +223,8 @@ sync_live_downloads_mirror_dir() {
     cp "$source_path" "$files_dir/"
   done
 
-  bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
+  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+    bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
   echo "synced ${#promoted_file_names[@]} promoted artifact(s) -> $target_label mirror $target_dir"
 }
 
@@ -281,6 +290,7 @@ RELEASE_PROOF_PATH="$RELEASE_PROOF_PATH" \
 STARTUP_SMOKE_DIR="$STARTUP_SMOKE_SOURCE" \
 CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}" \
 CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}" \
+CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
 CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
 
@@ -327,9 +337,11 @@ for file_name in "${promoted_file_names[@]}"; do
   cp "$source_path" "$DEPLOY_DIR/files/"
 done
 
-for mirror_dir in "${live_downloads_mirror_dirs[@]:-}"; do
-  sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
-done
+if [[ "${#live_downloads_mirror_dirs[@]}" -gt 0 ]]; then
+  for mirror_dir in "${live_downloads_mirror_dirs[@]}"; do
+    sync_live_downloads_mirror_dir "$mirror_dir" "public-edge"
+  done
+fi
 
 if [[ -d "$STARTUP_SMOKE_SOURCE" ]]; then
   verified_startup_smoke_tmp="$(mktemp)"
@@ -652,10 +664,12 @@ if to_bool "$DEPLOY_MODE"; then
   fi
 fi
 
-bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$DEPLOY_DIR"
+CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+  bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$DEPLOY_DIR"
 
 if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
-  bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
+  CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+    bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
 fi
 
 echo "Published ${#promoted_file_names[@]} desktop artifact(s) into $DEPLOY_DIR"

@@ -38,6 +38,21 @@
       "installAccessClass": "open_public"
     },
     {
+      "id": "avalonia-osx-arm64-installer",
+      "platform": "Avalonia Desktop macOS ARM64 Installer",
+      "url": "/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+      "sha256": "282adc773f1a86f81a89aefa82d595e67d9f663e4eedab2cd45269d6ab0e9a45",
+      "sizeBytes": 52396329,
+      "format": "dmg",
+      "flavor": "installer",
+      "kind": "dmg",
+      "head": "avalonia",
+      "platformId": "osx-arm64",
+      "arch": "arm64",
+      "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
+      "installAccessClass": "account_required"
+    },
+    {
       "id": "avalonia-osx-arm64-archive",
       "platform": "Avalonia Desktop macOS ARM64",
       "url": "/downloads/files/chummer-avalonia-osx-arm64.tar.gz",
@@ -66,6 +81,21 @@
       "arch": "arm64",
       "fileName": "chummer-blazor-desktop-osx-arm64.tar.gz",
       "installAccessClass": "open_public"
+    },
+    {
+      "id": "avalonia-win-x64-installer",
+      "platform": "Avalonia Desktop Windows X64 Installer",
+      "url": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
+      "sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+      "sizeBytes": 239554300,
+      "format": "exe",
+      "flavor": "installer",
+      "kind": "installer",
+      "head": "avalonia",
+      "platformId": "win-x64",
+      "arch": "x64",
+      "fileName": "chummer-avalonia-win-x64-installer.exe",
+      "installAccessClass": "account_required"
     },
     {
       "id": "avalonia-win-x64-portable",
