@@ -743,7 +743,9 @@ internal sealed class DesktopHomeWindow : Window
         string rolloutReason = string.IsNullOrWhiteSpace(_updateStatus.RolloutReason) ? S("desktop.home.value.unknown") : _updateStatus.RolloutReason;
         string supportabilityState = string.IsNullOrWhiteSpace(_updateStatus.SupportabilityState) ? S("desktop.home.value.unknown") : _updateStatus.SupportabilityState;
         string supportabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.SupportabilitySummary) ? S("desktop.home.value.no_supportability_summary") : _updateStatus.SupportabilitySummary;
-        string proofStatus = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus) ? S("desktop.home.value.none_published") : _updateStatus.ProofStatus;
+        string releaseState = string.IsNullOrWhiteSpace(_updateStatus.ProofStatus)
+            ? S("desktop.home.value.none_published")
+            : _updateStatus.ProofStatus;
         string proofGenerated = _updateStatus.ProofGeneratedAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? S("desktop.home.value.unknown");
         string knownIssueSummary = string.IsNullOrWhiteSpace(_updateStatus.KnownIssueSummary) ? S("desktop.home.value.none_published") : _updateStatus.KnownIssueSummary;
         string fixAvailabilitySummary = string.IsNullOrWhiteSpace(_updateStatus.FixAvailabilitySummary) ? S("desktop.home.value.no_fix_guidance") : _updateStatus.FixAvailabilitySummary;
@@ -762,7 +764,7 @@ internal sealed class DesktopHomeWindow : Window
             rolloutReason,
             supportabilityState,
             supportabilitySummary,
-            proofStatus,
+            releaseState,
             proofGenerated,
             knownIssueSummary,
             fixAvailabilitySummary,
@@ -900,7 +902,7 @@ internal sealed class DesktopHomeWindow : Window
 
     private string BuildCampaignAdoptionSummary()
         => string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionSummary)
-            ? "Campaign adoption: no adoption receipt is currently projected for this desktop return route."
+            ? "Campaign adoption state: no adoption status is currently available for this desktop return route."
             : $"Campaign adoption: {_campaignServerPlane.AdoptionSummary}";
 
     private string BuildCampaignAdoptionConfidenceSummary()
@@ -947,22 +949,22 @@ internal sealed class DesktopHomeWindow : Window
     {
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerProofSummary))
         {
-            return $"BLACK LEDGER consequence proof: {_campaignServerPlane.BlackLedgerProofSummary}";
+            return $"BLACK LEDGER consequence status: {_campaignServerPlane.BlackLedgerProofSummary}";
         }
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionEvidenceSummary))
         {
-            return $"Campaign adoption proof: {_campaignServerPlane.AdoptionEvidenceSummary}";
+            return $"Campaign adoption status: {_campaignServerPlane.AdoptionEvidenceSummary}";
         }
 
         string? evidenceLine = _campaignProjection.ReadinessHighlights
             .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(evidenceLine))
         {
-            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
+            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence status", StringComparison.OrdinalIgnoreCase);
         }
 
-        return "Campaign consequence proof: no consequence evidence is available.";
+        return "Campaign consequence status: no consequence details are available.";
     }
 
     private string ResolveCampaignMemoryNextSafeAction()

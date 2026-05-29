@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T18:33:19.962216Z",
+  "generatedAt": "2026-05-29T07:12:41.566278Z",
   "contractName": "chummer6-ui.chummer5a_veteran_task_time_budgets",
   "status": "pass",
   "summary": "Numeric veteran task-time budgets are materialized and remain within the Chummer5A parity envelope.",

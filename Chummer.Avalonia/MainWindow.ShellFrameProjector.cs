@@ -183,6 +183,11 @@ internal static class MainWindowShellFrameProjector
             return true;
         }
 
+        if (string.Equals(ResolveReleaseChannel(), "public_stable", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
         if (ClassicModePolicy.ShouldShowSampleControls())
         {
             return true;

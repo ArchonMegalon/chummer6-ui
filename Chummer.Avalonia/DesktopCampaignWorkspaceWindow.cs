@@ -394,7 +394,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
     private string BuildCampaignAdoptionSummary()
         => string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionSummary)
-            ? "Campaign adoption: no adoption receipt is currently projected for this desktop workspace."
+            ? "Campaign adoption state: no adoption status is currently available for this desktop workspace."
             : $"Campaign adoption: {_campaignServerPlane.AdoptionSummary}";
 
     private string BuildCampaignAdoptionConfidenceSummary()
@@ -441,22 +441,22 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerProofSummary))
         {
-            return $"BLACK LEDGER consequence proof: {_campaignServerPlane.BlackLedgerProofSummary}";
+            return $"BLACK LEDGER consequence status: {_campaignServerPlane.BlackLedgerProofSummary}";
         }
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionEvidenceSummary))
         {
-            return $"Campaign adoption proof: {_campaignServerPlane.AdoptionEvidenceSummary}";
+            return $"Campaign adoption status: {_campaignServerPlane.AdoptionEvidenceSummary}";
         }
 
         string? evidenceLine = _campaignProjection.ReadinessHighlights
             .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(evidenceLine))
         {
-            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
+            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence status", StringComparison.OrdinalIgnoreCase);
         }
 
-        return "Campaign consequence proof: no consequence evidence is available.";
+        return "Campaign consequence status: no consequence details are available.";
     }
 
     private string ResolveCampaignMemoryNextSafeAction()

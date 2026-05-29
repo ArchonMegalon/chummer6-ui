@@ -77,9 +77,12 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(classicToolStripText.Contains("ToolStripControl", StringComparison.Ordinal));
         Assert.IsFalse(classicStatusStripText.Contains("StatusStripControl", StringComparison.Ordinal));
         Assert.IsFalse(hostAxamlText.Contains("Legacy form-native surface projection", StringComparison.Ordinal));
-        StringAssert.Contains(classicMenuText, "Header=\"_File\"");
-        StringAssert.Contains(classicToolStripText, "Classic Mode default: form-native workbench");
+        StringAssert.Contains(classicMenuText, "Header=\"File\"");
         StringAssert.Contains(classicStatusStripText, "Mode: Classic");
+        Assert.IsFalse(classicToolStripText.Contains("Classic Mode default: form-native workbench", StringComparison.Ordinal));
+        Assert.IsFalse(hostAxamlText.Contains("Classic Mode", StringComparison.Ordinal));
+        Assert.IsFalse(hostText.Contains("Legacy form:", StringComparison.Ordinal));
+        Assert.IsFalse(hostText.Contains("Classic Default", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("Classic form-native projection", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("snapshot.EventHandlers", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("state.Rows.Take(20)", StringComparison.Ordinal));
