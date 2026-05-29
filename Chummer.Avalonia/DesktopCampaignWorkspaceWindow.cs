@@ -12,20 +12,12 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopCampaignWorkspaceWindow : Window
 {
-    private const string RestoreConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
-    private const string PrimaryDesktopRouteDecisionGate = "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement. Decision gate: Chummer will not replace local work automatically; keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support.";
-    private const string RestoreDecisionOrderSummary = "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.";
-    private const string RestoreLocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
-    private const string RestoreReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
-    private const string RestoreSupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
-    private const string RestoreDecisionInitialStatus = "Decision gate: no restore replacement is pending; local work stays visible until you choose Campaign Workspace review or Workspace Support.";
     private DesktopInstallLinkingState _installState;
     private readonly DesktopPreferenceState _preferences;
     private IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private DesktopHomeCampaignProjection _campaignProjection;
     private DesktopHomeCampaignServerPlane? _campaignServerPlane;
     private DesktopHomeSupportProjection _supportProjection;
-    private string _restoreDecisionStatus = RestoreDecisionInitialStatus;
     private readonly TextBlock _introText;
     private readonly TextBlock _statusText;
     private readonly TextBlock _readinessText;
@@ -350,9 +342,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         List<string> lines =
         [
-            _campaignProjection.RestoreSummary,
-            BuildRestoreContinuityChoiceSummary(),
-            BuildRestoreContinuityDecisionSummary()
+            _campaignProjection.RestoreSummary
         ];
 
         if (_campaignProjection.Watchouts.Count > 0)
@@ -468,23 +458,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
             : $"Review next-session return action: {safeAction}";
     }
 
-    private string BuildRestoreContinuityChoiceSummary()
-    {
-        if (!string.IsNullOrWhiteSpace(_campaignProjection.LeadWorkspaceId))
-        {
-            return "Restore choice: open the current campaign workspace, review devices/access, or use workspace support if the continuation does not match this install.";
-        }
-
-        if (_recentWorkspaces.Count > 0)
-        {
-            return "Restore choice: continue from the newest local workspace, review devices/access, or use workspace support before replacing local work.";
-        }
-
-        return DesktopInstallLinkingRuntime.IsClaimed(_installState)
-            ? "Restore choice: review devices/access to reconnect a workspace, or open install support if entitlement or stale-state posture is wrong."
-            : "Restore choice: link this install before restoring claimed workspace, entitlement, or continuation state.";
-    }
-
     private string BuildRestoreStaleStateVisibilitySummary()
     {
         if (_campaignServerPlane is null)
@@ -518,39 +491,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         return latestLocalWorkspaceUpdate > _campaignServerPlane.GeneratedAtUtc.ToUniversalTime();
     }
 
-    private string BuildRestoreContinuityDecisionSummary()
-        => $"Decision order: keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support before accepting restore replacement. {_restoreDecisionStatus}";
-
-    private static string BuildRestorePrimaryRouteDecisionGateSummary()
-        => PrimaryDesktopRouteDecisionGate;
-
-    private static string BuildRestoreDecisionOrderSummary()
-        => RestoreDecisionOrderSummary;
-
-    private static string BuildRestoreLocalAuthoritySummary()
-        => RestoreLocalAuthoritySummary;
-
-    private static string BuildRestoreReplacementGuardSummary()
-        => RestoreReplacementGuardSummary;
-
-    private static string BuildRestoreSupportHandoffSummary()
-        => RestoreSupportHandoffSummary;
-
-    private string BuildRestoreConflictChoiceSummary()
-    {
-        if (_campaignProjection.Watchouts.Count == 0)
-        {
-            return $"{RestoreConflictChoiceOrder} No campaign conflicts are waiting.";
-        }
-
-        IEnumerable<string> watchoutLines = _campaignProjection.Watchouts
-            .Take(4)
-            .Select(watchout => $"Review before continuing: {watchout}");
-        return string.Join(
-            "\n",
-            new[] { RestoreConflictChoiceOrder }.Concat(watchoutLines));
-    }
-
     private string BuildSupportBody()
     {
         List<string> lines =
@@ -566,7 +506,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         ];
         if (_supportProjection.HasTrackedCase)
         {
-            lines.Add("Support choice: open the tracked case");
+            lines.Add("Tracked support case is available.");
         }
 
         string? highlight = _supportProjection.Highlights.FirstOrDefault();
@@ -675,7 +615,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
 
     private bool KeepLocalWorkVisible()
     {
-        _restoreDecisionStatus = "Decision result: local work remains visible; no server restore replaced desktop state.";
         _restoreText.Text = BuildRestoreBody();
         return true;
     }
@@ -685,7 +624,6 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         WorkspaceListItem? workspace = ResolveSupportWorkspace();
         if (workspace is null)
         {
-            _restoreDecisionStatus = "Decision result: no local workspace is available to save before restore review.";
             _restoreText.Text = BuildRestoreBody();
             return;
         }
@@ -694,14 +632,11 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
         {
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
                 ?? throw new InvalidOperationException("Desktop campaign workspace save requires an IChummerClient instance."));
-            CommandResult<WorkspaceSaveReceipt> result = await client.SaveAsync(workspace.Id, CancellationToken.None).ConfigureAwait(true);
-            _restoreDecisionStatus = result.Success
-                ? $"Decision result: saved local workspace {workspace.Id.Value} before restore or conflict review; no server restore replaced desktop state."
-                : $"Decision result: local save for workspace {workspace.Id.Value} needs attention before restore review; no server restore replaced desktop state.";
+            await client.SaveAsync(workspace.Id, CancellationToken.None).ConfigureAwait(true);
         }
         catch
         {
-            _restoreDecisionStatus = $"Decision result: local save for workspace {workspace.Id.Value} failed; keep local work visible or open Workspace Support before accepting restore replacement.";
+            // Keep the workspace body stable; failures are surfaced through the support route.
         }
 
         _restoreText.Text = BuildRestoreBody();

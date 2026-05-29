@@ -811,26 +811,17 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "_campaignProjection.Summary");
         RequireContains(source, "_campaignProjection.RestoreSummary");
         RequireContains(source, "_campaignProjection.DeviceRoleSummary");
-        RequireContains(source, "BuildCampaignRestoreContinuitySummary()");
         RequireContains(source, "BuildCampaignStaleStateVisibilitySummary()");
-        RequireContains(source, "BuildCampaignConflictChoiceSummary()");
         RequireContains(source, "ShouldShowForRestoreContinuityReview(");
         RequireContains(source, "campaignProjection.Watchouts.Count > 0");
         RequireContains(source, "campaignServerPlane is null || IsServerContinuityOlderThanLocalWorkspace(workspaces, campaignServerPlane)");
-        RequireContains(source, "Restore choice: open the current campaign workspace");
+        RequireDoesNotContain(source, "Restore choice:");
         RequireContains(source, "Stale state: server continuity is unavailable");
         RequireContains(source, "Stale state: local workspace changed at");
         RequireContains(source, "Stale state: server continuity is current as of");
-        RequireContains(source, "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement.");
-        RequireContains(source, "Decision gate: Chummer will not replace local work automatically; keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support.");
-        RequireContains(source, "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.");
-        RequireContains(source, "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.");
-        RequireContains(source, "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.");
-        RequireContains(source, "Conflict choices:");
-        RequireContains(source, "CampaignConflictChoiceOrder");
-        RequireContains(source, "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.");
-        RequireContains(source, "No campaign conflicts are waiting.");
-        RequireContains(source, "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.");
+        RequireDoesNotContain(source, "Decision order:");
+        RequireDoesNotContain(source, "Local authority:");
+        RequireDoesNotContain(source, "Conflict choices:");
         RequireContains(source, "_campaignProjection.SupportClosureSummary");
         RequireContains(source, "_campaignProjection.ReadinessHighlights");
         RequireContains(source, "_campaignProjection.Watchouts");
@@ -920,26 +911,16 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.campaign.button.refresh");
         RequireContains(source, "desktop.campaign.status.local_fallback");
         RequireContains(source, "desktop.campaign.status.refresh_failed");
-        RequireContains(source, "BuildRestoreContinuityChoiceSummary()");
         RequireContains(source, "BuildRestoreStaleStateVisibilitySummary()");
-        RequireContains(source, "BuildRestoreConflictChoiceSummary()");
-        RequireContains(source, "Restore choice: open the current campaign workspace");
+        RequireDoesNotContain(source, "Restore choice:");
         RequireContains(source, "Stale state: server continuity is unavailable");
         RequireContains(source, "IsServerContinuityOlderThanLocalWorkspace()");
         RequireContains(source, "Stale state: local workspace changed at");
         RequireContains(source, "Stale state: server continuity is current as of");
-        RequireContains(source, "Primary route: Avalonia desktop keeps restore continuation, stale state, and conflict choices visible before any replacement.");
-        RequireContains(source, "Decision gate: Chummer will not replace local work automatically; keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support.");
-        RequireContains(source, "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.");
-        RequireContains(source, "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.");
-        RequireContains(source, "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.");
-        RequireContains(source, "Conflict choices:");
-        RequireContains(source, "RestoreConflictChoiceOrder");
-        RequireContains(source, "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.");
-        RequireContains(source, "No campaign conflicts are waiting.");
-        RequireContains(source, "Review before continuing:");
-        RequireContains(source, "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.");
-        RequireContains(source, "Support choice: open the tracked case");
+        RequireDoesNotContain(source, "Decision order:");
+        RequireDoesNotContain(source, "Local authority:");
+        RequireDoesNotContain(source, "Conflict choices:");
+        RequireDoesNotContain(source, "Support choice:");
         RequireContains(source, "BuildCampaignConsequenceSummary()");
         RequireContains(source, "BuildCampaignConsequenceEvidenceSummary()");
         RequireContains(source, "BuildCampaignNextSessionReturnSummary()");
@@ -1111,15 +1092,15 @@ internal static class AccessibilitySignoffSmokeTests
     private static void DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
-        RequireContains(source, "RestoreConflictChoiceOrder");
-        RequireContains(source, "BuildRestoreConflictChoiceSummary()");
+        RequireDoesNotContain(source, "RestoreConflictChoiceOrder");
+        RequireDoesNotContain(source, "BuildRestoreConflictChoiceSummary()");
         RequireContains(source, "BuildRestoreStaleStateVisibilitySummary()");
-        RequireContains(source, "BuildRestorePrimaryRouteDecisionGateSummary()");
-        RequireContains(source, "BuildRestoreDecisionOrderSummary()");
-        RequireContains(source, "BuildRestoreLocalAuthoritySummary()");
-        RequireContains(source, "BuildRestoreReplacementGuardSummary()");
-        RequireContains(source, "BuildRestoreSupportHandoffSummary()");
-        RequireContains(source, "Review before continuing:");
+        RequireDoesNotContain(source, "BuildRestorePrimaryRouteDecisionGateSummary()");
+        RequireDoesNotContain(source, "BuildRestoreDecisionOrderSummary()");
+        RequireDoesNotContain(source, "BuildRestoreLocalAuthoritySummary()");
+        RequireDoesNotContain(source, "BuildRestoreReplacementGuardSummary()");
+        RequireDoesNotContain(source, "BuildRestoreSupportHandoffSummary()");
+        RequireDoesNotContain(source, "Review before continuing:");
         RequireContains(source, "Review campaign consequences before continuing this restore route.");
     }
 
@@ -1759,14 +1740,14 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(summaryHeaderCode, "ConflictChoiceSummary");
         RequireContains(summaryHeaderCode, "CanSaveLocalWorkBeforeRestore");
         RequireContains(summaryHeaderCode, "BuildRestoreContinuityDecisionSummary");
-        RequireContains(summaryHeaderCode, "Review restore before replacing local work. Save first if needed.");
-        RequireContains(summaryHeaderCode, "Review restore before replacing local work. Keep local work or open support.");
-        RequireContains(summaryHeaderCode, "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.");
-        RequireContains(summaryHeaderCode, "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.");
-        RequireContains(summaryHeaderCode, "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.");
-        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Restore decision order\")");
-        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuityReplacementGuardText, \"Restore replacement guard\")");
-        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuitySupportHandoffText, \"Restore support handoff\")");
+        RequireContains(summaryHeaderCode, "Save first if needed before changing this desktop copy.");
+        RequireContains(summaryHeaderCode, "Keep local work or open support before changing this desktop copy.");
+        RequireDoesNotContain(summaryHeaderCode, "Decision order:");
+        RequireDoesNotContain(summaryHeaderCode, "Restore replacement guard:");
+        RequireDoesNotContain(summaryHeaderCode, "Support handoff:");
+        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Workspace decision order\")");
+        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuityReplacementGuardText, \"Workspace change guard\")");
+        RequireContains(summaryHeaderCode, "AutomationProperties.SetName(RestoreContinuitySupportHandoffText, \"Workspace support handoff\")");
         RequireContains(summaryHeaderCode, "restore-decision-keep-local-work");
         RequireContains(summaryHeaderCode, "restore-decision-save-local-work");
         RequireContains(summaryHeaderCode, "restore-decision-review-campaign-workspace");
@@ -1789,15 +1770,9 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlersSource, "ResolveActiveSupportWorkspace()");
 
         string projectorSource = ReadSource("Chummer.Avalonia/MainWindow.ShellFrameProjector.cs");
-        RequireContains(projectorSource, "RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language)");
-        RequireContains(projectorSource, "StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language)");
-        RequireContains(projectorSource, "ConflictChoiceSummary: BuildConflictChoiceSummary(workspaceContext, language)");
-        RequireContains(projectorSource, "CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)");
-        RequireContains(projectorSource, "Restore choice: keep");
-        RequireContains(projectorSource, "No server restore is applied automatically");
-        RequireContains(projectorSource, "Stale state: service continuity is unavailable");
-        RequireContains(projectorSource, "Conflict choices: save local work, review Campaign Workspace, open workspace support");
-        RequireContains(projectorSource, "Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support");
+        RequireContains(projectorSource, "HasVisibleContent: false");
+        RequireDoesNotContain(projectorSource, "Restore choice:");
+        RequireDoesNotContain(projectorSource, "Conflict choices:");
     }
 
     private static void ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy()

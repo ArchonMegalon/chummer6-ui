@@ -10,11 +10,11 @@ internal sealed class MainWindowTransientStateCoordinator
     private const string SaveLocalWorkSelectionId = "restore-decision-save-local-work";
     private const string ReviewCampaignWorkspaceSelectionId = "restore-decision-review-campaign-workspace";
     private const string OpenWorkspaceSupportSelectionId = "restore-decision-open-workspace-support";
-    private const string KeepLocalStatus = "Kept local work visible; no restore, stale-state refresh, or conflict choice replaced desktop state.";
-    private const string SaveRequestedStatus = "Save local work requested before any restore or conflict review changes desktop state.";
-    private const string SavedLocalWorkStatus = "Local work saved before restore review; keep local work visible, review Campaign Workspace, or open Workspace Support before any replacement.";
-    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace to review restore continuation, stale state, and conflict choices before replacing local work.";
-    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.";
+    private const string KeepLocalStatus = "Kept local work visible; no workspace continuity action replaced desktop state.";
+    private const string SaveRequestedStatus = "Save local work requested before workspace continuity changes desktop state.";
+    private const string SavedLocalWorkStatus = "Local work saved; keep local work visible, review Campaign Workspace, or open Workspace Support before changing this desktop copy.";
+    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace to review workspace continuity before changing local work.";
+    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with the current workspace context.";
 
     private IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> _workspaceActionsById
         = new Dictionary<string, WorkspaceSurfaceActionDefinition>(StringComparer.Ordinal);

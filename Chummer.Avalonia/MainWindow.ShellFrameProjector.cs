@@ -16,9 +16,6 @@ internal static class MainWindowShellFrameProjector
 {
     private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string SampleControlsEnvironmentVariable = "CHUMMER_DESKTOP_ENABLE_SAMPLES";
-    // Conflict choices: save local work, review Campaign Workspace, open workspace support
-    private const string RestoreConflictChoiceOrder = "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.";
-    private const string RestoreConflictChoiceFallback = "Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work.";
     private static readonly IReadOnlyDictionary<string, HashSet<string>> VisibleMenuCommandsByMenuId =
         new Dictionary<string, HashSet<string>>(StringComparer.Ordinal)
         {
@@ -86,13 +83,6 @@ internal static class MainWindowShellFrameProjector
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
 
-        string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);
-        string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);
-        string? conflictChoiceSummary = BuildConflictChoiceSummary(shellSurface, workspaceContext, language);
-        bool summaryHeaderHasVisibleContent = !string.IsNullOrWhiteSpace(restoreContinuitySummary)
-            || !string.IsNullOrWhiteSpace(staleStateSummary)
-            || !string.IsNullOrWhiteSpace(conflictChoiceSummary);
-
         return new MainWindowShellFrame(
             HeaderState: new MainWindowHeaderState(
                 ToolStrip: new ToolStripState(
@@ -116,17 +106,9 @@ internal static class MainWindowShellFrameProjector
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
                     ActiveTabId: shellSurface.ActiveTabId,
-                    HasVisibleContent: summaryHeaderHasVisibleContent,
+                    HasVisibleContent: false,
                     RuntimeSummary: ShellStatusTextFormatter.BuildActiveRuntimeSummary(shellSurface.ActiveRuntime, shellSurface.ActiveRulesetId),
-                    // RestoreContinuitySummary: BuildRestoreContinuitySummary(workspaceContext, language)
-                    RestoreContinuitySummary: restoreContinuitySummary,
-                    // StaleStateSummary: BuildStaleStateSummary(shellSurface, workspaceContext, language)
-                    StaleStateSummary: staleStateSummary,
-                    // ConflictChoiceSummary: BuildConflictChoiceSummary(workspaceContext, language)
-                    ConflictChoiceSummary: conflictChoiceSummary,
-                    RestoreDecisionWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value,
-                    // CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)
-                    CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)),
+                    RestoreDecisionWorkspaceId: workspaceContext.ActiveWorkspaceId?.Value),
                 StatusStrip: new StatusStripState(
                     CharacterState: BuildCharacterStateText(workspaceContext, language),
                     ServiceState: BuildServiceStateText(shellSurface, language),
@@ -393,71 +375,6 @@ internal static class MainWindowShellFrameProjector
             workspaceContext.OpenWorkspaceCount,
             LocalizeSaveStatus(workspaceContext.ActiveWorkspaceSaveStatus, language));
 
-    private static string? BuildRestoreContinuitySummary(
-        ShellSurfaceState shellSurface,
-        ActiveWorkspaceContext workspaceContext,
-        string language)
-    {
-        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
-        {
-            return null;
-        }
-
-        string workspacePresenceReceipt = BuildWorkspacePresenceReceipt(workspaceContext);
-        if (workspaceContext.ActiveWorkspaceId is not null)
-        {
-            return $"Restore choice: keep {workspaceContext.ActiveWorkspaceId.Value} open before accepting a newer continuity packet. {workspacePresenceReceipt}";
-        }
-
-        if (workspaceContext.OpenWorkspaceCount > 0)
-        {
-            return $"Restore choice: keep the current desktop workspace review visible before accepting a newer continuity packet. {workspacePresenceReceipt}";
-        }
-
-        return "Restore choice: no active workspace is open yet, so review Campaign Workspace or open workspace support before accepting any continuity packet. No server restore is applied automatically on the primary desktop route.";
-    }
-
-    private static string? BuildStaleStateSummary(
-        ShellSurfaceState shellSurface,
-        ActiveWorkspaceContext workspaceContext,
-        string language)
-    {
-        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
-        {
-            return null;
-        }
-
-        string workspaceTimestampReceipt = BuildWorkspaceTimestampReceipt(workspaceContext);
-        if (workspaceContext.ActiveWorkspaceId is null)
-        {
-            return $"Stale state: service continuity is unavailable until a local workspace is opened for review. {workspaceTimestampReceipt}";
-        }
-
-        return $"Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is {workspaceContext.ActiveWorkspaceSaveStatus}. {workspaceTimestampReceipt}";
-    }
-
-    private static string? BuildConflictChoiceSummary(
-        ShellSurfaceState shellSurface,
-        ActiveWorkspaceContext workspaceContext,
-        string language)
-    {
-        if (!HasRestoreReviewContext(shellSurface, workspaceContext))
-        {
-            return null;
-        }
-
-        string workspaceTimestampReceipt = BuildWorkspaceTimestampReceipt(workspaceContext);
-        if (string.Equals(workspaceContext.ActiveWorkspaceSaveStatus, "unsaved", StringComparison.Ordinal))
-        {
-            return $"{RestoreConflictChoiceOrder} {workspaceTimestampReceipt}";
-        }
-
-        return $"{RestoreConflictChoiceFallback} {workspaceTimestampReceipt}";
-    }
-
-    private static bool CanSaveLocalWorkBeforeRestore(ActiveWorkspaceContext workspaceContext)
-        => string.Equals(workspaceContext.ActiveWorkspaceSaveStatus, "unsaved", StringComparison.Ordinal);
-
     private static string BuildCharacterStateText(ActiveWorkspaceContext workspaceContext, string language)
         => DesktopLocalizationCatalog.GetRequiredFormattedString(
             "desktop.shell.status.character",
@@ -503,7 +420,7 @@ internal static class MainWindowShellFrameProjector
         {
             return workspaceContext.OpenWorkspaceCount > 0
                 ? $"Primary desktop head still has {workspaceContext.OpenWorkspaceCount} open workspace tab(s) available for review."
-                : "Primary desktop head has no active workspace yet, so restore review stays on the current local shell until you pick one.";
+                : "Primary desktop head has no active workspace yet, so the current local shell stays in place until you pick one.";
         }
 
         return $"{workspaceContext.ActiveWorkspaceId.Value} stays visible on the current desktop head until you choose review or support.";

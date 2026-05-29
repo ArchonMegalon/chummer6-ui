@@ -396,9 +396,8 @@ public static class DesktopInstallLinkingRuntime
                         $"Version: {state.ApplicationVersion}",
                         $"Channel: {state.ChannelId}",
                         $"Platform: {state.Platform}/{state.Arch}",
-                        "Restore posture: review claimed-install entitlement, stale-state visibility, and conflict choices before restoring workspace continuity.",
-                        "Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet.",
-                        "Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement.",
+                        "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
+                        "Local workspace state stays under explicit user control.",
                         string.IsNullOrWhiteSpace(state.LastClaimMessage) ? null : $"Hub message: {state.LastClaimMessage}",
                         string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
@@ -488,8 +487,8 @@ public static class DesktopInstallLinkingRuntime
             return BuildSupportPortalRelativePath(
                 new SupportPortalPrefill(
                     Kind: "bug_report",
-                    Title: $"Workspace restore review needs help for {state.HeadId}",
-                    Summary: "No local workspace is selected, but restore continuation, stale-state visibility, and conflict choices need support review before replacement.",
+                    Title: $"Workspace continuity needs help for {state.HeadId}",
+                    Summary: "No local workspace is selected, but continuity and stale-state details need support review.",
                     Detail: string.Join(
                         "\n",
                         new[]
@@ -498,9 +497,8 @@ public static class DesktopInstallLinkingRuntime
                             "Workspace ID: none",
                             "Ruleset: unknown",
                             "Local save state: no local workspace is selected.",
-                            "Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work.",
-                            "Stale-state visibility: keep the local workspace list visible until support confirms the current continuity packet.",
-                            "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open Workspace Support before accepting restore replacement.",
+                            "Workspace continuity: support can review the current continuity packet.",
+                            "Local workspace list stays under explicit user control.",
                             $"Install ID: {state.InstallationId}",
                             $"Head: {state.HeadId}",
                             $"Version: {state.ApplicationVersion}"
@@ -531,9 +529,8 @@ public static class DesktopInstallLinkingRuntime
                         $"Build method: {workspace.Summary.BuildMethod}",
                         $"Last local update: {workspace.LastUpdatedUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
                         $"Local save state: {(workspace.HasSavedWorkspace ? "saved workspace is available" : "unsaved or missing local workspace file")}.",
-                        "Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work.",
-                        "Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet.",
-                        "Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement.",
+                        "Workspace continuity: support can review the current continuity packet.",
+                        "Local workspace state stays under explicit user control.",
                         $"Install ID: {state.InstallationId}",
                         $"Head: {state.HeadId}",
                         $"Version: {state.ApplicationVersion}"

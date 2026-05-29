@@ -1,5 +1,6 @@
 #nullable enable annotations
 
+using System;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -44,25 +45,23 @@ public sealed class Next90M105PrimaryRouteDecisionGuardTests
         StringAssert.Contains(code, "ConflictChoiceStatusText.Text = state.ConflictChoiceSummary ?? string.Empty;");
         StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(state.StaleStateSummary)");
         StringAssert.Contains(code, "|| !string.IsNullOrWhiteSpace(state.ConflictChoiceSummary)");
-        StringAssert.Contains(code, "Review restore before replacing local work. Save first if needed.");
-        StringAssert.Contains(code, "Review restore before replacing local work. Keep local work or open support.");
+        StringAssert.Contains(code, "Save first if needed before changing this desktop copy.");
+        StringAssert.Contains(code, "Keep local work or open support before changing this desktop copy.");
         StringAssert.Contains(code, "SaveLocalWorkButton.IsEnabled = state.CanSaveLocalWorkBeforeRestore;");
         StringAssert.Contains(code, "restore-decision-keep-local-work");
         StringAssert.Contains(code, "restore-decision-review-campaign-workspace");
         StringAssert.Contains(code, "restore-decision-open-workspace-support");
-        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityStatusBorder, \"Restore continuity decision gate\")");
+        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityStatusBorder, \"Workspace continuity gate\")");
         StringAssert.Contains(code, "AutomationProperties.SetName(StaleStateStatusText, \"Stale state visibility status\")");
-        StringAssert.Contains(code, "AutomationProperties.SetName(ConflictChoiceStatusText, \"Conflict choice status\")");
-        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Restore decision order\")");
-        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open Workspace Support with your restore details already attached.\")");
+        StringAssert.Contains(code, "AutomationProperties.SetName(ConflictChoiceStatusText, \"Workspace review status\")");
+        StringAssert.Contains(code, "AutomationProperties.SetName(RestoreContinuityDecisionOrderText, \"Workspace decision order\")");
+        StringAssert.Contains(code, "AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, \"Open Workspace Support with the current workspace context attached.\")");
 
-        StringAssert.Contains(projector, "string? restoreContinuitySummary = BuildRestoreContinuitySummary(shellSurface, workspaceContext, language);");
-        StringAssert.Contains(projector, "string? staleStateSummary = BuildStaleStateSummary(shellSurface, workspaceContext, language);");
-        StringAssert.Contains(projector, "string? conflictChoiceSummary = BuildConflictChoiceSummary(shellSurface, workspaceContext, language);");
-        StringAssert.Contains(projector, "RestoreContinuitySummary: restoreContinuitySummary");
-        StringAssert.Contains(projector, "StaleStateSummary: staleStateSummary");
-        StringAssert.Contains(projector, "ConflictChoiceSummary: conflictChoiceSummary");
-        StringAssert.Contains(projector, "CanSaveLocalWorkBeforeRestore: CanSaveLocalWorkBeforeRestore(workspaceContext)");
+        StringAssert.Contains(projector, "HasVisibleContent: false");
+        Assert.IsFalse(projector.Contains("RestoreContinuitySummary:", StringComparison.Ordinal));
+        Assert.IsFalse(projector.Contains("StaleStateSummary:", StringComparison.Ordinal));
+        Assert.IsFalse(projector.Contains("ConflictChoiceSummary:", StringComparison.Ordinal));
+        Assert.IsFalse(projector.Contains("CanSaveLocalWorkBeforeRestore:", StringComparison.Ordinal));
 
         StringAssert.Contains(eventHandlers, "SummaryHeader_OnWorkspaceSupportRequested");
         StringAssert.Contains(eventHandlers, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(installState, ResolveActiveSupportWorkspace())");

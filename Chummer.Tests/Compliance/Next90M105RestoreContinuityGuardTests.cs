@@ -157,15 +157,17 @@ public sealed class Next90M105RestoreContinuityGuardTests
         StringAssert.Contains(receiptText, "\"retiredForCurrentRepoHistory\": true");
         StringAssert.Contains(receiptText, "\"currentRepoProofMode\": \"live_source_and_wiring\"");
         StringAssert.Contains(receiptText, "\"sourceMarkers\"");
-        StringAssert.Contains(receiptText, "\"BuildCampaignRestoreContinuitySummary()\"");
-        StringAssert.Contains(receiptText, "\"BuildRestoreContinuityChoiceSummary()\"");
-        StringAssert.Contains(receiptText, "\"Stale state: server continuity is unavailable\"");
-        StringAssert.Contains(receiptText, "\"Conflict choices:\"");
+        StringAssert.Contains(receiptText, "\"retiredSourceMarkers\"");
+        StringAssert.Contains(receiptText, "\"BuildCampaignBody()\"");
+        StringAssert.Contains(receiptText, "\"BuildRestoreBody()\"");
+        StringAssert.Contains(receiptText, "\"Workspace continuity: support can review the current continuity packet.\"");
+        StringAssert.Contains(receiptText, "\"BuildCampaignRestoreContinuitySummary()\",");
+        StringAssert.Contains(receiptText, "\"absent\": true");
         StringAssert.Contains(receiptText, "\"restore-decision-keep-local-work\"");
         StringAssert.Contains(receiptText, "\"restore-decision-review-campaign-workspace\"");
         StringAssert.Contains(receiptText, "\"restore-decision-open-workspace-support\"");
         StringAssert.Contains(receiptText, "\"BuildSupportPortalRelativePathForWorkspace_includes_workspace_follow_through_context\"");
-        StringAssert.Contains(receiptText, "\"Restore%20posture%3A%20review%20workspace%20continuation%2C%20stale-state%20visibility%2C%20and%20conflict%20choices%20before%20replacing%20local%20work.\"");
+        StringAssert.Contains(receiptText, "\"Workspace continuity: support can review the current continuity packet.\"");
     }
 
     private static string FindRepoRoot()

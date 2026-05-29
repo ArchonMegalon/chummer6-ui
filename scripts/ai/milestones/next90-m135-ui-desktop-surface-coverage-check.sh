@@ -102,7 +102,7 @@ SOURCE_MARKERS = {
         "ShowGmRunboardAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)",
         "S(\"desktop.campaign.section.runboard\")",
         "Runboard:",
-        "Restore choice:",
+        "BuildRestoreBody()",
         "DesktopSupportWindow.ShowAsync(this, _installState.HeadId);",
     ],
     "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs": [

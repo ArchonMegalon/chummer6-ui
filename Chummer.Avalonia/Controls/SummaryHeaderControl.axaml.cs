@@ -14,19 +14,19 @@ public partial class SummaryHeaderControl : UserControl
     private const string SaveLocalWorkSelectionId = "restore-decision-save-local-work";
     private const string ReviewCampaignWorkspaceSelectionId = "restore-decision-review-campaign-workspace";
     private const string OpenWorkspaceSupportSelectionId = "restore-decision-open-workspace-support";
-    private const string DecisionOrderSummary = "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.";
-    private const string LocalAuthoritySummary = "Local authority: the desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support; restore review never replaces local work by itself.";
-    private const string ReplacementGuardSummary = "Restore replacement guard: there is no one-click accept; Campaign Workspace review or Workspace Support must be opened before a server restore can replace local desktop work.";
-    private const string SupportHandoffSummary = "Support handoff: Workspace Support carries restore continuation, stale-state visibility, conflict choices, and the current local workspace anchor before any replacement.";
-    private const string SaveAvailableDecisionSummary = "Review restore before replacing local work. Save first if needed.";
-    private const string SaveUnavailableDecisionSummary = "Review restore before replacing local work. Keep local work or open support.";
-    private const string SaveAvailableStatus = "Save local work is available before restore review changes this desktop copy.";
+    private const string DecisionOrderSummary = "Open Campaign Workspace or Workspace Support when you need continuity help.";
+    private const string LocalAuthoritySummary = "The desktop workspace remains the working copy until you choose Campaign Workspace review or Workspace Support.";
+    private const string ReplacementGuardSummary = "Workspace changes stay explicit.";
+    private const string SupportHandoffSummary = "Workspace Support opens with the current local workspace context.";
+    private const string SaveAvailableDecisionSummary = "Save first if needed before changing this desktop copy.";
+    private const string SaveUnavailableDecisionSummary = "Keep local work or open support before changing this desktop copy.";
+    private const string SaveAvailableStatus = "Save local work is available before changing this desktop copy.";
     private const string SaveUnavailableStatus = "Save local work is unavailable because no dirty local workspace is active.";
-    private const string KeepLocalStatus = "Keep Local leaves this desktop copy in place while you review restore choices.";
-    private const string SaveRequestedStatus = "Saving local work before you review restore options.";
+    private const string KeepLocalStatus = "Keep Local leaves this desktop copy in place.";
+    private const string SaveRequestedStatus = "Saving local work before changing this desktop copy.";
     private const string SavedLocalWorkStatus = "Local work saved. Keep Local, review Campaign Workspace, or open Workspace Support before replacing anything.";
-    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace so you can compare restore choices before changing this copy.";
-    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with your restore details already attached.";
+    private const string ReviewCampaignWorkspaceStatus = "Opening Campaign Workspace.";
+    private const string OpenWorkspaceSupportStatus = "Opening Workspace Support with the current workspace context attached.";
 
     private readonly Dictionary<string, Button> _navigationTabButtons = new(StringComparer.Ordinal);
     private WorkspaceStripState _workspaceStripState = new("No character open");
@@ -187,35 +187,35 @@ public partial class SummaryHeaderControl : UserControl
 
     private void BuildRestoreActionButtons()
     {
-        ToolTip.SetTip(KeepLocalWorkButton, "Keep Local keeps this desktop copy visible while you review restore choices.");
-        ToolTip.SetTip(SaveLocalWorkButton, "Save local work before you review restore or conflict choices.");
-        ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Open Campaign Workspace to compare restore choices before replacing anything.");
-        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open Workspace Support with your restore details already attached.");
+        ToolTip.SetTip(KeepLocalWorkButton, "Keep Local keeps this desktop copy visible.");
+        ToolTip.SetTip(SaveLocalWorkButton, "Save local work before changing this desktop copy.");
+        ToolTip.SetTip(ReviewCampaignWorkspaceButton, "Open Campaign Workspace.");
+        ToolTip.SetTip(OpenWorkspaceSupportButton, "Open Workspace Support with the current workspace context attached.");
     }
 
     private void ApplyAutomationProperties()
     {
-        AutomationProperties.SetName(RestoreContinuityStatusBorder, "Restore continuity decision gate");
-        AutomationProperties.SetHelpText(RestoreContinuityStatusBorder, "The desktop app keeps restore and conflict details visible before anything can replace your local copy.");
+        AutomationProperties.SetName(RestoreContinuityStatusBorder, "Workspace continuity gate");
+        AutomationProperties.SetHelpText(RestoreContinuityStatusBorder, "The desktop app keeps local work under explicit user control.");
         AutomationProperties.SetName(RestoreContinuityStatusText, "Restore continuation status");
         AutomationProperties.SetName(StaleStateStatusText, "Stale state visibility status");
-        AutomationProperties.SetName(ConflictChoiceStatusText, "Conflict choice status");
-        AutomationProperties.SetName(RestoreContinuityDecisionText, "Restore decision guard");
-        AutomationProperties.SetHelpText(RestoreContinuityDecisionText, "Chummer does not replace your local work automatically; review the restore choices first.");
-        AutomationProperties.SetName(RestoreContinuityDecisionOrderText, "Restore decision order");
+        AutomationProperties.SetName(ConflictChoiceStatusText, "Workspace review status");
+        AutomationProperties.SetName(RestoreContinuityDecisionText, "Workspace decision guard");
+        AutomationProperties.SetHelpText(RestoreContinuityDecisionText, "Chummer keeps local work under explicit user control.");
+        AutomationProperties.SetName(RestoreContinuityDecisionOrderText, "Workspace decision order");
         AutomationProperties.SetHelpText(RestoreContinuityDecisionOrderText, "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then open Workspace Support.");
-        AutomationProperties.SetName(RestoreContinuityLocalAuthorityText, "Restore local authority");
+        AutomationProperties.SetName(RestoreContinuityLocalAuthorityText, "Workspace local authority");
         AutomationProperties.SetHelpText(RestoreContinuityLocalAuthorityText, "Your local desktop copy stays authoritative until you choose Campaign Workspace review or Workspace Support.");
-        AutomationProperties.SetName(RestoreContinuityReplacementGuardText, "Restore replacement guard");
+        AutomationProperties.SetName(RestoreContinuityReplacementGuardText, "Workspace change guard");
         AutomationProperties.SetHelpText(RestoreContinuityReplacementGuardText, "There is no automatic or one-click replacement from this desktop route.");
-        AutomationProperties.SetName(RestoreContinuitySupportHandoffText, "Restore support handoff");
-        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace Support opens with your restore, stale-state, conflict-choice, and local copy context.");
+        AutomationProperties.SetName(RestoreContinuitySupportHandoffText, "Workspace support handoff");
+        AutomationProperties.SetHelpText(RestoreContinuitySupportHandoffText, "Workspace Support opens with the current local workspace context.");
         AutomationProperties.SetName(KeepLocalWorkButton, "Keep Local");
-        AutomationProperties.SetName(SaveLocalWorkButton, "Save local work before restore review");
-        AutomationProperties.SetName(ReviewCampaignWorkspaceButton, "Review Campaign Workspace restore choices");
+        AutomationProperties.SetName(SaveLocalWorkButton, "Save local work before workspace review");
+        AutomationProperties.SetName(ReviewCampaignWorkspaceButton, "Review Campaign Workspace");
         AutomationProperties.SetName(OpenWorkspaceSupportButton, "Open Workspace Support");
-        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Open Workspace Support with your restore details already attached.");
-        AutomationProperties.SetName(RestoreContinuityActionStatusText, "Restore decision action status");
+        AutomationProperties.SetHelpText(OpenWorkspaceSupportButton, "Open Workspace Support with the current workspace context attached.");
+        AutomationProperties.SetName(RestoreContinuityActionStatusText, "Workspace decision action status");
     }
 
     private void ApplyRestoreActionSelection(string? selectionId)

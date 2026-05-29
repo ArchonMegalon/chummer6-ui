@@ -234,7 +234,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         string summaryHeaderMarkupText = File.ReadAllText(summaryHeaderMarkupPath);
 
         StringAssert.Contains(projectorText, "ShowNavigatorPane: false");
-        StringAssert.Contains(projectorText, "bool summaryHeaderHasVisibleContent = !string.IsNullOrWhiteSpace(restoreContinuitySummary)");
+        StringAssert.Contains(projectorText, "HasVisibleContent: false");
+        Assert.IsFalse(projectorText.Contains("Restore choice:", StringComparison.Ordinal));
+        Assert.IsFalse(projectorText.Contains("Conflict choices:", StringComparison.Ordinal));
         StringAssert.Contains(projectorText, "return [];");
         StringAssert.Contains(projectorText, "if (shellNotice.StartsWith(\"Restored \", StringComparison.OrdinalIgnoreCase))");
         StringAssert.Contains(summaryHeaderText, "bool hasRecoveryContext =");
@@ -1780,9 +1782,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ],
                 ActiveTabId: "tab-profile",
                 HasVisibleContent: true,
-                RestoreContinuitySummary: "Restore choice: continue from runner-1.",
+                RestoreContinuitySummary: "Continuity note: continue from runner-1.",
                 StaleStateSummary: "Stale state: runner-1 stays visible.",
-                ConflictChoiceSummary: "Conflict choices: keep local work, save local work, or review Campaign Workspace.",
+                ConflictChoiceSummary: "Workspace note: keep local work, save local work, or review Campaign Workspace.",
                 CanSaveLocalWorkBeforeRestore: true));
             control.Measure(new Size(1440d, 960d));
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
@@ -1824,9 +1826,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ],
                 ActiveTabId: "tab-profile",
                 RuntimeSummary: "Runtime: SR6 preview.",
-                RestoreContinuitySummary: "Restore choice: keep ws-1 open before accepting a newer continuity packet.",
+                RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
                 StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
-                ConflictChoiceSummary: "Conflict choices: review before replacing this unsaved desktop state.",
+                ConflictChoiceSummary: "Workspace note: review before replacing this unsaved desktop state.",
                 CanSaveLocalWorkBeforeRestore: true));
             control.Measure(new Size(1440d, 960d));
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
@@ -1837,10 +1839,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(FindDescendant<TextBlock>(control, "StaleStateStatusText").IsVisible);
             Assert.IsFalse(FindDescendant<TextBlock>(control, "ConflictChoiceStatusText").IsVisible);
             Assert.AreEqual(
-                "Restore continuity decision gate",
+                "Workspace continuity gate",
                 AutomationProperties.GetName(FindDescendant<Control>(control, "RestoreContinuityStatusBorder")));
             Assert.AreEqual(
-                "The desktop app keeps restore and conflict details visible before anything can replace your local copy.",
+                "The desktop app keeps local work under explicit user control.",
                 AutomationProperties.GetHelpText(FindDescendant<Control>(control, "RestoreContinuityStatusBorder")));
             Assert.AreEqual(
                 "Restore continuation status",
@@ -1849,52 +1851,52 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Stale state visibility status",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "StaleStateStatusText")));
             Assert.AreEqual(
-                "Conflict choice status",
+                "Workspace review status",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "ConflictChoiceStatusText")));
             Assert.IsTrue(FindDescendant<Control>(control, "RestoreContinuityActionPanel").IsVisible);
             Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText").IsVisible);
             Assert.AreEqual(
-                "Restore decision guard",
+                "Workspace decision guard",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText")));
             Assert.AreEqual(
-                "Chummer does not replace your local work automatically; review the restore choices first.",
+                "Chummer keeps local work under explicit user control.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionText")));
             Assert.AreEqual(
-                "Restore decision order",
+                "Workspace decision order",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
             Assert.AreEqual(
                 "Use the visible choices in order: keep local work visible, save local work when available, review Campaign Workspace, then open Workspace Support.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityDecisionOrderText")));
             Assert.AreEqual(
-                "Restore local authority",
+                "Workspace local authority",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
             Assert.AreEqual(
                 "Your local desktop copy stays authoritative until you choose Campaign Workspace review or Workspace Support.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityLocalAuthorityText")));
             Assert.AreEqual(
-                "Restore replacement guard",
+                "Workspace change guard",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText")));
             Assert.AreEqual(
                 "There is no automatic or one-click replacement from this desktop route.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuityReplacementGuardText")));
             Assert.AreEqual(
-                "Restore support handoff",
+                "Workspace support handoff",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText")));
             Assert.AreEqual(
-                "Workspace Support opens with your restore, stale-state, conflict-choice, and local copy context.",
+                "Workspace Support opens with the current local workspace context.",
                 AutomationProperties.GetHelpText(FindDescendant<TextBlock>(control, "RestoreContinuitySupportHandoffText")));
             Assert.AreEqual("restore-decision-keep-local-work", FindDescendant<Button>(control, "KeepLocalWorkButton").Tag);
             Assert.AreEqual("Keep Local", AutomationProperties.GetName(FindDescendant<Button>(control, "KeepLocalWorkButton")));
             Assert.IsTrue(FindDescendant<Button>(control, "SaveLocalWorkButton").IsEnabled);
             Assert.AreEqual("restore-decision-save-local-work", FindDescendant<Button>(control, "SaveLocalWorkButton").Tag);
-            Assert.AreEqual("Save local work before restore review", AutomationProperties.GetName(FindDescendant<Button>(control, "SaveLocalWorkButton")));
+            Assert.AreEqual("Save local work before workspace review", AutomationProperties.GetName(FindDescendant<Button>(control, "SaveLocalWorkButton")));
             Assert.AreEqual("restore-decision-review-campaign-workspace", FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton").Tag);
-            Assert.AreEqual("Review Campaign Workspace restore choices", AutomationProperties.GetName(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton")));
+            Assert.AreEqual("Review Campaign Workspace", AutomationProperties.GetName(FindDescendant<Button>(control, "ReviewCampaignWorkspaceButton")));
             Assert.AreEqual("restore-decision-open-workspace-support", FindDescendant<Button>(control, "OpenWorkspaceSupportButton").Tag);
             Assert.AreEqual("Open Workspace Support", AutomationProperties.GetName(FindDescendant<Button>(control, "OpenWorkspaceSupportButton")));
             Assert.IsFalse(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText").IsVisible);
             Assert.AreEqual(
-                "Restore decision action status",
+                "Workspace decision action status",
                 AutomationProperties.GetName(FindDescendant<TextBlock>(control, "RestoreContinuityActionStatusText")));
 
             RaiseClick(FindDescendant<Button>(control, "KeepLocalWorkButton"));
@@ -1931,9 +1933,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NavigationTabsHeading: "Runner Tabs",
                 NavigationTabs: [],
                 ActiveTabId: null,
-                RestoreContinuitySummary: "Restore choice: load a recent workspace before replacing local work.",
+                RestoreContinuitySummary: "Continuity note: load a recent workspace before replacing local work.",
                 StaleStateSummary: "Stale state: service continuity is unavailable.",
-                ConflictChoiceSummary: "Conflict choices: review workspace support before replacing local work.",
+                ConflictChoiceSummary: "Workspace note: review workspace support before replacing local work.",
                 CanSaveLocalWorkBeforeRestore: false));
             control.Measure(new Size(1440d, 960d));
             control.Arrange(new Rect(0d, 0d, 1440d, 960d));
@@ -1958,11 +1960,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NavigationTabsHeading: "Runner Tabs",
                 NavigationTabs: [],
                 ActiveTabId: null,
-                RestoreContinuitySummary: "Restore choice: keep ws-1 open before accepting a newer continuity packet.",
+                RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
                 StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
-                ConflictChoiceSummary: "Conflict choices: review before replacing this unsaved desktop state.",
+                ConflictChoiceSummary: "Workspace note: review before replacing this unsaved desktop state.",
                 CanSaveLocalWorkBeforeRestore: true,
-                RestoreDecisionActionStatus: "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.",
+                RestoreDecisionActionStatus: "Opening Workspace Support with workspace context.",
                 RestoreDecisionSelectionId: "restore-decision-open-workspace-support");
             control.SetState(state);
             control.Measure(new Size(1440d, 960d));
@@ -1996,7 +1998,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ?? throw new AssertFailedException("ApplyShellFrame returned null for pending save state.");
         SummaryHeaderState pendingSummaryHeader = ReadTransientSummaryHeader(resolvedPendingFrame);
         Assert.AreEqual(
-            "Save local work requested before any restore or conflict review changes desktop state.",
+            "Save local work requested before workspace continuity changes desktop state.",
             pendingSummaryHeader.RestoreDecisionActionStatus);
         Assert.AreEqual("restore-decision-save-local-work", pendingSummaryHeader.RestoreDecisionSelectionId);
 
@@ -2006,7 +2008,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ?? throw new AssertFailedException("ApplyShellFrame returned null for saved state.");
         SummaryHeaderState savedSummaryHeader = ReadTransientSummaryHeader(resolvedSavedFrame);
         Assert.AreEqual(
-            "Local work saved before restore review; keep local work visible, review Campaign Workspace, or open Workspace Support before any replacement.",
+            "Local work saved; keep local work visible, review Campaign Workspace, or open Workspace Support before changing this desktop copy.",
             savedSummaryHeader.RestoreDecisionActionStatus);
         Assert.IsNull(savedSummaryHeader.RestoreDecisionSelectionId);
 
@@ -2036,7 +2038,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             ?? throw new AssertFailedException("ApplyShellFrame returned null for anchored workspace state.");
         SummaryHeaderState anchoredSummaryHeader = ReadTransientSummaryHeader(resolvedAnchoredFrame);
         Assert.AreEqual(
-            "Opening Workspace Support with restore continuation, stale-state, and conflict-choice context.",
+            "Opening Workspace Support with the current workspace context.",
             anchoredSummaryHeader.RestoreDecisionActionStatus);
         Assert.AreEqual("restore-decision-open-workspace-support", anchoredSummaryHeader.RestoreDecisionSelectionId);
 
@@ -2068,16 +2070,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && harness.State.Session.OpenWorkspaces.Count > 0
                     && !harness.State.IsBusy);
 
-                string restoreText = harness.FindControl<TextBlock>("RestoreContinuityStatusText").Text ?? string.Empty;
-                string staleText = harness.FindControl<TextBlock>("StaleStateStatusText").Text ?? string.Empty;
-                string conflictText = harness.FindControl<TextBlock>("ConflictChoiceStatusText").Text ?? string.Empty;
-
-                StringAssert.Contains(restoreText, "stays visible on the current desktop head until you choose review or support.");
-                StringAssert.Contains(staleText, "was last touched locally at");
-                StringAssert.Contains(staleText, "stays visible before any replacement;");
-                StringAssert.Contains(conflictText, "was last touched locally at");
-                StringAssert.Contains(conflictText, "stays visible before any replacement;");
-                Assert.IsTrue(harness.FindControl<Button>("SaveLocalWorkButton").IsEnabled);
+                Assert.IsFalse(harness.FindControl<Control>("SummaryHeaderRegion").IsVisible);
             });
         }
         finally
@@ -2116,9 +2109,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NavigationTabsHeading: "Runner Tabs",
                 NavigationTabs: Array.Empty<NavigatorTabItem>(),
                 ActiveTabId: null,
-                RestoreContinuitySummary: "Restore choice: keep ws-1 open before accepting a newer continuity packet.",
+                RestoreContinuitySummary: "Continuity note: keep ws-1 open before accepting a newer packet.",
                 StaleStateSummary: "Stale state: desktop service is reachable, but server restore continuity still needs Campaign Workspace or Workspace Support review; local save posture is unsaved.",
-                ConflictChoiceSummary: "Conflict choices: keep local work visible, review Campaign Workspace, or open workspace support before replacing local work.",
+                ConflictChoiceSummary: "Workspace note: review Campaign Workspace or open workspace support.",
                 CanSaveLocalWorkBeforeRestore: canSaveLocalWorkBeforeRestore,
                 RestoreDecisionWorkspaceId: workspaceId),
             new StatusStripState(

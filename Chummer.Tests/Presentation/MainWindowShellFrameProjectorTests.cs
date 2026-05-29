@@ -144,7 +144,7 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
-    public void Project_surfaces_restore_continuity_and_conflict_guidance_for_unsaved_active_workspace()
+    public void Project_omits_restore_choice_chrome_for_unsaved_active_workspace()
     {
         CharacterWorkspaceId workspaceId = new("runner-007");
         DateTimeOffset lastOpenedUtc = new(2026, 5, 7, 4, 15, 0, TimeSpan.Zero);
@@ -165,23 +165,15 @@ public sealed class MainWindowShellFrameProjectorTests
             activeWorkspaceId: workspaceId,
             shellNotice: "Restored 1 workspace(s).");
 
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
-            "Restore choice: keep runner-007 open before accepting a newer continuity packet.");
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
-            "runner-007 stays visible on the current desktop head until you choose review or support.");
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.ConflictChoiceSummary ?? string.Empty,
-            "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement.");
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.ConflictChoiceSummary ?? string.Empty,
-            "runner-007 was last touched locally at 2026-05-07 04:15 UTC and stays visible before any replacement;");
-        Assert.IsTrue(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.RestoreContinuitySummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.StaleStateSummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.ConflictChoiceSummary);
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.HasVisibleContent);
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
     }
 
     [TestMethod]
-    public void Project_surfaces_stale_state_warning_when_no_active_workspace_is_open()
+    public void Project_omits_restore_choice_chrome_when_no_active_workspace_is_open()
     {
         MainWindowShellFrame frame = ProjectFrame(
             RulesetDefaults.Sr6,
@@ -200,15 +192,10 @@ public sealed class MainWindowShellFrameProjectorTests
             activeWorkspaceId: null,
             shellNotice: "Restored 1 workspace(s).");
 
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.RestoreContinuitySummary ?? string.Empty,
-            "keep the current desktop workspace review visible before accepting a newer continuity packet.");
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.StaleStateSummary ?? string.Empty,
-            "Stale state: service continuity is unavailable until a local workspace is opened for review.");
-        StringAssert.Contains(
-            frame.ChromeState.SummaryHeader.StaleStateSummary ?? string.Empty,
-            "no active workspace stays visible on the current desktop head before any replacement;");
+        Assert.IsNull(frame.ChromeState.SummaryHeader.RestoreContinuitySummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.StaleStateSummary);
+        Assert.IsNull(frame.ChromeState.SummaryHeader.ConflictChoiceSummary);
+        Assert.IsFalse(frame.ChromeState.SummaryHeader.HasVisibleContent);
         Assert.IsFalse(frame.ChromeState.SummaryHeader.CanSaveLocalWorkBeforeRestore);
     }
 

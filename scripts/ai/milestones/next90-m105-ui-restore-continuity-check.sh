@@ -123,9 +123,8 @@ COMMIT_SCOPE_ALLOWED_PREFIXES = [
 
 SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
     "Chummer.Avalonia/DesktopHomeWindow.cs": {
-        "restore_continuation": [
-            "BuildCampaignRestoreContinuitySummary()",
-            "Restore choice: open the current campaign workspace",
+        "restore_continuation_retired_from_home_chrome": [
+            "BuildCampaignBody()",
             "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)",
         ],
         "stale_state_visibility": [
@@ -134,20 +133,19 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
             "GetCampaignWorkspaceServerPlaneAsync",
         ],
         "conflict_safe_workspace": [
-            "Conflict choices:",
             "_campaignProjection.Watchouts",
             "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
             "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)",
         ],
         "claimed_install_support": [
-            "open install support if entitlement or stale-state posture is wrong",
+            "OpenUpdateSupport",
             "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)",
         ],
     },
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": {
-        "restore_continuation": [
-            "BuildRestoreContinuityChoiceSummary()",
-            "Restore choice: open the current campaign workspace",
+        "restore_continuation_retired_from_workspace_chrome": [
+            "BuildRestoreBody()",
+            "_campaignProjection.RestoreSummary",
             "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)",
         ],
         "stale_state_visibility": [
@@ -156,22 +154,20 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
             "GetCampaignWorkspaceServerPlaneAsync",
         ],
         "conflict_safe_workspace": [
-            "Conflict choices:",
-            "Review before continuing:",
+            "_campaignProjection.Watchouts",
             "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
             "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)",
         ],
         "support_fallback": [
             "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)",
-            "Support choice: open the tracked case",
+            "Tracked support case is available.",
         ],
     },
     "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs": {
         "support_prefill": [
-            "Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work.",
-            "Restore posture: review claimed-install entitlement, stale-state visibility, and conflict choices before restoring workspace continuity.",
-            "Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet.",
-            "Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement.",
+            "Workspace continuity: support can review the current continuity packet.",
+            "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
+            "Local workspace state stays under explicit user control.",
             "BuildSupportPortalRelativePathForWorkspace",
             "BuildSupportPortalRelativePathForInstall",
         ],
@@ -179,17 +175,16 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
     "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs": {
         "support_prefill_regression": [
             "BuildSupportPortalRelativePathForInstall_includes_install_prefill_context",
-            "Restore%20posture%3A%20review%20claimed-install%20entitlement%2C%20stale-state%20visibility%2C%20and%20conflict%20choices%20before%20restoring%20workspace%20continuity.",
+            "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
             "BuildSupportPortalRelativePathForWorkspace_includes_workspace_follow_through_context",
-            "Restore%20posture%3A%20review%20workspace%20continuation%2C%20stale-state%20visibility%2C%20and%20conflict%20choices%20before%20replacing%20local%20work.",
+            "Workspace continuity: support can review the current continuity packet.",
         ],
     },
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": {
-        "targeted_signoff": [
-            "BuildCampaignRestoreContinuitySummary()",
-            "BuildRestoreContinuityChoiceSummary()",
-            "Stale state: server continuity is unavailable",
-            "Conflict choices:",
+        "targeted_signoff_retirement": [
+            "RequireDoesNotContain(source, \"Restore choice:\")",
+            "RequireDoesNotContain(source, \"Decision order:\")",
+            "RequireDoesNotContain(source, \"Conflict choices:\")",
             "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
         ],
     },
@@ -205,17 +200,54 @@ SOURCE_MARKERS: dict[str, dict[str, list[str]]] = {
     },
     "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs": {
         "primary_route_restore_decision_gate": [
-            "Decision order: 1. keep local work visible, 2. save local work when available, 3. review Campaign Workspace, 4. open Workspace Support before accepting restore replacement.",
+            "Open Campaign Workspace or Workspace Support when you need continuity help.",
             "BuildRestoreContinuityDecisionSummary",
-            "Chummer does not replace your local work automatically; review the restore choices first.",
+            "Chummer keeps local work under explicit user control.",
             "restore-decision-keep-local-work",
             "restore-decision-review-campaign-workspace",
             "restore-decision-open-workspace-support",
-            "Keep Local leaves this desktop copy in place while you review restore choices.",
-            "Save local work before you review restore or conflict choices.",
+            "Keep Local leaves this desktop copy in place.",
+            "Save local work before changing this desktop copy.",
             "Save local work is unavailable because no dirty local workspace is active",
         ],
     },
+}
+
+RETIRED_SOURCE_MARKERS: dict[str, list[str]] = {
+    "Chummer.Avalonia/DesktopHomeWindow.cs": [
+        "BuildCampaignRestoreContinuitySummary()",
+        "Restore choice:",
+        "Conflict choices:",
+        "Decision order:",
+        "Local authority:",
+    ],
+    "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
+        "BuildRestoreContinuityChoiceSummary()",
+        "Restore choice:",
+        "Conflict choices:",
+        "Decision order:",
+        "Local authority:",
+        "Support choice:",
+    ],
+    "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs": [
+        "Restore choice:",
+        "Conflict choices:",
+        "BuildRestoreContinuitySummary",
+        "BuildConflictChoiceSummary",
+        "CanSaveLocalWorkBeforeRestore(",
+    ],
+    "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs": [
+        "Decision order:",
+        "Restore replacement guard:",
+        "Support handoff:",
+        "restore choices",
+        "conflict choices",
+        "conflict-choice",
+    ],
+    "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs": [
+        "Restore posture:",
+        "Conflict choices:",
+    ],
 }
 
 
@@ -589,6 +621,25 @@ for relative_path, groups in SOURCE_MARKERS.items():
         }
     source_results[relative_path] = group_results
 
+retired_source_results: dict[str, Any] = {}
+for relative_path, markers in RETIRED_SOURCE_MARKERS.items():
+    path = repo_root / relative_path
+    text = read_text(path, reasons, relative_path)
+    marker_results = []
+    present_markers = []
+    for marker in markers:
+        line = line_number(text, marker)
+        marker_results.append({"marker": marker, "absent": line is None, "line": line})
+        if line is not None:
+            present_markers.append(marker)
+    if present_markers:
+        reasons.append(f"{relative_path} still contains retired restore chrome marker(s): {', '.join(present_markers)}")
+    retired_source_results[relative_path] = {
+        "status": "pass" if not present_markers else "fail",
+        "markers": marker_results,
+        "presentMarkers": present_markers,
+    }
+
 standard_verify_text = read_text(repo_root / STANDARD_VERIFY_PATH, reasons, STANDARD_VERIFY_PATH)
 standard_verify_markers = [
     {"marker": marker, "present": line_number(standard_verify_text, marker) is not None, "line": line_number(standard_verify_text, marker)}
@@ -662,6 +713,10 @@ source_marker_review_reasons = [
     for relative_path, group_results in source_results.items()
     for group_name, group_result in group_results.items()
     if str(group_result.get("status") or "").strip().lower() != "pass"
+] + [
+    f"{relative_path}:retired_restore_chrome"
+    for relative_path, result in retired_source_results.items()
+    if str(result.get("status") or "").strip().lower() != "pass"
 ]
 verify_wiring_review_reasons = (
     []
@@ -718,8 +773,8 @@ receipt = {
     "status": "pass" if not reasons else "fail",
     "reasons": reasons,
     "summary": (
-        "Next-90 milestone 105.2 keeps desktop restore continuation, stale-state visibility, "
-        "and conflict-safe workspace choices visible on the Avalonia primary route."
+        "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving "
+        "the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route."
     ),
     "evidence": {
         "frontierId": FRONTIER_ID,
@@ -747,6 +802,7 @@ receipt = {
         "allowedPaths": EXPECTED_ALLOWED_PATHS,
         "ownedSurfaces": EXPECTED_SURFACES,
         "sourceMarkers": source_results,
+        "retiredSourceMarkers": retired_source_results,
         "closureGuard": closure_guard,
         "historicalBranchCommitChecks": historical_branch_commit_checks,
         "currentRepoProofMode": "live_source_and_wiring",

@@ -42,8 +42,9 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
         StringAssert.Contains(path, "releaseChannel=preview", StringComparison.Ordinal);
         StringAssert.Contains(path, "headId=avalonia", StringComparison.Ordinal);
-        StringAssert.Contains(path, Uri.EscapeDataString("Restore posture: review claimed-install entitlement, stale-state visibility, and conflict choices before restoring workspace continuity."), StringComparison.Ordinal);
-        StringAssert.Contains(path, "Restore%20posture%3A%20review%20claimed-install%20entitlement%2C%20stale-state%20visibility%2C%20and%20conflict%20choices%20before%20restoring%20workspace%20continuity.", StringComparison.Ordinal);
+        StringAssert.Contains(path, Uri.EscapeDataString("Workspace continuity: support can review claimed-install entitlement and stale-state details."), StringComparison.Ordinal);
+        Assert.IsFalse(path.Contains("Restore%20posture", StringComparison.Ordinal));
+        Assert.IsFalse(path.Contains("Conflict%20choices", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -126,10 +127,10 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "Workspace%20follow-through%20needs%20help%20for%20Redmond%20Edge", StringComparison.Ordinal);
         StringAssert.Contains(path, "workspace-redmond", StringComparison.Ordinal);
         StringAssert.Contains(path, "sr6.preview.v1", StringComparison.Ordinal);
-        StringAssert.Contains(path, Uri.EscapeDataString("Restore posture: review workspace continuation, stale-state visibility, and conflict choices before replacing local work."), StringComparison.Ordinal);
-        StringAssert.Contains(path, "Restore%20posture%3A%20review%20workspace%20continuation%2C%20stale-state%20visibility%2C%20and%20conflict%20choices%20before%20replacing%20local%20work.", StringComparison.Ordinal);
-        StringAssert.Contains(path, Uri.EscapeDataString("Stale-state visibility: keep the local workspace visible until support confirms the current continuity packet."), StringComparison.Ordinal);
-        StringAssert.Contains(path, Uri.EscapeDataString("Conflict choices: keep local work, save local work, or review Campaign Workspace before accepting restore replacement."), StringComparison.Ordinal);
+        StringAssert.Contains(path, Uri.EscapeDataString("Workspace continuity: support can review the current continuity packet."), StringComparison.Ordinal);
+        StringAssert.Contains(path, Uri.EscapeDataString("Local workspace state stays under explicit user control."), StringComparison.Ordinal);
+        Assert.IsFalse(path.Contains("Restore%20posture", StringComparison.Ordinal));
+        Assert.IsFalse(path.Contains("Conflict%20choices", StringComparison.Ordinal));
     }
 
     [TestMethod]
