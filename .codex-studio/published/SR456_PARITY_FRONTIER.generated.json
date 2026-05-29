@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T14:01:15.410950Z",
+  "generatedAt": "2026-05-29T14:03:23.662054Z",
   "contractName": "chummer6.sr456_parity_frontier",
   "status": "pass",
   "summary": "SR4, SR5, and SR6 UI/mouse parity receipts are green; SR4 and SR6 remain rule-authority NOT_READY until table, errata, and human-review work is complete.",
