@@ -5,92 +5,92 @@ namespace Chummer.Avalonia;
 
 internal static class MainWindowFeedbackCoordinator
 {
-    public static void ShowImportRawRequired(ToolStripControl toolStrip)
+    public static void ShowImportRawRequired(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.import_raw_required"));
     }
 
-    public static void ShowImportFileUnavailable(ToolStripControl toolStrip)
+    public static void ShowImportFileUnavailable(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.import_file_unavailable"));
     }
 
-    public static void ShowImportFileCancelled(ToolStripControl toolStrip, string operationTitle)
+    public static void ShowImportFileCancelled(IToolStripSurface toolStrip, string operationTitle)
     {
         toolStrip.SetStatusText(F("desktop.shell.feedback.import_file_cancelled", operationTitle));
     }
 
-    public static void ShowBundledDemoRunnerUnavailable(ToolStripControl toolStrip)
+    public static void ShowBundledDemoRunnerUnavailable(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.demo_runner_unavailable"));
     }
 
-    public static void ShowBundledDemoRunnerLoading(ToolStripControl toolStrip, string? sourceLabel)
+    public static void ShowBundledDemoRunnerLoading(IToolStripSurface toolStrip, string? sourceLabel)
     {
         toolStrip.SetStatusText(F("desktop.shell.feedback.demo_runner_loading", sourceLabel ?? "Samples/Legacy/Soma-Career.chum5"));
     }
 
-    public static void ShowNoActiveWorkspace(ToolStripControl toolStrip)
+    public static void ShowNoActiveWorkspace(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.no_active_workspace"));
     }
 
-    public static void ShowDesktopHomeReviewed(ToolStripControl toolStrip)
+    public static void ShowDesktopHomeReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.desktop_home_reviewed"));
     }
 
-    public static void ShowCampaignWorkspaceReviewed(ToolStripControl toolStrip)
+    public static void ShowCampaignWorkspaceReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.campaign_workspace_reviewed"));
     }
 
-    public static void ShowRuleEnvironmentStudioReviewed(ToolStripControl toolStrip)
+    public static void ShowRuleEnvironmentStudioReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText("Rule environment studio reviewed.");
     }
 
-    public static void ShowExplainFollowUpUnavailable(ToolStripControl toolStrip)
+    public static void ShowExplainFollowUpUnavailable(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText("Explain follow-up is unavailable for the current selection.");
     }
 
-    public static void ShowExplainFollowUpReviewed(ToolStripControl toolStrip)
+    public static void ShowExplainFollowUpReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText("Explain follow-up reviewed.");
     }
 
-    public static void ShowLocalWorkspaceKept(ToolStripControl toolStrip)
+    public static void ShowLocalWorkspaceKept(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText("Local workspace remains visible while restore and conflict review stay manual.");
     }
 
-    public static void ShowUpdateReviewed(ToolStripControl toolStrip)
+    public static void ShowUpdateReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.update_reviewed"));
     }
 
-    public static void ShowInstallLinkingReviewed(ToolStripControl toolStrip)
+    public static void ShowInstallLinkingReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.install_linking_reviewed"));
     }
 
-    public static void ShowSupportReviewed(ToolStripControl toolStrip)
+    public static void ShowSupportReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.support_reviewed"));
     }
 
-    public static void ShowReportIssueReviewed(ToolStripControl toolStrip)
+    public static void ShowReportIssueReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.report_issue_reviewed"));
     }
 
-    public static void ShowSettingsReviewed(ToolStripControl toolStrip)
+    public static void ShowSettingsReviewed(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.settings_reviewed"));
     }
 
-    public static void ShowInstallSupportUnavailable(ToolStripControl toolStrip)
+    public static void ShowInstallSupportUnavailable(IToolStripSurface toolStrip)
     {
         toolStrip.SetStatusText(S("desktop.shell.feedback.install_support_unavailable"));
     }
@@ -150,9 +150,9 @@ internal static class MainWindowFeedbackCoordinator
     }
 
     public static void ApplyUiActionFailure(
-        ToolStripControl toolStrip,
+        IToolStripSurface toolStrip,
         SectionHostControl sectionHost,
-        StatusStripControl statusStrip,
+        IStatusStripSurface statusStrip,
         MainWindowShellFrame shellFrame,
         string operationName,
         Exception ex)

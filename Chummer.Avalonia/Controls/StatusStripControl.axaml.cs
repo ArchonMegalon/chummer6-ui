@@ -5,7 +5,7 @@ using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia.Controls;
 
-public partial class StatusStripControl : UserControl
+public partial class StatusStripControl : UserControl, IStatusStripSurface
 {
     private static readonly string UiKitAccessibilityAdapterMarker = AccessibilityPrimitiveBoundary.RootClass;
 

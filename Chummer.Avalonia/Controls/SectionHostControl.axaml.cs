@@ -2219,7 +2219,18 @@ public partial class SectionHostControl : UserControl
             || SectionContextBorder.IsVisible
             || SectionActionTabStripBorder.IsVisible
             || SectionQuickActionsBorder.IsVisible;
-        SectionRowsList.Height = denseChromeVisible ? 176d : 212d;
+        double rowHeight = denseChromeVisible ? 176d : 212d;
+        if (SectionReviewExpander.IsVisible)
+        {
+            rowHeight -= 12d;
+        }
+
+        if (SectionQuickActionsBorder.IsVisible)
+        {
+            rowHeight -= 20d;
+        }
+
+        SectionRowsList.Height = Math.Max(132d, rowHeight);
     }
 }
 

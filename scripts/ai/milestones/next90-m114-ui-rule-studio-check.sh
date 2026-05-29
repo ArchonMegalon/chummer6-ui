@@ -92,7 +92,9 @@ SOURCE_MARKERS = {
     ],
     "Chummer.Avalonia/MainWindow.ControlBinding.cs": [
         "EventHandler onRuleEnvironmentStudioRequested,",
-        "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;",
+        "AttachToolStripHandlers(toolStrip);",
+        "AttachToolStripHandlers(classicToolStrip);",
+        "surface.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;",
     ],
     "Chummer.Avalonia/App.axaml.cs": [
         "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio",

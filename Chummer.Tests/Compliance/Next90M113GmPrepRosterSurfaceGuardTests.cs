@@ -64,8 +64,10 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"onGmPrepRequested: ToolStrip_OnGmPrepRequested,\"");
         StringAssert.Contains(scriptText, "\"onRosterMovementRequested: ToolStrip_OnRosterMovementRequested,\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.ControlBinding.cs\": [");
-        StringAssert.Contains(scriptText, "\"toolStrip.GmPrepRequested += onGmPrepRequested;\"");
-        StringAssert.Contains(scriptText, "\"toolStrip.RosterMovementRequested += onRosterMovementRequested;\"");
+        StringAssert.Contains(scriptText, "\"AttachToolStripHandlers(toolStrip);\"");
+        StringAssert.Contains(scriptText, "\"AttachToolStripHandlers(classicToolStrip);\"");
+        StringAssert.Contains(scriptText, "\"surface.GmPrepRequested += onGmPrepRequested;\"");
+        StringAssert.Contains(scriptText, "\"surface.RosterMovementRequested += onRosterMovementRequested;\"");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/MainWindow.ShellFrameProjector.cs\": [");
         StringAssert.Contains(scriptText, "\"ShowGmPrep: showSampleControls,\"");
         StringAssert.Contains(scriptText, "\"ShowRosterMovement: showSampleControls,\"");

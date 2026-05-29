@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T07:42:48.415625Z",
+  "generatedAt": "2026-05-28T18:24:32.462646Z",
   "contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
   "channelId": "public_stable",
   "status": "pass",
@@ -21,8 +21,8 @@
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-05-28T07:26:42Z",
-    "releaseChannelAgeSeconds": 966,
+    "releaseChannelGeneratedAt": "2026-05-28T18:08:17Z",
+    "releaseChannelAgeSeconds": 975,
     "releaseChannelFutureSkewSeconds": 0,
     "sourceRepoPath": "/docker/fleet/repos/chummer4",
     "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71",
@@ -109,8 +109,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-28T07:26:42Z",
-    "ageSeconds": 966,
+    "generatedAt": "2026-05-28T18:08:17Z",
+    "ageSeconds": 975,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300

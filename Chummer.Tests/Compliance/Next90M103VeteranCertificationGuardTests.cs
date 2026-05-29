@@ -533,8 +533,14 @@ public sealed class Next90M103VeteranCertificationGuardTests
             Assert.IsTrue(entry.GetProperty("visibleNamedControlIds").GetArrayLength() > 0, "M103 screenshot control evidence entries must capture visible named controls.");
             Assert.IsTrue(entry.GetProperty("visibleNamedControls").GetArrayLength() > 0, "M103 screenshot control evidence entries must capture visible named control details.");
             string? dialogTitle = entry.GetProperty("dialogTitle").GetString();
+            string screenshot = entry.GetProperty("screenshot").GetString() ?? string.Empty;
+            bool isSettingsFormPortCapture = string.Equals(screenshot, "03-settings-open-light.png", StringComparison.Ordinal)
+                && entry.GetProperty("visibleNamedControlIds").EnumerateArray()
+                    .Select(value => value.GetString() ?? string.Empty)
+                    .Contains("ClassicFormPortHostControl", StringComparer.Ordinal);
             if (!string.IsNullOrWhiteSpace(dialogTitle)
-                && !string.Equals(dialogTitle, "(none)", StringComparison.Ordinal))
+                && !string.Equals(dialogTitle, "(none)", StringComparison.Ordinal)
+                && !isSettingsFormPortCapture)
             {
                 Assert.IsTrue(entry.GetProperty("dialogFieldIds").GetArrayLength() > 0, "M103 dialog screenshots must capture generated dialog field ids.");
                 Assert.IsTrue(entry.GetProperty("dialogFieldControlIds").GetArrayLength() > 0, "M103 dialog screenshots must capture generated dialog control ids.");

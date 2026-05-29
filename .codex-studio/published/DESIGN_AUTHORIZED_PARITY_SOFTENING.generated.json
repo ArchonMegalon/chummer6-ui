@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T07:28:49.590171Z",
+  "generatedAt": "2026-05-28T18:10:24.540693Z",
   "contractName": "chummer6-ui.design_authorized_parity_softening",
   "status": "pass",
   "summary": "Parity softening is only allowed when the local Chummer6 design explicitly authorizes and explains the divergence.",

@@ -70,8 +70,10 @@ public partial class MainWindow : Window
 
         _controls = MainWindowControlBinder.Bind(
             toolStrip: ToolStripControl,
+            classicToolStrip: ClassicToolStripControl,
             summaryHeader: SummaryHeaderControl,
             menuBar: ShellMenuBarControl,
+            classicMenuBar: ClassicMenuBarControl,
             characterRoster: CharacterRosterControl,
             navigatorPane: NavigatorPaneControl,
             classicFormPortHost: ClassicFormPortHostControl,
@@ -79,6 +81,7 @@ public partial class MainWindow : Window
             commandDialogPane: CommandDialogPaneControl,
             coachSidecar: CoachSidecarControl,
             statusStrip: StatusStripControl,
+            classicStatusStrip: ClassicStatusStripControl,
             onImportFileRequested: ToolStrip_OnImportFileRequested,
             onOpenForPrintingRequested: ToolStrip_OnOpenForPrintingRequested,
             onOpenForExportRequested: ToolStrip_OnOpenForExportRequested,
@@ -121,6 +124,7 @@ public partial class MainWindow : Window
             RefreshState,
             OnOpened);
         _lifecycleCoordinator.Attach();
+        _controls.ApplyDesktopModeChrome(ClassicModePolicy.ResolveCurrentMode() == DesktopUiMode.Classic);
 
         RefreshState();
     }

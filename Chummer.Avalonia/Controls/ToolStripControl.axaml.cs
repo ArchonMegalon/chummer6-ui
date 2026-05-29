@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace Chummer.Avalonia.Controls;
 
-public partial class ToolStripControl : UserControl
+public partial class ToolStripControl : UserControl, IToolStripSurface
 {
     private static readonly IReadOnlyDictionary<string, string> ButtonIconAssets = new Dictionary<string, string>(StringComparer.Ordinal)
     {

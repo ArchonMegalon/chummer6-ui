@@ -1926,13 +1926,15 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(bindingSource, "onSupportRequested");
         RequireContains(bindingSource, "onReportIssueRequested");
         RequireContains(bindingSource, "onSettingsRequested");
-        RequireContains(bindingSource, "toolStrip.DesktopHomeRequested +=");
-        RequireContains(bindingSource, "toolStrip.CampaignWorkspaceRequested +=");
-        RequireContains(bindingSource, "toolStrip.UpdateStatusRequested +=");
-        RequireContains(bindingSource, "toolStrip.InstallLinkingRequested +=");
-        RequireContains(bindingSource, "toolStrip.SupportRequested +=");
-        RequireContains(bindingSource, "toolStrip.ReportIssueRequested +=");
-        RequireContains(bindingSource, "toolStrip.SettingsRequested +=");
+        RequireContains(bindingSource, "AttachToolStripHandlers(toolStrip);");
+        RequireContains(bindingSource, "AttachToolStripHandlers(classicToolStrip);");
+        RequireContains(bindingSource, "surface.DesktopHomeRequested +=");
+        RequireContains(bindingSource, "surface.CampaignWorkspaceRequested +=");
+        RequireContains(bindingSource, "surface.UpdateStatusRequested +=");
+        RequireContains(bindingSource, "surface.InstallLinkingRequested +=");
+        RequireContains(bindingSource, "surface.SupportRequested +=");
+        RequireContains(bindingSource, "surface.ReportIssueRequested +=");
+        RequireContains(bindingSource, "surface.SettingsRequested +=");
 
         string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
         RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");

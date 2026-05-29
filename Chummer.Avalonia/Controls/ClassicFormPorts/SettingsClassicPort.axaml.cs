@@ -32,17 +32,17 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetNotice(_noticeText, state.Notice, "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.");
         }
 
         if (_tabsPanel is not null)
         {
-            PopulateChipStrip(_tabsPanel, ResolveTabLabels(Tabs, snapshot), state.ActiveTabId);
+            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
         }
 
         if (_factsPanel is not null)
         {
-            PopulateFactStrip(
+            RenderFactBand(
                 _factsPanel,
                 [
                     new ClassicSheetFactDisplayItem("Ruleset", FindValue(state.Rows, "settings", "gameEdition")),
@@ -56,28 +56,28 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
         {
             _categoryPanel.Children.Clear();
             StackPanel categories = new();
-            PopulateLineStack(categories, ResolveTabLabels(Tabs, snapshot).Select(label => new ClassicPortLineItem("Category", label)), "Settings categories are unavailable.");
-            _categoryPanel.Children.Add(CreateSectionCard("Settings Categories", categories));
+            RenderDetailList(categories, MergeLegacyTabs(Tabs, snapshot).Select(label => new ClassicPortLineItem("Category", label)), "Settings categories are unavailable.");
+            _categoryPanel.Children.Add(BuildClassicPane("Settings Categories", categories));
         }
 
         if (_customDataPanel is not null)
         {
             _customDataPanel.Children.Clear();
             StackPanel customData = new();
-            PopulateLineStack(customData, BuildLegacyChromeLines(snapshot, 10), "Custom data and plugin chrome are unavailable.");
-            _customDataPanel.Children.Add(CreateSectionCard("Custom Data and Plugins", customData));
+            RenderDetailList(customData, DesignerChromeFacts(snapshot, 10), "Custom data and plugin chrome are unavailable.");
+            _customDataPanel.Children.Add(BuildClassicPane("Custom Data and Plugins", customData));
 
             StackPanel settingsRows = new();
-            PopulateLineStack(settingsRows, SelectRows(state.Rows, 10), "No settings values are currently projected.");
-            _customDataPanel.Children.Add(CreateSectionCard("Current Values", settingsRows));
+            RenderDetailList(settingsRows, MatchRows(state.Rows, 10), "No settings values are currently projected.");
+            _customDataPanel.Children.Add(BuildClassicPane("Current Values", settingsRows));
         }
 
         if (_workflowPanel is not null)
         {
             _workflowPanel.Children.Clear();
             StackPanel actions = new();
-            PopulateLineStack(actions, ResolveActionLabels(state).Select(label => new ClassicPortLineItem("Workflow", label)), "Settings workflow actions are not available yet.");
-            _workflowPanel.Children.Add(CreateSectionCard("Workflow and Issues", actions));
+            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Workflow", label)), "Settings workflow actions are not available yet.");
+            _workflowPanel.Children.Add(BuildClassicPane("Workflow and Issues", actions));
         }
     }
 }

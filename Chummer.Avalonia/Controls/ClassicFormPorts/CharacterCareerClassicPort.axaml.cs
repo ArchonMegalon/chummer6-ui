@@ -32,17 +32,17 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetNotice(_noticeText, state.Notice, "Career sheet is using the classic desktop route.");
+            SetLeadNotice(_noticeText, state.Notice, "Career sheet is using the classic desktop route.");
         }
 
         if (_tabsPanel is not null)
         {
-            PopulateChipStrip(_tabsPanel, ResolveTabLabels(Tabs, snapshot), state.ActiveTabId);
+            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
         }
 
         if (_factsPanel is not null)
         {
-            PopulateFactStrip(
+            RenderFactBand(
                 _factsPanel,
                 [
                     new ClassicSheetFactDisplayItem("Karma", FindValue(state.Rows, "karma")),
@@ -56,28 +56,28 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         {
             _summaryPanel.Children.Clear();
             StackPanel summary = new();
-            PopulateLineStack(summary, SelectRows(state.Rows, 10, "karma", "nuyen", "street", "public", "notoriety", "essence", "armor"), "Career summary is waiting for runtime values.");
-            _summaryPanel.Children.Add(CreateSectionCard("Career Summary", summary));
+            RenderDetailList(summary, MatchRows(state.Rows, 10, "karma", "nuyen", "street", "public", "notoriety", "essence", "armor"), "Career summary is waiting for runtime values.");
+            _summaryPanel.Children.Add(BuildClassicPane("Career Summary", summary));
         }
 
         if (_inventoryPanel is not null)
         {
             _inventoryPanel.Children.Clear();
             StackPanel inventory = new();
-            PopulateLineStack(inventory, SelectRows(state.Rows, 12, "gear", "weapon", "armor", "cyberware", "vehicle", "contact", "note"), "Inventory categories will appear here once the workspace is hydrated.");
-            _inventoryPanel.Children.Add(CreateSectionCard("Inventory and Contacts", inventory));
+            RenderDetailList(inventory, MatchRows(state.Rows, 12, "gear", "weapon", "armor", "cyberware", "vehicle", "contact", "note"), "Inventory categories will appear here once the workspace is hydrated.");
+            _inventoryPanel.Children.Add(BuildClassicPane("Inventory and Contacts", inventory));
 
             StackPanel chrome = new();
-            PopulateLineStack(chrome, BuildLegacyChromeLines(snapshot, 8), "Legacy chrome metadata is unavailable.");
-            _inventoryPanel.Children.Add(CreateSectionCard("Legacy Chrome", chrome));
+            RenderDetailList(chrome, DesignerChromeFacts(snapshot, 8), "Legacy chrome metadata is unavailable.");
+            _inventoryPanel.Children.Add(BuildClassicPane("Legacy Chrome", chrome));
         }
 
         if (_actionsPanel is not null)
         {
             _actionsPanel.Children.Clear();
             StackPanel actions = new();
-            PopulateLineStack(actions, ResolveActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No classic quick actions are available yet.");
-            _actionsPanel.Children.Add(CreateSectionCard("Classic Actions", actions));
+            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No runner commands are currently exposed for the active career route.");
+            _actionsPanel.Children.Add(BuildClassicPane("Classic Actions", actions));
         }
     }
 }

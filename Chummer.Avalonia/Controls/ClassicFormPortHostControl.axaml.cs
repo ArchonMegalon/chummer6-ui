@@ -9,6 +9,7 @@ public partial class ClassicFormPortHostControl : UserControl
     private readonly ContentControl? _portContentHost;
     private readonly TextBlock? _portTitleText;
     private readonly TextBlock? _portMetaText;
+    private readonly TextBlock? _portModeChipText;
 
     public ClassicFormPortHostControl()
     {
@@ -16,6 +17,7 @@ public partial class ClassicFormPortHostControl : UserControl
         _portContentHost = this.FindControl<ContentControl>("PortContentHost");
         _portTitleText = this.FindControl<TextBlock>("PortTitleText");
         _portMetaText = this.FindControl<TextBlock>("PortMetaText");
+        _portModeChipText = this.FindControl<TextBlock>("PortModeChipText");
         _ports = new Dictionary<string, ClassicFormPortSurfaceControl>(StringComparer.OrdinalIgnoreCase)
         {
             ["character_career"] = new CharacterCareerClassicPort(),
@@ -47,7 +49,12 @@ public partial class ClassicFormPortHostControl : UserControl
 
         if (_portMetaText is not null)
         {
-            _portMetaText.Text = $"Classic Mode default. FormPort: {port.SurfaceId}. Legacy-first desktop posture.";
+            _portMetaText.Text = $"Legacy form: {ResolveLegacyDesignerLabel(port.SurfaceId)}. Route: {state.SectionId ?? selectedCommandId ?? port.SurfaceId}.";
+        }
+
+        if (_portModeChipText is not null)
+        {
+            _portModeChipText.Text = "Classic Default";
         }
 
         port.SetState(new ClassicFormPortState(
@@ -67,6 +74,17 @@ public partial class ClassicFormPortHostControl : UserControl
             _portContentHost.Content = port;
         }
     }
+
+    private static string ResolveLegacyDesignerLabel(string surfaceId)
+        => surfaceId switch
+        {
+            "character_career" => "CharacterCareer.Designer.cs",
+            "character_create" => "CharacterCreate.Designer.cs",
+            "settings" => "EditGlobalSettings.Designer.cs",
+            "master_index" => "MasterIndex.Designer.cs",
+            "gear" => "SelectGear.Designer.cs",
+            _ => surfaceId,
+        };
 }
 
 public sealed record ClassicFormPortState(

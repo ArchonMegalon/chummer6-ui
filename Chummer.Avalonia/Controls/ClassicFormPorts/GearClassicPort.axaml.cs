@@ -32,20 +32,20 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetNotice(_noticeText, state.Notice, "Classic gear acquisition keeps category, filters, and purchase detail visible together.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic gear acquisition keeps category, filters, and purchase detail visible together.");
         }
 
         if (_tabsPanel is not null)
         {
-            PopulateChipStrip(_tabsPanel, ResolveTabLabels(Tabs, snapshot), state.ActiveTabId);
+            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
         }
 
         if (_factsPanel is not null)
         {
-            PopulateFactStrip(
+            RenderFactBand(
                 _factsPanel,
                 [
-                    new ClassicSheetFactDisplayItem("Category Rows", SelectRows(state.Rows, 1, "gearCount").FirstOrDefault()?.Detail ?? "n/a"),
+                    new ClassicSheetFactDisplayItem("Category Rows", MatchRows(state.Rows, 1, "gearCount").FirstOrDefault()?.Detail ?? "n/a"),
                     new ClassicSheetFactDisplayItem("Weapons", FindValue(state.Rows, "weaponCount")),
                     new ClassicSheetFactDisplayItem("Armor", FindValue(state.Rows, "armorCount")),
                     new ClassicSheetFactDisplayItem("Nuyen", FindValue(state.Rows, "nuyen")),
@@ -56,28 +56,28 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         {
             _categoryPanel.Children.Clear();
             StackPanel categories = new();
-            PopulateLineStack(categories, SelectRows(state.Rows, 12, "gear", "weapon", "armor", "cyberware", "vehicle"), "Gear categories will appear here.");
-            _categoryPanel.Children.Add(CreateSectionCard("Category Browser", categories));
+            RenderDetailList(categories, MatchRows(state.Rows, 12, "gear", "weapon", "armor", "cyberware", "vehicle"), "Gear categories will appear here.");
+            _categoryPanel.Children.Add(BuildClassicPane("Category Browser", categories));
         }
 
         if (_filterPanel is not null)
         {
             _filterPanel.Children.Clear();
             StackPanel filters = new();
-            PopulateLineStack(filters, snapshot.Groups.Take(8).Select(group => new ClassicPortLineItem("Filter Group", group)), "Legacy filter groups are not available.");
-            _filterPanel.Children.Add(CreateSectionCard("Classic Filters", filters));
+            RenderDetailList(filters, snapshot.Groups.Take(8).Select(group => new ClassicPortLineItem("Filter Group", group)), "Legacy filter groups are not available.");
+            _filterPanel.Children.Add(BuildClassicPane("Classic Filters", filters));
 
             StackPanel actions = new();
-            PopulateLineStack(actions, ResolveActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No gear actions are available yet.");
-            _filterPanel.Children.Add(CreateSectionCard("Purchase Actions", actions));
+            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No gear actions are available yet.");
+            _filterPanel.Children.Add(BuildClassicPane("Purchase Actions", actions));
         }
 
         if (_detailPanel is not null)
         {
             _detailPanel.Children.Clear();
             StackPanel details = new();
-            PopulateLineStack(details, SelectRows(state.Rows, 12), "Select an item to see classic detail values.");
-            _detailPanel.Children.Add(CreateSectionCard("Selected Item Detail", details));
+            RenderDetailList(details, MatchRows(state.Rows, 12), "Select an item to see classic detail values.");
+            _detailPanel.Children.Add(BuildClassicPane("Selected Item Detail", details));
         }
     }
 }

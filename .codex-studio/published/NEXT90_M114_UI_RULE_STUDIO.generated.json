@@ -105,8 +105,10 @@
         "_portabilityActivity": true
       },
       "Chummer.Avalonia/MainWindow.ControlBinding.cs": {
+        "AttachToolStripHandlers(classicToolStrip);": true,
+        "AttachToolStripHandlers(toolStrip);": true,
         "EventHandler onRuleEnvironmentStudioRequested,": true,
-        "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;": true
+        "surface.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;": true
       },
       "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
         "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")": true,
@@ -126,7 +128,7 @@
     "wave": "W12",
     "workTaskId": "114.2"
   },
-  "generatedAt": "2026-05-26T19:12:17Z",
+  "generatedAt": "2026-05-28T18:01:14Z",
   "status": "pass",
   "unresolved": []
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-28T11:31:14Z",
+  "generated_at": "2026-05-28T15:01:12Z",
   "status": "pass",
   "default_mode": "Classic",
   "available_modes": [
@@ -16,5 +16,6 @@
     "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/ClassicModePolicy.cs"
   ],
   "missing_files": [],
-  "section_host_fallback_present": true
+  "section_host_fallback_present": true,
+  "classic_shell_wrapper_hits": []
 }

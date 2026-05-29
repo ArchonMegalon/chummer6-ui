@@ -32,17 +32,17 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetNotice(_noticeText, state.Notice, "Classic chargen is routing through the legacy-first creation workbench.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic chargen is routing through the legacy-first creation workbench.");
         }
 
         if (_tabsPanel is not null)
         {
-            PopulateChipStrip(_tabsPanel, ResolveTabLabels(Tabs, snapshot), state.ActiveTabId);
+            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
         }
 
         if (_factsPanel is not null)
         {
-            PopulateFactStrip(
+            RenderFactBand(
                 _factsPanel,
                 [
                     new ClassicSheetFactDisplayItem("Edition", FindValue(state.Rows, "gameEdition")),
@@ -56,32 +56,32 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
         {
             _priorityPanel.Children.Clear();
             StackPanel priorities = new();
-            PopulateLineStack(priorities, SelectRows(state.Rows, 10, "priority", "metatype", "magic", "resonance", "resources"), "Priority selections will appear here once a creation route is active.");
-            _priorityPanel.Children.Add(CreateSectionCard("Priority Picks", priorities));
+            RenderDetailList(priorities, MatchRows(state.Rows, 10, "priority", "metatype", "magic", "resonance", "resources"), "Priority selections will appear here once a creation route is active.");
+            _priorityPanel.Children.Add(BuildClassicPane("Priority Picks", priorities));
 
             StackPanel skills = new();
-            PopulateLineStack(skills, SelectRows(state.Rows, 10, "skill", "knowledge"), "Skills summary is waiting for runtime values.");
-            _priorityPanel.Children.Add(CreateSectionCard("Skill Summary", skills));
+            RenderDetailList(skills, MatchRows(state.Rows, 10, "skill", "knowledge"), "Skills summary is waiting for runtime values.");
+            _priorityPanel.Children.Add(BuildClassicPane("Skill Summary", skills));
         }
 
         if (_attributePanel is not null)
         {
             _attributePanel.Children.Clear();
             StackPanel attributes = new();
-            PopulateLineStack(attributes, SelectRows(state.Rows, 12, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance"), "Attribute ladder is not populated yet.");
-            _attributePanel.Children.Add(CreateSectionCard("Attribute Ladder", attributes));
+            RenderDetailList(attributes, MatchRows(state.Rows, 12, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance"), "Attribute ladder is not populated yet.");
+            _attributePanel.Children.Add(BuildClassicPane("Attribute Ladder", attributes));
 
             StackPanel gearPrep = new();
-            PopulateLineStack(gearPrep, SelectRows(state.Rows, 8, "gear", "weapon", "armor", "spell"), "Gear and spell preparation will appear here.");
-            _attributePanel.Children.Add(CreateSectionCard("Loadout Preparation", gearPrep));
+            RenderDetailList(gearPrep, MatchRows(state.Rows, 8, "gear", "weapon", "armor", "spell"), "Gear and spell preparation will appear here.");
+            _attributePanel.Children.Add(BuildClassicPane("Loadout Preparation", gearPrep));
         }
 
         if (_actionPanel is not null)
         {
             _actionPanel.Children.Clear();
             StackPanel actions = new();
-            PopulateLineStack(actions, ResolveActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No creation actions are available yet.");
-            _actionPanel.Children.Add(CreateSectionCard("Creation Actions", actions));
+            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No creation actions are available yet.");
+            _actionPanel.Children.Add(BuildClassicPane("Creation Actions", actions));
         }
     }
 }

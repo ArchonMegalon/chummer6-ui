@@ -1560,6 +1560,37 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Classic_mode_surfaces_classic_menu_tool_and_status_chrome_instead_of_generic_shell_chrome()
+    {
+        string? priorMode = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_MODE");
+        string? priorChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", "classic");
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "public_stable");
+
+            WithRuntimeHarness(harness =>
+            {
+                harness.WaitForReady();
+
+                Assert.IsTrue(harness.FindControl<Control>("ClassicMenuBarControl").IsVisible, "Classic mode should expose the classic menu bar.");
+                Assert.IsTrue(harness.FindControl<Control>("ClassicToolStripControl").IsVisible, "Classic mode should expose the classic tool strip.");
+                Assert.IsTrue(harness.FindControl<Control>("ClassicStatusStripControl").IsVisible, "Classic mode should expose the classic status strip.");
+                Assert.IsFalse(harness.FindControl<Control>("ShellMenuBarControl").IsVisible, "Classic mode should hide the generic menu bar.");
+                Assert.IsFalse(harness.FindControl<Control>("ToolStripControl").IsVisible, "Classic mode should hide the generic tool strip.");
+                Assert.IsFalse(harness.FindControl<Control>("StatusStripControl").IsVisible, "Classic mode should hide the generic status strip.");
+                Assert.IsTrue(harness.FindControl<Button>("ImportFileButton").IsVisible, "Classic chrome should keep the first-minute open command visible.");
+                Assert.IsTrue(harness.FindControl<Button>("SettingsButton").IsVisible, "Classic chrome should keep settings visible.");
+            });
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_MODE", priorMode);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", priorChannel);
+        }
+    }
+
+    [TestMethod]
     public void Standalone_toolstrip_buttons_raise_expected_events()
     {
         WithStandaloneControl<ToolStripControl>(control =>

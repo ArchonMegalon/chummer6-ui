@@ -68,7 +68,9 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, DesktopHeadId, _adapter.State.LatestPortabilityActivity)");
         StringAssert.Contains(scriptText, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
         StringAssert.Contains(scriptText, "public event EventHandler? RuleEnvironmentStudioRequested;");
-        StringAssert.Contains(scriptText, "toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;");
+        StringAssert.Contains(scriptText, "AttachToolStripHandlers(toolStrip);");
+        StringAssert.Contains(scriptText, "AttachToolStripHandlers(classicToolStrip);");
+        StringAssert.Contains(scriptText, "surface.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;");
         StringAssert.Contains(scriptText, "DesktopStartupSurfaceCatalog.RuleEnvironmentStudio");
         StringAssert.Contains(scriptText, "DesktopRuleEnvironmentStudioWindow.ShowAsync(owner, \"avalonia\")");
         StringAssert.Contains(scriptText, "Content=\"Rule Studio\"");

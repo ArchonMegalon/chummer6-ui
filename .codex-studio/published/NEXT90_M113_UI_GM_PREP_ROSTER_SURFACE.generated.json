@@ -21,7 +21,7 @@
     "registry_task_unique": true
   },
   "failures": [],
-  "generatedAt": "2026-05-27T20:06:28Z",
+  "generatedAt": "2026-05-28T18:00:32Z",
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
@@ -97,8 +97,10 @@
       "OpenRosterMovementAsync": true
     },
     "Chummer.Avalonia/MainWindow.ControlBinding.cs": {
-      "toolStrip.GmPrepRequested += onGmPrepRequested;": true,
-      "toolStrip.RosterMovementRequested += onRosterMovementRequested;": true
+      "AttachToolStripHandlers(classicToolStrip);": true,
+      "AttachToolStripHandlers(toolStrip);": true,
+      "surface.GmPrepRequested += onGmPrepRequested;": true,
+      "surface.RosterMovementRequested += onRosterMovementRequested;": true
     },
     "Chummer.Avalonia/MainWindow.EventHandlers.cs": {
       "DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId)": true,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T07:30:11.005017Z",
+  "generatedAt": "2026-05-28T18:11:51.129834Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -305,87 +305,87 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 27538
+        "sizeBytes": 45664
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 54332
+        "sizeBytes": 70450
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 166165
+        "sizeBytes": 135200
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 130894
+        "sizeBytes": 136469
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 112907
+        "sizeBytes": 125935
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 115697
+        "sizeBytes": 121399
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 115391
+        "sizeBytes": 128277
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 117499
+        "sizeBytes": 133294
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 117566
+        "sizeBytes": 130710
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 118157
+        "sizeBytes": 131468
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 107841
+        "sizeBytes": 118008
       },
       {
         "name": "12-magic-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
-        "sizeBytes": 105846
+        "sizeBytes": 121514
       },
       {
         "name": "13-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "sizeBytes": 104039
+        "sizeBytes": 118950
       },
       {
         "name": "14-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
-        "sizeBytes": 108183
+        "sizeBytes": 123376
       },
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sizeBytes": 106022
+        "sizeBytes": 119086
       },
       {
         "name": "16-master-index-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
-        "sizeBytes": 93676
+        "sizeBytes": 106534
       },
       {
         "name": "17-character-roster-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/17-character-roster-dialog-light.png",
-        "sizeBytes": 106035
+        "sizeBytes": 119855
       }
     ],
     "workflowScreenshotCoverageStatus": "pass",

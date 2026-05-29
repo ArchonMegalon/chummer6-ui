@@ -10,8 +10,10 @@ internal static class MainWindowControlBinder
 
     public static MainWindowControls Bind(
         ToolStripControl toolStrip,
+        ClassicToolStrip classicToolStrip,
         SummaryHeaderControl summaryHeader,
         ShellMenuBarControl menuBar,
+        ClassicMenuBar classicMenuBar,
         CharacterRosterControl characterRoster,
         NavigatorPaneControl navigatorPane,
         ClassicFormPortHostControl classicFormPortHost,
@@ -19,6 +21,7 @@ internal static class MainWindowControlBinder
         CommandDialogPaneControl commandDialogPane,
         CoachSidecarControl coachSidecar,
         StatusStripControl statusStrip,
+        ClassicStatusStrip classicStatusStrip,
         EventHandler onImportFileRequested,
         EventHandler onOpenForPrintingRequested,
         EventHandler onOpenForExportRequested,
@@ -55,32 +58,16 @@ internal static class MainWindowControlBinder
         EventHandler<DialogFieldValueChangedEventArgs> onDialogFieldValueChanged,
         EventHandler<string> onMenuCommandSelected)
     {
-        toolStrip.ImportFileRequested += onImportFileRequested;
-        toolStrip.OpenForPrintingRequested += onOpenForPrintingRequested;
-        toolStrip.OpenForExportRequested += onOpenForExportRequested;
-        toolStrip.ImportRawRequested += onImportRawRequested;
-        toolStrip.SaveRequested += onSaveRequested;
-        toolStrip.PrintRequested += onPrintRequested;
-        toolStrip.CopyRequested += onCopyRequested;
-        toolStrip.DesktopHomeRequested += onDesktopHomeRequested;
-        toolStrip.GmPrepRequested += onGmPrepRequested;
-        toolStrip.RosterMovementRequested += onRosterMovementRequested;
-        toolStrip.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;
-        toolStrip.CloseWorkspaceRequested += onCloseWorkspaceRequested;
-        toolStrip.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
-        toolStrip.UpdateStatusRequested += onUpdateStatusRequested;
-        toolStrip.InstallLinkingRequested += onInstallLinkingRequested;
-        toolStrip.SupportRequested += onSupportRequested;
-        toolStrip.ReportIssueRequested += onReportIssueRequested;
-        toolStrip.SettingsRequested += onSettingsRequested;
-        toolStrip.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        AttachToolStripHandlers(toolStrip);
+        AttachToolStripHandlers(classicToolStrip);
+        AttachMenuBarHandlers(menuBar);
+        AttachMenuBarHandlers(classicMenuBar);
         summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         summaryHeader.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
         summaryHeader.WorkspaceSupportRequested += onWorkspaceSupportRequested;
-        menuBar.MenuSelected += onMenuSelected;
         characterRoster.SelectionChanged += (_, args) => onRosterWorkspaceSelected(characterRoster, args.SelectedNode.Id);
         navigatorPane.WorkspaceSelected += onWorkspaceSelected;
         navigatorPane.NavigationTabSelected += onNavigationTabSelected;
@@ -95,48 +82,103 @@ internal static class MainWindowControlBinder
         commandDialogPane.CommandSelected += onCommandSelected;
         commandDialogPane.DialogActionSelected += onDialogActionSelected;
         commandDialogPane.DialogFieldValueChanged += onDialogFieldValueChanged;
-        menuBar.MenuCommandSelected += onMenuCommandSelected;
-
+        IToolStripSurface activeToolStrip = ClassicModePolicy.IsClassicDefault() ? classicToolStrip : toolStrip;
+        IMenuBarSurface activeMenuBar = ClassicModePolicy.IsClassicDefault() ? classicMenuBar : menuBar;
+        IStatusStripSurface activeStatusStrip = ClassicModePolicy.IsClassicDefault() ? classicStatusStrip : statusStrip;
         return new MainWindowControls(
+            activeToolStrip,
+            activeMenuBar,
+            activeStatusStrip,
             toolStrip,
+            classicToolStrip,
             summaryHeader,
             menuBar,
+            classicMenuBar,
             characterRoster,
             navigatorPane,
             classicFormPortHost,
             sectionHost,
             commandDialogPane,
             coachSidecar,
-            statusStrip);
+            statusStrip,
+            classicStatusStrip);
+
+        void AttachToolStripHandlers(IToolStripSurface surface)
+        {
+            surface.ImportFileRequested += onImportFileRequested;
+            surface.OpenForPrintingRequested += onOpenForPrintingRequested;
+            surface.OpenForExportRequested += onOpenForExportRequested;
+            surface.ImportRawRequested += onImportRawRequested;
+            surface.SaveRequested += onSaveRequested;
+            surface.PrintRequested += onPrintRequested;
+            surface.CopyRequested += onCopyRequested;
+            surface.DesktopHomeRequested += onDesktopHomeRequested;
+            surface.GmPrepRequested += onGmPrepRequested;
+            surface.RosterMovementRequested += onRosterMovementRequested;
+            surface.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;
+            surface.CloseWorkspaceRequested += onCloseWorkspaceRequested;
+            surface.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
+            surface.UpdateStatusRequested += onUpdateStatusRequested;
+            surface.InstallLinkingRequested += onInstallLinkingRequested;
+            surface.SupportRequested += onSupportRequested;
+            surface.ReportIssueRequested += onReportIssueRequested;
+            surface.SettingsRequested += onSettingsRequested;
+            surface.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        }
+
+        void AttachMenuBarHandlers(IMenuBarSurface surface)
+        {
+            surface.MenuSelected += onMenuSelected;
+            surface.MenuCommandSelected += onMenuCommandSelected;
+        }
     }
 }
 
 internal sealed record MainWindowControls(
-    ToolStripControl ToolStrip,
+    IToolStripSurface ToolStrip,
+    IMenuBarSurface MenuBar,
+    IStatusStripSurface StatusStrip,
+    ToolStripControl ModernToolStrip,
+    ClassicToolStrip ClassicToolStrip,
     SummaryHeaderControl SummaryHeader,
-    ShellMenuBarControl MenuBar,
+    ShellMenuBarControl ModernMenuBar,
+    ClassicMenuBar ClassicMenuBar,
     CharacterRosterControl CharacterRoster,
     NavigatorPaneControl NavigatorPane,
     ClassicFormPortHostControl ClassicFormPortHost,
     SectionHostControl SectionHost,
     CommandDialogPaneControl CommandDialogPane,
     CoachSidecarControl CoachSidecar,
-    StatusStripControl StatusStrip)
+    StatusStripControl ModernStatusStrip,
+    ClassicStatusStrip ClassicStatusStrip)
 {
     public string SectionHostInputText => SectionHost.XmlInputText;
 
     public void ApplyShellFrame(MainWindowShellFrame shellFrame)
     {
-        ToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
-        MenuBar.SetState(shellFrame.HeaderState.MenuBar);
+        ModernToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
+        ClassicToolStrip.SetState(shellFrame.HeaderState.ToolStrip);
+        ModernMenuBar.SetState(shellFrame.HeaderState.MenuBar);
+        ClassicMenuBar.SetState(shellFrame.HeaderState.MenuBar);
         SummaryHeader.SetWorkspaceStripState(shellFrame.ChromeState.WorkspaceStrip);
         SummaryHeader.SetState(shellFrame.ChromeState.SummaryHeader);
-        StatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
+        ModernStatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
+        ClassicStatusStrip.SetState(shellFrame.ChromeState.StatusStrip);
         CharacterRoster.SetState(shellFrame.RosterPaneState);
         CommandDialogPane.SetState(shellFrame.CommandDialogPaneState);
         NavigatorPane.SetState(shellFrame.NavigatorPaneState);
         ClassicFormPortHost.SetState(shellFrame.SectionHostState, shellFrame.CommandDialogPaneState.SelectedCommandId);
         SectionHost.SetState(shellFrame.SectionHostState);
+    }
+
+    public void ApplyDesktopModeChrome(bool useClassicChrome)
+    {
+        ClassicMenuBar.IsVisible = useClassicChrome;
+        ClassicToolStrip.IsVisible = useClassicChrome;
+        ClassicStatusStrip.IsVisible = useClassicChrome;
+        ModernMenuBar.IsVisible = !useClassicChrome;
+        ModernToolStrip.IsVisible = !useClassicChrome;
+        ModernStatusStrip.IsVisible = !useClassicChrome;
     }
 
     public void ApplyCoachSidecar(CoachSidecarPaneState state)

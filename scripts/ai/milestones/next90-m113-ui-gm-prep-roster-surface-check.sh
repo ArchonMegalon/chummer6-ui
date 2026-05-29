@@ -97,8 +97,10 @@ SOURCE_MARKERS = {
         "onRosterMovementRequested: ToolStrip_OnRosterMovementRequested,",
     ],
     "Chummer.Avalonia/MainWindow.ControlBinding.cs": [
-        "toolStrip.GmPrepRequested += onGmPrepRequested;",
-        "toolStrip.RosterMovementRequested += onRosterMovementRequested;",
+        "AttachToolStripHandlers(toolStrip);",
+        "AttachToolStripHandlers(classicToolStrip);",
+        "surface.GmPrepRequested += onGmPrepRequested;",
+        "surface.RosterMovementRequested += onRosterMovementRequested;",
     ],
     "Chummer.Avalonia/MainWindow.ShellFrameProjector.cs": [
         "ShowGmPrep: showSampleControls,",

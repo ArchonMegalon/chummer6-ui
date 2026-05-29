@@ -41,12 +41,12 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
 
     protected abstract void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot);
 
-    protected static IReadOnlyList<string> ResolveTabLabels(IReadOnlyList<string> designTabs, ClassicFormDesignerSnapshot snapshot)
+    protected static IReadOnlyList<string> MergeLegacyTabs(IReadOnlyList<string> designTabs, ClassicFormDesignerSnapshot snapshot)
         => designTabs
             .Concat(snapshot.Tabs.Where(tab => !designTabs.Contains(tab, StringComparer.OrdinalIgnoreCase)))
             .ToArray();
 
-    protected static IReadOnlyList<string> ResolveActionLabels(ClassicFormPortState state)
+    protected static IReadOnlyList<string> CollectActionLabels(ClassicFormPortState state)
         => state.QuickActions
             .Select(action => action.Label)
             .Concat(state.SectionActions.Select(action => action.Label))
@@ -54,7 +54,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             .Take(10)
             .ToArray();
 
-    protected static IReadOnlyList<ClassicPortLineItem> SelectRows(
+    protected static IReadOnlyList<ClassicPortLineItem> MatchRows(
         IReadOnlyList<SectionRowDisplayItem> rows,
         int maxCount,
         params string[] pathTokens)
@@ -73,7 +73,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             .ToArray();
     }
 
-    protected static IReadOnlyList<ClassicPortLineItem> BuildLegacyChromeLines(ClassicFormDesignerSnapshot snapshot, int maxCount)
+    protected static IReadOnlyList<ClassicPortLineItem> DesignerChromeFacts(ClassicFormDesignerSnapshot snapshot, int maxCount)
     {
         List<ClassicPortLineItem> lines = [];
         lines.AddRange(snapshot.Groups.Take(maxCount).Select(group => new ClassicPortLineItem("Group", group)));
@@ -98,7 +98,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         return "n/a";
     }
 
-    protected static void PopulateChipStrip(Panel panel, IEnumerable<string> labels, string? selectedLabel = null)
+    protected static void RenderTagBand(Panel panel, IEnumerable<string> labels, string? selectedLabel = null)
     {
         panel.Children.Clear();
         foreach (string label in labels.Where(static value => !string.IsNullOrWhiteSpace(value)))
@@ -108,7 +108,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
     }
 
-    protected static void PopulateFactStrip(Panel panel, IEnumerable<ClassicSheetFactDisplayItem> facts)
+    protected static void RenderFactBand(Panel panel, IEnumerable<ClassicSheetFactDisplayItem> facts)
     {
         panel.Children.Clear();
         foreach (ClassicSheetFactDisplayItem fact in facts.Where(static fact => !string.IsNullOrWhiteSpace(fact.Value)))
@@ -117,7 +117,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
     }
 
-    protected static void PopulateLineStack(Panel panel, IEnumerable<ClassicPortLineItem> lines, string emptyMessage)
+    protected static void RenderDetailList(Panel panel, IEnumerable<ClassicPortLineItem> lines, string emptyMessage)
     {
         panel.Children.Clear();
         ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
@@ -133,12 +133,12 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
     }
 
-    protected static void SetNotice(TextBlock textBlock, string notice, string fallback)
+    protected static void SetLeadNotice(TextBlock textBlock, string notice, string fallback)
     {
         textBlock.Text = string.IsNullOrWhiteSpace(notice) ? fallback : notice;
     }
 
-    protected static Border CreateSectionCard(string heading, Control content)
+    protected static Border BuildClassicPane(string heading, Control content)
     {
         return new Border
         {

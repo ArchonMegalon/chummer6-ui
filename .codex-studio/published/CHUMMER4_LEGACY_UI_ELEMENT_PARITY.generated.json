@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T07:24:27.365966Z",
+  "generatedAt": "2026-05-28T18:05:57.599869Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
@@ -25,8 +25,8 @@
     "legacyDesignerEventHookCount": 1197,
     "legacyRuntimeEventHookCount": 34,
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 62,
-    "currentNamedAxamlInteractiveElementCount": 42,
+    "currentDynamicInteractiveElementCount": 58,
+    "currentNamedAxamlInteractiveElementCount": 67,
     "legacyBehaviorFamilyCounts": {
       "add_create": 11,
       "browse_select": 162,
@@ -84,7 +84,7 @@
       "action": 16,
       "ui": 47,
       "dialog-action": 23,
-      "current-dynamic": 10,
+      "current-dynamic": 9,
       "current-named": 42
     },
     "familyReviews": {
@@ -637,7 +637,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (13s 672ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 13s 870ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+5/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (13s 527ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 13s 734ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -1168,29 +1168,9 @@
     "unclassifiedLegacyDynamicElements": [],
     "currentDynamicElementSamples": [
       {
-        "source": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
-        "line": 35,
-        "type": "TabControl"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
-        "line": 36,
-        "type": "ListBox"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
-        "line": 41,
-        "type": "ListBox"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
-        "line": 127,
-        "type": "TabItem"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ClassicFormPorts/ClassicFormPortSurfaceControl.cs",
-        "line": 158,
-        "type": "Button"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml.cs",
+        "line": 91,
+        "type": "MenuItem"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
@@ -1316,6 +1296,26 @@
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
         "line": 1132,
         "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1232,
+        "type": "TextBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1255,
+        "type": "ComboBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1275,
+        "type": "Button"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
+        "line": 1399,
+        "type": "TabControl"
       }
     ],
     "currentNamedAxamlElementSamples": [
@@ -1370,104 +1370,104 @@
         "name": "RosterTree"
       },
       {
-        "source": "Chummer.Avalonia/Controls/WorkspaceStripControl.axaml",
-        "type": "Button",
-        "name": "LoadDemoRunnerQuickActionButton"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "FileMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "TabStrip",
-        "name": "LoadedRunnerTabStrip"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "EditMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "TabStrip",
-        "name": "SectionActionTabStrip"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "SpecialMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "ListBox",
-        "name": "SectionRowsList"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "ToolsMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "Expander",
-        "name": "SectionPayloadExpander"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "WindowsMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "Expander",
-        "name": "SectionReviewExpander"
+        "source": "Chummer.Avalonia/Controls/ClassicMenuBar.axaml",
+        "type": "MenuItem",
+        "name": "HelpMenuButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "TextBox",
-        "name": "SectionPreviewBox"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml",
-        "type": "TextBox",
-        "name": "XmlInputBox"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml",
-        "type": "ListBox",
-        "name": "CommandsList"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
-        "type": "Button",
-        "name": "KeepLocalWorkButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
-        "type": "Button",
-        "name": "SaveLocalWorkButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
-        "type": "Button",
-        "name": "ReviewCampaignWorkspaceButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
-        "type": "Button",
-        "name": "OpenWorkspaceSupportButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "SaveButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "PrintButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "CopyButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
-        "type": "Button",
-        "name": "DesktopHomeButton"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
         "type": "Button",
         "name": "ImportFileButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
         "type": "Button",
-        "name": "CloseWorkspaceButton"
+        "name": "SaveButton"
       },
       {
-        "source": "Chummer.Avalonia/Controls/ToolStripControl.axaml",
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "PrintButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "CopyButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
         "type": "Button",
         "name": "OpenForPrintingButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "OpenForExportButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "SettingsButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "ImportRawButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "DesktopHomeButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "CampaignWorkspaceButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "GmPrepButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "RosterMovementButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "RuleEnvironmentStudioButton"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/ClassicToolStrip.axaml",
+        "type": "Button",
+        "name": "UpdateStatusButton"
       }
     ],
     "legacyElementDispositionCount": 2602,
@@ -6037,8 +6037,8 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 62,
-    "currentNamedAxamlInteractiveElementCount": 42
+    "currentDynamicInteractiveElementCount": 58,
+    "currentNamedAxamlInteractiveElementCount": 67
   },
   "verifyWiringReview": {
     "status": "pass",
@@ -6063,7 +6063,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (13s 672ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 13s 870ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+5/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (13s 527ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 13s 734ms"
     }
   }
 }

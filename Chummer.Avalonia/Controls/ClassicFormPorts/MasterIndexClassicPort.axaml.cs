@@ -32,22 +32,22 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
     {
         if (_noticeText is not null)
         {
-            SetNotice(_noticeText, state.Notice, "Classic master index keeps browse, search, and source panes visible together.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic master index keeps browse, search, and source panes visible together.");
         }
 
         if (_tabsPanel is not null)
         {
-            PopulateChipStrip(_tabsPanel, ResolveTabLabels(Tabs, snapshot), state.ActiveTabId);
+            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
         }
 
         if (_factsPanel is not null)
         {
-            PopulateFactStrip(
+            RenderFactBand(
                 _factsPanel,
                 [
                     new ClassicSheetFactDisplayItem("Sources", snapshot.RootControls.Count.ToString()),
                     new ClassicSheetFactDisplayItem("Tool Strips", snapshot.ToolStrips.Count.ToString()),
-                    new ClassicSheetFactDisplayItem("Actions", ResolveActionLabels(state).Count.ToString()),
+                    new ClassicSheetFactDisplayItem("Actions", CollectActionLabels(state).Count.ToString()),
                 ]);
         }
 
@@ -55,24 +55,24 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
         {
             _browsePanel.Children.Clear();
             StackPanel browse = new();
-            PopulateLineStack(browse, SelectRows(state.Rows, 12), "Browse results will appear here once the index loads.");
-            _browsePanel.Children.Add(CreateSectionCard("Browse Results", browse));
+            RenderDetailList(browse, MatchRows(state.Rows, 12), "Browse results will appear here once the index loads.");
+            _browsePanel.Children.Add(BuildClassicPane("Browse Results", browse));
         }
 
         if (_searchPanel is not null)
         {
             _searchPanel.Children.Clear();
             StackPanel search = new();
-            PopulateLineStack(search, ResolveActionLabels(state).Select(label => new ClassicPortLineItem("Search Action", label)), "Search actions are not available yet.");
-            _searchPanel.Children.Add(CreateSectionCard("Search Workflow", search));
+            RenderDetailList(search, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Search Action", label)), "Search actions are not available yet.");
+            _searchPanel.Children.Add(BuildClassicPane("Search Workflow", search));
         }
 
         if (_sourcePanel is not null)
         {
             _sourcePanel.Children.Clear();
             StackPanel source = new();
-            PopulateLineStack(source, BuildLegacyChromeLines(snapshot, 12), "Source chrome metadata is unavailable.");
-            _sourcePanel.Children.Add(CreateSectionCard("Source and Legacy Chrome", source));
+            RenderDetailList(source, DesignerChromeFacts(snapshot, 12), "Source chrome metadata is unavailable.");
+            _sourcePanel.Children.Add(BuildClassicPane("Source and Legacy Chrome", source));
         }
     }
 }

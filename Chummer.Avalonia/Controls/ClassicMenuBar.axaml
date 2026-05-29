@@ -1,8 +1,74 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:Chummer.Avalonia.Controls"
              x:Class="Chummer.Avalonia.Controls.ClassicMenuBar">
-  <Border Padding="0">
-    <controls:ShellMenuBarControl />
+  <Border BorderBrush="#69737a"
+          BorderThickness="0,0,0,1"
+          Background="#eff2f4"
+          Padding="0">
+    <Menu x:Name="MenuBarPanel"
+          Background="Transparent">
+      <MenuItem x:Name="FileMenuButton"
+                Tag="file"
+                Header="File"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="New Character" />
+        <MenuItem Header="Open Character" />
+        <Separator />
+        <MenuItem Header="Save" />
+        <MenuItem Header="Save As" />
+        <Separator />
+        <MenuItem Header="Print" />
+        <MenuItem Header="Print Preview" />
+        <Separator />
+        <MenuItem Header="Exit" />
+      </MenuItem>
+      <MenuItem x:Name="EditMenuButton"
+                Tag="edit"
+                Header="Edit"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="Add Item" />
+        <MenuItem Header="Remove Item" />
+        <Separator />
+        <MenuItem Header="Find" />
+        <MenuItem Header="Preferences" />
+      </MenuItem>
+      <MenuItem x:Name="SpecialMenuButton"
+                Tag="special"
+                Header="Special"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="Character Sheet" />
+        <MenuItem Header="Master Index" />
+        <MenuItem Header="Gear Browser" />
+      </MenuItem>
+      <MenuItem x:Name="ToolsMenuButton"
+                Tag="tools"
+                Header="Tools"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="Character Settings" />
+        <MenuItem Header="Global Settings" />
+        <MenuItem Header="Plugins" />
+      </MenuItem>
+      <MenuItem x:Name="WindowsMenuButton"
+                Tag="windows"
+                Header="Windows"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="Character Sheet" />
+        <MenuItem Header="Contacts" />
+        <MenuItem Header="Initiative" />
+      </MenuItem>
+      <MenuItem x:Name="HelpMenuButton"
+                Tag="help"
+                Header="Help"
+                Click="RootMenuItem_OnClick"
+                SubmenuOpened="RootMenuItem_OnSubmenuOpened">
+        <MenuItem Header="Contents" />
+        <MenuItem Header="About Chummer" />
+      </MenuItem>
+    </Menu>
   </Border>
 </UserControl>

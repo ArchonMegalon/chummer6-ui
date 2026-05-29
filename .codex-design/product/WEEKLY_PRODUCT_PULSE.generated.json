@@ -1,8 +1,8 @@
 {
   "contract_name": "chummer.weekly_product_pulse",
   "contract_version": 3,
-  "generated_at": "2026-05-27T20:11:16Z",
-  "as_of": "2026-05-27",
+  "generated_at": "2026-05-28T18:01:26Z",
+  "as_of": "2026-05-28",
   "scorecard_source": "products/chummer/PRODUCT_HEALTH_SCORECARD.yaml",
   "progress_report_source": "products/chummer/PROGRESS_REPORT.generated.json",
   "progress_history_source": "products/chummer/PROGRESS_HISTORY.generated.json",
@@ -32,10 +32,10 @@
   "journey_gate_health": {
     "state": "blocked",
     "reason": "Resolve the blocking golden-journey gaps before widening publish claims.",
-    "blocked_count": 2,
+    "blocked_count": 3,
     "warning_count": 0,
     "blocked_external_only_count": 0,
-    "blocked_with_local_count": 2,
+    "blocked_with_local_count": 3,
     "blocked_external_only_hosts": [],
     "blocked_external_only_tuples": []
   },
@@ -70,7 +70,7 @@
   "public_promise_drift_count": 0,
   "governor_decisions": [
     {
-      "decision_id": "2026-05-27-focus-next-12-biggest-wins",
+      "decision_id": "2026-05-28-focus-next-12-biggest-wins",
       "action": "focus_shift",
       "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 99% overall progress in 'Public-fit polish', history depth has reached 20 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
       "cited_signals": [
@@ -83,12 +83,12 @@
       ]
     },
     {
-      "decision_id": "2026-05-27-launch-governance",
+      "decision_id": "2026-05-28-launch-governance",
       "action": "freeze_launch",
-      "reason": "Freeze launch expansion while 2 golden journey(s) remain blocked and journey health is blocked.",
+      "reason": "Freeze launch expansion while 3 golden journey(s) remain blocked and journey health is blocked.",
       "cited_signals": [
         "journey_gate_state=blocked",
-        "journey_gate_blocked_count=2",
+        "journey_gate_blocked_count=3",
         "local_release_proof_status=passed",
         "flagship_readiness_state=ready",
         "flagship_readiness_proof_status=pass",
@@ -126,10 +126,10 @@
     "journey_gate_health": {
       "state": "blocked",
       "reason": "Resolve the blocking golden-journey gaps before widening publish claims.",
-      "blocked_count": 2,
+      "blocked_count": 3,
       "warning_count": 0,
       "blocked_external_only_count": 0,
-      "blocked_with_local_count": 2,
+      "blocked_with_local_count": 3,
       "blocked_external_only_hosts": [],
       "blocked_external_only_tuples": []
     },
@@ -164,7 +164,7 @@
     "public_promise_drift_count": 0,
     "governor_decisions": [
       {
-        "decision_id": "2026-05-27-focus-next-12-biggest-wins",
+        "decision_id": "2026-05-28-focus-next-12-biggest-wins",
         "action": "focus_shift",
         "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 99% overall progress in 'Public-fit polish', history depth has reached 20 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
         "cited_signals": [
@@ -177,12 +177,12 @@
         ]
       },
       {
-        "decision_id": "2026-05-27-launch-governance",
+        "decision_id": "2026-05-28-launch-governance",
         "action": "freeze_launch",
-        "reason": "Freeze launch expansion while 2 golden journey(s) remain blocked and journey health is blocked.",
+        "reason": "Freeze launch expansion while 3 golden journey(s) remain blocked and journey health is blocked.",
         "cited_signals": [
           "journey_gate_state=blocked",
-          "journey_gate_blocked_count=2",
+          "journey_gate_blocked_count=3",
           "local_release_proof_status=passed",
           "flagship_readiness_state=ready",
           "flagship_readiness_proof_status=pass",
@@ -203,11 +203,11 @@
     "phase_label": "Public-fit polish",
     "history_snapshot_count": 20,
     "longest_pole": "Core Engine",
-    "launch_readiness": "Hold launch expansion pending route-canary validation. 2 golden journey(s) remain blocked.",
+    "launch_readiness": "Hold launch expansion pending route-canary validation. 3 golden journey(s) remain blocked.",
     "provider_route_stewardship": {
       "default_status": "Pilot defaults are governed",
       "canary_status": "Canary evidence is still accumulating",
-      "review_due": "2026-06-10",
+      "review_due": "2026-06-11",
       "next_decision": "Hold broad promotion until public route canary coverage exists."
     },
     "successor_dependency_posture": {

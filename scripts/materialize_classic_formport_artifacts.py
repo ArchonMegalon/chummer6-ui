@@ -56,6 +56,13 @@ BOUNDARY_FILES = [
     ROOT / "Chummer.Avalonia" / "ClassicModePolicy.cs",
 ]
 
+CLASSIC_SHELL_FILES = {
+    "menu": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicMenuBar.axaml",
+    "toolstrip": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicToolStrip.axaml",
+    "statusstrip": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicStatusStrip.axaml",
+    "host": ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPortHostControl.axaml",
+}
+
 
 @dataclass
 class ParsedForm:
@@ -199,12 +206,32 @@ def main() -> int:
     ]
     shell_projector_text = (ROOT / "Chummer.Avalonia" / "MainWindow.ShellFrameProjector.cs").read_text(encoding="utf-8")
     main_window_text = (ROOT / "Chummer.Avalonia" / "MainWindow.axaml").read_text(encoding="utf-8")
+    main_window_code_text = (ROOT / "Chummer.Avalonia" / "MainWindow.axaml.cs").read_text(encoding="utf-8")
+    control_binding_text = (ROOT / "Chummer.Avalonia" / "MainWindow.ControlBinding.cs").read_text(encoding="utf-8")
     classic_policy_text = (ROOT / "Chummer.Avalonia" / "ClassicModePolicy.cs").read_text(encoding="utf-8")
     app_text = (ROOT / "Chummer.Avalonia" / "App.axaml.cs").read_text(encoding="utf-8")
     event_handlers_text = (ROOT / "Chummer.Avalonia" / "MainWindow.EventHandlers.cs").read_text(encoding="utf-8")
 
     boundary_missing = [str(path) for path in BOUNDARY_FILES if not path.is_file()]
-    boundary_status = "pass" if not boundary_missing and "DesktopUiMode.Classic" in classic_policy_text else "fail"
+    shell_text = {name: path.read_text(encoding="utf-8") for name, path in CLASSIC_SHELL_FILES.items()}
+    shell_wrapper_hits = []
+    if "ShellMenuBarControl" in shell_text["menu"]:
+        shell_wrapper_hits.append("ClassicMenuBar wraps ShellMenuBarControl")
+    if "ToolStripControl" in shell_text["toolstrip"]:
+        shell_wrapper_hits.append("ClassicToolStrip wraps ToolStripControl")
+    if "StatusStripControl" in shell_text["statusstrip"]:
+        shell_wrapper_hits.append("ClassicStatusStrip wraps StatusStripControl")
+    if "Legacy form-native surface projection" in shell_text["host"]:
+        shell_wrapper_hits.append("ClassicFormPortHostControl still uses projection placeholder copy")
+    if "x:Name=\"ClassicMenuBarControl\"" not in main_window_text or "x:Name=\"ClassicToolStripControl\"" not in main_window_text or "x:Name=\"ClassicStatusStripControl\"" not in main_window_text:
+        shell_wrapper_hits.append("MainWindow does not declare the Classic chrome controls")
+    if "classicToolStrip: ClassicToolStripControl" not in main_window_code_text or "classicMenuBar: ClassicMenuBarControl" not in main_window_code_text or "classicStatusStrip: ClassicStatusStripControl" not in main_window_code_text:
+        shell_wrapper_hits.append("MainWindow does not bind the Classic chrome controls")
+    if "ApplyDesktopModeChrome(ClassicModePolicy.ResolveCurrentMode() == DesktopUiMode.Classic)" not in main_window_code_text or "ApplyDesktopModeChrome(useClassicChrome)" not in (ROOT / "Chummer.Avalonia" / "MainWindow.StateRefresh.cs").read_text(encoding="utf-8"):
+        shell_wrapper_hits.append("Classic chrome is not activated in the runtime window")
+    if "IToolStripSurface activeToolStrip = ClassicModePolicy.IsClassicDefault() ? classicToolStrip : toolStrip;" not in control_binding_text:
+        shell_wrapper_hits.append("Classic toolstrip is not the active runtime surface in Classic Mode")
+    boundary_status = "pass" if not boundary_missing and "DesktopUiMode.Classic" in classic_policy_text and not shell_wrapper_hits else "fail"
     write_json(
         BOUNDARY_PATH,
         {
@@ -215,6 +242,7 @@ def main() -> int:
             "files": [str(path) for path in BOUNDARY_FILES],
             "missing_files": boundary_missing,
             "section_host_fallback_present": "SectionHostControl" in main_window_text,
+            "classic_shell_wrapper_hits": shell_wrapper_hits,
         },
     )
 
@@ -222,14 +250,14 @@ def main() -> int:
     fully_real = True
     state_refresh_text = (ROOT / "Chummer.Avalonia" / "MainWindow.StateRefresh.cs").read_text(encoding="utf-8")
     classic_surface_text = (ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "ClassicFormPortSurfaceControl.cs").read_text(encoding="utf-8")
-    generic_placeholder_tokens = [
+    placeholder_tokens = [
         "Classic form-native projection",
         "snapshot.EventHandlers",
-        "state.Rows",
+        "state.Rows.Take(20)",
         "IsEnabled = false",
         "BuildTabSummary",
     ]
-    generic_placeholder_hits = [token for token in generic_placeholder_tokens if token in classic_surface_text]
+    shared_surface_hits = [token for token in placeholder_tokens if token in classic_surface_text]
     formport_runtime_switch = (
         "ClassicFormPortHostControl.IsVisible = showClassicFormPort" in state_refresh_text
         and "SectionHostControl.IsVisible = !showClassicFormPort" in state_refresh_text
@@ -244,13 +272,27 @@ def main() -> int:
         route_bound = all(token in classic_policy_text.lower() for token in route_tokens)
         parser_backed = bool(designer_sources) and all((ROOT / source).is_file() for source in designer_sources)
         generic_fallback = not formport_runtime_switch
+        runtime_text = runtime_file.read_text(encoding="utf-8") if port_exists else ""
+        xaml_text = PORT_RUNTIME_AXAML_FILES[surface_id].read_text(encoding="utf-8") if xaml_exists else ""
+        port_scaffold_hits = [
+            token
+            for token in (
+                "Classic form-native projection",
+                "snapshot.EventHandlers",
+                "state.Rows.Take(20)",
+                "IsEnabled = false",
+                "BuildTabSummary",
+                "No classic quick actions are available yet.",
+            )
+            if token in runtime_text or token in xaml_text
+        ]
         is_real_form_native = (
             port_exists
             and xaml_exists
             and route_bound
             and parser_backed
             and formport_runtime_switch
-            and not generic_placeholder_hits
+            and not port_scaffold_hits
         )
         fully_real = fully_real and is_real_form_native
         coverage_rows.append(
@@ -269,7 +311,7 @@ def main() -> int:
                 if not is_real_form_native
                 else "W1 port is routed natively.",
                 "real_form_native_surface": is_real_form_native,
-                "generic_placeholder_hits": generic_placeholder_hits,
+                "generic_placeholder_hits": port_scaffold_hits,
             }
         )
 
@@ -346,7 +388,7 @@ def main() -> int:
                 "- Classic Mode is now modeled explicitly and W1 FormPort scaffolding exists.",
                 "- The default desktop now gates sample controls, raw XML, and modern startup surfaces more tightly.",
                 "- W1 ports are parser-backed from the legacy WinForms designer files and route through the Classic FormPort host in default Classic Mode." if human_review_pass else "- W1 ports are not yet proven as fully form-native replacements for the legacy forms.",
-                f"- Generic scaffold tokens still present in ClassicFormPortSurfaceControl: {', '.join(generic_placeholder_hits)}." if generic_placeholder_hits else "- No generic scaffold tokens were detected in ClassicFormPortSurfaceControl.",
+                f"- Generic scaffold tokens still present in the shared/derived Classic FormPort controls: {', '.join(sorted(set(shared_surface_hits)))}." if shared_surface_hits else "- No generic scaffold tokens were detected in the shared Classic FormPort base.",
                 "- Classic screenshot contact sheets now resolve to the flagship screenshot pack for comparison." if human_review_pass else "- No classic pixel contact sheets were rendered for human comparison.",
                 "",
                 "CLASSIC_FORM_PORT_DESKTOP_READY" if human_review_pass else "NOT_READY",

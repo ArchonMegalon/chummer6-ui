@@ -336,8 +336,10 @@ for token in required_event_tokens:
         )
 
 required_binding_tokens = [
-    "toolStrip.PrintRequested += onPrintRequested;",
-    "toolStrip.CopyRequested += onCopyRequested;",
+    "AttachToolStripHandlers(toolStrip);",
+    "AttachToolStripHandlers(classicToolStrip);",
+    "surface.PrintRequested += onPrintRequested;",
+    "surface.CopyRequested += onCopyRequested;",
 ]
 for token in required_binding_tokens:
     if token not in main_window_control_binding_text:

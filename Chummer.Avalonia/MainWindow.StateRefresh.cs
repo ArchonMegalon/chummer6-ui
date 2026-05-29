@@ -52,6 +52,8 @@ public partial class MainWindow
 
     private void ApplyWorkbenchChromeVisibility(MainWindowShellFrame shellFrame)
     {
+        bool useClassicChrome = ClassicModePolicy.ResolveCurrentMode() == DesktopUiMode.Classic;
+        _controls.ApplyDesktopModeChrome(useClassicChrome);
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
         bool showRosterPane = !showNavigatorPane;
         bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;

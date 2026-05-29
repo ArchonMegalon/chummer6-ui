@@ -18,11 +18,19 @@
   </Window.Styles>
   <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
     <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="0">
-      <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
+      <Grid>
+        <controls:ClassicMenuBar x:Name="ClassicMenuBarControl"
+                                 IsVisible="False" />
+        <controls:ShellMenuBarControl x:Name="ShellMenuBarControl" />
+      </Grid>
     </Border>
 
     <Border x:Name="ToolStripRegion" Grid.Row="1" Classes="shell-panel chrome" Padding="1">
-      <controls:ToolStripControl x:Name="ToolStripControl" />
+      <Grid>
+        <controls:ClassicToolStrip x:Name="ClassicToolStripControl"
+                                   IsVisible="False" />
+        <controls:ToolStripControl x:Name="ToolStripControl" />
+      </Grid>
     </Border>
 
     <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0">
@@ -80,7 +88,11 @@
     </Grid>
 
     <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,1">
-      <controls:StatusStripControl x:Name="StatusStripControl" />
+      <Grid>
+        <controls:ClassicStatusStrip x:Name="ClassicStatusStripControl"
+                                     IsVisible="False" />
+        <controls:StatusStripControl x:Name="StatusStripControl" />
+      </Grid>
     </Border>
   </Grid>
 </Window>

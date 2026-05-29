@@ -5,7 +5,7 @@ using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia.Controls;
 
-public partial class ShellMenuBarControl : UserControl
+public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
 {
     private readonly MenuItem[] _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
