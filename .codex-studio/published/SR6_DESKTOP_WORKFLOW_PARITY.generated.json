@@ -1,13 +1,10 @@
 {
-  "generatedAt": "2026-05-29T08:27:48.584080Z",
+  "generatedAt": "2026-05-29T10:55:08.675817Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "public_stable",
-  "status": "fail",
-  "summary": "SR6 desktop workflow carry-forward parity is not yet exhaustively proven.",
-  "reasons": [
-    "Release channel receipt is stale (253874 seconds old).",
-    "SR4 desktop workflow parity must pass before SR6 carry-forward parity can close."
-  ],
+  "status": "pass",
+  "summary": "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, SR4 baseline proof, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
+  "reasons": [],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
@@ -24,8 +21,8 @@
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-05-26T09:56:34Z",
-    "releaseChannelAgeSeconds": 253874,
+    "releaseChannelGeneratedAt": "2026-05-29T08:34:38Z",
+    "releaseChannelAgeSeconds": 8430,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -90,8 +87,8 @@
       "workflowGateTests": true
     },
     "sr4ReceiptChannelId": "public_stable",
-    "sr4ReceiptGeneratedAt": "2026-05-29T08:27:34.896218Z",
-    "failureCount": 2
+    "sr4ReceiptGeneratedAt": "2026-05-29T10:54:32.808227Z",
+    "failureCount": 0
   },
   "sourceArtifactReview": {
     "status": "pass",
@@ -107,28 +104,24 @@
     }
   },
   "releaseChannelReview": {
-    "status": "fail",
-    "summary": "SR6 workflow parity proof is missing or drifting from release-channel identity.",
-    "reasons": [
-      "Release channel receipt is stale (253874 seconds old)."
-    ],
+    "status": "pass",
+    "summary": "SR6 workflow parity proof is aligned to a current release-channel identity.",
+    "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-26T09:56:34Z",
-    "ageSeconds": 253874,
+    "generatedAt": "2026-05-29T08:34:38Z",
+    "ageSeconds": 8430,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
   },
   "sr4BaselineReview": {
-    "status": "fail",
-    "summary": "SR4 baseline workflow parity proof is missing, stale, or misaligned for SR6 carry-forward closure.",
-    "reasons": [
-      "SR4 desktop workflow parity must pass before SR6 carry-forward parity can close."
-    ],
+    "status": "pass",
+    "summary": "SR4 baseline workflow parity proof is present and aligned for SR6 carry-forward closure.",
+    "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-29T08:27:34.896218Z"
+    "generatedAt": "2026-05-29T10:54:32.808227Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

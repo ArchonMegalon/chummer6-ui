@@ -1,12 +1,10 @@
 {
-  "generatedAt": "2026-05-29T08:27:55.369121Z",
+  "generatedAt": "2026-05-29T10:48:51.712877Z",
   "contract_name": "chummer6-ui.chummer5a_desktop_workflow_parity",
   "channelId": "public_stable",
-  "status": "fail",
-  "summary": "Chummer5a desktop workflow parity is not yet exhaustively proven.",
-  "reasons": [
-    "Release channel receipt is stale (253881 seconds old)."
-  ],
+  "status": "pass",
+  "summary": "Chummer5a desktop workflow parity is explicitly proven across source artifacts, release-channel identity, catalog coverage, workflow-family readiness, executable test references, and recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity.",
+  "reasons": [],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
@@ -21,8 +19,8 @@
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-05-26T09:56:34Z",
-    "releaseChannelAgeSeconds": 253881,
+    "releaseChannelGeneratedAt": "2026-05-29T08:34:38Z",
+    "releaseChannelAgeSeconds": 8053,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -84,7 +82,7 @@
       "uiGateTests": true,
       "workflowGateTests": true
     },
-    "failureCount": 1
+    "failureCount": 0
   },
   "sourceArtifactReview": {
     "status": "pass",
@@ -101,15 +99,13 @@
     }
   },
   "releaseChannelReview": {
-    "status": "fail",
-    "summary": "Chummer5a workflow parity proof is missing or drifting from release-channel identity.",
-    "reasons": [
-      "Release channel receipt is stale (253881 seconds old)."
-    ],
+    "status": "pass",
+    "summary": "Chummer5a workflow parity proof is aligned to a current release-channel identity.",
+    "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-26T09:56:34Z",
-    "ageSeconds": 253881,
+    "generatedAt": "2026-05-29T08:34:38Z",
+    "ageSeconds": 8053,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300

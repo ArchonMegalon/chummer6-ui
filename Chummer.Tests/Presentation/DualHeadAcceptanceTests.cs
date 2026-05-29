@@ -751,9 +751,7 @@ public class DualHeadAcceptanceTests
     {
         string xml = File.ReadAllText(FindTestFilePath("Apex Predator.chum5"));
         byte[] documentBytes = Encoding.UTF8.GetBytes(xml);
-        WorkspaceSurfaceActionDefinition[] actions = WorkspaceSurfaceActionCatalog.All
-            .Where(action => action.Kind == WorkspaceSurfaceActionKind.Section)
-            .ToArray();
+        WorkspaceSurfaceActionDefinition[] actions = await ResolveReachableWorkspaceSectionActionsAsync(documentBytes, CancellationToken.None);
 
         Dictionary<string, WorkspaceActionSnapshot> avaloniaSnapshots = await CaptureAvaloniaWorkspaceActionSnapshotsAsync(documentBytes, actions);
         Dictionary<string, WorkspaceActionSnapshot> blazorSnapshots = await CaptureBlazorWorkspaceActionSnapshotsAsync(documentBytes, actions);
@@ -1152,8 +1150,7 @@ public class DualHeadAcceptanceTests
 
         foreach (string actionId in actionIds)
         {
-            WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
+            WorkspaceSurfaceActionDefinition action = ResolveWorkspaceActionDefinition(presenter.State, actionId);
             await adapter.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
             CharacterOverviewState state = presenter.State;
             WorkspaceActionSnapshot snapshot = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
@@ -1205,8 +1202,7 @@ public class DualHeadAcceptanceTests
 
         foreach (string actionId in actionIds)
         {
-            WorkspaceSurfaceActionDefinition action = WorkspaceSurfaceActionCatalog.All
-                .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
+            WorkspaceSurfaceActionDefinition action = ResolveWorkspaceActionDefinition(ResolveBridgeState(callbackState, bridge), actionId);
             await bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
             CharacterOverviewState state = ResolveBridgeState(callbackState, bridge);
             WorkspaceActionSnapshot snapshot = await TakeWorkspaceActionSnapshotAsync(runtime, state, action, CancellationToken.None);
@@ -1933,6 +1929,61 @@ public class DualHeadAcceptanceTests
                 .Select(tab => RulesetDefaults.NormalizeOptional(tab.RulesetId))
                 .FirstOrDefault(rulesetId => rulesetId is not null)
             ?? string.Empty;
+    }
+
+    private static async Task<WorkspaceSurfaceActionDefinition[]> ResolveReachableWorkspaceSectionActionsAsync(
+        byte[] documentBytes,
+        CancellationToken ct)
+    {
+        using RuntimeClientLease runtime = CreateClient();
+        await ClearAllWorkspacesAsync();
+        var presenter = new CharacterOverviewPresenter(runtime.Client);
+        using var adapter = new CharacterOverviewViewModelAdapter(presenter);
+        await adapter.InitializeAsync(ct);
+        await adapter.ImportAsync(documentBytes, ct);
+        return ResolveReachableWorkspaceActions(presenter.State)
+            .Where(action => action.Kind == WorkspaceSurfaceActionKind.Section)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<WorkspaceSurfaceActionDefinition> ResolveReachableWorkspaceActions(CharacterOverviewState state)
+    {
+        string rulesetId = ResolveActiveRulesetId(state);
+        string[] tabIds = state.NavigationTabs
+            .Select(tab => tab.Id)
+            .Where(tabId => !string.IsNullOrWhiteSpace(tabId))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        var actions = new Dictionary<string, WorkspaceSurfaceActionDefinition>(StringComparer.Ordinal);
+        foreach (string tabId in tabIds)
+        {
+            foreach (WorkspaceSurfaceActionDefinition action in ShellCatalogResolver.ResolveWorkspaceActionsForTab(tabId, rulesetId))
+            {
+                actions.TryAdd(action.Id, action);
+            }
+        }
+
+        if (actions.Count == 0)
+        {
+            foreach (WorkspaceSurfaceActionDefinition action in WorkspaceSurfaceActionCatalog.ForRuleset(rulesetId))
+            {
+                actions.TryAdd(action.Id, action);
+            }
+        }
+
+        return actions.Values.ToArray();
+    }
+
+    private static WorkspaceSurfaceActionDefinition ResolveWorkspaceActionDefinition(CharacterOverviewState state, string actionId)
+    {
+        WorkspaceSurfaceActionDefinition? action = ResolveReachableWorkspaceActions(state)
+            .FirstOrDefault(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
+        if (action is not null)
+            return action;
+
+        return WorkspaceSurfaceActionCatalog.All
+            .First(item => string.Equals(item.Id, actionId, StringComparison.Ordinal));
     }
 
     private static async Task ClearAllWorkspacesAsync()
