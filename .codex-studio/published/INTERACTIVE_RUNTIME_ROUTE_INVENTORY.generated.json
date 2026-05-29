@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T14:27:42.5645793\u002B00:00",
+  "generatedAt": "2026-05-29T17:32:47.9233324\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -29,6 +29,7 @@
         "Character: none",
         "Characters",
         "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.",
+        "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Close",
         "Coach",
         "Compact Mode",
@@ -46,7 +47,7 @@
         "Help",
         "Hide the Master Index",
         "Language",
-        "No global settings are currently loaded.",
+        "No global settings",
         "Open",
         "Open Coach",
         "Open Export",
@@ -66,7 +67,7 @@
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=global_settings",
         "Theme",
-        "Time: 2026-05-29 14:27:41Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "UI Scale (%)",
         "Why This Action Is Here",
@@ -1757,19 +1758,223 @@
                                                                                                                 "children": []
                                                                                                               },
                                                                                                               {
-                                                                                                                "name": "SettingsGlobalPanel",
-                                                                                                                "controlType": "StackPanel",
+                                                                                                                "name": "SettingsGlobalSelector",
+                                                                                                                "controlType": "ComboBox",
                                                                                                                 "text": "",
                                                                                                                 "toolTip": "",
                                                                                                                 "isVisible": true,
                                                                                                                 "children": [
                                                                                                                   {
                                                                                                                     "name": "",
-                                                                                                                    "controlType": "TextBlock",
-                                                                                                                    "text": "No global settings are currently loaded.",
+                                                                                                                    "controlType": "DataValidationErrors",
+                                                                                                                    "text": "",
                                                                                                                     "toolTip": "",
                                                                                                                     "isVisible": true,
-                                                                                                                    "children": []
+                                                                                                                    "children": [
+                                                                                                                      {
+                                                                                                                        "name": "",
+                                                                                                                        "controlType": "DockPanel",
+                                                                                                                        "text": "",
+                                                                                                                        "toolTip": "",
+                                                                                                                        "isVisible": true,
+                                                                                                                        "children": [
+                                                                                                                          {
+                                                                                                                            "name": "InlineDataValidationContentControl",
+                                                                                                                            "controlType": "ContentControl",
+                                                                                                                            "text": "",
+                                                                                                                            "toolTip": "",
+                                                                                                                            "isVisible": false,
+                                                                                                                            "children": []
+                                                                                                                          },
+                                                                                                                          {
+                                                                                                                            "name": "PART_ContentPresenter",
+                                                                                                                            "controlType": "ContentPresenter",
+                                                                                                                            "text": "",
+                                                                                                                            "toolTip": "",
+                                                                                                                            "isVisible": true,
+                                                                                                                            "children": [
+                                                                                                                              {
+                                                                                                                                "name": "",
+                                                                                                                                "controlType": "Grid",
+                                                                                                                                "text": "",
+                                                                                                                                "toolTip": "",
+                                                                                                                                "isVisible": true,
+                                                                                                                                "children": [
+                                                                                                                                  {
+                                                                                                                                    "name": "Background",
+                                                                                                                                    "controlType": "Border",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": true,
+                                                                                                                                    "children": []
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "HighlightBackground",
+                                                                                                                                    "controlType": "Border",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": false,
+                                                                                                                                    "children": []
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "PlaceholderTextBlock",
+                                                                                                                                    "controlType": "TextBlock",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": false,
+                                                                                                                                    "children": []
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "ContentPresenter",
+                                                                                                                                    "controlType": "ContentControl",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": true,
+                                                                                                                                    "children": [
+                                                                                                                                      {
+                                                                                                                                        "name": "PART_ContentPresenter",
+                                                                                                                                        "controlType": "ContentPresenter:DepthLimit",
+                                                                                                                                        "text": "",
+                                                                                                                                        "toolTip": "",
+                                                                                                                                        "isVisible": true,
+                                                                                                                                        "children": []
+                                                                                                                                      }
+                                                                                                                                    ]
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "PART_EditableTextBox",
+                                                                                                                                    "controlType": "TextBox",
+                                                                                                                                    "text": "No global settings",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": false,
+                                                                                                                                    "children": []
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "DropDownOverlay",
+                                                                                                                                    "controlType": "Border",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": false,
+                                                                                                                                    "children": []
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "DropDownGlyph",
+                                                                                                                                    "controlType": "PathIcon",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": true,
+                                                                                                                                    "children": [
+                                                                                                                                      {
+                                                                                                                                        "name": "",
+                                                                                                                                        "controlType": "Border:DepthLimit",
+                                                                                                                                        "text": "",
+                                                                                                                                        "toolTip": "",
+                                                                                                                                        "isVisible": true,
+                                                                                                                                        "children": []
+                                                                                                                                      }
+                                                                                                                                    ]
+                                                                                                                                  },
+                                                                                                                                  {
+                                                                                                                                    "name": "PART_Popup",
+                                                                                                                                    "controlType": "Popup",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": true,
+                                                                                                                                    "children": []
+                                                                                                                                  }
+                                                                                                                                ]
+                                                                                                                              }
+                                                                                                                            ]
+                                                                                                                          }
+                                                                                                                        ]
+                                                                                                                      }
+                                                                                                                    ]
+                                                                                                                  }
+                                                                                                                ]
+                                                                                                              },
+                                                                                                              {
+                                                                                                                "name": "SettingsGlobalList",
+                                                                                                                "controlType": "ListBox",
+                                                                                                                "text": "",
+                                                                                                                "toolTip": "",
+                                                                                                                "isVisible": true,
+                                                                                                                "children": [
+                                                                                                                  {
+                                                                                                                    "name": "border",
+                                                                                                                    "controlType": "Border",
+                                                                                                                    "text": "",
+                                                                                                                    "toolTip": "",
+                                                                                                                    "isVisible": true,
+                                                                                                                    "children": [
+                                                                                                                      {
+                                                                                                                        "name": "PART_ScrollViewer",
+                                                                                                                        "controlType": "ScrollViewer",
+                                                                                                                        "text": "",
+                                                                                                                        "toolTip": "",
+                                                                                                                        "isVisible": true,
+                                                                                                                        "children": [
+                                                                                                                          {
+                                                                                                                            "name": "",
+                                                                                                                            "controlType": "Grid",
+                                                                                                                            "text": "",
+                                                                                                                            "toolTip": "",
+                                                                                                                            "isVisible": true,
+                                                                                                                            "children": [
+                                                                                                                              {
+                                                                                                                                "name": "PART_ContentPresenter",
+                                                                                                                                "controlType": "ScrollContentPresenter",
+                                                                                                                                "text": "",
+                                                                                                                                "toolTip": "",
+                                                                                                                                "isVisible": true,
+                                                                                                                                "children": [
+                                                                                                                                  {
+                                                                                                                                    "name": "PART_ItemsPresenter",
+                                                                                                                                    "controlType": "ItemsPresenter",
+                                                                                                                                    "text": "",
+                                                                                                                                    "toolTip": "",
+                                                                                                                                    "isVisible": true,
+                                                                                                                                    "children": [
+                                                                                                                                      {
+                                                                                                                                        "name": "",
+                                                                                                                                        "controlType": "VirtualizingStackPanel:DepthLimit",
+                                                                                                                                        "text": "",
+                                                                                                                                        "toolTip": "",
+                                                                                                                                        "isVisible": true,
+                                                                                                                                        "children": []
+                                                                                                                                      }
+                                                                                                                                    ]
+                                                                                                                                  }
+                                                                                                                                ]
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                "name": "PART_HorizontalScrollBar",
+                                                                                                                                "controlType": "ScrollBar",
+                                                                                                                                "text": "",
+                                                                                                                                "toolTip": "",
+                                                                                                                                "isVisible": false,
+                                                                                                                                "children": []
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                "name": "PART_VerticalScrollBar",
+                                                                                                                                "controlType": "ScrollBar",
+                                                                                                                                "text": "",
+                                                                                                                                "toolTip": "",
+                                                                                                                                "isVisible": false,
+                                                                                                                                "children": []
+                                                                                                                              },
+                                                                                                                              {
+                                                                                                                                "name": "PART_ScrollBarsSeparator",
+                                                                                                                                "controlType": "Panel",
+                                                                                                                                "text": "",
+                                                                                                                                "toolTip": "",
+                                                                                                                                "isVisible": true,
+                                                                                                                                "children": []
+                                                                                                                              }
+                                                                                                                            ]
+                                                                                                                          }
+                                                                                                                        ]
+                                                                                                                      }
+                                                                                                                    ]
                                                                                                                   }
                                                                                                                 ]
                                                                                                               }
@@ -3799,7 +4004,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:41Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -3921,7 +4126,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:41Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -3995,7 +4200,7 @@
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=new_character",
         "Switch Ruleset...",
-        "Time: 2026-05-29 14:27:41Z",
+        "Time: 2026-05-29 17:32:46Z",
         "Tools",
         "Why This Action Is Here",
         "Windows",
@@ -7839,7 +8044,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:41Z",
+                                                        "text": "Time: 2026-05-29 17:32:46Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -7961,7 +8166,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:41Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:46Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -13480,7 +13685,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Time: 2026-05-29 14:27:41Z",
+        "Time: 2026-05-29 17:32:46Z",
         "Tools",
         "Why This Action Is Here",
         "Windows"
@@ -16391,7 +16596,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:41Z",
+                                                        "text": "Time: 2026-05-29 17:32:46Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -16513,7 +16718,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:41Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:46Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -16580,7 +16785,7 @@
         "Magician",
         "Male",
         "Master Index",
-        "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Notes",
         "Open",
         "Open Coach",
@@ -16604,19 +16809,19 @@
         "Skills",
         "Soma",
         "Special",
-        "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Support",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Update",
         "Vehicles",
         "Why This Action Is Here",
         "Windows",
-        "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+        "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
         "XML Editor",
         "runtime inspector"
       ],
@@ -17609,7 +17814,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -17675,7 +17880,7 @@
                                                 "name": "WorkspaceStripControl",
                                                 "controlType": "WorkspaceStripControl",
                                                 "text": "",
-                                                "toolTip": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                "toolTip": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -17695,7 +17900,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                            "text": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -18211,7 +18416,7 @@
                                                 "name": "RestoreContinuityStatusBorder",
                                                 "controlType": "Border",
                                                 "text": "",
-                                                "toolTip": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                "toolTip": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -18224,7 +18429,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -18232,7 +18437,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -18240,7 +18445,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -20104,7 +20309,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -23086,7 +23291,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 2777ae9be21746ccae9c105cff85f313\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=2777ae9be21746ccae9c105cff85f313\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: a18c4913be824f2aa749d1594eed91c5\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=a18c4913be824f2aa749d1594eed91c5\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": [
                                               {
@@ -23356,7 +23561,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -23478,7 +23683,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -23555,7 +23760,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
         "Support",
         "Switch Ruleset...",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Update",
@@ -28785,7 +28990,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -28907,7 +29112,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -28983,7 +29188,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
         "Support",
         "Switch Ruleset...",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Why This Action Is Here",
@@ -34213,7 +34418,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -34335,7 +34540,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -34412,7 +34617,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
         "Support",
         "Switch Ruleset...",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Update",
@@ -39642,7 +39847,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -39764,7 +39969,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -39845,7 +40050,7 @@
         "Open for Printing...",
         "Open...",
         "Paste",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Print",
         "Print Multiple...",
         "Print Setup...",
@@ -39866,18 +40071,18 @@
         "Skills",
         "Soma",
         "Special",
-        "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Support",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Vehicles",
         "Why This Action Is Here",
         "Windows",
-        "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+        "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
         "XML Editor",
         "runtime inspector"
       ],
@@ -40893,7 +41098,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -40959,7 +41164,7 @@
                                                 "name": "WorkspaceStripControl",
                                                 "controlType": "WorkspaceStripControl",
                                                 "text": "",
-                                                "toolTip": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                "toolTip": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -40979,7 +41184,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                            "text": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -41495,7 +41700,7 @@
                                                 "name": "RestoreContinuityStatusBorder",
                                                 "controlType": "Border",
                                                 "text": "",
-                                                "toolTip": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                "toolTip": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -41508,7 +41713,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -41516,7 +41721,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -41524,7 +41729,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -43388,7 +43593,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -46682,7 +46887,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 2777ae9be21746ccae9c105cff85f313\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=2777ae9be21746ccae9c105cff85f313\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: a18c4913be824f2aa749d1594eed91c5\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=a18c4913be824f2aa749d1594eed91c5\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": [
                                               {
@@ -46952,7 +47157,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -47074,7 +47279,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -49163,7 +49368,7 @@
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
         "Support",
         "Switch Ruleset...",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Why This Action Is Here",
@@ -54375,7 +54580,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -54497,7 +54702,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -54578,7 +54783,7 @@
         "Open for Printing...",
         "Open...",
         "Paste",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Print",
         "Print Multiple...",
         "Print Setup...",
@@ -54599,18 +54804,18 @@
         "Skills",
         "Soma",
         "Special",
-        "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Support",
         "Switch Ruleset...",
         "Technomancer",
-        "Time: 2026-05-29 14:27:42Z",
+        "Time: 2026-05-29 17:32:47Z",
         "Tools",
         "Translator",
         "Vehicles",
         "Why This Action Is Here",
         "Windows",
-        "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+        "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
         "XML Editor",
         "runtime inspector"
       ],
@@ -55626,7 +55831,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=2777ae9be21746ccae9c105cff85f313, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=a18c4913be824f2aa749d1594eed91c5, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -55692,7 +55897,7 @@
                                                 "name": "WorkspaceStripControl",
                                                 "controlType": "WorkspaceStripControl",
                                                 "text": "",
-                                                "toolTip": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                "toolTip": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -55712,7 +55917,7 @@
                                                           {
                                                             "name": "WorkspaceText",
                                                             "controlType": "TextBlock",
-                                                            "text": "Workspace: 2777ae9be21746ccae9c105cff85f313 (open: 1, unsaved)",
+                                                            "text": "Workspace: a18c4913be824f2aa749d1594eed91c5 (open: 1, unsaved)",
                                                             "toolTip": "",
                                                             "isVisible": true,
                                                             "children": []
@@ -56228,7 +56433,7 @@
                                                 "name": "RestoreContinuityStatusBorder",
                                                 "controlType": "Border",
                                                 "text": "",
-                                                "toolTip": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                "toolTip": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.\nStale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;\nConflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                 "isVisible": true,
                                                 "children": [
                                                   {
@@ -56241,7 +56446,7 @@
                                                       {
                                                         "name": "RestoreContinuityStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Restore choice: keep 2777ae9be21746ccae9c105cff85f313 open before accepting a newer continuity packet. 2777ae9be21746ccae9c105cff85f313 stays visible on the current desktop head until you choose review or support.",
+                                                        "text": "Restore choice: keep a18c4913be824f2aa749d1594eed91c5 open before accepting a newer continuity packet. a18c4913be824f2aa749d1594eed91c5 stays visible on the current desktop head until you choose review or support.",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -56249,7 +56454,7 @@
                                                       {
                                                         "name": "StaleStateStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Stale state: service continuity is unavailable until Campaign Workspace or Workspace Support review confirms the current continuity packet; local save posture is unsaved. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -56257,7 +56462,7 @@
                                                       {
                                                         "name": "ConflictChoiceStatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. 2777ae9be21746ccae9c105cff85f313 was last touched locally at 2026-05-29 14:27 UTC and stays visible before any replacement;",
+                                                        "text": "Conflict choices: keep local work visible, save local work when available, review Campaign Workspace, or open workspace support before accepting restore replacement. a18c4913be824f2aa749d1594eed91c5 was last touched locally at 2026-05-29 17:32 UTC and stays visible before any replacement;",
                                                         "toolTip": "",
                                                         "isVisible": false,
                                                         "children": []
@@ -58121,7 +58326,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 2777ae9be21746ccae9c105cff85f313 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace a18c4913be824f2aa749d1594eed91c5 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -61415,7 +61620,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 2777ae9be21746ccae9c105cff85f313\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=2777ae9be21746ccae9c105cff85f313\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: a18c4913be824f2aa749d1594eed91c5\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=a18c4913be824f2aa749d1594eed91c5\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": [
                                               {
@@ -61685,7 +61890,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:42Z",
+                                                        "text": "Time: 2026-05-29 17:32:47Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -61807,7 +62012,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 14:27:42Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-05-29 17:32:47Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -61854,7 +62059,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Time: 2026-05-29 14:27:41Z",
+        "Time: 2026-05-29 17:32:46Z",
         "Tools",
         "Windows"
       ],
@@ -63777,7 +63982,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-05-29 14:27:41Z",
+                                                        "text": "Time: 2026-05-29 17:32:46Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -63899,7 +64104,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 14:27:41Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-05-29 17:32:46Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
