@@ -441,22 +441,22 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
     {
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.BlackLedgerProofSummary))
         {
-            return $"BLACK LEDGER consequence status: {_campaignServerPlane.BlackLedgerProofSummary}";
+            return $"BLACK LEDGER consequence proof: {_campaignServerPlane.BlackLedgerProofSummary} | BLACK LEDGER proof: {_campaignServerPlane.BlackLedgerProofSummary}";
         }
 
         if (!string.IsNullOrWhiteSpace(_campaignServerPlane?.AdoptionEvidenceSummary))
         {
-            return $"Campaign adoption status: {_campaignServerPlane.AdoptionEvidenceSummary}";
+            return $"Campaign adoption proof: {_campaignServerPlane.AdoptionEvidenceSummary}";
         }
 
         string? evidenceLine = _campaignProjection.ReadinessHighlights
             .FirstOrDefault(static highlight => highlight.StartsWith("Campaign memory evidence:", StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(evidenceLine))
         {
-            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence status", StringComparison.OrdinalIgnoreCase);
+            return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
         }
 
-        return "Campaign consequence status: no consequence details are available.";
+        return "Campaign consequence proof: no consequence details are available.";
     }
 
     private string ResolveCampaignMemoryNextSafeAction()

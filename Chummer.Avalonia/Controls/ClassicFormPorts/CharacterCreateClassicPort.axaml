@@ -3,29 +3,56 @@
              x:Class="Chummer.Avalonia.Controls.CharacterCreateClassicPort">
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,*"
-          RowSpacing="10">
+    <StackPanel Margin="8" Spacing="10">
       <TextBlock x:Name="CreateNoticeText"
                  TextWrapping="Wrap"
                  Opacity="0.8" />
-      <WrapPanel x:Name="CreateTabsPanel"
-                 Grid.Row="1"
-                 Orientation="Horizontal" />
-      <WrapPanel x:Name="CreateFactsPanel"
-                 Grid.Row="2"
-                 Orientation="Horizontal" />
-      <Grid Grid.Row="3"
-            ColumnDefinitions="3*,3*,2*"
-            ColumnSpacing="10">
-        <StackPanel x:Name="CreatePriorityPanel"
-                    Spacing="10" />
-        <StackPanel x:Name="CreateAttributePanel"
-                    Grid.Column="1"
-                    Spacing="10" />
-        <StackPanel x:Name="CreateActionPanel"
-                    Grid.Column="2"
-                    Spacing="10" />
-      </Grid>
-    </Grid>
+
+      <TabControl x:Name="CreateTabs">
+        <TabItem Header="Priorities">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Priority Grid" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreatePrioritiesPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Attributes">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Attribute Values" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreateAttributesPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Skills">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Skill Picks" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreateSkillsPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Gear">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Starting Gear" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreateGearPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Spells">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Spells and Traditions" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreateSpellsPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Final">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Finalized Profile" FontWeight="SemiBold" />
+            <StackPanel x:Name="CreateFinalPanel" Spacing="4" />
+            <TextBlock Text="Create Actions" FontWeight="SemiBold" Margin="0,8,0,0" />
+            <StackPanel x:Name="CreateActionsPanel" Spacing="4" />
+          </StackPanel>
+        </TabItem>
+      </TabControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

@@ -188,6 +188,7 @@ public static class DesktopHomeCampaignProjector
 
             if (!string.IsNullOrWhiteSpace(serverPlane.BlackLedgerProofSummary))
             {
+                readinessHighlights.Add($"BLACK LEDGER consequence proof: {serverPlane.BlackLedgerProofSummary}");
                 readinessHighlights.Add($"BLACK LEDGER proof: {serverPlane.BlackLedgerProofSummary}");
             }
         }

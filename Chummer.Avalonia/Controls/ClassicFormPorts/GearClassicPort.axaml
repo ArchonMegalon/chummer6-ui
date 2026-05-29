@@ -3,29 +3,52 @@
              x:Class="Chummer.Avalonia.Controls.GearClassicPort">
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,*"
-          RowSpacing="10">
+    <StackPanel Margin="8" Spacing="10">
       <TextBlock x:Name="GearNoticeText"
                  TextWrapping="Wrap"
                  Opacity="0.8" />
-      <WrapPanel x:Name="GearTabsPanel"
-                 Grid.Row="1"
-                 Orientation="Horizontal" />
-      <WrapPanel x:Name="GearFactsPanel"
-                 Grid.Row="2"
-                 Orientation="Horizontal" />
-      <Grid Grid.Row="3"
-            ColumnDefinitions="2*,2*,3*"
-            ColumnSpacing="10">
-        <StackPanel x:Name="GearCategoryPanel"
-                    Spacing="10" />
-        <StackPanel x:Name="GearFilterPanel"
-                    Grid.Column="1"
-                    Spacing="10" />
-        <StackPanel x:Name="GearDetailPanel"
-                    Grid.Column="2"
-                    Spacing="10" />
-      </Grid>
-    </Grid>
+
+      <TabControl x:Name="GearTabs">
+        <TabItem Header="Category">
+          <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Category Browser"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="GearCategoryPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Filters">
+          <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Filters and Quick Actions"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="GearFilterPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Details">
+          <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Item Detail"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="GearDetailPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Purchase">
+          <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Purchase Actions"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="GearPurchasePanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

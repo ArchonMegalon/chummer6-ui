@@ -3,29 +3,52 @@
              x:Class="Chummer.Avalonia.Controls.SettingsClassicPort">
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,*"
-          RowSpacing="10">
+    <StackPanel Margin="8" Spacing="10">
       <TextBlock x:Name="SettingsNoticeText"
                  TextWrapping="Wrap"
                  Opacity="0.8" />
-      <WrapPanel x:Name="SettingsTabsPanel"
-                 Grid.Row="1"
-                 Orientation="Horizontal" />
-      <WrapPanel x:Name="SettingsFactsPanel"
-                 Grid.Row="2"
-                 Orientation="Horizontal" />
-      <Grid Grid.Row="3"
-            ColumnDefinitions="2*,2*,3*"
-            ColumnSpacing="10">
-        <StackPanel x:Name="SettingsCategoryPanel"
-                    Spacing="10" />
-        <StackPanel x:Name="SettingsCustomDataPanel"
-                    Grid.Column="1"
-                    Spacing="10" />
-        <StackPanel x:Name="SettingsWorkflowPanel"
-                    Grid.Column="2"
-                    Spacing="10" />
-      </Grid>
-    </Grid>
+
+      <TabControl x:Name="SettingsTabs">
+        <TabItem Header="Global">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Global Settings"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="SettingsGlobalPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Custom Data">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Custom Data &amp; Plugins"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="SettingsCustomDataPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="GitHub Issues">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="GitHub Issues"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="SettingsGitHubIssuesPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Plugins">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Plugins"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="SettingsPluginsPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

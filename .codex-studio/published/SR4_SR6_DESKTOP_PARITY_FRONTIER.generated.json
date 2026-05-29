@@ -1,27 +1,38 @@
 {
-  "generatedAt": "2026-05-28T18:28:43.495606Z",
+  "generatedAt": "2026-05-29T08:28:02.992572Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "public_stable",
-  "status": "pass",
-  "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable workflow, coverage, ruleset-adaptation, release-channel, and gate-execution subreviews.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4/SR6 desktop parity frontier closure is not yet proven.",
+  "reasons": [
+    "Release channel receipt is stale (253888 seconds old).",
+    "SR4 parity receipt is not passing: Release channel receipt is stale (253860 seconds old).",
+    "SR6 parity receipt is not passing: Release channel receipt is stale (253874 seconds old)., SR4 desktop workflow parity must pass before SR6 carry-forward parity can close.",
+    "Chummer5a parity receipt is not passing: Release channel receipt is stale (253881 seconds old).",
+    "Ruleset/UI adaptation receipt is not passing: Release channel receipt is stale (253888 seconds old).",
+    "Ruleset/UI adaptation receipt reports failureCount=1.",
+    "SR4 parity gate exited non-zero: 43",
+    "SR6 parity gate exited non-zero: 43",
+    "Chummer5a parity gate exited non-zero: 43",
+    "Ruleset/UI adaptation gate exited non-zero: 43"
+  ],
   "evidence": {
     "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "sr6ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
     "chummer5aReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-05-28T18:08:17Z",
-    "releaseChannelAgeSeconds": 1226,
+    "releaseChannelGeneratedAt": "2026-05-26T09:56:34Z",
+    "releaseChannelAgeSeconds": 253888,
     "releaseChannelFutureSkewSeconds": 0,
-    "sr4Status": "pass",
-    "sr6Status": "pass",
-    "chummer5aStatus": "pass",
-    "rulesetUiAdaptationStatus": "pass",
+    "sr4Status": "fail",
+    "sr6Status": "fail",
+    "chummer5aStatus": "fail",
+    "rulesetUiAdaptationStatus": "fail",
     "sr4ClosureCounts": null,
     "sr6ClosureCounts": null,
     "sr4ChannelId": "public_stable",
@@ -30,32 +41,39 @@
     "rulesetUiAdaptationChannelId": "public_stable"
   },
   "releaseChannelReview": {
-    "status": "pass",
-    "summary": "Release channel identity and freshness are aligned to the SR4/SR6 desktop parity frontier.",
-    "reasons": [],
-    "path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "status": "fail",
+    "summary": "Release channel identity or freshness is blocking SR4/SR6 desktop parity frontier closure.",
+    "reasons": [
+      "Release channel receipt is stale (253888 seconds old)."
+    ],
+    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-28T18:08:17Z",
-    "ageSeconds": 1226,
+    "generatedAt": "2026-05-26T09:56:34Z",
+    "ageSeconds": 253888,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
   },
   "workflowReceiptReview": {
-    "status": "pass",
-    "summary": "SR4, SR6, Chummer5a, and ruleset-adaptation receipts are present, passing, and timestamped.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "One or more workflow or ruleset receipts are missing, stale, or not passing.",
+    "reasons": [
+      "SR4 parity receipt is not passing: Release channel receipt is stale (253860 seconds old).",
+      "SR6 parity receipt is not passing: Release channel receipt is stale (253874 seconds old)., SR4 desktop workflow parity must pass before SR6 carry-forward parity can close.",
+      "Chummer5a parity receipt is not passing: Release channel receipt is stale (253881 seconds old).",
+      "Ruleset/UI adaptation receipt is not passing: Release channel receipt is stale (253888 seconds old)."
+    ],
     "receiptStatuses": {
-      "sr4": "pass",
-      "sr6": "pass",
-      "chummer5a": "pass",
-      "rulesetUiAdaptation": "pass"
+      "sr4": "fail",
+      "sr6": "fail",
+      "chummer5a": "fail",
+      "rulesetUiAdaptation": "fail"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-05-28T18:24:32.462646Z",
-      "sr6": "2026-05-28T18:28:28.488357Z",
-      "chummer5a": "2026-05-28T18:28:35.438762Z",
-      "rulesetUiAdaptation": "2026-05-28T18:28:43.467480Z"
+      "sr4": "2026-05-29T08:27:34.896218Z",
+      "sr6": "2026-05-29T08:27:48.584080Z",
+      "chummer5a": "2026-05-29T08:27:55.369121Z",
+      "rulesetUiAdaptation": "2026-05-29T08:28:02.965098Z"
     }
   },
   "workflowCoverageReview": {
@@ -89,10 +107,12 @@
     }
   },
   "rulesetAdaptationReview": {
-    "status": "pass",
-    "summary": "Ruleset/UI adaptation directives and regression proof are explicit for SR4, SR5, and SR6.",
-    "reasons": [],
-    "failureCount": 0,
+    "status": "fail",
+    "summary": "Ruleset/UI adaptation proof still has directive or regression gaps.",
+    "reasons": [
+      "Ruleset/UI adaptation receipt reports failureCount=1."
+    ],
+    "failureCount": 1,
     "requiredDirectives": [
       "UI-RS-01",
       "UI-RS-02",
@@ -108,10 +128,12 @@
     "testBuildExit": 0
   },
   "channelAlignmentReview": {
-    "status": "pass",
-    "summary": "All downstream parity receipts are aligned to the same release-channel identity and provenance.",
-    "reasons": [],
-    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "status": "fail",
+    "summary": "One or more downstream parity receipts drift from the frontier release-channel identity.",
+    "reasons": [
+      "Release channel receipt is stale (253888 seconds old)."
+    ],
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "receiptChannelIds": {
       "sr4": "public_stable",
       "sr6": "public_stable",
@@ -119,10 +141,10 @@
       "rulesetUiAdaptation": "public_stable"
     },
     "receiptReleaseChannelPaths": {
-      "sr4": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "sr6": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "chummer5a": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "rulesetUiAdaptation": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "sr4": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "sr6": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "chummer5a": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "rulesetUiAdaptation": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "receiptReleaseChannelChannelIds": {
       "sr4": "public_stable",
@@ -131,21 +153,26 @@
       "rulesetUiAdaptation": "public_stable"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-05-28T18:08:17Z",
-      "sr6": "2026-05-28T18:08:17Z",
-      "chummer5a": "2026-05-28T18:08:17Z",
-      "rulesetUiAdaptation": "2026-05-28T18:08:17Z"
+      "sr4": "2026-05-26T09:56:34Z",
+      "sr6": "2026-05-26T09:56:34Z",
+      "chummer5a": "2026-05-26T09:56:34Z",
+      "rulesetUiAdaptation": "2026-05-26T09:56:34Z"
     }
   },
   "gateExecutionReview": {
-    "status": "pass",
-    "summary": "All frontier prerequisite gates executed successfully.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "One or more frontier prerequisite gates exited non-zero.",
+    "reasons": [
+      "SR4 parity gate exited non-zero: 43",
+      "SR6 parity gate exited non-zero: 43",
+      "Chummer5a parity gate exited non-zero: 43",
+      "Ruleset/UI adaptation gate exited non-zero: 43"
+    ],
     "gateExitCodes": {
-      "sr4": 0,
-      "sr6": 0,
-      "chummer5a": 0,
-      "rulesetUiAdaptation": 0
+      "sr4": 43,
+      "sr6": 43,
+      "chummer5a": 43,
+      "rulesetUiAdaptation": 43
     }
   }
 }

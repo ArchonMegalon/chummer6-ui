@@ -3,29 +3,42 @@
              x:Class="Chummer.Avalonia.Controls.MasterIndexClassicPort">
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,*"
-          RowSpacing="10">
+    <StackPanel Margin="8" Spacing="10">
       <TextBlock x:Name="IndexNoticeText"
                  TextWrapping="Wrap"
                  Opacity="0.8" />
-      <WrapPanel x:Name="IndexTabsPanel"
-                 Grid.Row="1"
-                 Orientation="Horizontal" />
-      <WrapPanel x:Name="IndexFactsPanel"
-                 Grid.Row="2"
-                 Orientation="Horizontal" />
-      <Grid Grid.Row="3"
-            ColumnDefinitions="2*,2*,3*"
-            ColumnSpacing="10">
-        <StackPanel x:Name="IndexBrowsePanel"
-                    Spacing="10" />
-        <StackPanel x:Name="IndexSearchPanel"
-                    Grid.Column="1"
-                    Spacing="10" />
-        <StackPanel x:Name="IndexSourcePanel"
-                    Grid.Column="2"
-                    Spacing="10" />
-      </Grid>
-    </Grid>
+
+      <TabControl x:Name="IndexTabs">
+        <TabItem Header="Browse">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Browse Results"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="IndexBrowsePanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Search">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Search Workflow"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="IndexSearchPanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Source">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
+            <TextBlock Text="Source and Legacy Chrome"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="IndexSourcePanel"
+                        Grid.Row="1"
+                        Spacing="4" />
+          </Grid>
+        </TabItem>
+      </TabControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

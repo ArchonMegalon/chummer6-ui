@@ -6,11 +6,14 @@ namespace Chummer.Avalonia.Controls;
 public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
 {
     private readonly TextBlock? _noticeText;
-    private readonly WrapPanel? _tabsPanel;
-    private readonly WrapPanel? _factsPanel;
-    private readonly StackPanel? _priorityPanel;
-    private readonly StackPanel? _attributePanel;
-    private readonly StackPanel? _actionPanel;
+    private readonly TabControl? _tabs;
+    private readonly StackPanel? _prioritiesPanel;
+    private readonly StackPanel? _attributesPanel;
+    private readonly StackPanel? _skillsPanel;
+    private readonly StackPanel? _gearPanel;
+    private readonly StackPanel? _spellsPanel;
+    private readonly StackPanel? _finalPanel;
+    private readonly StackPanel? _actionsPanel;
 
     public CharacterCreateClassicPort()
         : base(
@@ -21,67 +24,91 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
     {
         AvaloniaXamlLoader.Load(this);
         _noticeText = this.FindControl<TextBlock>("CreateNoticeText");
-        _tabsPanel = this.FindControl<WrapPanel>("CreateTabsPanel");
-        _factsPanel = this.FindControl<WrapPanel>("CreateFactsPanel");
-        _priorityPanel = this.FindControl<StackPanel>("CreatePriorityPanel");
-        _attributePanel = this.FindControl<StackPanel>("CreateAttributePanel");
-        _actionPanel = this.FindControl<StackPanel>("CreateActionPanel");
+        _tabs = this.FindControl<TabControl>("CreateTabs");
+        _prioritiesPanel = this.FindControl<StackPanel>("CreatePrioritiesPanel");
+        _attributesPanel = this.FindControl<StackPanel>("CreateAttributesPanel");
+        _skillsPanel = this.FindControl<StackPanel>("CreateSkillsPanel");
+        _gearPanel = this.FindControl<StackPanel>("CreateGearPanel");
+        _spellsPanel = this.FindControl<StackPanel>("CreateSpellsPanel");
+        _finalPanel = this.FindControl<StackPanel>("CreateFinalPanel");
+        _actionsPanel = this.FindControl<StackPanel>("CreateActionsPanel");
     }
 
     protected override void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot)
     {
+        _ = snapshot;
         if (_noticeText is not null)
         {
             SetLeadNotice(_noticeText, state.Notice, "Classic chargen is routing through the legacy-first creation workbench.");
         }
 
-        if (_tabsPanel is not null)
-        {
-            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
-        }
+        SetActiveTab(_tabs, state.ActiveTabId, "Priorities", "Attributes", "Skills", "Gear", "Spells", "Final");
 
-        if (_factsPanel is not null)
+        if (_prioritiesPanel is not null)
         {
-            RenderFactBand(
-                _factsPanel,
+            RenderFieldRows(
+                _prioritiesPanel,
                 [
-                    new ClassicSheetFactDisplayItem("Edition", FindValue(state.Rows, "gameEdition")),
-                    new ClassicSheetFactDisplayItem("Build", FindValue(state.Rows, "buildMethod")),
-                    new ClassicSheetFactDisplayItem("Priority", FindValue(state.Rows, "priority")),
-                    new ClassicSheetFactDisplayItem("Metatype", FindValue(state.Rows, "metatype")),
-                ]);
+                    new SectionRowDisplayItem("Ruleset", FindValue(state.Rows, "gameEdition")),
+                    new SectionRowDisplayItem("Build", FindValue(state.Rows, "buildMethod")),
+                    new SectionRowDisplayItem("Metatype", FindValue(state.Rows, "metatype")),
+                    new SectionRowDisplayItem("Priority Path", FindValue(state.Rows, "priority")),
+                ],
+                "No priority values are ready yet.");
+
+            RenderFieldRows(
+                _prioritiesPanel,
+                MatchRows(state.Rows, 10, "priority", "metatype", "resource"),
+                "No priority routing detail is available.");
         }
 
-        if (_priorityPanel is not null)
+        if (_attributesPanel is not null)
         {
-            _priorityPanel.Children.Clear();
-            StackPanel priorities = new();
-            RenderDetailList(priorities, MatchRows(state.Rows, 10, "priority", "metatype", "magic", "resonance", "resources"), "Priority selections will appear here once a creation route is active.");
-            _priorityPanel.Children.Add(BuildClassicPane("Priority Picks", priorities));
-
-            StackPanel skills = new();
-            RenderDetailList(skills, MatchRows(state.Rows, 10, "skill", "knowledge"), "Skills summary is waiting for runtime values.");
-            _priorityPanel.Children.Add(BuildClassicPane("Skill Summary", skills));
+            RenderFieldRows(
+                _attributesPanel,
+                MatchRows(state.Rows, 20, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance"),
+                "Attribute ladder is not populated yet.");
         }
 
-        if (_attributePanel is not null)
+        if (_skillsPanel is not null)
         {
-            _attributePanel.Children.Clear();
-            StackPanel attributes = new();
-            RenderDetailList(attributes, MatchRows(state.Rows, 12, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance"), "Attribute ladder is not populated yet.");
-            _attributePanel.Children.Add(BuildClassicPane("Attribute Ladder", attributes));
-
-            StackPanel gearPrep = new();
-            RenderDetailList(gearPrep, MatchRows(state.Rows, 8, "gear", "weapon", "armor", "spell"), "Gear and spell preparation will appear here.");
-            _attributePanel.Children.Add(BuildClassicPane("Loadout Preparation", gearPrep));
+            RenderFieldRows(
+                _skillsPanel,
+                MatchRows(state.Rows, 20, "skill", "knowledge", "language"),
+                "Skill and specialization values are not yet available.");
         }
 
-        if (_actionPanel is not null)
+        if (_gearPanel is not null)
         {
-            _actionPanel.Children.Clear();
-            StackPanel actions = new();
-            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No creation actions are available yet.");
-            _actionPanel.Children.Add(BuildClassicPane("Creation Actions", actions));
+            RenderFieldRows(
+                _gearPanel,
+                MatchRows(state.Rows, 15, "gear", "armor", "weapon", "ranged", "melee"),
+                "Starting gear is not loaded yet.");
+        }
+
+        if (_spellsPanel is not null)
+        {
+            RenderFieldRows(
+                _spellsPanel,
+                MatchRows(state.Rows, 10, "spell", "magic", "tradition"),
+                "No spell list is visible yet.");
+        }
+
+        if (_finalPanel is not null)
+        {
+            RenderFieldRows(
+                _finalPanel,
+                [
+                    new SectionRowDisplayItem("Build Method", FindValue(state.Rows, "buildMethod")),
+                    new SectionRowDisplayItem("Metatype", FindValue(state.Rows, "metatype")),
+                    new SectionRowDisplayItem("Primary Source", FindValue(state.Rows, "settings")),
+                ],
+                "No finalization summary yet.");
+        }
+
+        if (_actionsPanel is not null)
+        {
+            RenderActionRows(_actionsPanel, CollectActionLabels(state), "No creation actions are currently available.");
         }
     }
 }

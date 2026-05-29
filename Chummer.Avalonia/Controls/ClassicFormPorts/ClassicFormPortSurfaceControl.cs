@@ -54,7 +54,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             .Take(10)
             .ToArray();
 
-    protected static IReadOnlyList<ClassicPortLineItem> MatchRows(
+    protected static IReadOnlyList<SectionRowDisplayItem> MatchRows(
         IReadOnlyList<SectionRowDisplayItem> rows,
         int maxCount,
         params string[] pathTokens)
@@ -69,7 +69,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
 
         return filtered
             .Take(maxCount)
-            .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue))
+            .Select(row => new SectionRowDisplayItem(row.DisplayPath, row.DisplayValue))
             .ToArray();
     }
 
@@ -117,6 +117,86 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
     }
 
+    protected static void RenderFieldRows(Panel panel, IEnumerable<SectionRowDisplayItem> rows, string emptyMessage, int maxCount = 24)
+    {
+        RenderFieldItems(
+            panel,
+            rows
+                .Where(static row => !string.IsNullOrWhiteSpace(row.DisplayValue))
+                .Take(maxCount)
+                .Select(row => (row.DisplayPath, row.DisplayValue)),
+            emptyMessage);
+    }
+
+    protected static void RenderFieldRows(Panel panel, IEnumerable<SectionRowDisplayItem> rows, string emptyMessage, string[] pathTokens, int maxCount = 24)
+    {
+        if (pathTokens.Length == 0)
+        {
+            RenderFieldRows(panel, rows, emptyMessage, maxCount);
+            return;
+        }
+
+        IReadOnlyList<SectionRowDisplayItem> matchedRows = MatchRows(rows.ToArray(), maxCount, pathTokens);
+        RenderFieldRows(panel, matchedRows, emptyMessage, maxCount);
+    }
+
+    protected static void RenderActionRows(Panel panel, IEnumerable<string> actions, string emptyMessage)
+    {
+        panel.Children.Clear();
+        string[] materialized = actions
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (materialized.Length == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = emptyMessage,
+                Opacity = 0.75,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            return;
+        }
+
+        foreach (string action in materialized)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = action,
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+    }
+
+    protected static void SetActiveTab(TabControl? tabControl, string? activeTabId, params string[] tabTitles)
+    {
+        if (tabControl is null || tabTitles.Length == 0)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(activeTabId))
+        {
+            tabControl.SelectedIndex = 0;
+            return;
+        }
+
+        string normalizedActive = activeTabId.Trim().ToLowerInvariant();
+        for (int i = 0; i < tabTitles.Length; i++)
+        {
+            if (tabTitles[i].Contains(normalizedActive, StringComparison.OrdinalIgnoreCase)
+                || normalizedActive.Contains(tabTitles[i], StringComparison.OrdinalIgnoreCase))
+            {
+                tabControl.SelectedIndex = i;
+                return;
+            }
+        }
+
+        tabControl.SelectedIndex = 0;
+    }
+
     protected static void RenderDetailList(Panel panel, IEnumerable<ClassicPortLineItem> lines, string emptyMessage)
     {
         panel.Children.Clear();
@@ -130,6 +210,49 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         foreach (ClassicPortLineItem line in materialized)
         {
             panel.Children.Add(CreateLineCard(line));
+        }
+    }
+
+    private static void RenderFieldItems(Panel panel, IEnumerable<(string Label, string Value)> rows, string emptyMessage)
+    {
+        panel.Children.Clear();
+
+        (string Label, string Value)[] materialized = rows.ToArray();
+        if (materialized.Length == 0)
+        {
+            panel.Children.Add(new TextBlock
+            {
+                Text = emptyMessage,
+                Opacity = 0.75,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+            return;
+        }
+
+        foreach ((string label, string value) in materialized)
+        {
+            panel.Children.Add(new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("120,10,*"),
+                ColumnSpacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = string.IsNullOrWhiteSpace(label) ? "Field" : label,
+                        FontWeight = FontWeight.SemiBold,
+                        Opacity = 0.85,
+                        Margin = new Thickness(0, 1, 0, 1)
+                    },
+                    new TextBlock { Text = ":" },
+                    new TextBlock
+                    {
+                        Text = value,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                }
+            });
         }
     }
 

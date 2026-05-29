@@ -3,29 +3,80 @@
              x:Class="Chummer.Avalonia.Controls.CharacterCareerClassicPort">
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
-    <Grid RowDefinitions="Auto,Auto,Auto,*"
-          RowSpacing="10">
+    <StackPanel Margin="8" Spacing="10">
       <TextBlock x:Name="CareerNoticeText"
                  TextWrapping="Wrap"
                  Opacity="0.8" />
-      <WrapPanel x:Name="CareerTabsPanel"
-                 Grid.Row="1"
-                 Orientation="Horizontal" />
-      <WrapPanel x:Name="CareerFactsPanel"
-                 Grid.Row="2"
-                 Orientation="Horizontal" />
-      <Grid Grid.Row="3"
-            ColumnDefinitions="3*,3*,2*"
-            ColumnSpacing="10">
-        <StackPanel x:Name="CareerSummaryPanel"
-                    Spacing="10" />
-        <StackPanel x:Name="CareerInventoryPanel"
-                    Grid.Column="1"
-                    Spacing="10" />
-        <StackPanel x:Name="CareerActionsPanel"
-                    Grid.Column="2"
-                    Spacing="10" />
-      </Grid>
-    </Grid>
+
+      <TabControl x:Name="CareerTabs">
+        <TabItem Header="Character">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Career Snapshot"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerSnapshotPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Advancement">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Advancement Data"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerAdvancementPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Gear">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Gear Loaded"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerGearPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Armor">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Armor and Protection"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerArmorPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Weapons">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Weapons"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerWeaponsPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Contacts">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Contacts"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerContactsPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Notes">
+          <StackPanel Spacing="8" Margin="6">
+            <TextBlock Text="Notes"
+                       FontWeight="SemiBold" />
+            <StackPanel x:Name="CareerNotesPanel"
+                        Spacing="4" />
+            <TextBlock Text="Recent Actions"
+                       FontWeight="SemiBold"
+                       Margin="0,8,0,0" />
+            <StackPanel x:Name="CareerActionsPanel"
+                        Spacing="4" />
+          </StackPanel>
+        </TabItem>
+      </TabControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

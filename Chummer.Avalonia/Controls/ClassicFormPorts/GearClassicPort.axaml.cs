@@ -6,11 +6,11 @@ namespace Chummer.Avalonia.Controls;
 public partial class GearClassicPort : ClassicFormPortSurfaceControl
 {
     private readonly TextBlock? _noticeText;
-    private readonly WrapPanel? _tabsPanel;
-    private readonly WrapPanel? _factsPanel;
+    private readonly TabControl? _tabs;
     private readonly StackPanel? _categoryPanel;
     private readonly StackPanel? _filterPanel;
     private readonly StackPanel? _detailPanel;
+    private readonly StackPanel? _purchasePanel;
 
     public GearClassicPort()
         : base(
@@ -21,63 +21,71 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
     {
         AvaloniaXamlLoader.Load(this);
         _noticeText = this.FindControl<TextBlock>("GearNoticeText");
-        _tabsPanel = this.FindControl<WrapPanel>("GearTabsPanel");
-        _factsPanel = this.FindControl<WrapPanel>("GearFactsPanel");
+        _tabs = this.FindControl<TabControl>("GearTabs");
         _categoryPanel = this.FindControl<StackPanel>("GearCategoryPanel");
         _filterPanel = this.FindControl<StackPanel>("GearFilterPanel");
         _detailPanel = this.FindControl<StackPanel>("GearDetailPanel");
+        _purchasePanel = this.FindControl<StackPanel>("GearPurchasePanel");
     }
 
     protected override void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot)
     {
+        _ = snapshot;
         if (_noticeText is not null)
         {
-            SetLeadNotice(_noticeText, state.Notice, "Classic gear acquisition keeps category, filters, and purchase detail visible together.");
+            SetLeadNotice(_noticeText, state.Notice, "Gear selection and purchase are kept in a tabbed classic layout.");
         }
 
-        if (_tabsPanel is not null)
-        {
-            RenderTagBand(_tabsPanel, MergeLegacyTabs(Tabs, snapshot), state.ActiveTabId);
-        }
-
-        if (_factsPanel is not null)
-        {
-            RenderFactBand(
-                _factsPanel,
-                [
-                    new ClassicSheetFactDisplayItem("Category Rows", MatchRows(state.Rows, 1, "gearCount").FirstOrDefault()?.Detail ?? "n/a"),
-                    new ClassicSheetFactDisplayItem("Weapons", FindValue(state.Rows, "weaponCount")),
-                    new ClassicSheetFactDisplayItem("Armor", FindValue(state.Rows, "armorCount")),
-                    new ClassicSheetFactDisplayItem("Nuyen", FindValue(state.Rows, "nuyen")),
-                ]);
-        }
+        SetActiveTab(_tabs, state.ActiveTabId, "Category", "Filters", "Details", "Purchase");
 
         if (_categoryPanel is not null)
         {
-            _categoryPanel.Children.Clear();
-            StackPanel categories = new();
-            RenderDetailList(categories, MatchRows(state.Rows, 12, "gear", "weapon", "armor", "cyberware", "vehicle"), "Gear categories will appear here.");
-            _categoryPanel.Children.Add(BuildClassicPane("Category Browser", categories));
+            RenderFieldRows(
+                _categoryPanel,
+                MatchRows(state.Rows, 18, "category", "gear", "weapon", "armor", "cyberware"),
+                "No gear categories are currently visible.");
         }
 
         if (_filterPanel is not null)
         {
             _filterPanel.Children.Clear();
-            StackPanel filters = new();
-            RenderDetailList(filters, snapshot.Groups.Take(8).Select(group => new ClassicPortLineItem("Filter Group", group)), "Legacy filter groups are not available.");
-            _filterPanel.Children.Add(BuildClassicPane("Classic Filters", filters));
+
+            StackPanel filterChrome = new();
+            RenderDetailList(
+                filterChrome,
+                [
+                    new ClassicPortLineItem("Filter Group", FindValue(state.Rows, "filter")),
+                    new ClassicPortLineItem("Search Text", FindValue(state.Rows, "search")),
+                    new ClassicPortLineItem("Sort", FindValue(state.Rows, "sort")),
+                ],
+                "No legacy filter groups were exposed.");
+            _filterPanel.Children.Add(BuildClassicPane("Filter Controls", filterChrome));
 
             StackPanel actions = new();
-            RenderDetailList(actions, CollectActionLabels(state).Select(label => new ClassicPortLineItem("Action", label)), "No gear actions are available yet.");
-            _filterPanel.Children.Add(BuildClassicPane("Purchase Actions", actions));
+            RenderActionRows(
+                actions,
+                CollectActionLabels(state),
+                "No purchase actions are currently exposed.");
+            _filterPanel.Children.Add(BuildClassicPane("Available Actions", actions));
         }
 
         if (_detailPanel is not null)
         {
-            _detailPanel.Children.Clear();
             StackPanel details = new();
-            RenderDetailList(details, MatchRows(state.Rows, 12), "Select an item to see classic detail values.");
+            RenderFieldRows(
+                details,
+                MatchRows(state.Rows, 16, "detail", "quality", "availability", "cost"),
+                "Select an item to show classic detail values.");
+            _detailPanel.Children.Clear();
             _detailPanel.Children.Add(BuildClassicPane("Selected Item Detail", details));
+        }
+
+        if (_purchasePanel is not null)
+        {
+            StackPanel purchase = new();
+            _purchasePanel.Children.Clear();
+            RenderActionRows(purchase, CollectActionLabels(state), "No purchase actions are available yet.");
+            _purchasePanel.Children.Add(BuildClassicPane("Purchase Queue", purchase));
         }
     }
 }
