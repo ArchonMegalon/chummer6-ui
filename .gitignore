@@ -283,3 +283,9 @@ Chummer/Resources/source/upscaling/4x_FireAlpha.pth
 !/.codex-studio/published/
 !/.codex-studio/published/QUEUE.generated.yaml
 !/.codex-studio/published/WORKPACKAGES.generated.yaml
+*.zip
+*.dmg
+*.pkg
+*.deb
+*.tar.gz
+*.tgz
