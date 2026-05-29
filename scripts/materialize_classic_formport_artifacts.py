@@ -23,6 +23,7 @@ CONTACT_SHEETS_PATH = PUBLISHED / "CLASSIC_PIXEL_CONTACT_SHEETS.generated.json"
 BUDGETS_PATH = PUBLISHED / "CLASSIC_VETERAN_TASK_TIME_BUDGETS.generated.json"
 HUMAN_REVIEW_PATH = PUBLISHED / "CLASSIC_FORM_PORT_HUMAN_REVIEW.md"
 VERDICT_PATH = PUBLISHED / "CLASSIC_FORM_PORT_DESKTOP_VERDICT.md"
+REALITY_AUDIT_PATH = PUBLISHED / "CLASSIC_FORMPORT_REALITY_AUDIT.generated.json"
 
 DESIGNER_TARGETS = {
     "CharacterCareer": FORMS_ROOT / "Forms" / "Character Forms" / "CharacterCareer.Designer.cs",
@@ -247,6 +248,7 @@ def main() -> int:
     )
 
     coverage_rows = []
+    reality_rows = []
     fully_real = True
     state_refresh_text = (ROOT / "Chummer.Avalonia" / "MainWindow.StateRefresh.cs").read_text(encoding="utf-8")
     classic_surface_text = (ROOT / "Chummer.Avalonia" / "Controls" / "ClassicFormPorts" / "ClassicFormPortSurfaceControl.cs").read_text(encoding="utf-8")
@@ -283,9 +285,44 @@ def main() -> int:
                 "IsEnabled = false",
                 "BuildTabSummary",
                 "No classic quick actions are available yet.",
+                "RenderFieldRows(",
+                "MatchRows(state.Rows",
+                "FindValue(state.Rows",
             )
             if token in runtime_text or token in xaml_text
         ]
+        dense_control_hits = [
+            token
+            for token in (
+                "DataGrid",
+                "TreeView",
+                "ListBox",
+                "ComboBox",
+                "NumericUpDown",
+                "NumericUpDownEx",
+                "TabControl",
+                "GridSplitter",
+                "ContextMenu",
+            )
+            if token in runtime_text or token in xaml_text
+        ]
+        designer_control_count = 0
+        designer_tab_count = 0
+        designer_group_count = 0
+        for source in designer_sources:
+            designer_path = ROOT / source
+            if not designer_path.is_file():
+                continue
+            parsed_source = parse_designer(designer_path)
+            designer_control_count += len(parsed_source.controls)
+            designer_tab_count += len(parsed_source.tabs)
+            designer_group_count += len(parsed_source.groups)
+        shallow_projection = bool(
+            "RenderFieldRows(" in runtime_text
+            or "MatchRows(state.Rows" in runtime_text
+            or "FindValue(state.Rows" in runtime_text
+        )
+        density_deficit = len(dense_control_hits) < 3
         is_real_form_native = (
             port_exists
             and xaml_exists
@@ -293,8 +330,39 @@ def main() -> int:
             and parser_backed
             and formport_runtime_switch
             and not port_scaffold_hits
+            and not shallow_projection
+            and not density_deficit
         )
         fully_real = fully_real and is_real_form_native
+        reality_reasons = []
+        if not port_exists:
+            reality_reasons.append("runtime port file missing")
+        if not xaml_exists:
+            reality_reasons.append("runtime XAML file missing")
+        if not route_bound:
+            reality_reasons.append("Classic route tokens are not bound in policy")
+        if not parser_backed:
+            reality_reasons.append("legacy designer source is missing")
+        if shallow_projection:
+            reality_reasons.append("port still projects generic SectionRowDisplayItem rows")
+        if density_deficit:
+            reality_reasons.append("port lacks dense classic controls expected from WinForms parity")
+        if port_scaffold_hits:
+            reality_reasons.append("scaffold/generic tokens are present")
+        reality_rows.append(
+            {
+                "surface_id": surface_id,
+                "port_class": contract.get("port_class"),
+                "designer_control_count": designer_control_count,
+                "designer_tab_count": designer_tab_count,
+                "designer_group_count": designer_group_count,
+                "dense_control_hits": dense_control_hits,
+                "shallow_projection": shallow_projection,
+                "generic_placeholder_hits": port_scaffold_hits,
+                "status": "pass" if is_real_form_native else "fail",
+                "reasons": reality_reasons,
+            }
+        )
         coverage_rows.append(
             {
                 "surface_id": surface_id,
@@ -312,6 +380,8 @@ def main() -> int:
                 else "W1 port is routed natively.",
                 "real_form_native_surface": is_real_form_native,
                 "generic_placeholder_hits": port_scaffold_hits,
+                "dense_control_hits": dense_control_hits,
+                "shallow_projection": shallow_projection,
             }
         )
 
@@ -322,6 +392,18 @@ def main() -> int:
             "status": "pass" if fully_real else "fail",
             "w1_surface_count": len(coverage_rows),
             "coverage": coverage_rows,
+        },
+    )
+
+    write_json(
+        REALITY_AUDIT_PATH,
+        {
+            "generated_at": utc_now(),
+            "status": "pass" if fully_real else "fail",
+            "verdict": "CLASSIC_FORMPORT_REALITY_READY" if fully_real else "NOT_READY",
+            "audit_scope": "V14 classic FormPort reality audit: W1 ports must be dense form-specific replacements, not generic row projections.",
+            "surfaces": reality_rows,
+            "blocking_surfaces": [row["surface_id"] for row in reality_rows if row["status"] != "pass"],
         },
     )
 

@@ -1,0 +1,123 @@
+{
+  "generated_at": "2026-05-29T16:09:36Z",
+  "status": "fail",
+  "verdict": "NOT_READY",
+  "audit_scope": "V14 classic FormPort reality audit: W1 ports must be dense form-specific replacements, not generic row projections.",
+  "surfaces": [
+    {
+      "surface_id": "character_career",
+      "port_class": "CharacterCareerClassicPort",
+      "designer_control_count": 1338,
+      "designer_tab_count": 40,
+      "designer_group_count": 29,
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "status": "fail",
+      "reasons": [
+        "port still projects generic SectionRowDisplayItem rows",
+        "port lacks dense classic controls expected from WinForms parity",
+        "scaffold/generic tokens are present"
+      ]
+    },
+    {
+      "surface_id": "character_create",
+      "port_class": "CharacterCreateClassicPort",
+      "designer_control_count": 1037,
+      "designer_tab_count": 30,
+      "designer_group_count": 26,
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "status": "fail",
+      "reasons": [
+        "port still projects generic SectionRowDisplayItem rows",
+        "port lacks dense classic controls expected from WinForms parity",
+        "scaffold/generic tokens are present"
+      ]
+    },
+    {
+      "surface_id": "gear",
+      "port_class": "GearClassicPort",
+      "designer_control_count": 55,
+      "designer_tab_count": 0,
+      "designer_group_count": 1,
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "status": "fail",
+      "reasons": [
+        "port still projects generic SectionRowDisplayItem rows",
+        "port lacks dense classic controls expected from WinForms parity",
+        "scaffold/generic tokens are present"
+      ]
+    },
+    {
+      "surface_id": "master_index",
+      "port_class": "MasterIndexClassicPort",
+      "designer_control_count": 19,
+      "designer_tab_count": 0,
+      "designer_group_count": 0,
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows"
+      ],
+      "status": "fail",
+      "reasons": [
+        "port still projects generic SectionRowDisplayItem rows",
+        "port lacks dense classic controls expected from WinForms parity",
+        "scaffold/generic tokens are present"
+      ]
+    },
+    {
+      "surface_id": "settings",
+      "port_class": "SettingsClassicPort",
+      "designer_control_count": 146,
+      "designer_tab_count": 4,
+      "designer_group_count": 9,
+      "dense_control_hits": [
+        "TabControl",
+        "ContextMenu"
+      ],
+      "shallow_projection": true,
+      "generic_placeholder_hits": [
+        "RenderFieldRows("
+      ],
+      "status": "fail",
+      "reasons": [
+        "port still projects generic SectionRowDisplayItem rows",
+        "port lacks dense classic controls expected from WinForms parity",
+        "scaffold/generic tokens are present"
+      ]
+    }
+  ],
+  "blocking_surfaces": [
+    "character_career",
+    "character_create",
+    "gear",
+    "master_index",
+    "settings"
+  ]
+}

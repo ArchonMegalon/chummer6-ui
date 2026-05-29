@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-29T07:35:58Z",
-  "status": "pass",
+  "generated_at": "2026-05-29T16:09:36Z",
+  "status": "fail",
   "w1_surface_count": 5,
   "coverage": [
     {
@@ -18,9 +18,17 @@
       "route_tokens_present_in_policy": true,
       "parser_backed_from_designer": true,
       "generic_section_host_fallback": false,
-      "coverage_reason": "W1 port is routed natively.",
-      "real_form_native_surface": true,
-      "generic_placeholder_hits": []
+      "coverage_reason": "W1 port is still a classic-host scaffold, not a verified fully form-native replacement.",
+      "real_form_native_surface": false,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true
     },
     {
       "surface_id": "character_create",
@@ -37,9 +45,17 @@
       "route_tokens_present_in_policy": true,
       "parser_backed_from_designer": true,
       "generic_section_host_fallback": false,
-      "coverage_reason": "W1 port is routed natively.",
-      "real_form_native_surface": true,
-      "generic_placeholder_hits": []
+      "coverage_reason": "W1 port is still a classic-host scaffold, not a verified fully form-native replacement.",
+      "real_form_native_surface": false,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true
     },
     {
       "surface_id": "gear",
@@ -54,9 +70,17 @@
       "route_tokens_present_in_policy": true,
       "parser_backed_from_designer": true,
       "generic_section_host_fallback": false,
-      "coverage_reason": "W1 port is routed natively.",
-      "real_form_native_surface": true,
-      "generic_placeholder_hits": []
+      "coverage_reason": "W1 port is still a classic-host scaffold, not a verified fully form-native replacement.",
+      "real_form_native_surface": false,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows",
+        "FindValue(state.Rows"
+      ],
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true
     },
     {
       "surface_id": "master_index",
@@ -72,9 +96,16 @@
       "route_tokens_present_in_policy": true,
       "parser_backed_from_designer": true,
       "generic_section_host_fallback": false,
-      "coverage_reason": "W1 port is routed natively.",
-      "real_form_native_surface": true,
-      "generic_placeholder_hits": []
+      "coverage_reason": "W1 port is still a classic-host scaffold, not a verified fully form-native replacement.",
+      "real_form_native_surface": false,
+      "generic_placeholder_hits": [
+        "RenderFieldRows(",
+        "MatchRows(state.Rows"
+      ],
+      "dense_control_hits": [
+        "TabControl"
+      ],
+      "shallow_projection": true
     },
     {
       "surface_id": "settings",
@@ -90,9 +121,16 @@
       "route_tokens_present_in_policy": true,
       "parser_backed_from_designer": true,
       "generic_section_host_fallback": false,
-      "coverage_reason": "W1 port is routed natively.",
-      "real_form_native_surface": true,
-      "generic_placeholder_hits": []
+      "coverage_reason": "W1 port is still a classic-host scaffold, not a verified fully form-native replacement.",
+      "real_form_native_surface": false,
+      "generic_placeholder_hits": [
+        "RenderFieldRows("
+      ],
+      "dense_control_hits": [
+        "TabControl",
+        "ContextMenu"
+      ],
+      "shallow_projection": true
     }
   ]
 }
