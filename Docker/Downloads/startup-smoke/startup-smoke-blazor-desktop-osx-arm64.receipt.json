@@ -3,7 +3,7 @@
   "headId": "blazor-desktop",
   "version": "run-20260518-220935",
   "releaseVersion": "run-20260518-220935",
-  "channelId": "docker",
+  "channelId": "public_stable",
   "platform": "macos",
   "arch": "arm64",
   "rid": "osx-arm64",
@@ -23,5 +23,5 @@
   "artifactRelativePath": "files/chummer-blazor-desktop-osx-arm64-installer.dmg",
   "artifactSha256": "2f5220b2f67029edf221f3e2ca1047298c085c4b8f843085ebca196320d6b463",
   "artifactId": "blazor-desktop-osx-arm64-installer",
-  "channel": "docker"
+  "channel": "public_stable"
 }

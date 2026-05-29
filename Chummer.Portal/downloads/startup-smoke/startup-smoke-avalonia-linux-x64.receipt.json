@@ -3,7 +3,7 @@
   "headId": "avalonia",
   "version": "run-20260518-220935",
   "releaseVersion": "run-20260518-220935",
-  "channelId": "docker",
+  "channelId": "public_stable",
   "platform": "linux",
   "arch": "x64",
   "rid": "linux-x64",
@@ -29,5 +29,5 @@
   "artifactRelativePath": "files/chummer-avalonia-linux-x64-installer.deb",
   "artifactSha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
   "artifactId": "avalonia-linux-x64-installer",
-  "channel": "docker"
+  "channel": "public_stable"
 }

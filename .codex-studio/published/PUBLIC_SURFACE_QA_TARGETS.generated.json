@@ -1,0 +1,23 @@
+{
+  "generated_at_utc": "2026-05-29T19:30:00Z",
+  "provider": "Pixefy",
+  "scope": "public_routes_only",
+  "privacy_boundary": {
+    "no_private_campaign_data": true,
+    "no_private_runner_sheets": true,
+    "screenshots_may_be_committed_only_when_public_safe": true
+  },
+  "routes": [
+    { "id": "home", "url": "https://chummer.run/", "required": true },
+    { "id": "downloads", "url": "https://chummer.run/downloads", "required": true },
+    { "id": "status", "url": "https://chummer.run/status", "required": true },
+    { "id": "ledger", "url": "https://chummer.run/ledger", "required": true },
+    { "id": "ledger_map", "url": "https://chummer.run/ledger/map", "required": true },
+    { "id": "ledger_factions", "url": "https://chummer.run/ledger/factions", "required": true },
+    { "id": "ledger_newsroom", "url": "https://chummer.run/ledger/newsroom", "required": true },
+    { "id": "play", "url": "https://chummer.run/play", "required": true },
+    { "id": "help", "url": "https://chummer.run/help", "required": true },
+    { "id": "feedback", "url": "https://chummer.run/feedback", "required": true }
+  ],
+  "status": "ready_for_pixefy_capture"
+}

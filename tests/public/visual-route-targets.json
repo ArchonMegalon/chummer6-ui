@@ -1,0 +1,28 @@
+{
+  "provider": "Pixefy",
+  "device_matrix": [
+    { "id": "iphone_se", "viewport": "375x667" },
+    { "id": "iphone_pro", "viewport": "393x852" },
+    { "id": "iphone_pro_max", "viewport": "430x932" },
+    { "id": "android_small", "viewport": "360x740" },
+    { "id": "android_large", "viewport": "412x915" },
+    { "id": "ipad_portrait", "viewport": "768x1024" },
+    { "id": "ipad_landscape", "viewport": "1024x768" },
+    { "id": "desktop_1366", "viewport": "1366x768" },
+    { "id": "desktop_1440", "viewport": "1440x900" },
+    { "id": "desktop_1920", "viewport": "1920x1080" },
+    { "id": "desktop_ultrawide", "viewport": "2560x1080" }
+  ],
+  "routes": [
+    { "id": "home", "url": "https://chummer.run/" },
+    { "id": "downloads", "url": "https://chummer.run/downloads" },
+    { "id": "status", "url": "https://chummer.run/status" },
+    { "id": "ledger", "url": "https://chummer.run/ledger" },
+    { "id": "ledger_map", "url": "https://chummer.run/ledger/map" },
+    { "id": "ledger_factions", "url": "https://chummer.run/ledger/factions" },
+    { "id": "ledger_newsroom", "url": "https://chummer.run/ledger/newsroom" },
+    { "id": "play", "url": "https://chummer.run/play" },
+    { "id": "help", "url": "https://chummer.run/help" },
+    { "id": "feedback", "url": "https://chummer.run/feedback" }
+  ]
+}
