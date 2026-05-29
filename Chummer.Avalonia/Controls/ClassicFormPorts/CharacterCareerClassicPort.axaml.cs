@@ -7,14 +7,15 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
 {
     private readonly TextBlock? _noticeText;
     private readonly TabControl? _tabs;
-    private readonly StackPanel? _snapshotPanel;
-    private readonly StackPanel? _advancementPanel;
-    private readonly StackPanel? _gearPanel;
-    private readonly StackPanel? _armorPanel;
-    private readonly StackPanel? _weaponsPanel;
-    private readonly StackPanel? _contactsPanel;
-    private readonly StackPanel? _notesPanel;
-    private readonly StackPanel? _actionsPanel;
+    private readonly ComboBox? _actionSelector;
+    private readonly ListBox? _snapshotList;
+    private readonly TreeView? _advancementTree;
+    private readonly ListBox? _gearList;
+    private readonly ListBox? _armorList;
+    private readonly ListBox? _weaponsList;
+    private readonly TreeView? _contactsTree;
+    private readonly ListBox? _notesList;
+    private readonly ListBox? _actionsList;
 
     public CharacterCareerClassicPort()
         : base(
@@ -26,14 +27,15 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         AvaloniaXamlLoader.Load(this);
         _noticeText = this.FindControl<TextBlock>("CareerNoticeText");
         _tabs = this.FindControl<TabControl>("CareerTabs");
-        _snapshotPanel = this.FindControl<StackPanel>("CareerSnapshotPanel");
-        _advancementPanel = this.FindControl<StackPanel>("CareerAdvancementPanel");
-        _gearPanel = this.FindControl<StackPanel>("CareerGearPanel");
-        _armorPanel = this.FindControl<StackPanel>("CareerArmorPanel");
-        _weaponsPanel = this.FindControl<StackPanel>("CareerWeaponsPanel");
-        _contactsPanel = this.FindControl<StackPanel>("CareerContactsPanel");
-        _notesPanel = this.FindControl<StackPanel>("CareerNotesPanel");
-        _actionsPanel = this.FindControl<StackPanel>("CareerActionsPanel");
+        _actionSelector = this.FindControl<ComboBox>("CareerActionSelector");
+        _snapshotList = this.FindControl<ListBox>("CareerSnapshotList");
+        _advancementTree = this.FindControl<TreeView>("CareerAdvancementTree");
+        _gearList = this.FindControl<ListBox>("CareerGearList");
+        _armorList = this.FindControl<ListBox>("CareerArmorList");
+        _weaponsList = this.FindControl<ListBox>("CareerWeaponsList");
+        _contactsTree = this.FindControl<TreeView>("CareerContactsTree");
+        _notesList = this.FindControl<ListBox>("CareerNotesList");
+        _actionsList = this.FindControl<ListBox>("CareerActionsList");
     }
 
     protected override void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot)
@@ -45,74 +47,46 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Character", "Advancement", "Gear", "Armor", "Weapons", "Contacts", "Notes");
+        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
+        IReadOnlyList<string> actions = CollectActionLabels(state);
+        PopulateClassicSelector(_actionSelector, actions, "No actions");
 
-        if (_snapshotPanel is not null)
-        {
-            RenderFieldRows(
-                _snapshotPanel,
-                [
-                    new SectionRowDisplayItem("Name", FindValue(state.Rows, "name")),
-                    new SectionRowDisplayItem("Lifestyle", FindValue(state.Rows, "lifestyle")),
-                    new SectionRowDisplayItem("Build Method", FindValue(state.Rows, "buildMethod", "settings")),
-                    new SectionRowDisplayItem("Street Cred", FindValue(state.Rows, "streetCred", "street")),
-                    new SectionRowDisplayItem("Essence", FindValue(state.Rows, "essence")),
-                    new SectionRowDisplayItem("Karma", FindValue(state.Rows, "karma")),
-                    new SectionRowDisplayItem("Nuyen", FindValue(state.Rows, "nuyen")),
-                ],
-                "No core career metadata is currently available.");
-        }
+        PopulateClassicList(
+            _snapshotList,
+            [
+                new ClassicPortLineItem("Name", FindValue(rows, "name")),
+                new ClassicPortLineItem("Lifestyle", FindValue(rows, "lifestyle")),
+                new ClassicPortLineItem("Build Method", FindValue(rows, "buildMethod", "settings")),
+                new ClassicPortLineItem("Street Cred", FindValue(rows, "streetCred", "street")),
+                new ClassicPortLineItem("Essence", FindValue(rows, "essence")),
+                new ClassicPortLineItem("Karma", FindValue(rows, "karma")),
+                new ClassicPortLineItem("Nuyen", FindValue(rows, "nuyen")),
+            ],
+            "No core career metadata is currently available.");
 
-        if (_advancementPanel is not null)
-        {
-            RenderFieldRows(
-                _advancementPanel,
-                MatchRows(state.Rows, 12, "karma", "xp", "nextlevel", "improvement", "advancement", "metatype", "special"),
-                "Advancement details are not ready.");
-        }
+        PopulateClassicTree(
+            _advancementTree,
+            MatchRows(rows, 12, "karma", "xp", "nextlevel", "improvement", "advancement", "metatype", "special")
+                .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)),
+            "Advancement details are not ready.");
 
-        if (_gearPanel is not null)
-        {
-            RenderFieldRows(
-                _gearPanel,
-                MatchRows(state.Rows, 12, "gear", "cyberware", "mod"),
-                "No gear values are available yet.");
-        }
+        PopulateClassicList(_gearList, MatchRows(rows, 12, "gear", "cyberware", "mod"), "No gear values are available yet.");
 
-        if (_armorPanel is not null)
-        {
-            RenderFieldRows(
-                _armorPanel,
-                MatchRows(state.Rows, 12, "armor", "plate", "clothing"),
-                "Armor fields are currently empty.");
-        }
+        PopulateClassicList(_armorList, MatchRows(rows, 12, "armor", "plate", "clothing"), "Armor fields are currently empty.");
 
-        if (_weaponsPanel is not null)
-        {
-            RenderFieldRows(
-                _weaponsPanel,
-                MatchRows(state.Rows, 12, "weapon", "guns", "firearm", "blade"),
-                "No weapon items are loaded yet.");
-        }
+        PopulateClassicList(_weaponsList, MatchRows(rows, 12, "weapon", "guns", "firearm", "blade"), "No weapon items are loaded yet.");
 
-        if (_contactsPanel is not null)
-        {
-            RenderFieldRows(
-                _contactsPanel,
-                MatchRows(state.Rows, 12, "contact", "ally", "familiar"),
-                "No contacts have been loaded for this surface.");
-        }
+        PopulateClassicTree(
+            _contactsTree,
+            MatchRows(rows, 12, "contact", "ally", "familiar")
+                .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)),
+            "No contacts have been loaded for this surface.");
 
-        if (_notesPanel is not null)
-        {
-            RenderFieldRows(
-                _notesPanel,
-                MatchRows(state.Rows, 12, "note", "comment", "memo"),
-                "No notes are visible yet.");
-        }
+        PopulateClassicList(_notesList, MatchRows(rows, 12, "note", "comment", "memo"), "No notes are visible yet.");
 
-        if (_actionsPanel is not null)
-        {
-            RenderActionRows(_actionsPanel, CollectActionLabels(state), "No live actions are currently exposed for this surface.");
-        }
+        PopulateClassicList(
+            _actionsList,
+            actions.Select(action => new ClassicPortLineItem("Action", action)),
+            "No live actions are currently exposed for this surface.");
     }
 }

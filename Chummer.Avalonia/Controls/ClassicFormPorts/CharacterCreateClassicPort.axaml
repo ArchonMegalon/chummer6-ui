@@ -12,44 +12,45 @@
         <TabItem Header="Priorities">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Priority Grid" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreatePrioritiesPanel" Spacing="4" />
+            <ComboBox x:Name="CreatePrioritySelector" MinWidth="180" />
+            <ListBox x:Name="CreatePrioritiesList" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
         <TabItem Header="Attributes">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Attribute Values" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreateAttributesPanel" Spacing="4" />
+            <ListBox x:Name="CreateAttributesList" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
         <TabItem Header="Skills">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Skill Picks" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreateSkillsPanel" Spacing="4" />
+            <TreeView x:Name="CreateSkillsTree" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
         <TabItem Header="Gear">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Starting Gear" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreateGearPanel" Spacing="4" />
+            <ListBox x:Name="CreateGearList" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
         <TabItem Header="Spells">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Spells and Traditions" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreateSpellsPanel" Spacing="4" />
+            <TreeView x:Name="CreateSpellsTree" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
         <TabItem Header="Final">
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Finalized Profile" FontWeight="SemiBold" />
-            <StackPanel x:Name="CreateFinalPanel" Spacing="4" />
+            <ListBox x:Name="CreateFinalList" MinHeight="140" />
             <TextBlock Text="Create Actions" FontWeight="SemiBold" Margin="0,8,0,0" />
-            <StackPanel x:Name="CreateActionsPanel" Spacing="4" />
+            <ListBox x:Name="CreateActionsList" MinHeight="120" />
           </StackPanel>
         </TabItem>
       </TabControl>

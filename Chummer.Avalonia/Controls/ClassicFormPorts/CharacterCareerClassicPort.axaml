@@ -13,8 +13,19 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Career Snapshot"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerSnapshotPanel"
-                        Spacing="4" />
+            <ComboBox x:Name="CareerActionSelector"
+                      MinWidth="180" />
+            <ListBox x:Name="CareerSnapshotList"
+                     MinHeight="180">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="160,*" ColumnSpacing="8">
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                    <TextBlock Grid.Column="1" Text="{Binding Detail}" TextWrapping="Wrap" />
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
           </StackPanel>
         </TabItem>
 
@@ -22,8 +33,16 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Advancement Data"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerAdvancementPanel"
-                        Spacing="4" />
+            <TreeView x:Name="CareerAdvancementTree" MinHeight="180">
+              <TreeView.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel>
+                    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                    <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Opacity="0.78" />
+                  </StackPanel>
+                </DataTemplate>
+              </TreeView.ItemTemplate>
+            </TreeView>
           </StackPanel>
         </TabItem>
 
@@ -31,8 +50,8 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Gear Loaded"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerGearPanel"
-                        Spacing="4" />
+            <ListBox x:Name="CareerGearList"
+                     MinHeight="180" />
           </StackPanel>
         </TabItem>
 
@@ -40,8 +59,8 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Armor and Protection"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerArmorPanel"
-                        Spacing="4" />
+            <ListBox x:Name="CareerArmorList"
+                     MinHeight="180" />
           </StackPanel>
         </TabItem>
 
@@ -49,8 +68,8 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Weapons"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerWeaponsPanel"
-                        Spacing="4" />
+            <ListBox x:Name="CareerWeaponsList"
+                     MinHeight="180" />
           </StackPanel>
         </TabItem>
 
@@ -58,8 +77,7 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Contacts"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerContactsPanel"
-                        Spacing="4" />
+            <TreeView x:Name="CareerContactsTree" MinHeight="180" />
           </StackPanel>
         </TabItem>
 
@@ -67,13 +85,13 @@
           <StackPanel Spacing="8" Margin="6">
             <TextBlock Text="Notes"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="CareerNotesPanel"
-                        Spacing="4" />
+            <ListBox x:Name="CareerNotesList"
+                     MinHeight="140" />
             <TextBlock Text="Recent Actions"
                        FontWeight="SemiBold"
                        Margin="0,8,0,0" />
-            <StackPanel x:Name="CareerActionsPanel"
-                        Spacing="4" />
+            <ListBox x:Name="CareerActionsList"
+                     MinHeight="120" />
           </StackPanel>
         </TabItem>
       </TabControl>

@@ -213,6 +213,53 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         }
     }
 
+    protected static void PopulateClassicList(ListBox? listBox, IEnumerable<ClassicPortLineItem> lines, string emptyMessage)
+    {
+        if (listBox is null)
+        {
+            return;
+        }
+
+        ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
+        listBox.ItemsSource = materialized.Length == 0
+            ? [new ClassicPortLineItem("Status", emptyMessage)]
+            : materialized;
+    }
+
+    protected static void PopulateClassicList(ListBox? listBox, IEnumerable<SectionRowDisplayItem> rows, string emptyMessage, int maxCount = 24)
+        => PopulateClassicList(
+            listBox,
+            rows
+                .Where(static row => !string.IsNullOrWhiteSpace(row.DisplayValue))
+                .Take(maxCount)
+                .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)),
+            emptyMessage);
+
+    protected static void PopulateClassicTree(TreeView? treeView, IEnumerable<ClassicPortLineItem> lines, string emptyMessage)
+    {
+        if (treeView is null)
+        {
+            return;
+        }
+
+        ClassicPortLineItem[] materialized = lines.Where(static line => !string.IsNullOrWhiteSpace(line.Detail)).ToArray();
+        treeView.ItemsSource = materialized.Length == 0
+            ? [new ClassicPortLineItem("Status", emptyMessage)]
+            : materialized;
+    }
+
+    protected static void PopulateClassicSelector(ComboBox? comboBox, IEnumerable<string> labels, string emptyMessage)
+    {
+        if (comboBox is null)
+        {
+            return;
+        }
+
+        string[] materialized = labels.Where(static label => !string.IsNullOrWhiteSpace(label)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        comboBox.ItemsSource = materialized.Length == 0 ? [emptyMessage] : materialized;
+        comboBox.SelectedIndex = 0;
+    }
+
     private static void RenderFieldItems(Panel panel, IEnumerable<(string Label, string Value)> rows, string emptyMessage)
     {
         panel.Children.Clear();

@@ -13,9 +13,12 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Global Settings"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="SettingsGlobalPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ComboBox x:Name="SettingsGlobalSelector"
+                      Grid.Row="1"
+                      MinWidth="180" />
+            <ListBox x:Name="SettingsGlobalList"
+                     Grid.Row="2"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -23,9 +26,9 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Custom Data &amp; Plugins"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="SettingsCustomDataPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ListBox x:Name="SettingsCustomDataList"
+                     Grid.Row="1"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -33,9 +36,9 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="GitHub Issues"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="SettingsGitHubIssuesPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <TreeView x:Name="SettingsGitHubIssuesTree"
+                      Grid.Row="1"
+                      MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -43,9 +46,9 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Plugins"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="SettingsPluginsPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <TreeView x:Name="SettingsPluginsTree"
+                      Grid.Row="1"
+                      MinHeight="180" />
           </Grid>
         </TabItem>
       </TabControl>

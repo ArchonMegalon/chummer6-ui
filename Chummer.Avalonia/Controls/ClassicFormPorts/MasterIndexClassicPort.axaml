@@ -13,9 +13,12 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Browse Results"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="IndexBrowsePanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ComboBox x:Name="IndexBrowseSelector"
+                      Grid.Row="1"
+                      MinWidth="180" />
+            <TreeView x:Name="IndexBrowseTree"
+                      Grid.Row="2"
+                      MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -23,9 +26,9 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Search Workflow"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="IndexSearchPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ListBox x:Name="IndexSearchList"
+                     Grid.Row="1"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -33,9 +36,9 @@
           <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Source and Legacy Chrome"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="IndexSourcePanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ListBox x:Name="IndexSourceList"
+                     Grid.Row="1"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
       </TabControl>

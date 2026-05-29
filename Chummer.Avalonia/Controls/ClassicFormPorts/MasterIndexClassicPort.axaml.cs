@@ -7,9 +7,10 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
 {
     private readonly TextBlock? _noticeText;
     private readonly TabControl? _tabs;
-    private readonly StackPanel? _browsePanel;
-    private readonly StackPanel? _searchPanel;
-    private readonly StackPanel? _sourcePanel;
+    private readonly ComboBox? _browseSelector;
+    private readonly TreeView? _browseTree;
+    private readonly ListBox? _searchList;
+    private readonly ListBox? _sourceList;
 
     public MasterIndexClassicPort()
         : base(
@@ -21,9 +22,10 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
             AvaloniaXamlLoader.Load(this);
             _noticeText = this.FindControl<TextBlock>("IndexNoticeText");
             _tabs = this.FindControl<TabControl>("IndexTabs");
-            _browsePanel = this.FindControl<StackPanel>("IndexBrowsePanel");
-            _searchPanel = this.FindControl<StackPanel>("IndexSearchPanel");
-            _sourcePanel = this.FindControl<StackPanel>("IndexSourcePanel");
+            _browseSelector = this.FindControl<ComboBox>("IndexBrowseSelector");
+            _browseTree = this.FindControl<TreeView>("IndexBrowseTree");
+            _searchList = this.FindControl<ListBox>("IndexSearchList");
+            _sourceList = this.FindControl<ListBox>("IndexSourceList");
         }
 
     protected override void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot)
@@ -34,23 +36,15 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Browse", "Search", "Source");
+        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
+        IReadOnlyList<SectionRowDisplayItem> browseRows = MatchRows(rows, 12);
+        IReadOnlyList<string> actions = CollectActionLabels(state);
 
-        if (_browsePanel is not null)
-        {
-            RenderFieldRows(_browsePanel, MatchRows(state.Rows, 12), "Browse results will appear here once the index loads.");
-        }
+        PopulateClassicSelector(_browseSelector, browseRows.Select(static row => row.DisplayPath), "No index rows");
+        PopulateClassicTree(_browseTree, browseRows.Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)), "Browse results will appear here once the index loads.");
 
-        if (_searchPanel is not null)
-        {
-            RenderActionRows(_searchPanel, CollectActionLabels(state), "Search actions are not available yet.");
-        }
+        PopulateClassicList(_searchList, actions.Select(action => new ClassicPortLineItem("Search Action", action)), "Search actions are not available yet.");
 
-        if (_sourcePanel is not null)
-        {
-            _sourcePanel.Children.Clear();
-            StackPanel sourceChrome = new();
-            RenderDetailList(sourceChrome, DesignerChromeFacts(snapshot, 12), "Source chrome metadata is unavailable.");
-            _sourcePanel.Children.Add(BuildClassicPane("Source and Legacy Chrome", sourceChrome));
-        }
+        PopulateClassicList(_sourceList, DesignerChromeFacts(snapshot, 12), "Source chrome metadata is unavailable.");
     }
 }

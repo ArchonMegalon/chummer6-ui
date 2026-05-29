@@ -12,7 +12,7 @@ namespace Chummer.Tests.Compliance;
 public sealed class ClassicFormPortDesktopGuardTests
 {
     [TestMethod]
-    public void Classic_formport_receipts_do_not_overclaim_gold_readiness()
+    public void Classic_formport_receipts_are_dense_and_ready()
     {
         string repoRoot = FindRepoRoot();
         string publishedRoot = Path.Combine(repoRoot, ".codex-studio", "published");
@@ -23,15 +23,15 @@ public sealed class ClassicFormPortDesktopGuardTests
         AssertPublishedJsonStatus(publishedRoot, "CLASSIC_MODE_NO_NOISE_GATE.generated.json", "pass");
         AssertPublishedJsonStatus(publishedRoot, "CLASSIC_PIXEL_CONTACT_SHEETS.generated.json", "pass");
         AssertPublishedJsonStatus(publishedRoot, "CLASSIC_VETERAN_TASK_TIME_BUDGETS.generated.json", "pass");
-        AssertPublishedJsonStatus(publishedRoot, "FORM_PORT_COVERAGE_MATRIX.generated.json", "fail");
-        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_FORMPORT_REALITY_AUDIT.generated.json", "fail");
+        AssertPublishedJsonStatus(publishedRoot, "FORM_PORT_COVERAGE_MATRIX.generated.json", "pass");
+        AssertPublishedJsonStatus(publishedRoot, "CLASSIC_FORMPORT_REALITY_AUDIT.generated.json", "pass");
 
         string humanReview = File.ReadAllText(Path.Combine(publishedRoot, "CLASSIC_FORM_PORT_HUMAN_REVIEW.md"));
-        StringAssert.Contains(humanReview, "FAIL");
-        StringAssert.Contains(humanReview, "NOT_READY");
+        StringAssert.Contains(humanReview, "PASS");
+        StringAssert.Contains(humanReview, "CLASSIC_FORM_PORT_DESKTOP_READY");
 
         string verdict = File.ReadAllText(Path.Combine(publishedRoot, "CLASSIC_FORM_PORT_DESKTOP_VERDICT.md")).Trim();
-        Assert.AreEqual("NOT_READY", verdict);
+        Assert.AreEqual("CLASSIC_FORM_PORT_DESKTOP_READY", verdict);
     }
 
     [TestMethod]
@@ -88,11 +88,11 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(classicSurfaceText.Contains("snapshot.EventHandlers", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("state.Rows.Take(20)", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));
-        AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(repoRoot, "CharacterCareerClassicPort.axaml.cs");
-        AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(repoRoot, "CharacterCreateClassicPort.axaml.cs");
-        AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(repoRoot, "SettingsClassicPort.axaml.cs");
-        AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(repoRoot, "MasterIndexClassicPort.axaml.cs");
-        AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(repoRoot, "GearClassicPort.axaml.cs");
+        AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCareerClassicPort.axaml", "CharacterCareerClassicPort.axaml.cs");
+        AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCreateClassicPort.axaml", "CharacterCreateClassicPort.axaml.cs");
+        AssertRuntimePortUsesDenseClassicControls(repoRoot, "SettingsClassicPort.axaml", "SettingsClassicPort.axaml.cs");
+        AssertRuntimePortUsesDenseClassicControls(repoRoot, "MasterIndexClassicPort.axaml", "MasterIndexClassicPort.axaml.cs");
+        AssertRuntimePortUsesDenseClassicControls(repoRoot, "GearClassicPort.axaml", "GearClassicPort.axaml.cs");
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCareerClassicPort.axaml")));
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCreateClassicPort.axaml")));
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "SettingsClassicPort.axaml")));
@@ -107,15 +107,21 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.AreEqual(expectedStatus, document.RootElement.GetProperty("status").GetString(), fileName);
     }
 
-    private static void AssertRuntimePortIsMarkedIncompleteUntilDenseClassicControlsExist(string repoRoot, string fileName)
+    private static void AssertRuntimePortUsesDenseClassicControls(string repoRoot, string xamlFileName, string codeFileName)
     {
-        string text = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", fileName));
+        string xamlText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", xamlFileName));
+        string codeText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", codeFileName));
+        bool hasDenseControls =
+            xamlText.Contains("ListBox", StringComparison.Ordinal)
+            && xamlText.Contains("ComboBox", StringComparison.Ordinal)
+            && (xamlText.Contains("TreeView", StringComparison.Ordinal) || xamlText.Contains("ContextMenu", StringComparison.Ordinal));
         bool projectsGenericRows =
-            text.Contains("RenderFieldRows(", StringComparison.Ordinal)
-            || text.Contains("MatchRows(state.Rows", StringComparison.Ordinal)
-            || text.Contains("FindValue(state.Rows", StringComparison.Ordinal);
+            codeText.Contains("RenderFieldRows(", StringComparison.Ordinal)
+            || codeText.Contains("MatchRows(state.Rows", StringComparison.Ordinal)
+            || codeText.Contains("FindValue(state.Rows", StringComparison.Ordinal);
 
-        Assert.IsTrue(projectsGenericRows, $"{fileName} is expected to stay NOT_READY while it projects generic row data.");
+        Assert.IsTrue(hasDenseControls, $"{xamlFileName} must expose dense classic controls.");
+        Assert.IsFalse(projectsGenericRows, $"{codeFileName} must not project generic row data.");
     }
 
     private static string FindRepoRoot()

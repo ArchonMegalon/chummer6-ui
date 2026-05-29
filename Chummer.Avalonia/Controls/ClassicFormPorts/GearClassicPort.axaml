@@ -10,12 +10,15 @@
 
       <TabControl x:Name="GearTabs">
         <TabItem Header="Category">
-          <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Category Browser"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="GearCategoryPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ComboBox x:Name="GearCategorySelector"
+                      Grid.Row="1"
+                      MinWidth="180" />
+            <ListBox x:Name="GearCategoryList"
+                     Grid.Row="2"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -23,9 +26,9 @@
           <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Filters and Quick Actions"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="GearFilterPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <TreeView x:Name="GearFilterTree"
+                      Grid.Row="1"
+                      MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -33,9 +36,9 @@
           <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Item Detail"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="GearDetailPanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ListBox x:Name="GearDetailList"
+                     Grid.Row="1"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
 
@@ -43,9 +46,9 @@
           <Grid RowDefinitions="Auto,*" RowSpacing="8" Margin="6">
             <TextBlock Text="Purchase Actions"
                        FontWeight="SemiBold" />
-            <StackPanel x:Name="GearPurchasePanel"
-                        Grid.Row="1"
-                        Spacing="4" />
+            <ListBox x:Name="GearPurchaseList"
+                     Grid.Row="1"
+                     MinHeight="180" />
           </Grid>
         </TabItem>
       </TabControl>
