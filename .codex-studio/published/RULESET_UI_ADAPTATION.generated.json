@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T10:48:59.786630Z",
+  "generatedAt": "2026-05-29T11:03:03.409525Z",
   "contract_name": "chummer6-ui.ruleset_ui_adaptation_frontier",
   "channelId": "public_stable",
   "status": "pass",
@@ -7,7 +7,7 @@
   "reasons": [],
   "evidence": {
     "rulesetAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "unitTestBuildExit": 0,
     "signoffTestBuildExit": 0,
@@ -31,8 +31,8 @@
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-05-29T08:34:38Z",
-    "releaseChannelAgeSeconds": 8061,
+    "releaseChannelGeneratedAt": "2026-05-29T10:59:40Z",
+    "releaseChannelAgeSeconds": 203,
     "releaseChannelFutureSkewSeconds": 0,
     "testExecutionAttempted": true,
     "failureCount": 0
@@ -81,10 +81,10 @@
     "status": "pass",
     "summary": "Ruleset UI adaptation proof is aligned to a current release-channel identity.",
     "reasons": [],
-    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "path": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-05-29T08:34:38Z",
-    "ageSeconds": 8061,
+    "generatedAt": "2026-05-29T10:59:40Z",
+    "ageSeconds": 203,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
