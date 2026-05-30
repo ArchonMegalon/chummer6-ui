@@ -47,7 +47,7 @@ SOURCE_MARKERS = {
         "BuildResolutionReportCloseoutSummary()",
         "BLACK LEDGER consequence proof:",
         "Campaign adoption proof:",
-        "Review campaign consequences before opening another restore surface.",
+        "Review campaign consequences before continuing this restore route.",
     ],
     "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs": [
         "BuildCampaignAdoptionSummary()",

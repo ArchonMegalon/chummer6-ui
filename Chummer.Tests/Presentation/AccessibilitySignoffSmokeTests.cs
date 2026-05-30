@@ -805,6 +805,8 @@ internal static class AccessibilitySignoffSmokeTests
     private static void DesktopHome_wires_the_campaign_projection_into_the_summary_panel()
     {
         string source = ReadSource("Chummer.Avalonia/DesktopHomeWindow.cs");
+        string campaignWorkspaceSource = ReadSource("Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs");
+        string campaignSurfaceSource = source + "\n" + campaignWorkspaceSource;
         RequireContains(source, "ReadCampaignProjectionAsync");
         RequireContains(source, "BuildCampaignBody()");
         RequireContains(source, "_campaignProjection.NextSafeAction");
@@ -846,7 +848,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "Campaign consequence summary:");
         RequireContains(source, "Campaign consequence proof:");
         RequireContains(source, "Campaign next-session return:");
-        RequireContains(source, "Review campaign consequences before opening another restore surface.");
+        RequireContains(campaignSurfaceSource, "Review campaign consequences before continuing this restore route.");
         RequireContains(source, "Review next-session return action:");
         RequireContains(source, "CreateCampaignActions()");
         RequireContains(source, "desktop.home.section.campaign_return");

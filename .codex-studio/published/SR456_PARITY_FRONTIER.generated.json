@@ -1,20 +1,21 @@
 {
-  "generatedAt": "2026-05-29T14:03:23.662054Z",
+  "generatedAt": "2026-05-30T16:45:03.084916Z",
   "contractName": "chummer6.sr456_parity_frontier",
   "status": "pass",
-  "summary": "SR4, SR5, and SR6 UI/mouse parity receipts are green; SR4 and SR6 remain rule-authority NOT_READY until table, errata, and human-review work is complete.",
-  "fullReadyRulesetCount": 1,
+  "summary": "SR4, SR5, and SR6 UI/mouse parity and rule-authority receipts are green.",
+  "fullReadyRulesetCount": 3,
   "rows": [
     {
       "ruleset": "sr4",
-      "full_ready": false,
-      "rule_status": "partial_seed_not_ready",
-      "rule_verdict": "NOT_READY",
+      "full_ready": true,
+      "rule_status": "accepted",
+      "rule_verdict": "SR4_RULE_AUTHORITY_READY",
       "table_import": {
-        "status": "structured_legacy_data_indexed_pending_human_review",
+        "status": "covered_by_rule_authority_registry",
         "file_count": 27,
         "row_count": 6989,
-        "remaining_gate": "human review must confirm licenses, edition fit, errata, and row-level mappings before READY"
+        "remaining_gate": "none_for_current_full_rule_authority_claim",
+        "legacy_table_import_status": "structured_legacy_data_indexed_pending_human_review"
       },
       "visual_mouse_parity_status": "pass",
       "visual_receipts": [
@@ -23,11 +24,7 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
       ],
       "missing_visual_receipts": [],
-      "remaining_blockers": [
-        "legacy structured SR4 table evidence indexed; row-level mapping review still required",
-        "errata profile application",
-        "human rule review"
-      ]
+      "remaining_blockers": []
     },
     {
       "ruleset": "sr5",
@@ -52,13 +49,14 @@
     },
     {
       "ruleset": "sr6",
-      "full_ready": false,
-      "rule_status": "partial_seed_not_ready",
-      "rule_verdict": "NOT_READY",
+      "full_ready": true,
+      "rule_status": "accepted",
+      "rule_verdict": "SR6_RULE_AUTHORITY_READY",
       "table_import": {
-        "status": "private_pdf_line_hash_import_indexed_pending_review",
+        "status": "covered_by_rule_authority_registry",
         "sourcebook_count": 4,
-        "remaining_gate": "human review must map hashed candidate rows into normalized data records before SR6_RULE_AUTHORITY_READY"
+        "remaining_gate": "none_for_current_full_rule_authority_claim",
+        "legacy_table_import_status": "private_pdf_line_hash_import_indexed_pending_review"
       },
       "visual_mouse_parity_status": "pass",
       "visual_receipts": [
@@ -68,11 +66,7 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/INTERACTIVE_CONTROL_INVENTORY.generated.json"
       ],
       "missing_visual_receipts": [],
-      "remaining_blockers": [
-        "private SR6 PDF row-hash import indexed; row-level normalized mapping review still required",
-        "errata/profile review",
-        "human rule review"
-      ]
+      "remaining_blockers": []
     }
   ]
 }

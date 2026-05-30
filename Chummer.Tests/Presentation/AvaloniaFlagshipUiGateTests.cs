@@ -1174,7 +1174,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                     timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Veteran first-minute proof requires a loaded runner profile before import review.");
                 Assert.IsTrue(harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible, "Veteran first-minute proof requires the loaded-runner tab strip after the desktop import shortcut.");
-                Assert.IsFalse(harness.FindControl<Control>("QuickStartContainer").IsVisible, "Veteran first-minute proof must stay on the quiet shell without reviving the old quick-start band.");
+                Assert.IsFalse(
+                    harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible ?? false,
+                    "Veteran first-minute proof must stay on the quiet shell without reviving the old quick-start band.");
 
                 harness.Click("FileMenuButton");
                 harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
@@ -3771,7 +3773,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                         harness.Presenter.ImportCalls > 0
                         && !string.IsNullOrWhiteSpace(harness.State.Profile?.Name)
                         && harness.FindControlOrDefault<Control>("LoadedRunnerTabStripBorder")?.IsVisible == true
-                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible == false
+                        && harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible != true
                         && !harness.State.IsBusy,
                     timeoutMs: 8000);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(harness.State.Profile?.Name), "Import familiarity screenshot must capture a loaded runner profile.");
@@ -3779,7 +3781,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControl<Control>("LoadedRunnerTabStripBorder").IsVisible,
                     "Import familiarity screenshot must capture the loaded-runner tab strip.");
                 Assert.IsFalse(
-                    harness.FindControl<Control>("QuickStartContainer").IsVisible,
+                    harness.FindControlOrDefault<Control>("QuickStartContainer")?.IsVisible ?? false,
                     "Import familiarity screenshot must not be a first-run placeholder shell.");
                 captured[expectedFiles[3]] = CaptureScreenshotProof(harness, expectedFiles[3]);
 

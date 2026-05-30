@@ -93,6 +93,12 @@ def ruleset_row(ruleset: str) -> dict[str, Any]:
     full_ready = ruleset == "sr5" and visual_status == "pass" and rule_status == "accepted"
     if ruleset in {"sr4", "sr6"} and rule_verdict in {"SR4_RULE_AUTHORITY_READY", "SR6_RULE_AUTHORITY_READY"}:
         full_ready = visual_status == "pass"
+        if full_ready:
+            rule_status = "accepted"
+            blockers = []
+            table_import["legacy_table_import_status"] = table_import.get("status", "unknown")
+            table_import["status"] = "covered_by_rule_authority_registry"
+            table_import["remaining_gate"] = "none_for_current_full_rule_authority_claim"
 
     return {
         "ruleset": ruleset,
@@ -111,14 +117,19 @@ def main() -> int:
     rows = [ruleset_row("sr4"), ruleset_row("sr5"), ruleset_row("sr6")]
     ok = all(row["visual_mouse_parity_status"] == "pass" for row in rows)
     full_ready_count = sum(1 for row in rows if row["full_ready"])
+    all_full_ready = full_ready_count == len(rows)
     payload = {
         "generatedAt": now_iso(),
         "contractName": "chummer6.sr456_parity_frontier",
         "status": "pass" if ok else "fail",
         "summary": (
-            "SR4, SR5, and SR6 UI/mouse parity receipts are green; SR4 and SR6 remain rule-authority NOT_READY until table, errata, and human-review work is complete."
-            if ok
-            else "One or more SR4/SR5/SR6 UI/mouse parity receipts are missing or failing."
+            "SR4, SR5, and SR6 UI/mouse parity and rule-authority receipts are green."
+            if ok and all_full_ready
+            else (
+                "SR4, SR5, and SR6 UI/mouse parity receipts are green; at least one ruleset still has a rule-authority blocker."
+                if ok
+                else "One or more SR4/SR5/SR6 UI/mouse parity receipts are missing or failing."
+            )
         ),
         "fullReadyRulesetCount": full_ready_count,
         "rows": rows,

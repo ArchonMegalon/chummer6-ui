@@ -5871,6 +5871,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         if (string.IsNullOrWhiteSpace(normalized))
             return normalized;
 
+        if (string.Equals(normalized, "missing", StringComparison.OrdinalIgnoreCase))
+            return "No Adjacent SR6 oracle certification receipt coverage was discovered for Genesis/CommLink6.";
+
         if (normalized.StartsWith("adjacent SR6 oracle", StringComparison.OrdinalIgnoreCase))
             return "Adjacent SR6 oracle" + normalized["adjacent SR6 oracle".Length..];
 
