@@ -19,6 +19,9 @@ from typing import Any
 
 repo_root = Path(sys.argv[1])
 receipt_path = Path(sys.argv[2])
+skip_flagship_gate_dependency = (
+    __import__("os").environ.get("CHUMMER_VETERAN_TASK_TIME_SKIP_FLAGSHIP_GATE_DEPENDENCY", "").strip() == "1"
+)
 
 
 def now_iso() -> str:
@@ -246,7 +249,7 @@ flagship_gate_route_local_only = (
     )
 )
 for name, payload in receipts.items():
-    if name == "flagshipGate" and flagship_gate_route_local_only:
+    if name == "flagshipGate" and (flagship_gate_route_local_only or skip_flagship_gate_dependency):
         continue
     if not status_pass(payload.get("status")):
         append_reason(f"{name} status is not pass/ready.", reasons, flagship_route_reasons)

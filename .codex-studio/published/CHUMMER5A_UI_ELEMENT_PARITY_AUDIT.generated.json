@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-30T09:56:44.536198Z",
+  "generated_at": "2026-05-30T17:56:25.114413Z",
   "probe_kind": "ui_parity_audit",
   "status": "pass",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
@@ -12,8 +12,8 @@
     "chummer6_only_extra_present_count": 0,
     "removable_extra_present_count": 0,
     "coverage_gap_keys": [],
-    "active_runs_count": 0,
-    "productive_active_runs_count": 0,
+    "active_runs_count": 3,
+    "productive_active_runs_count": 3,
     "nonproductive_active_runs_count": 0
   },
   "visualNoCount": 0,
@@ -24,8 +24,7 @@
   "notes": [
     "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
     "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass.",
-    "No currently-audited Chummer6-only visible extras are present in the classic-parity disallow lists, so nothing in that category is presently marked removable.",
-    "Receipt timestamp refreshed after rerunning full Chummer5A UI parity artifact materialization and verifier."
+    "No currently-audited Chummer6-only visible extras are present in the classic-parity disallow lists, so nothing in that category is presently marked removable."
   ],
   "elements": [
     {
@@ -1277,13 +1276,13 @@
       "reason": "Route-local dense workbench proof cites ruleset tabs, workspace actions, screenshot review, and the published flagship workflow receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
       ]
     },
     {
@@ -1296,13 +1295,13 @@
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and closed-package direct workflow receipts directly.",
+      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -1315,13 +1314,13 @@
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and closed-package workflow-state receipts directly.",
+      "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -1394,7 +1393,7 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     },
     {
@@ -1446,7 +1445,7 @@
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-        "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     }
   ],
@@ -2719,13 +2718,13 @@
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and closed-package direct workflow receipts directly.",
+      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -2738,13 +2737,13 @@
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and closed-package workflow-state receipts directly.",
+      "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -2817,7 +2816,7 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     },
     {
@@ -2869,9 +2868,8 @@
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-        "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     }
-  ],
-  "refreshed_from_generated_at": "2026-05-07T23:31:39.358211Z"
+  ]
 }

@@ -702,7 +702,9 @@ failed.extend(name for name, ok in queue_checks.items() if not ok)
 failed.extend(
     f"flagship_frontier:{name}"
     for name, ok in flagship_frontier_checks.items()
-    if not ok and name not in {"repo_local_completion_ready", "flagship_product_frontier_active"}
+    if not SKIP_FLAGSHIP_GATE_DEPENDENCY
+    and not ok
+    and name not in {"repo_local_completion_ready", "flagship_product_frontier_active"}
 )
 for relative_path, marker_checks in source_checks.items():
     failed.extend(

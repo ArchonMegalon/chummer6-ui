@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T16:32:38.600147Z",
+  "generatedAt": "2026-05-30T17:56:41.242287Z",
   "contractName": "chummer6-ui.ui_parity_audit",
   "status": "pass",
   "summary": "The active UI parity gate stack passes across legacy parity, runtime inventory, startup survival, and SR6 sophistication.",
@@ -16,7 +16,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_MIRROR_COMPLETENESS.generated.json",
-        "receiptGeneratedAt": "2026-05-29T07:36:21.104640Z",
+        "receiptGeneratedAt": "2026-05-30T16:49:36.052580Z",
         "summary": "Flagship design mirror inputs are present and carry the required product bar markers.",
         "reusedPassingReceipt": true
       },
@@ -25,7 +25,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_LAYOUT_HARD_GATE.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:02:23.426052Z",
+        "receiptGeneratedAt": "2026-05-30T16:49:35.921830Z",
         "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",
         "reusedPassingReceipt": true
       },
@@ -61,7 +61,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/STARTUP_WORKBENCH_SURVIVAL.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:05:41.146029Z",
+        "receiptGeneratedAt": "2026-05-30T16:50:32.640273Z",
         "summary": "Avalonia startup survives first paint and stays on the workbench by default.",
         "reusedPassingReceipt": true
       },
@@ -70,7 +70,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESIGN_AUTHORIZED_PARITY_SOFTENING.generated.json",
-        "receiptGeneratedAt": "2026-05-28T18:10:24.540693Z",
+        "receiptGeneratedAt": "2026-05-30T16:49:35.984016Z",
         "summary": "Parity softening is only allowed when the local Chummer6 design explicitly authorizes and explains the divergence.",
         "reusedPassingReceipt": true
       },
@@ -79,7 +79,7 @@
         "status": "pass",
         "exitCode": 0,
         "receiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER_SR6_RULESET_UI_SOPHISTICATION_GATE.generated.json",
-        "receiptGeneratedAt": "2026-05-29T10:50:02.374232Z",
+        "receiptGeneratedAt": "2026-05-30T16:49:35.851620Z",
         "summary": "SR6 authored ruleset UI sophistication is pinned against SR5 richness and backed by runtime inventory, workflow parity, and shared muscle-memory proof.",
         "reusedPassingReceipt": true
       }

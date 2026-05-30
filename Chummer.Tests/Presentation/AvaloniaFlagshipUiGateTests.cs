@@ -1056,12 +1056,13 @@ public sealed class AvaloniaFlagshipUiGateTests
                     StringComparison.Ordinal));
             harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
-            harness.Presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None).GetAwaiter().GetResult();
+            harness.SelectCommand("hero_lab_importer");
             harness.WaitUntil(() =>
                 string.Equals(
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "Hero Lab Importer",
                     StringComparison.Ordinal));
+            Assert.AreEqual("dialog.hero_lab_importer", harness.State.ActiveDialog?.Id);
             AssertDialogMouseReachabilityOrScrollContainment(harness.Window, "Hero Lab Importer");
             AssertDialogContainsAll(
                 harness,
@@ -3160,6 +3161,21 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitForReady();
 
             OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
+            string[] visibleCommands = SnapshotListBoxItems(harness.FindControl<ListBox>("CommandsList"))
+                .OfType<CommandPaletteItem>()
+                .Select(item => item.Id ?? string.Empty)
+                .ToArray();
+            CollectionAssert.Contains(visibleCommands, "open_for_printing");
+            Assert.IsTrue(visibleCommands.Contains("open_for_export", StringComparer.Ordinal));
+
+            harness.ClickMenuCommand("open_for_printing");
+            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
+
+            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_for_export");
+            harness.ClickMenuCommand("open_for_export");
+            harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
+
+            OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
             harness.ClickMenuCommand("open_character");
             harness.WaitUntil(() =>
                 string.Equals(
@@ -3179,6 +3195,29 @@ public sealed class AvaloniaFlagshipUiGateTests
                     "Open Character",
                     StringComparison.Ordinal));
             harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
+        });
+    }
+
+    [TestMethod]
+    public void Runtime_backed_dice_roller_roll_and_reroll_update_dialog_state()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Presenter.ExecuteCommandAsync("dice_roller", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Dice Roller",
+                    StringComparison.Ordinal));
+            Assert.AreEqual("dialog.dice_roller", harness.State.ActiveDialog?.Id);
+            Assert.IsTrue(harness.Window.PeekDialogWindowForTesting() is { IsVisible: true, BoundDialogId: "dialog.dice_roller" });
+            AssertDialogMouseReachabilityOrScrollContainment(harness.Window, "Dice Roller");
+            Assert.AreEqual("Dice roller + initiative preview + roster context", DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "diceUtilityLane"));
+            StringAssert.Contains(
+                DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "initiativePreview"),
+                "Roll history stays available");
         });
     }
 

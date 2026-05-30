@@ -671,6 +671,9 @@ if ! receipt_passes_recently "$localization_release_gate_receipt_path"; then
   bash scripts/ai/milestones/b15-localization-release-gate.sh >/dev/null
 fi
 
+echo "[b14] refreshing Chummer5a UI element parity audit..."
+CHUMMER_UI_PARITY_REPO_ROOT="$(realpath "$repo_root")" python3 "$ui_parity_audit_probe_path" >/dev/null
+
 python3 - <<'PY' "$sample_path" "$receipt_path" "$screenshot_dir" "$signoff_path" "$avalonia_gate_tests_path" "$dual_head_tests_path" "$blazor_shell_tests_path" "$desktop_update_runtime_tests_path" "$desktop_install_linking_runtime_tests_path" "$desktop_startup_smoke_runtime_tests_path" "$workflow_parity_receipt_path" "$sr4_workflow_parity_receipt_path" "$sr6_workflow_parity_receipt_path" "$sr6_ruleset_ui_sophistication_receipt_path" "$sr4_sr6_frontier_receipt_path" "$desktop_workflow_execution_receipt_path" "$localization_release_gate_receipt_path" "$interactive_control_inventory_receipt_path" "$startup_workbench_survival_receipt_path" "$design_mirror_completeness_receipt_path" "$design_authorized_parity_softening_receipt_path" "$release_channel_path"
 import json
 import os
@@ -1311,10 +1314,12 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
     bash scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh >/dev/null
 
   echo "[b14] refreshing Chummer5a screenshot review gate..."
-  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+  CHUMMER_SCREENSHOT_REVIEW_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
 
   echo "[b14] refreshing direct import route proof..."
-  bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
+  CHUMMER_NEXT90_M141_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
 
   echo "[b14] materializing desktop workflow execution gate..."
   CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
@@ -1324,10 +1329,12 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   bash scripts/ai/milestones/classic-dense-workbench-posture-gate.sh >/dev/null
 
   echo "[b14] materializing veteran task-time evidence gate..."
-  bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
+  CHUMMER_VETERAN_TASK_TIME_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh >/dev/null
 
   echo "[b14] re-materializing Chummer5a screenshot review gate..."
-  bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
+  CHUMMER_SCREENSHOT_REVIEW_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh >/dev/null
 
   echo "[b14] materializing desktop executable exit gate..."
   python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null || true
@@ -1340,6 +1347,11 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   CHUMMER_DESKTOP_EXECUTABLE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE=1 \
   CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$desktop_executable_release_channel_path" \
     bash "$desktop_executable_exit_gate_script_path" >/dev/null
+
+  echo "[b14] refreshing direct output route proof..."
+  CHUMMER_NEXT90_M143_CANONICAL_UI_ROOT="$(realpath "$repo_root")" \
+  CHUMMER_NEXT90_M143_SKIP_FLAGSHIP_GATE_DEPENDENCY=1 \
+    bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh >/dev/null
 else
   echo "[b14] skipping downstream proof materialization for screenshot refresh-only pass..."
 fi
