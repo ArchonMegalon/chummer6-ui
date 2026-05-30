@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T10:59:35Z",
+  "generatedAt": "2026-05-29T21:04:31Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
@@ -77,8 +77,8 @@
       "title_present": true,
       "owned_surface_present": true,
       "allowed_paths_exact": true,
-      "repo_local_completion_ready": false,
-      "flagship_product_frontier_active": true,
+      "repo_local_completion_ready": true,
+      "flagship_product_frontier_active": false,
       "worker_safe": true
     },
     "sourceChecks": {

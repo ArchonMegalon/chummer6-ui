@@ -42,11 +42,17 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
     protected abstract void ApplyState(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot);
 
     protected static IReadOnlyList<string> MergeLegacyTabs(IReadOnlyList<string> designTabs, ClassicFormDesignerSnapshot snapshot)
+        => MergeLegacyTabsForBridge(designTabs, snapshot);
+
+    internal static IReadOnlyList<string> MergeLegacyTabsForBridge(IReadOnlyList<string> designTabs, ClassicFormDesignerSnapshot snapshot)
         => designTabs
             .Concat(snapshot.Tabs.Where(tab => !designTabs.Contains(tab, StringComparer.OrdinalIgnoreCase)))
             .ToArray();
 
     protected static IReadOnlyList<string> CollectActionLabels(ClassicFormPortState state)
+        => CollectActionLabelsForBridge(state);
+
+    internal static IReadOnlyList<string> CollectActionLabelsForBridge(ClassicFormPortState state)
         => state.QuickActions
             .Select(action => action.Label)
             .Concat(state.SectionActions.Select(action => action.Label))
@@ -74,6 +80,9 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
     }
 
     protected static IReadOnlyList<ClassicPortLineItem> DesignerChromeFacts(ClassicFormDesignerSnapshot snapshot, int maxCount)
+        => DesignerChromeFactsForBridge(snapshot, maxCount);
+
+    internal static IReadOnlyList<ClassicPortLineItem> DesignerChromeFactsForBridge(ClassicFormDesignerSnapshot snapshot, int maxCount)
     {
         List<ClassicPortLineItem> lines = [];
         lines.AddRange(snapshot.Groups.Take(maxCount).Select(group => new ClassicPortLineItem("Group", group)));

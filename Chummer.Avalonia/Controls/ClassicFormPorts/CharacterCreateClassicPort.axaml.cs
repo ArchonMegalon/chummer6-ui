@@ -45,37 +45,27 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Priorities", "Attributes", "Skills", "Gear", "Spells", "Final");
-        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
-        IReadOnlyList<string> actions = CollectActionLabels(state);
-        PopulateClassicSelector(_prioritySelector, MatchRows(rows, 10, "priority", "metatype", "resource").Select(static row => row.DisplayPath), "No priority routing");
+        ClassicCreatePortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Create;
+        PopulateClassicSelector(_prioritySelector, viewModel.Priorities, "No priority routing");
 
         PopulateClassicList(
             _prioritiesList,
-            [
-                new ClassicPortLineItem("Ruleset", FindValue(rows, "gameEdition")),
-                new ClassicPortLineItem("Build", FindValue(rows, "buildMethod")),
-                new ClassicPortLineItem("Metatype", FindValue(rows, "metatype")),
-                new ClassicPortLineItem("Priority Path", FindValue(rows, "priority")),
-            ],
+            viewModel.PrioritySummary,
             "No priority values are ready yet.");
 
-        PopulateClassicList(_attributesList, MatchRows(rows, 20, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance"), "Attribute ladder is not populated yet.");
+        PopulateClassicList(_attributesList, viewModel.Attributes, "Attribute ladder is not populated yet.");
 
-        PopulateClassicTree(_skillsTree, MatchRows(rows, 20, "skill", "knowledge", "language").Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)), "Skill and specialization values are not yet available.");
+        PopulateClassicTree(_skillsTree, viewModel.Skills, "Skill and specialization values are not yet available.");
 
-        PopulateClassicList(_gearList, MatchRows(rows, 15, "gear", "armor", "weapon", "ranged", "melee"), "Starting gear is not loaded yet.");
+        PopulateClassicList(_gearList, viewModel.Gear, "Starting gear is not loaded yet.");
 
-        PopulateClassicTree(_spellsTree, MatchRows(rows, 10, "spell", "magic", "tradition").Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)), "No spell list is visible yet.");
+        PopulateClassicTree(_spellsTree, viewModel.Spells, "No spell list is visible yet.");
 
         PopulateClassicList(
             _finalList,
-            [
-                new ClassicPortLineItem("Build Method", FindValue(rows, "buildMethod")),
-                new ClassicPortLineItem("Metatype", FindValue(rows, "metatype")),
-                new ClassicPortLineItem("Primary Source", FindValue(rows, "settings")),
-            ],
+            viewModel.FinalSummary,
             "No finalization summary yet.");
 
-        PopulateClassicList(_actionsList, actions.Select(action => new ClassicPortLineItem("Action", action)), "No creation actions are currently available.");
+        PopulateClassicList(_actionsList, viewModel.Actions, "No creation actions are currently available.");
     }
 }

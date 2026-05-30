@@ -36,15 +36,13 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Browse", "Search", "Source");
-        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
-        IReadOnlyList<SectionRowDisplayItem> browseRows = MatchRows(rows, 12);
-        IReadOnlyList<string> actions = CollectActionLabels(state);
+        ClassicIndexPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Index;
 
-        PopulateClassicSelector(_browseSelector, browseRows.Select(static row => row.DisplayPath), "No index rows");
-        PopulateClassicTree(_browseTree, browseRows.Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)), "Browse results will appear here once the index loads.");
+        PopulateClassicSelector(_browseSelector, viewModel.BrowseLabels, "No index rows");
+        PopulateClassicTree(_browseTree, viewModel.BrowseRows, "Browse results will appear here once the index loads.");
 
-        PopulateClassicList(_searchList, actions.Select(action => new ClassicPortLineItem("Search Action", action)), "Search actions are not available yet.");
+        PopulateClassicList(_searchList, viewModel.SearchActions, "Search actions are not available yet.");
 
-        PopulateClassicList(_sourceList, DesignerChromeFacts(snapshot, 12), "Source chrome metadata is unavailable.");
+        PopulateClassicList(_sourceList, viewModel.SourceFacts, "Source chrome metadata is unavailable.");
     }
 }

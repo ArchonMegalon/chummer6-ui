@@ -38,41 +38,15 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Global", "Custom Data", "GitHub Issues", "Plugins");
-        IReadOnlyList<SectionRowDisplayItem> globalRows = FindGlobalRows(state.Rows).ToArray();
-        IReadOnlyList<string> actions = CollectActionLabels(state);
+        ClassicSettingsPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Settings;
 
-        PopulateClassicSelector(_globalSelector, globalRows.Select(static row => row.DisplayPath), "No global settings");
-        PopulateClassicList(_globalList, globalRows, "No global settings are currently loaded.");
+        PopulateClassicSelector(_globalSelector, viewModel.GlobalLabels, "No global settings");
+        PopulateClassicList(_globalList, viewModel.GlobalRows, "No global settings are currently loaded.");
 
-        PopulateClassicList(_customDataList, actions.Select(action => new ClassicPortLineItem("Action", action)), "Custom data actions are not available yet.");
+        PopulateClassicList(_customDataList, viewModel.CustomDataActions, "Custom data actions are not available yet.");
 
-        PopulateClassicTree(_githubIssuesTree, MergeLegacyTabs(Tabs, snapshot).Select(label => new ClassicPortLineItem("Issue Channel", label)), "No GitHub issue metadata is currently available.");
+        PopulateClassicTree(_githubIssuesTree, viewModel.GitHubIssueChannels, "No GitHub issue metadata is currently available.");
 
-        PopulateClassicTree(_pluginsTree, snapshot.ContextMenus.Select(menu => new ClassicPortLineItem("Plugin", menu)), "Plugin context menu data is currently unavailable.");
-    }
-
-    private static IEnumerable<SectionRowDisplayItem> FindGlobalRows(IReadOnlyList<SectionRowDisplayItem> rows)
-    {
-        return MatchRows(rows, 32, "settings", "global", "language", "ruleset", "version").Distinct(new LabelValueComparer());
-    }
-
-    private sealed class LabelValueComparer : IEqualityComparer<SectionRowDisplayItem>
-    {
-        public bool Equals(SectionRowDisplayItem? x, SectionRowDisplayItem? y)
-        {
-            if (ReferenceEquals(x, y))
-            {
-                return true;
-            }
-
-            return x is not null
-                && y is not null
-                && string.Equals(x.Path, y.Path, StringComparison.Ordinal)
-                && string.Equals(x.DisplayPath, y.DisplayPath, StringComparison.Ordinal)
-                && string.Equals(x.DisplayValue, y.DisplayValue, StringComparison.Ordinal);
-        }
-
-        public int GetHashCode(SectionRowDisplayItem obj)
-            => HashCode.Combine(obj.Path, obj.DisplayPath, obj.DisplayValue);
+        PopulateClassicTree(_pluginsTree, viewModel.Plugins, "Plugin context menu data is currently unavailable.");
     }
 }

@@ -1,6 +1,18 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.CharacterCreateClassicPort">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+N" />
+    <KeyBinding Gesture="Ctrl+E" />
+    <KeyBinding Gesture="Delete" />
+  </UserControl.KeyBindings>
+  <UserControl.ContextMenu>
+    <ContextMenu>
+      <MenuItem Header="Add build choice" />
+      <MenuItem Header="Edit selected choice" />
+      <MenuItem Header="Delete selected choice" />
+    </ContextMenu>
+  </UserControl.ContextMenu>
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="8" Spacing="10">

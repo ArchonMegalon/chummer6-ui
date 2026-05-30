@@ -39,25 +39,18 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Category", "Filters", "Details", "Purchase");
-        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
-        IReadOnlyList<string> actions = CollectActionLabels(state);
-        IReadOnlyList<SectionRowDisplayItem> categoryRows = MatchRows(rows, 18, "category", "gear", "weapon", "armor", "cyberware");
+        ClassicGearPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Gear;
 
-        PopulateClassicSelector(_categorySelector, categoryRows.Select(static row => row.DisplayPath), "No gear categories");
-        PopulateClassicList(_categoryList, categoryRows, "No gear categories are currently visible.");
+        PopulateClassicSelector(_categorySelector, viewModel.Categories, "No gear categories");
+        PopulateClassicList(_categoryList, viewModel.CategoryRows, "No gear categories are currently visible.");
 
         PopulateClassicTree(
             _filterTree,
-            [
-                new ClassicPortLineItem("Filter Group", FindValue(rows, "filter")),
-                new ClassicPortLineItem("Search Text", FindValue(rows, "search")),
-                new ClassicPortLineItem("Sort", FindValue(rows, "sort")),
-                .. actions.Select(action => new ClassicPortLineItem("Action", action)),
-            ],
+            viewModel.Filters,
             "No legacy filter groups were exposed.");
 
-        PopulateClassicList(_detailList, MatchRows(rows, 16, "detail", "quality", "availability", "cost"), "Select an item to show classic detail values.");
+        PopulateClassicList(_detailList, viewModel.Details, "Select an item to show classic detail values.");
 
-        PopulateClassicList(_purchaseList, actions.Select(action => new ClassicPortLineItem("Purchase Action", action)), "No purchase actions are available yet.");
+        PopulateClassicList(_purchaseList, viewModel.PurchaseActions, "No purchase actions are available yet.");
     }
 }

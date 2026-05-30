@@ -47,46 +47,35 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Character", "Advancement", "Gear", "Armor", "Weapons", "Contacts", "Notes");
-        IReadOnlyList<SectionRowDisplayItem> rows = state.Rows;
-        IReadOnlyList<string> actions = CollectActionLabels(state);
-        PopulateClassicSelector(_actionSelector, actions, "No actions");
+        ClassicCareerPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Career;
+        PopulateClassicSelector(_actionSelector, viewModel.Actions.Select(static action => action.Detail), "No actions");
 
         PopulateClassicList(
             _snapshotList,
-            [
-                new ClassicPortLineItem("Name", FindValue(rows, "name")),
-                new ClassicPortLineItem("Lifestyle", FindValue(rows, "lifestyle")),
-                new ClassicPortLineItem("Build Method", FindValue(rows, "buildMethod", "settings")),
-                new ClassicPortLineItem("Street Cred", FindValue(rows, "streetCred", "street")),
-                new ClassicPortLineItem("Essence", FindValue(rows, "essence")),
-                new ClassicPortLineItem("Karma", FindValue(rows, "karma")),
-                new ClassicPortLineItem("Nuyen", FindValue(rows, "nuyen")),
-            ],
+            viewModel.Snapshot,
             "No core career metadata is currently available.");
 
         PopulateClassicTree(
             _advancementTree,
-            MatchRows(rows, 12, "karma", "xp", "nextlevel", "improvement", "advancement", "metatype", "special")
-                .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)),
+            viewModel.Advancement,
             "Advancement details are not ready.");
 
-        PopulateClassicList(_gearList, MatchRows(rows, 12, "gear", "cyberware", "mod"), "No gear values are available yet.");
+        PopulateClassicList(_gearList, viewModel.Gear, "No gear values are available yet.");
 
-        PopulateClassicList(_armorList, MatchRows(rows, 12, "armor", "plate", "clothing"), "Armor fields are currently empty.");
+        PopulateClassicList(_armorList, viewModel.Armor, "Armor fields are currently empty.");
 
-        PopulateClassicList(_weaponsList, MatchRows(rows, 12, "weapon", "guns", "firearm", "blade"), "No weapon items are loaded yet.");
+        PopulateClassicList(_weaponsList, viewModel.Weapons, "No weapon items are loaded yet.");
 
         PopulateClassicTree(
             _contactsTree,
-            MatchRows(rows, 12, "contact", "ally", "familiar")
-                .Select(row => new ClassicPortLineItem(row.DisplayPath, row.DisplayValue)),
+            viewModel.Contacts,
             "No contacts have been loaded for this surface.");
 
-        PopulateClassicList(_notesList, MatchRows(rows, 12, "note", "comment", "memo"), "No notes are visible yet.");
+        PopulateClassicList(_notesList, viewModel.Notes, "No notes are visible yet.");
 
         PopulateClassicList(
             _actionsList,
-            actions.Select(action => new ClassicPortLineItem("Action", action)),
+            viewModel.Actions,
             "No live actions are currently exposed for this surface.");
     }
 }

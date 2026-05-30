@@ -1,6 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.MasterIndexClassicPort">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Ctrl+F" />
+    <KeyBinding Gesture="Enter" />
+  </UserControl.KeyBindings>
+  <UserControl.ContextMenu>
+    <ContextMenu>
+      <MenuItem Header="Add source filter" />
+      <MenuItem Header="Edit search" />
+      <MenuItem Header="Delete filter" />
+    </ContextMenu>
+  </UserControl.ContextMenu>
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                 VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="8" Spacing="10">
