@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 namespace Chummer.Avalonia.Controls;
 
 public sealed record ClassicCareerPortViewModel(
@@ -201,19 +204,7 @@ internal sealed record ClassicFormPortDomainModel(
     {
         public static IReadOnlyList<ClassicDomainFact> FromState(ClassicFormPortState state)
         {
-            List<ClassicDomainFact> facts = [];
-            foreach (var row in state.Rows)
-            {
-                string label = Clean(row.DisplayPath);
-                string value = Clean(row.DisplayValue);
-                string key = NormalizeKey(label);
-                if (string.IsNullOrWhiteSpace(label) || string.IsNullOrWhiteSpace(value))
-                {
-                    continue;
-                }
-
-                facts.Add(new ClassicDomainFact(key, label, value, Classify(key, label, value)));
-            }
+            List<ClassicDomainFact> facts = ReadPreviewFacts(state.PreviewJson);
 
             if (facts.Count == 0)
             {
@@ -223,32 +214,164 @@ internal sealed record ClassicFormPortDomainModel(
             return facts;
         }
 
-        private static DomainBucket Classify(string key, string label, string value)
+        private static List<ClassicDomainFact> ReadPreviewFacts(string previewJson)
         {
-            string haystack = $"{key} {label} {value}".ToLowerInvariant();
-            if (ContainsAny(haystack, "karma", "improvement", "advancement", "metatype", "special")) return DomainBucket.Advancement;
-            if (ContainsAny(haystack, "armor", "plate", "clothing")) return DomainBucket.Armor;
-            if (ContainsAny(haystack, "weapon", "guns", "firearm", "blade", "ranged", "melee")) return DomainBucket.Weapon;
-            if (ContainsAny(haystack, "gear", "cyberware", "bioware", "mod")) return DomainBucket.Gear;
-            if (ContainsAny(haystack, "contact", "ally", "familiar")) return DomainBucket.Contact;
-            if (ContainsAny(haystack, "note", "comment", "memo")) return DomainBucket.Note;
-            if (ContainsAny(haystack, "priority", "resource")) return DomainBucket.Priority;
-            if (ContainsAny(haystack, "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance")) return DomainBucket.Attribute;
-            if (ContainsAny(haystack, "skill", "knowledge", "language")) return DomainBucket.Skill;
-            if (ContainsAny(haystack, "spell", "tradition")) return DomainBucket.Spell;
-            if (ContainsAny(haystack, "filter", "search", "sort")) return DomainBucket.Filter;
-            if (ContainsAny(haystack, "detail", "quality", "availability", "cost")) return DomainBucket.Detail;
-            if (ContainsAny(haystack, "settings", "global", "language", "ruleset", "version")) return DomainBucket.Setting;
-            return DomainBucket.Index;
+            List<ClassicDomainFact> facts = [];
+            if (string.IsNullOrWhiteSpace(previewJson))
+            {
+                return facts;
+            }
+
+            try
+            {
+                JsonNode? root = JsonNode.Parse(previewJson);
+                if (root is not null)
+                {
+                    CollectFacts(root, [], facts);
+                }
+            }
+            catch (JsonException)
+            {
+                facts.Add(new ClassicDomainFact("preview", "Preview", "Preview JSON could not be parsed", DomainBucket.Note));
+            }
+
+            return facts;
         }
 
-        private static bool ContainsAny(string text, params string[] tokens)
-            => tokens.Any(text.Contains);
+        private static void CollectFacts(JsonNode node, IReadOnlyList<string> path, List<ClassicDomainFact> facts)
+        {
+            if (node is JsonObject obj)
+            {
+                foreach ((string jsonKey, JsonNode? child) in obj)
+                {
+                    if (child is null)
+                    {
+                        continue;
+                    }
+
+                    CollectFacts(child, [.. path, jsonKey], facts);
+                }
+
+                return;
+            }
+
+            if (node is JsonArray array)
+            {
+                for (int index = 0; index < array.Count; index++)
+                {
+                    JsonNode? child = array[index];
+                    if (child is null)
+                    {
+                        continue;
+                    }
+
+                    CollectFacts(child, [.. path, (index + 1).ToString("00")], facts);
+                }
+
+                return;
+            }
+
+            string value = Clean(node.ToJsonString().Trim('"'));
+            if (string.IsNullOrWhiteSpace(value) || path.Count == 0)
+            {
+                return;
+            }
+
+            string key = NormalizeKey(path[^1]);
+            string label = BuildLabel(path);
+            facts.Add(new ClassicDomainFact(key, label, value, ClassifyBySchemaKey(key, path)));
+        }
+
+        private static DomainBucket ClassifyBySchemaKey(string key, IReadOnlyList<string> path)
+        {
+            if (AdvancementKeys.Contains(key)) return DomainBucket.Advancement;
+            if (ArmorKeys.Contains(key)) return DomainBucket.Armor;
+            if (WeaponKeys.Contains(key)) return DomainBucket.Weapon;
+            if (GearKeys.Contains(key)) return DomainBucket.Gear;
+            if (ContactKeys.Contains(key)) return DomainBucket.Contact;
+            if (NoteKeys.Contains(key)) return DomainBucket.Note;
+            if (PriorityKeys.Contains(key)) return DomainBucket.Priority;
+            if (AttributeKeys.Contains(key)) return DomainBucket.Attribute;
+            if (SkillKeys.Contains(key)) return DomainBucket.Skill;
+            if (SpellKeys.Contains(key)) return DomainBucket.Spell;
+            if (FilterKeys.Contains(key)) return DomainBucket.Filter;
+            if (DetailKeys.Contains(key)) return DomainBucket.Detail;
+            if (SettingKeys.Contains(key)) return DomainBucket.Setting;
+            return path.Count <= 2 ? DomainBucket.Snapshot : DomainBucket.Index;
+        }
+
+        private static string BuildLabel(IReadOnlyList<string> path)
+            => string.Join(" / ", path.Select(static segment => Title(NormalizeKey(segment))));
 
         private static string Clean(string value)
             => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
 
         private static string NormalizeKey(string value)
             => new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+
+        private static readonly HashSet<string> AdvancementKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "karma", "totalkarma", "streetcred", "notoriety", "publicawareness", "metatype", "specialattributes"
+        };
+
+        private static readonly HashSet<string> ArmorKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "armor", "armorname", "armorvalue", "armorjackets", "clothing", "protection"
+        };
+
+        private static readonly HashSet<string> WeaponKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "weapon", "weaponname", "damage", "accuracy", "ap", "mode", "recoil", "ranged", "melee"
+        };
+
+        private static readonly HashSet<string> GearKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "gear", "gearname", "cyberware", "bioware", "augmentation", "device", "rating", "quantity"
+        };
+
+        private static readonly HashSet<string> ContactKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "contact", "contacts", "loyalty", "connection", "name", "role"
+        };
+
+        private static readonly HashSet<string> NoteKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "note", "notes", "description", "memo", "comment", "summary"
+        };
+
+        private static readonly HashSet<string> PriorityKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "priority", "prioritytable", "resources", "buildmethod", "gameedition"
+        };
+
+        private static readonly HashSet<string> AttributeKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance", "essence", "initiative"
+        };
+
+        private static readonly HashSet<string> SkillKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "skill", "skills", "knowledge", "language", "group", "dicepool"
+        };
+
+        private static readonly HashSet<string> SpellKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "spell", "spells", "tradition", "drain", "force", "ritual"
+        };
+
+        private static readonly HashSet<string> FilterKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "filter", "search", "sort", "category", "source"
+        };
+
+        private static readonly HashSet<string> DetailKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "detail", "quality", "availability", "cost", "nuyen", "license", "sourcebook"
+        };
+
+        private static readonly HashSet<string> SettingKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "settings", "setting", "global", "language", "ruleset", "version", "option"
+        };
     }
 }

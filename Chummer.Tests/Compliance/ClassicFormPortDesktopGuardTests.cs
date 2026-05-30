@@ -44,6 +44,7 @@ public sealed class ClassicFormPortDesktopGuardTests
         string parserText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormDesignerParser.cs"));
         string classicSurfaceText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
         string hostText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPortHostControl.axaml.cs"));
+        string bridgeText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortViewModelBridge.cs"));
         string mainWindowText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.axaml"));
         string mainWindowCodeText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.axaml.cs"));
         string bindingText = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ControlBinding.cs"));
@@ -87,6 +88,10 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(classicSurfaceText.Contains("Classic form-native projection", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("snapshot.EventHandlers", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("state.Rows.Take(20)", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("foreach (var row in state.Rows)", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("ContainsAny(haystack", StringComparison.Ordinal));
+        StringAssert.Contains(bridgeText, "ReadPreviewFacts(state.PreviewJson)");
+        StringAssert.Contains(bridgeText, "ClassifyBySchemaKey");
         Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCareerClassicPort.axaml", "CharacterCareerClassicPort.axaml.cs");
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCreateClassicPort.axaml", "CharacterCreateClassicPort.axaml.cs");
