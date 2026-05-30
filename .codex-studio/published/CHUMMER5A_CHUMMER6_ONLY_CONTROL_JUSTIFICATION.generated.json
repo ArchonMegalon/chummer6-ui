@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T07:12:40.422783Z",
+  "generatedAt": "2026-05-30T09:56:20.639216Z",
   "contractName": "chummer6-ui.chummer5a_chummer6_only_control_justification",
   "status": "pass",
   "summary": "Every Chummer6-only reviewed control has a row-level reason or is hidden from the default public-stable shell.",

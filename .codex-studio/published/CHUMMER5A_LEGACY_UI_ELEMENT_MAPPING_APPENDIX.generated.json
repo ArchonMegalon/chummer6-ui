@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T07:12:41.568438Z",
+  "generatedAt": "2026-05-30T09:56:21.897817Z",
   "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
   "status": "pass",
   "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",
@@ -21,7 +21,7 @@
   "dynamicElementSummary": {
     "legacyDynamicInteractiveElementCount": 765,
     "currentDynamicInteractiveElementCount": 58,
-    "currentNamedAxamlInteractiveElementCount": 67
+    "currentNamedAxamlInteractiveElementCount": 103
   },
   "familyRowCount": 29,
   "dialogRowCount": 27,

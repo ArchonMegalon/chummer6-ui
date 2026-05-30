@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-07T23:31:39.358211Z",
+  "generated_at": "2026-05-30T09:56:44.536198Z",
   "probe_kind": "ui_parity_audit",
   "status": "pass",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
@@ -24,7 +24,8 @@
   "notes": [
     "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
     "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass.",
-    "No currently-audited Chummer6-only visible extras are present in the classic-parity disallow lists, so nothing in that category is presently marked removable."
+    "No currently-audited Chummer6-only visible extras are present in the classic-parity disallow lists, so nothing in that category is presently marked removable.",
+    "Receipt timestamp refreshed after rerunning full Chummer5A UI parity artifact materialization and verifier."
   ],
   "elements": [
     {
@@ -2871,5 +2872,6 @@
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M143_EXPORT_PRINT_SUPPLEMENT_RULE_ENVIRONMENT_RECEIPTS.md"
       ]
     }
-  ]
+  ],
+  "refreshed_from_generated_at": "2026-05-07T23:31:39.358211Z"
 }
