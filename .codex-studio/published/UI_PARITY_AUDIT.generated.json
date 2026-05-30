@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-30T18:01:11.463135Z",
+  "generatedAt": "2026-05-30T18:09:01.760272Z",
   "contractName": "chummer6-ui.ui_parity_audit",
   "status": "pass",
   "summary": "The active UI parity gate stack passes across legacy parity, runtime inventory, startup survival, and SR6 sophistication.",

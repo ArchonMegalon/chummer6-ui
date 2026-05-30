@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-29T18:10:55.295195Z",
+  "generatedAt": "2026-05-30T18:13:24.888816Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
@@ -637,7 +637,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 826ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 17s 052ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+13/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 559ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 16s 771ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -1229,7 +1229,7 @@
       },
       {
         "source": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
-        "line": 967,
+        "line": 902,
         "type": "Button"
       },
       {
@@ -6063,7 +6063,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\n  from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 826ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 17s 052ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+13/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 559ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 16s 771ms"
     }
   }
 }
