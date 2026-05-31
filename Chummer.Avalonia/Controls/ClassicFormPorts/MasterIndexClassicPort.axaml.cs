@@ -36,7 +36,8 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Browse", "Search", "Source");
-        ClassicIndexPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Index;
+        ClassicIndexPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Index;
+        DataContext = viewModel;
 
         PopulateClassicSelector(_browseSelector, viewModel.BrowseLabels, "No index rows");
         PopulateClassicTree(_browseTree, viewModel.BrowseRows, "Browse results will appear here once the index loads.");

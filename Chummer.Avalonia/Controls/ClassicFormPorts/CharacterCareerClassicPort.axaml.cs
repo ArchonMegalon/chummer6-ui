@@ -47,7 +47,8 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Character", "Advancement", "Gear", "Armor", "Weapons", "Contacts", "Notes");
-        ClassicCareerPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Career;
+        ClassicCareerPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Career;
+        DataContext = viewModel;
         PopulateClassicSelector(_actionSelector, viewModel.Actions.Select(static action => action.Detail), "No actions");
 
         PopulateClassicList(

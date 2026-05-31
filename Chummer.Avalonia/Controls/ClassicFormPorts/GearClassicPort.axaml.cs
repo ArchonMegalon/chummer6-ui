@@ -39,7 +39,8 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Category", "Filters", "Details", "Purchase");
-        ClassicGearPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Gear;
+        ClassicGearPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Gear;
+        DataContext = viewModel;
 
         PopulateClassicSelector(_categorySelector, viewModel.Categories, "No gear categories");
         PopulateClassicList(_categoryList, viewModel.CategoryRows, "No gear categories are currently visible.");

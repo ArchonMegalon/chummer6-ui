@@ -45,7 +45,8 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Priorities", "Attributes", "Skills", "Gear", "Spells", "Final");
-        ClassicCreatePortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Create;
+        ClassicCreatePortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Create;
+        DataContext = viewModel;
         PopulateClassicSelector(_prioritySelector, viewModel.Priorities, "No priority routing");
 
         PopulateClassicList(

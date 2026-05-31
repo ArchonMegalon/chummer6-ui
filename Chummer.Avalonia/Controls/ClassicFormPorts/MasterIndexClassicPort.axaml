@@ -2,14 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.MasterIndexClassicPort">
   <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+F" />
-    <KeyBinding Gesture="Enter" />
+    <KeyBinding Gesture="Ctrl+F" Command="{Binding Commands.SearchCommand}" />
+    <KeyBinding Gesture="Enter" Command="{Binding Commands.CommitCommand}" />
   </UserControl.KeyBindings>
   <UserControl.ContextMenu>
     <ContextMenu>
-      <MenuItem Header="Add source filter" />
-      <MenuItem Header="Edit search" />
-      <MenuItem Header="Delete filter" />
+      <MenuItem Header="Add source filter" Command="{Binding Commands.AddCommand}" />
+      <MenuItem Header="Edit search" Command="{Binding Commands.EditCommand}" />
+      <MenuItem Header="Delete filter" Command="{Binding Commands.DeleteCommand}" />
     </ContextMenu>
   </UserControl.ContextMenu>
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"

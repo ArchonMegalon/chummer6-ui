@@ -2,15 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.SettingsClassicPort">
   <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+N" />
-    <KeyBinding Gesture="Ctrl+E" />
-    <KeyBinding Gesture="Delete" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding Commands.AddCommand}" />
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding Commands.EditCommand}" />
+    <KeyBinding Gesture="Delete" Command="{Binding Commands.DeleteCommand}" />
   </UserControl.KeyBindings>
   <UserControl.ContextMenu>
     <ContextMenu>
-      <MenuItem Header="Add setting" />
-      <MenuItem Header="Edit selected setting" />
-      <MenuItem Header="Delete selected setting" />
+      <MenuItem Header="Add setting" Command="{Binding Commands.AddCommand}" />
+      <MenuItem Header="Edit selected setting" Command="{Binding Commands.EditCommand}" />
+      <MenuItem Header="Delete selected setting" Command="{Binding Commands.DeleteCommand}" />
     </ContextMenu>
   </UserControl.ContextMenu>
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"

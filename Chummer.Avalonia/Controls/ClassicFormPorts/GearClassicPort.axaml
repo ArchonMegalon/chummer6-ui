@@ -2,15 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.GearClassicPort">
   <UserControl.KeyBindings>
-    <KeyBinding Gesture="Ctrl+N" />
-    <KeyBinding Gesture="Ctrl+E" />
-    <KeyBinding Gesture="Delete" />
+    <KeyBinding Gesture="Ctrl+N" Command="{Binding Commands.AddCommand}" />
+    <KeyBinding Gesture="Ctrl+E" Command="{Binding Commands.EditCommand}" />
+    <KeyBinding Gesture="Delete" Command="{Binding Commands.DeleteCommand}" />
   </UserControl.KeyBindings>
   <UserControl.ContextMenu>
     <ContextMenu>
-      <MenuItem Header="Add gear" />
-      <MenuItem Header="Edit selected gear" />
-      <MenuItem Header="Delete selected gear" />
+      <MenuItem Header="Add gear" Command="{Binding Commands.AddCommand}" />
+      <MenuItem Header="Edit selected gear" Command="{Binding Commands.EditCommand}" />
+      <MenuItem Header="Delete selected gear" Command="{Binding Commands.DeleteCommand}" />
     </ContextMenu>
   </UserControl.ContextMenu>
   <ScrollViewer HorizontalScrollBarVisibility="Disabled"

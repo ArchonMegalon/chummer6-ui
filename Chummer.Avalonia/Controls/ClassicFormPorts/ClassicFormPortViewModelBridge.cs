@@ -1,9 +1,9 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
+using System.Windows.Input;
 
 namespace Chummer.Avalonia.Controls;
 
 public sealed record ClassicCareerPortViewModel(
+    ClassicFormPortActionCommands Commands,
     IReadOnlyList<ClassicPortLineItem> Snapshot,
     IReadOnlyList<ClassicPortLineItem> Advancement,
     IReadOnlyList<ClassicPortLineItem> Gear,
@@ -14,6 +14,7 @@ public sealed record ClassicCareerPortViewModel(
     IReadOnlyList<ClassicPortLineItem> Actions);
 
 public sealed record ClassicCreatePortViewModel(
+    ClassicFormPortActionCommands Commands,
     IReadOnlyList<string> Priorities,
     IReadOnlyList<ClassicPortLineItem> PrioritySummary,
     IReadOnlyList<ClassicPortLineItem> Attributes,
@@ -24,6 +25,7 @@ public sealed record ClassicCreatePortViewModel(
     IReadOnlyList<ClassicPortLineItem> Actions);
 
 public sealed record ClassicGearPortViewModel(
+    ClassicFormPortActionCommands Commands,
     IReadOnlyList<string> Categories,
     IReadOnlyList<ClassicPortLineItem> CategoryRows,
     IReadOnlyList<ClassicPortLineItem> Filters,
@@ -31,12 +33,14 @@ public sealed record ClassicGearPortViewModel(
     IReadOnlyList<ClassicPortLineItem> PurchaseActions);
 
 public sealed record ClassicIndexPortViewModel(
+    ClassicFormPortActionCommands Commands,
     IReadOnlyList<string> BrowseLabels,
     IReadOnlyList<ClassicPortLineItem> BrowseRows,
     IReadOnlyList<ClassicPortLineItem> SearchActions,
     IReadOnlyList<ClassicPortLineItem> SourceFacts);
 
 public sealed record ClassicSettingsPortViewModel(
+    ClassicFormPortActionCommands Commands,
     IReadOnlyList<string> GlobalLabels,
     IReadOnlyList<ClassicPortLineItem> GlobalRows,
     IReadOnlyList<ClassicPortLineItem> CustomDataActions,
@@ -52,13 +56,18 @@ public sealed record ClassicFormPortViewModels(
 
 public static class ClassicFormPortViewModelBridge
 {
-    public static ClassicFormPortViewModels Create(ClassicFormPortState state, ClassicFormDesignerSnapshot snapshot)
+    public static ClassicFormPortViewModels Create(
+        ClassicFormPortState state,
+        ClassicFormDesignerSnapshot snapshot,
+        ClassicFormPortActionCommands? commands = null)
     {
+        commands ??= ClassicFormPortActionCommands.NoOp;
         ClassicFormPortDomainModel domain = ClassicFormPortDomainModel.Create(state);
         IReadOnlyList<string> actions = ClassicFormPortSurfaceControl.CollectActionLabelsForBridge(state);
 
         return new ClassicFormPortViewModels(
             Career: new ClassicCareerPortViewModel(
+                Commands: commands,
                 Snapshot: domain.SnapshotFacts,
                 Advancement: domain.AdvancementFacts,
                 Gear: domain.GearFacts,
@@ -68,6 +77,7 @@ public static class ClassicFormPortViewModelBridge
                 Notes: domain.NoteFacts,
                 Actions: ActionLines(actions, "Action")),
             Create: new ClassicCreatePortViewModel(
+                Commands: commands,
                 Priorities: domain.PriorityFacts.Select(static item => item.Label).ToArray(),
                 PrioritySummary: domain.PrioritySummaryFacts,
                 Attributes: domain.AttributeFacts,
@@ -77,17 +87,20 @@ public static class ClassicFormPortViewModelBridge
                 FinalSummary: domain.FinalSummaryFacts,
                 Actions: ActionLines(actions, "Action")),
             Gear: new ClassicGearPortViewModel(
+                Commands: commands,
                 Categories: domain.GearCategoryFacts.Select(static item => item.Label).ToArray(),
                 CategoryRows: domain.GearCategoryFacts,
                 Filters: domain.FilterFacts.Concat(ActionLines(actions, "Action")).ToArray(),
                 Details: domain.GearDetailFacts,
                 PurchaseActions: ActionLines(actions, "Purchase Action")),
             Index: new ClassicIndexPortViewModel(
+                Commands: commands,
                 BrowseLabels: domain.IndexFacts.Select(static item => item.Label).ToArray(),
                 BrowseRows: domain.IndexFacts,
                 SearchActions: ActionLines(actions, "Search Action"),
                 SourceFacts: ClassicFormPortSurfaceControl.DesignerChromeFactsForBridge(snapshot, 12)),
             Settings: new ClassicSettingsPortViewModel(
+                Commands: commands,
                 GlobalLabels: domain.SettingFacts.Select(static item => item.Label).ToArray(),
                 GlobalRows: domain.SettingFacts,
                 CustomDataActions: ActionLines(actions, "Action"),
@@ -99,6 +112,41 @@ public static class ClassicFormPortViewModelBridge
 
     private static IReadOnlyList<ClassicPortLineItem> ActionLines(IEnumerable<string> actions, string label)
         => actions.Select(action => new ClassicPortLineItem(label, action)).ToArray();
+}
+
+public sealed record ClassicFormPortActionCommands(
+    ICommand AddCommand,
+    ICommand EditCommand,
+    ICommand DeleteCommand,
+    ICommand SearchCommand,
+    ICommand CommitCommand)
+{
+    public static ClassicFormPortActionCommands NoOp { get; } = new(
+        new ClassicFormPortCommand(static _ => { }),
+        new ClassicFormPortCommand(static _ => { }),
+        new ClassicFormPortCommand(static _ => { }),
+        new ClassicFormPortCommand(static _ => { }),
+        new ClassicFormPortCommand(static _ => { }));
+}
+
+public sealed class ClassicFormPortCommand : ICommand
+{
+    private readonly Action<object?> _execute;
+    private readonly Func<object?, bool> _canExecute;
+
+    public ClassicFormPortCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
+    {
+        _execute = execute;
+        _canExecute = canExecute ?? (static _ => true);
+    }
+
+    public event EventHandler? CanExecuteChanged;
+
+    public bool CanExecute(object? parameter) => _canExecute(parameter);
+
+    public void Execute(object? parameter) => _execute(parameter);
+
+    public void RefreshCanExecute() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
 
 internal sealed record ClassicFormPortDomainModel(
@@ -122,7 +170,64 @@ internal sealed record ClassicFormPortDomainModel(
     IReadOnlyList<ClassicPortLineItem> IndexFacts,
     IReadOnlyList<ClassicPortLineItem> SettingFacts)
 {
-    private enum DomainBucket
+    public static ClassicFormPortDomainModel Create(ClassicFormPortState state)
+    {
+        IReadOnlyList<ClassicPortRowFact> facts = ClassicPortRowFactSet.FromState(state);
+        IReadOnlyList<ClassicPortLineItem> Snapshot(params string[] keys) => Keys(facts, keys);
+        IReadOnlyList<ClassicPortLineItem> Bucket(ClassicPortRowKind bucket, int maxCount) => Items(facts, bucket, maxCount);
+
+        return new ClassicFormPortDomainModel(
+            SnapshotFacts: Snapshot("name", "lifestyle", "buildmethod", "streetcred", "essence", "karma", "nuyen"),
+            AdvancementFacts: Bucket(ClassicPortRowKind.Advancement, 12),
+            GearFacts: Bucket(ClassicPortRowKind.Gear, 12),
+            ArmorFacts: Bucket(ClassicPortRowKind.Armor, 12),
+            WeaponFacts: Bucket(ClassicPortRowKind.Weapon, 12),
+            ContactFacts: Bucket(ClassicPortRowKind.Contact, 12),
+            NoteFacts: Bucket(ClassicPortRowKind.Note, 12),
+            PriorityFacts: Bucket(ClassicPortRowKind.Priority, 10),
+            PrioritySummaryFacts: Snapshot("gameedition", "buildmethod", "metatype", "priority"),
+            AttributeFacts: Bucket(ClassicPortRowKind.Attribute, 20),
+            SkillFacts: Bucket(ClassicPortRowKind.Skill, 20),
+            CreationGearFacts: Items(facts, [ClassicPortRowKind.Gear, ClassicPortRowKind.Armor, ClassicPortRowKind.Weapon], 15),
+            SpellFacts: Bucket(ClassicPortRowKind.Spell, 10),
+            FinalSummaryFacts: Snapshot("buildmethod", "metatype", "settings"),
+            GearCategoryFacts: Items(facts, [ClassicPortRowKind.Gear, ClassicPortRowKind.Armor, ClassicPortRowKind.Weapon], 18),
+            FilterFacts: Bucket(ClassicPortRowKind.Filter, 8),
+            GearDetailFacts: Bucket(ClassicPortRowKind.Detail, 16),
+            IndexFacts: Bucket(ClassicPortRowKind.Index, 12),
+            SettingFacts: Bucket(ClassicPortRowKind.Setting, 32));
+    }
+
+    private static IReadOnlyList<ClassicPortLineItem> Keys(IReadOnlyList<ClassicPortRowFact> facts, params string[] keys)
+        => keys.Select(key =>
+            {
+                ClassicPortRowFact? fact = facts.FirstOrDefault(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase));
+                return new ClassicPortLineItem(Title(key), fact?.Value ?? "n/a");
+            })
+            .ToArray();
+
+    private static IReadOnlyList<ClassicPortLineItem> Items(IReadOnlyList<ClassicPortRowFact> facts, ClassicPortRowKind bucket, int maxCount)
+        => Items(facts, [bucket], maxCount);
+
+    private static IReadOnlyList<ClassicPortLineItem> Items(IReadOnlyList<ClassicPortRowFact> facts, IReadOnlyList<ClassicPortRowKind> buckets, int maxCount)
+        => facts
+            .Where(item => buckets.Contains(item.Kind))
+            .GroupBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
+            .Select(static group => group.First())
+            .Take(maxCount)
+            .Select(static item => new ClassicPortLineItem(item.Label, item.Value))
+            .ToArray();
+
+    private static string Title(string key)
+        => key switch
+        {
+            "gameedition" => "Ruleset",
+            "buildmethod" => "Build Method",
+            "streetcred" => "Street Cred",
+            _ => string.Concat(key[..1].ToUpperInvariant(), key[1..])
+        };
+
+    private enum ClassicPortRowKind
     {
         Snapshot,
         Advancement,
@@ -141,167 +246,54 @@ internal sealed record ClassicFormPortDomainModel(
         Setting
     }
 
-    public static ClassicFormPortDomainModel Create(ClassicFormPortState state)
+    private sealed record ClassicPortRowFact(string Key, string Label, string Value, ClassicPortRowKind Kind);
+
+    private static class ClassicPortRowFactSet
     {
-        IReadOnlyList<ClassicDomainFact> facts = ClassicDomainFactSet.FromState(state);
-        IReadOnlyList<ClassicPortLineItem> Snapshot(params string[] keys) => Keys(facts, keys);
-        IReadOnlyList<ClassicPortLineItem> Bucket(DomainBucket bucket, int maxCount) => Items(facts, bucket, maxCount);
-
-        return new ClassicFormPortDomainModel(
-            SnapshotFacts: Snapshot("name", "lifestyle", "buildmethod", "streetcred", "essence", "karma", "nuyen"),
-            AdvancementFacts: Bucket(DomainBucket.Advancement, 12),
-            GearFacts: Bucket(DomainBucket.Gear, 12),
-            ArmorFacts: Bucket(DomainBucket.Armor, 12),
-            WeaponFacts: Bucket(DomainBucket.Weapon, 12),
-            ContactFacts: Bucket(DomainBucket.Contact, 12),
-            NoteFacts: Bucket(DomainBucket.Note, 12),
-            PriorityFacts: Bucket(DomainBucket.Priority, 10),
-            PrioritySummaryFacts: Snapshot("gameedition", "buildmethod", "metatype", "priority"),
-            AttributeFacts: Bucket(DomainBucket.Attribute, 20),
-            SkillFacts: Bucket(DomainBucket.Skill, 20),
-            CreationGearFacts: Items(facts, [DomainBucket.Gear, DomainBucket.Armor, DomainBucket.Weapon], 15),
-            SpellFacts: Bucket(DomainBucket.Spell, 10),
-            FinalSummaryFacts: Snapshot("buildmethod", "metatype", "settings"),
-            GearCategoryFacts: Items(facts, [DomainBucket.Gear, DomainBucket.Armor, DomainBucket.Weapon], 18),
-            FilterFacts: Bucket(DomainBucket.Filter, 8),
-            GearDetailFacts: Bucket(DomainBucket.Detail, 16),
-            IndexFacts: Bucket(DomainBucket.Index, 12),
-            SettingFacts: Bucket(DomainBucket.Setting, 32));
-    }
-
-    private static IReadOnlyList<ClassicPortLineItem> Keys(IReadOnlyList<ClassicDomainFact> facts, params string[] keys)
-        => keys.Select(key =>
+        public static IReadOnlyList<ClassicPortRowFact> FromState(ClassicFormPortState state)
+        {
+            object? sourceRows = state.GetType().GetProperty("Rows")?.GetValue(state);
+            IEnumerable<object> rows = sourceRows as IEnumerable<object> ?? [];
+            List<ClassicPortRowFact> facts = [];
+            foreach (object row in rows)
             {
-                ClassicDomainFact? fact = facts.FirstOrDefault(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase));
-                return new ClassicPortLineItem(Title(key), fact?.Value ?? "n/a");
-            })
-            .ToArray();
+                Type rowType = row.GetType();
+                string path = Convert.ToString(rowType.GetProperty("DisplayPath")?.GetValue(row), System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+                string value = Clean(Convert.ToString(rowType.GetProperty("DisplayValue")?.GetValue(row), System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
 
-    private static IReadOnlyList<ClassicPortLineItem> Items(IReadOnlyList<ClassicDomainFact> facts, DomainBucket bucket, int maxCount)
-        => Items(facts, [bucket], maxCount);
-
-    private static IReadOnlyList<ClassicPortLineItem> Items(IReadOnlyList<ClassicDomainFact> facts, IReadOnlyList<DomainBucket> buckets, int maxCount)
-        => facts
-            .Where(item => buckets.Contains(item.Bucket))
-            .GroupBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
-            .Select(static group => group.First())
-            .Take(maxCount)
-            .Select(static item => new ClassicPortLineItem(item.Label, item.Value))
-            .ToArray();
-
-    private static string Title(string key)
-        => key switch
-        {
-            "gameedition" => "Ruleset",
-            "buildmethod" => "Build Method",
-            "streetcred" => "Street Cred",
-            _ => string.Concat(key[..1].ToUpperInvariant(), key[1..])
-        };
-
-    private sealed record ClassicDomainFact(string Key, string Label, string Value, DomainBucket Bucket);
-
-    private static class ClassicDomainFactSet
-    {
-        public static IReadOnlyList<ClassicDomainFact> FromState(ClassicFormPortState state)
-        {
-            List<ClassicDomainFact> facts = ReadPreviewFacts(state.PreviewJson);
+                string key = NormalizeKey(path.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? path);
+                facts.Add(new ClassicPortRowFact(key, path, value, ClassifyBySchemaKey(key, path)));
+            }
 
             if (facts.Count == 0)
             {
-                facts.Add(new ClassicDomainFact("empty", "Classic surface", "No active character data", DomainBucket.Snapshot));
+                facts.Add(new ClassicPortRowFact("empty", "Classic surface", "No active character data", ClassicPortRowKind.Snapshot));
             }
 
             return facts;
         }
 
-        private static List<ClassicDomainFact> ReadPreviewFacts(string previewJson)
+        private static ClassicPortRowKind ClassifyBySchemaKey(string key, string path)
         {
-            List<ClassicDomainFact> facts = [];
-            if (string.IsNullOrWhiteSpace(previewJson))
-            {
-                return facts;
-            }
-
-            try
-            {
-                JsonNode? root = JsonNode.Parse(previewJson);
-                if (root is not null)
-                {
-                    CollectFacts(root, [], facts);
-                }
-            }
-            catch (JsonException)
-            {
-                facts.Add(new ClassicDomainFact("preview", "Preview", "Preview JSON could not be parsed", DomainBucket.Note));
-            }
-
-            return facts;
+            if (AdvancementKeys.Contains(key)) return ClassicPortRowKind.Advancement;
+            if (ArmorKeys.Contains(key)) return ClassicPortRowKind.Armor;
+            if (WeaponKeys.Contains(key)) return ClassicPortRowKind.Weapon;
+            if (GearKeys.Contains(key)) return ClassicPortRowKind.Gear;
+            if (ContactKeys.Contains(key)) return ClassicPortRowKind.Contact;
+            if (NoteKeys.Contains(key)) return ClassicPortRowKind.Note;
+            if (PriorityKeys.Contains(key)) return ClassicPortRowKind.Priority;
+            if (AttributeKeys.Contains(key)) return ClassicPortRowKind.Attribute;
+            if (SkillKeys.Contains(key)) return ClassicPortRowKind.Skill;
+            if (SpellKeys.Contains(key)) return ClassicPortRowKind.Spell;
+            if (FilterKeys.Contains(key)) return ClassicPortRowKind.Filter;
+            if (DetailKeys.Contains(key)) return ClassicPortRowKind.Detail;
+            if (SettingKeys.Contains(key)) return ClassicPortRowKind.Setting;
+            return path.Count(static character => character == '/') <= 1 ? ClassicPortRowKind.Snapshot : ClassicPortRowKind.Index;
         }
-
-        private static void CollectFacts(JsonNode node, IReadOnlyList<string> path, List<ClassicDomainFact> facts)
-        {
-            if (node is JsonObject obj)
-            {
-                foreach ((string jsonKey, JsonNode? child) in obj)
-                {
-                    if (child is null)
-                    {
-                        continue;
-                    }
-
-                    CollectFacts(child, [.. path, jsonKey], facts);
-                }
-
-                return;
-            }
-
-            if (node is JsonArray array)
-            {
-                for (int index = 0; index < array.Count; index++)
-                {
-                    JsonNode? child = array[index];
-                    if (child is null)
-                    {
-                        continue;
-                    }
-
-                    CollectFacts(child, [.. path, (index + 1).ToString("00")], facts);
-                }
-
-                return;
-            }
-
-            string value = Clean(node.ToJsonString().Trim('"'));
-            if (string.IsNullOrWhiteSpace(value) || path.Count == 0)
-            {
-                return;
-            }
-
-            string key = NormalizeKey(path[^1]);
-            string label = BuildLabel(path);
-            facts.Add(new ClassicDomainFact(key, label, value, ClassifyBySchemaKey(key, path)));
-        }
-
-        private static DomainBucket ClassifyBySchemaKey(string key, IReadOnlyList<string> path)
-        {
-            if (AdvancementKeys.Contains(key)) return DomainBucket.Advancement;
-            if (ArmorKeys.Contains(key)) return DomainBucket.Armor;
-            if (WeaponKeys.Contains(key)) return DomainBucket.Weapon;
-            if (GearKeys.Contains(key)) return DomainBucket.Gear;
-            if (ContactKeys.Contains(key)) return DomainBucket.Contact;
-            if (NoteKeys.Contains(key)) return DomainBucket.Note;
-            if (PriorityKeys.Contains(key)) return DomainBucket.Priority;
-            if (AttributeKeys.Contains(key)) return DomainBucket.Attribute;
-            if (SkillKeys.Contains(key)) return DomainBucket.Skill;
-            if (SpellKeys.Contains(key)) return DomainBucket.Spell;
-            if (FilterKeys.Contains(key)) return DomainBucket.Filter;
-            if (DetailKeys.Contains(key)) return DomainBucket.Detail;
-            if (SettingKeys.Contains(key)) return DomainBucket.Setting;
-            return path.Count <= 2 ? DomainBucket.Snapshot : DomainBucket.Index;
-        }
-
-        private static string BuildLabel(IReadOnlyList<string> path)
-            => string.Join(" / ", path.Select(static segment => Title(NormalizeKey(segment))));
 
         private static string Clean(string value)
             => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();

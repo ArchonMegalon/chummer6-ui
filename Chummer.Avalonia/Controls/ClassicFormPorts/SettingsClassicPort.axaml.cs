@@ -38,7 +38,8 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Global", "Custom Data", "GitHub Issues", "Plugins");
-        ClassicSettingsPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot).Settings;
+        ClassicSettingsPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Settings;
+        DataContext = viewModel;
 
         PopulateClassicSelector(_globalSelector, viewModel.GlobalLabels, "No global settings");
         PopulateClassicList(_globalList, viewModel.GlobalRows, "No global settings are currently loaded.");
