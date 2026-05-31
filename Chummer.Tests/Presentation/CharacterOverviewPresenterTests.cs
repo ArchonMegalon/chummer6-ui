@@ -1064,7 +1064,7 @@ public class CharacterOverviewPresenterTests
     }
 
     [TestMethod]
-    public async Task ExecuteCommandAsync_dice_roller_opens_legacy_roll_surface()
+    public async Task ExecuteCommandAsync_dice_roller_opens_utility_lane_with_roster_context()
     {
         var client = new FakeChummerClient();
         client.SeedWorkspace("ws-legacy-1", "Legacy One", "L1", DateTimeOffset.UtcNow.AddMinutes(-10), RulesetDefaults.Sr5);
