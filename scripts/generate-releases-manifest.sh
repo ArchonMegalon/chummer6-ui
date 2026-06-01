@@ -1500,6 +1500,16 @@ for raw_path in sys.argv[2:]:
                 payload,
                 reported_expected_installer_sha256_by_tuple={},
             )
+    verifier_owned_top_level_rows = {
+        "installAwareArtifactRegistry": "expected_install_aware_artifact_registry_rows",
+        "desktopSurfaceRefs": "expected_desktop_surface_ref_rows",
+        "artifactIdentityRegistry": "expected_artifact_identity_registry_rows",
+        "artifactPublicationBindings": "expected_artifact_publication_binding_rows",
+    }
+    for payload_key, helper_name in verifier_owned_top_level_rows.items():
+        helper = getattr(verifier, helper_name, None)
+        if callable(helper):
+            payload[payload_key] = helper(payload)
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
