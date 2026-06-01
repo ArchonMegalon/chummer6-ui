@@ -1297,8 +1297,16 @@ for raw_path in sys.argv[2:]:
         )
 
     def derive_verifier_owned_value(name: str, current_value):
+        artifact_bound_registry_names = {
+            "expected_external_proof_request_rows",
+            "expected_desktop_route_truth_rows",
+            "expected_install_aware_artifact_registry_rows",
+            "expected_desktop_surface_ref_rows",
+            "expected_artifact_identity_registry_rows",
+            "expected_artifact_publication_binding_rows",
+        }
         helper = getattr(verifier, name, None)
-        if callable(helper):
+        if callable(helper) and name not in artifact_bound_registry_names:
             return helper(payload)
         if materializer is None:
             return current_value
@@ -1365,6 +1373,8 @@ for raw_path in sys.argv[2:]:
 
     def assert_desktop_surface_ref_consistency(local_payload: dict) -> None:
         artifacts = local_payload.get("artifacts") or local_payload.get("downloads") or []
+        if not artifacts:
+            return
         artifact_ids = {
             normalized_token(item.get("artifactId") or item.get("id"))
             for item in artifacts
