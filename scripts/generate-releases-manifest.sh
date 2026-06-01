@@ -1555,6 +1555,36 @@ for artifact in payload.get("artifacts") or []:
 PY
 )
 
+prune_downloads_dir_to_promoted_files() {
+  local file_path=""
+  local file_name=""
+  local keep=""
+
+  shopt -s nullglob
+  for file_path in \
+    "$DOWNLOADS_DIR"/chummer-*.exe \
+    "$DOWNLOADS_DIR"/chummer-*.zip \
+    "$DOWNLOADS_DIR"/chummer-*.tar.gz \
+    "$DOWNLOADS_DIR"/chummer-*-installer.deb \
+    "$DOWNLOADS_DIR"/chummer-*-installer.pkg \
+    "$DOWNLOADS_DIR"/chummer-*-installer.dmg \
+    "$DOWNLOADS_DIR"/chummer-*-installer.msix; do
+    [[ -f "$file_path" ]] || continue
+    file_name="$(basename "$file_path")"
+    keep=0
+    for promoted_file_name in "${promoted_file_names[@]}"; do
+      if [[ "$file_name" == "$promoted_file_name" ]]; then
+        keep=1
+        break
+      fi
+    done
+    if [[ "$keep" != "1" ]]; then
+      rm -f -- "$file_path"
+      echo "removed unpromoted desktop artifact from downloads source: $file_name"
+    fi
+  done
+}
+
 sync_promoted_files_dir() {
   local target_dir="$1"
   local target_label="$2"
@@ -1587,6 +1617,8 @@ sync_promoted_files_dir() {
     echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for $target_label sync"
   fi
 }
+
+prune_downloads_dir_to_promoted_files
 
 sync_portal_outputs() {
   local resolved_manifest_path="$1"
