@@ -2651,6 +2651,48 @@ def normalize_token(value: object) -> str:
     return str(value or "").strip().lower()
 
 
+def startup_smoke_channel_proves_release(
+    startup_smoke_channel: str,
+    release_channel_id: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    actual = normalize_token(startup_smoke_channel)
+    expected = normalize_token(release_channel_id)
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not expected or not actual:
+        return True
+    if actual == expected:
+        return True
+    if expected in {"preview", "smoke", "local", "local_docker_preview"} and actual in {"docker", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    if expected == "docker" and actual in {"preview", "smoke", "local", "local_docker_preview"}:
+        return not expected_digest or startup_digest == expected_digest
+    return False
+
+
+def startup_smoke_version_proves_release(
+    startup_smoke_version: str,
+    release_channel_version: str,
+    startup_smoke_artifact_digest: str,
+    expected_startup_smoke_digest: str,
+) -> bool:
+    version = str(startup_smoke_version or "").strip()
+    release_version = str(release_channel_version or "").strip()
+    startup_digest = normalize_token(startup_smoke_artifact_digest)
+    expected_digest = normalize_token(expected_startup_smoke_digest)
+    if not release_version:
+        return True
+    if expected_digest and startup_digest == expected_digest:
+        return True
+    if not version:
+        return False
+    if version == release_version:
+        return True
+    return version.lower().startswith("smoke-") and bool(expected_digest) and startup_digest == expected_digest
+
+
 def load_json(path: pathlib.Path) -> dict:
     try:
         loaded = json.loads(path.read_text(encoding="utf-8-sig"))

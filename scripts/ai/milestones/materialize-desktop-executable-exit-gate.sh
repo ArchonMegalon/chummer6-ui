@@ -576,14 +576,10 @@ def filter_install_artifacts_to_required_tuples(
     artifacts: List[Dict[str, Any]],
     required_tuples: List[str],
 ) -> List[Dict[str, Any]]:
-    required_tuple_set = {normalize_token(item) for item in required_tuples if normalize_token(item)}
-    if not required_tuple_set:
-        return list(artifacts)
-    return [
-        item
-        for item in artifacts
-        if build_install_media_tuple_token(item) in required_tuple_set
-    ]
+    # Required tuples are the policy floor, not an allowlist. Any installer
+    # published in the release channel must carry matching startup/install
+    # proof, otherwise optional shelf media can bypass the gate.
+    return list(artifacts)
 
 
 def installer_sha256_from_local_or_quarantine(

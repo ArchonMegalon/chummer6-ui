@@ -568,7 +568,7 @@ jobs:
           RELEASE_CHANNEL="${{ steps.release-context.outputs.channel }}" \
           CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE="${{ steps.release-context.outputs.allow_unsigned_public_release }}" \
           CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${REQUIRE_COMPLETE_DESKTOP_COVERAGE}" \
-          CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER=true \
+          CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER=false \
           SIGNING_RECEIPTS_DIR="dist/signing" \
           SOURCE_MANIFEST_PATH="$GITHUB_WORKSPACE/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json" \
           RELEASE_PROOF_PATH="$GITHUB_WORKSPACE/h/.codex-studio/published/HUB_LOCAL_RELEASE_PROOF.generated.json" \
