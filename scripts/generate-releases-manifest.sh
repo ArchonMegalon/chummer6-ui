@@ -1415,6 +1415,9 @@ for raw_path in sys.argv[2:]:
 
     coverage = payload.get("desktopTupleCoverage")
     if isinstance(coverage, dict):
+        fresh_tuple_coverage = fallback_tuple_coverage(payload)
+        if isinstance(fresh_tuple_coverage, dict):
+            coverage.update(fresh_tuple_coverage)
         coverage["externalProofRequests"] = derive_verifier_owned_value(
             "expected_external_proof_request_rows",
             coverage.get("externalProofRequests") or [],
@@ -1458,6 +1461,9 @@ for raw_path in sys.argv[2:]:
     # so carried-forward manifests cannot keep stale dependent rows such as desktopSurfaceRefs.
     coverage = payload.get("desktopTupleCoverage")
     if isinstance(coverage, dict):
+        fresh_tuple_coverage = fallback_tuple_coverage(payload)
+        if isinstance(fresh_tuple_coverage, dict):
+            coverage.update(fresh_tuple_coverage)
         coverage["externalProofRequests"] = derive_verifier_owned_value(
             "expected_external_proof_request_rows",
             coverage.get("externalProofRequests") or [],
