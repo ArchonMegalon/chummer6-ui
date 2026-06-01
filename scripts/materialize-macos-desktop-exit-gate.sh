@@ -238,9 +238,10 @@ def choose_best_startup_smoke_receipt(
     expected_rid: str,
     expected_artifact_digest: str,
 ) -> Path | None:
-    explicit = resolve_existing_path(explicit_path, candidates)
-    if explicit is not None:
-        return explicit
+    if explicit_path:
+        explicit = resolve_existing_path(explicit_path, candidates)
+        if explicit is not None:
+            return explicit
 
     scored: List[tuple[int, int, int, int, int, int, int, int, str, Path]] = []
     for candidate in candidates:
@@ -405,7 +406,11 @@ installer_path = resolve_existing_path(installer_path_arg, downloads_candidates)
 artifact_exists = installer_path is not None
 artifact_size = installer_path.stat().st_size if installer_path else 0
 artifact_sha = sha256_file(installer_path) if installer_path else ""
-primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
+primary_shelf_root = (
+    Path(os.path.abspath(str(installer_path.parent)))
+    if installer_path is not None
+    else Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
+)
 installer_from_primary_shelf = installer_path is not None and path_is_within(installer_path, primary_shelf_root)
 evidence["artifact"] = {
     "installer_path": str(installer_path) if installer_path else "",

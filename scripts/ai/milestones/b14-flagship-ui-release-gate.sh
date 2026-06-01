@@ -624,12 +624,14 @@ fi
 
 echo "[b14] running explicit Chummer5a desktop workflow parity gate..."
 if ! receipt_passes_recently "$workflow_parity_receipt_path"; then
-  bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
+  CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
+    bash scripts/ai/milestones/chummer5a-desktop-workflow-parity-check.sh >/dev/null
 fi
 
 echo "[b14] running explicit SR4/SR6 desktop parity frontier gate..."
 if ! receipt_passes_recently "$sr4_sr6_frontier_receipt_path"; then
   CHUMMER_SR4_SR6_FRONTIER_SKIP_SUBGATE_REFRESH=1 \
+    CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
     CHUMMER_SR4_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
     CHUMMER_SR6_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
     CHUMMER_CHUMMER5A_WORKFLOW_PARITY_SKIP_DEPENDENCY_MATERIALIZE=1 \
@@ -1312,7 +1314,8 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
     bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
 
   echo "[b14] materializing desktop workflow execution gate..."
-  CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
+  CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
+  CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1 \
     bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
   echo "[b14] materializing classic dense workbench posture gate..."

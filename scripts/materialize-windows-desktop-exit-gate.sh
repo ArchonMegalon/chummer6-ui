@@ -537,7 +537,7 @@ else:
     artifact_sha = str(windows_artifact.get("sha256") or "").strip().lower()
 
 default_file_name = artifact_file_name or f"chummer-{expected_head}-{expected_rid}-installer.exe"
-primary_shelf_root = Path(os.path.abspath(str(repo_root / "Docker" / "Downloads" / "files")))
+primary_shelf_root = Path(os.path.abspath(str(windows_local_desktop_files_root)))
 primary_shelf_candidates = [
     Path(os.path.abspath(str(windows_local_desktop_files_root / default_file_name))),
     primary_shelf_root / default_file_name,

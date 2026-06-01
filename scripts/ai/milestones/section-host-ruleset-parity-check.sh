@@ -377,7 +377,7 @@ attribute_parity_markers = {
     "attribute_editor_builder": ("SetAttributeParityEditor(", section_host_code_text),
     "attribute_edit_event": ("AttributeEditRequested", section_host_code_text),
     "numeric_updown_editor": ("NumericUpDown", section_host_code_text),
-    "review_expander_hidden": ("SectionReviewExpander.IsVisible = !showingAttributeParityEditor", section_host_code_text),
+    "review_expander_hidden": ("SectionReviewPanel.IsVisible = false", section_host_code_text),
     "named_base_editor": ('Name = $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
     "named_karma_editor": ('Name = $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}"', section_host_code_text),
     "base_editor_valuechanged": ("baseEditor.ValueChanged += (_, _) =>", section_host_code_text),

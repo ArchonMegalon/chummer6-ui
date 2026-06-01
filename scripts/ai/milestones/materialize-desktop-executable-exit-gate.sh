@@ -181,6 +181,10 @@ if [[ "$skip_release_gate_lock_wait" != "1" ]]; then
 fi
 
 if [[ "$skip_dependency_materialize" != "1" ]]; then
+  hub_published_files_root=""
+  if [[ -n "$hub_registry_root" && -d "$hub_registry_root/.codex-studio/published/files" ]]; then
+    hub_published_files_root="$hub_registry_root/.codex-studio/published/files"
+  fi
   if [[ -f "$visual_familiarity_materializer_path" ]]; then
     if ! env \
       CHUMMER_DESKTOP_VISUAL_SKIP_RELEASE_GATE_LOCK_WAIT="$skip_release_gate_lock_wait" \
@@ -218,6 +222,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$linux_gate_tuple_path" \
           env \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-$repo_root/Docker/Downloads/files}" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_tuple_path" \
@@ -239,6 +244,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$windows_gate_tuple_path" \
           env \
           CHUMMER_WINDOWS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_WINDOWS_LOCAL_DESKTOP_FILES_ROOT="${hub_published_files_root:-$repo_root/Docker/Downloads/files}" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_WINDOWS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_WINDOWS_DESKTOP_EXIT_GATE_PATH="$windows_gate_tuple_path" \
@@ -256,6 +262,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           "$macos_gate_tuple_path" \
           env \
           CHUMMER_MACOS_RELEASE_CHANNEL_PATH="$release_channel_path" \
+          CHUMMER_MACOS_INSTALLER_PATH="${hub_published_files_root:+$hub_published_files_root/chummer-$head-$rid-installer.dmg}" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_MACOS_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_MACOS_DESKTOP_EXIT_GATE_PATH="$macos_gate_tuple_path" \
@@ -3408,6 +3415,9 @@ if hub_registry_root is not None:
     ):
         trusted_roots.append(hub_registry_root)
         hub_registry_root_trusted = True
+run_services_root = repo_root.parent / "chummer.run-services"
+if run_services_root.is_dir():
+    trusted_roots.append(run_services_root)
 deduped_trusted_roots: List[Path] = []
 seen_trusted_roots: set[str] = set()
 for candidate_root in trusted_roots:
@@ -4893,6 +4903,9 @@ def resolve_desktop_files_root() -> Path:
     candidates: List[Path] = []
     if release_channel_path.parent.name == "downloads":
         candidates.append(release_channel_path.parent / "files")
+    hub_registry_root_raw = str(os.environ.get("CHUMMER_HUB_REGISTRY_ROOT") or "").strip()
+    if hub_registry_root_raw:
+        candidates.append(Path(hub_registry_root_raw) / ".codex-studio" / "published" / "files")
     candidates.append(repo_root / "Docker" / "Downloads" / "files")
     run_services_root_raw = str(os.environ.get("CHUMMER_RUN_SERVICES_ROOT") or "").strip()
     if run_services_root_raw:
