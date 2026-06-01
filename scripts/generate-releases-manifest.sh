@@ -1496,7 +1496,10 @@ for raw_path in sys.argv[2:]:
     if isinstance(coverage, dict):
         expected_external_proof_request_rows = getattr(verifier, "expected_external_proof_request_rows", None)
         if callable(expected_external_proof_request_rows):
-            coverage["externalProofRequests"] = expected_external_proof_request_rows(payload)
+            coverage["externalProofRequests"] = expected_external_proof_request_rows(
+                payload,
+                reported_expected_installer_sha256_by_tuple={},
+            )
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
