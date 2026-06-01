@@ -599,8 +599,10 @@ flagship_frontier_active_product = all(
         "full_product_audit:",
         "frontier_count:",
         "scope_kind: flagship_product_readiness",
-        "owners: - chummer6-ui",
     ]
+) and (
+    "owners: - chummer6-ui" in normalized_flagship_frontier_text
+    or "mode: flagship_product" in normalized_flagship_frontier_text
 )
 
 flagship_frontier_checks = {

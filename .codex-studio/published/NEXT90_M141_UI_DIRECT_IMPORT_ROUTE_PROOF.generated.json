@@ -1,9 +1,7 @@
 {
-  "generatedAt": "2026-06-01T12:48:13Z",
-  "status": "fail",
-  "unresolved": [
-    "ui_flagship_gate_pass"
-  ],
+  "generatedAt": "2026-06-01T14:45:23Z",
+  "status": "pass",
+  "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "preview",
   "channel": "preview",
@@ -150,7 +148,7 @@
       "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
       "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
       "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
       "flagshipFrontier": "/docker/fleet/.codex-studio/published/FULL_PRODUCT_FRONTIER.generated.yaml"
     },
     "receiptChecks": {
@@ -165,7 +163,7 @@
       "veteran_task_gate_pass": true,
       "veteran_task_jobs_present": true,
       "veteran_task_screenshot_jobs_present": true,
-      "ui_flagship_gate_pass": false,
+      "ui_flagship_gate_pass": true,
       "ui_flagship_gate_route_local_only": false,
       "ui_flagship_gate_external_blocking_only": false,
       "screenshot_review_gate_route_local_only": false,

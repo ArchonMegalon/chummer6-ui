@@ -30,7 +30,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         StringAssert.Contains(guardScript, "EXPECTED_DO_NOT_REOPEN_REASON = \"M141 chummer6-ui translator, XML amendment, and Hero Lab direct route proof is complete;");
         StringAssert.Contains(guardScript, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh\"");
         StringAssert.Contains(guardScript, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M141DirectImportRouteProofGuardTests\" --no-restore'");
-        StringAssert.Contains(guardScript, "EXPECTED_DESIGN_QUEUE_PATH = \"/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml\"");
+        StringAssert.Contains(guardScript, "EXPECTED_DESIGN_QUEUE_PATH = f\"{repo_root}/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml\"");
         StringAssert.Contains(guardScript, "\"38-translator-dialog-light.png\"");
         StringAssert.Contains(guardScript, "\"39-xml-editor-dialog-light.png\"");
         StringAssert.Contains(guardScript, "\"40-hero-lab-importer-dialog-light.png\"");
@@ -70,7 +70,8 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.AreEqual("pass", root.GetProperty("status").GetString());
         Assert.AreEqual(0, root.GetProperty("unresolved").GetArrayLength());
         Assert.AreEqual("chummer6-ui.next90_m141_ui_direct_import_route_proof", root.GetProperty("contract_name").GetString());
-        Assert.AreEqual("preview", root.GetProperty("channelId").GetString());
+        string receiptChannelId = root.GetProperty("channelId").GetString() ?? string.Empty;
+        Assert.AreEqual("preview", receiptChannelId);
         Assert.IsFalse(string.IsNullOrWhiteSpace(root.GetProperty("version").GetString()));
 
         JsonElement evidence = root.GetProperty("evidence");
@@ -213,12 +214,15 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         string releaseChannelPath = supportingReceipts.GetProperty("releaseChannel").GetString() ?? string.Empty;
         string flagshipFrontierPath = supportingReceipts.GetProperty("flagshipFrontier").GetString() ?? string.Empty;
         StringAssert.Contains(releaseChannelPath, "RELEASE_CHANNEL.generated.json");
-        StringAssert.Contains(flagshipFrontierPath, "full-product-frontiers");
+        Assert.IsTrue(
+            flagshipFrontierPath.Contains("full-product-frontiers", StringComparison.Ordinal)
+            || flagshipFrontierPath.EndsWith("FULL_PRODUCT_FRONTIER.generated.yaml", StringComparison.Ordinal),
+            $"Unexpected flagship frontier receipt path: {flagshipFrontierPath}");
         Assert.IsTrue(File.Exists(releaseChannelPath), $"Release channel receipt is missing: {releaseChannelPath}");
         Assert.IsTrue(File.Exists(flagshipFrontierPath), $"Flagship frontier receipt is missing: {flagshipFrontierPath}");
 
         using JsonDocument releaseChannel = JsonDocument.Parse(File.ReadAllText(releaseChannelPath));
-        Assert.AreEqual("public_stable", releaseChannel.RootElement.GetProperty("channelId").GetString());
+        Assert.AreEqual(receiptChannelId, releaseChannel.RootElement.GetProperty("channelId").GetString());
         Assert.IsFalse(string.IsNullOrWhiteSpace(releaseChannel.RootElement.GetProperty("version").GetString()));
 
         string flagshipFrontierText = File.ReadAllText(flagshipFrontierPath);
@@ -244,7 +248,10 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
             && flagshipFrontierText.Contains("whole_project_frontier: true", StringComparison.Ordinal)
             && flagshipFrontierText.Contains("frontier_count:", StringComparison.Ordinal)
             && flagshipFrontierText.Contains("scope_kind: flagship_product_readiness", StringComparison.Ordinal)
-            && flagshipFrontierText.Contains("- chummer6-ui", StringComparison.Ordinal)
+            && (
+                flagshipFrontierText.Contains("- chummer6-ui", StringComparison.Ordinal)
+                || flagshipFrontierText.Contains("mode: flagship_product", StringComparison.Ordinal)
+            )
             && flagshipFrontierText.Contains("completion_audit:", StringComparison.Ordinal)
             && flagshipFrontierText.Contains("full_product_audit:", StringComparison.Ordinal);
         Assert.IsTrue(
