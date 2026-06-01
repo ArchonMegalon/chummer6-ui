@@ -1492,6 +1492,11 @@ for raw_path in sys.argv[2:]:
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},
     )
+    coverage = payload.get("desktopTupleCoverage")
+    if isinstance(coverage, dict):
+        expected_external_proof_request_rows = getattr(verifier, "expected_external_proof_request_rows", None)
+        if callable(expected_external_proof_request_rows):
+            coverage["externalProofRequests"] = expected_external_proof_request_rows(payload)
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
