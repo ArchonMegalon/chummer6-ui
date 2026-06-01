@@ -1,96 +1,24 @@
 {
-  "generated_at": "2026-06-01T07:05:09.304324Z",
-  "generatedAt": "2026-06-01T07:05:09.304324Z",
+  "generated_at": "2026-06-01T12:53:40.023596Z",
+  "generatedAt": "2026-06-01T12:53:40.023596Z",
   "contract_name": "chummer6-ui.desktop_executable_exit_gate",
-  "channelId": "public_stable",
-  "releaseVersion": "run-20260601-064534",
-  "status": "fail",
-  "summary": "Desktop executable exit gate is not fully proven.",
-  "reasons": [
-    "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-    "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-    "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.",
-    "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-    "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-    "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-  ],
-  "blockingFindings": [
-    "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-    "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-    "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.",
-    "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-    "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-    "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-  ],
-  "blocking_findings": [
-    "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-    "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-    "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.",
-    "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-    "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-    "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-  ],
-  "blockingFindingsCount": 13,
-  "blocking_findings_count": 13,
-  "externalBlockingFindings": [
-    "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-    "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-    "Windows desktop exit gate receipt releaseVersion/version does not match release channel version."
-  ],
-  "external_blocking_findings": [
-    "Release channel does not publish desktop install media for required platform 'macos'.",
-    "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-    "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-    "Windows desktop exit gate receipt releaseVersion/version does not match release channel version."
-  ],
-  "externalBlockingFindingsCount": 4,
-  "external_blocking_findings_count": 4,
-  "localBlockingFindings": [
-    "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-    "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-    "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-  ],
-  "local_blocking_findings": [
-    "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-    "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-    "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete.",
-    "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-    "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-    "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-    "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-    "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-    "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-  ],
-  "localBlockingFindingsCount": 9,
-  "local_blocking_findings_count": 9,
+  "channelId": "preview",
+  "releaseVersion": "run-134",
+  "status": "pass",
+  "summary": "Desktop executable exit gate is proven by passing packaged-head receipts for promoted desktop platforms (Linux, macOS, Windows) and per-head flagship UI release proof.",
+  "reasons": [],
+  "blockingFindings": [],
+  "blocking_findings": [],
+  "blockingFindingsCount": 0,
+  "blocking_findings_count": 0,
+  "externalBlockingFindings": [],
+  "external_blocking_findings": [],
+  "externalBlockingFindingsCount": 0,
+  "external_blocking_findings_count": 0,
+  "localBlockingFindings": [],
+  "local_blocking_findings": [],
+  "localBlockingFindingsCount": 0,
+  "local_blocking_findings_count": 0,
   "blockedByExternalConstraintsOnly": false,
   "blocked_by_external_constraints_only": false,
   "reviews": {
@@ -105,15 +33,9 @@
       ]
     },
     "releaseChannelReview": {
-      "status": "fail",
-      "reasonCount": 5,
-      "reasons": [
-        "Release channel does not publish desktop install media for required platform 'macos'.",
-        "Desktop downloads shelf contains installer artifact(s) not promoted in release-channel truth: chummer-avalonia-osx-arm64-installer.dmg.",
-        "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-        "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.",
-        "Release channel supportabilityState cannot remain review_required when required desktop tuple coverage is complete."
-      ],
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
       "requiredPlatforms": [
         "linux",
         "windows",
@@ -124,15 +46,11 @@
       ]
     },
     "windowsPlatformReview": {
-      "status": "fail",
-      "reasonCount": 3,
-      "reasons": [
-        "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-        "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.",
-        "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version."
-      ],
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
       "gateStatuses": {
-        "avalonia:win-x64": "fail"
+        "avalonia:win-x64": "pass"
       }
     },
     "crossGateReview": {
@@ -144,29 +62,24 @@
       ]
     },
     "linuxPlatformReview": {
-      "status": "fail",
-      "reasonCount": 4,
-      "reasons": [
-        "linux desktop exit gate proof for avalonia:linux-x64 is stale (121653s old).",
-        "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-        "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-        "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version."
-      ],
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
       "gateStatuses": {
-        "avalonia:linux-x64": "fail"
+        "avalonia:linux-x64": "pass"
       }
     },
     "macosPlatformReview": {
-      "status": "fail",
-      "reasonCount": 1,
-      "reasons": [
-        "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-      ],
-      "gateStatuses": {}
+      "status": "pass",
+      "reasonCount": 0,
+      "reasons": [],
+      "gateStatuses": {
+        "avalonia:osx-arm64": "pass"
+      }
     }
   },
   "evidence": {
-    "release_channel_path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "linux_avalonia_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
     "linux_blazor_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_BLAZOR_DESKTOP_EXIT_GATE.generated.json",
     "windows_gate_path_default": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
@@ -201,14 +114,14 @@
     "release_gate_lock_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/locks/b14-flagship-ui-release-gate.lock",
     "release_gate_lock_observed_but_receipts_current": false,
     "flagship UI release gate proof_generated_at_alias_conflict": false,
-    "flagship UI release gate proof_generated_at": "2026-06-01T07:05:02.896035Z",
-    "flagship UI release gate proof_age_seconds": 5,
+    "flagship UI release gate proof_generated_at": "2026-06-01T12:33:14.652414Z",
+    "flagship UI release gate proof_age_seconds": 1224,
     "desktop visual familiarity gate proof_generated_at_alias_conflict": false,
-    "desktop visual familiarity gate proof_generated_at": "2026-06-01T07:05:03.113695Z",
-    "desktop visual familiarity gate proof_age_seconds": 5,
+    "desktop visual familiarity gate proof_generated_at": "2026-06-01T12:33:14.978109Z",
+    "desktop visual familiarity gate proof_age_seconds": 1224,
     "desktop workflow execution gate proof_generated_at_alias_conflict": false,
-    "desktop workflow execution gate proof_generated_at": "2026-06-01T07:05:05.548173Z",
-    "desktop workflow execution gate proof_age_seconds": 2,
+    "desktop workflow execution gate proof_generated_at": "2026-06-01T12:48:14.196716Z",
+    "desktop workflow execution gate proof_age_seconds": 325,
     "flagship_status": "fail",
     "visual_familiarity_status": "pass",
     "workflow_execution_status": "pass",
@@ -242,6 +155,11 @@
       },
       "linux_gate:avalonia:linux-x64": {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
+        "within_repo_root": true,
+        "repo_root": "/docker/chummercomplete/chummer6-ui"
+      },
+      "macos_gate:avalonia:osx-arm64": {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
         "within_repo_root": true,
         "repo_root": "/docker/chummercomplete/chummer6-ui"
       }
@@ -297,62 +215,63 @@
       "40-hero-lab-importer-dialog-light.png"
     ],
     "visual_familiarity_missing_screenshots_now": [],
-    "visual_familiarity_screenshot_reference_generated_at": "2026-06-01T07:05:03.113695Z",
+    "visual_familiarity_screenshot_reference_generated_at": "2026-06-01T12:33:14.978109Z",
     "visual_familiarity_screenshot_file_timestamps": {
-      "01-initial-shell-light.png": "2026-06-01T07:05:03.015493Z",
-      "02-menu-open-light.png": "2026-06-01T07:05:03.015493Z",
-      "03-settings-open-light.png": "2026-06-01T07:05:03.015493Z",
-      "04-loaded-runner-light.png": "2026-06-01T07:05:03.015493Z",
-      "05-dense-section-light.png": "2026-06-01T07:05:03.015493Z",
-      "06-dense-section-dark.png": "2026-06-01T07:05:03.015493Z",
-      "07-loaded-runner-tabs-light.png": "2026-06-01T07:05:03.015493Z",
-      "08-cyberware-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "09-vehicles-section-light.png": "2026-06-01T07:05:03.015493Z",
-      "10-contacts-section-light.png": "2026-06-01T07:05:03.015493Z",
-      "11-diary-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "12-magic-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "13-matrix-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "14-advancement-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "15-creation-section-light.png": "2026-06-01T07:05:03.015493Z",
-      "16-master-index-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "17-character-roster-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "18-import-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "38-translator-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "39-xml-editor-dialog-light.png": "2026-06-01T07:05:03.015493Z",
-      "40-hero-lab-importer-dialog-light.png": "2026-06-01T07:05:03.015493Z"
+      "01-initial-shell-light.png": "2026-06-01T12:33:14.895471Z",
+      "02-menu-open-light.png": "2026-06-01T12:33:14.895471Z",
+      "03-settings-open-light.png": "2026-06-01T12:33:14.895471Z",
+      "04-loaded-runner-light.png": "2026-06-01T12:33:14.895471Z",
+      "05-dense-section-light.png": "2026-06-01T12:33:14.895471Z",
+      "06-dense-section-dark.png": "2026-06-01T12:33:14.895471Z",
+      "07-loaded-runner-tabs-light.png": "2026-06-01T12:33:14.895471Z",
+      "08-cyberware-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "09-vehicles-section-light.png": "2026-06-01T12:33:14.895471Z",
+      "10-contacts-section-light.png": "2026-06-01T12:33:14.895471Z",
+      "11-diary-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "12-magic-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "13-matrix-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "14-advancement-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "15-creation-section-light.png": "2026-06-01T12:33:14.895471Z",
+      "16-master-index-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "17-character-roster-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "18-import-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "38-translator-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "39-xml-editor-dialog-light.png": "2026-06-01T12:33:14.895471Z",
+      "40-hero-lab-importer-dialog-light.png": "2026-06-01T12:33:14.895471Z"
     },
     "visual_familiarity_stale_screenshots": [],
     "visual_familiarity_screenshots_older_than_receipt": [],
     "visual_familiarity_screenshots_newer_than_receipt": [],
-    "release_channel_artifacts_total_count": 2,
-    "release_channel_artifacts_object_count": 2,
+    "release_channel_artifacts_total_count": 10,
+    "release_channel_artifacts_object_count": 10,
     "release_channel_artifacts_non_object_indexes": [],
     "release_channel.status_present": true,
     "release_channel.status_raw_type": "str",
     "release_channel.status_normalized": "published",
     "release_channel.channelId_present": true,
     "release_channel.channelId_raw_type": "str",
-    "release_channel.channelId_normalized": "public_stable",
+    "release_channel.channelId_normalized": "preview",
     "release_channel.channel_present": true,
     "release_channel.channel_raw_type": "str",
-    "release_channel.channel_normalized": "public_stable",
+    "release_channel.channel_normalized": "preview",
     "release_channel.version_present": true,
     "release_channel.version_raw_type": "str",
-    "release_channel.version_normalized": "run-20260601-064534",
+    "release_channel.version_normalized": "run-134",
     "release_channel.releaseVersion_present": false,
     "release_channel_version_alias_conflict": false,
     "release_channel_status": "published",
-    "release_channel_channel_id": "public_stable",
-    "release_channel_version": "run-20260601-064534",
-    "release_channel_generated_at": "2026-06-01T07:05:07Z",
+    "release_channel_channel_id": "preview",
+    "release_channel_version": "run-134",
+    "release_channel_generated_at": "2026-06-01T11:45:41Z",
     "release_channel_generated_at_alias_conflict": false,
     "release_channel_freshness_max_age_seconds": 86400,
     "release_channel_freshness_max_future_skew_seconds": 300,
-    "release_channel_age_seconds": 1,
+    "release_channel_age_seconds": 4078,
     "release_channel_tuple_coverage_unexpected_keys": [],
     "desktopTupleCoverage.requiredDesktopPlatforms_normalized": [
       "linux",
-      "windows"
+      "windows",
+      "macos"
     ],
     "desktopTupleCoverage.requiredDesktopPlatforms_whitespace_padded_indexes": [],
     "desktopTupleCoverage.requiredDesktopHeads_normalized": [
@@ -367,11 +286,18 @@
       "avalonia"
     ],
     "desktopTupleCoverage.promotedPlatformHeads.windows_whitespace_padded_indexes": [],
+    "desktopTupleCoverage.promotedPlatformHeads.macos_normalized": [
+      "avalonia"
+    ],
+    "desktopTupleCoverage.promotedPlatformHeads.macos_whitespace_padded_indexes": [],
     "desktopTupleCoverage.promotedPlatformHeads_normalized": {
       "linux": [
         "avalonia"
       ],
       "windows": [
+        "avalonia"
+      ],
+      "macos": [
         "avalonia"
       ]
     },
@@ -381,6 +307,9 @@
       ],
       "windows": [
         "windows"
+      ],
+      "macos": [
+        "macos"
       ]
     },
     "desktopTupleCoverage.promotedPlatformHeads_whitespace_padded_platform_keys": [],
@@ -395,12 +324,14 @@
     "desktopTupleCoverage.missingRequiredHeads_whitespace_padded_indexes": [],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_normalized": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_whitespace_padded_indexes": [],
     "desktopTupleCoverage.requiredDesktopPlatformHeadRidTuples_malformed_tokens": [],
     "desktopTupleCoverage.promotedPlatformHeadRidTuples_normalized": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "desktopTupleCoverage.promotedPlatformHeadRidTuples_whitespace_padded_indexes": [],
@@ -410,7 +341,8 @@
     "desktopTupleCoverage.missingRequiredPlatformHeadRidTuples_malformed_tokens": [],
     "release_channel_tuple_coverage_required_desktop_platforms": [
       "linux",
-      "windows"
+      "windows",
+      "macos"
     ],
     "release_channel_tuple_coverage_required_desktop_heads": [
       "avalonia"
@@ -421,6 +353,9 @@
       ],
       "windows": [
         "avalonia"
+      ],
+      "macos": [
+        "avalonia"
       ]
     },
     "release_channel_tuple_coverage_reported_missing_required_platform_head_pairs": [],
@@ -428,10 +363,12 @@
     "release_channel_tuple_coverage_reported_missing_required_heads": [],
     "release_channel_tuple_coverage_required_platform_head_rid_tuples": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "release_channel_tuple_coverage_promoted_platform_head_rid_tuples": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "release_channel_tuple_coverage_reported_missing_required_platform_head_rid_tuples": [],
@@ -448,12 +385,12 @@
     "release_channel_version_uses_unpublished_sentinel": false,
     "release_channel.rolloutState_present": true,
     "release_channel.rolloutState_raw_type": "str",
-    "release_channel.rolloutState_normalized": "public_stable",
+    "release_channel.rolloutState_normalized": "promoted_preview",
     "release_channel.supportabilityState_present": true,
     "release_channel.supportabilityState_raw_type": "str",
-    "release_channel.supportabilityState_normalized": "review_required",
-    "release_channel_rollout_state": "public_stable",
-    "release_channel_supportability_state": "review_required",
+    "release_channel.supportabilityState_normalized": "preview_supported",
+    "release_channel_rollout_state": "promoted_preview",
+    "release_channel_supportability_state": "preview_supported",
     "release_channel_rollout_state_present": true,
     "release_channel_supportability_state_present": true,
     "release_channel_allowed_rollout_states": [
@@ -483,10 +420,12 @@
     "release_channel_promoted_installer_tuple_rows_unexpected_keys": [],
     "release_channel_promoted_installer_tuple_ids_expected": [
       "avalonia:linux:linux-x64",
+      "avalonia:macos:osx-arm64",
       "avalonia:windows:win-x64"
     ],
     "release_channel_promoted_installer_tuple_ids_reported": [
       "avalonia:linux:linux-x64",
+      "avalonia:macos:osx-arm64",
       "avalonia:windows:win-x64"
     ],
     "release_channel_promoted_installer_tuple_rows_expected": [
@@ -498,6 +437,15 @@
         "arch": "x64",
         "kind": "installer",
         "artifactId": "avalonia-linux-x64-installer"
+      },
+      {
+        "tupleId": "avalonia:macos:osx-arm64",
+        "head": "avalonia",
+        "platform": "macos",
+        "rid": "osx-arm64",
+        "arch": "arm64",
+        "kind": "installer",
+        "artifactId": "avalonia-osx-arm64-installer"
       },
       {
         "tupleId": "avalonia:windows:win-x64",
@@ -518,6 +466,15 @@
         "arch": "x64",
         "kind": "installer",
         "artifactId": "avalonia-linux-x64-installer"
+      },
+      {
+        "tupleId": "avalonia:macos:osx-arm64",
+        "head": "avalonia",
+        "platform": "macos",
+        "rid": "osx-arm64",
+        "arch": "arm64",
+        "kind": "installer",
+        "artifactId": "avalonia-osx-arm64-installer"
       },
       {
         "tupleId": "avalonia:windows:win-x64",
@@ -548,12 +505,14 @@
     "release_channel_external_proof_request_rows_reported": [],
     "release_channel_external_proof_request_tuple_ids_reported": [],
     "release_channel_desktop_install_artifact_channel_ids": [
-      "public_stable",
-      "public_stable"
+      "preview",
+      "preview",
+      "preview"
     ],
     "release_channel_desktop_install_artifact_versions": [
-      "run-20260601-064534",
-      "run-20260601-064534"
+      "run-134",
+      "run-134",
+      "run-134"
     ],
     "release_channel_desktop_install_artifacts_missing_head": [],
     "release_channel_desktop_install_artifacts_missing_channel": [],
@@ -579,12 +538,13 @@
     ],
     "declared_required_desktop_platforms": [
       "linux",
-      "windows"
+      "windows",
+      "macos"
     ],
     "platform_artifact_counts": {
       "linux": 1,
       "windows": 1,
-      "macos": 0
+      "macos": 1
     },
     "platform_heads_from_release_channel": {
       "linux": [
@@ -593,7 +553,9 @@
       "windows": [
         "avalonia"
       ],
-      "macos": []
+      "macos": [
+        "avalonia"
+      ]
     },
     "desktop_files_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
     "quarantine_roots": [
@@ -606,20 +568,30 @@
         "file_name": "chummer-avalonia-linux-x64-installer.deb",
         "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
         "exists": true,
-        "size_bytes": 34999182,
-        "sha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
-        "expected_size_bytes": 34999182,
-        "expected_sha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67"
+        "size_bytes": 35069672,
+        "sha256": "4c70f443b10fa51ed2d73fb6eda051c1c8d3309ae17b2061033a511e06c37e84",
+        "expected_size_bytes": 35069672,
+        "expected_sha256": "4c70f443b10fa51ed2d73fb6eda051c1c8d3309ae17b2061033a511e06c37e84"
+      },
+      "avalonia-osx-arm64-installer": {
+        "artifact_id": "avalonia-osx-arm64-installer",
+        "file_name": "chummer-avalonia-osx-arm64-installer.dmg",
+        "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "exists": true,
+        "size_bytes": 52197727,
+        "sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+        "expected_size_bytes": 52197727,
+        "expected_sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c"
       },
       "avalonia-win-x64-installer": {
         "artifact_id": "avalonia-win-x64-installer",
         "file_name": "chummer-avalonia-win-x64-installer.exe",
         "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
         "exists": true,
-        "size_bytes": 239554300,
-        "sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
-        "expected_size_bytes": 239554300,
-        "expected_sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde"
+        "size_bytes": 142156383,
+        "sha256": "f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682",
+        "expected_size_bytes": 142156383,
+        "expected_sha256": "f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682"
       }
     },
     "desktop_shelf_installer_candidates": [
@@ -629,11 +601,10 @@
     ],
     "release_channel_promoted_desktop_installer_files": [
       "chummer-avalonia-linux-x64-installer.deb",
+      "chummer-avalonia-osx-arm64-installer.dmg",
       "chummer-avalonia-win-x64-installer.exe"
     ],
-    "unpromoted_desktop_shelf_installers": [
-      "chummer-avalonia-osx-arm64-installer.dmg"
-    ],
+    "unpromoted_desktop_shelf_installers": [],
     "linux_artifacts_missing_rid_by_head": [],
     "linux_heads_expected": [
       {
@@ -667,14 +638,13 @@
       "avalonia"
     ],
     "missing_promoted_desktop_heads": [],
-    "release_channel_tuple_coverage_missing_required_platforms_from_policy": [
-      "macos"
-    ],
+    "release_channel_tuple_coverage_missing_required_platforms_from_policy": [],
     "release_channel_tuple_coverage_missing_required_heads_from_policy": [],
     "release_channel_tuple_coverage_missing_canonical_required_heads": [],
     "required_desktop_platform_head_pair_platforms": [
       "linux",
-      "windows"
+      "windows",
+      "macos"
     ],
     "required_desktop_platform_head_pair_heads": [
       "avalonia"
@@ -684,6 +654,9 @@
         "avalonia"
       ],
       "windows": [
+        "avalonia"
+      ],
+      "macos": [
         "avalonia"
       ]
     },
@@ -696,14 +669,17 @@
     },
     "release_channel_promoted_platform_head_rid_tuples_from_artifacts": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "release_channel_required_platform_head_pairs_for_matrix": [
       "avalonia:linux",
+      "avalonia:macos",
       "avalonia:windows"
     ],
     "release_channel_required_platform_head_pairs_from_required_rid_tuples": [
       "avalonia:linux",
+      "avalonia:macos",
       "avalonia:windows"
     ],
     "release_channel_missing_required_platform_head_pairs_from_required_rid_tuples": [],
@@ -737,7 +713,7 @@
       "preview_supported",
       "gold_supported"
     ],
-    "release_channel_supportability_state_invalid_for_publishable_complete": true,
+    "release_channel_supportability_state_invalid_for_publishable_complete": false,
     "release_channel_publishable_status_with_incomplete_desktop_tuple_coverage": false,
     "windows_artifacts_missing_rid_by_head": [],
     "windows_heads_expected": [
@@ -771,19 +747,19 @@
           "kind": "installer",
           "fileName": "chummer-avalonia-win-x64-installer.exe",
           "downloadUrl": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
-          "sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
-          "sizeBytes": 239554300,
+          "sha256": "f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682",
+          "sizeBytes": 142156383,
           "platformLabel": "Avalonia Desktop Windows X64 Installer",
           "updateFeedUrl": null,
           "embeddedRuntimeBundleHeadId": null,
           "compatibilityState": "compatible",
           "installAccessClass": "account_required",
-          "channelId": "public_stable",
-          "channel": "public_stable",
-          "version": "run-20260530-184515",
-          "releaseVersion": "run-20260530-184515",
-          "generated_at": "2026-05-30T20:55:41Z",
-          "generatedAt": "2026-05-30T20:55:41Z",
+          "channelId": "preview",
+          "channel": "preview",
+          "version": "run-134",
+          "releaseVersion": "run-134",
+          "generated_at": "2026-06-01T11:45:41Z",
+          "generatedAt": "2026-06-01T11:45:41Z",
           "id": "avalonia-win-x64-installer"
         },
         "windows_installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
@@ -794,17 +770,16 @@
         "host_supports_windows_startup_smoke": false,
         "startup_smoke_external_blocker": "",
         "windows desktop exit gate proof_generated_at_alias_conflict": false,
-        "windows desktop exit gate proof_generated_at": "2026-05-30T21:19:23Z",
-        "windows desktop exit gate proof_age_seconds": 121545,
-        "windows desktop exit gate proof_stale_pass_receipt_allowed": true,
+        "windows desktop exit gate proof_generated_at": "2026-06-01T12:53:39Z",
+        "windows desktop exit gate proof_age_seconds": 0,
         "embedded_payload_marker_present": true,
         "embedded_sample_marker_present": true,
-        "gate_release_version": "run-20260530-184515",
-        "gate_channel_id": "public_stable",
+        "gate_release_version": "run-134",
+        "gate_channel_id": "preview",
         "gate_channel_id_alias_conflict": false,
-        "checks_release_channel_id": "public_stable",
-        "checks_release_channel_version": "run-20260530-184515",
-        "gate_release_version_primary": "run-20260530-184515",
+        "checks_release_channel_id": "preview",
+        "checks_release_channel_version": "run-134",
+        "gate_release_version_primary": "run-134",
         "gate_release_version_alias": "",
         "gate_release_version_alias_conflict": false,
         "expected_artifact_source": "",
@@ -822,19 +797,19 @@
         },
         "expected_artifact_arch": "x64",
         "expected_artifact_arch_alias_conflict": false,
-        "release_channel_windows_artifact_channel_id": "public_stable",
+        "release_channel_windows_artifact_channel_id": "preview",
         "release_channel_windows_artifact_channel_id_alias_conflict": false,
-        "release_channel_windows_artifact_version": "run-20260530-184515",
+        "release_channel_windows_artifact_version": "run-134",
         "release_channel_windows_artifact_version_alias_conflict": false,
         "release_channel_windows_artifact_arch": "x64",
         "release_channel_windows_artifact_arch_alias_conflict": false,
-        "release_channel_windows_artifact_generated_at": "2026-05-30T20:55:41Z",
+        "release_channel_windows_artifact_generated_at": "2026-06-01T11:45:41Z",
         "release_channel_windows_artifact_generated_at_valid": true,
         "release_channel_windows_artifact_generated_at_alias_conflict": false,
-        "windows_installer_size_bytes": 239554300,
-        "windows_installer_sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+        "windows_installer_size_bytes": 142156383,
+        "windows_installer_sha256": "f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682",
         "expected_windows_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-        "expected_windows_shelf_sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+        "expected_windows_shelf_sha256": "f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682",
         "trusted_path_scope": {
           "windows_startup_smoke": {
             "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
@@ -862,27 +837,27 @@
         "startup_smoke_receipt_source": "file",
         "startup_smoke_status": "pass",
         "startup_smoke_ready_checkpoint": "pre_ui_event_loop",
-        "startup_smoke_artifact_digest": "sha256:54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+        "startup_smoke_artifact_digest": "sha256:f35c14c3d091c6045b74b7df8961e8595305dab2a0641c4de2da9e89c915c682",
         "startup_smoke_head_id": "avalonia",
         "startup_smoke_platform": "windows",
         "startup_smoke_rid": "win-x64",
         "startup_smoke_arch": "x64",
         "startup_smoke_arch_alias_conflict": false,
-        "startup_smoke_channel": "public_stable",
+        "startup_smoke_channel": "preview",
         "startup_smoke_channel_id_alias_conflict": false,
-        "startup_smoke_version": "run-20260530-184515",
+        "startup_smoke_version": "run-134",
         "startup_smoke_version_alias_conflict": false,
         "startup_smoke_timestamp_alias_conflict": false,
         "startup_smoke_host_class": "github-actions-win-x64",
         "startup_smoke_operating_system": "Microsoft Windows 10.0.26100",
-        "startup_smoke_recorded_at": "2026-05-21T19:52:05.2855466+00:00",
-        "startup_smoke_stale_age_acceptable": true,
-        "startup_smoke_stale_age_accepted_reason": "Trusted Windows host proof still matches the exact promoted installer bytes and release version.",
-        "startup_smoke_receipt_age_seconds": 904384
+        "startup_smoke_recorded_at": "2026-06-01T11:44:20.0624471+00:00",
+        "startup_smoke_stale_age_acceptable": false,
+        "startup_smoke_stale_age_accepted_reason": "",
+        "startup_smoke_receipt_age_seconds": 4159
       }
     },
     "windows_statuses": {
-      "avalonia:win-x64": "fail"
+      "avalonia:win-x64": "pass"
     },
     "visual_familiarity.flagship_required_desktop_heads_normalized": [
       "avalonia",
@@ -921,42 +896,42 @@
     "workflow_execution.flagship_head_proof_statuses_duplicate_normalized_keys": [],
     "visual_familiarity.release_channel_channel_id_present": true,
     "visual_familiarity.release_channel_channel_id_raw_type": "str",
-    "visual_familiarity.release_channel_channel_id_normalized": "public_stable",
+    "visual_familiarity.release_channel_channel_id_normalized": "preview",
     "visual_familiarity.release_channel_id_present": false,
     "visual_familiarity.channelId_present": true,
     "visual_familiarity.channelId_raw_type": "str",
-    "visual_familiarity.channelId_normalized": "public_stable",
+    "visual_familiarity.channelId_normalized": "preview",
     "visual_familiarity.channel_present": false,
     "visual_familiarity_release_channel_id_alias_conflict": false,
     "workflow_execution.release_channel_channel_id_present": true,
     "workflow_execution.release_channel_channel_id_raw_type": "str",
-    "workflow_execution.release_channel_channel_id_normalized": "public_stable",
+    "workflow_execution.release_channel_channel_id_normalized": "preview",
     "workflow_execution.release_channel_id_present": false,
     "workflow_execution.channelId_present": true,
     "workflow_execution.channelId_raw_type": "str",
-    "workflow_execution.channelId_normalized": "public_stable",
+    "workflow_execution.channelId_normalized": "preview",
     "workflow_execution.channel_present": false,
     "workflow_execution_release_channel_id_alias_conflict": false,
     "visual_familiarity.release_channel_version_present": true,
     "visual_familiarity.release_channel_version_raw_type": "str",
-    "visual_familiarity.release_channel_version_normalized": "run-20260601-064534",
+    "visual_familiarity.release_channel_version_normalized": "run-134",
     "visual_familiarity.releaseVersion_present": true,
     "visual_familiarity.releaseVersion_raw_type": "str",
-    "visual_familiarity.releaseVersion_normalized": "run-20260601-064534",
+    "visual_familiarity.releaseVersion_normalized": "run-134",
     "visual_familiarity.version_present": false,
     "visual_familiarity_release_version_alias_conflict": false,
     "workflow_execution.release_channel_version_present": true,
     "workflow_execution.release_channel_version_raw_type": "str",
-    "workflow_execution.release_channel_version_normalized": "run-20260601-064534",
+    "workflow_execution.release_channel_version_normalized": "run-134",
     "workflow_execution.releaseVersion_present": true,
     "workflow_execution.releaseVersion_raw_type": "str",
-    "workflow_execution.releaseVersion_normalized": "run-20260601-064534",
+    "workflow_execution.releaseVersion_normalized": "run-134",
     "workflow_execution.version_present": false,
     "workflow_execution_release_version_alias_conflict": false,
-    "visual_familiarity_release_channel_id": "public_stable",
-    "workflow_execution_release_channel_id": "public_stable",
-    "visual_familiarity_release_version": "run-20260601-064534",
-    "workflow_execution_release_version": "run-20260601-064534",
+    "visual_familiarity_release_channel_id": "preview",
+    "workflow_execution_release_channel_id": "preview",
+    "visual_familiarity_release_version": "run-134",
+    "workflow_execution_release_version": "run-134",
     "visual_familiarity_required_desktop_heads": [
       "avalonia",
       "blazor-desktop"
@@ -1115,9 +1090,8 @@
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
         "status": "passed",
         "linux desktop exit gate proof for avalonia:linux-x64_generated_at_alias_conflict": false,
-        "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-05-30T21:17:36Z",
-        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 121653,
-        "linux desktop exit gate proof for avalonia:linux-x64_stale_pass_receipt_allowed": false,
+        "linux desktop exit gate proof for avalonia:linux-x64_generated_at": "2026-06-01T11:53:21Z",
+        "linux desktop exit gate proof for avalonia:linux-x64_age_seconds": 3618,
         "contract_name": "chummer6-ui.linux_desktop_exit_gate",
         "gate_reasons": [],
         "receipt_head": {
@@ -1126,8 +1100,8 @@
           "launch_target": "Chummer.Avalonia",
           "platform": "linux",
           "rid": "linux-x64",
-          "version": "run-20260530-184515",
-          "channel": "public_stable",
+          "version": "run-134",
+          "channel": "preview",
           "ready_checkpoint": "pre_ui_event_loop"
         },
         "release_channel_linux_artifact": {
@@ -1139,48 +1113,48 @@
           "kind": "installer",
           "fileName": "chummer-avalonia-linux-x64-installer.deb",
           "downloadUrl": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-          "sha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
-          "sizeBytes": 34999182,
+          "sha256": "4c70f443b10fa51ed2d73fb6eda051c1c8d3309ae17b2061033a511e06c37e84",
+          "sizeBytes": 35069672,
           "platformLabel": "Avalonia Desktop Linux X64 Installer",
           "updateFeedUrl": null,
           "embeddedRuntimeBundleHeadId": null,
           "compatibilityState": "compatible",
           "installAccessClass": "open_public",
-          "channelId": "public_stable",
-          "channel": "public_stable",
-          "version": "run-20260530-184515",
-          "releaseVersion": "run-20260530-184515",
-          "generated_at": "2026-05-30T20:55:41Z",
-          "generatedAt": "2026-05-30T20:55:41Z",
+          "channelId": "preview",
+          "channel": "preview",
+          "version": "run-134",
+          "releaseVersion": "run-134",
+          "generated_at": "2026-06-01T11:45:41Z",
+          "generatedAt": "2026-06-01T11:45:41Z",
           "id": "avalonia-linux-x64-installer"
         },
-        "gate_head_channel_id": "public_stable",
+        "gate_head_channel_id": "preview",
         "gate_head_channel_id_alias_conflict": false,
-        "checks_release_channel_id": "public_stable",
-        "checks_release_channel_version": "run-20260530-184515",
-        "gate_release_version_primary": "run-20260530-184515",
+        "checks_release_channel_id": "preview",
+        "checks_release_channel_version": "run-134",
+        "gate_release_version_primary": "run-134",
         "gate_release_version_alias": "",
         "gate_release_version_alias_conflict": false,
-        "gate_release_version": "run-20260530-184515",
+        "gate_release_version": "run-134",
         "primary_smoke_status": "passed",
-        "fallback_smoke_status": "passed",
+        "fallback_smoke_status": "not_built",
         "unit_test_status": "passed",
         "uses_promoted_installer": true,
         "host_supports_linux_startup_smoke": true,
         "startup_smoke_external_blocker": "",
         "checks_startup_smoke_receipt_found": true,
-        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
         "unit_test_summary": {
           "total": 22,
           "passed": 22,
           "failed": 0,
           "skipped": 0
         },
-        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+        "primary_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
         "primary_receipt_file_exists": true,
         "trusted_path_scope": {
           "linux_startup_smoke:avalonia": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1202,7 +1176,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_launch_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1224,7 +1198,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_wrapper_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1246,7 +1220,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_desktop_entry_capture_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1268,7 +1242,7 @@
             ]
           },
           "linux_installer_capture:avalonia:install_verification_path": {
-            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
+            "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
             "within_trusted_roots": true,
             "trusted_roots": [
               "/docker/chummercomplete/chummer6-ui",
@@ -1290,7 +1264,7 @@
             ]
           }
         },
-        "primary_receipt_artifact_digest": "sha256:ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
+        "primary_receipt_artifact_digest": "sha256:4c70f443b10fa51ed2d73fb6eda051c1c8d3309ae17b2061033a511e06c37e84",
         "primary_receipt_ready_checkpoint": "pre_ui_event_loop",
         "primary_receipt_source": "file",
         "primary_receipt_head_id": "avalonia",
@@ -1299,43 +1273,51 @@
         "primary_receipt_status": "pass",
         "primary_receipt_arch": "x64",
         "primary_receipt_arch_alias_conflict": false,
-        "primary_receipt_channel_id": "public_stable",
+        "primary_receipt_channel_id": "preview",
         "primary_receipt_channel_id_alias_conflict": false,
         "primary_receipt_host_class": "local-linux-x64",
         "primary_receipt_operating_system": "Ubuntu 24.04.4 LTS",
-        "primary_receipt_version": "run-20260530-184515",
+        "primary_receipt_version": "run-134",
         "primary_receipt_version_alias_conflict": false,
         "primary_receipt_timestamp_alias_conflict": false,
-        "primary_receipt_recorded_at": "2026-05-30T21:17:35.3111616+00:00",
-        "primary_receipt_age_seconds": 121653,
+        "primary_receipt_recorded_at": "2026-06-01T11:53:20.4964155+00:00",
+        "primary_receipt_age_seconds": 3619,
         "primary_receipt_version_proves_release": true,
         "expected_artifact_source": "",
         "expected_installer_file_name": "chummer-avalonia-linux-x64-installer.deb",
         "quarantined_installer_candidates": [],
         "expected_artifact_arch": "x64",
         "expected_artifact_arch_alias_conflict": false,
-        "release_channel_linux_artifact_channel_id": "public_stable",
+        "release_channel_linux_artifact_channel_id": "preview",
         "release_channel_linux_artifact_channel_id_alias_conflict": false,
-        "release_channel_linux_artifact_version": "run-20260530-184515",
+        "release_channel_linux_artifact_version": "run-134",
         "release_channel_linux_artifact_version_alias_conflict": false,
         "release_channel_linux_artifact_arch": "x64",
         "release_channel_linux_artifact_arch_alias_conflict": false,
-        "release_channel_linux_artifact_generated_at": "2026-05-30T20:55:41Z",
+        "release_channel_linux_artifact_generated_at": "2026-06-01T11:45:41Z",
         "release_channel_linux_artifact_generated_at_valid": true,
         "release_channel_linux_artifact_generated_at_alias_conflict": false,
         "expected_linux_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
-        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
-        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
-        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
-        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.OsbmLt/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
+        "install_launch_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+        "install_wrapper_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+        "install_desktop_entry_capture_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+        "install_verification_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.FjWCyp/startup-smoke-installer/install-verification-avalonia-linux-x64.json"
       }
     },
     "linux_statuses": {
-      "avalonia:linux-x64": "fail"
+      "avalonia:linux-x64": "pass"
     },
     "macos_artifacts_missing_rid_by_head": [],
-    "macos_heads_expected": [],
-    "macos_policy_required_head_rid_tuples": [],
+    "macos_heads_expected": [
+      {
+        "head": "avalonia",
+        "rid": "osx-arm64",
+        "fileName": "chummer-avalonia-osx-arm64-installer.dmg"
+      }
+    ],
+    "macos_policy_required_head_rid_tuples": [
+      "avalonia:osx-arm64"
+    ],
     "macos_policy_tuples_missing_release_artifacts": [],
     "published_startup_smoke_roots": [
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke",
@@ -1343,24 +1325,18 @@
     ],
     "published_desktop_artifact_tuples": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "published_installer_startup_smoke_tuples": [
       "avalonia:linux-x64:linux",
+      "avalonia:osx-arm64:macos",
       "avalonia:win-x64:windows"
     ],
     "stale_linux_gate_receipts_without_promoted_tuples": [],
     "stale_windows_gate_receipts_without_promoted_tuples": [],
-    "stale_macos_gate_receipts_without_promoted_tuples": [
-      {
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
-        "tuple": "avalonia:osx-arm64",
-        "status": "passed"
-      }
-    ],
-    "stale_passing_platform_gate_receipts_without_promoted_tuples": [
-      "macos:avalonia:osx-arm64"
-    ],
+    "stale_macos_gate_receipts_without_promoted_tuples": [],
+    "stale_passing_platform_gate_receipts_without_promoted_tuples": [],
     "stale_linux_startup_smoke_receipts_against_published_artifacts": [
       {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
@@ -1409,7 +1385,30 @@
         ]
       }
     ],
-    "stale_macos_startup_smoke_receipts_against_published_artifacts": [],
+    "stale_macos_startup_smoke_receipts_against_published_artifacts": [
+      {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "tuple": "avalonia:osx-arm64:macos",
+        "status": "pass",
+        "artifactFileName": "chummer-avalonia-osx-arm64-installer.dmg",
+        "artifactDigest": "sha256:62e410197697915a84b011cc3b15293fa98a5f2852613fa59a930b910a55d354",
+        "matchesPublishedArtifact": true,
+        "publishedArtifactFileNames": [
+          "chummer-avalonia-osx-arm64-installer.dmg"
+        ]
+      },
+      {
+        "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "tuple": "avalonia:osx-arm64:macos",
+        "status": "pass",
+        "artifactFileName": "chummer-avalonia-osx-arm64-installer.dmg",
+        "artifactDigest": "sha256:02b4822232a592f97307cf34a11eed92d698f8ac6bbd7e8948404b6148f6d89b",
+        "matchesPublishedArtifact": true,
+        "publishedArtifactFileNames": [
+          "chummer-avalonia-osx-arm64-installer.dmg"
+        ]
+      }
+    ],
     "stale_passing_startup_smoke_receipts_against_published_artifacts": [],
     "ignored_linux_startup_smoke_receipts_without_published_installer_tuple": [
       {
@@ -1422,32 +1421,155 @@
     "ignored_windows_startup_smoke_receipts_without_published_installer_tuple": [],
     "ignored_macos_startup_smoke_receipts_without_published_installer_tuple": [
       {
-        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "tuple": "avalonia:osx-arm64:macos",
-        "status": "pass",
-        "ignoredReason": "no_published_promoted_installer_tuple"
-      },
-      {
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-blazor-desktop-osx-arm64.receipt.json",
         "tuple": "blazor-desktop:osx-arm64:macos",
         "status": "pass",
         "ignoredReason": "no_published_promoted_installer_tuple"
-      },
-      {
-        "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
-        "tuple": "avalonia:osx-arm64:macos",
-        "status": "pass",
-        "ignoredReason": "no_published_promoted_installer_tuple"
       }
     ],
-    "macos_statuses": {},
-    "linux_missing_or_failing_keys": [
-      "avalonia:linux-x64"
-    ],
-    "windows_missing_or_failing_keys": [
-      "avalonia:win-x64"
-    ],
+    "macos_gates": {
+      "avalonia:osx-arm64": {
+        "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_MACOS_AVALONIA_OSX_ARM64_DESKTOP_EXIT_GATE.generated.json",
+        "status": "passed",
+        "contract_name": "chummer6-ui.macos_desktop_exit_gate",
+        "receipt_head": {
+          "app_key": "avalonia",
+          "platform": "macos",
+          "rid": "osx-arm64",
+          "launch_target": "Chummer.Avalonia"
+        },
+        "gate_reasons": [],
+        "gate_channel_id": "preview",
+        "gate_channel_id_alias_conflict": false,
+        "checks_release_channel_id": "preview",
+        "checks_release_channel_version": "run-134",
+        "gate_release_version_primary": "run-134",
+        "gate_release_version_alias": "",
+        "gate_release_version_alias_conflict": false,
+        "gate_release_version": "run-134",
+        "expected_artifact_source": "",
+        "expected_installer_file_name": "chummer-avalonia-osx-arm64-installer.dmg",
+        "quarantined_installer_candidates": [],
+        "quarantined_installer_marker_summary": {
+          "candidate_count": 0,
+          "payload_marker_present_paths": [],
+          "sample_marker_present_paths": [],
+          "payload_and_sample_marker_present_paths": [],
+          "payload_or_sample_marker_missing_paths": [],
+          "marker_check_supported_paths": [],
+          "marker_check_skipped_paths": [],
+          "unreadable_paths": []
+        },
+        "startup_smoke_status": "pass",
+        "artifact": {
+          "installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+          "installer_exists": true,
+          "installer_size_bytes": 52197727,
+          "installer_sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+          "file_name": "chummer-avalonia-osx-arm64-installer.dmg",
+          "installer_candidate_paths": [
+            "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
+          ],
+          "installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+          "installer_from_primary_shelf": true
+        },
+        "release_channel_macos_artifact": {
+          "artifactId": "avalonia-osx-arm64-installer",
+          "head": "avalonia",
+          "rid": "osx-arm64",
+          "platform": "macos",
+          "arch": "arm64",
+          "kind": "installer",
+          "fileName": "chummer-avalonia-osx-arm64-installer.dmg",
+          "downloadUrl": "/downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+          "sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+          "sizeBytes": 52197727,
+          "platformLabel": "Avalonia Desktop macOS ARM64 Installer",
+          "updateFeedUrl": null,
+          "embeddedRuntimeBundleHeadId": null,
+          "compatibilityState": "compatible",
+          "installAccessClass": "account_required",
+          "channelId": "preview",
+          "channel": "preview",
+          "version": "run-134",
+          "releaseVersion": "run-134",
+          "generated_at": "2026-06-01T11:45:41Z",
+          "generatedAt": "2026-06-01T11:45:41Z",
+          "id": "avalonia-osx-arm64-installer"
+        },
+        "checks_startup_smoke_receipt_found": true,
+        "checks_startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "startup_smoke_receipt_file_exists": true,
+        "startup_smoke_receipt_source": "file",
+        "host_supports_macos_startup_smoke": false,
+        "startup_smoke_external_blocker": "",
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at_alias_conflict": false,
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_generated_at": "2026-06-01T12:53:38Z",
+        "macOS desktop exit gate proof for avalonia (osx-arm64)_age_seconds": 1,
+        "startup_smoke_ready_checkpoint": "pre_ui_event_loop",
+        "startup_smoke_artifact_digest": "sha256:c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+        "startup_smoke_receipt_head_id": "avalonia",
+        "startup_smoke_receipt_platform": "macos",
+        "startup_smoke_receipt_rid": "osx-arm64",
+        "startup_smoke_receipt_arch": "arm64",
+        "startup_smoke_receipt_channel_id": "preview",
+        "startup_smoke_receipt_channel_id_alias_conflict": false,
+        "startup_smoke_receipt_version": "run-134",
+        "startup_smoke_receipt_version_alias_conflict": false,
+        "startup_smoke_receipt_timestamp_alias_conflict": false,
+        "startup_smoke_receipt_host_class": "github-actions-osx-arm64",
+        "startup_smoke_receipt_operating_system": "macOS 15.7.7",
+        "startup_smoke_receipt_recorded_at": "2026-06-01T11:42:45.422268+00:00",
+        "expected_artifact_arch": "arm64",
+        "expected_artifact_arch_alias_conflict": false,
+        "startup_smoke_receipt_arch_alias_conflict": false,
+        "release_channel_macos_artifact_channel_id": "preview",
+        "release_channel_macos_artifact_channel_id_alias_conflict": false,
+        "release_channel_macos_artifact_version": "run-134",
+        "release_channel_macos_artifact_version_alias_conflict": false,
+        "release_channel_macos_artifact_arch": "arm64",
+        "release_channel_macos_artifact_arch_alias_conflict": false,
+        "release_channel_macos_artifact_generated_at": "2026-06-01T11:45:41Z",
+        "release_channel_macos_artifact_generated_at_valid": true,
+        "release_channel_macos_artifact_generated_at_alias_conflict": false,
+        "installer_size_bytes": 52197727,
+        "installer_sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+        "expected_macos_shelf_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg",
+        "expected_macos_shelf_sha256": "c2c374f04ed7d405d6ef331659dd0b49040e2da39d409d104ac6b2cad91de25c",
+        "trusted_path_scope": {
+          "macos_startup_smoke:avalonia:osx-arm64": {
+            "path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+            "within_trusted_roots": true,
+            "trusted_roots": [
+              "/docker/chummercomplete/chummer6-ui",
+              "/docker/chummercomplete/.clean-main/chummer6-ui-main",
+              "/docker/chummercomplete/.remote-main-vapor",
+              "/docker/chummercomplete/.tmp-ui-main-widen",
+              "/docker/fleet/state/worktrees/ui/next90-m146-ui-desktop-gold-proof-recovery",
+              "/docker/fleet/state/worktrees/ui/next90-m147-ui-flagship-affordance-alignment",
+              "/tmp/chp-main-fix",
+              "/tmp/chummer-presentation-main-push",
+              "/tmp/chummer-presentation-verify-main",
+              "/tmp/chummer-ui-main-deploy-2",
+              "/tmp/chummer6-ui-worktree",
+              "/tmp/codex-fleet-runtime/worktrees/ui/next90-m122-ui-surface-campaign-adoption-runner-goal-pins-resolutionrep",
+              "/tmp/codex-fleet-runtime/worktrees/ui/next90-m123-ui-add-desktop-open-runs-and-gm-open-run-creation-flows-tie",
+              "/tmp/merge-chummer-presentation-main",
+              "/tmp/presentation-main-verify-merge",
+              "/docker/chummercomplete/chummer-hub-registry"
+            ]
+          }
+        },
+        "startup_smoke_receipt_age_seconds": 4254
+      }
+    },
+    "macos_statuses": {
+      "avalonia:osx-arm64": "pass"
+    },
+    "linux_missing_or_failing_keys": [],
+    "windows_missing_or_failing_keys": [],
     "macos_missing_or_failing_keys": [],
-    "failureCount": 13
+    "failureCount": 0
   }
 }

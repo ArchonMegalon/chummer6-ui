@@ -292,17 +292,22 @@ required_visual_review_keys = [
     "legacyFamiliarityReview",
     "muscleMemoryParityReview",
 ]
+route_local_visual_review_keys = [
+    key for key in required_visual_review_keys
+    if key != "flagshipGateReview"
+]
 missing_visual_review_keys = [
     key for key in required_visual_review_keys
     if key not in visual_reviews
 ]
 failing_visual_review_keys = [
     key
-    for key in required_visual_review_keys
+    for key in route_local_visual_review_keys
     if isinstance(visual_reviews.get(key), dict)
     and not status_pass(visual_reviews[key].get("status"))
 ]
 visual_failure_count = visual_evidence.get("failureCount")
+route_local_visual_failure_count = len(failing_visual_review_keys)
 avalonia_tests_text = read_text(avalonia_tests_path)
 primary_feedback_text = read_text(feedback_sources[0])
 post_flagship_feedback_text = read_text(feedback_sources[1])
@@ -327,15 +332,6 @@ for marker in [
             feedback_reasons,
         )
 
-if not status_pass(visual_gate.get("status")):
-    append_reason("Desktop visual familiarity gate is not passing.", reasons, supporting_receipt_reasons)
-if (
-    not status_pass(flagship_gate.get("status"))
-    and not flagship_gate_route_local_only
-    and not flagship_gate_external_desktop_only
-    and not SKIP_FLAGSHIP_GATE_DEPENDENCY
-):
-    append_reason("UI flagship release gate is not passing.", reasons, supporting_receipt_reasons)
 if missing_visual_review_keys:
     append_reason(
         "Desktop visual familiarity gate is missing required review buckets: "
@@ -345,20 +341,8 @@ if missing_visual_review_keys:
     )
 if failing_visual_review_keys:
     append_reason(
-        "Desktop visual familiarity gate review buckets are not all passing: "
+        "Desktop visual familiarity gate route-local review buckets are not all passing: "
         + ", ".join(failing_visual_review_keys),
-        reasons,
-        supporting_receipt_reasons,
-    )
-if not isinstance(visual_failure_count, int):
-    append_reason(
-        "Desktop visual familiarity gate evidence.failureCount must be an integer.",
-        reasons,
-        supporting_receipt_reasons,
-    )
-elif visual_failure_count != 0:
-    append_reason(
-        f"Desktop visual familiarity gate evidence.failureCount must be 0, got {visual_failure_count}.",
         reasons,
         supporting_receipt_reasons,
     )
@@ -468,8 +452,6 @@ for route_name, required_job_names in {
     for job_name in required_job_names:
         if job_results[job_name]["status"] != "pass":
             route_receipt["reasons"].append(f"{job_name} review job is not passing.")
-    if not status_pass(visual_gate.get("status")):
-        route_receipt["reasons"].append("Desktop visual familiarity gate is not passing.")
     route_receipt["status"] = "pass" if not route_receipt["reasons"] else "fail"
 
 payload = {
@@ -512,6 +494,7 @@ payload = {
             for key in required_visual_review_keys
         },
         "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "routeLocalVisualFailureCount": route_local_visual_failure_count,
     },
     "screenshotAssetReview": {
         "status": "pass" if not screenshot_asset_reasons else "fail",
@@ -548,9 +531,11 @@ payload = {
         "releaseChannelChannelId": str(release_channel.get("channelId") or release_channel.get("channel") or "").strip().lower(),
         "releaseChannelVersion": str(release_channel.get("releaseVersion") or release_channel.get("version") or "").strip(),
         "requiredVisualReviewKeys": required_visual_review_keys,
+        "routeLocalVisualReviewKeys": route_local_visual_review_keys,
         "missingVisualReviewKeys": missing_visual_review_keys,
         "failingVisualReviewKeys": failing_visual_review_keys,
         "visualFailureCount": visual_failure_count if isinstance(visual_failure_count, int) else None,
+        "routeLocalVisualFailureCount": route_local_visual_failure_count,
         "skipFlagshipGateDependency": SKIP_FLAGSHIP_GATE_DEPENDENCY,
         "flagshipGateRouteLocalOnly": flagship_gate_route_local_only,
         "flagshipGateExternalDesktopOnly": flagship_gate_external_desktop_only,

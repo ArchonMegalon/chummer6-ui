@@ -1,21 +1,20 @@
 # Chummer5A UI Element Parity Audit
 
-Generated at: 2026-06-01T07:05:02.850662Z
+Generated at: 2026-06-01T13:05:46.341532Z
 
 ## Scope
 This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.
 
 ## Summary
 - Total audited elements: 84
-- Visual parity yes/no: 83/1
-- Behavioral parity yes/no: 83/1
+- Visual parity yes/no: 84/0
+- Behavioral parity yes/no: 84/0
 - Chummer6-only extras present: 0
 - Removable extras present: 0
 - Active/productive/nonproductive shard runs: 3/0/0
 
 ## Top findings
-- [HIGH] ui_parity_gap: Dice Initiative And Table Utilities is not directly parity-proven. At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative'].
-- [HIGH] readiness_gap: Flagship readiness still contains open coverage keys outside the surface-level desktop parity matrix. desktop_client: Chummer5A UI element parity audit still has unresolved release-blocking rows: Dice Initiative And Table Utilities (no/no)., Chummer5A UI element parity audit still reports open parity gaps: visual_no_count=1, behavioral_no_count=1.
+- No parity findings were emitted from the current audit inputs.
 
 ## Element matrix
 
@@ -96,7 +95,7 @@ This matrix covers every parity-tracked visible surface and currently-present di
 | Recover Section Rhythm | veteran_task | yes | yes | yes | no | Required baseline captures and the matching veteran workflow interaction proof are present. |
 | Custom Data Xml And Translator Bridge | workflow_family | yes | yes | yes | no | All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:translator', 'menu:xml_editor']. |
 | Dense Builder And Career Workflows | workflow_family | yes | yes | yes | no | Route-local dense workbench proof cites ruleset tabs, workspace actions, screenshot review, and the published flagship workflow receipts directly. |
-| Dice Initiative And Table Utilities | workflow_family | no | no | yes | no | At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative']. |
+| Dice Initiative And Table Utilities | workflow_family | yes | yes | yes | no | Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly. |
 | Identity Contacts Lifestyles History | workflow_family | yes | yes | yes | no | Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly. |
 | Legacy And Adjacent Import Oracles | workflow_family | yes | yes | yes | no | All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:hero_lab_importer', 'workflow:import_oracle']. |
 | Roster Dashboards And Multi Character Ops | workflow_family | yes | yes | yes | no | All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:character_roster_multi_character_flow', 'workflow:multi_character']. |
