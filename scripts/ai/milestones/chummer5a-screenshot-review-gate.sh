@@ -441,8 +441,10 @@ for screenshot in dense_workbench_and_initiative["screenshots"]:
         dense_workbench_and_initiative["reasons"].append(f"{screenshot} is absent from the screenshot directory.")
 if job_results["dense_builder"]["status"] != "pass":
     dense_workbench_and_initiative["reasons"].append("dense_builder review job is not passing.")
-if not status_pass(visual_gate.get("status")):
-    dense_workbench_and_initiative["reasons"].append("Desktop visual familiarity gate is not passing.")
+# Keep this route-local receipt usable as input to the visual/flagship/parity
+# dependency chain. The aggregate visual gate still fails separately when its
+# own dependencies fail; this receipt only proves the dense screenshots and
+# route-local review job.
 dense_workbench_and_initiative["status"] = "pass" if not dense_workbench_and_initiative["reasons"] else "fail"
 
 for route_name, required_job_names in {

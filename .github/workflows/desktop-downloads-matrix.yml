@@ -99,6 +99,13 @@ jobs:
             installer_ext: deb
             launch_target: Chummer.Avalonia
             tolerate_failure: true
+          - app: avalonia
+            project: Chummer.Avalonia/Chummer.Avalonia.csproj
+            os: macos-latest
+            rid: osx-arm64
+            installer_ext: dmg
+            launch_target: Chummer.Avalonia
+            tolerate_failure: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4

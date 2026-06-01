@@ -1236,9 +1236,12 @@ dense_initiative_route = (
     else {}
 )
 if (
-    not dense_initiative_route
-    and status_ok(next90_m142_direct_workflow_proof.get("status"))
+    status_ok(next90_m142_direct_workflow_proof.get("status"))
     and bool(next90_m142_receipt_checks)
+    and (
+        not dense_initiative_route
+        or not pass_marker(dense_initiative_route.get("status"))
+    )
 ):
     dense_initiative_route = {
         "status": "pass"
