@@ -25472,7 +25472,7 @@
     <Content Include="sheets\zh-cn\Vehicles.xsl">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="wkhtmltopdf.exe">
+    <Content Include="wkhtmltopdf.exe" Condition="Exists('wkhtmltopdf.exe')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="data\options.xml">
