@@ -261,7 +261,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 [
                     new DesktopDialogField("supportHub", "Tracked support", "/account/support", "/account/support", IsReadOnly: true),
                     new DesktopDialogField("supportPublic", "Guest support", "/contact", "/contact", IsReadOnly: true),
-                    new DesktopDialogField("supportGithub", "Public GitHub issue form", "https://github.com/chummer5a/chummer5a/issues/new/choose", "https://github.com/chummer5a/chummer5a/issues/new/choose", IsReadOnly: true)
+                    new DesktopDialogField("supportGithub", "Public GitHub issue form", "https://github.com/ArchonMegalon/Chummer6/issues/new/choose", "https://github.com/ArchonMegalon/Chummer6/issues/new/choose", IsReadOnly: true)
                 ],
                 [new DesktopDialogAction("close", "Close", true)]),
             "about" => new DesktopDialogState(
@@ -369,8 +369,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dumpshock" => new DesktopDialogState(
                 "dialog.dumpshock",
                 "Issue Tracker",
-                "https://github.com/chummer5a/chummer5a/issues/",
-                BuildExternalLinkFields("Issue Tracker", "https://github.com/chummer5a/chummer5a/issues/", "The legacy issue tracker opens externally and stays outside the desktop workbench."),
+                "https://github.com/ArchonMegalon/Chummer6/issues/",
+                BuildExternalLinkFields("Issue Tracker", "https://github.com/ArchonMegalon/Chummer6/issues/", "The Chummer6 issue tracker opens externally and stays outside the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
@@ -548,6 +548,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "Select Build Method",
             BuildNewCharacterMessage(normalizedRulesetId, preferredBuildMethod, houseRulesEnabled),
             [
+                new DesktopDialogField(
+                    "newCharacterName",
+                    "Character Name",
+                    "New Character",
+                    "New Character",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
+                    "newCharacterAlias",
+                    "Alias",
+                    "Runner",
+                    "Runner",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
                 CreateBuildMethodField("newCharacterBuildMethod", normalizedRulesetId, preferredBuildMethod),
                 new DesktopDialogField(

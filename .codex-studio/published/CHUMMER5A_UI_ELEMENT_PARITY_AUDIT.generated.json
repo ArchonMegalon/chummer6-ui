@@ -1,26 +1,43 @@
 {
-  "generated_at": "2026-05-30T18:26:50.314420Z",
+  "generated_at": "2026-06-01T07:05:02.850662Z",
   "probe_kind": "ui_parity_audit",
-  "status": "pass",
+  "status": "fail",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
   "summary": {
     "total_elements": 84,
-    "visual_yes_count": 84,
-    "visual_no_count": 0,
-    "behavioral_yes_count": 84,
-    "behavioral_no_count": 0,
+    "visual_yes_count": 83,
+    "visual_no_count": 1,
+    "behavioral_yes_count": 83,
+    "behavioral_no_count": 1,
     "chummer6_only_extra_present_count": 0,
     "removable_extra_present_count": 0,
-    "coverage_gap_keys": [],
-    "active_runs_count": 2,
-    "productive_active_runs_count": 2,
+    "coverage_gap_keys": [
+      "desktop_client"
+    ],
+    "active_runs_count": 3,
+    "productive_active_runs_count": 0,
     "nonproductive_active_runs_count": 0
   },
-  "visualNoCount": 0,
-  "behavioralNoCount": 0,
-  "releaseBlockingNoCount": 0,
-  "coverageGapKeys": [],
-  "findings": [],
+  "visualNoCount": 1,
+  "behavioralNoCount": 1,
+  "releaseBlockingNoCount": 1,
+  "coverageGapKeys": [
+    "desktop_client"
+  ],
+  "findings": [
+    {
+      "severity": "high",
+      "category": "ui_parity_gap",
+      "summary": "Dice Initiative And Table Utilities is not directly parity-proven.",
+      "detail": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative']."
+    },
+    {
+      "severity": "high",
+      "category": "readiness_gap",
+      "summary": "Flagship readiness still contains open coverage keys outside the surface-level desktop parity matrix.",
+      "detail": "desktop_client: Chummer5A UI element parity audit still has unresolved release-blocking rows: Dice Initiative And Table Utilities (no/no)., Chummer5A UI element parity audit still reports open parity gaps: visual_no_count=1, behavioral_no_count=1."
+    }
+  ],
   "notes": [
     "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
     "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass.",
@@ -1289,19 +1306,17 @@
       "id": "family:dice_initiative_and_table_utilities",
       "label": "Dice Initiative And Table Utilities",
       "category": "workflow_family",
-      "visual_parity": "yes",
-      "behavioral_parity": "yes",
+      "visual_parity": "no",
+      "behavioral_parity": "no",
       "present_in_chummer5a": "yes",
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
+      "reason": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2712,19 +2727,17 @@
       "id": "family:dice_initiative_and_table_utilities",
       "label": "Dice Initiative And Table Utilities",
       "category": "workflow_family",
-      "visual_parity": "yes",
-      "behavioral_parity": "yes",
+      "visual_parity": "no",
+      "behavioral_parity": "no",
       "present_in_chummer5a": "yes",
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
+      "reason": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {

@@ -40,6 +40,8 @@ public partial class SectionHostControl : UserControl
     internal ExplainDrawerContext? GetCurrentExplainDrawerContext()
         => _currentExplainDrawerContext;
 
+    private Control SectionReviewExpander => SectionReviewPanel;
+
     public void SetState(SectionHostState state)
     {
         SetNavigationTabs(state.NavigationTabs, state.ActiveTabId);
@@ -148,9 +150,7 @@ public partial class SectionHostControl : UserControl
         if (!HasRenderableSectionSurface(sectionId, previewJson, rowArray))
         {
             SectionPreviewBox.Text = string.Empty;
-            SectionReviewExpander.Header = "Section";
             SectionReviewExpander.IsVisible = false;
-            SectionReviewExpander.IsExpanded = false;
             SectionRowsList.ItemsSource = null;
             SectionRowsBorder.IsVisible = false;
             return;
@@ -158,10 +158,8 @@ public partial class SectionHostControl : UserControl
 
         string previewText = BuildSectionPreviewText(sectionId, previewJson, rowArray);
         SectionPreviewBox.Text = previewText;
-        SectionReviewExpander.Header = BuildSectionPreviewHeader(sectionId, previewJson);
         bool showingAttributeParityEditor = AttributeParityEditorBorder.IsVisible;
-        SectionReviewExpander.IsVisible = !showingAttributeParityEditor && !string.IsNullOrWhiteSpace(previewText);
-        SectionReviewExpander.IsExpanded = !showingAttributeParityEditor;
+        SectionReviewPanel.IsVisible = false;
         SectionRowsList.ItemsSource = null;
         SectionRowsList.ItemsSource = rowArray;
         SectionRowsBorder.IsVisible = !showingAttributeParityEditor;
@@ -179,6 +177,8 @@ public partial class SectionHostControl : UserControl
             SectionContextBorder.IsVisible = false;
             SectionContextTitleText.Text = string.Empty;
             SectionContextSummaryText.Text = string.Empty;
+            SectionContextTitleText.IsVisible = false;
+            SectionContextSummaryText.IsVisible = false;
             UpdateSectionRowsHeight();
             return;
         }
@@ -189,6 +189,8 @@ public partial class SectionHostControl : UserControl
         SectionContextBorder.IsVisible = showContext;
         SectionContextTitleText.Text = showContext ? BuildSectionTitle(sectionId, previewJson) : string.Empty;
         SectionContextSummaryText.Text = showContext ? BuildSectionSummary(sectionId, previewJson, rowArray, quickActions) : string.Empty;
+        SectionContextTitleText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextTitleText.Text);
+        SectionContextSummaryText.IsVisible = showContext && !string.IsNullOrWhiteSpace(SectionContextSummaryText.Text);
         UpdateSectionRowsHeight();
     }
 
@@ -207,6 +209,7 @@ public partial class SectionHostControl : UserControl
         IReadOnlyList<ClassicSheetFactDisplayItem> summaryFacts = BuildCharacterSummaryFacts(previewJson);
         IReadOnlyList<ClassicSheetFactDisplayItem> attributeFacts = BuildCharacterAttributeFacts(previewJson, rows);
         ClassicCharacterSummaryTitle.Text = BuildClassicSheetTitle(sectionId, previewJson);
+        ClassicCharacterSummaryTitle.IsVisible = !string.IsNullOrWhiteSpace(ClassicCharacterSummaryTitle.Text);
 
         foreach (ClassicSheetFactDisplayItem fact in summaryFacts)
         {
@@ -632,12 +635,14 @@ public partial class SectionHostControl : UserControl
         if (buildLab is null)
         {
             BuildLabSummaryText.Text = string.Empty;
+            BuildLabSummaryText.IsVisible = false;
             BuildLabTrustReceiptPanel.Children.Clear();
             UpdateSectionRowsHeight();
             return;
         }
 
         BuildLabSummaryText.Text = $"{buildLab.Title} · {buildLab.RulesetId}/{buildLab.BuildMethod}";
+        BuildLabSummaryText.IsVisible = true;
         SetBuildLabTrustReceiptSections(DesktopTrustReceiptText.BuildBuildLabSections(buildLab));
         UpdateSectionRowsHeight();
     }
@@ -2220,7 +2225,7 @@ public partial class SectionHostControl : UserControl
             || SectionActionTabStripBorder.IsVisible
             || SectionQuickActionsBorder.IsVisible;
         double rowHeight = denseChromeVisible ? 176d : 212d;
-        if (SectionReviewExpander.IsVisible)
+        if (SectionReviewPanel.IsVisible)
         {
             rowHeight -= 12d;
         }

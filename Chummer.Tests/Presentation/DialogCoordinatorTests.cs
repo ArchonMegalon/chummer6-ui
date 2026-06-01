@@ -327,11 +327,12 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<name>Nova</name>");
         StringAssert.Contains(imported.Content, "<alias>Cipher</alias>");
         StringAssert.Contains(imported.Content, "<buildmethod>Priority</buildmethod>");
+        StringAssert.Contains(imported.Content, "<created>False</created>");
         StringAssert.Contains(imported.Content, "<prioritymetatype>D,1</prioritymetatype>");
         StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Created 'Nova' (Priority, SR6) with house rules enabled.");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Started 'Nova' (Priority, SR6) with house rules enabled.");
     }
 
     [TestMethod]

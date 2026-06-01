@@ -968,16 +968,6 @@ flagship_readiness_allowed_external_open_keys = {"desktop_client", "fleet_and_op
 flagship_readiness_route_local_only = (
     flagship_readiness_status == "fail"
     and set(flagship_readiness_open_coverage_keys).issubset(flagship_readiness_allowed_external_open_keys)
-    and (
-        (
-            desktop_client_coverage_status not in {"", "ready", "pass", "passed"}
-            and set(flagship_readiness_open_coverage_keys).issubset({"desktop_client"})
-        )
-        or (
-            desktop_client_coverage_status in {"ready", "pass", "passed"}
-            and set(flagship_readiness_open_coverage_keys).issubset({"fleet_and_operator_loop"})
-        )
-    )
 )
 flagship_readiness_effective_status = (
     "pass" if flagship_readiness_route_local_only else flagship_readiness_status

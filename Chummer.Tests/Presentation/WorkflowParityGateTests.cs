@@ -255,6 +255,56 @@ public sealed class WorkflowParityGateTests
     }
 
     [TestMethod]
+    public async Task Runtime_backed_new_character_build_matrix_completes_every_ruleset_build_method()
+    {
+        foreach (string rulesetId in SupportedRulesets)
+        {
+            DesktopDialogState dialog = CreateCommandDialog("new_character", rulesetId);
+            DesktopDialogField buildMethodField = dialog.Fields.Single(field => string.Equals(field.Id, "newCharacterBuildMethod", StringComparison.Ordinal));
+            string[] buildMethods = buildMethodField.Options!
+                .Select(option => option.Value)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+
+            Assert.IsTrue(buildMethods.Length > 0, $"{rulesetId} must expose at least one build method.");
+            if (string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal))
+            {
+                CollectionAssert.Contains(buildMethods, "BP", "SR4 character creation must expose and execute BP.");
+            }
+
+            foreach (string buildMethod in buildMethods)
+            {
+                await AssertNewCharacterRecursiveParityAsync(rulesetId, buildMethod);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_mystic_adept_keeps_assensing_visible_in_scrollable_dialog_contract()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterPriorityTalent", "B");
+        harness.UpdateDialogField("newCharacterPriorityTalentChoice", "Mystic Adept");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        AssertSelectFieldContains(priorityDialog, "newCharacterPrioritySkillChoice1", "Assensing");
+        AssertSelectFieldContains(priorityDialog, "newCharacterPrioritySkillChoice2", "Assensing");
+        AssertSelectFieldContains(priorityDialog, "newCharacterPrioritySkillChoice3", "Assensing");
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityWorkflowState"));
+        Assert.IsTrue(runtimeState.SkillChoice1.Visible, "Mystic Adept must render the first skill combo.");
+        Assert.IsTrue(runtimeState.SkillChoice2.Visible, "Mystic Adept must render the second skill combo.");
+        Assert.IsTrue(runtimeState.SkillChoice3.Visible, "Mystic Adept must render the third skill combo; this is where Assensing was previously cut off.");
+    }
+
+    [TestMethod]
     public async Task Runtime_backed_new_character_character_settings_materialize_house_rule_and_build_method_defaults()
     {
         DesktopPreferenceState seededPreferences = DesktopPreferenceState.Default with
@@ -318,6 +368,7 @@ public sealed class WorkflowParityGateTests
         await harness.ActAsync("create_character");
 
         string expectedDialogId = string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal)
             ? "dialog.new_character.priority_workflow"
             : "dialog.new_character.karma_workflow";
 
@@ -325,7 +376,8 @@ public sealed class WorkflowParityGateTests
         Assert.AreEqual(expectedDialogId, harness.State.ActiveDialog!.Id);
         AssertDialogParity(rulesetId, "new_character.continuation", WorkflowShape.Choice, harness.State.ActiveDialog);
 
-        if (string.Equals(buildMethod, "Priority", StringComparison.Ordinal))
+        if (string.Equals(buildMethod, "Priority", StringComparison.Ordinal)
+            || string.Equals(buildMethod, "SumToTen", StringComparison.Ordinal))
         {
             harness.UpdateDialogField("newCharacterMetatypeCategory", "Metahuman");
             harness.UpdateDialogField("newCharacterMetatype", "Elf");
@@ -737,6 +789,16 @@ public sealed class WorkflowParityGateTests
             selectedValue,
             field.Value,
             $"'{dialog.Id}' select field '{fieldId}' selected value drifted.");
+    }
+
+    private static void AssertSelectFieldContains(DesktopDialogState dialog, string fieldId, string expectedOptionValue)
+    {
+        DesktopDialogField field = dialog.Fields.Single(field => string.Equals(field.Id, fieldId, StringComparison.Ordinal));
+        Assert.AreEqual("select", field.InputType, $"'{dialog.Id}' field '{fieldId}' must stay a select control.");
+        CollectionAssert.Contains(
+            (field.Options ?? Array.Empty<DesktopDialogFieldOption>()).Select(option => option.Value).ToArray(),
+            expectedOptionValue,
+            $"'{dialog.Id}' field '{fieldId}' must include '{expectedOptionValue}'.");
     }
 
     private static bool TryResolveExactVisibleSelectContract(

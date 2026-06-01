@@ -3439,13 +3439,15 @@ public sealed class AvaloniaFlagshipUiGateTests
             Border attributeEditor = FindDescendant<Border>(control, "AttributeParityEditorBorder");
             NumericUpDown baseEditor = FindDescendant<NumericUpDown>(control, "AttributeBaseEditor_BOD");
             NumericUpDown karmaEditor = FindDescendant<NumericUpDown>(control, "AttributeKarmaEditor_BOD");
-            Expander reviewExpander = FindDescendant<Expander>(control, "SectionReviewExpander");
+            Control? reviewExpander = FindDescendantOrDefault<Expander>(control, "SectionReviewExpander");
+            Control reviewPanel = FindDescendant<Control>(control, "SectionReviewPanel");
 
             Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
             Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base numeric editor.");
             Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma numeric editor.");
             // Legacy-equivalent chrome gate marker: The section preview header must not invent Review chrome that Chummer5A never had.
-            Assert.IsFalse(reviewExpander.IsVisible, "Character creation parity must not fall back to the review expander.");
+            Assert.IsNull(reviewExpander, "Character creation parity must not fall back to the review expander.");
+            Assert.IsFalse(reviewPanel.IsVisible, "Character creation parity must not fall back to a profile review panel.");
 
             baseEditor.Value = 4m;
             PumpStandaloneUi();
@@ -3483,14 +3485,40 @@ public sealed class AvaloniaFlagshipUiGateTests
                 NpcPersonaStudio: null));
             PumpStandaloneUi();
 
-            Expander reviewExpander = FindDescendant<Expander>(control, "SectionReviewExpander");
+            Control? reviewExpander = FindDescendantOrDefault<Expander>(control, "SectionReviewExpander");
+            Control reviewPanel = FindDescendant<Control>(control, "SectionReviewPanel");
             Border sectionRowsBorder = FindDescendant<Border>(control, "SectionRowsBorder");
             Border sectionContextBorder = FindDescendant<Border>(control, "SectionContextBorder");
 
-            Assert.IsFalse(reviewExpander.IsVisible, "A fresh workbench launch must not show a fake empty section expander.");
+            Assert.IsNull(reviewExpander, "A fresh workbench launch must not include a fake empty section expander.");
+            Assert.IsFalse(reviewPanel.IsVisible, "A fresh workbench launch must not show a fake empty section review panel.");
             Assert.IsFalse(sectionRowsBorder.IsVisible, "A fresh workbench launch must not show an empty section rows scaffold.");
             Assert.IsFalse(sectionContextBorder.IsVisible, "A fresh workbench launch must not show synthetic section context before a real surface is opened.");
         });
+    }
+
+    [TestMethod]
+    public void Client_label_visibility_gate_keeps_profile_rows_and_priority_labels_visible_without_collapsible_profile_chrome()
+    {
+        string sectionMarkup = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
+        string sectionSource = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs"));
+        string dialogSource = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+
+        Assert.IsFalse(
+            sectionMarkup.Contains("x:Name=\"SectionReviewExpander\"", StringComparison.Ordinal)
+            || sectionMarkup.Contains("Name=\"SectionReviewExpander\"", StringComparison.Ordinal),
+            "Profile/detail surfaces must not be wrapped in a collapsible SectionReviewExpander.");
+        Assert.IsFalse(
+            sectionMarkup.Contains("Text=\"{Binding DisplayPath}\"\n                               Classes=\"shell-caption\"\n                               TextTrimming=\"CharacterEllipsis\"\n                               IsVisible=\"False\"", StringComparison.Ordinal),
+            "Section row labels must not be suppressed.");
+        StringAssert.Contains(sectionSource, "SectionContextTitleText.IsVisible = showContext");
+        StringAssert.Contains(sectionSource, "ClassicCharacterSummaryTitle.IsVisible =");
+        Assert.IsFalse(
+            dialogSource.Contains("Text = text,\n            IsVisible = false,\n            FontWeight = FontWeight.SemiBold", StringComparison.Ordinal),
+            "Priority build row labels must remain visible.");
+        StringAssert.Contains(
+            File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml")),
+            "<ScrollViewer Grid.Row=\"1\"");
     }
 
     [TestMethod]
@@ -3698,8 +3726,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Support/report flow must keep a visible public contact/support affordance.");
             Assert.IsTrue(
                 dialogBody.Contains("GitHub is still available", StringComparison.OrdinalIgnoreCase)
-                || dialogBody.Contains("github.com/chummer5a/chummer5a", StringComparison.OrdinalIgnoreCase),
-                "Support/report flow must preserve a public GitHub reporting fallback.");
+                || dialogBody.Contains("github.com/ArchonMegalon/Chummer6", StringComparison.OrdinalIgnoreCase),
+                "Support/report flow must preserve the public Chummer6 GitHub reporting fallback.");
+            Assert.IsFalse(
+                dialogBody.Contains("github.com/chummer5a/chummer5a/issues", StringComparison.OrdinalIgnoreCase),
+                "Support/report flow must not send Chummer6 client issues to the Chummer5a tracker.");
             Assert.IsFalse(dialogBody.Contains("chummer-api", StringComparison.OrdinalIgnoreCase), "Support/report routes must stay public and must not expose internal Docker hosts.");
             string[] actionIds = harness.FindControl<Panel>("DialogActionsHost").Children
                 .OfType<Button>()

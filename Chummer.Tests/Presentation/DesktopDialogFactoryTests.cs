@@ -1700,8 +1700,8 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("sr6", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
         Assert.AreEqual("Priority", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
         Assert.AreEqual("false", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
-        Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterName", StringComparison.Ordinal)));
-        Assert.IsNull(dialog.Fields.SingleOrDefault(field => string.Equals(field.Id, "newCharacterAlias", StringComparison.Ordinal)));
+        Assert.AreEqual("New Character", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
+        Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
     }

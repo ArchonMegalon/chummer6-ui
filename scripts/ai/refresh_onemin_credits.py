@@ -19,6 +19,7 @@ DEFAULT_RUNTIME_ROOT = Path("/docker/fleet/state/browseract_bootstrap/runtime")
 DEFAULT_LATEST_AGGREGATE_FILENAME = "onemin_aggregate_billing_full_refresh_latest.json"
 DEFAULT_BROWSERACT_REFRESH_STATE_ROOT = Path("/docker/EA/state")
 DEFAULT_BROWSERACT_MAX_AGE_SECONDS = 6 * 60 * 60
+DEFAULT_BROWSERACT_MAX_CREDITS_PER_ACCOUNT = 4_000_000
 FIELDNAMES = (
     "recorded_at_local",
     "recorded_at_utc",
@@ -84,6 +85,16 @@ def _browseract_max_age_seconds() -> int:
         return max(0, int(float(raw)))
     except ValueError:
         return DEFAULT_BROWSERACT_MAX_AGE_SECONDS
+
+
+def _browseract_default_max_credits_per_account() -> int:
+    raw = str(os.environ.get("ONEMIN_BROWSERACT_DEFAULT_MAX_CREDITS_PER_ACCOUNT", "") or "").strip()
+    if not raw:
+        return DEFAULT_BROWSERACT_MAX_CREDITS_PER_ACCOUNT
+    try:
+        return max(0, int(float(raw)))
+    except ValueError:
+        return DEFAULT_BROWSERACT_MAX_CREDITS_PER_ACCOUNT
 
 
 def _coerce_int(value: Any) -> int | None:
@@ -184,6 +195,8 @@ def _latest_browseract_refresh_payload() -> dict[str, Any] | None:
 
     sum_remaining = sum(int(_coerce_int(row.get("remaining_credits")) or 0) for row in successes)
     sum_max = _safe_sum([_coerce_int(row.get("max_credits")) for row in successes])
+    if sum_max in (None, 0):
+        sum_max = len(successes) * _browseract_default_max_credits_per_account()
     daily_bonus_known = [_coerce_int(row.get("daily_bonus_credits")) for row in successes if _coerce_int(row.get("daily_bonus_credits")) is not None]
     daily_bonus_claimable = sum(daily_bonus_known) if daily_bonus_known else None
     latest_observed_at = max(item[0] for item in latest_by_account.values())
@@ -215,7 +228,7 @@ def _latest_browseract_refresh_payload() -> dict[str, Any] | None:
         "slots": [
             {
                 "free_credits": _coerce_int(row.get("remaining_credits")),
-                "max_credits": _coerce_int(row.get("max_credits")),
+                "max_credits": _coerce_int(row.get("max_credits")) or _browseract_default_max_credits_per_account(),
                 "basis": row.get("basis") or "actual_billing_usage_page",
                 "daily_bonus_available": row.get("daily_bonus_available"),
                 "daily_bonus_credits": _coerce_int(row.get("daily_bonus_credits")),
@@ -276,8 +289,27 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
     slots = [slot for slot in (payload.get("slots") or []) if isinstance(slot, dict)]
     probe = payload.get("probe") or {}
     probe_slots = [slot for slot in (probe.get("slots") or []) if isinstance(slot, dict)]
+    billing_lookup = payload.get("billing_lookup") if isinstance(payload.get("billing_lookup"), dict) else {}
+    aggregate_snapshot = (
+        billing_lookup.get("aggregate_snapshot")
+        if isinstance(billing_lookup.get("aggregate_snapshot"), dict)
+        else {}
+    )
+    global_aggregate_snapshot = (
+        billing_lookup.get("global_aggregate_snapshot")
+        if isinstance(billing_lookup.get("global_aggregate_snapshot"), dict)
+        else {}
+    )
 
     reported_free_credits = _coerce_int(payload.get("sum_free_credits"))
+    global_actual_remaining_credits = _coerce_int(
+        payload.get("global_actual_remaining_credits_total")
+        or aggregate_snapshot.get("global_actual_remaining_credits_total")
+        or global_aggregate_snapshot.get("global_actual_remaining_credits_total")
+        or payload.get("actual_remaining_credits_total")
+        or aggregate_snapshot.get("actual_remaining_credits_total")
+        or global_aggregate_snapshot.get("actual_remaining_credits_total")
+    )
     sum_max_credits = _coerce_int(payload.get("sum_max_credits"))
     slot_sum_free_credits = _safe_sum([_coerce_int(slot.get("free_credits")) for slot in slots])
     slot_sum_max_credits = _safe_sum([_coerce_int(slot.get("max_credits")) for slot in slots])
@@ -294,6 +326,18 @@ def _normalize_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
     free_credits = reported_free_credits
     free_credits_source = "reported_sum_free_credits"
+    payload_source = str(payload.get("payload_source") or "").strip()
+    basis_summary = str(payload.get("basis_summary") or "").strip()
+    if (
+        global_actual_remaining_credits not in (None, 0)
+        and (
+            free_credits in (None, 0)
+            or payload_source == "direct_local_onemin"
+            or "profiles_fallback" in basis_summary
+        )
+    ):
+        free_credits = global_actual_remaining_credits
+        free_credits_source = "global_actual_remaining_credits_total"
     if free_credits in (None, 0):
         if slot_sum_free_credits not in (None, 0):
             free_credits = slot_sum_free_credits
@@ -380,12 +424,17 @@ print(json.dumps({
     "global_aggregate_snapshot": refresh_json.get("global_aggregate_snapshot") or {},
 }))
 """.replace("__NOW_UTC__", now_utc)
-    result = subprocess.run(
-        ["docker", "exec", "-i", "ea-api", "python", "-c", script],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    timeout_seconds = max(30, _coerce_int(os.environ.get("CODEXEA_ONEMIN_BILLING_TIMEOUT_SECONDS")) or 180) + 30
+    try:
+        result = subprocess.run(
+            ["docker", "exec", "-i", "ea-api", "python", "-c", script],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        return None
     if result.returncode != 0:
         return None
     try:
@@ -405,6 +454,96 @@ print(json.dumps({
     return merged
 
 
+def _container_probe_refresh_payload() -> dict[str, Any] | None:
+    if not shutil.which("docker"):
+        return None
+    now_utc = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    script = r"""
+import json
+from app.services import responses_upstream as upstream
+
+payload = upstream.probe_all_onemin_slots(include_reserve=True)
+slots = [slot for slot in (payload.get("slots") or []) if isinstance(slot, dict)]
+max_per_slot = upstream._onemin_max_credits_per_key()
+rows = []
+for slot in slots:
+    remaining = slot.get("estimated_remaining_credits")
+    max_credits = slot.get("max_credits") or max_per_slot
+    rows.append({
+        "account_name": slot.get("account_name"),
+        "slot_env_name": slot.get("slot_env_name") or slot.get("account_name"),
+        "slot": slot.get("slot"),
+        "slot_role": slot.get("slot_role"),
+        "owner_label": slot.get("owner_label"),
+        "owner_name": slot.get("owner_name"),
+        "owner_email": slot.get("owner_email"),
+        "state": slot.get("state"),
+        "basis": slot.get("estimated_credit_basis"),
+        "free_credits": remaining,
+        "max_credits": max_credits,
+        "last_probe_at": slot.get("last_probe_at"),
+        "last_probe_result": slot.get("result"),
+        "last_probe_detail": slot.get("detail"),
+        "last_probe_model": slot.get("model"),
+        "last_probe_latency_ms": slot.get("latency_ms"),
+    })
+known_free = [int(row.get("free_credits") or 0) for row in rows if row.get("free_credits") is not None]
+known_max = [int(row.get("max_credits") or 0) for row in rows if row.get("max_credits") is not None]
+basis_counts = {}
+state_counts = {}
+probe_result_counts = dict(payload.get("result_counts") or {})
+for row in rows:
+    basis = str(row.get("basis") or "unknown")
+    state = str(row.get("state") or "unknown")
+    basis_counts[basis] = basis_counts.get(basis, 0) + 1
+    state_counts[state] = state_counts.get(state, 0) + 1
+def count_summary(counts):
+    return ", ".join(f"{key} x{counts[key]}" for key in sorted(counts))
+print(json.dumps({
+    "payload_source": "actual_provider_api_probe_rollup",
+    "payload_fetched_at": "__NOW_UTC__",
+    "recorded_at_utc": "__NOW_UTC__",
+    "slot_count": len(rows),
+    "slot_count_with_known_balance": len(known_free),
+    "slot_count_with_balance": len(known_free),
+    "slot_count_with_known_max": len(known_max),
+    "slot_count_with_positive_balance": sum(1 for value in known_free if value > 0),
+    "unknown_balance_slot_count": max(len(rows) - len(known_free), 0),
+    "sum_free_credits": sum(known_free) if known_free else 0,
+    "sum_probe_estimated_credits": sum(known_free) if known_free else 0,
+    "sum_max_credits": sum(known_max) if known_max else 0,
+    "basis_summary": count_summary(basis_counts),
+    "state_summary": count_summary(state_counts),
+    "basis_counts": basis_counts,
+    "state_counts": state_counts,
+    "probe_result_counts": probe_result_counts,
+    "owner_mapped_slot_count": int(payload.get("owner_mapped_slots") or 0),
+    "last_probe_at": payload.get("last_probe_at"),
+    "used_precomputed_aggregate": False,
+    "probe": payload,
+    "slots": rows,
+}))
+""".replace("__NOW_UTC__", now_utc)
+    timeout_seconds = max(30, _coerce_int(os.environ.get("CODEXEA_ONEMIN_PROBE_TIMEOUT_SECONDS")) or 180) + 30
+    try:
+        result = subprocess.run(
+            ["docker", "exec", "-i", "ea-api", "python", "-c", script],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+    except subprocess.TimeoutExpired:
+        return None
+    if result.returncode != 0:
+        return None
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
 def _should_use_container_global_refresh(payload: dict[str, Any]) -> bool:
     payload_source = str(payload.get("payload_source") or "").strip()
     if payload_source.endswith("_cache"):
@@ -415,6 +554,11 @@ def _should_use_container_global_refresh(payload: dict[str, Any]) -> bool:
         if isinstance(global_snapshot, dict) and global_snapshot:
             return False
     return bool(payload.get("refresh_error"))
+
+
+def _payload_is_stale_cache(payload: dict[str, Any]) -> bool:
+    payload_source = str(payload.get("payload_source") or "").strip()
+    return payload_source.endswith("_cache")
 
 
 def load_payload() -> dict[str, Any]:
@@ -476,10 +620,17 @@ def load_payload() -> dict[str, Any]:
         envelope.update(data)
         payload = envelope
     payload = _prefer_browseract_refresh_payload(payload, browseract_payload)
+    if _payload_is_stale_cache(payload):
+        container_probe_payload = _container_probe_refresh_payload()
+        if container_probe_payload is not None:
+            return container_probe_payload
     if _should_use_container_global_refresh(payload):
         container_payload = _container_global_refresh_payload()
         if container_payload is not None:
             return container_payload
+        container_probe_payload = _container_probe_refresh_payload()
+        if container_probe_payload is not None:
+            return container_probe_payload
     return payload
 
 
@@ -600,10 +751,21 @@ def main() -> int:
     burn_rate_credits_per_hour = None
     burn_rate_credits_per_day = None
     burn_rate_source = ""
+    previous_measurement_trust = str((previous or {}).get("measurement_trust") or "").strip()
+    previous_payload_source = str((previous or {}).get("payload_source") or "").strip()
+    current_payload_source = str(payload.get("payload_source") or "").strip()
     if measurement_trust != "fresh":
         delta_credits = None
         delta_seconds = None
         burn_rate_source = "stale_source_no_burn"
+    elif previous_measurement_trust and previous_measurement_trust != "fresh":
+        delta_credits = None
+        delta_seconds = None
+        burn_rate_source = "previous_stale_source_no_burn"
+    elif previous_payload_source and current_payload_source and previous_payload_source != current_payload_source:
+        delta_credits = None
+        delta_seconds = None
+        burn_rate_source = "source_transition_no_burn"
     elif delta_credits is not None and delta_seconds and delta_seconds > 0:
         burn_rate_credits_per_hour = (0 - float(delta_credits)) * 3600.0 / float(delta_seconds)
         burn_rate_credits_per_day = burn_rate_credits_per_hour * 24.0

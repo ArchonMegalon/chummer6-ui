@@ -74,7 +74,7 @@ internal static class StarterWorkspaceXmlFactory
                 new XElement("publicawareness", "0"),
                 new XElement("burntstreetcred", "0"),
                 new XElement("buildkarma", "35"),
-                new XElement("created", "True"),
+                new XElement("created", "False"),
                 new XElement("gameedition", edition),
                 new XElement("gameplayoption", "Standard"),
                 new XElement("settings", "Core Rulebook"),

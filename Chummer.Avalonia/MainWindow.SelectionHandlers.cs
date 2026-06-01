@@ -16,7 +16,7 @@ public partial class MainWindow
 
     private const string LegacyWikiUrl = "https://github.com/chummer5a/chummer5a/wiki/";
     private const string LegacyDiscordUrl = "https://discord.gg/mJB7st9";
-    private const string LegacyIssueTrackerUrl = "https://github.com/chummer5a/chummer5a/issues/";
+    private const string LegacyIssueTrackerUrl = "https://github.com/ArchonMegalon/Chummer6/issues/";
 
     private async void CommandDialogPane_OnCommandSelected(object? sender, string commandId)
     {

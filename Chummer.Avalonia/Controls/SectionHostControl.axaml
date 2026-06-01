@@ -139,15 +139,15 @@
                      Background="Transparent">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <Grid ColumnDefinitions="92,*" ColumnSpacing="6" Margin="0,0">
+                  <Grid ColumnDefinitions="132,*" ColumnSpacing="8" Margin="0,0">
                     <TextBlock Grid.Column="0"
                                Text="{Binding DisplayPath}"
                                Classes="shell-caption"
-                               TextTrimming="CharacterEllipsis"
-                               IsVisible="False" />
+                               TextWrapping="Wrap"
+                               TextTrimming="CharacterEllipsis" />
                     <TextBlock Grid.Column="1"
                                Text="{Binding DisplayValue}"
-                               TextWrapping="NoWrap"
+                               TextWrapping="Wrap"
                                TextTrimming="CharacterEllipsis" />
                   </Grid>
                 </DataTemplate>
@@ -170,18 +170,18 @@
                   IsHitTestVisible="False"
                   ClipToBounds="True"
                   IsExpanded="False" />
-        <Expander Grid.Row="5"
-                  x:Name="SectionReviewExpander"
-                  Header=""
-                  IsExpanded="True"
-                  IsVisible="False">
+        <Border Grid.Row="5"
+                x:Name="SectionReviewPanel"
+                Classes="shell-panel subtle"
+                Padding="3,2"
+                IsVisible="False">
           <TextBox x:Name="SectionPreviewBox"
                    AcceptsReturn="True"
                    TextWrapping="Wrap"
                    IsReadOnly="True"
                    MinHeight="80"
                    MaxHeight="120" />
-        </Expander>
+        </Border>
         <Border Grid.Row="6"
                 x:Name="SectionQuickActionsBorder"
                 Classes="shell-panel"

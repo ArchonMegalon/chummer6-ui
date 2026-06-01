@@ -244,6 +244,9 @@ bash scripts/ai/milestones/chummer-shared-legacy-equivalent-chrome-gate.sh
 echo "[verify] checking Chummer5a screenshot review gate..."
 bash scripts/ai/milestones/chummer5a-screenshot-review-gate.sh
 
+echo "[verify] checking Pixefy Chummer5a screenshot comparison gate..."
+bash scripts/ai/milestones/pixefy-chummer5a-screenshot-comparison-gate.sh
+
 echo "[verify] checking next-90 M141 direct import-route proof guard..."
 bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh
 
@@ -312,7 +315,7 @@ verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CH
 echo "[verify] refreshing verified release-channel mirror..."
 python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null
 
-if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+if [[ ! -f "$canonical_release_channel_path" && -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
   release_channel_path_default="$verified_release_channel_path"
 fi
 

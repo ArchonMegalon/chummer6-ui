@@ -289313,6 +289313,48 @@
         ],
         "dialogFields": [
           {
+            "fieldId": "newCharacterName",
+            "expectedLabel": "Character Name",
+            "expectedInputType": "text",
+            "expectedVisualKind": "default",
+            "expectedLayoutSlot": "left",
+            "optionsCount": 0,
+            "isVisible": true,
+            "runtimeLabelText": "Character Name",
+            "runtimeControlType": "TextBox",
+            "runtimeToolTip": "Character Name",
+            "runtimeLayoutZone": "left",
+            "mouseRoutes": [
+              "left_click",
+              "hover"
+            ],
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "fieldId": "newCharacterAlias",
+            "expectedLabel": "Alias",
+            "expectedInputType": "text",
+            "expectedVisualKind": "default",
+            "expectedLayoutSlot": "right",
+            "optionsCount": 0,
+            "isVisible": true,
+            "runtimeLabelText": "Alias",
+            "runtimeControlType": "TextBox",
+            "runtimeToolTip": "Alias",
+            "runtimeLayoutZone": "right",
+            "mouseRoutes": [
+              "left_click",
+              "hover"
+            ],
+            "x": 0,
+            "y": 0,
+            "width": 0,
+            "height": 0
+          },
+          {
             "fieldId": "newCharacterRulesetId",
             "expectedLabel": "Ruleset",
             "expectedInputType": "select",

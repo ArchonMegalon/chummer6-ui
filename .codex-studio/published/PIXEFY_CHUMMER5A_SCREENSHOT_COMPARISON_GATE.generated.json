@@ -1,0 +1,21 @@
+{
+  "contract_name": "chummer6-ui.pixefy_chummer5a_screenshot_comparison_gate",
+  "generated_at": "2026-05-31T17:39:26.631663Z",
+  "status": "pass",
+  "provider": "Pixefy",
+  "comparison_baseline": "Chummer5a screenshot/contact-sheet receipts",
+  "screenshot_directory": ".codex-studio/published/ui-flagship-release-gate-screenshots",
+  "screenshot_count": 40,
+  "required_screenshots": [
+    "01-initial-shell-light.png",
+    "15-creation-section-light.png",
+    "36-workflow-new-character-dialog-light.png"
+  ],
+  "receipts": {
+    "pixefy_targets": ".codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json",
+    "screenshot_review": ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+    "side_by_side_contact_sheets": ".codex-studio/published/CHUMMER5A_SIDE_BY_SIDE_CONTACT_SHEETS.generated.json",
+    "flagship_gate": ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+  },
+  "reasons": []
+}

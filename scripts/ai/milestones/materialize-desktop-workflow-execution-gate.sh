@@ -35,7 +35,7 @@ if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_pat
 else
   release_channel_path_default="$default_release_channel_path"
 fi
-if [[ -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+if [[ ! -f "$canonical_release_channel_path" && -f "$verified_release_channel_path" && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
   release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"

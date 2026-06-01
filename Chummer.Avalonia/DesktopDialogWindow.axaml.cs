@@ -456,6 +456,8 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateLegacyNewCharacterPane(IReadOnlyList<DesktopDialogField> fields)
     {
+        DesktopDialogField nameField = FindRequiredField(fields, "newCharacterName");
+        DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterAlias");
         DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterRulesetId");
         DesktopDialogField buildMethodField = FindRequiredField(fields, "newCharacterBuildMethod");
 
@@ -563,6 +565,10 @@ public partial class DesktopDialogWindow : Window
         summaryRow.Children.Add(rulesetSummary);
 
         shell.Children.Add(CreateLegacyFieldGroup(
+            "Runner Identity",
+            CreateSplitFieldRow(nameField, aliasField)));
+
+        shell.Children.Add(CreateLegacyFieldGroup(
             "Select Build Method",
             settingRow,
             rulesetRow,
@@ -596,7 +602,6 @@ public partial class DesktopDialogWindow : Window
         {
             Name = name,
             Text = text,
-            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
