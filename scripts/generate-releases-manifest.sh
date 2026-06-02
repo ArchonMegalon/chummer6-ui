@@ -1355,11 +1355,42 @@ def prune_rows_to_manifest_artifacts(local_payload: dict) -> None:
     artifact_ids = manifest_artifact_ids(local_payload)
     if not artifact_ids:
         return
-    for key in (
+    route_installer_ids: set[str] = set()
+    coverage = local_payload.get("desktopTupleCoverage")
+    route_truth = coverage.get("desktopRouteTruth") if isinstance(coverage, dict) else None
+    if isinstance(route_truth, list):
+        route_helper = getattr(verifier, "expected_installer_artifact_id_for_route", None)
+        for row in route_truth:
+            if not isinstance(row, dict):
+                continue
+            artifact_id = ""
+            if callable(route_helper):
+                artifact_id = normalized_token(route_helper(row))
+            if not artifact_id:
+                head = normalized_token(row.get("head"))
+                rid = normalized_token(row.get("rid"))
+                if head and rid:
+                    artifact_id = f"{head}-{rid}-installer"
+            if artifact_id:
+                route_installer_ids.add(artifact_id)
+    registry_artifact_ids = artifact_ids | route_installer_ids
+    registry_bound_keys = (
         "installAwareArtifactRegistry",
-        "desktopSurfaceRefs",
         "artifactIdentityRegistry",
         "artifactPublicationBindings",
+    )
+    for key in registry_bound_keys:
+        rows = local_payload.get(key)
+        if not isinstance(rows, list):
+            continue
+        local_payload[key] = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and normalized_token(row.get("artifactId") or row.get("id")) in registry_artifact_ids
+        ]
+    for key in (
+        "desktopSurfaceRefs",
     ):
         rows = local_payload.get(key)
         if not isinstance(rows, list):
