@@ -1357,6 +1357,7 @@ def prune_rows_to_manifest_artifacts(local_payload: dict) -> None:
         return
     for key in (
         "installAwareArtifactRegistry",
+        "desktopSurfaceRefs",
         "artifactIdentityRegistry",
         "artifactPublicationBindings",
     ):
