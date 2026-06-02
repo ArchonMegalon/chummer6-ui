@@ -1,8 +1,8 @@
 {
   "headId": "blazor-desktop",
-  "version": "run-134",
-  "releaseVersion": "run-134",
-  "channelId": "preview",
+  "version": "unpublished",
+  "releaseVersion": "unpublished",
+  "channelId": "public_stable",
   "platform": "linux",
   "arch": "x64",
   "rid": "linux-x64",
@@ -22,9 +22,9 @@
   "artifactInstallLaunchCapturePath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/installed-launch-blazor-desktop-linux-x64.bin",
   "artifactInstallWrapperCapturePath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/installed-wrapper-blazor-desktop-linux-x64.sh",
   "artifactInstallDesktopEntryCapturePath": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke/installed-desktop-entry-blazor-desktop-linux-x64.desktop",
-  "artifactPath": "/home/runner/work/chummer6-ui/chummer6-ui/dist/files/chummer-blazor-desktop-linux-x64-installer.deb",
+  "artifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-blazor-desktop-linux-x64-installer.deb",
   "status": "pass",
-  "channel": "preview",
+  "channel": "public_stable",
   "artifactFileName": "chummer-blazor-desktop-linux-x64-installer.deb",
   "fileName": "chummer-blazor-desktop-linux-x64-installer.deb",
   "artifactRelativePath": "files/chummer-blazor-desktop-linux-x64-installer.deb"

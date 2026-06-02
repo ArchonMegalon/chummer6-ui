@@ -1,9 +1,9 @@
 {
   "status": "skipped",
   "headId": "avalonia",
-  "version": "run-134",
-  "releaseVersion": "run-134",
-  "channelId": "preview",
+  "version": "unpublished",
+  "releaseVersion": "unpublished",
+  "channelId": "public_stable",
   "platform": "linux",
   "arch": "arm64",
   "rid": "linux-arm64",
@@ -14,7 +14,7 @@
   "recordedAtUtc": "2026-06-01T11:42:59.390863+00:00",
   "startedAtUtc": "2026-06-01T11:42:59.390863+00:00",
   "completedAtUtc": "2026-06-01T11:42:59.390863+00:00",
-  "artifactPath": "/home/runner/work/chummer6-ui/chummer6-ui/dist/files/chummer-avalonia-linux-arm64-installer.deb",
+  "artifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-linux-arm64-installer.deb",
   "artifactFileName": "chummer-avalonia-linux-arm64-installer.deb",
   "fileName": "chummer-avalonia-linux-arm64-installer.deb",
   "artifactRelativePath": "files/chummer-avalonia-linux-arm64-installer.deb",
@@ -24,5 +24,5 @@
   "skipClass": "incompatible_host",
   "verificationDisposition": "incompatible_host",
   "hostMachine": "x86_64",
-  "channel": "preview"
+  "channel": "public_stable"
 }

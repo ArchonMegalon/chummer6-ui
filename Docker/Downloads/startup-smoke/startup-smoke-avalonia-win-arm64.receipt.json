@@ -1,9 +1,9 @@
 {
   "status": "skipped",
   "headId": "avalonia",
-  "version": "run-134",
-  "releaseVersion": "run-134",
-  "channelId": "preview",
+  "version": "unpublished",
+  "releaseVersion": "unpublished",
+  "channelId": "public_stable",
   "platform": "windows",
   "arch": "arm64",
   "rid": "win-arm64",
@@ -14,7 +14,7 @@
   "recordedAtUtc": "2026-06-01T11:44:05.877323+00:00",
   "startedAtUtc": "2026-06-01T11:44:05.877323+00:00",
   "completedAtUtc": "2026-06-01T11:44:05.877323+00:00",
-  "artifactPath": "/home/runner/work/chummer6-ui/chummer6-ui/dist/files/chummer-avalonia-win-arm64-installer.exe",
+  "artifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-arm64-installer.exe",
   "artifactFileName": "chummer-avalonia-win-arm64-installer.exe",
   "fileName": "chummer-avalonia-win-arm64-installer.exe",
   "artifactRelativePath": "files/chummer-avalonia-win-arm64-installer.exe",
@@ -24,5 +24,5 @@
   "skipClass": "incompatible_host",
   "verificationDisposition": "incompatible_host",
   "hostMachine": "x86_64",
-  "channel": "preview"
+  "channel": "public_stable"
 }

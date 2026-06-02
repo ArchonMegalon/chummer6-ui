@@ -82,6 +82,8 @@ def main() -> int:
     now = utc_now()
     verifier_module = load_verifier_module(repo_root)
     payload = normalize_verifier_owned_fields(payload, verifier_module, now)
+    payload["generated_at"] = now
+    payload["generatedAt"] = now
     payload["verifiedAt"] = now
     payload["verifiedFromPath"] = str(canonical_manifest)
     payload["verifiedFromGeneratedAt"] = source_generated_at
@@ -92,6 +94,45 @@ def main() -> int:
 
     subprocess.run(
         ["bash", str(repo_root / "scripts" / "verify-releases-manifest.sh"), str(output_path)],
+        check=True,
+    )
+
+    portal_mirror_dir = repo_root / ".codex-studio" / "published" / "portal"
+    portal_mirror_dir.mkdir(parents=True, exist_ok=True)
+    materializer_path = Path(resolved_registry_root) / "scripts" / "materialize_public_release_channel.py"
+    subprocess.run(
+        [
+            "python3",
+            str(materializer_path),
+            "--manifest",
+            str(output_path),
+            "--downloads-dir",
+            str(repo_root / "Docker" / "Downloads" / "files"),
+            "--startup-smoke-dir",
+            str(repo_root / "Docker" / "Downloads" / "startup-smoke"),
+            "--output",
+            str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
+            "--compat-output",
+            str(portal_mirror_dir / "releases.json"),
+        ],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+
+    subprocess.run(
+        [
+            "bash",
+            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
+            str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            "bash",
+            str(repo_root / "scripts" / "verify-releases-manifest.sh"),
+            str(portal_mirror_dir / "releases.json"),
+        ],
         check=True,
     )
 

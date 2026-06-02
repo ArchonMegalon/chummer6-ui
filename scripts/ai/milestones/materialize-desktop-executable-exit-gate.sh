@@ -4374,6 +4374,9 @@ synthetic_external_proof_request_install_artifacts = (
         release_channel_generated_at_raw,
     )
 )
+desktop_install_artifacts.extend(
+    synthetic_external_proof_request_install_artifacts
+)
 evidence["release_channel_external_proof_request_install_artifacts"] = (
     synthetic_external_proof_request_install_artifacts
 )

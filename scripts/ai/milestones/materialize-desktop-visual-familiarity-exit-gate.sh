@@ -717,6 +717,8 @@ flagship_gate_review_start = len(reasons)
 flagship_gate = load_json(flagship_gate_path)
 flagship_status = str(flagship_gate.get("status") or "").strip().lower()
 evidence["flagship_gate_status"] = flagship_status
+if not status_ok(flagship_status):
+    reasons.append("Flagship UI release gate is missing or not passing.")
 validate_receipt_freshness(
     "flagship_ui_release_gate",
     flagship_gate,
