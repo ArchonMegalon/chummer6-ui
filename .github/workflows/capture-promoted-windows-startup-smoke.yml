@@ -26,7 +26,7 @@ permissions:
 jobs:
   capture-startup-smoke:
     name: Capture promoted Windows startup smoke
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     defaults:
       run:
         shell: bash
@@ -36,7 +36,7 @@ jobs:
       CHUMMER_DESKTOP_STARTUP_SMOKE_OPERATING_SYSTEM: Windows
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -76,7 +76,7 @@ jobs:
             "${{ inputs.expected_version }}"
 
       - name: Upload startup smoke artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: promoted-startup-smoke-avalonia-win-x64
           path: |

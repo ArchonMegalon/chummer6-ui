@@ -18,7 +18,7 @@ permissions:
 jobs:
   nightly-build:
     if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     timeout-minutes: 60 # Prevent stuck builds
     env:
       CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
@@ -30,7 +30,7 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0 # Need full history for version calculation
 
@@ -40,35 +40,35 @@ jobs:
         git config --system core.longpaths true
 
     - name: Checkout core-engine compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-core
         ref: fleet/core
         path: c
 
     - name: Checkout run-services compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-hub
         ref: main
         path: h
 
     - name: Checkout hub-registry compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-hub-registry
         ref: fleet/hub-registry
         path: g
 
     - name: Checkout ui-kit compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-ui-kit
         ref: fleet/ui-kit
         path: u
 
     - name: Checkout media-factory compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-media-factory
         ref: fleet/media-factory
@@ -97,7 +97,7 @@ jobs:
         New-Item -ItemType Junction -Path (Join-Path $compatRoot "fleet\\repos\\chummer-media-factory") -Target "${env:GITHUB_WORKSPACE}\\m" | Out-Null
     
     - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
     
@@ -370,7 +370,7 @@ jobs:
     
     - name: Upload build artifacts
       if: steps.check_commit.outputs.skip != 'true'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: nightly-build-${{ steps.update_version.outputs.nightly_tag }}
         path: ${{ steps.create_zip.outputs.zip_file }}

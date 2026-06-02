@@ -49,7 +49,7 @@ jobs:
     #   - https://gh.io/supported-runners-and-hardware-resources
     #   - https://gh.io/using-larger-runners
     # Consider using larger runners for possible analysis time improvements.
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'windows-latest' }}
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'windows-2025-vs2026' }}
     timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
     permissions:
       actions: read
@@ -76,7 +76,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         path: r
 
@@ -87,35 +87,35 @@ jobs:
         git config --system core.longpaths true
 
     - name: Checkout core-engine compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-core
         ref: fleet/core
         path: c
 
     - name: Checkout run-services compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-hub
         ref: main
         path: h
 
     - name: Checkout hub-registry compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-hub-registry
         ref: fleet/hub-registry
         path: g
 
     - name: Checkout ui-kit compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-ui-kit
         ref: fleet/ui-kit
         path: u
 
     - name: Checkout media-factory compatibility tree
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         repository: ArchonMegalon/chummer6-media-factory
         ref: fleet/media-factory
@@ -147,13 +147,13 @@ jobs:
         ln -sfn "$GITHUB_WORKSPACE/m" "$compat_root/fleet/repos/chummer-media-factory"
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
+      uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
         build-mode: manual
@@ -168,7 +168,7 @@ jobs:
     # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
     # If this step fails, then you should remove it and run the build manually (see below)
     # - name: Autobuild
-    #   uses: github/codeql-action/autobuild@v3
+    #   uses: github/codeql-action/autobuild@v4
 
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
@@ -199,6 +199,6 @@ jobs:
         done
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      uses: github/codeql-action/analyze@v4
       with:
         category: "/language:${{matrix.language}}"
