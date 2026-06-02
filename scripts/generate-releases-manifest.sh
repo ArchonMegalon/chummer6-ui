@@ -1341,6 +1341,35 @@ def artifact_rows_for_registry(local_payload: dict) -> list[dict]:
 def is_downloads_compatibility_payload(local_payload: dict) -> bool:
     return isinstance(local_payload.get("downloads"), list) and not isinstance(local_payload.get("artifacts"), list)
 
+def manifest_artifact_ids(local_payload: dict) -> set[str]:
+    artifact_ids: set[str] = set()
+    for row in artifact_rows_for_registry(local_payload):
+        if not isinstance(row, dict):
+            continue
+        artifact_id = normalized_token(row.get("artifactId") or row.get("id"))
+        if artifact_id:
+            artifact_ids.add(artifact_id)
+    return artifact_ids
+
+def prune_rows_to_manifest_artifacts(local_payload: dict) -> None:
+    artifact_ids = manifest_artifact_ids(local_payload)
+    if not artifact_ids:
+        return
+    for key in (
+        "installAwareArtifactRegistry",
+        "artifactIdentityRegistry",
+        "artifactPublicationBindings",
+    ):
+        rows = local_payload.get(key)
+        if not isinstance(rows, list):
+            continue
+        local_payload[key] = [
+            row
+            for row in rows
+            if isinstance(row, dict)
+            and normalized_token(row.get("artifactId") or row.get("id")) in artifact_ids
+        ]
+
 for raw_path in sys.argv[2:]:
     manifest_path = Path(raw_path).resolve()
     if not manifest_path.is_file():
@@ -1565,6 +1594,7 @@ for raw_path in sys.argv[2:]:
         "expected_artifact_publication_binding_rows",
         payload.get("artifactPublicationBindings") or [],
     )
+    prune_rows_to_manifest_artifacts(payload)
     payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
         "expected_registry_boundary_coverage",
         payload.get("registryBoundaryCoverage") or {},
@@ -1587,6 +1617,11 @@ for raw_path in sys.argv[2:]:
         helper = getattr(verifier, helper_name, None)
         if callable(helper):
             payload[payload_key] = helper(payload)
+    prune_rows_to_manifest_artifacts(payload)
+    payload["registryBoundaryCoverage"] = derive_verifier_owned_value(
+        "expected_registry_boundary_coverage",
+        payload.get("registryBoundaryCoverage") or {},
+    )
     assert_desktop_surface_ref_consistency(payload)
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
