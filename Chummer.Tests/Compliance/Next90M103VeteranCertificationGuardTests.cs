@@ -71,6 +71,10 @@ public sealed class Next90M103VeteranCertificationGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_DESIGN_QUEUE_PATH");
         StringAssert.Contains(scriptText, "EXPECTED_REGISTRY_PATH");
         StringAssert.Contains(scriptText, "EXPECTED_QUEUE_HEADER");
+        StringAssert.Contains(scriptText, "\"SettingsGlobalList\"");
+        StringAssert.Contains(scriptText, "\"SettingsGlobalSelector\"");
+        StringAssert.Contains(scriptText, "\"SettingsTabs\"");
+        StringAssert.Contains(scriptText, "\"Global Settings Classic\"");
         StringAssert.Contains(scriptText, "validate_queue_header");
         StringAssert.Contains(scriptText, "EXPECTED_VERIFY_BANNER");
         StringAssert.Contains(scriptText, "DISALLOWED_ACTIVE_RUN_PROOF_TOKENS");
@@ -233,7 +237,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
             queueTopLevel.GetProperty("source_registry_path").GetString(),
             "Fleet staging must retain its canonical successor registry pointer.");
         Assert.AreEqual(
-            "6184015a25d7f7ae103ae56183e6d62658f83557",
+            "e350c3be89d2f3ff2b04c700b0b4f43b554b9ad9",
             queueTopLevel.GetProperty("source_queue_fingerprint").GetString(),
             "Fleet staging must retain the completed M103 source queue fingerprint.");
         Assert.AreEqual(
@@ -256,7 +260,7 @@ public sealed class Next90M103VeteranCertificationGuardTests
             designQueueTopLevel.GetProperty("source_registry_path").GetString(),
             "Design queue staging must retain its canonical successor registry pointer.");
         Assert.AreEqual(
-            "6184015a25d7f7ae103ae56183e6d62658f83557",
+            "e350c3be89d2f3ff2b04c700b0b4f43b554b9ad9",
             designQueueTopLevel.GetProperty("source_queue_fingerprint").GetString(),
             "Design queue staging must retain the completed M103 source queue fingerprint.");
 
@@ -433,19 +437,9 @@ public sealed class Next90M103VeteranCertificationGuardTests
             Assert.IsTrue(matrixRow.GetProperty("screenshotContentNonBlank").GetBoolean(), $"{surface} certification matrix must prove nonblank screenshot content.");
             Assert.IsGreaterThanOrEqualTo(3, matrixRow.GetProperty("screenshotDistinctSampleColors").GetInt32(), $"{surface} certification matrix screenshot sample is too flat.");
             string digest = result.GetProperty("publishedScreenshotSha256").GetString() ?? string.Empty;
-            if (surface == "hero_lab_importer")
-            {
-                Assert.AreEqual(
-                    screenshotDigestsBySurface["import"],
-                    digest,
-                    "hero_lab_importer may currently reuse the import screenshot proof digest.");
-            }
-            else
-            {
-                Assert.IsFalse(
-                    screenshotDigestsBySurface.Values.Contains(digest, StringComparer.Ordinal),
-                    $"{surface} screenshot must be distinct.");
-            }
+            Assert.IsFalse(
+                screenshotDigestsBySurface.Values.Contains(digest, StringComparer.Ordinal),
+                $"{surface} screenshot must be distinct.");
 
             screenshotDigestsBySurface[surface] = digest;
         }

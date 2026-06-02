@@ -1256,13 +1256,19 @@ for entry_index, raw_entry in enumerate(raw_screenshot_control_entries, start=1)
     is_settings_formport_capture = (
         screenshot == "03-settings-open-light.png"
         and "ClassicFormPortHostControl" in visible_named_control_ids
-        and any(
-            control_id in visible_named_control_ids
-            for control_id in (
-                "SettingsCategoryPanel",
-                "SettingsWorkflowPanel",
-                "SettingsTabsPanel",
+        and (
+            any(
+                control_id in visible_named_control_ids
+                for control_id in (
+                    "SettingsCategoryPanel",
+                    "SettingsWorkflowPanel",
+                    "SettingsTabsPanel",
+                    "SettingsGlobalList",
+                    "SettingsGlobalSelector",
+                    "SettingsTabs",
+                )
             )
+            or "Global Settings Classic" in visible_text_samples
         )
     )
     is_dialog_capture = bool(dialog_title) and dialog_title != "(none)" and not is_settings_formport_capture

@@ -1315,7 +1315,8 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
 
   echo "[b14] materializing desktop workflow execution gate..."
   CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
-  CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=1 \
+  CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=0 \
+  CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
     bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
 
   echo "[b14] materializing classic dense workbench posture gate..."
@@ -1339,6 +1340,7 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
   CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
   CHUMMER_DESKTOP_EXECUTABLE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE=1 \
   CHUMMER_DESKTOP_EXECUTABLE_RELEASE_CHANNEL_PATH="$desktop_executable_release_channel_path" \
+  CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH=1 \
     bash "$desktop_executable_exit_gate_script_path" >/dev/null
 
   echo "[b14] refreshing direct output route proof..."

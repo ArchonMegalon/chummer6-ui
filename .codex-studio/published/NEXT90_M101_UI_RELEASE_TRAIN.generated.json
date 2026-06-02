@@ -1456,7 +1456,7 @@
         "status": "pass"
       },
       "macos": {
-        "artifactDigest": "sha256:282adc773f1a86f81a89aefa82d595e67d9f663e4eedab2cd45269d6ab0e9a45",
+        "artifactDigest": "sha256:02b4822232a592f97307cf34a11eed92d698f8ac6bbd7e8948404b6148f6d89b",
         "artifactId": "avalonia-osx-arm64-installer",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-osx-arm64-installer",
         "expectedRouteTupleId": "avalonia:macos:osx-arm64",
@@ -1510,7 +1510,7 @@
           "receipt_primary_artifact_locator_present": true,
           "receipt_process_path_avoids_fallback_head": true
         },
-        "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
+        "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-osx-arm64.receipt.json",
         "status": "pass"
       },
       "windows": {
@@ -1738,7 +1738,7 @@
     ],
     "queueProofItemsMatchDesignQueue": true,
     "queueTopLevel": {
-      "activation_rule": "Use these items immediately on shards whose current flagship closeout",
+      "activation_rule": "Use these items immediately on shards whose current flagship closeout slice is empty; do not let them replace",
       "mode": "append",
       "program_wave": "next_90_day_product_advance",
       "source_queue_fingerprint": "e350c3be89d2f3ff2b04c700b0b4f43b554b9ad9",
@@ -1839,7 +1839,7 @@
     "registryPath": "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_PRODUCT_ADVANCE_REGISTRY.yaml",
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelStatus": "published",
-    "releaseChannelVersion": "run-20260518-220935",
+    "releaseChannelVersion": "run-20260601-070650",
     "requiredDesktopHeads": [
       "avalonia"
     ],
@@ -1916,7 +1916,7 @@
     "verifyScriptPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh"
   },
   "frontierId": 2450443084,
-  "generatedAt": "2026-05-26T15:59:20Z",
+  "generatedAt": "2026-06-02T05:49:31Z",
   "landedCommit": "c9c0d84f",
   "milestoneId": 101,
   "ownedSurfaces": [

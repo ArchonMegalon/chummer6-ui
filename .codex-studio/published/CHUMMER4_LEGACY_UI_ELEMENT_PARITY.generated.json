@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-01T17:35:48.565927Z",
+  "generatedAt": "2026-06-02T06:06:21.945210Z",
   "contract_name": "chummer6-ui.chummer4_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer4 designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
@@ -25,7 +25,7 @@
     "legacyDesignerEventHookCount": 1197,
     "legacyRuntimeEventHookCount": 34,
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 58,
+    "currentDynamicInteractiveElementCount": 59,
     "currentNamedAxamlInteractiveElementCount": 102,
     "legacyBehaviorFamilyCounts": {
       "add_create": 11,
@@ -637,7 +637,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+13/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 578ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 16s 850ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (14s 581ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 14s 788ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -1254,7 +1254,7 @@
       },
       {
         "source": "Chummer.Avalonia/DesktopDialogWindow.axaml.cs",
-        "line": 2300,
+        "line": 2330,
         "type": "TextBox"
       },
       {
@@ -6037,7 +6037,7 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 1371,
-    "currentDynamicInteractiveElementCount": 58,
+    "currentDynamicInteractiveElementCount": 59,
     "currentNamedAxamlInteractiveElementCount": 102
   },
   "verifyWiringReview": {
@@ -6063,7 +6063,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n[+13/x0/?0] Chummer.Tests.dll (net10.0|x64)(14s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (16s 578ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 16s 850ms"
+      "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(11s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (14s 581ms)\nTest run summary: Passed!\n  total: 15\n  failed: 0\n  succeeded: 15\n  skipped: 0\n  duration: 14s 788ms"
     }
   }
 }

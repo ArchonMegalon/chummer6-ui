@@ -159,37 +159,37 @@
         "avalonia_build_blocker_receipts": {
           "markers": [
             {
-              "line": 762,
+              "line": 767,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 764,
+              "line": 769,
               "marker": "Rule environment:",
               "present": true
             },
             {
-              "line": 766,
+              "line": 771,
               "marker": "Before:",
               "present": true
             },
             {
-              "line": 767,
+              "line": 772,
               "marker": "After:",
               "present": true
             },
             {
-              "line": 765,
+              "line": 770,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             },
             {
-              "line": 765,
+              "line": 770,
               "marker": "BuildBuildBlockerAfter(buildLab)",
               "present": true
             },
             {
-              "line": 768,
+              "line": 773,
               "marker": "BuildBuildBlockerSupport(buildLab)",
               "present": true
             }
@@ -322,27 +322,27 @@
         "avalonia_import_receipt_surface": {
           "markers": [
             {
-              "line": 262,
+              "line": 249,
               "marker": "Import rule environment:",
               "present": true
             },
             {
-              "line": 266,
+              "line": 253,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 267,
+              "line": 254,
               "marker": "Import environment after:",
               "present": true
             },
             {
-              "line": 271,
+              "line": 258,
               "marker": "Import explain receipt:",
               "present": true
             },
             {
-              "line": 277,
+              "line": 264,
               "marker": "Support reuse:",
               "present": true
             }
@@ -770,12 +770,12 @@
         "targeted_signoff": {
           "markers": [
             {
-              "line": 1822,
+              "line": 1799,
               "marker": "BuildImportRuleEnvironment(activity.Receipt)",
               "present": true
             },
             {
-              "line": 1463,
+              "line": 1446,
               "marker": "Import environment before:",
               "present": true
             },
@@ -785,7 +785,7 @@
               "present": true
             },
             {
-              "line": 1609,
+              "line": 1592,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             },
@@ -867,12 +867,12 @@
         "m104_standard_verify_wiring": {
           "markers": [
             {
-              "line": 1036,
+              "line": 1042,
               "marker": "checking next-90 M104 desktop explain receipt guard",
               "present": true
             },
             {
-              "line": 1037,
+              "line": 1043,
               "marker": "bash scripts/ai/milestones/next90-m104-ui-explain-receipts-check.sh",
               "present": true
             }
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-05-28T17:58:23Z",
+  "generatedAt": "2026-06-02T06:02:14Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

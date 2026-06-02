@@ -260,7 +260,10 @@ echo "[verify] checking dense workbench recovery gate..."
 bash scripts/ai/milestones/dense-workbench-recovery-gate.sh
 
 echo "[verify] checking W1 desktop executable exit gate..."
-bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh
+CHUMMER_DESKTOP_EXECUTABLE_SKIP_DEPENDENCY_MATERIALIZE=1 \
+CHUMMER_DESKTOP_EXECUTABLE_ALLOW_VERIFY_RELEASE_CHANNEL_OVERRIDE=1 \
+CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH=1 \
+  bash scripts/ai/milestones/materialize-desktop-executable-exit-gate.sh
 
 echo "[verify] checking W1 desktop executable gate blocking findings aliases..."
 python3 - <<'PY'

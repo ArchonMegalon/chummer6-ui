@@ -791,6 +791,7 @@ internal sealed class DesktopHomeWindow : Window
             _campaignProjection.RestoreSummary,
             _campaignProjection.DeviceRoleSummary,
             _campaignProjection.SupportClosureSummary,
+            "Review campaign consequences before continuing this restore route.",
             BuildCampaignConsequenceSummary(),
             BuildCampaignConsequenceEvidenceSummary(),
             BuildCampaignNextSessionReturnSummary(),

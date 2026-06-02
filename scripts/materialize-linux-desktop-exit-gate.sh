@@ -1915,7 +1915,7 @@ if publish:
 PY
 
   local fleet_root="${CHUMMER_FLEET_ROOT:-/docker/fleet}"
-  if [[ -d "$fleet_root" && -f "$fleet_root/scripts/chummer_design_supervisor.py" ]]; then
+  if [[ "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH:-0}" != "1" && -d "$fleet_root" && -f "$fleet_root/scripts/chummer_design_supervisor.py" ]]; then
     "$PYTHON_BIN" - "$fleet_root" <<'PY'
 from __future__ import annotations
 

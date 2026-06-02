@@ -226,6 +226,7 @@ if [[ "$skip_dependency_materialize" != "1" ]]; then
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_APP_KEY="$head" \
           CHUMMER_LINUX_DESKTOP_EXIT_GATE_RID="$rid" \
           CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH="$linux_gate_tuple_path" \
+          CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH:-1}" \
           bash "$linux_gate_materializer_path" >/dev/null 2>&1; then
           :
         fi

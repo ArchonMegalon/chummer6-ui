@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-05-29T18:41:59Z",
+  "generatedAt": "2026-06-02T06:11:17Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -147,12 +147,12 @@
         {
           "marker": "checking next-90 M105 restore-continuity and conflict-safe desktop UX guard",
           "present": true,
-          "line": 1039
+          "line": 1045
         },
         {
           "marker": "bash scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh",
           "present": true,
-          "line": 1040
+          "line": 1046
         }
       ]
     },
@@ -169,9 +169,9 @@
         "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "a41acce8",
-        "subject": "Integrate pending presentation changes",
-        "sha": "a41acce86943f6e5da063040e5cd889babdb5853",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Avalonia/DesktopHomeWindow.cs"
         ],
@@ -183,9 +183,9 @@
         "path": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "a41acce8",
-        "subject": "Integrate pending presentation changes",
-        "sha": "a41acce86943f6e5da063040e5cd889babdb5853",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"
         ],
@@ -197,9 +197,9 @@
         "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml",
         "pathAllowed": true,
         "exists": true,
-        "commit": "feb46fab",
+        "commit": "847c6d8a",
         "subject": "presentation: remove desktop explanatory chrome",
-        "sha": "feb46fab5984723ec4f4e102e75082df2b8fb0e0",
+        "sha": "847c6d8a7663bb018ce42ed75d37a3735813a3a7",
         "paths": [
           "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
         ],
@@ -211,9 +211,9 @@
         "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "89d2ce65",
-        "subject": "Land full vapor closeout and release proof refresh",
-        "sha": "89d2ce6537b86a1de7928d597045f17cffd7f705",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
         ],
@@ -225,9 +225,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "89d2ce65",
-        "subject": "Land full vapor closeout and release proof refresh",
-        "sha": "89d2ce6537b86a1de7928d597045f17cffd7f705",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -239,9 +239,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "89d2ce65",
-        "subject": "Land full vapor closeout and release proof refresh",
-        "sha": "89d2ce6537b86a1de7928d597045f17cffd7f705",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -253,9 +253,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "42636066",
-        "subject": "Land full Chummer 5A parity runtime and proof refresh",
-        "sha": "42636066c11febf690286861c2ead2025aee81fd",
+        "commit": "fa68f3ab",
+        "subject": "Close flagship desktop gold audit gaps",
+        "sha": "fa68f3ab4b2e12d0c435b857567f1d1ce526d1c1",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -267,9 +267,9 @@
         "path": "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "a6a90fa1",
-        "subject": "Audit: sync campaign OS canon and fleet oversight",
-        "sha": "a6a90fa165d17917a7c1a25b0fcfe0a7ebcc20f1",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs"
         ],
@@ -281,9 +281,9 @@
         "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "89d2ce65",
-        "subject": "Land full vapor closeout and release proof refresh",
-        "sha": "89d2ce6537b86a1de7928d597045f17cffd7f705",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
         ],
@@ -295,9 +295,9 @@
         "path": "scripts/ai/verify.sh",
         "pathAllowed": true,
         "exists": true,
-        "commit": "615409e6",
-        "subject": "Harden flagship reachability and parity proof gates",
-        "sha": "615409e6ab52a7065b4ff46df3ea408368c665eb",
+        "commit": "69c7313e",
+        "subject": "Harden Chummer5a parity and desktop readiness gates",
+        "sha": "69c7313e9d6865cf2711a0f0f53e38d9b49791e5",
         "paths": [
           "scripts/ai/verify.sh"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "42636066",
-        "subject": "Land full Chummer 5A parity runtime and proof refresh",
-        "sha": "42636066c11febf690286861c2ead2025aee81fd",
+        "commit": "dc5d73d3",
+        "subject": "Remove noisy restore choice desktop chrome",
+        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -399,39 +399,15 @@
         },
         {
           "status": " M",
-          "path": "Chummer.Avalonia/Controls/SummaryHeaderControl.axaml.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs"
-        },
-        {
-          "status": " M",
           "path": "Chummer.Avalonia/DesktopHomeWindow.cs"
         },
         {
           "status": " M",
-          "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/Compliance/Next90M105RestoreContinuityGuardTests.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
-        },
-        {
-          "status": " M",
-          "path": "scripts/ai/milestones/next90-m105-ui-restore-continuity-check.sh"
+          "path": "scripts/ai/verify.sh"
         }
       ]
     },
-    "headCommit": "d3925aab57a89e9eb89d02695667e6be8f8ce2d0",
+    "headCommit": "79172dfdb1db294adcff1aa39fd42ceec6468838",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
@@ -456,7 +432,7 @@
             {
               "marker": "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1164
+              "line": 1165
             }
           ],
           "missingMarkers": []
@@ -467,7 +443,7 @@
             {
               "marker": "Stale state: server continuity is unavailable",
               "present": true,
-              "line": 822
+              "line": 823
             },
             {
               "marker": "ReadCampaignWorkspaceServerPlaneAsync",
@@ -493,12 +469,12 @@
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 1211
+              "line": 1212
             },
             {
               "marker": "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1170
+              "line": 1171
             }
           ],
           "missingMarkers": []
@@ -509,12 +485,12 @@
             {
               "marker": "OpenUpdateSupport",
               "present": true,
-              "line": 999
+              "line": 1000
             },
             {
               "marker": "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1176
+              "line": 1177
             }
           ],
           "missingMarkers": []
@@ -669,22 +645,22 @@
             {
               "marker": "RequireDoesNotContain(source, \"Restore choice:\")",
               "present": true,
-              "line": 818
+              "line": 820
             },
             {
               "marker": "RequireDoesNotContain(source, \"Decision order:\")",
               "present": true,
-              "line": 822
+              "line": 824
             },
             {
               "marker": "RequireDoesNotContain(source, \"Conflict choices:\")",
               "present": true,
-              "line": 824
+              "line": 826
             },
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 866
+              "line": 868
             }
           ],
           "missingMarkers": []

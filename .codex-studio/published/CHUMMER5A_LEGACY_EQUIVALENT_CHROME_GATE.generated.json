@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-28T18:08:23.867379Z",
+  "generatedAt": "2026-06-02T06:08:52.074933Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_equivalent_chrome_gate",
   "status": "pass",
   "summary": "Legacy-equivalent chrome stays stripped when Chummer5A already had the same function.",

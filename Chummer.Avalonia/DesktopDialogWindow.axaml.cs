@@ -921,9 +921,9 @@ public partial class DesktopDialogWindow : Window
         };
         topBar.Children.Add(rollLabel);
 
-        TextBox diceCountTextBox = BuildLegacyInlineTextBox(diceCountField, width: 56);
-        Grid.SetColumn(diceCountTextBox, 1);
-        topBar.Children.Add(diceCountTextBox);
+        NumericUpDown diceCountEditor = BuildLegacyInlineNumericUpDown(diceCountField, width: 56);
+        Grid.SetColumn(diceCountEditor, 1);
+        topBar.Children.Add(diceCountEditor);
 
         TextBlock d6Label = new()
         {
@@ -982,8 +982,8 @@ public partial class DesktopDialogWindow : Window
         AddCheckboxRow(rightPane, 2, BuildLegacyInlineCheckBox(rushJobField, "Rushed Job (Glitch on 1 or 2)"));
         AddCheckboxRow(rightPane, 3, BuildLegacyInlineCheckBox(bubbleDieField, "Bubble Die (Fix Even Dicepool Glitch Chances)"));
         AddCheckboxRow(rightPane, 4, BuildLegacyInlineCheckBox(variableGlitchField, "Glitch on More 1's than Hits, Not Half Dicepool"));
-        AddLabeledValueRow(rightPane, 5, "Threshold:", BuildLegacyInlineTextBox(thresholdField, width: 64));
-        AddLabeledValueRow(rightPane, 6, "Gremlins:", BuildLegacyInlineTextBox(gremlinsField, width: 64));
+        AddLabeledValueRow(rightPane, 5, "Threshold:", BuildLegacyInlineNumericUpDown(thresholdField, width: 64));
+        AddLabeledValueRow(rightPane, 6, "Gremlins:", BuildLegacyInlineNumericUpDown(gremlinsField, width: 64));
 
         Grid resultsPane = new()
         {
@@ -2022,6 +2022,36 @@ public partial class DesktopDialogWindow : Window
         }
 
         return textBox;
+    }
+
+    private NumericUpDown BuildLegacyInlineNumericUpDown(DesktopDialogField field, double width)
+    {
+        decimal value = decimal.TryParse(field.Value, out decimal parsedValue) ? parsedValue : 0m;
+        NumericUpDown numericUpDown = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id),
+            Value = value,
+            IsReadOnly = field.IsReadOnly,
+            Width = width,
+            Minimum = 0,
+            Increment = 1
+        };
+        ApplyAccessibility(numericUpDown, field.AccessibleName, field.ToolTip, field.HelpText);
+        if (!field.IsReadOnly)
+        {
+            numericUpDown.ValueChanged += (_, _) =>
+            {
+                string nextValue = Convert.ToInt32(numericUpDown.Value ?? 0m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                if (string.Equals(nextValue, field.Value, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                QueueDialogFieldUpdate(field.Id, nextValue);
+            };
+        }
+
+        return numericUpDown;
     }
 
     private static string[] SplitLines(string value)
