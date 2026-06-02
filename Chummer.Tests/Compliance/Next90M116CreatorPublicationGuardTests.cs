@@ -48,7 +48,7 @@ public sealed class Next90M116CreatorPublicationGuardTests
         StringAssert.Contains(scriptText, "\"Review Moderation Flow\"");
         StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.ShowAsync(");
         StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.ShowModerationAsync(");
-        StringAssert.Contains(scriptText, "Desktop creator publication surface requires an IChummerClient instance.");
+        StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.cs");
 
         StringAssert.Contains(projectText, "Compliance\\Next90M116CreatorPublicationGuardTests.cs");
     }

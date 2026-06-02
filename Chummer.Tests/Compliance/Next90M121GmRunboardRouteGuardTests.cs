@@ -29,7 +29,7 @@ public sealed class Next90M121GmRunboardRouteGuardTests
         StringAssert.Contains(scriptText, "\"add_the_desktop_gm_runboard:ui\"");
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M121 chummer6-ui desktop GM Runboard route is complete;");
-        StringAssert.Contains(scriptText, "\"DesktopCampaignWorkspaceSurface.GmRunboard\"");
+        StringAssert.Contains(scriptText, "DesktopStartupSurfaceCatalog.GmRunboard");
         StringAssert.Contains(scriptText, "\\\"Open GM Runboard\\\"");
         StringAssert.Contains(scriptText, "\"public const string GmRunboard = \\\"gm_runboard\\\";\"");
     }

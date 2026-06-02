@@ -31,7 +31,11 @@ internal static class Program
             CancellationToken.None).ConfigureAwait(false);
 
         AppBuilder builder = BuildAvaloniaApp();
-        int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync("avalonia", args, CancellationToken.None)
+        int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
+                "avalonia",
+                args,
+                CancellationToken.None,
+                App.InstallLinkingStartupContext)
             .ConfigureAwait(false);
         if (startupSmokeExitCode is not null)
         {

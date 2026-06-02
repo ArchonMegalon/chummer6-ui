@@ -184,7 +184,7 @@
     "release_channel_receipt_exists": true,
     "release_channel_channel_id": "public_stable",
     "release_channel_version": "run-20260601-070650",
-    "release_channel_generated_at": "2026-06-02T07:22:46Z",
+    "release_channel_generated_at": "2026-06-02T09:46:12Z",
     "flagship_gate.headProofs.status_normalized": {
       "avalonia": "pass",
       "blazor-desktop": "pass"
@@ -570,6 +570,7 @@
     "contacts_diary_method_has_rhythm_markers": true,
     "ruleset_orientation_method_has_markers": true,
     "missing_ruleset_orientation_markers": [],
-    "failureCount": 0
+    "failureCount": 0,
+    "release_channel_age_seconds": 26914
   }
 }

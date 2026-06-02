@@ -15,7 +15,7 @@ namespace Chummer.Tests.Presentation;
 public sealed class DesktopHomeWindowStartupTests
 {
     [TestMethod]
-    public void ShouldShowOnStartup_keeps_first_launch_on_real_workbench_when_no_follow_through_is_needed()
+    public void ShouldShowOnStartup_prompts_unclaimed_first_launch_to_link_install()
     {
         bool shouldShow = DesktopHomeWindow.ShouldShowOnStartup(
             installContext: null,
@@ -26,7 +26,7 @@ public sealed class DesktopHomeWindowStartupTests
             campaignServerPlane: null,
             supportProjection: CreateSupportProjection(needsAttention: false));
 
-        Assert.IsFalse(shouldShow, "First launch without install/update/support or restore follow-through should stay on the main workbench quick-start shell.");
+        Assert.IsTrue(shouldShow, "An unclaimed first launch must show the native linking prompt instead of exposing the workbench as a disconnected install.");
     }
 
     [TestMethod]

@@ -71,7 +71,7 @@ public sealed class Next90M141DirectImportRouteProofGuardTests
         Assert.AreEqual(0, root.GetProperty("unresolved").GetArrayLength());
         Assert.AreEqual("chummer6-ui.next90_m141_ui_direct_import_route_proof", root.GetProperty("contract_name").GetString());
         string receiptChannelId = root.GetProperty("channelId").GetString() ?? string.Empty;
-        Assert.AreEqual("preview", receiptChannelId);
+        Assert.AreEqual("public_stable", receiptChannelId);
         Assert.IsFalse(string.IsNullOrWhiteSpace(root.GetProperty("version").GetString()));
 
         JsonElement evidence = root.GetProperty("evidence");

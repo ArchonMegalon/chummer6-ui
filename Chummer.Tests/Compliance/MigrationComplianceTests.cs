@@ -3401,8 +3401,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "dotnet restore \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
         StringAssert.Contains(workflowText, "Publish secondary Windows desktop head");
         StringAssert.Contains(workflowText, "dotnet publish \"Chummer.Blazor.Desktop/Chummer.Blazor.Desktop.csproj\"");
-        Assert.IsFalse(workflowText.Contains("os: macos-latest", StringComparison.Ordinal));
-        Assert.IsFalse(workflowText.Contains("os: macos-13", StringComparison.Ordinal));
+        StringAssert.Contains(workflowText, "os: macos-latest");
         StringAssert.Contains(workflowText, "name: Publish secondary Windows desktop head");
         StringAssert.Contains(workflowText, "out/blazor-desktop/${{ matrix.rid }}");
         StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_KEY");
@@ -3410,7 +3409,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "CHUMMER_WINDOWS_SECONDARY_HEAD_LAUNCH_TARGET");
         StringAssert.Contains(workflowText, "CHUMMER_STARTUP_SMOKE_REQUIRED_INSTALL_PATHS");
         StringAssert.Contains(workflowText, "avalonia/Chummer.Avalonia.exe;blazor-desktop/Chummer.Blazor.Desktop.exe");
-        Assert.IsFalse(workflowText.Contains("installer_ext: dmg", StringComparison.Ordinal));
+        StringAssert.Contains(workflowText, "installer_ext: dmg");
         StringAssert.Contains(workflowText, "name: Startup smoke");
         StringAssert.Contains(workflowText, "bash scripts/run-desktop-startup-smoke.sh");
         StringAssert.Contains(workflowText, "desktop-smoke-${{ matrix.app }}-${{ matrix.rid }}");
@@ -6835,7 +6834,7 @@ public class MigrationComplianceTests
 
             Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
             Assert.AreEqual(sourceVersion, root.GetProperty("version").GetString());
-            Assert.AreEqual("coverage_incomplete", root.GetProperty("rolloutState").GetString());
+            Assert.AreEqual("public_stable", root.GetProperty("rolloutState").GetString());
             Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
 
             string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-linux-x64.receipt.json");

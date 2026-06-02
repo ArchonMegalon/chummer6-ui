@@ -2000,13 +2000,15 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.button.open_report_issue");
         RequireContains(source, "desktop.install_link.title");
         RequireContains(source, "GetRequiredString");
-        RequireContains(source, "Please claim your app before you continue.");
+        RequireContains(source, "I'm not linked. Please link this copy before Chummer shows anything else.");
         RequireContains(source, "desktop.install_link.button.redeem_claim_code");
         RequireContains(source, "desktop.install_link.claim_code_watermark");
         RequireContains(source, "DesktopInstallLinkingRuntime.RedeemClaimCodeAsync");
         RequireContains(source, "RefreshActionState()");
-        RequireContains(source, "Claim this app on chummer.run");
-        RequireContains(source, "Paste the install handoff here or start the signed-in route on chummer.run.");
+        RequireContains(source, "desktop.install_link.button.login_website");
+        RequireContains(source, "e.Cancel = true;");
+        RequireDoesNotContain(source, "ContinueAsGuestAsync");
+        RequireDoesNotContain(source, "desktop.install_link.button.continue_guest");
         RequireContains(source, "desktop.install_link.summary.last_claim_attempt");
         RequireContains(source, "desktop.install_link.summary.hub_message");
         RequireContains(source, "desktop.install_link.summary.claim_error");

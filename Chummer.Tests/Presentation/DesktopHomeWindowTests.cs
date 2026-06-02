@@ -53,7 +53,7 @@ public sealed class DesktopHomeWindowTests
     }
 
     [TestMethod]
-    public void ShouldShowOnStartup_returns_false_when_guest_install_has_no_local_workspace_and_no_follow_through_is_pending()
+    public void ShouldShowOnStartup_returns_true_when_guest_install_has_no_local_workspace()
     {
         bool shouldShow = InvokeShouldShowOnStartup(
             installContext: null,
@@ -64,7 +64,7 @@ public sealed class DesktopHomeWindowTests
             campaignServerPlane: null,
             supportProjection: CreateSupportProjection(needsAttention: false));
 
-        Assert.IsFalse(shouldShow, "A clean first launch should stay on the main workbench shell until there is real install or restore follow-through to review.");
+        Assert.IsTrue(shouldShow, "Unlinked installs must show only the linking gate instead of landing on the workbench.");
     }
 
     [TestMethod]
@@ -170,7 +170,7 @@ public sealed class DesktopHomeWindowTests
     }
 
     [TestMethod]
-    public void ShouldShowOnStartup_returns_false_when_guest_install_already_has_local_workspace()
+    public void ShouldShowOnStartup_returns_true_when_guest_install_already_has_local_workspace()
     {
         bool shouldShow = InvokeShouldShowOnStartup(
             installContext: null,
@@ -197,7 +197,7 @@ public sealed class DesktopHomeWindowTests
             campaignServerPlane: null,
             supportProjection: CreateSupportProjection(needsAttention: false));
 
-        Assert.IsFalse(shouldShow, "Guest installs with live local work should continue straight into the workbench instead of being intercepted by the home overlay.");
+        Assert.IsTrue(shouldShow, "Unlinked installs must not expose local workbench content even when local workspaces already exist.");
     }
 
     private static bool InvokeShouldShowOnStartup(

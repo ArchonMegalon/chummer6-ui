@@ -116,12 +116,12 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.open_account"] = "Open Account",
         ["desktop.install_link.button.link_copy"] = "Link This Copy",
         ["desktop.install_link.button.redeem_claim_code"] = "Redeem In App",
-        ["desktop.install_link.button.continue_guest"] = "Continue as Guest",
+        ["desktop.install_link.button.login_website"] = "Log in on website",
         ["desktop.home.language_summary"] = "Language: {0}\nShipping locales: {1}\nLanguage changes apply fully on restart during the current desktop wave.",
         ["desktop.home.next_safe_action"] = "Next safe action: {0}",
         ["desktop.home.watchout"] = "Watchout: {0}",
         ["desktop.home.intro.claim_failed_guest"] = "This flagship desktop head is still running as a guest because the last claim attempt failed. Link this copy from home before you rely on install-aware support, fix notices, or roaming continuity.",
-        ["desktop.home.intro.guest_recommended_link"] = "This flagship desktop head is ready to continue as a guest, but the account-aware path is the recommended route if you want install-aware support, fix notices, and roaming continuity.",
+        ["desktop.home.intro.guest_recommended_link"] = "I'm not linked. Please link this copy before Chummer shows anything else.",
         ["desktop.home.intro.update_available"] = "A promoted update is ready for this install. Review the update posture before you jump back into campaign work.",
         ["desktop.home.intro.release_posture_review"] = "This desktop head is linked, but the current release posture needs review before you trust update, support, and campaign continuity on this install.",
         ["desktop.home.intro.campaign_watchouts"] = "This desktop head is linked and current enough to continue, but the campaign return lane has watchouts to review before you reopen work.",
@@ -213,7 +213,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.summary.platform"] = "Platform: {0}/{1}",
         ["desktop.install_link.summary.status"] = "Status: {0}",
         ["desktop.install_link.summary.linked_status"] = "Linked. Grant expires {0} UTC.",
-        ["desktop.install_link.summary.guest_status"] = "Not linked yet. You can keep using this copy as a guest.",
+        ["desktop.install_link.summary.guest_status"] = "I'm not linked. Please link this copy before Chummer shows anything else.",
         ["desktop.install_link.summary.last_claim_attempt"] = "Last claim attempt: {0} UTC.",
         ["desktop.install_link.summary.hub_message"] = "Hub message: {0}",
         ["desktop.install_link.summary.claim_error"] = "Claim error: {0}",
@@ -569,7 +569,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Konto öffnen";
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie verknüpfen";
             localized["desktop.install_link.button.redeem_claim_code"] = "In App einlösen";
-            localized["desktop.install_link.button.continue_guest"] = "Als Gast fortfahren";
+            localized["desktop.install_link.button.login_website"] = "Auf der Website anmelden";
             localized["desktop.install_link.shipping_locales"] = "Shipping-Lokale: {0}. Install-, Update- und Support-Vertrauensflusse sollen in dieser Desktop-Welle ausgerichtet bleiben.";
             localized["desktop.install_link.claim_code_watermark"] = "Fugen Sie den Installations-Handoff aus dem angemeldeten Chummer-Download oder Wiederherstellungsablauf ein";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Wenn der gefuhrte Installations-Handoff diese Kopie noch nicht verknupft hat, fugen Sie hier den angemeldeten Installations-Handoff ein, damit Chummer ihn in-app einlosen kann.";
@@ -963,7 +963,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Ouvrir le compte";
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
-            localized["desktop.install_link.button.continue_guest"] = "Continuer en invité";
+            localized["desktop.install_link.button.login_website"] = "Se connecter sur le site";
             localized["desktop.install_link.shipping_locales"] = "Locales livrees : {0}. Les flux de confiance installation, mise a jour et support doivent rester alignes dans cette vague desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Collez le relais d'installation depuis le telechargement Chummer connecte ou le flux de recuperation guide";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Si le relais guide d'installation n'a pas termine la liaison de cette copie, collez ici le relais d'installation connecte pour que Chummer le traite dans l'app.";
@@ -1357,7 +1357,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "アカウントを開く";
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
-            localized["desktop.install_link.button.continue_guest"] = "ゲストとして続行";
+            localized["desktop.install_link.button.login_website"] = "Webサイトでログイン";
             localized["desktop.install_link.shipping_locales"] = "出荷ロケール: {0}。このデスクトップ波では、インストール・更新・サポートの信頼フローを揃える必要があります。";
             localized["desktop.install_link.claim_code_watermark"] = "サインイン済み Chummer ダウンロードまたはガイド付き復旧フローのインストール引き継ぎを貼り付けてください";
             localized["desktop.install_link.status.prompt_guest_claim"] = "ガイド付きインストール引き継ぎでこのコピーのリンクが完了しなかった場合は、ここにサインイン済みのインストール引き継ぎを貼り付けて、Chummer がアプリ内で処理できるようにしてください。";
@@ -1751,7 +1751,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "Abrir conta";
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
-            localized["desktop.install_link.button.continue_guest"] = "Continuar como convidado";
+            localized["desktop.install_link.button.login_website"] = "Entrar no site";
             localized["desktop.install_link.shipping_locales"] = "Locales de envio: {0}. Os fluxos de confianca de instalacao, atualizacao e suporte devem permanecer alinhados nesta onda desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Cole a transferência da instalação vinda do download conectado do Chummer ou do fluxo guiado de recuperação";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Se a transferência guiada da instalação não terminou de vincular esta cópia, cole aqui a transferência conectada para que o Chummer a resolva dentro do app.";
@@ -2145,7 +2145,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.open_account"] = "打开账户";
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
-            localized["desktop.install_link.button.continue_guest"] = "以访客身份继续";
+            localized["desktop.install_link.button.login_website"] = "在网站登录";
             localized["desktop.install_link.shipping_locales"] = "出货语言: {0}。本轮桌面波次中，安装、更新和支持的信任流程应保持一致。";
             localized["desktop.install_link.claim_code_watermark"] = "粘贴来自已登录 Chummer 下载或引导恢复流程的安装接续";
             localized["desktop.install_link.status.prompt_guest_claim"] = "如果引导安装接续尚未完成此副本的绑定，请在此粘贴已登录安装接续，让 Chummer 在应用内完成处理。";

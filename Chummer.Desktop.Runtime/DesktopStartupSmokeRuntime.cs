@@ -25,7 +25,11 @@ public static class DesktopStartupSmokeRuntime
         WriteIndented = true
     };
 
-    public static async Task<int?> TryHandleAsync(string headId, string[] args, CancellationToken cancellationToken)
+    public static async Task<int?> TryHandleAsync(
+        string headId,
+        string[] args,
+        CancellationToken cancellationToken,
+        DesktopInstallLinkingStartupContext? installLinkingStartupContext = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
         ArgumentNullException.ThrowIfNull(args);
@@ -62,6 +66,11 @@ public static class DesktopStartupSmokeRuntime
                 ProcessPath: context.ProcessPath,
                 ArtifactDigest: context.ArtifactDigest,
                 ArtifactDigestSource: context.ArtifactDigestSource,
+                InstallLinkingStatus: installLinkingStartupContext?.State.Status,
+                InstallLinkingPromptRequired: installLinkingStartupContext?.ShouldPrompt,
+                InstallLinkingPromptReason: installLinkingStartupContext?.PromptReason,
+                InstallLinkingLaunchCount: installLinkingStartupContext?.State.LaunchCount,
+                InstallLinkingInstallationId: installLinkingStartupContext?.State.InstallationId,
                 Framework: context.Framework,
                 OperatingSystem: context.OperatingSystem,
                 RecordedAtUtc: DateTimeOffset.UtcNow,
@@ -392,6 +401,11 @@ public static class DesktopStartupSmokeRuntime
         string ProcessPath,
         string? ArtifactDigest,
         string ArtifactDigestSource,
+        string? InstallLinkingStatus,
+        bool? InstallLinkingPromptRequired,
+        string? InstallLinkingPromptReason,
+        int? InstallLinkingLaunchCount,
+        string? InstallLinkingInstallationId,
         string Framework,
         string OperatingSystem,
         DateTimeOffset RecordedAtUtc,

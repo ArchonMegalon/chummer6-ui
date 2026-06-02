@@ -311,6 +311,11 @@ internal sealed class DesktopHomeWindow : Window
             return true;
         }
 
+        if (!DesktopInstallLinkingRuntime.IsClaimed(installState))
+        {
+            return true;
+        }
+
         if (!string.Equals(updateStatus.Status, "current", StringComparison.Ordinal))
         {
             return true;
@@ -911,7 +916,7 @@ internal sealed class DesktopHomeWindow : Window
             return evidenceLine.Replace("Campaign memory evidence", "Campaign consequence proof", StringComparison.OrdinalIgnoreCase);
         }
 
-        return "Campaign consequence proof: no consequence details are available.";
+        return "Campaign consequence proof: no consequence evidence is available.";
     }
 
     private string ResolveCampaignMemoryNextSafeAction()

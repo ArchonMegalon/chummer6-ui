@@ -86,6 +86,66 @@ public sealed class DesktopStartupSmokeRuntimeTests
     }
 
     [TestMethod]
+    public async Task TryHandleAsync_writes_install_linking_gate_status_when_context_is_available()
+    {
+        string receiptPath = Path.Combine(Path.GetTempPath(), $"startup-smoke-install-link-{Guid.NewGuid():N}.json");
+        string? priorReceiptPath = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT");
+        DesktopInstallLinkingState installState = new(
+            InstallationId: $"install-{Guid.NewGuid():N}",
+            HeadId: "avalonia",
+            ApplicationVersion: "local-test",
+            ChannelId: "local",
+            Platform: "linux",
+            Arch: "x64",
+            Status: "guest",
+            CreatedAtUtc: DateTimeOffset.UtcNow,
+            UpdatedAtUtc: DateTimeOffset.UtcNow,
+            LaunchCount: 1,
+            LastStartedAtUtc: DateTimeOffset.UtcNow,
+            ClaimedAtUtc: null,
+            LastPromptDismissedAtUtc: null,
+            PublicKey: "public-key",
+            PrivateKey: "private-key");
+        DesktopInstallLinkingStartupContext installContext = new(
+            State: installState,
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: true,
+            PromptReason: "claim_required");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", receiptPath);
+
+            int? exitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(
+                "avalonia",
+                ["--startup-smoke"],
+                CancellationToken.None,
+                installContext).ConfigureAwait(false);
+
+            Assert.AreEqual(0, exitCode);
+            Assert.IsTrue(File.Exists(receiptPath));
+
+            using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
+            Assert.AreEqual("guest", receipt.RootElement.GetProperty("installLinkingStatus").GetString());
+            Assert.IsTrue(receipt.RootElement.GetProperty("installLinkingPromptRequired").GetBoolean());
+            Assert.AreEqual("claim_required", receipt.RootElement.GetProperty("installLinkingPromptReason").GetString());
+            Assert.AreEqual(1, receipt.RootElement.GetProperty("installLinkingLaunchCount").GetInt32());
+            Assert.AreEqual(installState.InstallationId, receipt.RootElement.GetProperty("installLinkingInstallationId").GetString());
+            Assert.IsFalse(receipt.RootElement.TryGetProperty("grantToken", out _));
+            Assert.IsFalse(receipt.RootElement.TryGetProperty("privateKey", out _));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SMOKE_RECEIPT", priorReceiptPath);
+            if (File.Exists(receiptPath))
+            {
+                File.Delete(receiptPath);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task TryHandleAsync_prefers_explicit_release_channel_override_for_receipt_channel()
     {
         string receiptPath = Path.Combine(Path.GetTempPath(), $"startup-smoke-channel-{Guid.NewGuid():N}.json");

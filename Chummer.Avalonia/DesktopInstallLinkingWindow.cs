@@ -19,9 +19,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly TextBlock _claimCodeLabelText;
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
+    private readonly TextBlock _moreToolsHeading;
+    private readonly StackPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
     private readonly Button _accountButton;
-    private readonly Button _continueGuestButton;
     private readonly Button _redeemClaimCodeButton;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context)
@@ -76,9 +77,6 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _followThroughButton = CreateButton(string.Empty, OpenFollowThroughAsync, isDefault: true);
         _accountButton = CreateButton(string.Empty, OpenAccountAsync);
-        _continueGuestButton = CreateButton(
-            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.continue_guest", _language),
-            ContinueAsGuestAsync);
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
@@ -94,6 +92,26 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton
             }
         };
+        _moreToolsHeading = new TextBlock
+        {
+            Text = "More tools",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+        _moreToolsPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Spacing = 6,
+            Children =
+            {
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
+                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
+            }
+        };
 
         Content = new Border
         {
@@ -107,7 +125,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     _summaryText,
                     new TextBlock
                     {
-                        Text = "Please claim your app before you continue.",
+                        Text = "I'm not linked. Please link this copy before Chummer shows anything else.",
                         FontWeight = FontWeight.SemiBold,
                         TextWrapping = TextWrapping.Wrap
                     },
@@ -139,33 +157,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                     _accountButton
                                 }
                             },
-                            new TextBlock
-                            {
-                                Text = "More tools",
-                                FontWeight = FontWeight.SemiBold,
-                                TextWrapping = TextWrapping.Wrap
-                            },
-                            new StackPanel
-                            {
-                                Orientation = Orientation.Horizontal,
-                                HorizontalAlignment = HorizontalAlignment.Left,
-                                Spacing = 6,
-                                Children =
-                                {
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
-                                    _continueGuestButton,
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _language), CopyInstallIdAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _language), OpenDownloadsAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_support", _language), OpenSupportAsync),
-                                    CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
-                                }
-                            }
+                            _moreToolsHeading,
+                            _moreToolsPanel
                         }
                     }
                 }
             }
         };
 
+        Closing += OnClosing;
         Opened += (_, _) =>
         {
             if (context.ClaimResult is not null)
@@ -177,7 +177,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                SetStatus("Paste the install handoff here or start the signed-in route on chummer.run. Chummer can redeem the handoff in-app and then continue without a browser-only claim ritual.");
+                SetStatus("I'm not linked. Please link this copy from the website before Chummer shows anything else.");
             }
         };
 
@@ -337,17 +337,6 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
-    private Task ContinueAsGuestAsync()
-    {
-        if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
-        {
-            DesktopInstallLinkingRuntime.MarkPromptDismissed(_state.HeadId);
-        }
-
-        Close();
-        return Task.CompletedTask;
-    }
-
     private void RefreshSummary()
     {
         _summaryText.Text = BuildSummary(_state, _updateStatus, _language);
@@ -361,11 +350,24 @@ internal sealed class DesktopInstallLinkingWindow : Window
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
         _accountButton.Content = claimed
             ? "Open linked account"
-            : "Claim this app on chummer.run";
+            : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
+        _followThroughButton.IsVisible = claimed;
         _claimCodeHintText.IsVisible = !claimed;
         _claimCodeLabelText.IsVisible = !claimed;
         _claimCodeEntryRow.IsVisible = !claimed;
-        _continueGuestButton.IsVisible = !claimed;
+        _moreToolsHeading.IsVisible = claimed;
+        _moreToolsPanel.IsVisible = claimed;
+    }
+
+    private void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (DesktopInstallLinkingRuntime.IsClaimed(_state))
+        {
+            return;
+        }
+
+        e.Cancel = true;
+        SetStatus("I'm not linked. Please link this copy from the website before Chummer shows anything else.");
     }
 
     private void SetStatus(string message)

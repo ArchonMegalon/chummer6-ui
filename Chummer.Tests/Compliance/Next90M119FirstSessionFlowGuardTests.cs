@@ -44,9 +44,9 @@ public sealed class Next90M119FirstSessionFlowGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "\"Review Starter Lane\"");
+        StringAssert.Contains(scriptText, "CreateButton(\"Starter\", OpenStarterLaneReviewAsync)");
         StringAssert.Contains(scriptText, "OpenStarterLaneReviewAsync()");
-        StringAssert.Contains(scriptText, "CreateButton(\"Review Starter Lane\", OpenStarterLaneReviewAsync)");
+        StringAssert.Contains(scriptText, "CreateButton(\"Starter\", OpenStarterLaneReviewAsync)");
 
         StringAssert.Contains(projectText, "Compliance\\Next90M119FirstSessionFlowGuardTests.cs");
     }
