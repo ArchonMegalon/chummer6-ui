@@ -1258,6 +1258,25 @@ def load_materializer(path: Path):
 verifier_path = Path(sys.argv[1]).resolve()
 verifier = load_verifier(verifier_path)
 materializer = load_materializer(verifier_path.with_name("materialize_public_release_channel.py"))
+canonical_payload = {}
+canonical_artifacts_by_key = {}
+
+canonical_path = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else None
+if canonical_path is not None and canonical_path.is_file():
+    loaded_canonical = json.loads(canonical_path.read_text(encoding="utf-8-sig"))
+    if isinstance(loaded_canonical, dict):
+        canonical_payload = loaded_canonical
+        for artifact in loaded_canonical.get("artifacts") or []:
+            if not isinstance(artifact, dict):
+                continue
+            keys = {
+                str(artifact.get("artifactId") or artifact.get("id") or "").strip(),
+                str(artifact.get("fileName") or "").strip(),
+                Path(str(artifact.get("downloadUrl") or "").strip()).name,
+            }
+            for key in keys:
+                if key:
+                    canonical_artifacts_by_key[key] = artifact
 
 def required_heads_and_platforms(payload: dict) -> tuple[list[str], list[str]]:
     coverage = payload.get("desktopTupleCoverage")
@@ -1269,6 +1288,59 @@ def required_heads_and_platforms(payload: dict) -> tuple[list[str], list[str]]:
     platforms = [str(item).strip().lower() for item in coverage.get("requiredDesktopPlatforms") or [] if str(item).strip()]
     return (heads or default_heads, platforms or default_platforms)
 
+def hydrate_download_compatibility_from_canonical(local_payload: dict) -> None:
+    downloads = local_payload.get("downloads")
+    if not isinstance(downloads, list) or not canonical_artifacts_by_key:
+        return
+    for row in downloads:
+        if not isinstance(row, dict):
+            continue
+        keys = {
+            str(row.get("artifactId") or row.get("id") or "").strip(),
+            str(row.get("fileName") or "").strip(),
+            Path(str(row.get("url") or row.get("downloadUrl") or "").strip()).name,
+        }
+        canonical = next((canonical_artifacts_by_key[key] for key in keys if key in canonical_artifacts_by_key), None)
+        if not isinstance(canonical, dict):
+            continue
+        for source_key, target_key in (
+            ("artifactId", "artifactId"),
+            ("compatibilityState", "compatibilityState"),
+            ("compatibilityReason", "compatibilityReason"),
+            ("channelId", "channelId"),
+            ("channel", "channel"),
+            ("releaseVersion", "releaseVersion"),
+            ("version", "version"),
+            ("head", "head"),
+            ("platform", "platformId"),
+            ("arch", "arch"),
+            ("installAccessClass", "installAccessClass"),
+        ):
+            value = canonical.get(source_key)
+            if value is not None and str(value).strip():
+                row[target_key] = value
+
+def artifact_rows_for_registry(local_payload: dict) -> list[dict]:
+    artifacts = local_payload.get("artifacts")
+    if isinstance(artifacts, list):
+        return artifacts
+    downloads = local_payload.get("downloads")
+    if not isinstance(downloads, list):
+        return []
+    rows: list[dict] = []
+    for item in downloads:
+        if not isinstance(item, dict):
+            continue
+        row = dict(item)
+        row.setdefault("artifactId", row.get("id"))
+        row.setdefault("downloadUrl", row.get("url"))
+        row.setdefault("fileName", Path(str(row.get("url") or "")).name)
+        rows.append(row)
+    return rows
+
+def is_downloads_compatibility_payload(local_payload: dict) -> bool:
+    return isinstance(local_payload.get("downloads"), list) and not isinstance(local_payload.get("artifacts"), list)
+
 for raw_path in sys.argv[2:]:
     manifest_path = Path(raw_path).resolve()
     if not manifest_path.is_file():
@@ -1276,12 +1348,17 @@ for raw_path in sys.argv[2:]:
     payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
     if not isinstance(payload, dict):
         raise SystemExit(f"release manifest must be a JSON object: {manifest_path}")
+    hydrate_download_compatibility_from_canonical(payload)
 
     def fallback_tuple_coverage(local_payload: dict) -> dict | None:
+        if is_downloads_compatibility_payload(local_payload):
+            canonical_coverage = canonical_payload.get("desktopTupleCoverage")
+            if isinstance(canonical_coverage, dict):
+                return json.loads(json.dumps(canonical_coverage))
         if materializer is None or not hasattr(materializer, "desktop_tuple_coverage"):
             return None
-        artifacts = local_payload.get("artifacts")
-        if not isinstance(artifacts, list):
+        artifacts = artifact_rows_for_registry(local_payload)
+        if not artifacts:
             return None
         required_heads, required_platforms = required_heads_and_platforms(local_payload)
         return materializer.desktop_tuple_coverage(
@@ -1311,7 +1388,7 @@ for raw_path in sys.argv[2:]:
         if materializer is None:
             return current_value
         tuple_coverage = fallback_tuple_coverage(payload)
-        artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), list) else []
+        artifacts = artifact_rows_for_registry(payload)
         channel_id = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
         release_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
         fallback_helpers = {
