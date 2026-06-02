@@ -13,6 +13,11 @@ on:
         required: false
         default: true
         type: boolean
+      require_external_deploy:
+        description: "Fail if no portal directory, object-storage, or HTTP promotion target is configured."
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -43,6 +48,7 @@ on:
       - 'scripts/publish-download-bundle-http.sh'
       - 'scripts/publish-download-bundle-s3.sh'
       - 'scripts/verify-releases-manifest.sh'
+      - 'scripts/verify-desktop-external-deploy-readiness.py'
       - 'scripts/validate-amend-manifests.sh'
       - 'scripts/ai/milestones/b14-flagship-ui-release-gate.sh'
       - 'scripts/ai/milestones/b15-localization-release-gate.sh'
@@ -651,6 +657,65 @@ jobs:
             echo "- Tag: \`$release_tag\`"
             echo "- Bundle: \`desktop-download-bundle\`"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  audit-external-deploy-readiness:
+    name: Audit External Deploy Readiness
+    needs: generate-manifest
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    env:
+      REQUIRE_EXTERNAL_DEPLOY: ${{ github.event_name == 'workflow_dispatch' && inputs.require_external_deploy }}
+      CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR }}
+      CHUMMER_PORTAL_DOWNLOADS_S3_URI: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI }}
+      CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL }}
+      CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
+      CHUMMER_RELEASE_UPLOAD_TOKEN: ${{ secrets.CHUMMER_RELEASE_UPLOAD_TOKEN }}
+      CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID: ${{ secrets.CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID }}
+      CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY: ${{ secrets.CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Materialize deploy readiness receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "${REQUIRE_EXTERNAL_DEPLOY}" == "true" ]]; then
+            args+=(--require-external-deploy)
+          fi
+          python3 scripts/verify-desktop-external-deploy-readiness.py "${args[@]}"
+
+      - name: Publish deploy readiness summary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+
+          with open("deploy-readiness/EXTERNAL_DEPLOY_READINESS.generated.json", encoding="utf-8") as fh:
+              receipt = json.load(fh)
+          print("## External Deploy Readiness")
+          print()
+          print(f"- Status: `{receipt['status']}`")
+          print(f"- Require external deploy: `{str(receipt['requireExternalDeploy']).lower()}`")
+          print(f"- Complete modes: `{', '.join(receipt['completeModes']) if receipt['completeModes'] else 'none'}`")
+          print(f"- Configured modes: `{', '.join(receipt['configuredModes']) if receipt['configuredModes'] else 'none'}`")
+          print()
+          print(receipt["summary"])
+          for mode in receipt["modes"]:
+              missing = ", ".join(mode["missing"]) if mode["missing"] else "none"
+              print(f"- `{mode['mode']}` missing: `{missing}`")
+          PY
+
+      - name: Upload deploy readiness receipt
+        uses: actions/upload-artifact@v7
+        with:
+          name: external-deploy-readiness
+          path: deploy-readiness
+          if-no-files-found: error
+          retention-days: 14
 
   deploy-downloads:
     name: Deploy Downloads Bundle

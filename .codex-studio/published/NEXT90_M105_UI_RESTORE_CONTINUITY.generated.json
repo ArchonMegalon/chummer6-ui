@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-06-02T08:05:13Z",
+  "generatedAt": "2026-06-02T09:07:59Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "82e26a91",
-        "subject": "Harden release proof gates and evidence",
-        "sha": "82e26a915fa742d7e17f95c7d9c32d88d39d4ce4",
+        "commit": "b05e8800",
+        "subject": "Harden macOS desktop packaging",
+        "sha": "b05e8800fe5c96ad6bb8d76a68283fcbf8943a63",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -394,7 +394,7 @@
       "has_relevant_changes": false,
       "changes": []
     },
-    "headCommit": "82e26a915fa742d7e17f95c7d9c32d88d39d4ce4",
+    "headCommit": "aebdee93aa52919b6d8952a529d83afb90b47ec9",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
