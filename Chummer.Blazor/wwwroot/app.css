@@ -347,16 +347,11 @@ button:disabled {
 }
 
 .left-pane,
-.right-pane,
 .center-pane {
     display: grid;
     gap: 0.15rem;
     align-content: start;
     min-height: 0;
-}
-
-.right-pane {
-    display: none;
 }
 
 .panel {

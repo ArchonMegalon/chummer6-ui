@@ -49,7 +49,7 @@ internal static class AccessibilitySignoffSmokeTests
             DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
             PrimaryDesktopSummaryHeader_keeps_restore_stale_and_conflict_choices_visible();
             ShellNavigator_wires_ruleset_specific_headings_and_labels();
-            ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy();
+            DesktopShell_removes_right_rail_and_workspace_strip_keeps_ruleset_specific_copy();
             DesktopShell_ruleset_matrix_coverage_is_published_and_executable();
             DesktopHome_exposes_claim_aware_install_and_update_actions();
             DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
@@ -1777,14 +1777,15 @@ internal static class AccessibilitySignoffSmokeTests
         RequireDoesNotContain(projectorSource, "Conflict choices:");
     }
 
-    private static void ShellRightRail_and_workspace_strip_wire_ruleset_specific_copy()
+    private static void DesktopShell_removes_right_rail_and_workspace_strip_keeps_ruleset_specific_copy()
     {
         string desktopShellSource = ReadSource("Chummer.Blazor/Components/Layout/DesktopShell.razor");
         RequireContains(desktopShellSource, "<MdiStrip");
         RequireContains(desktopShellSource, "RulesetId=\"@_shellSurfaceState.ActiveRulesetId\"");
-        RequireContains(desktopShellSource, "<ImportPanel");
-        RequireContains(desktopShellSource, "<CommandPanel");
-        RequireContains(desktopShellSource, "<ResultPanel");
+        RequireDoesNotContain(desktopShellSource, "<aside class=\"right-pane\"");
+        RequireDoesNotContain(desktopShellSource, "<ImportPanel");
+        RequireDoesNotContain(desktopShellSource, "<CommandPanel");
+        RequireDoesNotContain(desktopShellSource, "<ResultPanel");
 
         string mdiStripSource = ReadSource("Chummer.Blazor/Components/Shell/MdiStrip.razor");
         RequireContains(mdiStripSource, "BuildWorkspaceStripEmptyState()");

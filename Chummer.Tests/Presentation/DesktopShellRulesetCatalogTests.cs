@@ -96,9 +96,10 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.AreEqual(0, cut.FindAll(".workbench-summary-copy").Count, "Desktop shell must keep the header tab-only in the compact single-runner posture.");
             Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count, "Desktop shell must not burn header width on runtime copy in the compact single-runner posture.");
             Assert.IsFalse(cut.Markup.Contains(expectedDossiers, StringComparison.Ordinal), "Single-runner posture must not surface workspace dossiers on first paint.");
-            StringAssert.Contains(cut.Markup, expectedImportHeading);
-            StringAssert.Contains(cut.Markup, expectedResultHeading);
-            StringAssert.Contains(cut.Markup, expectedCommandHeading);
+            Assert.AreEqual(0, cut.FindAll(".right-pane").Count, "The desktop shell must not mount the removed right-side frame.");
+            Assert.IsFalse(cut.Markup.Contains(expectedImportHeading, StringComparison.Ordinal), "Import heading belonged to the removed right rail.");
+            Assert.IsFalse(cut.Markup.Contains(expectedResultHeading, StringComparison.Ordinal), "Result heading belonged to the removed right rail.");
+            Assert.AreEqual(1, cut.FindAll(".center-pane").Count);
             StringAssert.Contains(cut.Find("#complianceState").TextContent, "Ruleset:");
             StringAssert.Contains(cut.Find("#complianceState").TextContent, RulesetUiDirectiveCatalog.Resolve(rulesetId).DisplayName);
             StringAssert.Contains(cut.Find("#complianceState").TextContent, RulesetUiDirectiveCatalog.Resolve(rulesetId).FileExtension);
@@ -462,7 +463,7 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [TestMethod]
-    public void DesktopShell_renders_coach_sidecar_for_active_runtime()
+    public void DesktopShell_does_not_mount_right_sidecar_for_active_runtime()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -521,38 +522,24 @@ public sealed class DesktopShellRulesetCatalogTests
             new Sr6CatalogPlugin());
 
         IRenderedComponent<DesktopShell> cut = context.Render<DesktopShell>();
-        cut.Find("[data-testid=\"refresh-workbench-coach-sidecar\"]").Click();
 
         cut.WaitForAssertion(() =>
         {
-            StringAssert.Contains(cut.Markup, "Coach Sidecar");
-            StringAssert.Contains(cut.Markup, "Grounded Guidance");
-            StringAssert.Contains(cut.Markup, "Recent Coach Guidance");
-            StringAssert.Contains(cut.Markup, "AI Magicx");
-            StringAssert.Contains(cut.Markup, "Transport: ready · base yes · model yes · keys primary 1 / fallback 0 · route coach · binding primary / slot 0");
-            StringAssert.Contains(cut.Markup, "cache hit");
-            StringAssert.Contains(cut.Markup, "Keep the active runtime pinned before previewing Karma spend.");
-            StringAssert.Contains(cut.Markup, "Signal's clean. Keep the deck on the grounded lane.");
-            StringAssert.Contains(cut.Markup, "Budget snapshot: 18 / 400 chummer-ai-units");
-            StringAssert.Contains(cut.Markup, "Structured summary: Preview Karma against the pinned runtime before you commit advancement changes.");
-            StringAssert.Contains(cut.Markup, "Recommendations: 1 · Preview Karma spend");
-            StringAssert.Contains(cut.Markup, "Evidence: 1 · Pinned runtime");
-            StringAssert.Contains(cut.Markup, "Risks: 1 · Preview first");
-            StringAssert.Contains(cut.Markup, "Sources: 1 sources / 1 action drafts");
-            StringAssert.Contains(cut.Markup, "382 left / 5 burst");
-            StringAssert.Contains(cut.Markup, "data-testid=\"open-workbench-coach-sidecar\"");
-            StringAssert.Contains(cut.Markup, "data-testid=\"workbench-coach-provider-transport\"");
-            StringAssert.Contains(cut.Markup, "data-testid=\"open-workbench-coach-thread\"");
-            StringAssert.Contains(cut.Markup, "/coach/?routeType=coach&amp;conversationId=conv.workbench-coach-1&amp;runtimeFingerprint=sr6-runtime-fp-001&amp;workspaceId=ws-sr6");
-            StringAssert.Contains(cut.Markup, "/coach/?routeType=coach&amp;runtimeFingerprint=sr6-runtime-fp-001&amp;workspaceId=ws-sr6");
+            Assert.AreEqual(0, cut.FindAll(".right-pane").Count, "Desktop workspace must not mount the removed right-side frame.");
+            Assert.AreEqual(0, cut.FindAll("[data-testid=\"refresh-workbench-coach-sidecar\"]").Count, "Coach sidecar must not mount in the removed right rail.");
+            Assert.AreEqual(0, cut.FindAll("[data-import-trust-receipt]").Count, "Import panel must not mount in the removed right rail.");
+            Assert.AreEqual(1, cut.FindAll(".center-pane").Count, "Workspace content should use the center pane only.");
+            Assert.IsFalse(cut.Markup.Contains("Coach Sidecar", StringComparison.Ordinal), "Coach sidecar heading must not render in the removed right rail.");
+            Assert.IsFalse(cut.Markup.Contains("Grounded Guidance", StringComparison.Ordinal), "Coach sidecar subtitle must not render in the removed right rail.");
+            Assert.IsFalse(cut.Markup.Contains("Recent Coach Guidance", StringComparison.Ordinal), "Coach sidecar history must not render in the removed right rail.");
         });
 
-        Assert.AreEqual(1, coachClient.StatusCalls);
-        Assert.AreEqual(1, coachClient.ProviderHealthCalls);
-        Assert.AreEqual(1, coachClient.AuditCalls);
-        Assert.AreEqual(AiRouteTypes.Coach, coachClient.LastAuditRouteType);
-        Assert.AreEqual("sr6-runtime-fp-001", coachClient.LastRuntimeFingerprint);
-        Assert.AreEqual(3, coachClient.LastMaxCount);
+        Assert.AreEqual(0, coachClient.StatusCalls);
+        Assert.AreEqual(0, coachClient.ProviderHealthCalls);
+        Assert.AreEqual(0, coachClient.AuditCalls);
+        Assert.IsNull(coachClient.LastAuditRouteType);
+        Assert.IsNull(coachClient.LastRuntimeFingerprint);
+        Assert.AreEqual(0, coachClient.LastMaxCount);
     }
 
     private static void RegisterDesktopShellServices(

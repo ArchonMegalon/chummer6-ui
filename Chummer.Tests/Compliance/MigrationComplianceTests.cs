@@ -3221,8 +3221,8 @@ public class MigrationComplianceTests
         Assert.IsFalse(mainLayoutText.Contains("IsHomeRoute()", StringComparison.Ordinal));
         Assert.IsFalse(mainLayoutText.Contains("@Body", StringComparison.Ordinal));
         StringAssert.Contains(desktopShellText, "class=\"desktop-shell classic-desktop-shell\"");
-        StringAssert.Contains(desktopShellText, "ImportedFileName=\"@ImportedFileName\"");
-        StringAssert.Contains(desktopShellText, "ImportError=\"@ImportError\"");
+        Assert.IsFalse(desktopShellText.Contains("ImportedFileName=\"@ImportedFileName\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("ImportError=\"@ImportError\"", StringComparison.Ordinal));
         StringAssert.Contains(desktopShellText, "LastUiUtc=\"@_lastUiUtc\"");
         Assert.IsFalse(desktopShellText.Contains("ImportedFileName=\"ImportedFileName\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopShellText.Contains("ImportError=\"ImportError\"", StringComparison.Ordinal));
@@ -3235,7 +3235,7 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
-    public void Blazor_workbench_head_embeds_coach_sidecar_for_active_runtime_context()
+    public void Blazor_workbench_head_does_not_embed_removed_right_rail_sidecar()
     {
         string blazorProgramPath = FindPath("Chummer.Blazor", "Program.cs");
         string blazorProgramText = File.ReadAllText(blazorProgramPath);
@@ -3251,16 +3251,17 @@ public class MigrationComplianceTests
         string componentTestsText = File.ReadAllText(componentTestsPath);
 
         StringAssert.Contains(blazorProgramText, "AddHttpClient<IWorkbenchCoachApiClient, WorkbenchCoachApiClient>");
-        StringAssert.Contains(desktopShellText, "Coach Sidecar");
-        StringAssert.Contains(desktopShellText, "Grounded Guidance");
-        StringAssert.Contains(desktopShellText, "Recent Coach Guidance");
-        StringAssert.Contains(desktopShellText, "data-testid=\"open-workbench-coach-sidecar\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"refresh-workbench-coach-sidecar\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"workbench-coach-provider-transport\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"open-workbench-coach-thread\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"workbench-coach-audit-flavor\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"workbench-coach-audit-budget\"");
-        StringAssert.Contains(desktopShellText, "data-testid=\"workbench-coach-audit-structured\"");
+        Assert.IsFalse(desktopShellText.Contains("<aside class=\"right-pane\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("Coach Sidecar", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("Grounded Guidance", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("Recent Coach Guidance", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"open-workbench-coach-sidecar\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"refresh-workbench-coach-sidecar\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"workbench-coach-provider-transport\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"open-workbench-coach-thread\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"workbench-coach-audit-flavor\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"workbench-coach-audit-budget\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopShellText.Contains("data-testid=\"workbench-coach-audit-structured\"", StringComparison.Ordinal));
         StringAssert.Contains(desktopShellCodeText, "RefreshCoachSidecarIfNeededAsync");
         StringAssert.Contains(desktopShellCodeText, "BuildCoachLaunchUri");
         StringAssert.Contains(desktopShellCodeText, "AiCoachLaunchQuery.BuildRelativeUri");
@@ -3272,8 +3273,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(coachClientText, "(\"routeType\", routeType)");
         StringAssert.Contains(coachClientText, "/api/ai/conversation-audits");
         StringAssert.Contains(coachClientText, "HttpClient");
-        StringAssert.Contains(componentTestsText, "DesktopShell_renders_coach_sidecar_for_active_runtime");
-        StringAssert.Contains(componentTestsText, "open-workbench-coach-sidecar");
+        StringAssert.Contains(componentTestsText, "DesktopShell_does_not_mount_right_sidecar_for_active_runtime");
+        StringAssert.Contains(componentTestsText, "Desktop workspace must not mount the removed right-side frame.");
     }
 
     [TestMethod]
