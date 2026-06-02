@@ -796,6 +796,8 @@ build_macos_installer() {
   local plist_path="$contents_dir/Info.plist"
   local bundle_identifier
   local original_publish_dir
+  local stage_size_kb
+  local image_size_mb
   bundle_identifier="$(macos_bundle_identifier)"
   local hdiutil_tmp_root="${CHUMMER_DESKTOP_INSTALLER_TMPDIR:-${TMPDIR:-$DIST_DIR/tmp}}"
   local hdiutil_tmp_work="$hdiutil_tmp_root/hdiutil-$APP_KEY-$RID"
@@ -873,9 +875,15 @@ EOF
   sign_macos_app_bundle_if_configured "$app_bundle"
 
   rm -f "$DIST_DIR/$installer_name"
+  stage_size_kb="$(du -sk "$stage_root" | awk '{print $1}')"
+  image_size_mb=$(( (stage_size_kb + 1023) / 1024 ))
+  image_size_mb=$(( image_size_mb + image_size_mb / 2 + 256 ))
+  echo "macOS dmg sizing: staged=${stage_size_kb}KiB image=${image_size_mb}MiB tmpdir=$hdiutil_tmp_work" >&2
   if ! TMPDIR="$hdiutil_tmp_work" hdiutil create \
     -volname "$APP_DISPLAY" \
     -srcfolder "$stage_root" \
+    -fs HFS+ \
+    -size "${image_size_mb}m" \
     -ov \
     -format UDZO \
     "$DIST_DIR/$installer_name" >/dev/null; then
