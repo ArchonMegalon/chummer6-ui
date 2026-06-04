@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Chummer.Application.Characters;
 using Chummer.Application.Content;
+using Chummer.Application.Session;
 using Chummer.Application.Workspaces;
 using Chummer.Contracts.Assets;
 using Chummer.Contracts.Campaign;
@@ -23,7 +24,6 @@ using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Infrastructure.Xml;
 using Chummer.Presentation;
-using Chummer.Presentation.Explain;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
@@ -367,7 +367,7 @@ public class RulesetSeamContractsTests
                 Karma: 0m,
                 Nuyen: 0m,
                 Created: true));
-        SessionEvent sessionEvent = new(
+        SessionEventEnvelope sessionEvent = new(
             EventId: "evt-1",
             OverlayId: "overlay-1",
             BaseCharacterVersion: baseCharacterVersion,
@@ -375,7 +375,11 @@ public class RulesetSeamContractsTests
             ActorId: "user-1",
             Sequence: 1,
             EventType: SessionEventTypes.TrackerIncrement,
-            PayloadJson: "{\"trackerId\":\"stun\",\"amount\":1}",
+            Payload: new Dictionary<string, RulesetCapabilityValue>(StringComparer.Ordinal)
+            {
+                ["trackerId"] = RulesetCapabilityBridge.FromObject("stun"),
+                ["amount"] = RulesetCapabilityBridge.FromObject(1)
+            },
             CreatedAtUtc: DateTimeOffset.UtcNow);
         SessionLedger ledger = new(
             OverlayId: "overlay-1",
@@ -543,7 +547,7 @@ public class RulesetSeamContractsTests
             VersionId: "charv-1",
             RulesetId: RulesetDefaults.Sr5,
             RuntimeFingerprint: "runtime-lock-sha256");
-        SessionEvent sessionEvent = new(
+        SessionEventEnvelope sessionEvent = new(
             EventId: "evt-1",
             OverlayId: "overlay-1",
             BaseCharacterVersion: baseCharacterVersion,
@@ -551,7 +555,11 @@ public class RulesetSeamContractsTests
             ActorId: "user-1",
             Sequence: 1,
             EventType: SessionEventTypes.TrackerIncrement,
-            PayloadJson: "{\"trackerId\":\"stun\",\"amount\":1}",
+            Payload: new Dictionary<string, RulesetCapabilityValue>(StringComparer.Ordinal)
+            {
+                ["trackerId"] = RulesetCapabilityBridge.FromObject("stun"),
+                ["amount"] = RulesetCapabilityBridge.FromObject(1)
+            },
             CreatedAtUtc: DateTimeOffset.UtcNow);
         SessionSyncBatch batch = new(
             OverlayId: "overlay-1",
@@ -1199,18 +1207,32 @@ public class RulesetSeamContractsTests
                 new SessionExplainEntry(
                     EntryId: "explain-1",
                     Kind: SessionExplainEntryKinds.TrackerThreshold,
-                    Title: "Stun Threshold",
-                    Summary: "Warning threshold at 8.",
-                    Fragments: ["stun-warning at 8"],
+                    TitleKey: "session.explain.entry.tracker-threshold.title",
+                    TitleParameters: [],
+                    SummaryKey: "session.explain.entry.tracker-threshold.summary",
+                    SummaryParameters: [new RulesetExplainParameter("threshold", RulesetCapabilityBridge.FromObject(8))],
+                    Fragments:
+                    [
+                        new SessionExplainFragment(
+                            FragmentKey: "session.explain.fragment.tracker-threshold",
+                            Parameters: [new RulesetExplainParameter("threshold", RulesetCapabilityBridge.FromObject(8))])
+                    ],
                     ProviderId: "sr5-core/tracker-threshold",
                     PackId: "sr5-core",
                     GasUsed: 18),
                 new SessionExplainEntry(
                     EntryId: "explain-2",
                     Kind: SessionExplainEntryKinds.QuickActionAvailability,
-                    Title: "Fire Weapon",
-                    Summary: "Available because the action economy is open.",
-                    Fragments: ["phase=open"],
+                    TitleKey: "session.explain.entry.quick-action.title",
+                    TitleParameters: [new RulesetExplainParameter("actionId", RulesetCapabilityBridge.FromObject("fire-weapon"))],
+                    SummaryKey: "session.explain.entry.quick-action.summary",
+                    SummaryParameters: [new RulesetExplainParameter("phase", RulesetCapabilityBridge.FromObject("open"))],
+                    Fragments:
+                    [
+                        new SessionExplainFragment(
+                            FragmentKey: "session.explain.fragment.quick-action.phase",
+                            Parameters: [new RulesetExplainParameter("phase", RulesetCapabilityBridge.FromObject("open"))])
+                    ],
                     ProviderId: "sr5-core/quick-action",
                     PackId: "sr5-core",
                     GasUsed: 22)
@@ -2502,6 +2524,37 @@ public class RulesetSeamContractsTests
     }
 
     [TestMethod]
+    public void Build_lab_create_tab_and_action_are_exposed_across_ruleset_catalogs()
+    {
+        IReadOnlyList<NavigationTabDefinition> hostingTabs = NavigationTabCatalog.ForRuleset(RulesetDefaults.Sr5);
+        IReadOnlyList<WorkspaceSurfaceActionDefinition> hostingActions = WorkspaceSurfaceActionCatalog.ForRuleset(RulesetDefaults.Sr5);
+        IReadOnlyList<NavigationTabDefinition> sr5Tabs = new Sr5RulesetShellDefinitionProvider().GetNavigationTabs();
+        IReadOnlyList<NavigationTabDefinition> sr4Tabs = new Sr4RulesetShellDefinitionProvider().GetNavigationTabs();
+        IReadOnlyList<NavigationTabDefinition> sr6Tabs = new Sr6RulesetShellDefinitionProvider().GetNavigationTabs();
+        IReadOnlyList<WorkspaceSurfaceActionDefinition> sr5Actions = new Sr5RulesetCatalogProvider().GetWorkspaceActions();
+        IReadOnlyList<WorkspaceSurfaceActionDefinition> sr4Actions = new Sr4RulesetCatalogProvider().GetWorkspaceActions();
+        IReadOnlyList<WorkspaceSurfaceActionDefinition> sr6Actions = new Sr6RulesetCatalogProvider().GetWorkspaceActions();
+        IReadOnlyList<WorkflowSurfaceDefinition> sr5Surfaces = new Sr5RulesetCatalogProvider().GetWorkflowSurfaces();
+        IReadOnlyList<WorkflowSurfaceDefinition> sr4Surfaces = new Sr4RulesetCatalogProvider().GetWorkflowSurfaces();
+        IReadOnlyList<WorkflowSurfaceDefinition> sr6Surfaces = new Sr6RulesetCatalogProvider().GetWorkflowSurfaces();
+
+        Assert.IsTrue(hostingTabs.Any(tab => string.Equals(tab.Id, "tab-create", StringComparison.Ordinal) && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(hostingActions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
+
+        Assert.IsTrue(sr5Tabs.Any(tab => string.Equals(tab.Id, "tab-create", StringComparison.Ordinal) && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Tabs.Any(tab => string.Equals(tab.Id, "tab-create", StringComparison.Ordinal) && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-create", StringComparison.Ordinal) && string.Equals(tab.SectionId, "build-lab", StringComparison.Ordinal)));
+
+        Assert.IsTrue(sr5Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
+
+        Assert.IsTrue(sr5Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr5.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
+        Assert.IsTrue(sr4Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr4.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
+        Assert.IsTrue(sr6Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr6.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
+    }
+
+    [TestMethod]
     public void Ruleset_plugin_contracts_are_declared_for_serializer_shell_catalog_capability_rule_and_script_hosts()
     {
         Assert.IsTrue(typeof(IRulesetPlugin).IsInterface);
@@ -2527,42 +2580,43 @@ public class RulesetSeamContractsTests
         RulesetExecutionOptions options = new(
             Explain: true,
             GasBudget: gasBudget);
-        RulesetExplainTrace explainTrace = RulesetExplainContractFactory.CreateTrace(
-            new ExplainTraceSeed(
-                Subject: new ExplainTextSeed("derive.stat", FallbackText: "derive.stat"),
-                Providers:
-                [
-                    new ExplainProviderSeed(
-                        Provider: new ExplainProvenanceSeed("sr5/derive.stat.body", new ExplainTextSeed("sr5/derive.stat.body", FallbackText: "sr5/derive.stat.body")),
-                        Capability: new ExplainProvenanceSeed(RulePackCapabilityIds.DeriveStat, new ExplainTextSeed(RulePackCapabilityIds.DeriveStat, FallbackText: RulePackCapabilityIds.DeriveStat)),
-                        Pack: new ExplainProvenanceSeed("house-rules", new ExplainTextSeed("house-rules", FallbackText: "house-rules")),
-                        Success: true,
-                        Fragments:
-                        [
-                            new ExplainFragmentSeed(
-                                Label: new ExplainTextSeed("Base Body", FallbackText: "Base Body"),
-                                Value: "3",
-                                Reason: new ExplainTextSeed("Metatype base value.", FallbackText: "Metatype base value."),
-                                Pack: new ExplainProvenanceSeed("sr5-core", new ExplainTextSeed("sr5-core", FallbackText: "sr5-core")),
-                                Provider: new ExplainProvenanceSeed("sr5/derive.stat.body", new ExplainTextSeed("sr5/derive.stat.body", FallbackText: "sr5/derive.stat.body")))
-                        ],
-                        GasUsage: new RulesetGasUsage(
-                            ProviderInstructionsConsumed: 120,
-                            RequestInstructionsConsumed: 120,
-                            PeakMemoryBytes: 4096),
-                        Messages:
-                        [
-                            new ExplainTextSeed("Derived body successfully.", FallbackText: "Derived body successfully.")
-                        ])
-                ],
-                Messages:
-                [
-                    new ExplainTextSeed("Trace captured.", FallbackText: "Trace captured.")
-                ],
-                AggregateGasUsage: new RulesetGasUsage(
-                    ProviderInstructionsConsumed: 120,
-                    RequestInstructionsConsumed: 120,
-                    PeakMemoryBytes: 4096)));
+        RulesetExplainTrace explainTrace = new(
+            TargetKey: "derive.stat.body",
+            FinalValue: RulesetCapabilityBridge.FromObject(3),
+            SummaryKey: "ruleset.explain.summary.derive.stat.body",
+            SummaryParameters: [new RulesetExplainParameter("value", RulesetCapabilityBridge.FromObject(3))],
+            Providers:
+            [
+                new RulesetProviderTrace(
+                    ProviderId: "sr5/derive.stat.body",
+                    CapabilityId: RulePackCapabilityIds.DeriveStat,
+                    PackId: "house-rules",
+                    Success: true,
+                    Steps:
+                    [
+                        new RulesetTraceStep(
+                            ProviderId: "sr5/derive.stat.body",
+                            CapabilityId: RulePackCapabilityIds.DeriveStat,
+                            PackId: "sr5-core",
+                            ExplanationKey: "ruleset.explain.step.derive.stat.base",
+                            ExplanationParameters:
+                            [
+                                new RulesetExplainParameter("metatype", RulesetCapabilityBridge.FromObject("human")),
+                                new RulesetExplainParameter("value", RulesetCapabilityBridge.FromObject(3))
+                            ],
+                            Category: "base",
+                            Modifier: 3m,
+                            Certain: true)
+                    ],
+                    GasUsage: new RulesetGasUsage(
+                        ProviderInstructionsConsumed: 120,
+                        RequestInstructionsConsumed: 120,
+                        PeakMemoryBytes: 4096))
+            ],
+            AggregateGasUsage: new RulesetGasUsage(
+                ProviderInstructionsConsumed: 120,
+                RequestInstructionsConsumed: 120,
+                PeakMemoryBytes: 4096));
         RulesetRuleEvaluationRequest ruleRequest = new(
             RuleId: "derive.stat.body",
             Inputs: new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -2578,42 +2632,42 @@ public class RulesetSeamContractsTests
             },
             Messages: ["ok"],
             Explain: explainTrace);
-        RulesetExplainTrace scriptExplainTrace = RulesetExplainContractFactory.CreateTrace(
-            new ExplainTraceSeed(
-                Subject: new ExplainTextSeed("session.quick-actions", FallbackText: "session.quick-actions"),
-                Providers:
-                [
-                    new ExplainProviderSeed(
-                        Provider: new ExplainProvenanceSeed("sr5/session.quick-actions", new ExplainTextSeed("sr5/session.quick-actions", FallbackText: "sr5/session.quick-actions")),
-                        Capability: new ExplainProvenanceSeed(RulePackCapabilityIds.SessionQuickActions, new ExplainTextSeed(RulePackCapabilityIds.SessionQuickActions, FallbackText: RulePackCapabilityIds.SessionQuickActions)),
-                        Pack: new ExplainProvenanceSeed("house-rules", new ExplainTextSeed("house-rules", FallbackText: "house-rules")),
-                        Success: true,
-                        Fragments:
-                        [
-                            new ExplainFragmentSeed(
-                                Label: new ExplainTextSeed("Quick Action Set", FallbackText: "Quick Action Set"),
-                                Value: "2",
-                                Reason: new ExplainTextSeed("Pinned quick actions are session-safe.", FallbackText: "Pinned quick actions are session-safe."),
-                                Pack: new ExplainProvenanceSeed("house-rules", new ExplainTextSeed("house-rules", FallbackText: "house-rules")),
-                                Provider: new ExplainProvenanceSeed("sr5/session.quick-actions", new ExplainTextSeed("sr5/session.quick-actions", FallbackText: "sr5/session.quick-actions")))
-                        ],
-                        GasUsage: new RulesetGasUsage(
-                            ProviderInstructionsConsumed: 80,
-                            RequestInstructionsConsumed: 80,
-                            PeakMemoryBytes: 2048),
-                        Messages:
-                        [
-                            new ExplainTextSeed("Prepared quick actions.", FallbackText: "Prepared quick actions.")
-                        ])
-                ],
-                Messages:
-                [
-                    new ExplainTextSeed("Script trace captured.", FallbackText: "Script trace captured.")
-                ],
-                AggregateGasUsage: new RulesetGasUsage(
-                    ProviderInstructionsConsumed: 80,
-                    RequestInstructionsConsumed: 80,
-                    PeakMemoryBytes: 2048)));
+        RulesetExplainTrace scriptExplainTrace = new(
+            TargetKey: "session.quick-actions",
+            FinalValue: RulesetCapabilityBridge.FromObject(2),
+            SummaryKey: "ruleset.explain.summary.session.quick-actions",
+            SummaryParameters: [new RulesetExplainParameter("quickActions", RulesetCapabilityBridge.FromObject(2))],
+            Providers:
+            [
+                new RulesetProviderTrace(
+                    ProviderId: "sr5/session.quick-actions",
+                    CapabilityId: RulePackCapabilityIds.SessionQuickActions,
+                    PackId: "house-rules",
+                    Success: true,
+                    Steps:
+                    [
+                        new RulesetTraceStep(
+                            ProviderId: "sr5/session.quick-actions",
+                            CapabilityId: RulePackCapabilityIds.SessionQuickActions,
+                            PackId: "house-rules",
+                            ExplanationKey: "ruleset.explain.step.session.quick-actions.pinned",
+                            ExplanationParameters:
+                            [
+                                new RulesetExplainParameter("quickActions", RulesetCapabilityBridge.FromObject(2))
+                            ],
+                            Category: "availability",
+                            Modifier: 2m,
+                            Certain: true)
+                    ],
+                    GasUsage: new RulesetGasUsage(
+                        ProviderInstructionsConsumed: 80,
+                        RequestInstructionsConsumed: 80,
+                        PeakMemoryBytes: 2048))
+            ],
+            AggregateGasUsage: new RulesetGasUsage(
+                ProviderInstructionsConsumed: 80,
+                RequestInstructionsConsumed: 80,
+                PeakMemoryBytes: 2048));
         RulesetScriptExecutionRequest scriptRequest = new(
             ScriptId: "sr5/session.quick-actions",
             ScriptSource: "-- compiled provider reference",
@@ -2633,37 +2687,12 @@ public class RulesetSeamContractsTests
 
         Assert.IsTrue(ruleRequest.Options?.Explain);
         Assert.AreEqual(5000, ruleRequest.Options?.GasBudget?.ProviderInstructionLimit);
-        Assert.AreEqual(RulePackCapabilityIds.DeriveStat, ReadExplainScalar(ruleResult.Explain?.Providers[0].CapabilityId));
+        Assert.AreEqual(RulePackCapabilityIds.DeriveStat, ruleResult.Explain?.Providers[0].CapabilityId);
         Assert.AreEqual(120, ruleResult.Explain?.AggregateGasUsage.RequestInstructionsConsumed);
-        Assert.AreEqual("derive.stat", ReadExplainScalar(ruleResult.Explain?.SubjectId));
+        Assert.AreEqual("derive.stat.body", ruleResult.Explain?.TargetKey);
         Assert.IsTrue(scriptRequest.Options?.Explain);
-        Assert.AreEqual("sr5/session.quick-actions", ReadExplainScalar(scriptResult.Explain?.Providers[0].ProviderId));
-        Assert.AreEqual("house-rules", ReadExplainScalar(scriptResult.Explain?.Providers[0].PackId));
-    }
-
-    private static string? ReadExplainScalar(object? source)
-    {
-        if (source is null)
-        {
-            return null;
-        }
-
-        if (source is string value)
-        {
-            return value;
-        }
-
-        Type type = source.GetType();
-        foreach (string propertyName in new[] { "Id", "ProviderId", "CapabilityId", "PackId", "Key", "LocalizationKey", "Text", "Value" })
-        {
-            System.Reflection.PropertyInfo? property = type.GetProperty(propertyName, System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.IgnoreCase);
-            if (property?.GetValue(source) is string propertyValue && !string.IsNullOrWhiteSpace(propertyValue))
-            {
-                return propertyValue;
-            }
-        }
-
-        return null;
+        Assert.AreEqual("sr5/session.quick-actions", scriptResult.Explain?.Providers[0].ProviderId);
+        Assert.AreEqual("house-rules", scriptResult.Explain?.Providers[0].PackId);
     }
 
     [TestMethod]
@@ -2698,7 +2727,7 @@ public class RulesetSeamContractsTests
                 }),
             Diagnostics:
             [
-                new RulesetCapabilityDiagnostic("rule.ok", "rule ok")
+                new RulesetCapabilityDiagnostic("rule.ok", "rule ok", MessageKey: "rule.ok")
             ]);
         RulesetRuleEvaluationResult bridgedRuleResult = RulesetCapabilityBridge.ToRuleResult(typedRuleResult);
 
@@ -2725,7 +2754,7 @@ public class RulesetSeamContractsTests
             Output: null,
             Diagnostics:
             [
-                new RulesetCapabilityDiagnostic("script.fail", "script failed", RulesetCapabilityDiagnosticSeverities.Error)
+                new RulesetCapabilityDiagnostic("script.fail", "script failed", RulesetCapabilityDiagnosticSeverities.Error, MessageKey: "script.fail")
             ]);
         RulesetScriptExecutionResult bridgedScriptResult = RulesetCapabilityBridge.ToScriptResult(typedScriptResult);
 
@@ -2744,7 +2773,9 @@ public class RulesetSeamContractsTests
             Explainable: true,
             SessionSafe: true,
             DefaultGasBudget: new RulesetGasBudget(1_000, 5_000, 1_048_576, TimeSpan.FromSeconds(1)),
-            MaximumGasBudget: new RulesetGasBudget(5_000, 20_000, 4_194_304, TimeSpan.FromSeconds(2)));
+            MaximumGasBudget: new RulesetGasBudget(5_000, 20_000, 4_194_304, TimeSpan.FromSeconds(2)),
+            TitleKey: "ruleset.capability.session.quick-actions.title",
+            TitleParameters: []);
 
         Assert.AreEqual(RulePackCapabilityIds.SessionQuickActions, descriptor.CapabilityId);
         Assert.AreEqual(RulesetCapabilityInvocationKinds.Script, descriptor.InvocationKind);
@@ -2752,6 +2783,9 @@ public class RulesetSeamContractsTests
         Assert.IsTrue(descriptor.SessionSafe);
         Assert.AreEqual(1_000, descriptor.DefaultGasBudget.ProviderInstructionLimit);
         Assert.AreEqual(20_000, descriptor.MaximumGasBudget?.RequestInstructionLimit);
+        Assert.AreEqual("ruleset.capability.session.quick-actions.title", descriptor.TitleKey);
+        Assert.AreEqual("ruleset.capability.session.quick-actions.title", RulesetCapabilityDescriptorLocalization.ResolveTitleKey(descriptor));
+        Assert.AreEqual(0, RulesetCapabilityDescriptorLocalization.ResolveTitleParameters(descriptor).Count);
     }
 
     [TestMethod]
@@ -2772,6 +2806,12 @@ public class RulesetSeamContractsTests
         Assert.IsNull(typeof(RulesetDefaults).GetMethod("NormalizeOrDefault", [typeof(string), typeof(string)]));
         Assert.IsNull(RulesetDefaults.NormalizeOptional(" "));
         Assert.AreEqual(RulesetDefaults.Sr4, RulesetDefaults.NormalizeRequired(" SR4 "));
+        Assert.AreEqual(RulesetDefaults.Sr4, RulesetDefaults.NormalizeOptional("Shadowrun 4"));
+        Assert.AreEqual(RulesetDefaults.Sr5, RulesetDefaults.NormalizeOptional("Shadowrun Fifth Edition"));
+        Assert.AreEqual(RulesetDefaults.Sr6, RulesetDefaults.NormalizeOptional("sr 6"));
+        Assert.AreEqual(RulesetDefaults.Sr6, RulesetDefaults.NormalizeOptional("sr6.preview.v1"));
+        Assert.AreEqual(RulesetDefaults.Sr5, RulesetDefaults.NormalizeOptional("sr5-preview"));
+        Assert.AreEqual("official.sr5.core", RulesetDefaults.NormalizeOptional("official.sr5.core"));
         Assert.AreEqual(
             RulesetDefaults.Sr6,
             RulesetDefaults.NormalizeOptional(null) ?? RulesetDefaults.NormalizeRequired(RulesetDefaults.Sr6));
@@ -2813,7 +2853,7 @@ public class RulesetSeamContractsTests
     }
 
     [TestMethod]
-    public async Task Sr5_plugin_adapters_expose_existing_shell_catalogs_without_behavior_change()
+    public async Task Sr5_plugin_adapters_expose_existing_shell_catalogs_and_execute_deterministic_rule_execution()
     {
         Sr5RulesetPlugin plugin = new();
 
@@ -2833,7 +2873,9 @@ public class RulesetSeamContractsTests
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkflowSurfaces().Count);
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkspaceActions().Count);
         Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveStat, StringComparison.Ordinal)));
+        Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveInitiative, StringComparison.Ordinal)));
         Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(static descriptor => descriptor.SessionSafe));
+        Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().All(static descriptor => !string.IsNullOrWhiteSpace(descriptor.TitleKey)));
 
         RulesetCapabilityInvocationResult capabilityResult = await plugin.Capabilities.InvokeAsync(
             new RulesetCapabilityInvocationRequest(
@@ -2845,28 +2887,57 @@ public class RulesetSeamContractsTests
                 ]),
             CancellationToken.None);
         Assert.IsTrue(capabilityResult.Success);
-        Assert.AreEqual(12L, capabilityResult.Output?.Properties?["karma"].IntegerValue);
+        Assert.IsNotNull(capabilityResult.Output);
+        Assert.AreEqual("sr5.rule.executed", capabilityResult.Diagnostics[0].MessageKey);
+
+        RulesetCapabilityInvocationResult initiativeResult = await plugin.Capabilities.InvokeAsync(
+            new RulesetCapabilityInvocationRequest(
+                CapabilityId: RulePackCapabilityIds.DeriveInitiative,
+                InvocationKind: RulesetCapabilityInvocationKinds.Rule,
+                Arguments:
+                [
+                    new RulesetCapabilityArgument("reaction", RulesetCapabilityBridge.FromObject(5)),
+                    new RulesetCapabilityArgument("intuition", RulesetCapabilityBridge.FromObject(6)),
+                    new RulesetCapabilityArgument("initiativeDice", RulesetCapabilityBridge.FromObject(2))
+                ]),
+            CancellationToken.None);
+        Assert.IsTrue(initiativeResult.Success);
+        Assert.IsNotNull(initiativeResult.Output);
+        Assert.AreEqual("sr5.initiative.executed", initiativeResult.Diagnostics[0].MessageKey);
+        Assert.AreEqual("initiative.total", initiativeResult.Explain?.TargetKey);
 
         RulesetRuleEvaluationResult ruleResult = await plugin.Rules.EvaluateAsync(
             new RulesetRuleEvaluationRequest(
-                RuleId: "sr5.noop",
-                Inputs: new Dictionary<string, object?> { ["karma"] = 12 }),
+                RuleId: RulePackCapabilityIds.DeriveInitiative,
+                Inputs: new Dictionary<string, object?>
+                {
+                    ["reaction"] = 5,
+                    ["intuition"] = 6,
+                    ["initiativeDice"] = 2
+                }),
             CancellationToken.None);
         Assert.IsTrue(ruleResult.Success);
-        Assert.IsTrue(ruleResult.Outputs.ContainsKey("karma"));
+        Assert.IsTrue(ruleResult.Outputs.Count > 0);
+        CollectionAssert.Contains(ruleResult.Messages.ToArray(), "SR5 deterministic derive-initiative capability executed.");
 
         RulesetScriptExecutionResult scriptResult = await plugin.Scripts.ExecuteAsync(
             new RulesetScriptExecutionRequest(
-                ScriptId: "sr5.noop",
+                ScriptId: RulePackCapabilityIds.SessionQuickActions,
                 ScriptSource: "-- noop",
                 Inputs: new Dictionary<string, object?> { ["nuyen"] = 5000 }),
             CancellationToken.None);
         Assert.IsTrue(scriptResult.Success);
-        Assert.AreEqual("noop", scriptResult.Outputs["mode"]);
+        Assert.IsTrue(scriptResult.Outputs.Count > 0);
+        Assert.IsTrue(string.IsNullOrWhiteSpace(scriptResult.Error));
+        Assert.AreEqual(
+            "ruleset.capability.session.quick-actions.title",
+            plugin.CapabilityDescriptors.GetCapabilityDescriptors()
+                .Single(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal))
+                .TitleKey);
     }
 
     [TestMethod]
-    public async Task Sr6_plugin_skeleton_exposes_independent_catalogs_and_codec_contracts()
+    public async Task Sr6_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()
     {
         Sr6RulesetPlugin plugin = new();
         Sr6WorkspaceCodec codec = new();
@@ -2892,6 +2963,7 @@ public class RulesetSeamContractsTests
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkflowSurfaces().Count);
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkspaceActions().Count);
         Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveStat, StringComparison.Ordinal)));
+        Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveInitiative, StringComparison.Ordinal)));
 
         RulesetCapabilityInvocationResult capabilityResult = await plugin.Capabilities.InvokeAsync(
             new RulesetCapabilityInvocationRequest(
@@ -2902,10 +2974,25 @@ public class RulesetSeamContractsTests
                     new RulesetCapabilityArgument("edge", RulesetCapabilityBridge.FromObject(2))
                 ]),
             CancellationToken.None);
-        Assert.IsFalse(capabilityResult.Success);
-        CollectionAssert.Contains(
-            capabilityResult.Diagnostics.Select(static diagnostic => diagnostic.Message).ToArray(),
-            "SR6 rules engine is not implemented; this ruleset remains experimental.");
+        Assert.IsTrue(capabilityResult.Success);
+        Assert.IsNotNull(capabilityResult.Output);
+        Assert.AreEqual("sr6.rule.executed", capabilityResult.Diagnostics[0].MessageKey);
+
+        RulesetCapabilityInvocationResult initiativeResult = await plugin.Capabilities.InvokeAsync(
+            new RulesetCapabilityInvocationRequest(
+                CapabilityId: RulePackCapabilityIds.DeriveInitiative,
+                InvocationKind: RulesetCapabilityInvocationKinds.Rule,
+                Arguments:
+                [
+                    new RulesetCapabilityArgument("reaction", RulesetCapabilityBridge.FromObject(5)),
+                    new RulesetCapabilityArgument("intuition", RulesetCapabilityBridge.FromObject(4)),
+                    new RulesetCapabilityArgument("initiativeDice", RulesetCapabilityBridge.FromObject(2))
+                ]),
+            CancellationToken.None);
+        Assert.IsTrue(initiativeResult.Success);
+        Assert.IsNotNull(initiativeResult.Output);
+        Assert.AreEqual("sr6.initiative.executed", initiativeResult.Diagnostics[0].MessageKey);
+        Assert.AreEqual("initiative.total", initiativeResult.Explain?.TargetKey);
 
         WorkspaceDownloadReceipt download = codec.BuildDownload(
             new CharacterWorkspaceId("ws-sr6"),
@@ -2915,26 +3002,30 @@ public class RulesetSeamContractsTests
 
         RulesetRuleEvaluationResult ruleResult = await plugin.Rules.EvaluateAsync(
             new RulesetRuleEvaluationRequest(
-                RuleId: "sr6.noop",
+                RuleId: RulePackCapabilityIds.DeriveInitiative,
                 Inputs: new Dictionary<string, object?> { ["edge"] = 2 }),
             CancellationToken.None);
-        Assert.IsFalse(ruleResult.Success);
-        Assert.IsEmpty(ruleResult.Outputs);
-        CollectionAssert.Contains(ruleResult.Messages.ToArray(), "SR6 rules engine is not implemented; this ruleset remains experimental.");
+        Assert.IsTrue(ruleResult.Success);
+        Assert.IsTrue(ruleResult.Outputs.Count > 0);
 
         RulesetScriptExecutionResult scriptResult = await plugin.Scripts.ExecuteAsync(
             new RulesetScriptExecutionRequest(
-                ScriptId: "sr6.noop",
+                ScriptId: RulePackCapabilityIds.SessionQuickActions,
                 ScriptSource: "// noop",
                 Inputs: new Dictionary<string, object?> { ["essence"] = 5.8m }),
             CancellationToken.None);
-        Assert.IsFalse(scriptResult.Success);
-        Assert.IsEmpty(scriptResult.Outputs);
-        StringAssert.Contains(scriptResult.Error, "SR6 script host is not implemented");
+        Assert.IsTrue(scriptResult.Success);
+        Assert.IsTrue(scriptResult.Outputs.Count > 0);
+        Assert.IsTrue(string.IsNullOrWhiteSpace(scriptResult.Error));
+        Assert.AreEqual(
+            "ruleset.capability.session.quick-actions.title",
+            plugin.CapabilityDescriptors.GetCapabilityDescriptors()
+                .Single(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal))
+                .TitleKey);
     }
 
     [TestMethod]
-    public async Task Sr4_plugin_scaffold_exposes_independent_catalogs_and_codec_contracts()
+    public async Task Sr4_plugin_exposes_independent_catalogs_and_executes_deterministic_baseline_capabilities()
     {
         Sr4RulesetPlugin plugin = new();
         Sr4WorkspaceCodec codec = new();
@@ -2948,7 +3039,9 @@ public class RulesetSeamContractsTests
 
         WorkspacePayloadEnvelope wrapped = codec.WrapImport(
             RulesetDefaults.Sr4,
-            new WorkspaceImportDocument("<character><name>Ghost</name><alias>Switchback</alias></character>", RulesetDefaults.Sr4));
+            new WorkspaceImportDocument(
+                "<character><name>Ghost</name><alias>Switchback</alias><metatype>Human</metatype><buildmethod>Priority</buildmethod><createdversion>1.0</createdversion><appversion>1.0</appversion><karma>0</karma><nuyen>0</nuyen><created>true</created></character>",
+                RulesetDefaults.Sr4));
         CharacterFileSummary summary = codec.ParseSummary(wrapped);
 
         Assert.AreEqual(RulesetDefaults.Sr4, wrapped.RulesetId);
@@ -2960,6 +3053,7 @@ public class RulesetSeamContractsTests
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkflowSurfaces().Count);
         Assert.IsGreaterThan(0, plugin.Catalogs.GetWorkspaceActions().Count);
         Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveStat, StringComparison.Ordinal)));
+        Assert.IsTrue(plugin.CapabilityDescriptors.GetCapabilityDescriptors().Any(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.DeriveInitiative, StringComparison.Ordinal)));
 
         RulesetCapabilityInvocationResult capabilityResult = await plugin.Capabilities.InvokeAsync(
             new RulesetCapabilityInvocationRequest(
@@ -2970,10 +3064,25 @@ public class RulesetSeamContractsTests
                     new RulesetCapabilityArgument("essence", RulesetCapabilityBridge.FromObject(5.5m))
                 ]),
             CancellationToken.None);
-        Assert.IsFalse(capabilityResult.Success);
-        CollectionAssert.Contains(
-            capabilityResult.Diagnostics.Select(static diagnostic => diagnostic.Message).ToArray(),
-            "SR4 rules engine is not implemented; this ruleset remains experimental.");
+        Assert.IsTrue(capabilityResult.Success);
+        Assert.IsNotNull(capabilityResult.Output);
+        Assert.AreEqual("sr4.rule.executed", capabilityResult.Diagnostics[0].MessageKey);
+
+        RulesetCapabilityInvocationResult initiativeResult = await plugin.Capabilities.InvokeAsync(
+            new RulesetCapabilityInvocationRequest(
+                CapabilityId: RulePackCapabilityIds.DeriveInitiative,
+                InvocationKind: RulesetCapabilityInvocationKinds.Rule,
+                Arguments:
+                [
+                    new RulesetCapabilityArgument("reaction", RulesetCapabilityBridge.FromObject(4)),
+                    new RulesetCapabilityArgument("intuition", RulesetCapabilityBridge.FromObject(5)),
+                    new RulesetCapabilityArgument("initiativeDice", RulesetCapabilityBridge.FromObject(1))
+                ]),
+            CancellationToken.None);
+        Assert.IsTrue(initiativeResult.Success);
+        Assert.IsNotNull(initiativeResult.Output);
+        Assert.AreEqual("sr4.initiative.executed", initiativeResult.Diagnostics[0].MessageKey);
+        Assert.AreEqual("initiative.total", initiativeResult.Explain?.TargetKey);
 
         WorkspaceDownloadReceipt download = codec.BuildDownload(
             new CharacterWorkspaceId("ws-sr4"),
@@ -2983,22 +3092,26 @@ public class RulesetSeamContractsTests
 
         RulesetRuleEvaluationResult ruleResult = await plugin.Rules.EvaluateAsync(
             new RulesetRuleEvaluationRequest(
-                RuleId: "sr4.noop",
+                RuleId: RulePackCapabilityIds.DeriveInitiative,
                 Inputs: new Dictionary<string, object?> { ["essence"] = 5.5m }),
             CancellationToken.None);
-        Assert.IsFalse(ruleResult.Success);
-        Assert.IsEmpty(ruleResult.Outputs);
-        CollectionAssert.Contains(ruleResult.Messages.ToArray(), "SR4 rules engine is not implemented; this ruleset remains experimental.");
+        Assert.IsTrue(ruleResult.Success);
+        Assert.IsTrue(ruleResult.Outputs.Count > 0);
 
         RulesetScriptExecutionResult scriptResult = await plugin.Scripts.ExecuteAsync(
             new RulesetScriptExecutionRequest(
-                ScriptId: "sr4.noop",
+                ScriptId: RulePackCapabilityIds.SessionQuickActions,
                 ScriptSource: "-- noop",
                 Inputs: new Dictionary<string, object?> { ["karma"] = 9 }),
             CancellationToken.None);
-        Assert.IsFalse(scriptResult.Success);
-        Assert.IsEmpty(scriptResult.Outputs);
-        StringAssert.Contains(scriptResult.Error, "SR4 script host is not implemented");
+        Assert.IsTrue(scriptResult.Success);
+        Assert.IsTrue(scriptResult.Outputs.Count > 0);
+        Assert.IsTrue(string.IsNullOrWhiteSpace(scriptResult.Error));
+        Assert.AreEqual(
+            "ruleset.capability.session.quick-actions.title",
+            plugin.CapabilityDescriptors.GetCapabilityDescriptors()
+                .Single(descriptor => string.Equals(descriptor.CapabilityId, RulePackCapabilityIds.SessionQuickActions, StringComparison.Ordinal))
+                .TitleKey);
     }
 
     [TestMethod]
@@ -3020,7 +3133,7 @@ public class RulesetSeamContractsTests
     [TestMethod]
     public async Task Dedicated_session_client_keeps_mobile_boundary_separate_from_workbench_client()
     {
-        InProcessSessionClient sessionClient = new();
+        InProcessSessionClient sessionClient = new(new NotImplementedSessionService());
         SessionApiResult<SessionCharacterCatalog> listResult = await sessionClient.ListCharactersAsync(CancellationToken.None);
         SessionApiResult<RulePackCatalog> rulePackResult = await sessionClient.ListRulePacksAsync(CancellationToken.None);
 

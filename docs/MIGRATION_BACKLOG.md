@@ -8,7 +8,7 @@ Principle: **one shell contract, one behavior path, two renderers**.
 ## Objective
 
 Finish migration execution without re-architecting again. Keep existing seams (`Api`, `Application`, `Contracts`, `Infrastructure`, `Presentation`) and drive parity through shared presenter behavior used by both `Chummer.Blazor` and `Chummer.Avalonia`.
-Current runtime registration remains explicit: default headless/desktop/web paths register SR5 and SR6, while `Chummer.Rulesets.Sr4` remains scaffolded/experimental and is not yet part of the default runtime path.
+Current runtime registration remains explicit: desktop/web runtime paths register SR4, SR5, and SR6, while the bare headless core remains SR5-first unless a host opts into additional ruleset lanes.
 The UI-side ruleset adaptation lane is now published in `docs/RULESET_UI_DIRECTIVE.md`.
 
 ## Guardrails (Non-Negotiable)
@@ -178,7 +178,7 @@ Progress: `WorkspaceDocument` now carries first-class `WorkspaceDocumentState` (
 
 - [x] `MIG-073` Add restart-safe persistence tests for workspace/session state and save/download flows.
 Acceptance criteria: after process restart, persisted workspaces reopen with deterministic metadata and receipts.
-Progress: `RestartSafeWorkspacePersistenceTests` now verify restart-safe bootstrap/session restore plus explicit save, download, export, and print receipts after process restart.
+Progress: `RestartSafeWorkspacePersistenceTests` now verify restart-safe bootstrap/session restore plus explicit save, download, export, and print receipts after process restart. Desktop continuity is also no longer limited to one install-local lane: claimed installs now use a grant-bound hub roaming seam (`/api/v1/install-linking/continuation/workspaces/list` + `/upsert`) with fail-open desktop fallback, same-account isolation, and freshness-tested inbound/outbound sync on list/bootstrap/import/save/update paths.
 
 - [x] `MIG-074` Make content packaging deterministic (data/lang assets) for docker runtime.
 Acceptance criteria: API container startup validates required content bundle and fails fast when missing.

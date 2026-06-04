@@ -35,7 +35,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.ApplicationInsights.DataContracts;
 using NLog;
-using Application = System.Windows.Forms.Application;
 using DataFormats = System.Windows.Forms.DataFormats;
 using DragDropEffects = System.Windows.Forms.DragDropEffects;
 using DragEventArgs = System.Windows.Forms.DragEventArgs;
@@ -75,7 +74,7 @@ namespace Chummer
         {
             token.ThrowIfCancellationRequested();
             string strSpace = await LanguageManager.GetStringAsync("String_Space", token: token).ConfigureAwait(false);
-            return Application.ProductName + strSpace + "-" + strSpace
+            return System.Windows.Forms.Application.ProductName + strSpace + "-" + strSpace
                 + await LanguageManager.GetStringAsync("String_Version", token: token).ConfigureAwait(false) + strSpace
 #if DEBUG
                 + _strCurrentVersion + " DEBUG BUILD";
@@ -1217,8 +1216,8 @@ namespace Chummer
 
 #if !DEBUG
         private Uri UpdateLocation { get; } = new Uri(GlobalSettings.PreferNightlyBuilds
-            ? "https://api.github.com/repos/chummer5a/chummer5a/releases"
-            : "https://api.github.com/repos/chummer5a/chummer5a/releases/latest");
+            ? "https://api.github.com/repos/ArchonMegalon/Chummer6/releases"
+            : "https://api.github.com/repos/ArchonMegalon/Chummer6/releases/latest");
 
         private Task _tskVersionUpdate;
 
@@ -1390,7 +1389,7 @@ namespace Chummer
                         if (Utils.GitUpdateAvailable > 0)
                         {
                             string strSpace = await LanguageManager.GetStringAsync("String_Space", token: objNewToken);
-                            string strNewText = Application.ProductName + strSpace + "-" + strSpace +
+                            string strNewText = System.Windows.Forms.Application.ProductName + strSpace + "-" + strSpace +
                                                 await LanguageManager.GetStringAsync(
                                                     "String_Version", token: objNewToken)
                                                 + strSpace + _strCurrentVersion + strSpace + "-" + strSpace
@@ -1823,7 +1822,7 @@ namespace Chummer
 
         private void mnuChummerWiki_Click(object sender, EventArgs e)
         {
-            Process.Start(new ProcessStartInfo("https://github.com/chummer5a/chummer5a/wiki/") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("https://github.com/ArchonMegalon/Chummer6/wiki/") { UseShellExecute = true });
         }
 
         private void mnuChummerDiscord_Click(object sender, EventArgs e)
@@ -1833,12 +1832,12 @@ namespace Chummer
 
         private void mnuHelpDumpshock_Click(object sender, EventArgs e)
         {
-            Process.Start(new ProcessStartInfo("https://github.com/chummer5a/chummer5a/issues/") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("https://github.com/ArchonMegalon/Chummer6/issues/") { UseShellExecute = true });
         }
 
         private void mnuReportBug_Click(object sender, EventArgs e)
         {
-            Process.Start(new ProcessStartInfo("https://github.com/chummer5a/chummer5a/issues/new/choose") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("https://github.com/ArchonMegalon/Chummer6/issues/new/choose") { UseShellExecute = true });
         }
 
         public PrintMultipleCharacters PrintMultipleCharactersForm => _frmOpenPrintMultipleCharacters;
@@ -4496,7 +4495,7 @@ namespace Chummer
                 {
                     if (++intIndex >= intLength)
                         return objReturn;
-                    if (strArg.EndsWith(Path.GetFileName(Application.ExecutablePath), StringComparison.OrdinalIgnoreCase))
+                    if (strArg.EndsWith(Path.GetFileName(System.Windows.Forms.Application.ExecutablePath), StringComparison.OrdinalIgnoreCase))
                         continue;
                     switch (strArg.ToUpperInvariant())
                     {
@@ -4536,7 +4535,7 @@ namespace Chummer
                                 // This check is needed because applications in .NET 8 are .dlls, and .exe files just serve to launch the .dlls (presumably for cross-platform support)
                                 if (!string.Equals(strExtension, ".dll", StringComparison.OrdinalIgnoreCase)
                                     || !string.Equals(Path.GetFileNameWithoutExtension(strArg),
-                                        Path.GetFileNameWithoutExtension(Application.ExecutablePath),
+                                        Path.GetFileNameWithoutExtension(System.Windows.Forms.Application.ExecutablePath),
                                         StringComparison.OrdinalIgnoreCase))
                                 {
                                     if (!string.Equals(strExtension, ".chum5", StringComparison.OrdinalIgnoreCase)

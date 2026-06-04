@@ -289,7 +289,7 @@ namespace Chummer
             Rectangle bounds = ClientRectangle;
 
             // draw the button background as according to the current state.
-            if (State != PushButtonState.Pressed && IsDefault && !Application.RenderWithVisualStyles)
+            if (State != PushButtonState.Pressed && IsDefault && !System.Windows.Forms.Application.RenderWithVisualStyles)
             {
                 Rectangle backgroundBounds = bounds;
                 backgroundBounds.Inflate(-1, -1);
@@ -313,7 +313,7 @@ namespace Chummer
                               bounds.Width - _dropDownRectangle.Width - internalBorder,
                               bounds.Height - (internalBorder * 2) + 2);
 
-            bool drawSplitLine = (State == PushButtonState.Hot || State == PushButtonState.Pressed || !Application.RenderWithVisualStyles);
+            bool drawSplitLine = (State == PushButtonState.Hot || State == PushButtonState.Pressed || !System.Windows.Forms.Application.RenderWithVisualStyles);
 
             if (RightToLeft == RightToLeft.Yes)
             {
@@ -486,7 +486,7 @@ namespace Chummer
                     textRectangle = OverlayObjectRect(ref content_rect, ref text_size, TextAlign); // Rectangle.Inflate(content_rect, -4, -4);
 
                     //Offset on Windows 98 style when button is pressed
-                    if (_state == PushButtonState.Pressed && !Application.RenderWithVisualStyles)
+                    if (_state == PushButtonState.Pressed && !System.Windows.Forms.Application.RenderWithVisualStyles)
                         textRectangle.Offset(1, 1);
 
                     // Image is dependent on ImageAlign

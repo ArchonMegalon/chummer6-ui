@@ -67,6 +67,62 @@ namespace Chummer
             InitializeComponent();
             tabSkillsUc.MyToken = GenericToken;
             tabPowerUc.MyToken = GenericToken;
+            ConfigureMainSplitContainerForSinglePanel();
+            EnsurePanel2Collapsed();
+            splitMain.Layout += CharacterCreate_EnsurePanel2Hidden;
+            splitMain.SizeChanged += CharacterCreate_EnsurePanel2Hidden;
+            splitMain.SplitterMoved += CharacterCreate_EnsurePanel2Hidden;
+            Shown += CharacterCreate_EnsurePanel2Hidden;
+            Load += CharacterCreate_EnsurePanel2Hidden;
+        }
+
+        private void CharacterCreate_EnsurePanel2Hidden(object sender, System.EventArgs e)
+        {
+            EnsurePanel2Collapsed();
+        }
+
+        private void CharacterCreate_EnsurePanel2Hidden(object sender, System.Windows.Forms.SplitterEventArgs e)
+        {
+            EnsurePanel2Collapsed();
+        }
+
+        private void EnsurePanel2Collapsed()
+        {
+            if (splitMain == null || splitMain.IsDisposed)
+                return;
+
+            splitMain.FixedPanel = FixedPanel.Panel1;
+            splitMain.IsSplitterFixed = true;
+            splitMain.Panel1MinSize = 0;
+            splitMain.Panel2MinSize = 0;
+            splitMain.SplitterWidth = 1;
+            splitMain.Panel2Collapsed = true;
+            splitMain.Panel2.Hide();
+            splitMain.Panel2.Visible = false;
+            splitMain.SplitterDistance = splitMain.Width;
+            splitMain.Panel2.BackColor = SystemColors.Control;
+            splitMain.Panel2.Padding = Padding.Empty;
+        }
+
+        private void ConfigureMainSplitContainerForSinglePanel()
+        {
+            if (splitMain == null || splitMain.IsDisposed)
+                return;
+
+            splitMain.BorderStyle = BorderStyle.None;
+            splitMain.Dock = DockStyle.Fill;
+            splitMain.BackColor = SystemColors.Control;
+            splitMain.Panel1.BackColor = SystemColors.Control;
+            splitMain.Panel2.BackColor = SystemColors.Control;
+            splitMain.Panel1MinSize = 0;
+            splitMain.Panel2MinSize = 0;
+            splitMain.FixedPanel = FixedPanel.Panel1;
+            splitMain.IsSplitterFixed = true;
+            splitMain.SplitterWidth = 1;
+            splitMain.Panel2.Padding = Padding.Empty;
+            splitMain.Panel2Collapsed = true;
+            splitMain.Panel2.Hide();
+            splitMain.Panel2.Visible = false;
         }
 
         [Obsolete("This constructor is for use by form designers only.", true)]
@@ -292,6 +348,7 @@ namespace Chummer
 
         private async void CharacterCreate_Load(object sender, EventArgs e)
         {
+            EnsurePanel2Collapsed();
             try
             {
                 try
@@ -21971,7 +22028,7 @@ namespace Chummer
             }
         }
 
-        private async Task AppendAttributeSectionExcessMessageAsync(
+        private static async Task AppendAttributeSectionExcessMessageAsync(
             StringBuilder sbdMessage,
             string strMessageKey,
             string strSectionLabelKey,

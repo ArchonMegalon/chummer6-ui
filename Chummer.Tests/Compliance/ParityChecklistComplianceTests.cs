@@ -33,8 +33,8 @@ public sealed class ParityChecklistComplianceTests
         StringAssert.Contains(parityGeneratorText, "existing_token != token");
         StringAssert.Contains(parityGeneratorText, "extract_switch_expression_body");
         StringAssert.Contains(parityGeneratorText, "parse_switch_case_ids");
-        StringAssert.Contains(parityGeneratorText, "return commandId switch");
-        StringAssert.Contains(parityGeneratorText, "return controlId switch");
+        StringAssert.Contains(parityGeneratorText, "parse_switch_case_ids(text, variable_name=\"commandId\")");
+        StringAssert.Contains(parityGeneratorText, "parse_switch_case_ids(text, variable_name=\"controlId\")");
     }
 
     private static string FindPath(params string[] parts)

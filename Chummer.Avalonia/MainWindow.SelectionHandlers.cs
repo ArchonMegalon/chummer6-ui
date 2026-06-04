@@ -14,7 +14,7 @@ public partial class MainWindow
     internal static Func<MainWindow>? NewWindowFactoryForTesting { get; set; }
     internal static Action<MainWindow>? NewWindowCreatedForTesting { get; set; }
 
-    private const string LegacyWikiUrl = "https://github.com/chummer5a/chummer5a/wiki/";
+    private const string LegacyWikiUrl = "https://github.com/ArchonMegalon/Chummer6/wiki/";
     private const string LegacyDiscordUrl = "https://discord.gg/mJB7st9";
     private const string LegacyIssueTrackerUrl = "https://github.com/ArchonMegalon/Chummer6/issues/";
 

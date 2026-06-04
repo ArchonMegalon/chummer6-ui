@@ -6,64 +6,57 @@ using Chummer.Contracts.Content;
 using Chummer.Contracts.Workspaces;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.IO;
 
 namespace Chummer.Tests.Presentation;
 
-internal static class AccessibilitySignoffSmokeTests
+[TestClass]
+public sealed class AccessibilitySignoffSmokeTests
 {
-    private static int Main()
+    [TestMethod]
+    public void Accessibility_signoff_smoke_checks_pass()
     {
-        try
-        {
-            SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation();
-            GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
-            BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
-            BlazorHome_uses_local_chummer6_flagship_media_samples();
-            BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
-            DesktopHomeCampaignProjector_uses_real_campaign_restore_truth();
-            DesktopHomeSupportProjector_uses_real_support_case_truth();
-            DesktopHomeBuildExplainProjector_uses_real_contract_state();
-            DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
-            FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
-            DesktopCampaignWorkspace_is_a_real_top_level_surface();
-            DesktopCampaignWorkspace_promotes_gm_runboard_route();
-            DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement();
-            DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();
-            DesktopOrganizerOperations_keeps_role_boundaries_visible();
-            DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();
-            DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();
-            CharacterRosterStructureParityGuardTests.Run();
-            DesktopUpdateSurface_is_a_real_top_level_surface();
-            DesktopSupportSurface_is_a_real_top_level_surface();
-            DesktopSupportCaseSurface_is_a_real_top_level_surface();
-            DesktopExplainReceipts_and_diagnostics_diffs_are_visible_on_trust_surfaces();
-            DesktopDevicesAccessSurface_is_a_real_top_level_surface();
-            DesktopReportSurface_is_a_real_top_level_surface();
-            DesktopCrashRecoverySurface_is_a_real_top_level_surface();
-            DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces();
-            DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable();
-            DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
-            DesktopHome_wires_the_support_projection_into_the_summary_panel();
-            DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
-            PrimaryDesktopSummaryHeader_keeps_restore_stale_and_conflict_choices_visible();
-            ShellNavigator_wires_ruleset_specific_headings_and_labels();
-            DesktopShell_removes_right_rail_and_workspace_strip_keeps_ruleset_specific_copy();
-            DesktopShell_ruleset_matrix_coverage_is_published_and_executable();
-            DesktopHome_exposes_claim_aware_install_and_update_actions();
-            DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
-            BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate();
-            BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing();
-            DesktopHead_uses_canonical_catalog_only_resolver();
-            Console.WriteLine("[B13] PASS: targeted accessibility smoke runner checks passed.");
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[B13] FAIL: {ex.Message}");
-            return 1;
-        }
+        SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation();
+        GeneratedAssetReviewPanel_renders_preview_and_emits_attach_approve_archive_actions();
+        BlazorHome_invalidates_spider_cards_when_session_context_shifts_and_refreshes_them();
+        BlazorHome_uses_local_chummer6_flagship_media_samples();
+        BlazorCampaignSpineShowcase_uses_customer_facing_build_path_copy();
+        DesktopHomeCampaignProjector_uses_real_campaign_restore_truth();
+        DesktopHomeSupportProjector_uses_real_support_case_truth();
+        DesktopHomeBuildExplainProjector_uses_real_contract_state();
+        DesktopHomeBuildExplainProjector_exposes_safe_action_and_watchouts_when_workspace_is_missing();
+        FlagshipDesktopShell_exposes_persistent_home_install_and_support_actions();
+        DesktopCampaignWorkspace_is_a_real_top_level_surface();
+        DesktopCampaignWorkspace_promotes_gm_runboard_route();
+        DesktopCampaignWorkspace_promotes_gm_prep_packets_and_roster_movement();
+        DesktopOrganizerOperationsSurface_is_a_real_top_level_surface();
+        DesktopOrganizerOperations_keeps_role_boundaries_visible();
+        DesktopRuleEnvironmentStudioSurface_is_a_real_top_level_surface();
+        DesktopCampaignWorkspace_keeps_restore_conflict_choices_visible();
+        CharacterRosterStructureParityGuardTests.Run();
+        DesktopUpdateSurface_is_a_real_top_level_surface();
+        DesktopSupportSurface_is_a_real_top_level_surface();
+        DesktopSupportCaseSurface_is_a_real_top_level_surface();
+        DesktopExplainReceipts_and_diagnostics_diffs_are_visible_on_trust_surfaces();
+        DesktopDevicesAccessSurface_is_a_real_top_level_surface();
+        DesktopReportSurface_is_a_real_top_level_surface();
+        DesktopCrashRecoverySurface_is_a_real_top_level_surface();
+        DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces();
+        DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable();
+        DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
+        DesktopHome_wires_the_support_projection_into_the_summary_panel();
+        DesktopHome_wires_the_build_and_explain_projection_into_the_summary_panel();
+        PrimaryDesktopSummaryHeader_keeps_restore_stale_and_conflict_choices_visible();
+        ShellNavigator_wires_ruleset_specific_headings_and_labels();
+        DesktopShell_removes_right_rail_and_workspace_strip_keeps_ruleset_specific_copy();
+        DesktopShell_ruleset_matrix_coverage_is_published_and_executable();
+        DesktopHome_exposes_claim_aware_install_and_update_actions();
+        DesktopInstallLinkingWindow_exposes_trust_actions_and_locale_guidance();
+        BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate();
+        BlazorDesktopPrintPreview_waits_for_loaded_document_before_printing();
+        DesktopHead_uses_canonical_catalog_only_resolver();
     }
 
     private static void SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation()
@@ -2001,7 +1994,7 @@ internal static class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.home.button.open_report_issue");
         RequireContains(source, "desktop.install_link.title");
         RequireContains(source, "GetRequiredString");
-        RequireContains(source, "I'm not linked. Please link this copy before Chummer shows anything else.");
+        RequireContains(source, "desktop.install_link.summary.guest_status");
         RequireContains(source, "desktop.install_link.button.redeem_claim_code");
         RequireContains(source, "desktop.install_link.claim_code_watermark");
         RequireContains(source, "DesktopInstallLinkingRuntime.RedeemClaimCodeAsync");

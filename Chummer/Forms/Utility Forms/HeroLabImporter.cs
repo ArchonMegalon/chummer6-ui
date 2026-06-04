@@ -201,7 +201,7 @@ namespace Chummer
 
             string strFileText
                 = await strFile
-                        .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + Application.ProductName + ">",
+                        .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + System.Windows.Forms.Application.ProductName + ">",
                                            token: token).ConfigureAwait(false);
             TreeNode nodRootNode = new TreeNode
             {
@@ -373,7 +373,7 @@ namespace Chummer
                     {
                         Text = await CalculatedName(objCache, token).ConfigureAwait(false),
                         ToolTipText = await strFile.CheapReplaceAsync(Utils.GetStartupPath,
-                                                                      () => "<" + Application.ProductName + ">",
+                                                                      () => "<" + System.Windows.Forms.Application.ProductName + ">",
                                                                       token: token).ConfigureAwait(false)
                     };
                     nodRootNode.Nodes.Add(objNode);

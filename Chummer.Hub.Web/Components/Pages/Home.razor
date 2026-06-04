@@ -1,0 +1,151 @@
+@page "/"
+
+<PageTitle>Discover Projects</PageTitle>
+
+<main>
+    <section>
+        <h1>Discover Projects</h1>
+        @if (!string.IsNullOrWhiteSpace(_statusMessage))
+        {
+            <p>@_statusMessage</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <p class="error">@_errorMessage</p>
+        }
+        @if (_catalog.Items.Count == 0)
+        {
+            <p>No hub projects matched the current query.</p>
+        }
+        else
+        {
+            <div>
+                @foreach (HubCatalogItem item in _catalog.Items)
+                {
+                    <button type="button" data-hub-item="@item.ItemId" @onclick="() => SelectItemAsync(item)">@item.Title</button>
+                }
+            </div>
+        }
+    </section>
+
+    <section>
+        <h2>Coach Sidecar</h2>
+        <h3>Curation Signals</h3>
+        @if (_coachProvider is not null)
+        {
+            <div>
+                <strong>@_coachProvider.DisplayName</strong>
+                <div data-testid="hub-coach-provider-transport">Transport: @FormatTransport(_coachProvider)</div>
+            </div>
+        }
+        <h3>Recent Coach Guidance</h3>
+        @if (_coachAudit is not null)
+        {
+            <p data-testid="hub-coach-audit-flavor">@_coachAudit.FlavorLine</p>
+            <p>Budget snapshot: @FormatBudget(_coachAudit.Budget)</p>
+            <p>Structured summary: @_coachAudit.StructuredAnswer?.Summary</p>
+            <p>Recommendations: @FormatRecommendations(_coachAudit.StructuredAnswer)</p>
+            <p>Evidence: @FormatEvidence(_coachAudit.StructuredAnswer)</p>
+            <p>Risks: @FormatRisks(_coachAudit.StructuredAnswer)</p>
+            <p>Sources: @FormatSources(_coachAudit.StructuredAnswer)</p>
+            <a data-testid="hub-open-coach-thread" href="@BuildCoachLaunchUri(_coachAudit.ConversationId, _coachAudit.RuntimeFingerprint, ResolveRulesetId())">Open thread</a>
+        }
+    </section>
+
+    <section>
+        @if (_selectedDetail is not null)
+        {
+            <h2>@_selectedDetail.Summary.Title</h2>
+            @if (_selectedDetail.Publisher is not null)
+            {
+                <p>@_selectedDetail.Publisher.DisplayName</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(_selectedDetail.RuntimeFingerprint))
+            {
+                <p>@_selectedDetail.RuntimeFingerprint</p>
+            }
+            @foreach (HubProjectDetailFact fact in _selectedDetail.Facts)
+            {
+                <p>@fact.Value</p>
+            }
+            <a data-hub-action="open-coach" href="@BuildCoachLaunchUri(null, _selectedDetail.RuntimeFingerprint, _selectedDetail.Summary.RulesetId)">Open coach</a>
+            <div>
+                <button type="button" @onclick="PreviewInstallAsync">Preview Install</button>
+            </div>
+        }
+        @if (_installPreview is not null)
+        {
+            @foreach (HubProjectInstallPreviewChange change in _installPreview.Changes)
+            {
+                <p>@change.Summary</p>
+            }
+            @foreach (HubProjectInstallPreviewDiagnostic diagnostic in _installPreview.Diagnostics)
+            {
+                <p>@diagnostic.Message</p>
+            }
+        }
+    </section>
+
+    <section>
+        <h2>Draft Foundry</h2>
+        <button type="button" data-hub-action="load-drafts" @onclick="LoadDraftsAsync">Load Drafts</button>
+        <div>
+            @foreach (HubPublishDraftReceipt draft in _drafts.Items)
+            {
+                <button type="button" data-hub-draft="@draft.DraftId" @onclick="() => SelectDraftAsync(draft.DraftId)">@draft.Title</button>
+            }
+        </div>
+        @if (_selectedDraftDetail is null)
+        {
+            <p>Create or inspect a draft</p>
+        }
+        else
+        {
+            <h3>Editing owner-backed draft</h3>
+            <p>@_selectedDraftDetail.Draft.DraftId</p>
+            @if (!string.IsNullOrWhiteSpace(_selectedDraftDetail.LatestModerationNotes))
+            {
+                <p>@_selectedDraftDetail.LatestModerationNotes</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(_selectedDraftDetail.Draft.PublisherId))
+            {
+                <p>@_selectedDraftDetail.Draft.PublisherId</p>
+            }
+            <button type="button" data-hub-action="archive-draft" @onclick="ArchiveDraftAsync">Archive Draft</button>
+            <button type="button" data-hub-action="delete-draft" @onclick="DeleteDraftAsync">Delete Draft</button>
+        }
+
+        <input data-draft-field="project-id" value="@_draftProjectId" @onchange="eventArgs => _draftProjectId = eventArgs.Value?.ToString() ?? string.Empty" />
+        <input data-draft-field="title" value="@_draftTitle" @onchange="eventArgs => _draftTitle = eventArgs.Value?.ToString() ?? string.Empty" />
+        <input data-draft-field="summary" value="@_draftSummary" @onchange="eventArgs => _draftSummary = eventArgs.Value?.ToString() ?? string.Empty" />
+        <textarea data-draft-field="description" @onchange="eventArgs => _draftDescription = eventArgs.Value?.ToString() ?? string.Empty">@_draftDescription</textarea>
+        <textarea data-draft-field="submission-notes" @onchange="eventArgs => _submissionNotes = eventArgs.Value?.ToString() ?? string.Empty">@_submissionNotes</textarea>
+        <div>
+            <button type="button" data-hub-action="create-draft" @onclick="CreateDraftAsync">Create Draft</button>
+            <button type="button" data-hub-action="save-draft" @onclick="SaveDraftAsync">Save Draft</button>
+            <button type="button" data-hub-action="submit-draft" @onclick="SubmitDraftAsync">Submit Draft</button>
+        </div>
+    </section>
+
+    <section>
+        <h2>Moderation Queue</h2>
+        <select data-moderation-filter="state" value="@_moderationState" @onchange="eventArgs => _moderationState = eventArgs.Value?.ToString() ?? string.Empty">
+            <option value="">all</option>
+            <option value="@HubModerationStates.PendingReview">@HubModerationStates.PendingReview</option>
+            <option value="@HubModerationStates.Approved">@HubModerationStates.Approved</option>
+            <option value="@HubModerationStates.Rejected">@HubModerationStates.Rejected</option>
+        </select>
+        <textarea data-moderation-field="notes" @onchange="eventArgs => _moderationNotes = eventArgs.Value?.ToString() ?? string.Empty">@_moderationNotes</textarea>
+        <button type="button" data-hub-action="load-moderation-queue" @onclick="LoadModerationQueueAsync">Load Moderation Queue</button>
+        @foreach (HubModerationQueueItem item in _moderationQueue.Items)
+        {
+            <div>
+                <p>@item.CaseId</p>
+                <p>@item.Title</p>
+                <p>@item.State</p>
+                <button type="button" data-hub-approve="@item.CaseId" @onclick="() => ApproveModerationAsync(item.CaseId)">Approve</button>
+                <button type="button" data-hub-reject="@item.CaseId" @onclick="() => RejectModerationAsync(item.CaseId)">Reject</button>
+            </div>
+        }
+    </section>
+</main>

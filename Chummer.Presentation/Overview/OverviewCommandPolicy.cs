@@ -8,7 +8,7 @@ public static class OverviewCommandPolicy
 
     private static readonly HashSet<string> MenuCommandIds = new(StringComparer.Ordinal)
     {
-        "file", "tools", "windows", "help"
+        "file", "edit", "special", "tools", "windows", "help"
     };
 
     private static readonly HashSet<string> ImportHintCommandIds = new(StringComparer.Ordinal)

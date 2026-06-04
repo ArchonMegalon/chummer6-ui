@@ -197,7 +197,7 @@ PY
     echo "local-tests using CHUMMER_API_BASE_URL=$CHUMMER_API_BASE_URL"
   fi
   set +e
-  dotnet test "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${cpu_args[@]}" "${server_args[@]}" "${restore_args[@]}" "${build_args[@]}" --logger "console;verbosity=normal" 2>&1 | tee "$TEST_LOG_FILE"
+  dotnet test --project "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${cpu_args[@]}" "${server_args[@]}" "${restore_args[@]}" "${build_args[@]}" --logger "console;verbosity=normal" 2>&1 | tee "$TEST_LOG_FILE"
   status=${PIPESTATUS[0]}
   set -e
   echo
@@ -665,7 +665,7 @@ if [[ "$RUNBOOK_MODE" == "docker-tests" ]]; then
   fi
   set +e
   docker compose run $build_arg --rm chummer-tests sh -lc \
-    "cd /src && dotnet test '$TEST_PROJECT' -c Release $framework_arg $filter_arg --logger \"console;verbosity=normal\"" \
+      "cd /src && dotnet test '$TEST_PROJECT' -c Release $framework_arg $filter_arg --logger \"console;verbosity=normal\"" \
     2>&1 | tee "$TEST_LOG_FILE"
   status=${PIPESTATUS[0]}
   set -e

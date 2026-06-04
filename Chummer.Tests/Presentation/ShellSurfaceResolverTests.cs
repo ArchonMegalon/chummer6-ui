@@ -252,7 +252,7 @@ public sealed class ShellSurfaceResolverTests
         ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
 
         CollectionAssert.AreEqual(
-            ["tab-info", "tab-gear"],
+            new[] { "tab-info", "tab-gear" },
             surface.NavigationTabs.Select(tab => tab.Id).ToArray());
         Assert.AreEqual("tab-info", surface.ActiveTabId);
         Assert.AreEqual("tab-info", catalogResolver.LastWorkspaceActionTabId);

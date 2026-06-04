@@ -109,6 +109,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.summary"] = "Chummer keeps the binary canonical. Linking happens through a signed-in install handoff and a Hub-issued installation grant instead of mutating the installer per user.",
         ["desktop.install_link.shipping_locales"] = "Shipping locales: {0}. Install, update, and support trust flows should stay aligned across this desktop wave.",
         ["desktop.install_link.claim_code_label"] = "Install handoff",
+        ["desktop.install_link.more_tools"] = "More tools",
+        ["desktop.install_link.next_step"] = "Next step",
         ["desktop.install_link.button.copy_install_id"] = "Copy Install ID",
         ["desktop.install_link.button.open_downloads"] = "Open Downloads",
         ["desktop.install_link.button.open_support"] = "Open Support",
@@ -562,6 +564,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.title"] = "Diese Kopie verknüpfen";
             localized["desktop.install_link.heading"] = "Diese Desktop-Kopie mit Ihrem Konto verknüpfen";
             localized["desktop.install_link.claim_code_label"] = "Installations-Handoff";
+            localized["desktop.install_link.more_tools"] = "Weitere Tools";
+            localized["desktop.install_link.next_step"] = "Nächster Schritt";
             localized["desktop.install_link.button.copy_install_id"] = "Installations-ID kopieren";
             localized["desktop.install_link.button.open_downloads"] = "Downloads öffnen";
             localized["desktop.install_link.button.open_support"] = "Support öffnen";
@@ -956,6 +960,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.title"] = "Lier cette copie";
             localized["desktop.install_link.heading"] = "Lier cette copie desktop à votre compte";
             localized["desktop.install_link.claim_code_label"] = "Relais d'installation";
+            localized["desktop.install_link.more_tools"] = "Autres outils";
+            localized["desktop.install_link.next_step"] = "Étape suivante";
             localized["desktop.install_link.button.copy_install_id"] = "Copier l'ID d'installation";
             localized["desktop.install_link.button.open_downloads"] = "Ouvrir Téléchargements";
             localized["desktop.install_link.button.open_support"] = "Ouvrir le support";
@@ -1350,6 +1356,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.title"] = "このコピーをリンク";
             localized["desktop.install_link.heading"] = "このデスクトップコピーをアカウントにリンク";
             localized["desktop.install_link.claim_code_label"] = "インストール引き継ぎ";
+            localized["desktop.install_link.more_tools"] = "その他のツール";
+            localized["desktop.install_link.next_step"] = "次のステップ";
             localized["desktop.install_link.button.copy_install_id"] = "インストール ID をコピー";
             localized["desktop.install_link.button.open_downloads"] = "ダウンロードを開く";
             localized["desktop.install_link.button.open_support"] = "サポートを開く";
@@ -1744,6 +1752,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.title"] = "Vincular esta cópia";
             localized["desktop.install_link.heading"] = "Vincular esta cópia desktop à sua conta";
             localized["desktop.install_link.claim_code_label"] = "Transferência da instalação";
+            localized["desktop.install_link.more_tools"] = "Mais ferramentas";
+            localized["desktop.install_link.next_step"] = "Próximo passo";
             localized["desktop.install_link.button.copy_install_id"] = "Copiar ID da instalação";
             localized["desktop.install_link.button.open_downloads"] = "Abrir Downloads";
             localized["desktop.install_link.button.open_support"] = "Abrir suporte";
@@ -2138,6 +2148,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.title"] = "绑定此副本";
             localized["desktop.install_link.heading"] = "将此桌面副本绑定到您的账户";
             localized["desktop.install_link.claim_code_label"] = "安装接续";
+            localized["desktop.install_link.more_tools"] = "更多工具";
+            localized["desktop.install_link.next_step"] = "下一步";
             localized["desktop.install_link.button.copy_install_id"] = "复制安装 ID";
             localized["desktop.install_link.button.open_downloads"] = "打开下载";
             localized["desktop.install_link.button.open_support"] = "打开支持";

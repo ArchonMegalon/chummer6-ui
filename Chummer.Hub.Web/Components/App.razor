@@ -1,0 +1,35 @@
+@inject NavigationManager Navigation
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="@BuildBaseHref()" />
+    <title>Chummer Hub Web</title>
+</head>
+<body>
+<Routes @rendermode="new InteractiveServerRenderMode()" />
+<script src="_framework/blazor.web.js"></script>
+<script src="hub-api.js"></script>
+</body>
+</html>
+
+@code {
+    private string BuildBaseHref()
+    {
+        if (!Uri.TryCreate(Navigation.BaseUri, UriKind.Absolute, out Uri? uri))
+        {
+            return "/";
+        }
+
+        if (string.IsNullOrWhiteSpace(uri.AbsolutePath) || string.Equals(uri.AbsolutePath, "/", StringComparison.Ordinal))
+        {
+            return "/";
+        }
+
+        return uri.AbsolutePath.EndsWith("/", StringComparison.Ordinal)
+            ? uri.AbsolutePath
+            : $"{uri.AbsolutePath}/";
+    }
+}

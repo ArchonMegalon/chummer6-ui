@@ -956,7 +956,7 @@ namespace Chummer
 
         private void lblWikiLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            Process.Start(new ProcessStartInfo("https://github.com/chummer5a/chummer5a/wiki/Custom-Data-Files#amend-data-files") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("https://github.com/ArchonMegalon/Chummer6/wiki/Custom-Data-Files#amend-data-files") { UseShellExecute = true });
         }
 
         #endregion Methods

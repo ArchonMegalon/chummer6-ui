@@ -178,17 +178,17 @@ public sealed class AvaloniaCoachSidecarProjectorTests
         Assert.AreEqual("Scoped Coach launch link copied to the clipboard.", projection.LaunchStatusMessage);
         Assert.HasCount(1, projection.Providers);
         Assert.HasCount(1, projection.Audits);
-        StringAssert.Contains(projection.Providers[0].ToString(), "AI Magicx");
-        StringAssert.Contains(projection.Providers[0].ToString(), "transport ready · base yes · model yes");
-        StringAssert.Contains(projection.Providers[0].ToString(), "keys primary 1 / fallback 0");
-        StringAssert.Contains(projection.Providers[0].ToString(), "route coach · binding primary / slot 0");
-        StringAssert.Contains(projection.Audits[0].ToString(), "cache hit");
-        StringAssert.Contains(projection.Audits[0].ToString(), "launch /coach/?routeType=coach&conversationId=conv.avalonia-coach-1&runtimeFingerprint=sha256%3Aruntime-1&workspaceId=ws-1");
-        StringAssert.Contains(projection.Audits[0].ToString(), "Pin the runtime before previewing spend changes.");
-        StringAssert.Contains(projection.Audits[0].ToString(), "flavor Keep the trace clean and the runtime pinned.");
-        StringAssert.Contains(projection.Audits[0].ToString(), "budget 18 / 400 chummer-ai-units");
-        StringAssert.Contains(projection.Audits[0].ToString(), "structured Preview spend against the active runtime before any mutation path.");
-        StringAssert.Contains(projection.Audits[0].ToString(), "recommendations 1 · Preview spend");
+        Assert.AreEqual("AI Magicx", projection.Providers[0].DisplayName);
+        Assert.AreEqual("ready · base yes · model yes", projection.Providers[0].TransportSummary);
+        Assert.AreEqual("primary 1 / fallback 0", projection.Providers[0].CredentialSummary);
+        Assert.AreEqual("route coach · binding primary / slot 0", projection.Providers[0].BindingSummary);
+        Assert.AreEqual("cache hit", projection.Audits[0].CacheStatus);
+        Assert.AreEqual("/coach/?routeType=coach&conversationId=conv.avalonia-coach-1&runtimeFingerprint=sha256%3Aruntime-1&workspaceId=ws-1", projection.Audits[0].LaunchUri);
+        Assert.AreEqual("Pin the runtime before previewing spend changes.", projection.Audits[0].Summary);
+        Assert.AreEqual("Keep the trace clean and the runtime pinned.", projection.Audits[0].FlavorLine);
+        Assert.AreEqual("18 / 400 chummer-ai-units · burst 1 / 6", projection.Audits[0].BudgetSummary);
+        Assert.AreEqual("Preview spend against the active runtime before any mutation path.", projection.Audits[0].StructuredSummary);
+        Assert.AreEqual("1 · Preview spend", projection.Audits[0].RecommendationSummary);
     }
 
     [TestMethod]
@@ -205,11 +205,11 @@ public sealed class AvaloniaCoachSidecarProjectorTests
             errorMessage: "offline");
 
         Assert.AreEqual("unloaded", projection.Status);
-        Assert.AreEqual("n/a", projection.PromptPolicy);
-        Assert.AreEqual("n/a", projection.BudgetSummary);
-        Assert.AreEqual("n/a", projection.WorkspaceId);
-        Assert.AreEqual("n/a", projection.RuntimeFingerprint);
-        Assert.AreEqual("n/a", projection.LaunchUri);
+        Assert.AreEqual("Policy not loaded yet", projection.PromptPolicy);
+        Assert.AreEqual("Budget not loaded yet", projection.BudgetSummary);
+        Assert.AreEqual("No workspace attached", projection.WorkspaceId);
+        Assert.AreEqual("No runtime fingerprint yet", projection.RuntimeFingerprint);
+        Assert.AreEqual(string.Empty, projection.LaunchUri);
         Assert.IsNull(projection.LaunchStatusMessage);
         Assert.AreEqual("offline", projection.ErrorMessage);
         Assert.IsEmpty(projection.Providers);

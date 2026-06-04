@@ -351,8 +351,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "wiki" => new DesktopDialogState(
                 "dialog.wiki",
                 "Wiki",
-                "https://github.com/chummer5a/chummer5a/wiki/",
-                BuildExternalLinkFields("Chummer Wiki", "https://github.com/chummer5a/chummer5a/wiki/", "Use the legacy wiki as an external reference without displacing the current workbench."),
+                "https://github.com/ArchonMegalon/Chummer6/wiki/",
+                BuildExternalLinkFields("Chummer Wiki", "https://github.com/ArchonMegalon/Chummer6/wiki/", "Use the legacy wiki as an external reference without displacing the current workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "discord" => new DesktopDialogState(
                 "dialog.discord",
@@ -363,8 +363,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "revision_history" => new DesktopDialogState(
                 "dialog.revision_history",
                 "Revision History",
-                "https://github.com/chummer5a/chummer5a/releases",
-                BuildExternalLinkFields("Revision History", "https://github.com/chummer5a/chummer5a/releases", "Release notes open as an external help surface."),
+                "https://github.com/ArchonMegalon/Chummer6/releases",
+                BuildExternalLinkFields("Revision History", "https://github.com/ArchonMegalon/Chummer6/releases", "Release notes open as an external help surface."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "dumpshock" => new DesktopDialogState(
                 "dialog.dumpshock",

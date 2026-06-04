@@ -131,6 +131,7 @@ SOURCE_PATHS = {
     "avaloniaGateTests": repo_root / "Chummer.Tests" / "Presentation" / "AvaloniaFlagshipUiGateTests.cs",
     "dualHeadTests": repo_root / "Chummer.Tests" / "Presentation" / "DualHeadAcceptanceTests.cs",
     "desktopDialogFactoryTests": repo_root / "Chummer.Tests" / "Presentation" / "DesktopDialogFactoryTests.cs",
+    "desktopInstallLinkingTests": repo_root / "Chummer.Tests" / "Presentation" / "DesktopInstallLinkingShellChromeTests.cs",
     "presenterTests": repo_root / "Chummer.Tests" / "Presentation" / "CharacterOverviewPresenterTests.cs",
     "verifyScript": repo_root / "scripts" / "ai" / "verify.sh",
     "b14Script": repo_root / "scripts" / "ai" / "milestones" / "b14-flagship-ui-release-gate.sh",
@@ -386,6 +387,7 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["editglobalsettings"], ["command:global_settings"]),
     (["editcharactersettings"], ["command:character_settings"]),
     (["editnotes", "rtfeditor"], ["ui:open_notes", "action:tab-notes.metadata"]),
+    (["desktopinstalllinkinggateform"], ["Windows_install_link_gate_copy_stays_fail_closed_until_user_links_in_browser"]),
     (["masterindex"], ["command:master_index"]),
     (["characterroster"], ["command:character_roster"]),
     (["diceroller", "initiativeroller"], ["command:dice_roller"]),
@@ -664,6 +666,8 @@ def classify_legacy_behavior(path: str, control: str, event: str, handler: str, 
         return "window_management"
     if has("wiki", "discord", "revision", "dumpshock", "about", "reportbug", "support", "forcecrash"):
         return "help_external"
+    if has("website", "browser", "portal", "openwebsite", "linkbutton"):
+        return "help_external"
     if has("dice", "updat", "translator", "xmleditor", "herolab", "masterindex", "characterroster", "dataexporter", "globalsettings", "charactersettings", "roster", "cmdtest"):
         return "tools_utilities"
     if has("cmdok", "btnok", "okclick", "okadd", "accept"):
@@ -787,7 +791,7 @@ if missing_files:
 texts = {key: read_text(path) for key, path in SOURCE_PATHS.items() if path.exists() and path.is_file()}
 test_corpus = "\n".join(
     texts.get(key, "")
-    for key in ("avaloniaGateTests", "dualHeadTests", "desktopDialogFactoryTests", "presenterTests")
+    for key in ("avaloniaGateTests", "dualHeadTests", "desktopDialogFactoryTests", "desktopInstallLinkingTests", "presenterTests")
 )
 
 legacy_events: list[dict[str, Any]] = []
@@ -1133,11 +1137,12 @@ if not evidence["b14ConsumesReceipt"]:
     add_reason(f"B14 flagship UI release gate does not consume the {legacy_subject} legacy UI element parity receipt.")
 
 test_command = [
-    "dotnet",
-    "test",
-    "--project",
+    "bash",
+    "scripts/ai/test.sh",
     "Chummer.Tests/Chummer.Tests.csproj",
-    "--no-build",
+    "--no-restore",
+    "-f",
+    "net10.0",
     "--filter",
     PROOF_FILTER,
     "-v",

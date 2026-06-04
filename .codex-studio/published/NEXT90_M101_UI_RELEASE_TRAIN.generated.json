@@ -1916,7 +1916,7 @@
     "verifyScriptPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh"
   },
   "frontierId": 2450443084,
-  "generatedAt": "2026-06-02T05:49:31Z",
+  "generatedAt": "2026-06-03T03:03:19Z",
   "landedCommit": "c9c0d84f",
   "milestoneId": 101,
   "ownedSurfaces": [

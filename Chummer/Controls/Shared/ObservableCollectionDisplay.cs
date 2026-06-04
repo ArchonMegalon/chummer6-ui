@@ -103,8 +103,8 @@ namespace Chummer.Controls.Shared
 
         private void ObservableCollectionDisplay_Load(object sender, EventArgs e)
         {
-            Application.Idle += ApplicationOnIdle;
-            Disposed += (o, args) => Application.Idle -= ApplicationOnIdle;
+            System.Windows.Forms.Application.Idle += ApplicationOnIdle;
+            Disposed += (o, args) => System.Windows.Forms.Application.Idle -= ApplicationOnIdle;
         }
 
         /// <summary>

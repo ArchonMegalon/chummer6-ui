@@ -1569,7 +1569,7 @@ public class MigrationComplianceTests
         string migrationBacklogPath = FindPath("docs", "MIGRATION_BACKLOG.md");
         string migrationBacklogText = File.ReadAllText(migrationBacklogPath);
 
-        Assert.IsNull(TryFindDirectory("Chummer.Hub.Web"));
+        Assert.IsNotNull(TryFindDirectory("Chummer.Hub.Web"));
         StringAssert.Contains(hubProjectReferenceText, "<ProjectReference Include=\"..\\Chummer.Hub.Web\\Chummer.Hub.Web.csproj\" Condition=\"Exists('..\\\\Chummer.Hub.Web\\\\Chummer.Hub.Web.csproj')\"");
         StringAssert.Contains(composeText, "chummer-hub-web-portal:");
         StringAssert.Contains(composeText, "CHUMMER_PORTAL_HUB_PROXY_URL");
@@ -2598,11 +2598,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(requestOwnerAccessorText, "OwnerScope.LocalSingleUser");
         StringAssert.Contains(requestOwnerAccessorText, "ClaimTypes.NameIdentifier");
         StringAssert.Contains(requestOwnerAccessorText, "principal.FindFirst(\"sub\")?.Value");
-        StringAssert.Contains(requestOwnerAccessorText, "PortalOwnerPropagationContract.OwnerHeaderName");
+        StringAssert.Contains(requestOwnerAccessorText, "PortalAuthenticatedOwnerPropagation.TryResolveOwner(");
         StringAssert.Contains(requestOwnerAccessorText, "ResolvePortalAuthenticatedOwner");
         StringAssert.Contains(requestOwnerAccessorText, "context.Request.Headers[_headerName].FirstOrDefault()");
-        StringAssert.Contains(requestOwnerAccessorText, "CreatePortalOwnerSignature");
-        StringAssert.Contains(requestOwnerAccessorText, "CryptographicOperations.FixedTimeEquals");
+        string portalOwnerPropagationText = File.ReadAllText(FindPath("Chummer.Api", "Owners", "PortalAuthenticatedOwnerPropagation.cs"));
+        StringAssert.Contains(portalOwnerPropagationText, "PortalOwnerPropagationContract.OwnerHeaderName");
+        StringAssert.Contains(portalOwnerPropagationText, "CreateSignature(");
+        StringAssert.Contains(portalOwnerPropagationText, "CryptographicOperations.FixedTimeEquals");
         StringAssert.Contains(ownerContractText, "X-Chummer-Portal-Owner");
         StringAssert.Contains(ownerContractText, "X-Chummer-Portal-Owner-Signature");
         StringAssert.Contains(ownerContractText, "X-Chummer-Portal-Owner-Timestamp");
@@ -3201,6 +3203,33 @@ public class MigrationComplianceTests
         StringAssert.Contains(indexText, "<app>Loading...</app>");
         StringAssert.Contains(indexText, "_content/Chummer.Blazor/app.css");
         StringAssert.Contains(indexText, "_framework/blazor.webview.js");
+    }
+
+    [TestMethod]
+    public void Desktop_roaming_workspace_sync_contract_is_grant_bound_and_fail_open()
+    {
+        string runtimePath = FindPath("Chummer.Desktop.Runtime", "ServiceCollectionDesktopRuntimeExtensions.cs");
+        string runtimeText = File.ReadAllText(runtimePath);
+        string clientPath = FindPath("Chummer.Desktop.Runtime", "InProcessChummerClient.cs");
+        string clientText = File.ReadAllText(clientPath);
+        string roamingPath = FindPath("Chummer.Desktop.Runtime", "GrantBoundDesktopWorkspaceRoamingSync.cs");
+        string roamingText = File.ReadAllText(roamingPath);
+        string linkingControllerPath = FindPath("..", "chummer.run-services", "Chummer.Run.Api", "Controllers", "InstallLinkingController.cs");
+        string linkingControllerText = File.ReadAllText(linkingControllerPath);
+
+        StringAssert.Contains(runtimeText, "IDesktopWorkspaceRoamingSync");
+        StringAssert.Contains(runtimeText, "GrantBoundDesktopWorkspaceRoamingSync");
+        StringAssert.Contains(runtimeText, "NoOpDesktopWorkspaceRoamingSync");
+        StringAssert.Contains(clientText, "SynchronizeInboundAsync");
+        StringAssert.Contains(clientText, "SynchronizeOutboundAsync");
+        StringAssert.Contains(roamingText, "CHUMMER_API_BASE_URL");
+        StringAssert.Contains(roamingText, "CHUMMER_WEB_BASE_URL");
+        StringAssert.Contains(roamingText, "api/v1/install-linking/continuation/workspaces/list");
+        StringAssert.Contains(roamingText, "api/v1/install-linking/continuation/workspaces/upsert");
+        StringAssert.Contains(roamingText, "IsNonFatalSyncFailure");
+        StringAssert.Contains(linkingControllerText, "[HttpPost(\"continuation/workspaces/list\")]");
+        StringAssert.Contains(linkingControllerText, "[HttpPost(\"continuation/workspaces/upsert\")]");
+        StringAssert.Contains(linkingControllerText, "ResolveInstallationForGrant");
     }
 
     [TestMethod]
@@ -5992,7 +6021,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(infrastructureDiText, "services.AddSr5Ruleset();");
         Assert.IsFalse(infrastructureDiText.Contains("services.AddSr6Ruleset();", StringComparison.Ordinal));
         StringAssert.Contains(desktopRuntimeDiText, "services.AddChummerHeadlessCore(baseDirectory, currentDirectory);");
-        Assert.IsFalse(desktopRuntimeDiText.Contains("services.AddSr4Ruleset();", StringComparison.Ordinal));
+        StringAssert.Contains(desktopRuntimeDiText, "services.AddSr4Ruleset();");
         StringAssert.Contains(desktopRuntimeDiText, "services.AddSr5Ruleset();");
         StringAssert.Contains(desktopRuntimeDiText, "services.AddSr6Ruleset();");
         StringAssert.Contains(blazorProgramText, "builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());");
@@ -6002,12 +6031,13 @@ public class MigrationComplianceTests
         StringAssert.Contains(blazorProgramText, "AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();");
         StringAssert.Contains(readmeText, "desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured");
         StringAssert.Contains(readmeText, "legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth");
-        StringAssert.Contains(backlogText, "default headless/desktop/web paths register SR5 and SR6");
-        StringAssert.Contains(backlogText, "`Chummer.Rulesets.Sr4` remains scaffolded/experimental");
+        StringAssert.Contains(backlogText, "desktop/web runtime paths register SR4, SR5, and SR6");
+        StringAssert.Contains(backlogText, "bare headless core remains SR5-first");
         string desktopRuntimeTestsPath = FindPath("Chummer.Tests", "ServiceCollectionDesktopRuntimeExtensionsTests.cs");
         string desktopRuntimeTestsText = File.ReadAllText(desktopRuntimeTestsPath);
         StringAssert.Contains(desktopRuntimeTestsText, "Default_ruleset_environment_variable_controls_shell_catalog_resolution");
-        StringAssert.Contains(desktopRuntimeTestsText, "Default_ruleset_environment_variable_fails_when_ruleset_is_not_registered");
+        StringAssert.Contains(desktopRuntimeTestsText, "Default_ruleset_environment_variable_supports_sr4_when_registered");
+        StringAssert.Contains(desktopRuntimeTestsText, "Default_ruleset_environment_variable_fails_when_ruleset_is_unknown");
         StringAssert.Contains(desktopRuntimeTestsText, "IRulesetShellCatalogResolver shellCatalogResolver");
         StringAssert.Contains(desktopRuntimeTestsText, "ResolveCommands(null)");
         StringAssert.Contains(desktopRuntimeTestsText, "CHUMMER_DEFAULT_RULESET");
@@ -6940,6 +6970,23 @@ public class MigrationComplianceTests
             string portalArtifactPath = Path.Combine(portalDownloadsDir, "files", artifactName);
             CollectionAssert.AreEqual(installerBytes, File.ReadAllBytes(canonicalArtifactPath));
             CollectionAssert.AreEqual(installerBytes, File.ReadAllBytes(portalArtifactPath));
+
+            using JsonDocument compatibilityManifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+            using JsonDocument canonicalManifest = JsonDocument.Parse(File.ReadAllText(canonicalManifestPath));
+            JsonElement compatibilityCoverage = compatibilityManifest.RootElement
+                .GetProperty("registryBoundaryCoverage")
+                .GetProperty("compatibility");
+            JsonElement canonicalCoverage = canonicalManifest.RootElement
+                .GetProperty("registryBoundaryCoverage")
+                .GetProperty("compatibility");
+            Assert.AreEqual(
+                canonicalCoverage.GetProperty("compatibleArtifactCount").GetInt32(),
+                compatibilityCoverage.GetProperty("compatibleArtifactCount").GetInt32(),
+                "releases.json must keep compatibleArtifactCount aligned with RELEASE_CHANNEL.generated.json.");
+            Assert.AreEqual(
+                canonicalCoverage.GetProperty("unknownArtifactCount").GetInt32(),
+                compatibilityCoverage.GetProperty("unknownArtifactCount").GetInt32(),
+                "releases.json must keep unknownArtifactCount aligned with RELEASE_CHANNEL.generated.json.");
         }
         finally
         {

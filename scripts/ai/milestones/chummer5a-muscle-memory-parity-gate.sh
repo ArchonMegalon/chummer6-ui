@@ -15,6 +15,7 @@ verify_script_path="$repo_root/scripts/ai/verify.sh"
 visual_gate_path="$repo_root/scripts/ai/milestones/materialize-desktop-visual-familiarity-exit-gate.sh"
 screenshot_review_gate_path="$repo_root/scripts/ai/milestones/chummer5a-screenshot-review-gate.sh"
 inventory_receipt_path="${CHUMMER5A_MUSCLE_MEMORY_INVENTORY_RECEIPT_PATH:-$repo_root/.codex-studio/published/CHUMMER5A_MUSCLE_MEMORY_INVENTORY.generated.json}"
+pixefy_comparison_receipt_path="${CHUMMER5A_PIXEFY_SCREENSHOT_COMPARISON_RECEIPT_PATH:-${CHUMMER_PIXEFY_CHUMMER5A_SCREENSHOT_COMPARISON_RECEIPT_PATH:-$repo_root/.codex-studio/published/PIXEFY_CHUMMER5A_SCREENSHOT_COMPARISON_GATE.generated.json}}"
 # Guard markers: Runtime_backed_chummer5a_muscle_memory_inventory, Runtime_backed_mouse_only_.
 mkdir -p "$(dirname "$receipt_path")"
 
@@ -33,7 +34,8 @@ python3 - <<'PY' \
   "$verify_script_path" \
   "$visual_gate_path" \
   "$screenshot_review_gate_path" \
-  "$inventory_receipt_path"
+  "$inventory_receipt_path" \
+  "$pixefy_comparison_receipt_path"
 from __future__ import annotations
 
 import json
@@ -55,7 +57,9 @@ from typing import Any
     visual_gate_path,
     screenshot_review_gate_path,
     inventory_receipt_path,
-) = [Path(value) for value in sys.argv[1:12]]
+    pixefy_comparison_receipt_path
+) = [Path(value) for value in sys.argv[1:13]]
+REPO_ROOT = Path.cwd()
 
 
 def now_iso() -> str:
@@ -78,6 +82,10 @@ def write_receipt(payload: dict[str, Any]) -> None:
     receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def status_is_pass(value: object) -> bool:
+    return str(value or "").strip().lower() in {"pass", "passed", "ready"}
+
+
 def add_failure(message: str, bucket: list[str]) -> None:
     if message not in reasons:
         reasons.append(message)
@@ -95,7 +103,8 @@ required_paths = {
     "verifyScript": verify_script_path,
     "visualGate": visual_gate_path,
     "screenshotReviewGate": screenshot_review_gate_path,
-    "inventoryReceipt": inventory_receipt_path
+    "inventoryReceipt": inventory_receipt_path,
+    "pixefyComparisonReceipt": pixefy_comparison_receipt_path
 }
 missing_paths = [name for name, path in required_paths.items() if not path.is_file()]
 if missing_paths:
@@ -121,6 +130,7 @@ verify_script_text = read_text(verify_script_path)
 visual_gate_text = read_text(visual_gate_path)
 screenshot_review_gate_text = read_text(screenshot_review_gate_path)
 inventory_receipt = load_json(inventory_receipt_path)
+pixefy_comparison_receipt = load_json(pixefy_comparison_receipt_path)
 
 payload: dict[str, Any] = {
     "generatedAt": now_iso(),
@@ -134,6 +144,7 @@ payload: dict[str, Any] = {
         "parityOraclePath": str(parity_oracle_path),
         "designDocPath": str(design_doc_path),
         "inventoryReceiptPath": str(inventory_receipt_path),
+        "pixefyComparisonReceiptPath": str(pixefy_comparison_receipt_path),
         "workspaceActionCount": 0,
         "desktopControlCount": 0,
         "tabCount": 0,
@@ -141,7 +152,9 @@ payload: dict[str, Any] = {
         "runtimeShellSurfaceCount": 0,
         "runtimeMenuRootCount": 0,
         "runtimeDialogSurfaceCount": 0,
-        "runtimeVisibleElementCount": 0
+        "runtimeVisibleElementCount": 0,
+        "pixefyComparisonScreenshotCount": int(pixefy_comparison_receipt.get("screenshot_count") or 0),
+        "pixefyComparisonRequiredScreenshotCount": len(pixefy_comparison_receipt.get("required_screenshots") or [])
     },
     "reviews": {}
 }
@@ -184,8 +197,35 @@ for marker in policy.get("requiredRuntimeTestMarkers") or []:
 
 if inventory_receipt.get("contractName") != "chummer6-ui.chummer5a_muscle_memory_inventory":
     add_failure("Runtime muscle-memory inventory receipt contractName is missing or incorrect.", inventory_runtime_reasons)
-if str(inventory_receipt.get("status") or "").strip().lower() not in {"pass", "passed", "ready"}:
+if not status_is_pass(inventory_receipt.get("status")):
     add_failure("Runtime muscle-memory inventory receipt is missing or not passing.", inventory_runtime_reasons)
+
+if not status_is_pass(pixefy_comparison_receipt.get("status")):
+    add_failure("Pixefy comparison gate receipt is missing or not passing.", wiring_reasons)
+if str(pixefy_comparison_receipt.get("provider") or "").strip().lower() != "pixefy":
+    add_failure("Pixefy comparison gate receipt must declare provider 'Pixefy'.", wiring_reasons)
+if not isinstance(pixefy_comparison_receipt.get("required_screenshots"), list) or not pixefy_comparison_receipt.get("required_screenshots"):
+    add_failure("Pixefy comparison gate receipt is missing required screenshots data.", wiring_reasons)
+if not isinstance(pixefy_comparison_receipt.get("receipts"), dict):
+    add_failure("Pixefy comparison gate receipt is missing nested receipt references.", wiring_reasons)
+if int(pixefy_comparison_receipt.get("screenshot_count") or 0) <= 0:
+    add_failure("Pixefy comparison gate did not capture any screenshots.", wiring_reasons)
+if int(pixefy_comparison_receipt.get("current_ref_unique_count") or 0) <= 0:
+    add_failure("Pixefy comparison gate did not include any unique screenshot references.", wiring_reasons)
+if int(pixefy_comparison_receipt.get("missing_required_count") or 0) != 0:
+    add_failure("Pixefy comparison gate is missing one or more required screenshots.", wiring_reasons)
+
+pixefy_screenshot_directory = Path(pixefy_comparison_receipt.get("screenshot_directory") or "")
+if not pixefy_screenshot_directory.is_absolute():
+    pixefy_screenshot_directory = (REPO_ROOT / pixefy_screenshot_directory).resolve()
+evidence["pixefy_screenshot_directory"] = str(pixefy_screenshot_directory)
+if not pixefy_screenshot_directory.is_dir():
+    add_failure("Pixefy comparison gate screenshot_directory is missing or not a directory.", wiring_reasons)
+else:
+    for screenshot in pixefy_comparison_receipt.get("required_screenshots") or []:
+        screenshot_path = pixefy_screenshot_directory / str(screenshot)
+        if not screenshot_path.is_file():
+            add_failure(f"Pixefy comparison gate required screenshot is missing: {screenshot}", wiring_reasons)
 
 inventory_evidence = inventory_receipt.get("evidence") or {}
 if not isinstance(inventory_evidence, dict):

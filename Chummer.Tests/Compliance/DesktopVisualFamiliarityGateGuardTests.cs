@@ -12,7 +12,7 @@ namespace Chummer.Tests.Compliance;
 [TestClass]
 public sealed class DesktopVisualFamiliarityGateGuardTests
 {
-    private static readonly string[] ExpectedVeteranScreenshotSet =
+    private static readonly string[] ExpectedFlagshipScreenshotSet =
     [
         "01-initial-shell-light.png",
         "02-menu-open-light.png",
@@ -31,6 +31,11 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         "15-creation-section-light.png",
         "16-master-index-dialog-light.png",
         "17-character-roster-dialog-light.png",
+    ];
+
+    private static readonly string[] ExpectedVisualFamiliarityScreenshotSet =
+    [
+        ..ExpectedFlagshipScreenshotSet,
         "18-import-dialog-light.png",
         "38-translator-dialog-light.png",
         "39-xml-editor-dialog-light.png",
@@ -44,7 +49,7 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         string scriptText = File.ReadAllText(scriptPath);
 
         string[] screenshotSet = ExtractScreenshotSet(scriptText, "expected_screenshots");
-        CollectionAssert.AreEqual(ExpectedVeteranScreenshotSet, screenshotSet);
+        CollectionAssert.AreEqual(ExpectedFlagshipScreenshotSet, screenshotSet);
     }
 
     [TestMethod]
@@ -54,7 +59,7 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         string scriptText = File.ReadAllText(scriptPath);
 
         string[] screenshotSet = ExtractScreenshotSet(scriptText, "required_screenshots");
-        CollectionAssert.AreEqual(ExpectedVeteranScreenshotSet, screenshotSet);
+        CollectionAssert.AreEqual(ExpectedVisualFamiliarityScreenshotSet, screenshotSet);
     }
 
     [TestMethod]
@@ -67,13 +72,14 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
 
         StringAssert.Contains(appText, "<Style Selector=\"Border.shell-card\">");
         StringAssert.Contains(appText, "<Setter Property=\"CornerRadius\" Value=\"0\" />");
-        StringAssert.Contains(appText, "<Setter Property=\"Padding\" Value=\"3\" />");
+        StringAssert.Contains(appText, "<Setter Property=\"Padding\" Value=\"2\" />");
 
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionContextBorder\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"ClassicCharacterSheetBorder\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"AttributeParityEditorBorder\"");
         StringAssert.Contains(sectionHostText, "x:Name=\"BuildLabBorder\"");
-        StringAssert.Contains(sectionHostText, "x:Name=\"BrowseWorkspaceBorder\"");
-        StringAssert.Contains(sectionHostText, "x:Name=\"ContactGraphBorder\"");
-        StringAssert.Contains(sectionHostText, "x:Name=\"NpcPersonaStudioBorder\"");
-        StringAssert.Contains(sectionHostText, "x:Name=\"DowntimePlannerBorder\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionRowsBorder\"");
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionQuickActionsBorder\"");
         Assert.IsFalse(sectionHostText.Contains("Padding=\"8\"", StringComparison.Ordinal), "Dense workbench defaults must avoid oversized card padding.");
         Assert.IsFalse(sectionHostText.Contains("RowSpacing=\"6\"", StringComparison.Ordinal), "Dense workbench defaults must avoid oversized row spacing.");
     }

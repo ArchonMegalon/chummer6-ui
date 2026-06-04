@@ -27,7 +27,7 @@ public sealed class Next90M144DesktopProofGuardTests
         JsonElement root = document.RootElement;
 
         Assert.AreEqual("chummer6-ui.next90_m144_startup_smoke_and_executable_gate", root.GetProperty("contract_name").GetString());
-        Assert.AreEqual("fail", root.GetProperty("status").GetString());
+        Assert.AreEqual("pass", root.GetProperty("status").GetString());
         CollectionAssert.AreEqual(
             new[]
             {
@@ -42,22 +42,24 @@ public sealed class Next90M144DesktopProofGuardTests
         JsonElement linux = FindTupleProof(proofs, "avalonia:linux-x64:linux");
         JsonElement macos = FindTupleProof(proofs, "avalonia:osx-arm64:macos");
 
+        Assert.AreEqual(0, root.GetProperty("blockingFindings").GetArrayLength());
+
+        Assert.IsTrue(windows.GetProperty("releaseChannelArtifactPresent").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeReceiptPresent").GetBoolean());
-        Assert.IsFalse(windows.GetProperty("startupSmokeVersionMatchesReleaseChannel").GetBoolean());
-        Assert.IsFalse(windows.GetProperty("startupSmokeChannelMatchesReleaseChannel").GetBoolean());
+        Assert.IsTrue(windows.GetProperty("startupSmokeVersionMatchesReleaseChannel").GetBoolean());
+        Assert.IsTrue(windows.GetProperty("startupSmokeChannelMatchesReleaseChannel").GetBoolean());
+        Assert.IsTrue(windows.GetProperty("executableGatePresent").GetBoolean());
+        Assert.IsTrue(windows.GetProperty("executableGateVersionMatchesReleaseChannel").GetBoolean());
 
-        Assert.IsFalse(linux.GetProperty("releaseChannelArtifactPresent").GetBoolean());
-        Assert.IsFalse(linux.GetProperty("startupSmokeReceiptPresent").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("releaseChannelArtifactPresent").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("startupSmokeReceiptPresent").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("executableGatePresent").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("startupSmokeArtifactDigestMatchesLocalArtifact").GetBoolean());
 
-        Assert.IsFalse(macos.GetProperty("releaseChannelArtifactPresent").GetBoolean());
-        Assert.IsFalse(macos.GetProperty("executableGatePresent").GetBoolean());
-
-        string[] reasons = root.GetProperty("blockingFindings").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray();
-        Assert.IsTrue(reasons.Any(reason => reason.Contains("avalonia:linux-x64:linux is missing a promoted linux installer/media row", StringComparison.Ordinal)));
-        Assert.IsTrue(reasons.Any(reason => reason.Contains("avalonia:linux-x64:linux is missing startup smoke receipt", StringComparison.Ordinal)));
-        Assert.IsTrue(reasons.Any(reason => reason.Contains("avalonia:osx-arm64:macos is missing a promoted macos installer/media row", StringComparison.Ordinal)));
-        Assert.IsTrue(reasons.Any(reason => reason.Contains("avalonia:osx-arm64:macos is missing executable gate receipt", StringComparison.Ordinal)));
-        Assert.IsTrue(reasons.Any(reason => reason.Contains("Release channel requiredDesktopPlatformHeadRidTuples does not cover the expected flagship Windows/Linux/macOS tuple set.", StringComparison.Ordinal)));
+        Assert.IsTrue(macos.GetProperty("releaseChannelArtifactPresent").GetBoolean());
+        Assert.IsTrue(macos.GetProperty("startupSmokeReceiptPresent").GetBoolean());
+        Assert.IsTrue(macos.GetProperty("executableGatePresent").GetBoolean());
+        Assert.IsTrue(macos.GetProperty("startupSmokeReadyCheckpointMatches").GetBoolean());
     }
 
     private static JsonElement FindTupleProof(JsonElement proofs, string tupleId)

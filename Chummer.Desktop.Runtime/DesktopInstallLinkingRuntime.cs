@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Chummer.Hub.Registry.Contracts.InstallLinking;
+using Chummer.Contracts.Owners;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Desktop.Runtime;
@@ -142,6 +143,14 @@ public static class DesktopInstallLinkingRuntime
             ShouldPrompt: shouldPrompt,
             PromptReason: promptReason);
     }
+
+    public static DesktopInstallLinkingStartupContext InitializeForStartup(
+        string headId,
+        string[] args,
+        CancellationToken cancellationToken)
+        => Task.Run(() => InitializeForStartupAsync(headId, args, cancellationToken), cancellationToken)
+            .GetAwaiter()
+            .GetResult();
 
     public static DesktopInstallLinkingState LoadOrCreateState(string headId)
     {
@@ -615,6 +624,25 @@ public static class DesktopInstallLinkingRuntime
         => string.Equals(state.Status, ClaimedStatus, StringComparison.OrdinalIgnoreCase)
            && !string.IsNullOrWhiteSpace(state.GrantToken);
 
+    public static OwnerScope ResolveOwnerScope(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (!IsClaimed(state))
+        {
+            return OwnerScope.LocalSingleUser;
+        }
+
+        string? claimedIdentity = NormalizeClaimedOwnerIdentity(state.SubjectId)
+            ?? NormalizeClaimedOwnerIdentity(state.UserId);
+        if (string.IsNullOrWhiteSpace(claimedIdentity))
+        {
+            return OwnerScope.LocalSingleUser;
+        }
+
+        return new OwnerScope($"install-account:{claimedIdentity}");
+    }
+
     private static async Task<DesktopInstallClaimResult> RedeemClaimCodeAsync(
         string headId,
         string claimCode,
@@ -876,6 +904,16 @@ public static class DesktopInstallLinkingRuntime
             LastPromptDismissedAtUtc: null,
             PublicKey: publicKey,
             PrivateKey: privateKey);
+    }
+
+    private static string? NormalizeClaimedOwnerIdentity(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
     }
 
     private static DesktopInstallLinkingState RefreshRuntimeMetadata(DesktopInstallLinkingState state, DateTimeOffset now)

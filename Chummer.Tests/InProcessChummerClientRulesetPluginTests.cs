@@ -221,6 +221,103 @@ public sealed class InProcessChummerClientRulesetPluginTests
     }
 
     [TestMethod]
+    public async Task ListWorkspaces_syncs_inbound_before_listing()
+    {
+        OwnerScope owner = new("alice@example.com");
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        NoOpWorkspaceService workspaceService = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            rulesetSelectionPolicy: CreateRuntimeRulesetSelectionPolicy(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner),
+            workspaceRoamingSync: roamingSync);
+
+        _ = await client.ListWorkspacesAsync(CancellationToken.None);
+
+        Assert.AreEqual(owner.NormalizedValue, roamingSync.LastInboundOwner?.NormalizedValue);
+        Assert.AreEqual(owner.NormalizedValue, workspaceService.LastListOwner?.NormalizedValue);
+    }
+
+    [TestMethod]
+    public async Task GetShellBootstrap_syncs_inbound_before_listing()
+    {
+        OwnerScope owner = new("alice@example.com");
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        NoOpWorkspaceService workspaceService = new();
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            rulesetSelectionPolicy: CreateRuntimeRulesetSelectionPolicy(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner),
+            workspaceRoamingSync: roamingSync);
+
+        _ = await client.GetShellBootstrapAsync(null, CancellationToken.None);
+
+        Assert.AreEqual(owner.NormalizedValue, roamingSync.LastInboundOwner?.NormalizedValue);
+        Assert.AreEqual(owner.NormalizedValue, workspaceService.LastListOwner?.NormalizedValue);
+    }
+
+    [TestMethod]
+    public async Task Save_and_update_metadata_sync_outbound_when_successful()
+    {
+        OwnerScope owner = new("alice@example.com");
+        RecordingDesktopWorkspaceRoamingSync roamingSync = new();
+        CharacterWorkspaceId workspaceId = new("ws-owner");
+        NoOpWorkspaceService workspaceService = new()
+        {
+            SaveResult = new CommandResult<WorkspaceSaveReceipt>(
+                Success: true,
+                Value: new WorkspaceSaveReceipt(workspaceId, 42, RulesetDefaults.Sr6),
+                Error: null),
+            UpdateMetadataResult = new CommandResult<CharacterProfileSection>(
+                Success: true,
+                Value: new CharacterProfileSection(
+                    Name: "Owner Runner",
+                    Alias: "Owner Runner",
+                    PlayerName: string.Empty,
+                    Metatype: "Human",
+                    Metavariant: string.Empty,
+                    Sex: string.Empty,
+                    Age: string.Empty,
+                    Height: string.Empty,
+                    Weight: string.Empty,
+                    Hair: string.Empty,
+                    Eyes: string.Empty,
+                    Skin: string.Empty,
+                    Concept: string.Empty,
+                    Description: string.Empty,
+                    Background: string.Empty,
+                    CreatedVersion: "6",
+                    AppVersion: "6",
+                    BuildMethod: "Priority",
+                    GameplayOption: string.Empty,
+                    Created: true,
+                    Adept: false,
+                    Magician: false,
+                    Technomancer: false,
+                    AI: false,
+                    MainMugshotIndex: 0,
+                    MugshotCount: 0),
+                Error: null)
+        };
+        InProcessChummerClient client = new(
+            workspaceService,
+            CreateRuntimeShellCatalogResolver(),
+            rulesetSelectionPolicy: CreateRuntimeRulesetSelectionPolicy(),
+            ownerContextAccessor: new StubOwnerContextAccessor(owner),
+            workspaceRoamingSync: roamingSync);
+
+        _ = await client.SaveAsync(workspaceId, CancellationToken.None);
+        _ = await client.UpdateMetadataAsync(workspaceId, new UpdateWorkspaceMetadata("Owner Runner", null, null), CancellationToken.None);
+
+        CollectionAssert.AreEqual(
+            new[] { workspaceId.Value, workspaceId.Value },
+            roamingSync.OutboundWorkspaceIds.Select(static item => item.Value).ToArray());
+        Assert.AreEqual(owner.NormalizedValue, roamingSync.LastOutboundOwner?.NormalizedValue);
+    }
+
+    [TestMethod]
     public async Task GetShellBootstrap_restores_saved_active_workspace_when_present()
     {
         var workspaceService = new NoOpWorkspaceService
@@ -655,6 +752,10 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public OwnerScope? LastListOwner { get; private set; }
 
+        public CommandResult<CharacterProfileSection> UpdateMetadataResult { get; init; } = new(false, null, "Update not configured.");
+
+        public CommandResult<WorkspaceSaveReceipt> SaveResult { get; init; } = new(false, null, "Save not configured.");
+
         public WorkspaceImportResult Import(WorkspaceImportDocument document) => ImportResult;
 
         public WorkspaceImportResult Import(OwnerScope owner, WorkspaceImportDocument document)
@@ -725,11 +826,11 @@ public sealed class InProcessChummerClientRulesetPluginTests
 
         public CharacterAwakeningSection? GetAwakening(OwnerScope owner, CharacterWorkspaceId id) => GetAwakening(id);
 
-        public CommandResult<CharacterProfileSection> UpdateMetadata(CharacterWorkspaceId id, UpdateWorkspaceMetadata command) => throw new NotSupportedException();
+        public CommandResult<CharacterProfileSection> UpdateMetadata(CharacterWorkspaceId id, UpdateWorkspaceMetadata command) => UpdateMetadataResult;
 
         public CommandResult<CharacterProfileSection> UpdateMetadata(OwnerScope owner, CharacterWorkspaceId id, UpdateWorkspaceMetadata command) => UpdateMetadata(id, command);
 
-        public CommandResult<WorkspaceSaveReceipt> Save(CharacterWorkspaceId id) => throw new NotSupportedException();
+        public CommandResult<WorkspaceSaveReceipt> Save(CharacterWorkspaceId id) => SaveResult;
 
         public CommandResult<WorkspaceSaveReceipt> Save(OwnerScope owner, CharacterWorkspaceId id) => Save(id);
 
@@ -756,6 +857,30 @@ public sealed class InProcessChummerClientRulesetPluginTests
         }
 
         public OwnerScope Current { get; }
+    }
+
+    private sealed class RecordingDesktopWorkspaceRoamingSync : IDesktopWorkspaceRoamingSync
+    {
+        public OwnerScope? LastInboundOwner { get; private set; }
+
+        public OwnerScope? LastOutboundOwner { get; private set; }
+
+        public List<CharacterWorkspaceId> OutboundWorkspaceIds { get; } = new();
+
+        public Task SynchronizeInboundAsync(OwnerScope owner, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            LastInboundOwner = owner;
+            return Task.CompletedTask;
+        }
+
+        public Task SynchronizeOutboundAsync(OwnerScope owner, CharacterWorkspaceId workspaceId, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+            LastOutboundOwner = owner;
+            OutboundWorkspaceIds.Add(workspaceId);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class StubActiveRuntimeStatusService : IActiveRuntimeStatusService

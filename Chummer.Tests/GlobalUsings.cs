@@ -1,6 +1,10 @@
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
 global using AngleSharp.Dom;
 global using Chummer;
 global using Chummer.Contracts.Content;
+global using Chummer.Contracts.Presentation;
 global using Chummer.Rulesets.Hosting;
 global using Chummer.Rulesets.Hosting.Presentation;
 global using BuildLabActionDescriptor = Chummer.Contracts.Presentation.BuildLabActionDescriptor;
@@ -17,6 +21,7 @@ global using BuildLabIntakeField = Chummer.Contracts.Presentation.BuildLabIntake
 global using BuildLabProgressionStep = Chummer.Contracts.Presentation.BuildLabProgressionStep;
 global using BuildLabProgressionTimeline = Chummer.Contracts.Presentation.BuildLabProgressionTimeline;
 global using BuildLabSurfaceIds = Chummer.Contracts.Presentation.BuildLabSurfaceIds;
+global using BuildLabTeamCoverageProjection = Chummer.Contracts.Presentation.BuildLabTeamCoverageProjection;
 global using BuildLabVariantMetric = Chummer.Contracts.Presentation.BuildLabVariantMetric;
 global using BuildLabVariantProjection = Chummer.Contracts.Presentation.BuildLabVariantProjection;
 global using BuildLabVariantWarning = Chummer.Contracts.Presentation.BuildLabVariantWarning;

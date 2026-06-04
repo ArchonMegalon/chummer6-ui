@@ -94,7 +94,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         };
         _moreToolsHeading = new TextBlock
         {
-            Text = "More tools",
+            Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.more_tools", _language),
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         };
@@ -125,7 +125,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     _summaryText,
                     new TextBlock
                     {
-                        Text = "I'm not linked. Please link this copy before Chummer shows anything else.",
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language),
                         FontWeight = FontWeight.SemiBold,
                         TextWrapping = TextWrapping.Wrap
                     },
@@ -139,7 +139,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         {
                             new TextBlock
                             {
-                                Text = "Next step",
+                                Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.next_step", _language),
                                 FontWeight = FontWeight.SemiBold,
                                 TextWrapping = TextWrapping.Wrap
                             },
@@ -177,7 +177,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                SetStatus("I'm not linked. Please link this copy from the website before Chummer shows anything else.");
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language));
             }
         };
 
@@ -323,15 +323,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         if (opened)
         {
-            SetStatus(DesktopInstallLinkingRuntime.IsClaimed(_state)
-                ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language)
-                : "Opened the signed-in claim route on chummer.run. Finish the OAuth handoff there and let Chummer come back with the install callback.");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
         }
         else
         {
-            SetStatus(DesktopInstallLinkingRuntime.IsClaimed(_state)
-                ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language)
-                : "Unable to open the signed-in claim route right now.");
+            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
         }
 
         return Task.CompletedTask;
@@ -349,7 +345,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
         _accountButton.Content = claimed
-            ? "Open linked account"
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
         _followThroughButton.IsVisible = claimed;
         _claimCodeHintText.IsVisible = !claimed;
@@ -367,7 +363,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
 
         e.Cancel = true;
-        SetStatus("I'm not linked. Please link this copy from the website before Chummer shows anything else.");
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language));
     }
 
     private void SetStatus(string message)

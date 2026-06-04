@@ -1,5 +1,7 @@
+using Chummer.Application.Owners;
 using Chummer.Infrastructure.DependencyInjection;
 using Chummer.Presentation;
+using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,28 +15,55 @@ public static class ServiceCollectionDesktopRuntimeExtensions
     private const string LegacyDesktopClientModeEnvironmentVariable = "CHUMMER_DESKTOP_CLIENT_MODE";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
+    private const string StatePathEnvironmentVariable = "CHUMMER_STATE_PATH";
     private const string HttpClientMode = "http";
 
     public static IServiceCollection AddChummerLocalRuntimeClient(
         this IServiceCollection services,
         string baseDirectory,
-        string currentDirectory)
+        string currentDirectory,
+        string? desktopHeadId = null)
     {
         ArgumentNullException.ThrowIfNull(services);
+        ConfigureDesktopStatePath(desktopHeadId);
         services.AddChummerHeadlessCore(baseDirectory, currentDirectory);
+        services.AddSr4Ruleset();
         services.AddSr5Ruleset();
         services.AddSr6Ruleset();
 
         services.RemoveAll<IChummerClient>();
         services.RemoveAll<ISessionClient>();
         services.RemoveAll<HttpClient>();
+        services.RemoveAll<IOwnerContextAccessor>();
+
+        if (!string.IsNullOrWhiteSpace(desktopHeadId))
+        {
+            services.TryAddSingleton<IOwnerContextAccessor>(_ => new DesktopInstallOwnerContextAccessor(desktopHeadId));
+        }
+        else
+        {
+            services.TryAddSingleton<IOwnerContextAccessor, Chummer.Infrastructure.Owners.LocalOwnerContextAccessor>();
+        }
 
         if (UseHttpClientMode())
         {
             services.TryAddSingleton(CreateApiHttpClient());
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
             services.TryAddSingleton<IChummerClient, HttpChummerClient>();
             services.TryAddSingleton<ISessionClient, HttpSessionClient>();
             return services;
+        }
+
+        if (!string.IsNullOrWhiteSpace(desktopHeadId))
+        {
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync>(provider => new GrantBoundDesktopWorkspaceRoamingSync(
+                desktopHeadId,
+                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceStore>(),
+                provider.GetRequiredService<Chummer.Application.Workspaces.IWorkspaceService>()));
+        }
+        else
+        {
+            services.TryAddSingleton<IDesktopWorkspaceRoamingSync, NoOpDesktopWorkspaceRoamingSync>();
         }
 
         services.TryAddSingleton<IChummerClient, InProcessChummerClient>();
@@ -48,6 +77,23 @@ public static class ServiceCollectionDesktopRuntimeExtensions
         string baseDirectory,
         string currentDirectory)
         => AddChummerLocalRuntimeClient(services, baseDirectory, currentDirectory);
+
+    private static void ConfigureDesktopStatePath(string? desktopHeadId)
+    {
+        if (string.IsNullOrWhiteSpace(desktopHeadId))
+        {
+            return;
+        }
+
+        string? configuredStatePath = Environment.GetEnvironmentVariable(StatePathEnvironmentVariable);
+        if (!string.IsNullOrWhiteSpace(configuredStatePath))
+        {
+            return;
+        }
+
+        string sharedDesktopRoot = DesktopStateRootResolver.Resolve("Chummer6", "Chummer6");
+        Environment.SetEnvironmentVariable(StatePathEnvironmentVariable, Path.Combine(sharedDesktopRoot, "state"));
+    }
 
     private static HttpClient CreateApiHttpClient()
     {

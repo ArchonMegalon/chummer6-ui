@@ -104,7 +104,7 @@ namespace Chummer
                 }
             }
 
-            using (new Forms.DummyForm()) // New Form needs to be created (or Application.Run() called) before Synchronization.Current is set
+            using (new Forms.DummyForm()) // New Form needs to be created (or System.Windows.Forms.Application.Run() called) before Synchronization.Current is set
             {
                 JoinableTaskContext objNewContext = new JoinableTaskContext();
                 JoinableTaskContext objReturn = Interlocked.CompareExchange(ref s_objJoinableTaskContext, objNewContext, default);
@@ -338,7 +338,7 @@ namespace Chummer
         public static int DefaultPoolSize { get; } = Math.Max(MaxParallelBatchSize, byte.MaxValue + 1);
 
         private static readonly Lazy<string> s_strGetStartupPath = new Lazy<string>(
-            () => IsUnitTest ? AppDomain.CurrentDomain.SetupInformation.ApplicationBase : Application.StartupPath);
+            () => IsUnitTest ? AppDomain.CurrentDomain.SetupInformation.ApplicationBase : System.Windows.Forms.Application.StartupPath);
 
         private static readonly Lazy<string> s_strGetEscapedStartupPath = new Lazy<string>(
             () => GetStartupPath.Replace("\\", "\\\\").Replace("\\\\\\\\", "\\\\"));
@@ -965,7 +965,7 @@ namespace Chummer
             Log.Info("Restart Chummer");
             string strFileName;
             string strArguments = string.Empty;
-            Application.UseWaitCursor = true;
+            System.Windows.Forms.Application.UseWaitCursor = true;
             try
             {
                 // Get the parameters/arguments passed to program if any
@@ -996,7 +996,7 @@ namespace Chummer
             }
             catch
             {
-                Application.UseWaitCursor = false;
+                System.Windows.Forms.Application.UseWaitCursor = false;
                 throw;
             }
             // Sending restart command asynchronously to MySynchronizationContext so that tasks can properly clean up before restart
@@ -1011,7 +1011,7 @@ namespace Chummer
                 };
                 try
                 {
-                    Application.Exit();
+                    System.Windows.Forms.Application.Exit();
                 }
                 finally
                 {
@@ -1587,7 +1587,7 @@ namespace Chummer
                 int intIsOkToRunDoEvents = Interlocked.Decrement(ref _intIsOkToRunDoEvents);
                 if (blnForceDoEvents || intIsOkToRunDoEvents == 0)
                 {
-                    RunInEmptyExecutionContext(Application.DoEvents);
+                    RunInEmptyExecutionContext(System.Windows.Forms.Application.DoEvents);
                 }
             }
             finally
@@ -1632,7 +1632,7 @@ namespace Chummer
             return func.Invoke();
         }
 
-        // Empty/default Execution Context that we need for e.g. manual calls of Application.DoEvents so that AsyncLocals in events do not flow from values set in main thread
+        // Empty/default Execution Context that we need for e.g. manual calls of System.Windows.Forms.Application.DoEvents so that AsyncLocals in events do not flow from values set in main thread
         private static readonly ExecutionContext s_objEmptyExecutionContext = ExecutionContext.Capture()?.CreateCopy();
 
         /// <summary>
@@ -1646,7 +1646,7 @@ namespace Chummer
         private static bool DefaultIsOkToRunDoEvents => (!IsUnitTest || IsUnitTestForUI) && EverDoEvents;
 
         /// <summary>
-        /// This member makes sure we aren't swamping the program with massive amounts of <see cref="Application.DoEvents"/> calls
+        /// This member makes sure we aren't swamping the program with massive amounts of <see cref="System.Windows.Forms.Application.DoEvents"/> calls
         /// </summary>
         private static int _intIsOkToRunDoEvents = DefaultIsOkToRunDoEvents.ToInt32();
 

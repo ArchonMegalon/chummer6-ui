@@ -37,7 +37,6 @@ using iText.Kernel.Pdf;
 using Microsoft.IO;
 #endif
 using NLog;
-using Application = System.Windows.Forms.Application;
 
 namespace Chummer
 {
@@ -660,7 +659,7 @@ namespace Chummer
             if (await Program.ShowScrollableMessageBoxAsync(
                     this,
                     await LanguageManager.GetStringAsync("Tip_LifeModule_Warning", _strSelectedLanguage)
-                        .ConfigureAwait(false), Application.ProductName,
+                        .ConfigureAwait(false), System.Windows.Forms.Application.ProductName,
                     MessageBoxButtons.OKCancel, MessageBoxIcon.Warning).ConfigureAwait(false) != DialogResult.OK)
                 await chkLifeModule.DoThreadSafeAsync(x => x.Checked = false).ConfigureAwait(false);
             else

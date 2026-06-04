@@ -81,7 +81,8 @@ public class HubInstallPreviewServiceTests
             new RuntimeLockInstallServiceStub(null),
             new RuntimeLockRegistryServiceStub(null),
             new RulePackRegistryServiceStub([]),
-            new BuildKitRegistryServiceStub([]));
+            new BuildKitRegistryServiceStub([]),
+            new DefaultNpcVaultRegistryService());
 
         HubProjectInstallPreviewReceipt? preview = service.Preview(
             OwnerScope.LocalSingleUser,
@@ -154,7 +155,8 @@ public class HubInstallPreviewServiceTests
                         InstalledTargetId: "workspace-1",
                         RuntimeFingerprint: "sha256:core"))),
             new RulePackRegistryServiceStub([]),
-            new BuildKitRegistryServiceStub([]));
+            new BuildKitRegistryServiceStub([]),
+            new DefaultNpcVaultRegistryService());
 
         HubProjectInstallPreviewReceipt? preview = service.Preview(
             OwnerScope.LocalSingleUser,
@@ -192,36 +194,17 @@ public class HubInstallPreviewServiceTests
                         Title: "Street Sam Starter",
                         Description: "Starter template.",
                         Targets: [RulesetDefaults.Sr5],
-                        RuntimeRequirements:
-                        [
-                            new BuildKitRuntimeRequirement(
-                                RulesetId: RulesetDefaults.Sr5,
-                                RequiredRuntimeFingerprints: ["sha256:core"],
-                                RequiredRulePacks: [])
-                        ],
-                        Prompts:
-                        [
-                            new BuildKitPromptDescriptor(
-                                PromptId: "combat-focus",
-                                Kind: BuildKitPromptKinds.Choice,
-                                Label: "Combat focus",
-                                Options: [new BuildKitPromptOption("street-sam", "Street Sam")],
-                                Required: true)
-                        ],
-                        Actions:
-                        [
-                            new BuildKitActionDescriptor(
-                                ActionId: "starter-bundle",
-                                Kind: BuildKitActionKinds.AddBundle,
-                                TargetId: "street-sam.bundle")
-                        ],
+                        RuntimeRequirements: [],
+                        Prompts: [],
+                        Actions: [],
                         Visibility: ArtifactVisibilityModes.Public,
                         TrustTier: ArtifactTrustTiers.Curated),
                     Owner: new OwnerScope("system"),
                     Visibility: ArtifactVisibilityModes.Public,
                     PublicationStatus: BuildKitPublicationStatuses.Published,
                     UpdatedAtUtc: System.DateTimeOffset.UtcNow)
-            ]));
+            ]),
+            new DefaultNpcVaultRegistryService());
 
         HubProjectInstallPreviewReceipt? preview = service.Preview(
             OwnerScope.LocalSingleUser,
@@ -232,11 +215,191 @@ public class HubInstallPreviewServiceTests
 
         Assert.IsNotNull(preview);
         Assert.AreEqual(HubProjectInstallPreviewStates.Ready, preview.State);
-        Assert.AreEqual("sha256:core", preview.RuntimeFingerprint);
+        Assert.IsNull(preview.RuntimeFingerprint);
         Assert.AreEqual(HubProjectInstallPreviewChangeKinds.InstallStateChanged, preview.Changes[0].Kind);
-        Assert.IsTrue(preview.RequiresConfirmation);
+        Assert.IsTrue(preview.Changes[0].Summary.Contains("Apply this build path in the workbench", StringComparison.Ordinal));
+        Assert.IsTrue(preview.Changes[0].Summary.Contains("selected workspace", StringComparison.Ordinal));
+        Assert.IsFalse(preview.RequiresConfirmation);
         Assert.IsTrue(preview.Diagnostics.Any(diagnostic => diagnostic.Kind == HubProjectInstallPreviewDiagnosticKinds.Installability));
-        Assert.IsTrue(preview.Changes.Any(change => change.Summary.Contains("prompt", StringComparison.OrdinalIgnoreCase)));
+        Assert.IsTrue(preview.RuntimeCompatibilitySummary?.Contains("grounded campaign/profile runtime", StringComparison.Ordinal) == true);
+        Assert.IsTrue(preview.CampaignReturnSummary?.Contains("selected workspace", StringComparison.Ordinal) == true);
+        Assert.IsTrue(preview.SupportClosureSummary?.Contains("grounded runtime", StringComparison.Ordinal) == true);
+        Assert.IsTrue(preview.Changes.Any(change => change.Summary.Contains("First playable session:", StringComparison.Ordinal)));
+        Assert.IsTrue(preview.Changes.Any(change => change.Summary.Contains("selected workspace", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Hub_install_preview_service_uses_shared_buildkit_compatibility_receipts_for_runtime_review()
+    {
+        DefaultHubInstallPreviewService service = new(
+            CreatePluginRegistry(),
+            new RulePackInstallServiceStub(null),
+            new RuleProfileRegistryServiceStub(null),
+            new RuleProfileApplicationServiceStub(null),
+            new RuntimeLockInstallServiceStub(null),
+            new RuntimeLockRegistryServiceStub(null),
+            new RulePackRegistryServiceStub([]),
+            new BuildKitRegistryServiceStub(
+            [
+                new BuildKitRegistryEntry(
+                    new BuildKitManifest(
+                        BuildKitId: "matrix-operator",
+                        Version: "1.1.0",
+                        Title: "Matrix Operator",
+                        Description: "Decker planning lane.",
+                        Targets: [RulesetDefaults.Sr5],
+                        RuntimeRequirements:
+                        [
+                            new BuildKitRuntimeRequirement(
+                                RulesetId: RulesetDefaults.Sr5,
+                                RequiredRuntimeFingerprints: ["sha256:campaign-a"],
+                                RequiredRulePacks: [new ArtifactVersionReference("official-errata", "1.2.0")])
+                        ],
+                        Prompts:
+                        [
+                            new BuildKitPromptDescriptor(
+                                PromptId: "matrix-lane",
+                                Kind: BuildKitPromptKinds.Choice,
+                                Label: "Matrix lane",
+                                Options: [new BuildKitPromptOption("stealth", "Stealth")],
+                                Required: true)
+                        ],
+                        Actions:
+                        [
+                            new BuildKitActionDescriptor(
+                                ActionId: "queue-specialty",
+                                Kind: BuildKitActionKinds.QueueCareerUpdate,
+                                TargetId: "career.matrix-operator")
+                        ],
+                        Visibility: ArtifactVisibilityModes.Public,
+                        TrustTier: ArtifactTrustTiers.Curated),
+                    Owner: new OwnerScope("system"),
+                    Visibility: ArtifactVisibilityModes.Public,
+                    PublicationStatus: BuildKitPublicationStatuses.Published,
+                    UpdatedAtUtc: DateTimeOffset.UtcNow)
+            ]),
+            new DefaultNpcVaultRegistryService());
+
+        HubProjectInstallPreviewReceipt? preview = service.Preview(
+            OwnerScope.LocalSingleUser,
+            HubCatalogItemKinds.BuildKit,
+            "matrix-operator",
+            new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.Workspace, "workspace-1"),
+            RulesetDefaults.Sr5);
+
+        Assert.IsNotNull(preview);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Ready, preview.State);
+        Assert.AreEqual("sha256:campaign-a", preview.RuntimeFingerprint);
+        Assert.IsTrue(preview.RequiresConfirmation);
+        Assert.IsTrue(preview.Changes[0].Summary.Contains("runtime and rule environment match", StringComparison.Ordinal));
+        Assert.IsTrue(preview.Changes[0].Summary.Contains("selected workspace", StringComparison.Ordinal));
+        Assert.IsTrue(preview.RuntimeCompatibilitySummary?.Contains("official-errata@1.2.0", StringComparison.Ordinal) == true);
+        Assert.IsTrue(preview.CampaignReturnSummary?.Contains("selected workspace", StringComparison.Ordinal) == true);
+        Assert.IsTrue(preview.SupportClosureSummary?.Contains("migration-oracle contract", StringComparison.Ordinal) == true);
+        Assert.IsFalse(preview.Changes.Any(change => change.Summary.Contains("First playable session:", StringComparison.Ordinal)));
+    }
+
+    [TestMethod]
+    public void Hub_install_preview_service_defers_buildkits_when_requested_ruleset_mismatches_target()
+    {
+        DefaultHubInstallPreviewService service = new(
+            CreatePluginRegistry(),
+            new RulePackInstallServiceStub(null),
+            new RuleProfileRegistryServiceStub(null),
+            new RuleProfileApplicationServiceStub(null),
+            new RuntimeLockInstallServiceStub(null),
+            new RuntimeLockRegistryServiceStub(null),
+            new RulePackRegistryServiceStub([]),
+            new BuildKitRegistryServiceStub(
+            [
+                new BuildKitRegistryEntry(
+                    new BuildKitManifest(
+                        BuildKitId: "sr6-mage-starter",
+                        Version: "1.0.0",
+                        Title: "SR6 Mage Starter",
+                        Description: "Starter template.",
+                        Targets: ["sr6"],
+                        RuntimeRequirements: [],
+                        Prompts: [],
+                        Actions: [],
+                        Visibility: ArtifactVisibilityModes.Public,
+                        TrustTier: ArtifactTrustTiers.Curated),
+                    Owner: new OwnerScope("system"),
+                    Visibility: ArtifactVisibilityModes.Public,
+                    PublicationStatus: BuildKitPublicationStatuses.Published,
+                    UpdatedAtUtc: DateTimeOffset.UtcNow)
+            ]),
+            new DefaultNpcVaultRegistryService());
+
+        HubProjectInstallPreviewReceipt? preview = service.Preview(
+            OwnerScope.LocalSingleUser,
+            HubCatalogItemKinds.BuildKit,
+            "sr6-mage-starter",
+            new RuleProfileApplyTarget(RuleProfileApplyTargetKinds.Workspace, "workspace-1"),
+            RulesetDefaults.Sr5);
+
+        Assert.IsNotNull(preview);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Deferred, preview.State);
+        Assert.AreEqual(BuildKitValidationIssueKinds.RulesetMismatch, preview.DeferredReason);
+        Assert.AreEqual(HubProjectInstallPreviewChangeKinds.InstallDeferred, preview.Changes[0].Kind);
+        Assert.IsTrue(preview.Changes[0].Summary.Contains("targets sr6, not sr5", StringComparison.Ordinal));
+        Assert.IsTrue(preview.Diagnostics[0].Message.Contains("Choose a compatible runtime lane before handoff", StringComparison.Ordinal));
+        Assert.IsNull(preview.RuntimeCompatibilitySummary);
+        Assert.IsNull(preview.CampaignReturnSummary);
+        Assert.IsNull(preview.SupportClosureSummary);
+    }
+
+    [TestMethod]
+    public void Hub_install_preview_service_returns_ready_receipts_for_seeded_npc_packets()
+    {
+        DefaultHubInstallPreviewService service = new(
+            CreatePluginRegistry(),
+            new RulePackInstallServiceStub(null),
+            new RuleProfileRegistryServiceStub(null),
+            new RuleProfileApplicationServiceStub(null),
+            new RuntimeLockInstallServiceStub(null),
+            new RuntimeLockRegistryServiceStub(null),
+            new RulePackRegistryServiceStub([]),
+            new BuildKitRegistryServiceStub([]),
+            new DefaultNpcVaultRegistryService());
+
+        RuleProfileApplyTarget target = new(RuleProfileApplyTargetKinds.Workspace, "workspace-1");
+
+        HubProjectInstallPreviewReceipt? npcEntry = service.Preview(
+            OwnerScope.LocalSingleUser,
+            HubCatalogItemKinds.NpcEntry,
+            "red-samurai",
+            target,
+            RulesetDefaults.Sr5);
+        HubProjectInstallPreviewReceipt? npcPack = service.Preview(
+            OwnerScope.LocalSingleUser,
+            HubCatalogItemKinds.NpcPack,
+            "renraku-security",
+            target,
+            RulesetDefaults.Sr5);
+        HubProjectInstallPreviewReceipt? encounterPack = service.Preview(
+            OwnerScope.LocalSingleUser,
+            HubCatalogItemKinds.EncounterPack,
+            "renraku-checkpoint",
+            target,
+            RulesetDefaults.Sr5);
+
+        Assert.IsNotNull(npcEntry);
+        Assert.IsNotNull(npcPack);
+        Assert.IsNotNull(encounterPack);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Ready, npcEntry.State);
+        Assert.AreEqual("sha256:core", npcEntry.RuntimeFingerprint);
+        Assert.IsTrue(npcEntry.Changes[0].Summary.Contains("Bind Red Samurai into the selected workspace", StringComparison.Ordinal));
+        Assert.IsTrue(npcEntry.RuntimeCompatibilitySummary?.Contains("session-ready and GM-board-ready on runtime sha256:core", StringComparison.Ordinal) == true);
+        Assert.IsTrue(npcEntry.CampaignReturnSummary?.Contains("selected workspace", StringComparison.Ordinal) == true);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Ready, npcPack.State);
+        Assert.IsTrue(npcPack.Changes[0].Summary.Contains("3 prepared opposition seat(s)", StringComparison.Ordinal));
+        Assert.IsTrue(npcPack.SupportClosureSummary?.Contains("3 prepared opposition seat(s)", StringComparison.Ordinal) == true);
+        Assert.AreEqual(HubProjectInstallPreviewStates.Ready, encounterPack.State);
+        Assert.IsTrue(encounterPack.Changes[0].Summary.Contains("2 explicit role lane(s)", StringComparison.Ordinal));
+        Assert.IsTrue(encounterPack.Diagnostics.Any(diagnostic =>
+            diagnostic.Kind == HubProjectInstallPreviewDiagnosticKinds.Installability
+            && diagnostic.Message.Contains("governed role and quantity truth", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -303,7 +466,8 @@ public class HubInstallPreviewServiceTests
                         InstalledTargetKind: RuleProfileApplyTargetKinds.Workspace,
                         InstalledTargetId: "workspace-1"))
             ]),
-            new BuildKitRegistryServiceStub([]));
+            new BuildKitRegistryServiceStub([]),
+            new DefaultNpcVaultRegistryService());
 
         HubProjectInstallPreviewReceipt? preview = service.Preview(
             new OwnerScope("alice"),

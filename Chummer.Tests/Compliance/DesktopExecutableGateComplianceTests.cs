@@ -238,6 +238,32 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Gold_critical_gate_test_sources_are_compiled_into_main_test_project()
+    {
+        string repoRoot = FindRepoRoot();
+        string projectPath = Path.Combine(repoRoot, "Chummer.Tests", "Chummer.Tests.csproj");
+        string projectText = File.ReadAllText(projectPath);
+
+        string[] requiredIncludes =
+        {
+            "Compliance\\ArchitectureGuardrailTests.cs",
+            "Compliance\\DesktopVisualFamiliarityGateGuardTests.cs",
+            "Compliance\\Next90M101ReleaseTrainGuardTests.cs",
+            "Compliance\\Next90M117ArtifactShelfGuardTests.cs",
+            "Compliance\\Next90M141UiImportRouteProofGuardTests.cs",
+            "Compliance\\Next90M144DesktopProofGuardTests.cs",
+            "Compliance\\ParityChecklistComplianceTests.cs",
+            "Compliance\\XmlBoundaryGuardrailTests.cs",
+            "Presentation\\DesktopInstallLinkingShellChromeTests.cs",
+        };
+
+        foreach (string requiredInclude in requiredIncludes)
+        {
+            StringAssert.Contains(projectText, $"<Compile Include=\"{requiredInclude}\" />");
+        }
+    }
+
+    [TestMethod]
     public void Visual_familiarity_gate_refreshes_stale_screenshot_pack_via_b14_without_recursing_into_downstream_receipts()
     {
         string repoRoot = FindRepoRoot();

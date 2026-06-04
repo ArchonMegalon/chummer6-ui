@@ -779,6 +779,7 @@ public sealed record CommandPaletteItem(string Id, string Label, string Group, b
 public sealed record CommandDialogPaneState(
     CommandPaletteItem[] Commands,
     string? SelectedCommandId,
+    string? ActiveDialogId,
     string? DialogTitle,
     string? DialogMessage,
     string? DialogTrustReceipt,

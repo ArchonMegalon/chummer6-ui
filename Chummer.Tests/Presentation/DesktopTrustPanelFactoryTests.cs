@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.VisualTree;
 using Chummer.Avalonia;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Rulesets;
@@ -73,7 +74,8 @@ public sealed class DesktopTrustPanelFactoryTests
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual("avalonia", context.RuntimeFingerprint);
         StringAssert.Contains(context.Message ?? string.Empty, "Support blocker explain companion");
-        StringAssert.Contains(context.Message ?? string.Empty, "Support diagnostics receipt");
+        StringAssert.Contains(context.Message ?? string.Empty, "Diagnostics receipt correlation key: support/install-1/avalonia/stable");
+        StringAssert.Contains(context.Message ?? string.Empty, "Manifest signature mismatch.");
     }
 
     [TestMethod]
@@ -151,7 +153,7 @@ public sealed class DesktopTrustPanelFactoryTests
                 return;
             }
 
-            AppBuilder.Configure<Application>()
+            AppBuilder.Configure<global::Avalonia.Application>()
                 .UseHeadless(new AvaloniaHeadlessPlatformOptions())
                 .SetupWithoutStarting();
             _headlessInitialized = true;

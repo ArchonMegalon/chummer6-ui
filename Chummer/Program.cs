@@ -32,6 +32,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Chummer.Backend;
+using Chummer.Desktop.Runtime;
 using Chummer.Forms;
 using Chummer.Plugins;
 using Chummer.Properties;
@@ -113,9 +114,9 @@ namespace Chummer
         [STAThread]
         private static void Main()
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
+            System.Windows.Forms.Application.EnableVisualStyles();
+            System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+            System.Windows.Forms.Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
             // Set DPI Stuff before anything else
             SetProcessDPI(GlobalSettings.DpiScalingMethodSetting);
             if (IsMainThread)
@@ -343,7 +344,7 @@ namespace Chummer
                         if (!string.IsNullOrEmpty(LanguageManager.ManagerErrorMessage))
                         {
                             // MainForm is null at the moment, so we have to show error box manually
-                            MessageBox.Show(LanguageManager.ManagerErrorMessage, Application.ProductName,
+                            MessageBox.Show(LanguageManager.ManagerErrorMessage, System.Windows.Forms.Application.ProductName,
                                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                             return;
                         }
@@ -351,7 +352,7 @@ namespace Chummer
                         if (!string.IsNullOrEmpty(GlobalSettings.ErrorMessage))
                         {
                             // MainForm is null at the moment, so we have to show error box manually
-                            MessageBox.Show(GlobalSettings.ErrorMessage, Application.ProductName, MessageBoxButtons.OK,
+                            MessageBox.Show(GlobalSettings.ErrorMessage, System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                                             MessageBoxIcon.Error);
                             return;
                         }
@@ -359,7 +360,7 @@ namespace Chummer
                         if (!string.IsNullOrEmpty(strPostErrorMessage))
                         {
                             // MainForm is null at the moment, so we have to show error box manually
-                            MessageBox.Show(strPostErrorMessage, Application.ProductName, MessageBoxButtons.OK,
+                            MessageBox.Show(strPostErrorMessage, System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                                             MessageBoxIcon.Error);
                             return;
                         }
@@ -480,6 +481,19 @@ namespace Chummer
                         //              /plugin:Name:Parameter:Argument
                         //              /plugin:SINners:RegisterUriScheme:0
                         bool showMainForm = !Utils.IsUnitTest;
+                        if (!Utils.IsUnitTest)
+                        {
+                            DesktopInstallLinkingStartupContext objInstallLinkingContext =
+                                DesktopInstallLinkingRuntime.InitializeForStartup(
+                                    "winforms",
+                                    Environment.GetCommandLineArgs(),
+                                    CancellationToken.None);
+                            if (!CanShowMainFormWithoutInstallLinking(objInstallLinkingContext))
+                            {
+                                return;
+                            }
+                        }
+
                         bool blnRestoreDefaultLanguage;
                         try
                         {
@@ -586,7 +600,7 @@ namespace Chummer
                                                            CustomActivity.OperationType.DependencyOperation,
                                                            Utils.CurrentChummerVersion.ToString(3)))
                             using (ThreadSafeForm<LoadingBar> frmLoadingBar
-                                   = CreateAndShowProgressBar(Application.ProductName, Utils.BasicDataFileNames.Count))
+                                   = CreateAndShowProgressBar(System.Windows.Forms.Application.ProductName, Utils.BasicDataFileNames.Count))
                             {
                                 Utils.RunWithoutThreadLock(() => ParallelExtensions.ForEachAsync(Utils.BasicDataFileNames, strLoopFile => CacheCommonFile(strLoopFile, frmLoadingBar.MyForm)));
                                 async Task CacheCommonFile(string strFile, LoadingBar frmLoadingBarInner)
@@ -605,13 +619,13 @@ namespace Chummer
                                         _ = await SettingsManager.GetLoadedCharacterSettingsAsync().ConfigureAwait(false);
                                     }
                                     await frmLoadingBarInner.PerformStepAsync(
-                                        Application.ProductName,
+                                        System.Windows.Forms.Application.ProductName,
                                         LoadingBar.ProgressBarTextPatterns.Initializing).ConfigureAwait(false);
                                 }
                             }
 
                             MainForm.MyStartupPvt = pvt;
-                            Application.Run(MainForm);
+                            System.Windows.Forms.Application.Run(MainForm);
                         }
 
                         OpenCharacters.Clear();
@@ -698,6 +712,47 @@ namespace Chummer
         private static bool UnblockFile(string strFileName)
         {
             return NativeMethods.DeleteFile(strFileName + ":Zone.Identifier");
+        }
+
+        private static bool CanShowMainFormWithoutInstallLinking(DesktopInstallLinkingStartupContext startupContext)
+        {
+            if (startupContext is null)
+                return false;
+
+            if (DesktopInstallLinkingRuntime.IsClaimed(startupContext.State))
+                return true;
+
+            if (!string.IsNullOrWhiteSpace(startupContext.PromptReason))
+                Log?.Warn($"Install linking gate active: {startupContext.PromptReason}");
+
+            using (DesktopInstallLinkingGateForm objGateForm = new(startupContext))
+            {
+                if (objGateForm.ShowDialog() != DialogResult.OK)
+                    return false;
+            }
+
+            DesktopInstallLinkingStartupContext objRefreshedContext = DesktopInstallLinkingRuntime.InitializeForStartup(
+                "winforms",
+                Environment.GetCommandLineArgs(),
+                CancellationToken.None);
+
+            if (DesktopInstallLinkingRuntime.IsClaimed(objRefreshedContext.State))
+                return true;
+
+            DesktopInstallLinkingRuntime.MarkPromptDismissed(objRefreshedContext.State.HeadId);
+
+            string strStatusMessage = "Please complete the website login and restart Chummer to continue.";
+            if (!string.IsNullOrWhiteSpace(objRefreshedContext.ClaimResult?.Message))
+                strStatusMessage = objRefreshedContext.ClaimResult.Message + Environment.NewLine + Environment.NewLine + strStatusMessage;
+            if (!string.IsNullOrWhiteSpace(objRefreshedContext.PromptReason))
+                strStatusMessage = $"{strStatusMessage}{Environment.NewLine}Reason: {objRefreshedContext.PromptReason}";
+
+            MessageBox.Show(
+                strStatusMessage,
+                System.Windows.Forms.Application.ProductName,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+            return false;
         }
 
         public static void SetProcessDPI(DpiScalingMethod eMethod)

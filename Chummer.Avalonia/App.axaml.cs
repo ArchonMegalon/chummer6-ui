@@ -81,7 +81,7 @@ public partial class App : global::Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory(), "avalonia");
         if (UseHttpCoachSidecar())
         {
             services.AddSingleton(CreateApiHttpClient());
@@ -170,6 +170,12 @@ public partial class App : global::Avalonia.Application
 
             DesktopInstallLinkingState currentInstallState = DesktopInstallLinkingRuntime.LoadOrCreateState(installLinkingContext.State.HeadId);
             owner.ApplyInstallLinkingChrome(currentInstallState);
+            if (!DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))
+            {
+                DesktopInstallLinkingRuntime.MarkPromptDismissed(currentInstallState.HeadId);
+                owner.Close();
+                return;
+            }
         }
 
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");

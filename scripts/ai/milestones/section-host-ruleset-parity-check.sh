@@ -54,6 +54,8 @@ EXPECTED_SR6_ADAPTED_SECTION_IDS = []
 
 EXPECTED_COMMAND_IDS = [
     "file",
+    "edit",
+    "special",
     "tools",
     "windows",
     "help",

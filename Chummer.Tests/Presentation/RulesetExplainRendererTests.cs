@@ -74,7 +74,7 @@ public sealed class RulesetExplainRendererTests
                 ],
                 AggregateGasUsage: new RulesetGasUsage(2, 3, 128)));
 
-        Assert.ThrowsException<KeyNotFoundException>(() => RulesetExplainRenderer.Project(trace, localization));
+        Assert.ThrowsExactly<KeyNotFoundException>(() => RulesetExplainRenderer.Project(trace, localization));
     }
 
     [TestMethod]

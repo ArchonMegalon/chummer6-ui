@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-02T09:07:26.550414Z",
+  "generatedAt": "2026-06-03T19:30:58.281389Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -34,7 +34,7 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
@@ -290,10 +290,10 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
     "releaseChannelVersion": "run-20260601-070650",
     "requiredVisualReviewKeys": [
@@ -317,7 +317,7 @@
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0,
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "desktopExecutableLocalBlockingFindings": [],

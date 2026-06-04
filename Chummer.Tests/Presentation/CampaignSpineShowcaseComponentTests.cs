@@ -241,7 +241,7 @@ public sealed class CampaignSpineShowcaseComponentTests
                     ReasonSummary: "Campaign continuity reuses the campaign-approved compatibility fingerprint.",
                     ExplainEntryId: "rules.navigator.1:return")
             ],
-            Studio: new RuleEnvironmentStudioProjection(
+            Studio: new Chummer.Campaign.Contracts.RuleEnvironmentStudioProjection(
                 CurrentStage: RuleEnvironmentLifecycleStages.CampaignApproved,
                 CurrentStageLabel: "Campaign-approved",
                 PromotionTargetStage: RuleEnvironmentLifecycleStages.Published,
@@ -267,7 +267,7 @@ public sealed class CampaignSpineShowcaseComponentTests
         StringAssert.Contains(cut.Markup, "Campaign continuity reuses the campaign-approved compatibility fingerprint.");
         StringAssert.Contains(cut.Markup, "Support can reuse this answer.");
         StringAssert.Contains(cut.Markup, "Rule-environment studio");
-        StringAssert.Contains(cut.Markup, "Campaign-approved -&gt; Published");
+        StringAssert.Contains(cut.Markup, "Campaign-approved -> Published");
         StringAssert.Contains(cut.Markup, "Rollback can re-pin sr6.preview.v1");
         StringAssert.Contains(cut.Markup, "lineage anchor");
         StringAssert.Contains(cut.Markup, "chummer-explain-chip");

@@ -770,7 +770,7 @@
         "targeted_signoff": {
           "markers": [
             {
-              "line": 1799,
+              "line": 1800,
               "marker": "BuildImportRuleEnvironment(activity.Receipt)",
               "present": true
             },
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-06-02T06:02:14Z",
+  "generatedAt": "2026-06-03T03:03:24Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

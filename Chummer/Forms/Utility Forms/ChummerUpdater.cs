@@ -29,7 +29,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using NLog;
-using Application = System.Windows.Forms.Application;
 
 namespace Chummer
 {
@@ -364,8 +363,8 @@ namespace Chummer
             _strExceptionString = string.Empty;
             LatestVersion = strError;
             Uri uriUpdateLocation = new Uri(_blnPreferNightly
-                ? "https://api.github.com/repos/chummer5a/chummer5a/releases"
-                : "https://api.github.com/repos/chummer5a/chummer5a/releases/latest");
+                ? "https://api.github.com/repos/ArchonMegalon/Chummer6/releases"
+                : "https://api.github.com/repos/ArchonMegalon/Chummer6/releases/latest");
 
             if (blnChummerVersionGotten)
             {
@@ -469,7 +468,7 @@ namespace Chummer
                                         "Warning_Update_CouldNotConnectException",
                                         token: token).ConfigureAwait(false),
                                 _strExceptionString),
-                        Application.ProductName, MessageBoxButtons.OK,
+                        System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                         MessageBoxIcon.Error, token: token).ConfigureAwait(false);
                 }
 
@@ -484,7 +483,7 @@ namespace Chummer
                 File.Move(_strTempLatestVersionChangelogPath, _strTempLatestVersionChangelogPath + ".old");
             }
 
-            string strUrl = "https://raw.githubusercontent.com/chummer5a/chummer5a/" + LatestVersion + "/Chummer/changelog.txt";
+            string strUrl = "https://raw.githubusercontent.com/ArchonMegalon/Chummer6/" + LatestVersion + "/Chummer/changelog.txt";
             try
             {
                 Uri uriConnectionAddress = new Uri(strUrl);
@@ -516,7 +515,7 @@ namespace Chummer
                                     "Warning_Update_CouldNotConnectException",
                                     token: token).ConfigureAwait(false),
                             strException),
-                        Application.ProductName, MessageBoxButtons.OK,
+                        System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                         MessageBoxIcon.Error, token: token).ConfigureAwait(false);
                 }
 
@@ -542,7 +541,7 @@ namespace Chummer
                                     "Warning_Update_CouldNotConnectException",
                                     token: token).ConfigureAwait(false),
                             strException),
-                        Application.ProductName, MessageBoxButtons.OK,
+                        System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                         MessageBoxIcon.Error, token: token).ConfigureAwait(false);
                 }
 
@@ -1358,7 +1357,7 @@ namespace Chummer
                                         "Warning_Update_CouldNotConnectException",
                                         token: token)
                                     .ConfigureAwait(false),
-                                strException), Application.ProductName, MessageBoxButtons.OK,
+                                strException), System.Windows.Forms.Application.ProductName, MessageBoxButtons.OK,
                             MessageBoxIcon.Error, token: token).ConfigureAwait(false);
                     }
 

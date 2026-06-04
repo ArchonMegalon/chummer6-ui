@@ -59,14 +59,10 @@ public class ArchitectureGuardrailTests
         string text = File.ReadAllText(programPath);
 
         StringAssert.Contains(text, "app.MapInfoEndpoints();");
-        StringAssert.Contains(text, "app.MapCharacterEndpoints();");
-        StringAssert.Contains(text, "app.MapLifeModulesEndpoints();");
-        StringAssert.Contains(text, "app.MapToolsEndpoints();");
-        StringAssert.Contains(text, "app.MapSettingsEndpoints();");
-        StringAssert.Contains(text, "app.MapRosterEndpoints();");
         StringAssert.Contains(text, "app.MapCommandEndpoints();");
         StringAssert.Contains(text, "app.MapNavigationEndpoints();");
         StringAssert.Contains(text, "app.MapShellEndpoints();");
+        StringAssert.Contains(text, "app.MapToolEndpoints();");
         StringAssert.Contains(text, "app.MapWorkspaceEndpoints();");
         StringAssert.Contains(text, "builder.Services.AddChummerHeadlessCore(");
 
@@ -85,8 +81,9 @@ public class ArchitectureGuardrailTests
         string programPath = FindPath("Chummer.Blazor", "Program.cs");
         string text = File.ReadAllText(programPath);
 
-        StringAssert.Contains(text, "app.MapGet(\"/health\"");
-        StringAssert.Contains(text, "head = \"blazor\"");
+        StringAssert.Contains(text, "builder.Services.AddRazorComponents()");
+        StringAssert.Contains(text, "AddInteractiveServerComponents();");
+        StringAssert.Contains(text, "app.MapRazorComponents<App>()");
     }
 
     [TestMethod]
@@ -225,7 +222,7 @@ public class ArchitectureGuardrailTests
     [TestMethod]
     public void Tools_endpoints_stay_transport_only()
     {
-        string endpointPath = FindPath("Chummer.Api", "Endpoints", "ToolsEndpoints.cs");
+        string endpointPath = FindPath("Chummer.Api", "Endpoints", "ToolEndpoints.cs");
         string text = File.ReadAllText(endpointPath);
 
         Assert.IsFalse(text.Contains("Directory.", StringComparison.Ordinal));
@@ -240,7 +237,7 @@ public class ArchitectureGuardrailTests
         string endpointPath = FindPath("Chummer.Api", "Endpoints", "WorkspaceEndpoints.cs");
         string text = File.ReadAllText(endpointPath);
 
-        StringAssert.Contains(text, "IWorkspaceService workspaceService");
+        StringAssert.Contains(text, "IChummerClient client");
         Assert.IsFalse(text.Contains("Directory.", StringComparison.Ordinal));
         Assert.IsFalse(text.Contains("File.", StringComparison.Ordinal));
         Assert.IsFalse(text.Contains("Path.Combine", StringComparison.Ordinal));
@@ -251,9 +248,9 @@ public class ArchitectureGuardrailTests
     }
 
     [TestMethod]
-    public void Web_project_does_not_reference_core_directly()
+    public void Hub_web_project_does_not_reference_core_directly()
     {
-        string projectPath = FindPath("Chummer.Web", "Chummer.Web.csproj");
+        string projectPath = FindPath("Chummer.Hub.Web", "Chummer.Hub.Web.csproj");
         string text = File.ReadAllText(projectPath);
 
         Assert.IsFalse(text.Contains(@"..\Chummer.Core\Chummer.Core.csproj", StringComparison.Ordinal));
@@ -305,24 +302,28 @@ public class ArchitectureGuardrailTests
             ["Chummer.Contracts"] = new HashSet<string>(StringComparer.Ordinal),
             ["Chummer.Core"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts" },
             ["Chummer.Application"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts" },
-            ["Chummer.Presentation"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts", "Chummer.Rulesets.Hosting" },
+            ["Chummer.Presentation"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Run.Contracts", "Chummer.Rulesets.Hosting" },
             ["Chummer.Rulesets.Hosting"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts" },
             ["Chummer.Rulesets.Sr5"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts" },
             ["Chummer.Infrastructure"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Rulesets.Hosting", "Chummer.Rulesets.Sr5", "Chummer.Rulesets.Sr6" },
             ["Chummer.Infrastructure.Browser"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts" },
-            ["Chummer.Api"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Infrastructure" },
+            ["Chummer.Api"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Infrastructure", "Chummer.Presentation", "Chummer.Rulesets.Sr4", "Chummer.Rulesets.Sr6" },
             ["Chummer.Portal"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts" },
-            ["Chummer.Web"] = new HashSet<string>(StringComparer.Ordinal),
-            ["Chummer.Blazor"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts", "Chummer.Presentation", "Chummer.Rulesets.Hosting", "Chummer.Rulesets.Sr5", "Chummer.Rulesets.Sr6" },
-            ["Chummer.Hub.Web"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts", "Chummer.Presentation" },
-            ["Chummer.Desktop.Runtime"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Infrastructure", "Chummer.Presentation", "Chummer.Rulesets.Hosting", "Chummer.Rulesets.Sr5", "Chummer.Rulesets.Sr6" },
-            ["Chummer.Blazor.Desktop"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Blazor", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation" },
-            ["Chummer.Avalonia"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation" },
+            ["Chummer.Blazor"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation", "Chummer.Run.Contracts" },
+            ["Chummer.Hub.Web"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Presentation", "Chummer.Run.Contracts" },
+            ["Chummer.Desktop.Runtime"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Hub.Registry.Contracts", "Chummer.Infrastructure", "Chummer.Presentation", "Chummer.Run.Contracts", "Chummer.Rulesets.Hosting", "Chummer.Rulesets.Sr5", "Chummer.Rulesets.Sr6" },
+            ["Chummer.Blazor.Desktop"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Blazor", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation", "Chummer.Run.Contracts" },
+            ["Chummer.Avalonia"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation", "Chummer.Run.Contracts" },
             ["Chummer.Avalonia.Browser"] = new HashSet<string>(StringComparer.Ordinal)
         };
 
         foreach ((string project, HashSet<string> allowed) in allowedReferences)
         {
+            if (!ProjectFileExists(project))
+            {
+                continue;
+            }
+
             HashSet<string> actual = ReadProjectReferenceNames(project);
             List<string> forbidden = actual.Except(allowed, StringComparer.Ordinal).OrderBy(name => name, StringComparer.Ordinal).ToList();
 
@@ -357,6 +358,11 @@ public class ArchitectureGuardrailTests
 
     private static string FindPath(params string[] parts)
     {
+        if (parts.Length > 0 && TryResolveProjectOrNestedPath(parts, requireDirectory: false) is { } resolvedPath)
+        {
+            return resolvedPath;
+        }
+
         foreach (string? root in CandidateRoots())
         {
             if (string.IsNullOrWhiteSpace(root))
@@ -389,7 +395,7 @@ public class ArchitectureGuardrailTests
             .Where(element => string.Equals(element.Name.LocalName, "ProjectReference", StringComparison.Ordinal))
             .Select(element => element.Attribute("Include")?.Value ?? string.Empty)
             .Where(include => !string.IsNullOrWhiteSpace(include))
-            .Select(include => Path.GetFileNameWithoutExtension(include.Replace('\\', Path.DirectorySeparatorChar)))
+            .Select(ResolveProjectReferenceName)
             .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToHashSet(StringComparer.Ordinal);
     }
@@ -399,6 +405,11 @@ public class ArchitectureGuardrailTests
         return Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
             .Where(path =>
             {
+                if (IsGeneratedOrTransientPath(path))
+                {
+                    return false;
+                }
+
                 string extension = Path.GetExtension(path);
                 return string.Equals(extension, ".cs", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(extension, ".razor", StringComparison.OrdinalIgnoreCase);
@@ -407,6 +418,11 @@ public class ArchitectureGuardrailTests
 
     private static string FindDirectory(params string[] parts)
     {
+        if (parts.Length > 0 && TryResolveProjectOrNestedPath(parts, requireDirectory: true) is { } resolvedPath)
+        {
+            return resolvedPath;
+        }
+
         foreach (string? root in CandidateRoots())
         {
             if (string.IsNullOrWhiteSpace(root))
@@ -431,6 +447,11 @@ public class ArchitectureGuardrailTests
 
     private static string? TryFindDirectory(params string[] parts)
     {
+        if (parts.Length > 0 && TryResolveProjectOrNestedPath(parts, requireDirectory: true) is { } resolvedPath)
+        {
+            return resolvedPath;
+        }
+
         foreach (string? root in CandidateRoots())
         {
             if (string.IsNullOrWhiteSpace(root))
@@ -458,6 +479,66 @@ public class ArchitectureGuardrailTests
         yield return Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
+        yield return "/docker/chummercomplete";
+        yield return "/docker/chummercomplete/chummer-core-engine";
+        yield return "/docker/chummercomplete/chummer-presentation";
+        yield return "/docker/chummercomplete/chummer.run-services";
+        yield return "/docker/chummercomplete/chummer-hub-registry";
         yield return "/src";
     }
+
+    private static string? TryResolveProjectOrNestedPath(IReadOnlyList<string> parts, bool requireDirectory)
+    {
+        string projectName = parts[0];
+
+        foreach (string root in CandidateRoots().Where(static root => !string.IsNullOrWhiteSpace(root)).Distinct(StringComparer.Ordinal)!)
+        {
+            if (!Directory.Exists(root))
+            {
+                continue;
+            }
+
+            foreach (string projectDirectory in Directory.EnumerateDirectories(root, projectName, SearchOption.AllDirectories))
+            {
+                string candidate = Path.Combine(new[] { projectDirectory }.Concat(parts.Skip(1)).ToArray());
+                bool exists = requireDirectory ? Directory.Exists(candidate) : File.Exists(candidate);
+                if (exists)
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string ResolveProjectReferenceName(string include)
+    {
+        if (string.IsNullOrWhiteSpace(include))
+        {
+            return string.Empty;
+        }
+
+        return include switch
+        {
+            "$(ChummerLocalContractsProject)" => "Chummer.Contracts",
+            "$(ChummerLocalCampaignContractsProject)" => "Chummer.Campaign.Contracts",
+            "$(ChummerLocalRunContractsProject)" => "Chummer.Run.Contracts",
+            "$(ChummerLocalHubRegistryContractsProject)" => "Chummer.Hub.Registry.Contracts",
+            "$(ChummerLocalUiKitProject)" => string.Empty,
+            _ => Path.GetFileNameWithoutExtension(include.Replace('\\', Path.DirectorySeparatorChar))
+        };
+    }
+
+    private static bool IsGeneratedOrTransientPath(string path)
+    {
+        string[] segments = path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
+        return segments.Any(segment =>
+            string.Equals(segment, "bin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(segment, "obj", StringComparison.OrdinalIgnoreCase)
+            || segment.StartsWith(".", StringComparison.Ordinal));
+    }
+
+    private static bool ProjectFileExists(string projectName)
+        => TryResolveProjectOrNestedPath([projectName, $"{projectName}.csproj"], requireDirectory: false) is not null;
 }

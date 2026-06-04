@@ -146,7 +146,7 @@ public sealed class SessionOfflineCacheServiceTests
             BaseCharacterVersion: baseCharacterVersion,
             Events:
             [
-                new SessionEvent(
+                new SessionEventEnvelope(
                     EventId: "event-1",
                     OverlayId: "offline:char-1",
                     BaseCharacterVersion: baseCharacterVersion,
@@ -154,7 +154,11 @@ public sealed class SessionOfflineCacheServiceTests
                     ActorId: "actor-1",
                     Sequence: 1,
                     EventType: SessionEventTypes.TrackerIncrement,
-                    PayloadJson: "{\"trackerId\":\"stun\",\"delta\":1}",
+                    Payload: new Dictionary<string, RulesetCapabilityValue>(StringComparer.Ordinal)
+                    {
+                        ["trackerId"] = RulesetCapabilityBridge.FromObject("stun"),
+                        ["delta"] = RulesetCapabilityBridge.FromObject(1)
+                    },
                     CreatedAtUtc: DateTimeOffset.UtcNow)
             ],
             NextSequence: 2);

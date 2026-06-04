@@ -354,6 +354,10 @@ button:disabled {
     min-height: 0;
 }
 
+.right-pane {
+    display: none;
+}
+
 .panel {
     background: var(--ui-kit-panel-surface);
     border: 1px solid var(--ui-kit-shell-border);

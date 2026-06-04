@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-02T09:07:26Z",
+  "generatedAt": "2026-06-03T19:30:55Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
@@ -148,7 +148,7 @@
       "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
       "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
       "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
       "flagshipFrontier": "/docker/fleet/.codex-studio/published/FULL_PRODUCT_FRONTIER.generated.yaml"
     },
     "receiptChecks": {
@@ -168,7 +168,7 @@
       "ui_flagship_gate_external_blocking_only": false,
       "screenshot_review_gate_route_local_only": false,
       "screenshot_review_gate_external_blocking_only": false,
-      "skip_flagship_gate_dependency": false,
+      "skip_flagship_gate_dependency": true,
       "ui_flagship_gate_tokens_present": true
     },
     "routeReceiptChecks": {

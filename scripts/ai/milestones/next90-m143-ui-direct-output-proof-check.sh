@@ -27,6 +27,15 @@ design_queue_path = Path(sys.argv[3])
 receipt_path = Path(sys.argv[4])
 repo_root = Path(sys.argv[5])
 canonical_ui_root = Path(os.environ.get("CHUMMER_NEXT90_M143_CANONICAL_UI_ROOT", str(repo_root)))
+known_ui_root_aliases = {str(canonical_ui_root)}
+
+if "CHUMMER_NEXT90_M143_CANONICAL_UI_ROOT" not in os.environ:
+    sibling_alias = canonical_ui_root.with_name(
+        "chummer-presentation" if canonical_ui_root.name == "chummer6-ui" else "chummer6-ui"
+    )
+    if sibling_alias.is_dir():
+        known_ui_root_aliases.add(str(sibling_alias))
+
 skip_flagship_gate_dependency = os.environ.get("CHUMMER_NEXT90_M143_SKIP_FLAGSHIP_GATE_DEPENDENCY", "").strip() == "1"
 
 PACKAGE_ID = "next90-m143-ui-capture-direct-screenshot-and-runtime-proof-for-print-export-exchange-sr6"
@@ -245,6 +254,13 @@ def normalize_inline_whitespace(value: str) -> str:
     return " ".join(str(value or "").split())
 
 
+def normalize_ui_paths_for_compare(value: str) -> str:
+    normalized = normalize_inline_whitespace(value)
+    for alias in sorted(known_ui_root_aliases, key=len, reverse=True):
+        normalized = normalized.replace(normalize_inline_whitespace(alias), "<UI_REPO_ROOT>")
+    return normalized
+
+
 def extract_block(text: str, anchor: str, next_anchors: list[str]) -> str:
     start = text.find(anchor)
     if start < 0:
@@ -348,8 +364,18 @@ queue_checks["design_queue_allowed_paths_exact"] = allowed_paths_block in design
 queue_checks["queue_owned_surfaces_exact"] = owned_surfaces_block in queue_block
 queue_checks["design_queue_owned_surfaces_exact"] = owned_surfaces_block in design_queue_block
 queue_checks["registry_evidence_exact"] = all(normalize_inline_whitespace(line) in registry_block_normalized for line in EXPECTED_REGISTRY_EVIDENCE)
-queue_checks["queue_proof_exact"] = all(normalize_inline_whitespace(line) in queue_block_normalized for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
-queue_checks["design_queue_proof_exact"] = all(normalize_inline_whitespace(line) in design_queue_block_normalized for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND])
+queue_checks["registry_evidence_exact"] = all(
+    normalize_ui_paths_for_compare(line) in normalize_ui_paths_for_compare(registry_block)
+    for line in EXPECTED_REGISTRY_EVIDENCE
+)
+queue_checks["queue_proof_exact"] = all(
+    normalize_ui_paths_for_compare(line) in normalize_ui_paths_for_compare(queue_block)
+    for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND]
+)
+queue_checks["design_queue_proof_exact"] = all(
+    normalize_ui_paths_for_compare(line) in normalize_ui_paths_for_compare(design_queue_block)
+    for line in EXPECTED_PROOF + [EXPECTED_DIRECT_PROOF_COMMAND, EXPECTED_TARGETED_TEST_COMMAND]
+)
 queue_checks["queue_design_block_parity"] = queue_block_normalized == design_queue_block_normalized and bool(queue_block)
 queue_checks["registry_worker_safe"] = not any(token.lower() in registry_block.lower() for token in DISALLOWED_PROOF_TOKENS)
 queue_checks["queue_worker_safe"] = not any(token.lower() in queue_block.lower() for token in DISALLOWED_PROOF_TOKENS)
@@ -382,7 +408,15 @@ for row_id in EXPECTED_PARITY_ROW_IDS:
             str(canonical_ui_root / ".codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json"),
             str(canonical_ui_root / ".codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json"),
         ]
-    parity_checks[f"{key_prefix}_evidence_present"] = all(item in evidence_list for item in required_evidence)
+    normalized_evidence = {
+        normalize_ui_paths_for_compare(item)
+        for item in evidence_list
+        if isinstance(item, str)
+    }
+    parity_checks[f"{key_prefix}_evidence_present"] = all(
+        normalize_ui_paths_for_compare(required_item) in normalized_evidence
+        for required_item in required_evidence
+    )
 payload["evidence"]["parityAuditChecks"] = parity_checks
 
 for name, passed in parity_checks.items():

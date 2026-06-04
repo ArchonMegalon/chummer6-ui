@@ -55,7 +55,7 @@ namespace Chummer.Backend
                     {"visible-build-type", "RELEASE"},
 #endif
                     {"commandline", Environment.CommandLine.AnonymizePath()},
-                    {"visible-version", Application.ProductVersion},
+                    {"visible-version", System.Windows.Forms.Application.ProductVersion},
                     {"chummer-version", Utils.CurrentChummerVersion.ToString()},
                     {"os-type", Environment.OSVersion.VersionString},
                     {"human-readable-os-version", Utils.HumanReadableOSVersion},

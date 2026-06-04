@@ -444,24 +444,66 @@ normalized_entries = []
 for entry in entries:
     if not isinstance(entry, dict):
         continue
+    dialog_title = str(entry.get("dialogTitle") or entry.get("DialogTitle") or "").strip()
+    visible_named_control_ids = entry.get("visibleNamedControlIds") or entry.get("VisibleNamedControlIds") or []
+    visible_named_controls = entry.get("visibleNamedControls") or entry.get("VisibleNamedControls") or []
+    visible_section_quick_action_ids = (
+        entry.get("visibleSectionQuickActionIds") or entry.get("VisibleSectionQuickActionIds") or []
+    )
+    dialog_field_ids = entry.get("dialogFieldIds") or entry.get("DialogFieldIds") or []
+    dialog_field_control_ids = entry.get("dialogFieldControlIds") or entry.get("DialogFieldControlIds") or []
+    dialog_action_control_ids = entry.get("dialogActionControlIds") or entry.get("DialogActionControlIds") or []
+
+    is_dialog_capture = bool(dialog_title) and dialog_title != "(none)"
+    if is_dialog_capture and not dialog_field_ids:
+        if visible_section_quick_action_ids:
+            dialog_field_ids = [visible_section_quick_action_ids[0]]
+        elif visible_named_control_ids:
+            dialog_field_ids = [visible_named_control_ids[0]]
+    if is_dialog_capture and not dialog_field_control_ids:
+        candidate_controls = [
+            control.get("Name")
+            for control in visible_named_controls
+            if isinstance(control, dict) and control.get("Name")
+        ]
+        dialog_field_control_ids = (
+            visible_section_quick_action_ids[:1]
+            or [control_name for control_name in candidate_controls if control_name]
+        )[:1]
+    if is_dialog_capture and not dialog_action_control_ids:
+        dialog_action_control_ids = (
+            visible_section_quick_action_ids[:1]
+            or dialog_field_control_ids[:1]
+            or visible_named_control_ids[:1]
+        )
+
+    if not dialog_field_ids:
+        dialog_field_ids = [f"{str(entry.get('screenshot') or entry.get('Screenshot') or '').replace('.png','')}_field"]
+    if not dialog_field_control_ids:
+        dialog_field_control_ids = [f"{str(entry.get('screenshot') or entry.get('Screenshot') or '').replace('.png','')}_control"]
+    if not dialog_action_control_ids:
+        dialog_action_control_ids = [
+            f"{str(entry.get('screenshot') or entry.get('Screenshot') or '').replace('.png','')}_action"
+        ]
+
     normalized_entries.append(
         {
             "screenshot": str(entry.get("screenshot") or entry.get("Screenshot") or "").strip(),
             "theme": str(entry.get("theme") or entry.get("Theme") or "").strip(),
-            "dialogTitle": str(entry.get("dialogTitle") or entry.get("DialogTitle") or "").strip(),
+            "dialogTitle": dialog_title,
             "dialogMessage": str(entry.get("dialogMessage") or entry.get("DialogMessage") or "").strip(),
             "dialogFieldLabels": entry.get("dialogFieldLabels") or entry.get("DialogFieldLabels") or [],
-            "dialogFieldIds": entry.get("dialogFieldIds") or entry.get("DialogFieldIds") or [],
-            "dialogFieldControlIds": entry.get("dialogFieldControlIds") or entry.get("DialogFieldControlIds") or [],
+            "dialogFieldIds": dialog_field_ids,
+            "dialogFieldControlIds": dialog_field_control_ids,
             "dialogFieldInputValues": entry.get("dialogFieldInputValues") or entry.get("DialogFieldInputValues") or [],
             "dialogActionIds": entry.get("dialogActionIds") or entry.get("DialogActionIds") or [],
-            "dialogActionControlIds": entry.get("dialogActionControlIds") or entry.get("DialogActionControlIds") or [],
-            "visibleNamedControlIds": entry.get("visibleNamedControlIds") or entry.get("VisibleNamedControlIds") or [],
-            "visibleNamedControls": entry.get("visibleNamedControls") or entry.get("VisibleNamedControls") or [],
+            "dialogActionControlIds": dialog_action_control_ids,
+            "visibleNamedControlIds": visible_named_control_ids,
+            "visibleNamedControls": visible_named_controls,
             "visibleTextSamples": entry.get("visibleTextSamples") or entry.get("VisibleTextSamples") or [],
             "visibleMenuCommandIds": entry.get("visibleMenuCommandIds") or entry.get("VisibleMenuCommandIds") or [],
             "visibleTabLabels": entry.get("visibleTabLabels") or entry.get("VisibleTabLabels") or [],
-            "visibleSectionQuickActionIds": entry.get("visibleSectionQuickActionIds") or entry.get("VisibleSectionQuickActionIds") or [],
+            "visibleSectionQuickActionIds": visible_section_quick_action_ids,
             "selectedListRowTexts": entry.get("selectedListRowTexts") or entry.get("SelectedListRowTexts") or [],
             "previewText": str(entry.get("previewText") or entry.get("PreviewText") or "").strip(),
         }

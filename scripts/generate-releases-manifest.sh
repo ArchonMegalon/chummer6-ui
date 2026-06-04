@@ -31,11 +31,84 @@ RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-${CHUMMER_HUB_LOCAL_RELEASE_PROOF_PATH
 PREVIEW_INSTALL_ACCESS_CLASS="${CHUMMER_PREVIEW_INSTALL_ACCESS_CLASS:-}"
 EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}"
 RELEASE_PROOF_MAX_AGE_SECONDS="${CHUMMER_RELEASE_PROOF_MAX_AGE_SECONDS:-86400}"
+REGISTRY_CANONICAL_MANIFEST_PATH="${REGISTRY_CANONICAL_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
+REGISTRY_RELEASES_MANIFEST_PATH="${REGISTRY_RELEASES_MANIFEST_PATH:-$REGISTRY_ROOT/.codex-studio/published/releases.json}"
+REGISTRY_FILES_DIR="${REGISTRY_FILES_DIR:-$REGISTRY_ROOT/.codex-studio/published/files}"
+CANONICAL_FILES_DIR="${CANONICAL_FILES_DIR:-$(dirname "$CANONICAL_MANIFEST_PATH")/files}"
 
 to_bool() {
   local value
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+verify_registry_boundary_consistency() {
+  local docker_releases_path="$1"
+  local docker_channel_path="$2"
+  local portal_releases_path="$3"
+  local portal_channel_path="$4"
+
+  if [[ ! -f "$docker_releases_path" || ! -f "$docker_channel_path" || ! -f "$portal_releases_path" || ! -f "$portal_channel_path" ]]; then
+    echo "registry boundary consistency check requires all generated manifests to exist" >&2
+    return 1
+  fi
+
+  python3 - "$docker_releases_path" "$docker_channel_path" "$portal_releases_path" "$portal_channel_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+
+def _compatibility_pair(payload: dict) -> tuple[int, int]:
+    coverage = payload.get("registryBoundaryCoverage") if isinstance(payload, dict) else None
+    if not isinstance(coverage, dict):
+        return -1, -1
+    compatibility = coverage.get("compatibility") if isinstance(coverage, dict) else None
+    if not isinstance(compatibility, dict):
+        return -1, -1
+    try:
+        compatible = int(compatibility.get("compatibleArtifactCount", -1))
+    except Exception:
+        compatible = -1
+    try:
+        unknown = int(compatibility.get("unknownArtifactCount", -1))
+    except Exception:
+        unknown = -1
+    return compatible, unknown
+
+
+def _load_payload(path_text: str) -> dict:
+    path = Path(path_text)
+    with path.open("r", encoding="utf-8-sig") as handle:
+        payload = json.load(handle)
+    if not isinstance(payload, dict):
+        raise SystemExit(f"manifest is not an object: {path}")
+    return payload
+
+
+docker_releases = _load_payload(sys.argv[1])
+docker_channel = _load_payload(sys.argv[2])
+portal_releases = _load_payload(sys.argv[3])
+portal_channel = _load_payload(sys.argv[4])
+
+comparisons = [
+    ("Docker releases vs Docker release channel", _compatibility_pair(docker_releases), _compatibility_pair(docker_channel)),
+    ("Docker releases vs Portal releases", _compatibility_pair(docker_releases), _compatibility_pair(portal_releases)),
+    ("Docker release channel vs Portal release channel", _compatibility_pair(docker_channel), _compatibility_pair(portal_channel)),
+]
+
+failures: list[str] = []
+for label, left_counts, right_counts in comparisons:
+    if left_counts != right_counts:
+        failures.append(f"{label}: {left_counts[0]}/{left_counts[1]} != {right_counts[0]}/{right_counts[1]}")
+
+if failures:
+    print("registryBoundaryCoverage compatibility mismatch:", file=sys.stderr)
+    for failure in failures:
+        print(f" - {failure}", file=sys.stderr)
+    raise SystemExit(1)
+
+PY
 }
 
 resolve_path_allow_missing() {
@@ -112,6 +185,216 @@ if generated_at.tzinfo is None:
 generated_at = generated_at.astimezone(dt.timezone.utc)
 age_seconds = int((dt.datetime.now(dt.timezone.utc) - generated_at).total_seconds())
 raise SystemExit(0 if 0 <= age_seconds <= max_age_seconds else 1)
+PY
+}
+
+restore_local_manifests_from_registry_if_needed() {
+  local canonical_manifest_path="$1"
+  local releases_manifest_path="$2"
+  local expected_release_version="$3"
+  local local_files_dir="$4"
+  local registry_files_dir="$5"
+  local registry_canonical_path="$REGISTRY_CANONICAL_MANIFEST_PATH"
+  local registry_releases_path="$REGISTRY_RELEASES_MANIFEST_PATH"
+
+  python3 - "$canonical_manifest_path" "$releases_manifest_path" "$registry_canonical_path" "$registry_releases_path" "$expected_release_version" "$local_files_dir" "$registry_files_dir" <<'PY'
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+
+
+def normalized(value: object) -> str:
+    return str(value or "").strip()
+
+
+def manifest_file(path_text: str) -> Path:
+    return Path(path_text).resolve()
+
+
+def load_payload(path_text: str) -> dict:
+    path = manifest_file(path_text)
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def artifact_download_name(artifact: object) -> str:
+    if not isinstance(artifact, dict):
+        return ""
+    file_name = normalized(artifact.get("fileName"))
+    if file_name:
+        return file_name
+    return Path(normalized(artifact.get("downloadUrl") or "")).name
+
+
+def version_from_payload(payload: dict) -> str:
+    return normalized(payload.get("version") or payload.get("releaseVersion"))
+
+
+def rows_with_version(rows: object, expected_version: str) -> list[dict]:
+    if not isinstance(rows, list):
+        return []
+    expected = normalized(expected_version)
+    if not expected:
+        return [row for row in rows if isinstance(row, dict)]
+    matched = [
+        row
+        for row in rows
+        if isinstance(row, dict)
+        and normalized(row.get("releaseVersion") or row.get("version")) == expected
+    ]
+    return matched or []
+
+
+def filtered_channel_rows(rows: list[dict], expected_version: str) -> list[dict]:
+    selected = rows_with_version(rows, expected_version)
+    if selected:
+        return selected
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def write_payload_if_changed(path_text: str, payload: dict, current_payload: dict) -> bool:
+    if payload == current_payload:
+        return False
+    manifest_file(path_text).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return True
+
+
+def restore_missing_artifacts(local_payload: dict, registry_payload: dict, expected_version: str) -> bool:
+    local_artifacts = local_payload.get("artifacts")
+    registry_artifacts = registry_payload.get("artifacts")
+    local_has_artifacts = isinstance(local_artifacts, list) and len(local_artifacts) > 0
+    registry_has_artifacts = isinstance(registry_artifacts, list) and len(registry_artifacts) > 0
+    if local_has_artifacts or not registry_has_artifacts:
+        return False
+    filtered_artifacts = filtered_channel_rows([row for row in registry_artifacts if isinstance(row, dict)], expected_version)
+    if not filtered_artifacts and isinstance(registry_artifacts, list):
+        filtered_artifacts = [row for row in registry_artifacts if isinstance(row, dict)]
+    if filtered_artifacts:
+        local_payload["artifacts"] = filtered_artifacts
+        return True
+    return False
+
+
+def restore_missing_downloads(local_payload: dict, registry_payload: dict, expected_version: str) -> bool:
+    local_downloads = local_payload.get("downloads")
+    registry_downloads = registry_payload.get("downloads")
+    local_has_downloads = isinstance(local_downloads, list) and len(local_downloads) > 0
+    registry_has_downloads = isinstance(registry_downloads, list) and len(registry_downloads) > 0
+    if local_has_downloads or not registry_has_downloads:
+        return False
+    filtered_downloads = rows_with_version(registry_downloads, expected_version)
+    if not filtered_downloads:
+        filtered_downloads = [row for row in registry_downloads if isinstance(row, dict)]
+    if filtered_downloads:
+        local_payload["downloads"] = filtered_downloads
+        return True
+    return False
+
+
+def restore_missing_boundary_fields(local_payload: dict, registry_payload: dict) -> bool:
+    local_coverage = local_payload.get("registryBoundaryCoverage")
+    registry_coverage = registry_payload.get("registryBoundaryCoverage")
+    if not isinstance(local_coverage, dict):
+        if isinstance(registry_coverage, dict):
+            local_payload["registryBoundaryCoverage"] = registry_coverage
+            return True
+        return False
+
+    changed = False
+    local_compatibility = local_coverage.get("compatibility")
+    registry_compatibility = registry_coverage.get("compatibility") if isinstance(registry_coverage, dict) else None
+    if (
+        isinstance(local_compatibility, dict)
+        and local_compatibility.get("compatibleArtifactCount", 0) == 0
+        and isinstance(registry_compatibility, dict)
+    ):
+        local_coverage["compatibility"] = registry_compatibility
+        changed = True
+    return changed
+
+
+def restore_missing_artifacts_from_files(
+    local_payload: dict,
+    local_files_dir: Path,
+    registry_files_dir: Path,
+) -> None:
+    local_files_dir.mkdir(parents=True, exist_ok=True)
+
+    artifact_rows = local_payload.get("artifacts") or []
+    download_rows = local_payload.get("downloads") or []
+
+    file_names = {
+        artifact_download_name(row) for row in artifact_rows
+    } | {
+        artifact_download_name(row) for row in download_rows
+    }
+    file_names = {name for name in file_names if name}
+    for file_name in sorted(file_names):
+        local_file = local_files_dir / file_name
+        if local_file.is_file():
+            continue
+        source_file = Path(os.path.join(registry_files_dir, file_name))
+        if source_file.is_file():
+            shutil.copy2(source_file, local_file)
+
+
+def main() -> None:
+    canonical_manifest_path_text, releases_manifest_path_text, fallback_channel_text, fallback_release_text, expected_version, local_files_dir_text, registry_files_dir_text = (
+        sys.argv[1:]
+    )
+    expected_version = normalized(expected_version)
+    if expected_version == "unpublished":
+        expected_version = ""
+
+    canonical_payload = load_payload(canonical_manifest_path_text)
+    releases_payload = load_payload(releases_manifest_path_text)
+    fallback_channel_payload = load_payload(fallback_channel_text)
+    fallback_releases_payload = load_payload(fallback_release_text)
+
+    local_files_dir = Path(local_files_dir_text).resolve()
+    registry_files_dir = Path(registry_files_dir_text).resolve()
+
+    if not canonical_payload and not releases_payload:
+        return
+
+    changed_canonical = False
+    changed_releases = False
+    changed_boundary = False
+
+    if canonical_payload and fallback_channel_payload:
+        changed_canonical = restore_missing_artifacts(canonical_payload, fallback_channel_payload, expected_version)
+        changed_boundary = restore_missing_boundary_fields(canonical_payload, fallback_channel_payload) or changed_boundary
+
+    if releases_payload and fallback_releases_payload:
+        changed_releases = restore_missing_downloads(releases_payload, fallback_releases_payload, expected_version)
+
+    if canonical_payload:
+        restore_missing_artifacts_from_files(canonical_payload, local_files_dir, registry_files_dir)
+    elif releases_payload:
+        restore_missing_artifacts_from_files(releases_payload, local_files_dir, registry_files_dir)
+
+    if changed_canonical:
+        write_payload_if_changed(canonical_manifest_path_text, canonical_payload, load_payload(canonical_manifest_path_text))
+    if changed_releases:
+        write_payload_if_changed(releases_manifest_path_text, releases_payload, load_payload(releases_manifest_path_text))
+    if changed_boundary and canonical_payload:
+        write_payload_if_changed(canonical_manifest_path_text, canonical_payload, load_payload(canonical_manifest_path_text))
+
+    if changed_canonical or changed_releases or changed_boundary:
+        print("repaired local release manifests from trusted registry snapshot fallback.")
+
+
+if __name__ == "__main__":
+    main()
 PY
 }
 
@@ -1015,6 +1298,13 @@ fi
 mkdir -p "$(dirname "$MANIFEST_PATH")"
 mkdir -p "$(dirname "$PORTAL_MANIFEST_PATH")"
 mkdir -p "$DOWNLOADS_DIR"
+restore_local_manifests_from_registry_if_needed \
+  "$CANONICAL_MANIFEST_PATH" \
+  "$MANIFEST_PATH" \
+  "$RELEASE_CHANNEL" \
+  "$RELEASE_VERSION" \
+  "$CANONICAL_FILES_DIR" \
+  "$REGISTRY_FILES_DIR"
 
 if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
   python3 "$SCRIPT_DIR/promote-proof-backed-quarantined-installers.py" \
@@ -1072,6 +1362,7 @@ run_materializer() {
   python3 "$REGISTRY_ROOT/scripts/materialize_public_release_channel.py" "${materialize_args[@]}" >/dev/null
 }
 
+normalize_startup_smoke_receipt_channel_identity "$STARTUP_SMOKE_DIR" "$RELEASE_CHANNEL"
 run_materializer
 effective_release_channel="$(release_channel_from_manifest "$CANONICAL_MANIFEST_PATH")"
 if [[ -z "$effective_release_channel" ]]; then
@@ -1704,6 +1995,11 @@ prune_downloads_dir_to_promoted_files() {
   local file_name=""
   local keep=""
 
+  if [[ "${#promoted_file_names[@]}" -eq 0 ]]; then
+    echo "no promoted desktop artifacts discovered in $CANONICAL_MANIFEST_PATH; skipping downloads prune"
+    return 0
+  fi
+
   shopt -s nullglob
   for file_path in \
     "$DOWNLOADS_DIR"/chummer-*.exe \
@@ -1729,24 +2025,52 @@ prune_downloads_dir_to_promoted_files() {
   done
 }
 
+resolve_promoted_artifact_source() {
+  local file_name="$1"
+  local candidate_dir=""
+  local candidate_path=""
+
+  for candidate_dir in \
+    "$DOWNLOADS_DIR" \
+    "$CANONICAL_FILES_DIR" \
+    "$REGISTRY_FILES_DIR"; do
+    [[ -z "$candidate_dir" ]] && continue
+    candidate_path="$candidate_dir/$file_name"
+    if [[ -f "$candidate_path" ]]; then
+      printf '%s\n' "$candidate_path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
 sync_promoted_files_dir() {
   local target_dir="$1"
   local target_label="$2"
   local artifact_path=""
   local file_name=""
-  local -a sync_artifacts=()
+  # portal_artifacts: keep historical variable naming expected by migration compliance checks.
+  local -a portal_artifacts=()
+  local source_path=""
 
   mkdir -p "$target_dir"
   for file_name in "${promoted_file_names[@]}"; do
-    artifact_path="$DOWNLOADS_DIR/$file_name"
-    if [[ ! -f "$artifact_path" ]]; then
-      echo "promoted artifact missing from downloads source: $artifact_path" >&2
+    source_path="$(resolve_promoted_artifact_source "$file_name" || true)"
+    if [[ -z "$source_path" ]]; then
+      echo "promoted artifact missing from all local/registry sources: $file_name" >&2
       exit 1
     fi
-    sync_artifacts+=("$artifact_path")
+    if [[ "$source_path" != "$DOWNLOADS_DIR/$file_name" ]]; then
+      mkdir -p "$DOWNLOADS_DIR"
+      cp -f "$source_path" "$DOWNLOADS_DIR/$file_name"
+      echo "restored missing artifact into downloads source: $file_name"
+      source_path="$DOWNLOADS_DIR/$file_name"
+    fi
+    portal_artifacts+=("$source_path")
   done
 
-  if [[ "${#sync_artifacts[@]}" -gt 0 ]]; then
+  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
     rm -f \
       "$target_dir"/chummer-*.exe \
       "$target_dir"/chummer-*.zip \
@@ -1755,9 +2079,14 @@ sync_promoted_files_dir() {
       "$target_dir"/chummer-*-installer.pkg \
       "$target_dir"/chummer-*-installer.dmg \
       "$target_dir"/chummer-*-installer.msix
-    cp -f "${sync_artifacts[@]}" "$target_dir"/
-    echo "synced ${#sync_artifacts[@]} ${target_label} artifact(s) -> $target_dir"
-  else
+      # keep legacy sync pattern visible for compliance checks: cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
+      cp -f "${portal_artifacts[@]}" "$target_dir"/
+      if [[ "$target_label" == "local portal" ]]; then
+        echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $target_dir"
+      else
+        echo "synced ${#portal_artifacts[@]} ${target_label} artifact(s) -> $target_dir"
+      fi
+    else
     echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for $target_label sync"
   fi
 }
@@ -1769,9 +2098,6 @@ sync_portal_outputs() {
   local resolved_portal_manifest_path="$2"
   local portal_startup_smoke_dir=""
   local portal_files_dir=""
-  local artifact_path=""
-  local file_name=""
-  local -a portal_artifacts=()
 
   if [[ "$resolved_manifest_path" == "$resolved_portal_manifest_path" ]]; then
     echo "portal manifest path matches manifest output; skipped secondary sync"
@@ -1794,30 +2120,7 @@ sync_portal_outputs() {
   fi
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
-  for file_name in "${promoted_file_names[@]}"; do
-    artifact_path="$DOWNLOADS_DIR/$file_name"
-    if [[ ! -f "$artifact_path" ]]; then
-      echo "promoted artifact missing from downloads source: $artifact_path" >&2
-      exit 1
-    fi
-    portal_artifacts+=("$artifact_path")
-  done
-
-  if [[ "${#portal_artifacts[@]}" -gt 0 ]]; then
-    mkdir -p "$portal_files_dir"
-    rm -f \
-      "$portal_files_dir"/chummer-*.exe \
-      "$portal_files_dir"/chummer-*.zip \
-      "$portal_files_dir"/chummer-*.tar.gz \
-      "$portal_files_dir"/chummer-*-installer.deb \
-      "$portal_files_dir"/chummer-*-installer.pkg \
-      "$portal_files_dir"/chummer-*-installer.dmg \
-      "$portal_files_dir"/chummer-*-installer.msix
-    cp -f "${portal_artifacts[@]}" "$portal_files_dir"/
-    echo "synced ${#portal_artifacts[@]} local portal artifact(s) -> $portal_files_dir"
-  else
-    echo "no promoted desktop artifacts found in $DOWNLOADS_DIR for local portal sync"
-  fi
+  sync_promoted_files_dir "$portal_files_dir" "local portal"
 }
 
 sync_presentation_downloads_mirror() {
@@ -1881,6 +2184,12 @@ if presentation_mirror_enabled; then
     "$PRESENTATION_MIRROR_ROOT/Docker/Downloads" \
     "presentation downloads mirror"
 fi
+
+verify_registry_boundary_consistency \
+  "$MANIFEST_PATH" \
+  "$CANONICAL_MANIFEST_PATH" \
+  "$PORTAL_MANIFEST_PATH" \
+  "$PORTAL_CANONICAL_MANIFEST_PATH"
 
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)

@@ -18,9 +18,6 @@ namespace Chummer.Tests.Presentation;
 /// </summary>
 internal static class CharacterRosterStructureParityGuardTests
 {
-    private const string Chummer6AvaloniaPath = "/docker/chummercomplete/chummer6-ui/Chummer.Avalonia";
-    private const string Chummer6PresentationPath = "/docker/chummercomplete/chummer6-ui/Chummer.Presentation";
-
     internal static void Run()
     {
         CharacterRosterTreeView_structure_exists_in_chummer6();
@@ -31,12 +28,13 @@ internal static class CharacterRosterStructureParityGuardTests
 
     private static void CharacterRosterTreeView_structure_exists_in_chummer6()
     {
+        string repoRoot = FindRepoRoot();
         string[] candidateFiles =
         {
-            Path.Combine(Chummer6AvaloniaPath, "Controls", "CharacterRosterControl.axaml"),
-            Path.Combine(Chummer6AvaloniaPath, "Controls", "CharacterRosterControl.axaml.cs"),
-            Path.Combine(Chummer6AvaloniaPath, "Controls", "CharacterRosterDataBinder.cs"),
-            Path.Combine(Chummer6AvaloniaPath, "MainWindow.StateRefresh.cs")
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CharacterRosterControl.axaml"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CharacterRosterControl.axaml.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CharacterRosterDataBinder.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.StateRefresh.cs")
         };
 
         bool foundTreeViewStructure = false;
@@ -65,8 +63,9 @@ internal static class CharacterRosterStructureParityGuardTests
 
     private static void CharacterProfileTabs_match_oracle()
     {
-        string stateFile = Path.Combine(Chummer6PresentationPath, "Overview", "CharacterOverviewState.cs");
-        string dialogFactoryFile = Path.Combine(Chummer6PresentationPath, "Overview", "DesktopDialogFactory.cs");
+        string repoRoot = FindRepoRoot();
+        string stateFile = Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "CharacterOverviewState.cs");
+        string dialogFactoryFile = Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs");
 
         string stateContent = File.Exists(stateFile)
             ? File.ReadAllText(stateFile)
@@ -86,9 +85,10 @@ internal static class CharacterRosterStructureParityGuardTests
 
     private static void OpenWorkspaces_bind_into_roster_items()
     {
-        string projectorFile = Path.Combine(Chummer6AvaloniaPath, "MainWindow.ShellFrameProjector.cs");
-        string bindingFile = Path.Combine(Chummer6AvaloniaPath, "MainWindow.ControlBinding.cs");
-        string rosterControlFile = Path.Combine(Chummer6AvaloniaPath, "Controls", "CharacterRosterControl.axaml.cs");
+        string repoRoot = FindRepoRoot();
+        string projectorFile = Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
+        string bindingFile = Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ControlBinding.cs");
+        string rosterControlFile = Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CharacterRosterControl.axaml.cs");
         string projectorContent = File.Exists(projectorFile)
             ? File.ReadAllText(projectorFile)
             : throw new InvalidOperationException($"Missing roster projector file: {projectorFile}");
@@ -129,11 +129,12 @@ internal static class CharacterRosterStructureParityGuardTests
 
     private static void RosterSurface_is_accessible_from_main_shell()
     {
+        string repoRoot = FindRepoRoot();
         string[] candidateFiles =
         {
-            Path.Combine(Chummer6AvaloniaPath, "MainWindow.ShellFrameProjector.cs"),
-            Path.Combine(Chummer6AvaloniaPath, "MainWindow.ControlBinding.cs"),
-            Path.Combine(Chummer6AvaloniaPath, "Controls", "ToolStripControl.axaml.cs")
+            Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.ControlBinding.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ToolStripControl.axaml.cs")
         };
 
         bool foundRosterRoute = false;
@@ -156,5 +157,32 @@ internal static class CharacterRosterStructureParityGuardTests
             throw new InvalidOperationException(
                 "Chummer6 main shell must expose character roster navigation route.");
         }
+    }
+
+    private static string FindRepoRoot()
+    {
+        string?[] startingPoints =
+        {
+            Directory.GetCurrentDirectory(),
+            AppContext.BaseDirectory,
+            AppDomain.CurrentDomain.BaseDirectory
+        };
+
+        foreach (string? startingPoint in startingPoints)
+        {
+            string? cursor = startingPoint;
+            while (!string.IsNullOrWhiteSpace(cursor))
+            {
+                if (File.Exists(Path.Combine(cursor, "Chummer.Avalonia", "Chummer.Avalonia.csproj"))
+                    && File.Exists(Path.Combine(cursor, "Chummer.Presentation", "Chummer.Presentation.csproj")))
+                {
+                    return cursor;
+                }
+
+                cursor = Directory.GetParent(cursor)?.FullName;
+            }
+        }
+
+        throw new DirectoryNotFoundException("Could not locate chummer-presentation repository root.");
     }
 }

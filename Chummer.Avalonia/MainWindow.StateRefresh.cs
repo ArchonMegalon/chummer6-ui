@@ -57,8 +57,17 @@ public partial class MainWindow
         bool showNavigatorPane = shellFrame.ShowNavigatorPane;
         bool showRosterPane = !showNavigatorPane;
         bool showSummaryHeader = shellFrame.ChromeState.SummaryHeader.HasVisibleContent;
-        bool showCommandSurface = !string.IsNullOrWhiteSpace(_shellPresenter.State.OpenMenuId)
-            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId);
+        string? selectedCommandId = shellFrame.CommandDialogPaneState.SelectedCommandId;
+        string? activeDialogId = shellFrame.CommandDialogPaneState.ActiveDialogId;
+        bool shouldSuppressRightCommandPane = IsNewCharacterWorkbenchActive(selectedCommandId, activeDialogId, shellFrame.CommandDialogPaneState);
+        bool hasCommandContext = !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.ActiveDialogId)
+            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.SelectedCommandId)
+            || shellFrame.CommandDialogPaneState.Fields.Length > 0
+            || shellFrame.CommandDialogPaneState.Actions.Length > 0
+            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogTitle)
+            || !string.IsNullOrWhiteSpace(shellFrame.CommandDialogPaneState.DialogMessage);
+        bool hasOpenMenu = !string.IsNullOrWhiteSpace(shellFrame.HeaderState.MenuBar.OpenMenuId);
+        bool showCommandSurface = (hasCommandContext || hasOpenMenu) && !shouldSuppressRightCommandPane;
         bool showClassicFormPort = ClassicModePolicy.ShouldUseClassicFormPort(
             shellFrame.SectionHostState.SectionId,
             shellFrame.CommandDialogPaneState.SelectedCommandId);
@@ -71,6 +80,10 @@ public partial class MainWindow
             || shellFrame.CommandDialogPaneState.Fields.Length > 0
             || shellFrame.CommandDialogPaneState.Actions.Length > 0
             || showCommandSurface;
+        if (shouldSuppressRightCommandPane)
+        {
+            showRightShell = false;
+        }
 
         if (commandPromotedToClassicFormPort)
         {
@@ -108,6 +121,139 @@ public partial class MainWindow
 
         ContentRegion.InvalidateMeasure();
         ContentRegion.InvalidateArrange();
+    }
+
+    private static bool IsNewCharacterWorkbenchActive(
+        string? selectedCommandId,
+        string? activeDialogId,
+        CommandDialogPaneState commandDialogPaneState)
+    {
+        if (IsNewCharacterCommandId(selectedCommandId) || IsNewCharacterDialogId(activeDialogId))
+            return true;
+
+        string? dialogTitle = commandDialogPaneState.DialogTitle;
+        if (!string.IsNullOrWhiteSpace(dialogTitle)
+            && IsNewCharacterDialogTitle(dialogTitle))
+        {
+            return true;
+        }
+
+        bool hasNewCharacterAction = commandDialogPaneState.Actions.Any(action =>
+            IsNewCharacterCommandId(action.Id)
+            || IsNewCharacterDialogAction(action.Id));
+
+        bool hasNewCharacterField = commandDialogPaneState.Fields.Any(field =>
+            IsNewCharacterFieldId(field.Id)
+            || IsNewCharacterFieldLabel(field.Label));
+
+        bool hasNewCharacterWorkflowSignature = commandDialogPaneState.Fields.Any(field =>
+            IsNewCharacterWorkflowField(field.Id, field.Label));
+
+        return commandDialogPaneState.Fields.Length > 0
+            && (hasNewCharacterAction || hasNewCharacterField || hasNewCharacterWorkflowSignature);
+    }
+
+    private static bool IsNewCharacterCommandId(string? commandId)
+        => MatchesAnyNormalizedToken(
+            commandId,
+            "newcharacter",
+            "newcritter",
+            "newrunner",
+            "charactergen",
+            "chargen");
+
+    private static bool IsNewCharacterDialogId(string? dialogId)
+        => MatchesAnyNormalizedToken(
+            dialogId,
+            "dialognewcharacter",
+            "dialognewcritter",
+            "dialognewrunner",
+            "priorityworkflow",
+            "karmaworkflow",
+            "sumtotenworkflow",
+            "mysticadeptworkflow");
+
+    private static bool IsNewCharacterDialogAction(string? actionId)
+        => MatchesAnyNormalizedToken(
+            actionId,
+            "createcharacter",
+            "completenewcharacterworkflow",
+            "newcharacterworkflowcancel",
+            "newcharacter",
+            "newrunner");
+
+    private static bool IsNewCharacterFieldId(string? fieldId)
+        => MatchesAnyNormalizedToken(
+            fieldId,
+            "newcharactername",
+            "newcharacteralias",
+            "newcharacterbuildmethod",
+            "newcharacterrulesetid",
+            "newcharactermetatype",
+            "newcharacterworkflowbuildmethod",
+            "newcharacterworkflowhouserulesenabled",
+            "newcharacterprioritylastchangedfieldid",
+            "newcharacter");
+
+    private static bool IsNewCharacterFieldLabel(string? label)
+        => MatchesAnyNormalizedToken(
+            label,
+            "newcharacter",
+            "buildmethod",
+            "ruleset",
+            "metatype",
+            "talentchoice",
+            "houserules");
+
+    private static bool IsNewCharacterWorkflowField(string? fieldId, string? fieldLabel)
+    {
+        string normalizedId = NormalizeToken(fieldId);
+        string normalizedLabel = NormalizeToken(fieldLabel);
+        return normalizedId.StartsWith("newcharacterpriority", StringComparison.Ordinal)
+            || normalizedId.StartsWith("newcharacterworkflow", StringComparison.Ordinal)
+            || normalizedId.StartsWith("newcharacterkarma", StringComparison.Ordinal)
+            || normalizedId.Contains("assensing", StringComparison.Ordinal)
+            || normalizedLabel.Contains("assensing", StringComparison.Ordinal)
+            || normalizedLabel.Contains("buildmethod", StringComparison.Ordinal)
+            || normalizedLabel.Contains("mysticadept", StringComparison.Ordinal)
+            || normalizedLabel.Contains("priority", StringComparison.Ordinal);
+    }
+
+    private static bool IsNewCharacterDialogTitle(string? dialogTitle)
+        => MatchesAnyNormalizedToken(
+            dialogTitle,
+            "newcharacter",
+            "selectbuildmethod",
+            "prioritybuild",
+            "charactercreation",
+            "chargen");
+
+    private static bool MatchesAnyNormalizedToken(string? value, params string[] tokens)
+    {
+        string normalized = NormalizeToken(value);
+        if (normalized.Length == 0)
+            return false;
+
+        return tokens.Any(token =>
+            normalized.Contains(token, StringComparison.Ordinal));
+    }
+
+    private static string NormalizeToken(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        Span<char> buffer = stackalloc char[value.Length];
+        int index = 0;
+        foreach (char character in value)
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                buffer[index++] = char.ToLowerInvariant(character);
+            }
+        }
+
+        return new string(buffer[..index]);
     }
 
     private static void ApplyPaneWidth(Border pane, bool isVisible, double width, double minWidth, double maxWidth)

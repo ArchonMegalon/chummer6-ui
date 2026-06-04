@@ -1,6 +1,7 @@
 #nullable enable annotations
 
 using System;
+using Chummer.Api;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 

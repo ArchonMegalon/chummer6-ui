@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using Chummer.Application.Owners;
 using Chummer.Contracts.Owners;
 using Microsoft.AspNetCore.Http;
@@ -71,47 +69,12 @@ public sealed class RequestOwnerContextAccessor : IOwnerContextAccessor
 
     private OwnerScope? ResolvePortalAuthenticatedOwner(HttpContext context)
     {
-        if (string.IsNullOrWhiteSpace(_portalOwnerSharedKey))
-        {
-            return null;
-        }
-
-        string? owner = context.Request.Headers[PortalOwnerPropagationContract.OwnerHeaderName].FirstOrDefault();
-        string? timestamp = context.Request.Headers[PortalOwnerPropagationContract.TimestampHeaderName].FirstOrDefault();
-        string? signature = context.Request.Headers[PortalOwnerPropagationContract.SignatureHeaderName].FirstOrDefault();
-        if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(timestamp) || string.IsNullOrWhiteSpace(signature))
-        {
-            return null;
-        }
-
-        if (!long.TryParse(timestamp, out long unixTimestamp))
-        {
-            return null;
-        }
-
-        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        if (Math.Abs(now - unixTimestamp) > _portalOwnerMaxAgeSeconds)
-        {
-            return null;
-        }
-
-        string expectedSignature = CreatePortalOwnerSignature(owner, timestamp, _portalOwnerSharedKey);
-        byte[] providedBytes = Encoding.UTF8.GetBytes(signature);
-        byte[] expectedBytes = Encoding.UTF8.GetBytes(expectedSignature);
-        if (providedBytes.Length != expectedBytes.Length
-            || !CryptographicOperations.FixedTimeEquals(providedBytes, expectedBytes))
-        {
-            return null;
-        }
-
-        return new OwnerScope(owner);
-    }
-
-    private static string CreatePortalOwnerSignature(string owner, string timestamp, string sharedKey)
-    {
-        using HMACSHA256 hmac = new(Encoding.UTF8.GetBytes(sharedKey));
-        string payload = PortalOwnerPropagationContract.BuildSignaturePayload(owner, timestamp);
-        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
-        return Convert.ToHexString(hash).ToLowerInvariant();
+        return PortalAuthenticatedOwnerPropagation.TryResolveOwner(
+            context,
+            _portalOwnerSharedKey,
+            _portalOwnerMaxAgeSeconds,
+            out OwnerScope owner)
+            ? owner
+            : null;
     }
 }

@@ -4400,25 +4400,29 @@ namespace Chummer
             // 
             // splitMain
             // 
-            this.splitMain.BackColor = System.Drawing.SystemColors.InactiveCaption;
+            this.splitMain.BackColor = System.Drawing.SystemColors.Control;
             this.splitMain.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.splitMain.ForeColor = System.Drawing.SystemColors.InactiveCaption;
+            this.splitMain.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.splitMain.ForeColor = System.Drawing.SystemColors.Control;
             this.splitMain.Location = new System.Drawing.Point(0, 0);
             this.splitMain.Name = "splitMain";
+            this.splitMain.Padding = new System.Windows.Forms.Padding(0);
             // 
             // splitMain.Panel1
             // 
             this.splitMain.Panel1.BackColor = System.Drawing.SystemColors.Control;
             this.splitMain.Panel1.Controls.Add(this.tabCharacterTabs);
             this.splitMain.Panel1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.splitMain.Panel1MinSize = 849;
+            this.splitMain.Panel1MinSize = 0;
             // 
             // splitMain.Panel2
             // 
             this.splitMain.Panel2.BackColor = System.Drawing.SystemColors.Control;
             this.splitMain.Panel2.Controls.Add(this.tabInfo);
             this.splitMain.Panel2.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.splitMain.Panel2.Padding = new System.Windows.Forms.Padding(0);
             this.splitMain.Size = new System.Drawing.Size(1264, 657);
+            this.splitMain.SplitterWidth = 1;
             this.splitMain.SplitterDistance = 985;
             this.splitMain.TabIndex = 54;
             // 

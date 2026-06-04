@@ -444,7 +444,7 @@ if ".right-pane {\n    display: none;" not in blazor_css_text and ".right-pane {
     append_reason("Blazor desktop shell still exposes the right-side rail.", blazor_layout_reasons)
 
 resolver_tokens = [
-    '["file", "tools", "windows", "help"]',
+    '["file", "edit", "special", "tools", "windows", "help"]',
     '["save_character", "print_character", "copy"]',
     'Command("copy", "command.copy", "edit", true)',
 ]

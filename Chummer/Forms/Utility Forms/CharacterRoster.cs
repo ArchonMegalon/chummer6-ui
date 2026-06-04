@@ -1101,7 +1101,7 @@ namespace Chummer
                     if (!string.IsNullOrEmpty(strFilePath))
                     {
                         strTooltip = strFilePath.Replace(Utils.GetStartupPath,
-                                                               "<" + Application.ProductName + ">");
+                                                               "<" + System.Windows.Forms.Application.ProductName + ">");
                     }
 
                     string strErrorText = objCache.ErrorText;
@@ -1733,7 +1733,7 @@ namespace Chummer
             {
                 Text = await objCache.CalculatedNameAsync(token: token).ConfigureAwait(false),
                 ToolTipText = await (await objCache.GetFilePathAsync(token).ConfigureAwait(false))
-                    .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + Application.ProductName + ">", token: token).ConfigureAwait(false),
+                    .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + System.Windows.Forms.Application.ProductName + ">", token: token).ConfigureAwait(false),
                 Tag = objCache
             };
             string strErrorText = await objCache.GetErrorTextAsync(token).ConfigureAwait(false);
@@ -1818,7 +1818,7 @@ namespace Chummer
                                 x.Text = string.IsNullOrEmpty(strSettingsFile) ? strUnknown : strSettingsFile, token).ConfigureAwait(false);
                                 await lblFilePath.SetToolTipTextAsync(
                                     await (await objCache.GetFilePathAsync(token).ConfigureAwait(false))
-                                        .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + Application.ProductName + ">", token: token).ConfigureAwait(false),
+                                        .CheapReplaceAsync(Utils.GetStartupPath, () => "<" + System.Windows.Forms.Application.ProductName + ">", token: token).ConfigureAwait(false),
                                     token).ConfigureAwait(false);
                                 Image objMugshot = await objCache.GetMugshotAsync(token).ConfigureAwait(false);
                                 await picMugshot.DoThreadSafeAsync(x => x.Image = objMugshot, token).ConfigureAwait(false);

@@ -646,6 +646,7 @@ internal static class MainWindowShellFrameProjector
             return new CommandDialogPaneState(
                 Commands: commands,
                 SelectedCommandId: lastCommandId,
+                ActiveDialogId: null,
                 DialogTitle: null,
                 DialogMessage: null,
                 DialogTrustReceipt: null,
@@ -672,6 +673,7 @@ internal static class MainWindowShellFrameProjector
         return new CommandDialogPaneState(
             Commands: commands,
             SelectedCommandId: lastCommandId,
+            ActiveDialogId: state.ActiveDialog.Id,
             DialogTitle: state.ActiveDialog.Title,
             DialogMessage: state.ActiveDialog.Message,
             DialogTrustReceipt: DesktopTrustReceiptText.BuildDialogReceipt(state.ActiveDialog),

@@ -1,6 +1,8 @@
 #nullable enable annotations
 
 using System;
+using System.IO;
+using System.Linq;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -52,6 +54,56 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(path, Uri.EscapeDataString("/account/access/install-link?"));
         StringAssert.Contains(path, Uri.EscapeDataString("installationId=install-1"));
         StringAssert.Contains(path, Uri.EscapeDataString("installLinkMode=browser_callback"));
+    }
+
+    [TestMethod]
+    public void Windows_install_link_gate_copy_stays_fail_closed_until_user_links_in_browser()
+    {
+        string formPath = FindPath("Chummer", "Forms", "DesktopInstallLinkingGateForm.cs");
+        string formText = File.ReadAllText(formPath);
+
+        StringAssert.Contains(formText, "I'm not linked. Please link and log in on the website.");
+        StringAssert.Contains(formText, "Log in on the website");
+        StringAssert.Contains(formText, "This install is not linked to a Chummer account yet.");
+        Assert.IsFalse(
+            formText.Contains("dashboard", StringComparison.OrdinalIgnoreCase),
+            "The unlinked Windows gate must not suggest that the desktop continues into dashboard or workbench content before linking.");
+        Assert.IsFalse(
+            formText.Contains("premium", StringComparison.OrdinalIgnoreCase),
+            "The unlinked Windows gate should stay narrowly focused on account linking.");
+    }
+
+    [TestMethod]
+    public void Winforms_startup_uses_sync_install_linking_bridge_without_direct_async_blocker_calls()
+    {
+        string programPath = FindPath("Chummer", "Program.cs");
+        string programText = File.ReadAllText(programPath);
+
+        StringAssert.Contains(programText, "DesktopInstallLinkingRuntime.InitializeForStartup(");
+        Assert.IsFalse(
+            programText.Contains("DesktopInstallLinkingRuntime.InitializeForStartupAsync(", StringComparison.Ordinal),
+            "Program startup should go through the explicit sync bridge instead of directly blocking on the async runtime API.");
+        Assert.IsFalse(
+            programText.Contains("InitializeForStartupAsync(\n", StringComparison.Ordinal)
+            || programText.Contains("InitializeForStartupAsync(\r\n", StringComparison.Ordinal),
+            "Program.cs should not directly call the async startup entrypoint.");
+    }
+
+    private static string FindPath(params string[] parts)
+    {
+        string? current = AppContext.BaseDirectory;
+        while (!string.IsNullOrWhiteSpace(current))
+        {
+            string candidate = Path.Combine(new[] { current }.Concat(parts).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            current = Directory.GetParent(current)?.FullName;
+        }
+
+        throw new DirectoryNotFoundException($"Could not locate {Path.Combine(parts)} from the test output directory.");
     }
 
     private static DesktopInstallLinkingState CreateInstallState(

@@ -40,7 +40,7 @@ namespace Chummer
             if (objReturn._objControl == null)
             {
                 if (Interlocked.Increment(ref _intApplicationWaitCursors) == 1)
-                    Application.UseWaitCursor = true;
+                    System.Windows.Forms.Application.UseWaitCursor = true;
                 objReturn._blnDoUnsetCursorOnDispose = true;
                 return objReturn;
             }
@@ -92,7 +92,7 @@ namespace Chummer
             if (objReturn._objControl == null)
             {
                 if (Interlocked.Increment(ref _intApplicationWaitCursors) == 1)
-                    Application.UseWaitCursor = true;
+                    System.Windows.Forms.Application.UseWaitCursor = true;
                 objReturn._blnDoUnsetCursorOnDispose = true;
                 return objReturn;
             }
@@ -209,7 +209,7 @@ namespace Chummer
             {
                 if (Interlocked.Decrement(ref _intApplicationWaitCursors) == 0 && _blnDoUnsetCursorOnDispose)
                 {
-                    Application.UseWaitCursor = false;
+                    System.Windows.Forms.Application.UseWaitCursor = false;
                 }
                 return;
             }
@@ -247,7 +247,7 @@ namespace Chummer
             {
                 if (Interlocked.Decrement(ref _intApplicationWaitCursors) == 0 && _blnDoUnsetCursorOnDispose)
                 {
-                    Application.UseWaitCursor = false;
+                    System.Windows.Forms.Application.UseWaitCursor = false;
                 }
                 return;
             }

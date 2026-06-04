@@ -1137,9 +1137,14 @@ public partial class DesktopDialogWindow : Window
         TextBox searchBox = new()
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(searchField.Id),
-            Text = searchField.Value
+            Text = searchField.Value,
+            Focusable = true
         };
         ApplyAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
+        if (string.IsNullOrWhiteSpace(_preferredFocusControlName))
+        {
+            _preferredFocusControlName = searchBox.Name;
+        }
         if (string.Equals(_preferredFocusControlName, searchBox.Name, StringComparison.Ordinal))
         {
             searchBox.AttachedToVisualTree += (_, _) => RestorePreferredTextBoxFocus(searchBox);
@@ -2409,7 +2414,11 @@ public partial class DesktopDialogWindow : Window
 
     private void OnOpened(object? sender, EventArgs e)
     {
-        FocusPreferredControl();
+        Dispatcher.UIThread.Post(() =>
+        {
+            Activate();
+            FocusPreferredControl();
+        }, DispatcherPriority.Input);
     }
 
     private void CapturePreferredFocusState()

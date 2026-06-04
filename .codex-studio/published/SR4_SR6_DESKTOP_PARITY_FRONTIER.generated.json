@@ -1,22 +1,35 @@
 {
-  "generatedAt": "2026-06-02T05:39:08.935409Z",
+  "generatedAt": "2026-06-04T14:00:59.514405Z",
   "contract_name": "chummer6-ui.sr4_sr6_desktop_parity_frontier",
   "channelId": "public_stable",
-  "status": "pass",
-  "summary": "SR4 and SR6 desktop parity frontier closure is explicitly proven by executable workflow, coverage, ruleset-adaptation, release-channel, and gate-execution subreviews.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4/SR6 desktop parity frontier closure is not yet proven.",
+  "reasons": [
+    "SR4 parity receipt predates the release channel generatedAt timestamp.",
+    "SR4 parity receipt releaseChannelPath does not match the frontier release channel path.",
+    "SR4 parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+    "SR6 parity receipt predates the release channel generatedAt timestamp.",
+    "SR6 parity receipt releaseChannelPath does not match the frontier release channel path.",
+    "SR6 parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+    "Chummer5a parity receipt predates the release channel generatedAt timestamp.",
+    "Chummer5a parity receipt releaseChannelPath does not match the frontier release channel path.",
+    "Chummer5a parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+    "Ruleset/UI adaptation receipt predates the release channel generatedAt timestamp.",
+    "Ruleset/UI adaptation receipt releaseChannelPath does not match the frontier release channel path.",
+    "Ruleset/UI adaptation receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp."
+  ],
   "evidence": {
-    "sr4ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "sr6ReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "chummer5aReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
-    "releaseChannelPath": ".tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "sr6ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "chummer5aReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
+    "rulesetUiAdaptationReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/RULESET_UI_ADAPTATION.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "releaseChannelMaxAgeSeconds": 86400,
     "releaseChannelMaxFutureSkewSeconds": 300,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-02T05:18:28Z",
-    "releaseChannelAgeSeconds": 1240,
+    "releaseChannelGeneratedAt": "2026-06-03T19:30:58Z",
+    "releaseChannelAgeSeconds": 66601,
     "releaseChannelFutureSkewSeconds": 0,
     "sr4Status": "pass",
     "sr6Status": "pass",
@@ -33,18 +46,23 @@
     "status": "pass",
     "summary": "Release channel identity and freshness are aligned to the SR4/SR6 desktop parity frontier.",
     "reasons": [],
-    "path": ".tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "path": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-02T05:18:28Z",
-    "ageSeconds": 1240,
+    "generatedAt": "2026-06-03T19:30:58Z",
+    "ageSeconds": 66601,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
   },
   "workflowReceiptReview": {
-    "status": "pass",
-    "summary": "SR4, SR6, Chummer5a, and ruleset-adaptation receipts are present, passing, and timestamped.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "One or more workflow or ruleset receipts are missing, stale, or not passing.",
+    "reasons": [
+      "SR4 parity receipt predates the release channel generatedAt timestamp.",
+      "SR6 parity receipt predates the release channel generatedAt timestamp.",
+      "Chummer5a parity receipt predates the release channel generatedAt timestamp.",
+      "Ruleset/UI adaptation receipt predates the release channel generatedAt timestamp."
+    ],
     "receiptStatuses": {
       "sr4": "pass",
       "sr6": "pass",
@@ -52,10 +70,10 @@
       "rulesetUiAdaptation": "pass"
     },
     "receiptGeneratedAts": {
-      "sr4": "2026-06-02T05:28:50.850279Z",
-      "sr6": "2026-06-02T05:32:28.579474Z",
-      "chummer5a": "2026-06-02T05:24:29.945208Z",
-      "rulesetUiAdaptation": "2026-06-02T05:33:07.017026Z"
+      "sr4": "2026-06-03T13:21:25.202374Z",
+      "sr6": "2026-06-03T13:25:22.900052Z",
+      "chummer5a": "2026-06-03T19:03:53.035804Z",
+      "rulesetUiAdaptation": "2026-06-03T13:25:48.379420Z"
     }
   },
   "workflowCoverageReview": {
@@ -108,10 +126,23 @@
     "testBuildExit": 0
   },
   "channelAlignmentReview": {
-    "status": "pass",
-    "summary": "All downstream parity receipts are aligned to the same release-channel identity and provenance.",
-    "reasons": [],
-    "releaseChannelPath": ".tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
+    "status": "fail",
+    "summary": "One or more downstream parity receipts drift from the frontier release-channel identity.",
+    "reasons": [
+      "SR4 parity receipt predates the release channel generatedAt timestamp.",
+      "SR4 parity receipt releaseChannelPath does not match the frontier release channel path.",
+      "SR4 parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+      "SR6 parity receipt predates the release channel generatedAt timestamp.",
+      "SR6 parity receipt releaseChannelPath does not match the frontier release channel path.",
+      "SR6 parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+      "Chummer5a parity receipt predates the release channel generatedAt timestamp.",
+      "Chummer5a parity receipt releaseChannelPath does not match the frontier release channel path.",
+      "Chummer5a parity receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp.",
+      "Ruleset/UI adaptation receipt predates the release channel generatedAt timestamp.",
+      "Ruleset/UI adaptation receipt releaseChannelPath does not match the frontier release channel path.",
+      "Ruleset/UI adaptation receipt releaseChannelGeneratedAt does not match the frontier release channel timestamp."
+    ],
+    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "receiptChannelIds": {
       "sr4": "public_stable",
       "sr6": "public_stable",
@@ -119,10 +150,10 @@
       "rulesetUiAdaptation": "public_stable"
     },
     "receiptReleaseChannelPaths": {
-      "sr4": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "sr6": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "chummer5a": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
-      "rulesetUiAdaptation": "/docker/chummercomplete/chummer-presentation/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
+      "sr4": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "sr6": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "chummer5a": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+      "rulesetUiAdaptation": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "receiptReleaseChannelChannelIds": {
       "sr4": "public_stable",
@@ -131,10 +162,10 @@
       "rulesetUiAdaptation": "public_stable"
     },
     "receiptReleaseChannelGeneratedAts": {
-      "sr4": "2026-06-02T05:18:28Z",
-      "sr6": "2026-06-02T05:18:28Z",
-      "chummer5a": "2026-06-02T05:18:28Z",
-      "rulesetUiAdaptation": "2026-06-02T05:18:28Z"
+      "sr4": "2026-06-03T07:11:58Z",
+      "sr6": "2026-06-03T07:11:58Z",
+      "chummer5a": "2026-06-03T07:11:58Z",
+      "rulesetUiAdaptation": "2026-06-03T07:11:58Z"
     }
   },
   "gateExecutionReview": {

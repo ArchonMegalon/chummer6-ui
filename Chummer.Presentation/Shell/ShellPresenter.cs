@@ -6,7 +6,7 @@ namespace Chummer.Presentation.Shell;
 
 public sealed class ShellPresenter : IShellPresenter
 {
-    private static readonly string[] MenuOrder = ["file", "tools", "windows", "help"];
+    private static readonly string[] MenuOrder = ["file", "edit", "special", "tools", "windows", "help"];
     private static readonly CatalogOnlyRulesetShellCatalogResolver CompatibilityShellCatalogResolver = new();
     private readonly IChummerClient _runtimeClient;
     private readonly IShellBootstrapDataProvider _bootstrapDataProvider;
@@ -533,6 +533,14 @@ public sealed class ShellPresenter : IShellPresenter
             && tabs.Any(tab => tab.EnabledByDefault && string.Equals(tab.Id, currentActiveTabId, StringComparison.Ordinal)))
         {
             return currentActiveTabId;
+        }
+
+        string? infoTabId = tabs
+            .FirstOrDefault(tab => tab.EnabledByDefault && string.Equals(tab.Id, "tab-info", StringComparison.Ordinal))
+            ?.Id;
+        if (!string.IsNullOrWhiteSpace(infoTabId))
+        {
+            return infoTabId;
         }
 
         return tabs.FirstOrDefault(tab => tab.EnabledByDefault)?.Id;

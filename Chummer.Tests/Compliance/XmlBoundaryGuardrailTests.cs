@@ -21,7 +21,7 @@ public class XmlBoundaryGuardrailTests
     [TestMethod]
     public void Xml_string_parameters_in_public_interfaces_do_not_expand()
     {
-        string applicationDirectory = FindDirectory("Chummer.Application");
+        string applicationDirectory = FindSiblingRepoDirectory("chummer-core-engine", "Chummer.Application");
         string presentationDirectory = FindDirectory("Chummer.Presentation");
 
         Dictionary<string, int> actualXmlParameterCounts = new(StringComparer.Ordinal);
@@ -62,7 +62,7 @@ public class XmlBoundaryGuardrailTests
     [TestMethod]
     public void Application_and_presentation_layers_do_not_reference_legacy_characterxmldocument()
     {
-        string applicationDirectory = FindDirectory("Chummer.Application");
+        string applicationDirectory = FindSiblingRepoDirectory("chummer-core-engine", "Chummer.Application");
         string presentationDirectory = FindDirectory("Chummer.Presentation");
 
         List<string> offenders = Directory.EnumerateFiles(applicationDirectory, "*.cs", SearchOption.AllDirectories)
@@ -98,11 +98,38 @@ public class XmlBoundaryGuardrailTests
         throw new DirectoryNotFoundException("Could not locate directory: " + Path.Combine(parts));
     }
 
+    private static string FindSiblingRepoDirectory(string repoName, params string[] parts)
+    {
+        foreach (string? root in CandidateRoots())
+        {
+            if (string.IsNullOrWhiteSpace(root))
+                continue;
+
+            DirectoryInfo current = new(root);
+            while (true)
+            {
+                string repoCandidate = Path.Combine(current.FullName, repoName);
+                string candidate = Path.Combine(new[] { repoCandidate }.Concat(parts).ToArray());
+                if (Directory.Exists(candidate))
+                    return candidate;
+
+                if (current.Parent == null)
+                    break;
+
+                current = current.Parent;
+            }
+        }
+
+        throw new DirectoryNotFoundException("Could not locate sibling repo directory: " + Path.Combine(new[] { repoName }.Concat(parts).ToArray()));
+    }
+
     private static IEnumerable<string?> CandidateRoots()
     {
         yield return Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
+        yield return "/docker/chummercomplete/chummer-presentation";
+        yield return "/docker/chummercomplete";
         yield return "/src";
     }
 }

@@ -87,6 +87,8 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
     private static readonly string[] ExpectedCommandIds =
     [
         "file",
+        "edit",
+        "special",
         "tools",
         "windows",
         "help",

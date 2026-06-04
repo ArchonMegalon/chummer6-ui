@@ -1,0 +1,53 @@
+{
+  "completeModes": [],
+  "configuredModes": [],
+  "generatedAt": "2026-06-03T05:27:30.454010Z",
+  "modes": [
+    {
+      "configured": false,
+      "missing": [
+        "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+      ],
+      "mode": "portal_directory",
+      "required": [
+        "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+      ]
+    },
+    {
+      "configured": false,
+      "missing": [
+        "CHUMMER_RELEASE_UPLOAD_URL",
+        "CHUMMER_RELEASE_UPLOAD_TOKEN",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+      ],
+      "mode": "http_promote",
+      "required": [
+        "CHUMMER_RELEASE_UPLOAD_URL",
+        "CHUMMER_RELEASE_UPLOAD_TOKEN",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL"
+      ]
+    },
+    {
+      "configured": false,
+      "missing": [
+        "CHUMMER_PORTAL_DOWNLOADS_S3_URI",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL",
+        "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID",
+        "CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY"
+      ],
+      "mode": "object_storage",
+      "required": [
+        "CHUMMER_PORTAL_DOWNLOADS_S3_URI",
+        "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL",
+        "CHUMMER_PORTAL_DOWNLOADS_AWS_ACCESS_KEY_ID",
+        "CHUMMER_PORTAL_DOWNLOADS_AWS_SECRET_ACCESS_KEY"
+      ]
+    }
+  ],
+  "requireExternalDeploy": false,
+  "schema": "chummer.desktop.external_deploy_readiness.v1",
+  "status": "not_configured",
+  "summary": "No complete external deploy path is configured; rolling GitHub Release publication remains the available public bundle path."
+}

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-02T09:08:35Z",
+  "generated_at": "2026-06-03T03:43:35Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 387,
+  "default_key_count": 389,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -30,16 +30,16 @@
       "0 Warning(s)",
       "    0 Error(s)",
       "",
-      "Time Elapsed 00:00:27.73",
+      "Time Elapsed 00:00:26.76",
       "[B13] PASS: targeted accessibility smoke runner checks passed."
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 387,
-      "minimum_override_count": 387,
-      "default_key_count": 387,
+      "override_count": 389,
+      "minimum_override_count": 389,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 387,
+      "override_count": 389,
       "minimum_override_count": 40,
-      "default_key_count": 387,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 387,
+      "override_count": 389,
       "minimum_override_count": 40,
-      "default_key_count": 387,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 387,
+      "override_count": 389,
       "minimum_override_count": 40,
-      "default_key_count": 387,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 387,
+      "override_count": 389,
       "minimum_override_count": 40,
-      "default_key_count": 387,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 387,
+      "override_count": 389,
       "minimum_override_count": 40,
-      "default_key_count": 387,
+      "default_key_count": 389,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-02T09:08:07Z",
+    "generated_at": "2026-06-03T03:43:08Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -366,8 +366,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 226,
-      "required_key_count": 226,
+      "matched_default_key_count": 228,
+      "required_key_count": 228,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -435,9 +435,9 @@
         "desktop.devices.title",
         "desktop.home.section.install_support",
         "desktop.home.section.update_posture",
-        "desktop.install_link.button.continue_guest",
         "desktop.install_link.button.copy_install_id",
         "desktop.install_link.button.link_copy",
+        "desktop.install_link.button.login_website",
         "desktop.install_link.button.open_account",
         "desktop.install_link.button.open_downloads",
         "desktop.install_link.button.open_support",
@@ -446,6 +446,8 @@
         "desktop.install_link.claim_code_label",
         "desktop.install_link.claim_code_watermark",
         "desktop.install_link.heading",
+        "desktop.install_link.more_tools",
+        "desktop.install_link.next_step",
         "desktop.install_link.shipping_locales",
         "desktop.install_link.status.claim_code_required",
         "desktop.install_link.status.clipboard_unavailable",

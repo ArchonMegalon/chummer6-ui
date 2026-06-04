@@ -125,6 +125,23 @@ public sealed class DesktopHomeWindowStartupTests
         Assert.IsTrue(shouldShow, "Claimed installs without a restored local workspace should open the native restore continuation flow when server continuity is present.");
     }
 
+    [TestMethod]
+    public void ShouldShowOnStartup_keeps_first_launch_on_real_workbench_when_no_follow_through_is_needed()
+    {
+        bool shouldShow = DesktopHomeWindow.ShouldShowOnStartup(
+            installContext: null,
+            installState: CreateInstallState(status: "claimed"),
+            updateStatus: CreateUpdateStatus(status: "current"),
+            workspaces: [],
+            campaignProjection: CreateCampaignProjection(watchouts: []),
+            campaignServerPlane: null,
+            supportProjection: CreateSupportProjection(needsAttention: false));
+
+        Assert.IsFalse(
+            shouldShow,
+            "A claimed install with no follow-through conditions should keep startup on the real workbench.");
+    }
+
     private static DesktopInstallLinkingState CreateInstallState(string status)
         => new(
             InstallationId: "install-123",

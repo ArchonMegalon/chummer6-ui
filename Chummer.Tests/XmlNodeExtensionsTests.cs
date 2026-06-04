@@ -31,7 +31,7 @@ namespace Chummer.Tests
         public void TestIsNullOrInnerTextIsEmpty_NullNode()
         {
             XmlNode nullNode = null;
-            Assert.IsTrue(nullNode.IsNullOrInnerTextIsEmpty(), "Null node should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(nullNode), "Null node should be considered empty");
         }
 
         [TestMethod]
@@ -39,7 +39,7 @@ namespace Chummer.Tests
         {
             XmlDocument doc = new XmlDocument();
             XmlElement emptyElement = doc.CreateElement("test");
-            Assert.IsTrue(emptyElement.IsNullOrInnerTextIsEmpty(), "Element with no children should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(emptyElement), "Element with no children should be considered empty");
         }
 
         [TestMethod]
@@ -48,7 +48,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             XmlElement element = doc.CreateElement("test");
             element.InnerText = string.Empty;
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with empty InnerText should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with empty InnerText should be considered empty");
         }
 
         [TestMethod]
@@ -58,7 +58,7 @@ namespace Chummer.Tests
             XmlElement element = doc.CreateElement("test");
             element.InnerText = "   \t\n  ";
             // Whitespace-only nodes should be considered empty
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with only whitespace should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with only whitespace should be considered empty");
         }
 
         [TestMethod]
@@ -67,7 +67,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             XmlElement element = doc.CreateElement("test");
             element.InnerText = "some content";
-            Assert.IsFalse(element.IsNullOrInnerTextIsEmpty(), "Element with content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with content should not be considered empty");
         }
 
         [TestMethod]
@@ -78,7 +78,7 @@ namespace Chummer.Tests
             XmlElement child = doc.CreateElement("child");
             parent.AppendChild(child);
             // Element with empty child element should be considered empty
-            Assert.IsTrue(parent.IsNullOrInnerTextIsEmpty(), "Element with empty child element should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with empty child element should be considered empty");
         }
 
         [TestMethod]
@@ -89,7 +89,7 @@ namespace Chummer.Tests
             XmlElement child = doc.CreateElement("child");
             child.InnerText = "content";
             parent.AppendChild(child);
-            Assert.IsFalse(parent.IsNullOrInnerTextIsEmpty(), "Element with child element containing content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with child element containing content should not be considered empty");
         }
 
         [TestMethod]
@@ -106,7 +106,7 @@ namespace Chummer.Tests
             parent.AppendChild(child2);
             parent.AppendChild(child3);
             // Element with multiple empty child elements should be considered empty
-            Assert.IsTrue(parent.IsNullOrInnerTextIsEmpty(), "Element with multiple empty child elements should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with multiple empty child elements should be considered empty");
         }
 
         [TestMethod]
@@ -122,7 +122,7 @@ namespace Chummer.Tests
             parent.AppendChild(child1);
             parent.AppendChild(child2);
             parent.AppendChild(child3);
-            Assert.IsFalse(parent.IsNullOrInnerTextIsEmpty(), "Element with multiple children where one has content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with multiple children where one has content should not be considered empty");
         }
 
         [TestMethod]
@@ -132,7 +132,7 @@ namespace Chummer.Tests
             XmlElement element = doc.CreateElement("test");
             XmlCDataSection cdata = doc.CreateCDataSection("content");
             element.AppendChild(cdata);
-            Assert.IsFalse(element.IsNullOrInnerTextIsEmpty(), "Element with CDATA containing content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with CDATA containing content should not be considered empty");
         }
 
         [TestMethod]
@@ -142,7 +142,7 @@ namespace Chummer.Tests
             XmlElement element = doc.CreateElement("test");
             XmlCDataSection cdata = doc.CreateCDataSection(string.Empty);
             element.AppendChild(cdata);
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with empty CDATA should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with empty CDATA should be considered empty");
         }
 
         [TestMethod]
@@ -157,7 +157,7 @@ namespace Chummer.Tests
             child1.AppendChild(grandchild);
             parent.AppendChild(child1);
             parent.AppendChild(child2);
-            Assert.IsTrue(parent.IsNullOrInnerTextIsEmpty(), "Element with nested empty children should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with nested empty children should be considered empty");
         }
 
         [TestMethod]
@@ -173,7 +173,7 @@ namespace Chummer.Tests
             child1.AppendChild(grandchild);
             parent.AppendChild(child1);
             parent.AppendChild(child2);
-            Assert.IsFalse(parent.IsNullOrInnerTextIsEmpty(), "Element with nested children containing content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Element with nested children containing content should not be considered empty");
         }
 
         [TestMethod]
@@ -182,7 +182,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             XmlElement element = doc.CreateElement("test");
             element.InnerXml = "<child1></child1>text<child2></child2>";
-            Assert.IsFalse(element.IsNullOrInnerTextIsEmpty(), "Element with mixed content (text and elements) should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with mixed content (text and elements) should not be considered empty");
         }
 
         [TestMethod]
@@ -191,7 +191,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             XmlElement element = doc.CreateElement("test");
             element.InnerXml = "<child1></child1><child2></child2><child3></child3>";
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with only empty child elements should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with only empty child elements should be considered empty");
         }
 
         [TestMethod]
@@ -201,7 +201,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             XmlElement weaponBonus = doc.CreateElement("weaponbonus");
             // This simulates <weaponbonus></weaponbonus>
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Empty weaponbonus element should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Empty weaponbonus element should be considered empty");
         }
 
         [TestMethod]
@@ -213,7 +213,7 @@ namespace Chummer.Tests
             XmlElement damage = doc.CreateElement("damage");
             damage.InnerText = "+1";
             weaponBonus.AppendChild(damage);
-            Assert.IsFalse(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus element with content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus element with content should not be considered empty");
         }
 
         [TestMethod]
@@ -229,7 +229,7 @@ namespace Chummer.Tests
             weaponBonus.AppendChild(child2);
             weaponBonus.AppendChild(child3);
             // Before the fix, this would incorrectly return false because it was checking firstChild.NodeType for all children
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus with multiple empty child elements should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus with multiple empty child elements should be considered empty");
         }
 
         [TestMethod]
@@ -246,7 +246,7 @@ namespace Chummer.Tests
             weaponBonus.AppendChild(child2);
             weaponBonus.AppendChild(child3);
             // Before the fix, this might have incorrectly evaluated due to checking firstChild instead of xmlNodeInner
-            Assert.IsFalse(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus with multiple children where one has content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus with multiple children where one has content should not be considered empty");
         }
 
         [TestMethod]
@@ -256,7 +256,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             doc.LoadXml("<root><weaponbonus></weaponbonus></root>");
             XmlElement weaponBonus = (XmlElement)doc.SelectSingleNode("//weaponbonus");
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Empty weaponbonus element loaded from XML string should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Empty weaponbonus element loaded from XML string should be considered empty");
         }
 
         [TestMethod]
@@ -267,7 +267,7 @@ namespace Chummer.Tests
             doc.PreserveWhitespace = true;
             doc.LoadXml("<root><weaponbonus>   </weaponbonus></root>");
             XmlElement weaponBonus = (XmlElement)doc.SelectSingleNode("//weaponbonus");
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus element with only whitespace should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus element with only whitespace should be considered empty");
         }
 
         [TestMethod]
@@ -278,7 +278,7 @@ namespace Chummer.Tests
             doc.PreserveWhitespace = true;
             doc.LoadXml("<root><weaponbonus>\n\t\n</weaponbonus></root>");
             XmlElement weaponBonus = (XmlElement)doc.SelectSingleNode("//weaponbonus");
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus element with only whitespace/newlines should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus element with only whitespace/newlines should be considered empty");
         }
 
         [TestMethod]
@@ -288,7 +288,7 @@ namespace Chummer.Tests
             XmlDocument doc = new XmlDocument();
             doc.LoadXml("<root><weaponbonus><damage>+1</damage></weaponbonus></root>");
             XmlElement weaponBonus = (XmlElement)doc.SelectSingleNode("//weaponbonus");
-            Assert.IsFalse(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus element with content loaded from XML string should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus element with content loaded from XML string should not be considered empty");
         }
 
         [TestMethod]
@@ -299,7 +299,7 @@ namespace Chummer.Tests
             doc.LoadXml("<root><weaponbonus><damage></damage><ap></ap><acc></acc></weaponbonus></root>");
             XmlElement weaponBonus = (XmlElement)doc.SelectSingleNode("//weaponbonus");
             // This is the exact scenario that would have failed before the bug fix
-            Assert.IsTrue(weaponBonus.IsNullOrInnerTextIsEmpty(), "Weaponbonus with multiple empty children loaded from XML should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(weaponBonus), "Weaponbonus with multiple empty children loaded from XML should be considered empty");
         }
 
         [TestMethod]
@@ -310,7 +310,7 @@ namespace Chummer.Tests
             XmlElement element = doc.CreateElement("test");
             XmlText whitespaceNode = doc.CreateTextNode("   \t  ");
             element.AppendChild(whitespaceNode);
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with whitespace-only text node should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with whitespace-only text node should be considered empty");
         }
 
         [TestMethod]
@@ -322,7 +322,7 @@ namespace Chummer.Tests
             XmlElement element = doc.CreateElement("test");
             XmlSignificantWhitespace whitespaceNode = doc.CreateSignificantWhitespace("   ");
             element.AppendChild(whitespaceNode);
-            Assert.IsTrue(element.IsNullOrInnerTextIsEmpty(), "Element with significant whitespace-only node should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(element), "Element with significant whitespace-only node should be considered empty");
         }
 
         [TestMethod]
@@ -339,7 +339,7 @@ namespace Chummer.Tests
             level1a.AppendChild(level2b);
             parent.AppendChild(level1a);
             parent.AppendChild(level1b);
-            Assert.IsTrue(parent.IsNullOrInnerTextIsEmpty(), "Complex nested structure with all empty elements should be considered empty");
+            Assert.IsTrue(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Complex nested structure with all empty elements should be considered empty");
         }
 
         [TestMethod]
@@ -355,7 +355,7 @@ namespace Chummer.Tests
             level1a.AppendChild(level2a);
             parent.AppendChild(level1a);
             parent.AppendChild(level1b);
-            Assert.IsFalse(parent.IsNullOrInnerTextIsEmpty(), "Complex nested structure with content should not be considered empty");
+            Assert.IsFalse(Chummer.Core.XmlNodeExtensions.IsNullOrInnerTextIsEmpty(parent), "Complex nested structure with content should not be considered empty");
         }
     }
 }

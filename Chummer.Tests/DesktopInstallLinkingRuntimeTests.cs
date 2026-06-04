@@ -484,6 +484,41 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void InitializeForStartup_without_explicit_handoff_requires_linking_on_first_launch()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-startup-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+
+            DesktopInstallLinkingStartupContext context = DesktopInstallLinkingRuntime.InitializeForStartup(
+                "avalonia",
+                Array.Empty<string>(),
+                CancellationToken.None);
+
+            Assert.IsTrue(context.ShouldPrompt, "First launch without a claim or callback must enter the install-link gate.");
+            Assert.AreEqual("claim_required", context.PromptReason);
+            Assert.IsNull(context.ClaimResult);
+            Assert.AreEqual(1, context.State.LaunchCount);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public void StartupClaimExtraction_reads_install_link_callback_variants()
     {
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");

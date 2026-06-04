@@ -19,7 +19,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
 
     private static readonly IReadOnlyList<WorkflowSurfaceDefinition> WorkflowSurfaces =
     [
-        new("catalog.shell.menu", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.MenuBar, WorkflowLayoutTokens.ShellFrame, ["file", "tools", "windows", "help"]),
+        new("catalog.shell.menu", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.MenuBar, WorkflowLayoutTokens.ShellFrame, ["file", "edit", "special", "tools", "windows", "help"]),
         new("catalog.shell.toolbar", WorkflowDefinitionIds.LibraryShell, WorkflowSurfaceKinds.ShellRegion, ShellRegionIds.ToolStrip, WorkflowLayoutTokens.ShellFrame, ["save_character", "print_character", "copy", "new_character", "open_character", "close_window"]),
         new("catalog.career.section", WorkflowDefinitionIds.CareerWorkbench, WorkflowSurfaceKinds.Workbench, ShellRegionIds.SectionPane, WorkflowLayoutTokens.CareerWorkbench, ["tab-info.summary", "tab-info.profile", "tab-skills.skills"]),
         new("catalog.selection.dialog", WorkflowDefinitionIds.SelectionDialog, WorkflowSurfaceKinds.Dialog, ShellRegionIds.DialogHost, WorkflowLayoutTokens.SelectionDialog, ["tab-gear.inventory"]),
@@ -31,6 +31,8 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
     private static readonly IReadOnlyList<AppCommandDefinition> CompatibilityCommands =
     [
         Command("file", "command.file", "menu", false),
+        Command("edit", "command.edit", "menu", false),
+        Command("special", "command.special", "menu", false),
         Command("tools", "command.tools", "menu", false),
         Command("windows", "command.windows", "menu", false),
         Command("help", "command.help", "menu", false),
@@ -57,7 +59,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
         Command("master_index", "command.master_index", "tools", false),
         Command("character_roster", "command.character_roster", "tools", false),
         Command("data_exporter", "command.data_exporter", "tools", false),
-        Command("report_bug", "command.report_bug", "tools", false),
+        Command("report_bug", "command.report_bug", "help", false),
         Command("print_setup", "command.print_setup", "file", false),
         Command("print_multiple", "command.print_multiple", "file", false),
         Command("exit", "command.exit", "file", false),
