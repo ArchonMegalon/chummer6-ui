@@ -1415,12 +1415,16 @@ public static class DesktopInstallLinkingRuntime
     private static Uri ResolveApiBaseAddress()
     {
         string? configured = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            configured = Environment.GetEnvironmentVariable(WebBaseUrlEnvironmentVariable);
+        }
         if (!string.IsNullOrWhiteSpace(configured) && Uri.TryCreate(configured, UriKind.Absolute, out Uri? uri))
         {
             return uri;
         }
 
-        return new Uri("http://chummer-api:8080", UriKind.Absolute);
+        return new Uri(DefaultPublicWebBaseUrl, UriKind.Absolute);
     }
 
     private static Uri ResolvePublicWebAddress()

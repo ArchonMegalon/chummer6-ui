@@ -1,7 +1,7 @@
 {
   "contract_name": "chummer.weekly_product_pulse",
   "contract_version": 3,
-  "generated_at": "2026-06-05T00:00:09Z",
+  "generated_at": "2026-06-05T15:38:33Z",
   "as_of": "2026-06-05",
   "scorecard_source": "products/chummer/PRODUCT_HEALTH_SCORECARD.yaml",
   "progress_report_source": "products/chummer/PROGRESS_REPORT.generated.json",
@@ -16,9 +16,10 @@
   },
   "flagship_readiness": {
     "state": "watch",
-    "reason": "Published flagship readiness proof is fail. Coverage gaps remain: fleet_and_operator_loop. Readiness-plane gaps remain: structural_ready, flagship_ready.",
+    "reason": "Published flagship readiness proof is fail. Coverage gaps remain: horizons_and_public_surface, fleet_and_operator_loop. Readiness-plane gaps remain: structural_ready, flagship_ready.",
     "proof_status": "fail",
     "coverage_gap_keys": [
+      "horizons_and_public_surface",
       "fleet_and_operator_loop"
     ],
     "readiness_plane_gap_keys": [
@@ -115,9 +116,10 @@
     },
     "flagship_readiness": {
       "state": "watch",
-      "reason": "Published flagship readiness proof is fail. Coverage gaps remain: fleet_and_operator_loop. Readiness-plane gaps remain: structural_ready, flagship_ready.",
+      "reason": "Published flagship readiness proof is fail. Coverage gaps remain: horizons_and_public_surface, fleet_and_operator_loop. Readiness-plane gaps remain: structural_ready, flagship_ready.",
       "proof_status": "fail",
       "coverage_gap_keys": [
+        "horizons_and_public_surface",
         "fleet_and_operator_loop"
       ],
       "readiness_plane_gap_keys": [
@@ -217,7 +219,7 @@
     "provider_route_stewardship": {
       "default_status": "Pilot defaults are governed",
       "canary_status": "Canary green on all active lanes",
-      "review_due": "2026-06-18",
+      "review_due": "2026-06-19",
       "next_decision": "Promote once canaries stay green and support fallout remains clear through the next route review."
     },
     "successor_dependency_posture": {

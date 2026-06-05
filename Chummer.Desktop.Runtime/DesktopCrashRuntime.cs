@@ -602,12 +602,16 @@ public static class DesktopCrashRuntime
     private static Uri ResolveApiBaseAddress()
     {
         string? configured = Environment.GetEnvironmentVariable(ApiBaseUrlEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            configured = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        }
         if (!string.IsNullOrWhiteSpace(configured) && Uri.TryCreate(configured, UriKind.Absolute, out Uri? uri))
         {
             return uri;
         }
 
-        return new Uri("http://chummer-api:8080", UriKind.Absolute);
+        return new Uri("https://chummer.run/", UriKind.Absolute);
     }
 
     private sealed record DesktopCrashPendingMarker(

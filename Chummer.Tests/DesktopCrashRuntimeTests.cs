@@ -142,6 +142,33 @@ public sealed class DesktopCrashRuntimeTests
     }
 
     [TestMethod]
+    public void ResolveApiBaseAddress_falls_back_to_public_web_host_when_api_host_is_unset()
+    {
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
+
+            MethodInfo method = typeof(DesktopCrashRuntime).GetMethod(
+                "ResolveApiBaseAddress",
+                BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new InvalidOperationException("ResolveApiBaseAddress was not found.");
+
+            Uri uri = (Uri)(method.Invoke(null, null)
+                ?? throw new InvalidOperationException("ResolveApiBaseAddress returned null."));
+
+            Assert.AreEqual("https://chummer.run/", uri.AbsoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+        }
+    }
+
+    [TestMethod]
     public void TryLoadPendingCrashReport_reads_marker_report_and_summary_and_acknowledges_match()
     {
         using TestStateRootScope scope = new();

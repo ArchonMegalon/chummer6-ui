@@ -94,6 +94,20 @@ if [[ ! -d "$BUNDLE_DIR" ]]; then
 fi
 
 if [[ ! -d "$FILES_SOURCE" ]]; then
+  for fallback_files_source in \
+    "$REPO_ROOT/Chummer.Portal/downloads/files" \
+    "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads/files" \
+    "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads/files" \
+    "$REPO_ROOT/../chummer-hub-registry/.codex-studio/published/files"
+  do
+    if [[ -d "$fallback_files_source" ]]; then
+      FILES_SOURCE="$fallback_files_source"
+      break
+    fi
+  done
+fi
+
+if [[ ! -d "$FILES_SOURCE" ]]; then
   echo "Bundle is missing files directory: $FILES_SOURCE" >&2
   echo "Expected desktop-download-bundle layout: releases.json + files/chummer-*" >&2
   exit 1

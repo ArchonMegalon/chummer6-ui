@@ -753,11 +753,13 @@ if not isinstance(payload, dict):
     raise SystemExit(f"source manifest payload must be a JSON object: {source_path}")
 
 loaded_channel = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
-if not release_channel or not loaded_channel or loaded_channel == release_channel:
+if not release_channel:
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(0)
 
 for key in (
+    "status",
+    "message",
     "rolloutState",
     "rollout_state",
     "rolloutReason",
@@ -1311,6 +1313,8 @@ if [[ "$PROMOTE_PROOF_BACKED_QUARANTINED_INSTALLERS" != "0" ]]; then
     --repo-root "$REPO_ROOT" \
     --downloads-dir "$DOWNLOADS_DIR" \
     --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
+    --display-downloads-dir "$CANONICAL_FILES_DIR" \
+    --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
     --release-channel "$RELEASE_CHANNEL" \
     --release-version "$RELEASE_VERSION" \
     --output "$QUARANTINE_PROMOTION_EVIDENCE_PATH" \
@@ -1965,6 +1969,9 @@ python3 "$SCRIPT_DIR/materialize-external-host-proof-blockers.py" \
   --manifest "$CANONICAL_MANIFEST_PATH" \
   --downloads-dir "$DOWNLOADS_DIR" \
   --startup-smoke-dir "$STARTUP_SMOKE_DIR" \
+  --display-manifest "$CANONICAL_MANIFEST_PATH" \
+  --display-downloads-dir "$CANONICAL_FILES_DIR" \
+  --display-startup-smoke-dir "$(dirname "$CANONICAL_MANIFEST_PATH")/startup-smoke" \
   --output "$EXTERNAL_HOST_PROOF_BLOCKERS_PATH" \
   --base-url "${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
   --timeout-seconds "${CHUMMER_EXTERNAL_PROOF_ROUTE_TIMEOUT_SECONDS:-10}" \

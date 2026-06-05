@@ -17,8 +17,7 @@ public class EngineClient
     {
         try 
         {
-            // Call the real Core Engine API container over the internal Docker network
-            var response = await _http.PostAsJsonAsync("http://chummer-api:8080/api/engine/evaluate", parameters);
+            var response = await _http.PostAsJsonAsync("/api/engine/evaluate", parameters);
             if(response.IsSuccessStatusCode) {
                 return $"[API SUCCESS] Core Engine processed: {parameters}";
             }

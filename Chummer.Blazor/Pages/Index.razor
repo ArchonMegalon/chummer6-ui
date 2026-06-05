@@ -1,7 +1,7 @@
 @page "/legacy-console"
 @page "/legacy-console/"
 @using Chummer.Blazor.Services
-@using System.Net.Http
+@inject EngineClient Engine
 
 <div class="chummer-desktop-layout">
     <div class="menu-bar">
@@ -58,15 +58,14 @@
     private string actionCommand = "Test Lua Engine";
     private string apiResponse = "Ready. Awaiting API connection...";
     private bool isProcessing = false;
-    private EngineClient engine = new EngineClient(new HttpClient());
 
     private async Task FireCommand()
     {
         isProcessing = true;
-        apiResponse = "Sending request to internal Docker API (chummer-api:8080)...";
+        apiResponse = "Sending request to the configured engine route...";
         await InvokeAsync(StateHasChanged);
         
-        apiResponse = await engine.ExecuteBuildAsync(actionCommand);
+        apiResponse = await Engine.ExecuteBuildAsync(actionCommand);
         
         isProcessing = false;
         await InvokeAsync(StateHasChanged);

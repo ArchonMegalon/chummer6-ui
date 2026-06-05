@@ -1438,7 +1438,13 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(projectText, "<Project Sdk=\"Microsoft.NET.Sdk.Web\">");
         StringAssert.Contains(programText, "AddRazorComponents()");
-        StringAssert.Contains(engineClientText, "http://chummer-api:8080/api/engine/evaluate");
+        StringAssert.Contains(engineClientText, "PostAsJsonAsync(\"/api/engine/evaluate\"");
+        Assert.IsFalse(
+            engineClientText.Contains("http://chummer-api:8080", StringComparison.Ordinal),
+            "Blazor EngineClient must not hardcode the internal Docker API host in a product-facing route.");
+        StringAssert.Contains(programText, "AddScoped<EngineClient>");
+        StringAssert.Contains(programText, "ResolveEngineBaseAddress");
+        StringAssert.Contains(programText, "http://127.0.0.1:8091");
         StringAssert.Contains(browserInfrastructureProjectText, @"..\Chummer.Application\Chummer.Application.csproj");
         StringAssert.Contains(browserInfrastructureProjectText, "Microsoft.JSInterop");
         StringAssert.Contains(composeText, "chummer-blazor:");
@@ -5137,7 +5143,7 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(visualGateScriptText, "flagship_gate = load_json(flagship_gate_path)");
         StringAssert.Contains(visualGateScriptText, "evidence[\"flagship_gate_status\"] = flagship_status");
-        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate is missing or not passing.");
+        StringAssert.Contains(visualGateScriptText, "Flagship UI release gate receipt is missing or unreadable.");
         StringAssert.Contains(visualGateScriptText, "allow_stale_pass_receipt=True");
         StringAssert.Contains(visualGateScriptText, "flagship_gate_review_start = len(reasons)");
         StringAssert.Contains(visualGateScriptText, "head_proof_review_start = len(reasons)");
@@ -6550,6 +6556,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(publisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");
         StringAssert.Contains(publisherText, "installer.exe");
         StringAssert.Contains(publisherText, "Published ${#promoted_file_names[@]} desktop artifact(s)");
+        StringAssert.Contains(generatorText, "--display-downloads-dir \"$CANONICAL_FILES_DIR\"");
+        StringAssert.Contains(generatorText, "--display-startup-smoke-dir \"$(dirname \"$CANONICAL_MANIFEST_PATH\")/startup-smoke\"");
+        StringAssert.Contains(generatorText, "--display-manifest \"$CANONICAL_MANIFEST_PATH\"");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_S3_URI");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL");
         StringAssert.Contains(s3PublisherText, "CHUMMER_PORTAL_DOWNLOADS_VERIFY_LINKS");

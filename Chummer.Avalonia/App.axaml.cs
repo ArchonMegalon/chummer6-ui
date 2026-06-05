@@ -105,13 +105,7 @@ public partial class App : global::Avalonia.Application
 
     private static HttpClient CreateApiHttpClient()
     {
-        string? configured = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
-        string baseUrl = string.IsNullOrWhiteSpace(configured) ? "http://chummer-api:8080" : configured.Trim();
-        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseAddress))
-        {
-            throw new InvalidOperationException($"Invalid CHUMMER_API_BASE_URL value '{baseUrl}'.");
-        }
-
+        Uri baseAddress = ResolveApiBaseAddress();
         HttpClient client = new()
         {
             BaseAddress = baseAddress,
@@ -126,6 +120,24 @@ public partial class App : global::Avalonia.Application
         }
 
         return client;
+    }
+
+    private static Uri ResolveApiBaseAddress()
+    {
+        string? configured = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            configured = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        }
+
+        string baseUrl = string.IsNullOrWhiteSpace(configured) ? "https://chummer.run/" : configured.Trim();
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseAddress))
+        {
+            throw new InvalidOperationException(
+                $"Invalid CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL value '{baseUrl}'.");
+        }
+
+        return baseAddress;
     }
 
     private static bool UseHttpCoachSidecar()

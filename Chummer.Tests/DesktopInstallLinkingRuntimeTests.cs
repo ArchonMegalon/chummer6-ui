@@ -269,6 +269,33 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void ResolveApiBaseAddress_falls_back_to_public_web_host_when_api_host_is_unset()
+    {
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", null);
+
+            MethodInfo method = typeof(DesktopInstallLinkingRuntime).GetMethod(
+                "ResolveApiBaseAddress",
+                BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new InvalidOperationException("ResolveApiBaseAddress was not found.");
+
+            Uri uri = (Uri)(method.Invoke(null, null)
+                ?? throw new InvalidOperationException("ResolveApiBaseAddress returned null."));
+
+            Assert.AreEqual("https://chummer.run/", uri.AbsoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+        }
+    }
+
+    [TestMethod]
     public void Callback_fragment_extractors_read_fragment_queries_and_reject_non_install_routes()
     {
         MethodInfo? browserMethod = typeof(DesktopInstallLinkingRuntime).GetMethod(

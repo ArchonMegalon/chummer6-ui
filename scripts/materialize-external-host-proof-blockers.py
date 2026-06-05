@@ -23,6 +23,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--downloads-dir", required=True, type=Path)
     parser.add_argument("--startup-smoke-dir", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--display-manifest", type=Path)
+    parser.add_argument("--display-downloads-dir", type=Path)
+    parser.add_argument("--display-startup-smoke-dir", type=Path)
     parser.add_argument("--base-url", default="https://chummer.run")
     parser.add_argument("--timeout-seconds", type=int, default=10)
     parser.add_argument("--max-receipt-age-seconds", type=int, default=604800)
@@ -366,9 +369,9 @@ def main() -> int:
     payload = {
         "contract_name": CONTRACT_NAME,
         "generated_at": utc_now_iso(),
-        "manifest_path": str(args.manifest),
-        "downloads_dir": str(args.downloads_dir),
-        "startup_smoke_dir": str(args.startup_smoke_dir),
+        "manifest_path": str((args.display_manifest or args.manifest).resolve()),
+        "downloads_dir": str((args.display_downloads_dir or args.downloads_dir).resolve()),
+        "startup_smoke_dir": str((args.display_startup_smoke_dir or args.startup_smoke_dir).resolve()),
         "base_url": args.base_url,
         "timeout_seconds": args.timeout_seconds,
         "max_receipt_age_seconds": args.max_receipt_age_seconds,

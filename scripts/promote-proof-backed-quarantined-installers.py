@@ -124,6 +124,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--downloads-dir", type=Path, required=True)
     parser.add_argument("--startup-smoke-dir", type=Path, required=True)
+    parser.add_argument("--display-downloads-dir", type=Path)
+    parser.add_argument("--display-startup-smoke-dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--release-channel", default="", help="Optional expected channelId/channel for startup-smoke receipts.")
     parser.add_argument("--release-version", default="", help="Optional expected version/releaseVersion for startup-smoke receipts.")
@@ -313,8 +315,8 @@ def main() -> int:
         "generatedAt": generated_at,
         "generated_at": generated_at,
         "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-        "downloadsDir": str(downloads_dir),
-        "startupSmokeDir": str(startup_smoke_dir),
+        "downloadsDir": str((args.display_downloads_dir or downloads_dir).resolve()),
+        "startupSmokeDir": str((args.display_startup_smoke_dir or startup_smoke_dir).resolve()),
         "releaseChannel": release_channel,
         "releaseVersion": release_version,
         "quarantineDirs": [str(path) for path in quarantine_dirs],
