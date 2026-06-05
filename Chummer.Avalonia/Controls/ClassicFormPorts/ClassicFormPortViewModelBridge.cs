@@ -62,7 +62,7 @@ public static class ClassicFormPortViewModelBridge
         ClassicFormPortActionCommands? commands = null)
     {
         commands ??= ClassicFormPortActionCommands.NoOp;
-        ClassicFormPortDomainModel domain = ClassicFormPortDomainModel.Create(state);
+        ClassicFormPortDomainModel domain = state.DomainModel;
         IReadOnlyList<string> actions = ClassicFormPortSurfaceControl.CollectActionLabelsForBridge(state);
 
         return new ClassicFormPortViewModels(
@@ -149,7 +149,7 @@ public sealed class ClassicFormPortCommand : ICommand
     public void RefreshCanExecute() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }
 
-internal sealed record ClassicFormPortDomainModel(
+public sealed record ClassicFormPortDomainModel(
     IReadOnlyList<ClassicPortLineItem> SnapshotFacts,
     IReadOnlyList<ClassicPortLineItem> AdvancementFacts,
     IReadOnlyList<ClassicPortLineItem> GearFacts,
@@ -170,9 +170,9 @@ internal sealed record ClassicFormPortDomainModel(
     IReadOnlyList<ClassicPortLineItem> IndexFacts,
     IReadOnlyList<ClassicPortLineItem> SettingFacts)
 {
-    public static ClassicFormPortDomainModel Create(ClassicFormPortState state)
+    public static ClassicFormPortDomainModel CreateFromRows(IReadOnlyList<SectionRowDisplayItem> rows)
     {
-        IReadOnlyList<ClassicPortRowFact> facts = ClassicPortRowFactSet.FromState(state);
+        IReadOnlyList<ClassicPortRowFact> facts = ClassicPortRowFactSet.FromRows(rows);
         IReadOnlyList<ClassicPortLineItem> Snapshot(params string[] keys) => Keys(facts, keys);
         IReadOnlyList<ClassicPortLineItem> Bucket(ClassicPortRowKind bucket, int maxCount) => Items(facts, bucket, maxCount);
 
@@ -250,23 +250,20 @@ internal sealed record ClassicFormPortDomainModel(
 
     private static class ClassicPortRowFactSet
     {
-        public static IReadOnlyList<ClassicPortRowFact> FromState(ClassicFormPortState state)
+        public static IReadOnlyList<ClassicPortRowFact> FromRows(IReadOnlyList<SectionRowDisplayItem> rows)
         {
-            object? sourceRows = state.GetType().GetProperty("Rows")?.GetValue(state);
-            IEnumerable<object> rows = sourceRows as IEnumerable<object> ?? [];
             List<ClassicPortRowFact> facts = [];
-            foreach (object row in rows)
+            foreach (SectionRowDisplayItem row in rows)
             {
-                Type rowType = row.GetType();
-                string path = Convert.ToString(rowType.GetProperty("DisplayPath")?.GetValue(row), System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
-                string value = Clean(Convert.ToString(rowType.GetProperty("DisplayValue")?.GetValue(row), System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
+                string path = row.Path ?? string.Empty;
+                string value = Clean(row.Value ?? string.Empty);
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     continue;
                 }
 
-                string key = NormalizeKey(path.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? path);
-                facts.Add(new ClassicPortRowFact(key, path, value, ClassifyBySchemaKey(key, path)));
+                string key = NormalizeKey(path.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? path);
+                facts.Add(new ClassicPortRowFact(key, BuildDisplayLabel(path), value, ClassifyBySchemaKey(key, path)));
             }
 
             if (facts.Count == 0)
@@ -276,6 +273,9 @@ internal sealed record ClassicFormPortDomainModel(
 
             return facts;
         }
+
+        private static string BuildDisplayLabel(string path)
+            => new SectionRowDisplayItem(path, string.Empty).DisplayPath;
 
         private static ClassicPortRowKind ClassifyBySchemaKey(string key, string path)
         {

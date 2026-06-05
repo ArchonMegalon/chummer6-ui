@@ -43,6 +43,8 @@ public partial class ClassicFormPortHostControl : UserControl
             _portTitleText.Text = port.SurfaceTitle;
         }
 
+        ClassicFormPortDomainModel domainModel = ClassicFormPortDomainModel.CreateFromRows(state.Rows);
+
         port.SetState(new ClassicFormPortState(
             port.SurfaceId,
             state.SectionId ?? selectedCommandId ?? string.Empty,
@@ -53,7 +55,8 @@ public partial class ClassicFormPortHostControl : UserControl
             state.Rows,
             state.QuickActions,
             state.NavigationTabs,
-            state.SectionActions));
+            state.SectionActions,
+            domainModel));
 
         if (_portContentHost is not null)
         {
@@ -72,4 +75,5 @@ public sealed record ClassicFormPortState(
     IReadOnlyList<SectionRowDisplayItem> Rows,
     IReadOnlyList<SectionQuickActionDisplayItem> QuickActions,
     IReadOnlyList<NavigatorTabItem> NavigationTabs,
-    IReadOnlyList<NavigatorSectionActionItem> SectionActions);
+    IReadOnlyList<NavigatorSectionActionItem> SectionActions,
+    ClassicFormPortDomainModel DomainModel);
