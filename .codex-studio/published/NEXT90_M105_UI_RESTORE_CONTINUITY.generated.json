@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-06-03T03:43:01Z",
+  "generatedAt": "2026-06-05T03:15:41Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -225,9 +225,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "dc5d73d3",
-        "subject": "Remove noisy restore choice desktop chrome",
-        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
+        "commit": "389b5d4e",
+        "subject": "Harden desktop flagship gates and continuity",
+        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -239,9 +239,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "dc5d73d3",
-        "subject": "Remove noisy restore choice desktop chrome",
-        "sha": "dc5d73d333e0244f327892f67656be30256cbc54",
+        "commit": "389b5d4e",
+        "subject": "Harden desktop flagship gates and continuity",
+        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -253,9 +253,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "6517c731",
-        "subject": "Remove desktop right rail",
-        "sha": "6517c731bd0ccf0225c185acc23fc5a071c3ee99",
+        "commit": "389b5d4e",
+        "subject": "Harden desktop flagship gates and continuity",
+        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "e2894717",
-        "subject": "Audit external deploy readiness",
-        "sha": "e2894717902e5c115fa22471c499ab3d14e3a7ae",
+        "commit": "389b5d4e",
+        "subject": "Harden desktop flagship gates and continuity",
+        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -396,14 +396,10 @@
         {
           "status": " M",
           "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
-        },
-        {
-          "status": " M",
-          "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         }
       ]
     },
-    "headCommit": "2cbe64913708398d191d7160f44b4fc6b279651b",
+    "headCommit": "389b5d4ee54c33d64ad76b191856ccb60487f936",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
@@ -580,27 +576,27 @@
             {
               "marker": "Workspace continuity: support can review the current continuity packet.",
               "present": true,
-              "line": 500
+              "line": 509
             },
             {
               "marker": "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
               "present": true,
-              "line": 399
+              "line": 408
             },
             {
               "marker": "Local workspace state stays under explicit user control.",
               "present": true,
-              "line": 400
+              "line": 409
             },
             {
               "marker": "BuildSupportPortalRelativePathForWorkspace",
               "present": true,
-              "line": 313
+              "line": 322
             },
             {
               "marker": "BuildSupportPortalRelativePathForInstall",
               "present": true,
-              "line": 300
+              "line": 309
             }
           ],
           "missingMarkers": []
@@ -641,22 +637,22 @@
             {
               "marker": "RequireDoesNotContain(source, \"Restore choice:\")",
               "present": true,
-              "line": 820
+              "line": 813
             },
             {
               "marker": "RequireDoesNotContain(source, \"Decision order:\")",
               "present": true,
-              "line": 824
+              "line": 817
             },
             {
               "marker": "RequireDoesNotContain(source, \"Conflict choices:\")",
               "present": true,
-              "line": 826
+              "line": 819
             },
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 868
+              "line": 861
             }
           ],
           "missingMarkers": []

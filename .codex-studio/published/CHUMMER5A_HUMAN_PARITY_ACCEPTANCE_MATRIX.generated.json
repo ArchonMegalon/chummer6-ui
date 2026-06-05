@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T03:43:35.947581Z",
+  "generatedAt": "2026-06-05T03:16:18.556669Z",
   "contractName": "chummer6-ui.chummer5a_human_parity_acceptance_matrix",
   "status": "pass",
   "summary": "Element-level Chummer5A parity rows are materialized for every required family, surface, dialog, and reviewed Chummer6-only control.",

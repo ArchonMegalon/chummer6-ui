@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.avalonia_primary_route_proof",
-  "generatedAt": "2026-06-03T03:42:32Z",
+  "generatedAt": "2026-06-05T03:15:14Z",
   "status": "pass",
   "primaryHead": "avalonia",
   "requiredPlatforms": [
@@ -12,7 +12,7 @@
     "blazor-desktop"
   ],
   "fallbackInstallArtifactCount": 0,
-  "fallbackReceiptCount": 0,
+  "fallbackReceiptCount": 2,
   "platformProof": [
     {
       "platform": "linux",

@@ -265,6 +265,41 @@ def _coerce_rows(rows: Any, reasons: list[str]) -> list[dict[str, Any]]:
     return normalized
 
 
+def _find_screenshot_entry(entries: list[dict[str, Any]], screenshot_name: str) -> dict[str, Any] | None:
+    for entry in entries:
+        if str(_entry_value(entry, "screenshot", "Screenshot") or "").strip() == screenshot_name:
+            return entry
+    return None
+
+
+def _entry_value(entry: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in entry:
+            return entry.get(key)
+    return None
+
+
+def _bool_value(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "1", "yes"}
+    if isinstance(value, (int, float)):
+        return value != 0
+    return False
+
+
+def _float_value(value: Any) -> float | None:
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
 def main() -> int:
     PUBLISHED.mkdir(parents=True, exist_ok=True)
     reasons: list[str] = []
@@ -276,6 +311,8 @@ def main() -> int:
     flagship_gate_path = PUBLISHED / "UI_FLAGSHIP_RELEASE_GATE.generated.json"
     screenshot_control_evidence_path = PUBLISHED / "ui-flagship-release-gate-screenshots" / "SCREENSHOT_CONTROL_EVIDENCE.generated.json"
     screenshot_matrix_path = PUBLISHED / "CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
+    windows_gate_path = PUBLISHED / "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json"
+    startup_smoke_gate_path = PUBLISHED / "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json"
 
     for path in [
         pixefy_targets_path,
@@ -284,6 +321,8 @@ def main() -> int:
         flagship_gate_path,
         screenshot_control_evidence_path,
         screenshot_matrix_path,
+        windows_gate_path,
+        startup_smoke_gate_path,
     ]:
         if not path.is_file():
             reasons.append(f"missing required receipt: {_receipt_path(path)}")
@@ -294,6 +333,8 @@ def main() -> int:
     flagship_gate = _load_json(flagship_gate_path) if flagship_gate_path.is_file() else {}
     screenshot_control_evidence = _load_json(screenshot_control_evidence_path) if screenshot_control_evidence_path.is_file() else {}
     screenshot_matrix = _load_json(screenshot_matrix_path) if screenshot_matrix_path.is_file() else {}
+    windows_gate = _load_json(windows_gate_path) if windows_gate_path.is_file() else {}
+    startup_smoke_gate = _load_json(startup_smoke_gate_path) if startup_smoke_gate_path.is_file() else {}
 
     if str(pixefy_targets.get("provider") or "").strip().lower() != "pixefy":
         reasons.append("PUBLIC_SURFACE_QA_TARGETS.generated.json must declare provider Pixefy.")
@@ -312,6 +353,36 @@ def main() -> int:
         reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing generatedAt.")
     if not _status_is_pass(screenshot_matrix):
         reasons.append("CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json is not passing.")
+    if not _status_is_pass(windows_gate):
+        reasons.append("UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json is not passing.")
+    if not _status_is_pass(startup_smoke_gate):
+        reasons.append("NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json is not passing.")
+
+    authority = screenshot_control_evidence.get("authority")
+    if not isinstance(authority, dict):
+        reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing authority metadata.")
+        authority = {}
+    if str(authority.get("visualBaseline") or "").strip() != "Chummer5a":
+        reasons.append("Screenshot control evidence must pin visualBaseline to Chummer5a.")
+    if str(authority.get("releaseAuthorityPlatform") or "").strip().lower() != "windows":
+        reasons.append("Screenshot control evidence must declare Windows as releaseAuthorityPlatform.")
+    if str(authority.get("captureHead") or "").strip().lower() != "avalonia":
+        reasons.append("Screenshot control evidence must declare Avalonia as captureHead.")
+    if str(authority.get("menuInteractionMode") or "").strip().lower() != "real_menu_items":
+        reasons.append("Screenshot control evidence must declare real_menu_items menu interaction mode.")
+    if str(authority.get("dialogHostPolicy") or "").strip().lower() != "dedicated_desktop_dialog_window":
+        reasons.append("Screenshot control evidence must declare dedicated_desktop_dialog_window dialogHostPolicy.")
+    if str(authority.get("forbiddenInlineSurface") or "").strip() != "RightShellRegion":
+        reasons.append("Screenshot control evidence must forbid RightShellRegion as inline desktop dialog surface.")
+
+    supporting_proofs = screenshot_control_evidence.get("supportingProofs")
+    if not isinstance(supporting_proofs, dict):
+        reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing supportingProofs metadata.")
+        supporting_proofs = {}
+    if str(supporting_proofs.get("windowsDesktopExitGate") or "").strip() == "":
+        reasons.append("Screenshot control evidence must cite the Windows desktop exit gate.")
+    if str(supporting_proofs.get("startupSmokeAndExecutableGate") or "").strip() == "":
+        reasons.append("Screenshot control evidence must cite the startup smoke and executable gate.")
 
     screenshot_asset_review = screenshot_review.get("screenshotAssetReview", {})
     if not isinstance(screenshot_asset_review, dict):
@@ -372,9 +443,9 @@ def main() -> int:
         reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing screenshot entries.")
         control_entries = []
     control_screenshot_names = sorted({
-        str(entry.get("screenshot") or "").strip()
+        str(_entry_value(entry, "screenshot", "Screenshot") or "").strip()
         for entry in control_entries
-        if isinstance(entry, dict) and str(entry.get("screenshot") or "").strip()
+        if isinstance(entry, dict) and str(_entry_value(entry, "screenshot", "Screenshot") or "").strip()
     })
     if control_screenshot_names and control_screenshot_names != screenshot_files:
         missing_from_control = sorted(set(screenshot_files) - set(control_screenshot_names))
@@ -407,6 +478,52 @@ def main() -> int:
                 "workflowCoverage references screenshots missing on disk: "
                 + ", ".join(missing_workflow_files)
             )
+
+    menu_open_entry = _find_screenshot_entry(control_entries, "02-menu-open-light.png")
+    if menu_open_entry is None:
+        reasons.append("SCREENSHOT_CONTROL_EVIDENCE.generated.json is missing 02-menu-open-light.png entry.")
+    else:
+        visible_menu_command_ids = [
+            str(value).strip()
+            for value in _entry_value(menu_open_entry, "visibleMenuCommandIds", "VisibleMenuCommandIds") or []
+            if isinstance(value, str) and value.strip()
+        ]
+        for required_command in ("new_character", "open_character", "save_character"):
+            if required_command not in visible_menu_command_ids:
+                reasons.append(
+                    f"02-menu-open-light.png must expose '{required_command}' through real visible menu command ids."
+                )
+        if _bool_value(_entry_value(menu_open_entry, "rightShellVisible", "RightShellVisible")):
+            reasons.append("02-menu-open-light.png must not show the inline right shell.")
+        right_shell_width = _float_value(_entry_value(menu_open_entry, "rightShellWidth", "RightShellWidth"))
+        if right_shell_width is None:
+            reasons.append("02-menu-open-light.png is missing rightShellWidth evidence.")
+        elif right_shell_width > 1.0:
+            reasons.append("02-menu-open-light.png must keep rightShellWidth collapsed.")
+        if _bool_value(_entry_value(menu_open_entry, "inlineCommandSurfaceVisible", "InlineCommandSurfaceVisible")):
+            reasons.append("02-menu-open-light.png must not render the inline command surface.")
+
+    new_character_entries = [
+        entry for entry in control_entries
+        if "new-character" in str(_entry_value(entry, "screenshot", "Screenshot") or "").strip()
+        or str(_entry_value(entry, "dialogTitle", "DialogTitle") or "").strip() == "Select Build Method"
+    ]
+    if not new_character_entries:
+        reasons.append("Screenshot control evidence is missing a New Character workflow visual proof entry.")
+    else:
+        for entry in new_character_entries:
+            screenshot_name = str(_entry_value(entry, "screenshot", "Screenshot") or "").strip() or "<unknown>"
+            if _bool_value(_entry_value(entry, "rightShellVisible", "RightShellVisible")):
+                reasons.append(f"{screenshot_name} must not show the inline right shell during New Character.")
+            right_shell_width = _float_value(_entry_value(entry, "rightShellWidth", "RightShellWidth"))
+            if right_shell_width is None:
+                reasons.append(f"{screenshot_name} is missing rightShellWidth evidence.")
+            elif right_shell_width > 1.0:
+                reasons.append(f"{screenshot_name} must keep rightShellWidth collapsed during New Character.")
+            if _bool_value(_entry_value(entry, "inlineCommandSurfaceVisible", "InlineCommandSurfaceVisible")):
+                reasons.append(f"{screenshot_name} must not render the inline command surface during New Character.")
+            if not _bool_value(_entry_value(entry, "dialogWindowVisible", "DialogWindowVisible")):
+                reasons.append(f"{screenshot_name} must prove the dedicated desktop dialog window is visible.")
 
     rows = _coerce_rows(contact_sheets.get("rows"), reasons)
     if not rows:

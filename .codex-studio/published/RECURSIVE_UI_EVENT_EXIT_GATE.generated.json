@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T12:25:44Z",
+  "generatedAt": "2026-06-05T03:10:10Z",
   "contract_name": "chummer6-ui.recursive_ui_event_exit_gate",
   "status": "pass",
   "summary": "Recursive UI event exit gate verifies route recursion, screenshot proof, and Chummer5a parity landmarks.",
@@ -27,7 +27,7 @@
       "popup-file-menu": {
         "screenshots_present": true,
         "missing_texts": [],
-        "missing_commands": [],
+        "open_menu_id": "file",
         "missing_parity_rows": []
       },
       "section-active-surface": {

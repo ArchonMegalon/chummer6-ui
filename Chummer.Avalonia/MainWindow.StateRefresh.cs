@@ -80,6 +80,13 @@ public partial class MainWindow
             || shellFrame.CommandDialogPaneState.Fields.Length > 0
             || shellFrame.CommandDialogPaneState.Actions.Length > 0
             || showCommandSurface;
+        if (useClassicChrome)
+        {
+            // The Chummer5a-equivalent desktop workbench owns menus and dialogs in-place or
+            // through the dedicated dialog window. It must not light up an empty inline right rail.
+            showRightShell = false;
+        }
+
         if (shouldSuppressRightCommandPane)
         {
             showRightShell = false;

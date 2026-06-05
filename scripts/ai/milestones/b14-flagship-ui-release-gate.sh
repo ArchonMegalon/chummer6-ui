@@ -506,6 +506,10 @@ for entry in entries:
             "visibleSectionQuickActionIds": visible_section_quick_action_ids,
             "selectedListRowTexts": entry.get("selectedListRowTexts") or entry.get("SelectedListRowTexts") or [],
             "previewText": str(entry.get("previewText") or entry.get("PreviewText") or "").strip(),
+            "rightShellVisible": bool(entry.get("rightShellVisible") if "rightShellVisible" in entry else entry.get("RightShellVisible", False)),
+            "rightShellWidth": entry.get("rightShellWidth") if "rightShellWidth" in entry else entry.get("RightShellWidth", 0.0),
+            "inlineCommandSurfaceVisible": bool(entry.get("inlineCommandSurfaceVisible") if "inlineCommandSurfaceVisible" in entry else entry.get("InlineCommandSurfaceVisible", False)),
+            "dialogWindowVisible": bool(entry.get("dialogWindowVisible") if "dialogWindowVisible" in entry else entry.get("DialogWindowVisible", False)),
         }
     )
 
@@ -544,7 +548,7 @@ control_evidence["workflowCoverage"] = [
     {
         "workflowFamilyId": "magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms",
         "legacyBehaviorLineage": "Magic lineage",
-        "screenshotFiles": ["12-magic-dialog-light.png", "13-matrix-dialog-light.png"],
+        "screenshotFiles": ["12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png"],
     },
     {
         "workflowFamilyId": "improvements-explain-result-parity",
@@ -559,7 +563,7 @@ control_evidence["workflowCoverage"] = [
     {
         "workflowFamilyId": "dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare",
         "legacyBehaviorLineage": "Dense workbench lineage",
-        "screenshotFiles": ["05-dense-section-light.png", "06-dense-section-dark.png"],
+        "screenshotFiles": ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png"],
     },
 ]
 (target_dir / "SCREENSHOT_CONTROL_EVIDENCE.generated.json").write_text(

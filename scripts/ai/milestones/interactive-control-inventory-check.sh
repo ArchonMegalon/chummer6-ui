@@ -392,17 +392,72 @@ for label, path_key in dependency_requirements.items():
 expected_route_families = {"shell", "popup", "dialog", "section", "ruleset"}
 expected_ruleset_lanes = {"sr4", "sr5", "sr6"}
 expected_route_ids = {
-    "shell-startup": ("shell", None, "TreeView"),
-    "popup-file-menu": ("popup", "new_character", "Button"),
-    "popup-tools-menu": ("popup", "master_index", "Button"),
-    "dialog-global-settings": ("dialog", None, "TextBox"),
-    "shell-loaded-runner": ("shell", None, "Button"),
-    "section-attributes-editor": ("section", None, "NumericUpDown"),
-    "dialog-priority-workflow-priority": ("dialog", None, "ComboBox"),
-    "dialog-priority-workflow-sum-to-ten": ("dialog", None, "ComboBox"),
-    "ruleset-sr4-codex-tree": ("ruleset", None, "TreeView"),
-    "ruleset-sr5-codex-tree": ("ruleset", None, "TreeView"),
-    "ruleset-sr6-codex-tree": ("ruleset", None, "TreeView"),
+    "shell-startup": {
+        "family": "shell",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "TreeView",
+    },
+    "popup-file-menu": {
+        "family": "popup",
+        "visibleCommandId": None,
+        "openMenuId": "file",
+        "controlType": "Button",
+    },
+    "popup-tools-menu": {
+        "family": "popup",
+        "visibleCommandId": None,
+        "openMenuId": "tools",
+        "controlType": "Button",
+    },
+    "dialog-global-settings": {
+        "family": "dialog",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "TextBox",
+    },
+    "shell-loaded-runner": {
+        "family": "shell",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "Button",
+    },
+    "section-attributes-editor": {
+        "family": "section",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "NumericUpDown",
+    },
+    "dialog-priority-workflow-priority": {
+        "family": "dialog",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "ComboBox",
+    },
+    "dialog-priority-workflow-sum-to-ten": {
+        "family": "dialog",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "ComboBox",
+    },
+    "ruleset-sr4-codex-tree": {
+        "family": "ruleset",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "TreeView",
+    },
+    "ruleset-sr5-codex-tree": {
+        "family": "ruleset",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "TreeView",
+    },
+    "ruleset-sr6-codex-tree": {
+        "family": "ruleset",
+        "visibleCommandId": None,
+        "openMenuId": None,
+        "controlType": "TreeView",
+    },
 }
 
 
@@ -662,11 +717,15 @@ else:
             shared_failures,
         )
 
-    for route_id, (expected_family, expected_command_id, expected_control_type) in expected_route_ids.items():
+    for route_id, expectation in expected_route_ids.items():
         route = route_map.get(route_id)
         if route is None:
             add_failure(f"Interactive runtime route inventory is missing route '{route_id}'.", shared_failures)
             continue
+        expected_family = str(expectation.get("family") or "")
+        expected_command_id = str(expectation.get("visibleCommandId") or "")
+        expected_open_menu_id = str(expectation.get("openMenuId") or "")
+        expected_control_type = str(expectation.get("controlType") or "")
         if str(route.get("routeFamily") or "") != expected_family:
             add_failure(
                 f"Interactive runtime route '{route_id}' drifted from expected family '{expected_family}'.",
@@ -675,6 +734,11 @@ else:
         if expected_command_id and expected_command_id not in {str(value) for value in route.get("visibleCommandIds") or []}:
             add_failure(
                 f"Interactive runtime route '{route_id}' is missing expected visible command '{expected_command_id}'.",
+                shared_failures,
+            )
+        if expected_open_menu_id and str(route.get("openMenuId") or "") != expected_open_menu_id:
+            add_failure(
+                f"Interactive runtime route '{route_id}' is missing expected openMenuId '{expected_open_menu_id}'.",
                 shared_failures,
             )
         if not route_has_control_type(route, expected_control_type):

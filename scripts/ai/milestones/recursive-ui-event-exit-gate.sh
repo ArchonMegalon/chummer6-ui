@@ -84,7 +84,7 @@ branch_requirements = {
     "popup-file-menu": {
         "screenshots": ["02-menu-open-light.png", "19-workflow-file-menu-loaded-light.png"],
         "texts": ["File"],
-        "commands": ["new_character", "open_character", "save_character"],
+        "open_menu_id": "file",
         "parity_rows": ["landmark:file_menu", "non_negotiable:file_menu_live"],
     },
     "dialog-global-settings": {
@@ -182,6 +182,15 @@ for route in routes:
         route_check["missing_commands"] = missing_commands
         if missing_commands:
             reasons.append(f"{route_id} is missing recursive command ids: {', '.join(missing_commands)}.")
+
+    expected_open_menu_id = str(branch.get("open_menu_id") or "").strip()
+    if expected_open_menu_id:
+        observed_open_menu_id = str(route.get("openMenuId") or "").strip()
+        route_check["open_menu_id"] = observed_open_menu_id
+        if observed_open_menu_id != expected_open_menu_id:
+            reasons.append(
+                f"{route_id} is missing expected open menu context '{expected_open_menu_id}'."
+            )
 
     required_rows = list(branch.get("parity_rows", []))
     if required_rows:

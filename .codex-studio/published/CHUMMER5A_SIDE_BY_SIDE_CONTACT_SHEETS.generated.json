@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T03:43:37.077735Z",
+  "generatedAt": "2026-06-05T03:16:19.654420Z",
   "contractName": "chummer6-ui.chummer5a_side_by_side_contact_sheets",
   "status": "pass",
   "summary": "Side-by-side review sheets pair the canonical Chummer5A oracle anchors with current Chummer6 screenshots for every required surface family.",
@@ -97,10 +97,10 @@
       ],
       "currentScreenshotRefs": [
         "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
-        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png",
         "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png"
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/20-workflow-skills-section-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/22-workflow-qualities-section-light.png"
       ],
       "legacySourceMode": "oracle_anchor_sheet",
       "status": "pass"
@@ -157,8 +157,8 @@
       "currentScreenshotRefs": [
         "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
         "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png",
-        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png"
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
+        "chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/31-workflow-powers-section-light.png"
       ],
       "legacySourceMode": "oracle_anchor_sheet",
       "status": "pass"

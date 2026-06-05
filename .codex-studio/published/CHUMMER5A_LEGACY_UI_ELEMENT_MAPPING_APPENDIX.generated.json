@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T03:43:37.079405Z",
+  "generatedAt": "2026-06-05T03:16:19.655877Z",
   "contractName": "chummer6-ui.chummer5a_legacy_ui_element_mapping_appendix",
   "status": "pass",
   "summary": "Legacy Chummer5A event hooks, dynamic elements, family mappings, and per-dialog human parity rows are exported together so family-level proof cannot substitute for element-level review.",
@@ -10,11 +10,11 @@
   },
   "legacyExtractionSummary": {
     "designerEventHookCount": 1755,
-    "runtimeEventHookCount": 336,
+    "runtimeEventHookCount": 339,
     "dynamicInteractiveElementCount": 765
   },
   "legacyDispositionSummary": {
-    "legacyElementDispositionCount": 2856,
+    "legacyElementDispositionCount": 2859,
     "missingLegacyElementDispositionCount": 0,
     "familyFallbackLegacyElementDispositionCount": 0
   },
@@ -89,7 +89,7 @@
     {
       "family_id": "character_creation",
       "status": "pass",
-      "legacy_event_count": 376,
+      "legacy_event_count": 378,
       "legacy_dynamic_element_count": 164,
       "mapped_current_ids": [
         "command:new_character",
@@ -312,8 +312,8 @@
     {
       "family_id": "help_external",
       "status": "pass",
-      "legacy_event_count": 10,
-      "legacy_dynamic_element_count": 8,
+      "legacy_event_count": 11,
+      "legacy_dynamic_element_count": 10,
       "mapped_current_ids": [
         "command:wiki",
         "command:discord",
@@ -574,7 +574,7 @@
       "family_id": "tools_utilities",
       "status": "pass",
       "legacy_event_count": 51,
-      "legacy_dynamic_element_count": 37,
+      "legacy_dynamic_element_count": 35,
       "mapped_current_ids": [
         "command:dice_roller",
         "command:master_index",

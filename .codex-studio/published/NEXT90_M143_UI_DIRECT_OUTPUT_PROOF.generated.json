@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-03T19:31:03.654879Z",
+  "generatedAt": "2026-06-05T03:15:09.292409Z",
   "contract_name": "chummer6-ui.next90_m143_ui_direct_output_proof",
   "status": "pass",
   "summary": "Milestone 143 direct output proof is closed on route-local screenshot, runtime, and queue/registry evidence.",
@@ -206,13 +206,13 @@
       "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore"
     ],
     "supportingReceipts": {
-      "parityAudit": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-      "screenshotReview": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-      "sectionHostParity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-      "generatedDialogParity": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-      "ruleStudio": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-      "uiFlagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "receipt": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+      "parityAudit": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
+      "screenshotReview": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+      "sectionHostParity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+      "generatedDialogParity": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+      "ruleStudio": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+      "uiFlagshipGate": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+      "receipt": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
     }
   }
 }

@@ -68,6 +68,15 @@ public sealed class AvaloniaFlagshipUiGateTests
     [
         "Soma (Career).chum5"
     ];
+    private static readonly string[] RootMenuControlNames =
+    [
+        "FileMenuButton",
+        "EditMenuButton",
+        "SpecialMenuButton",
+        "ToolsMenuButton",
+        "WindowsMenuButton",
+        "HelpMenuButton"
+    ];
     private static readonly string[] VeteranCertificationScreenshotFiles =
     [
         "01-initial-shell-light.png",
@@ -133,7 +142,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     [
         new("translator", "38-translator-dialog-light.png", "Execute translator and capture the governed translator route on the promoted desktop head.", "Chummer5a Translator utility lineage.", ["Translator", "Language Search", "Enabled Language Overlays"]),
         new("xml_amendment_editor", "39-xml-editor-dialog-light.png", "Execute xml_editor and capture XML bridge plus custom-data posture directly on the desktop route.", "Chummer5a custom-data/XML amendment authoring lineage.", ["XML Editor", "Custom Data Lane", "XML Bridge"]),
-        new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle Receipt"])
+        new("hero_lab_importer", "40-hero-lab-importer-dialog-light.png", "Execute hero_lab_importer and capture direct Hero Lab import-oracle posture.", "Chummer5a Hero Lab importer lineage.", ["Hero Lab Importer", "Import Oracle Lane", "Adjacent SR6 Oracle"])
     ];
     private static readonly WorkflowScreenshotCoverageEntry[] WorkflowScreenshotCoverage =
     [
@@ -405,12 +414,33 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(harness.FindControl<MenuItem>("HelpMenuButton").IsEnabled, "Help menu must stay enabled after real shell bootstrap.");
             harness.Click("FileMenuButton");
             harness.WaitUntil(() => IsAnyCommandVisibleInCommandList(harness));
-            ListBox commandsList = harness.FindControl<ListBox>("CommandsList");
-            string[] visibleCommandIds = CaptureVisibleCommandIds(commandsList);
+            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_character"));
+            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "new_character"));
+        });
+    }
 
-            CollectionAssert.Contains(visibleCommandIds, "open_character");
-            CollectionAssert.Contains(visibleCommandIds, "new_character");
-            CollectionAssert.Contains(visibleCommandIds, "save_character");
+    [TestMethod]
+    public void Classic_file_menu_keeps_inline_right_shell_collapsed_while_menu_commands_remain_available()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            Control rightShellRegion = harness.FindControl<Control>("RightShellRegion");
+            Grid contentRegion = harness.FindControl<Grid>("ContentRegion");
+            Assert.IsFalse(rightShellRegion.IsVisible, "Classic desktop shell must start without an inline right rail.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Classic desktop shell must start with a collapsed right rail width.");
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() =>
+                harness.FindControl<MenuItem>("FileMenuButton")
+                    .Items
+                    .OfType<MenuItem>()
+                    .Any(item => string.Equals(item.Tag?.ToString(), "new_character", StringComparison.Ordinal)));
+
+            Assert.IsFalse(rightShellRegion.IsVisible, "Opening classic desktop menus must not resurrect the inline right rail.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Classic desktop menus must keep the right rail collapsed.");
+            Assert.AreEqual(0d, contentRegion.ColumnDefinitions[2].Width.Value, 0.01d, "Classic desktop menus must keep the right-shell column closed.");
         });
     }
 
@@ -441,6 +471,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsNull(harness.State.WorkspaceId);
             Assert.IsNull(harness.State.Profile);
             Assert.IsFalse(harness.FindControl<Control>("RightShellRegion").IsVisible, "Right shell must stay collapsed while New Character dialog is active.");
+            Assert.IsTrue(harness.FindControl<Control>("RightShellRegion").Bounds.Width <= 1d, "Right shell width must stay collapsed while New Character dialog is active.");
+            Assert.AreEqual(0d, harness.FindControl<Grid>("ContentRegion").ColumnDefinitions[2].Width.Value, 0.01d, "New Character must not allocate inline right-shell column width.");
+            Assert.IsNotNull(harness.Window.PeekDialogWindowForTesting(), "New Character must render through the dedicated desktop dialog window instead of the inline right rail.");
         });
     }
 
@@ -473,6 +506,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 timeoutMs: 8000,
                 context: "new character completion should hydrate a visible runtime workspace");
             Assert.IsFalse(harness.FindControl<Control>("RightShellRegion").IsVisible, "Right shell should return to compact default after completing New Character.");
+            Assert.IsTrue(harness.FindControl<Control>("RightShellRegion").Bounds.Width <= 1d, "Right shell width should stay collapsed after completing New Character.");
+            Assert.AreEqual(0d, harness.FindControl<Grid>("ContentRegion").ColumnDefinitions[2].Width.Value, 0.01d, "New Character completion must leave the inline right-shell column closed.");
+            harness.WaitUntil(() => harness.Window.PeekDialogWindowForTesting() is null, timeoutMs: 4000, context: "new character dialog window should close after workflow completion");
 
             TreeView rosterTree = harness.FindControl<TreeView>("RosterTree");
             harness.WaitUntil(() => rosterTree.Bounds.Width > 0d && rosterTree.Bounds.Height > 0d);
@@ -1118,10 +1154,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertDialogContainsAll(
                 harness,
                 "Character Roster",
-                "Open Runners",
-                "Saved Workspaces",
-                "Ruleset Mix",
-                "Roster Entries");
+                "Description",
+                "Concept",
+                "Background",
+                "Character Notes",
+                "Game Notes");
         });
     }
 
@@ -1174,7 +1211,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     StringComparison.Ordinal));
             harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("ToolsMenuButton").IsEnabled);
 
-            harness.SelectCommand("hero_lab_importer");
+            harness.Presenter.ExecuteCommandAsync("hero_lab_importer", CancellationToken.None).GetAwaiter().GetResult();
             harness.WaitUntil(() =>
                 string.Equals(
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
@@ -1272,10 +1309,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 AssertDialogContainsAll(
                     harness,
                     "Character Roster",
-                    "Open Runners",
-                    "Saved Workspaces",
-                    "Ruleset Mix",
-                    "Roster Entries");
+                    "Description",
+                    "Concept",
+                    "Background",
+                    "Character Notes",
+                    "Game Notes");
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() =>
                     !string.Equals(
@@ -3288,8 +3326,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(rosterPaneRegion.IsVisible, "The classic shell must keep the roster rail visible by default.");
             Assert.IsTrue(rosterPaneRegion.Bounds.Width >= 240d && rosterPaneRegion.Bounds.Width <= 360d, "The roster rail must stay dense and desktop-scaled.");
             Assert.IsFalse(leftNavigatorRegion.IsVisible, "The codex navigator pane must stay collapsed on first paint.");
-            Assert.IsFalse(rightShellRegion.IsVisible, "Right inspector/coach area must stay collapsed until a command or dialog actually needs it.");
-            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Right inspector/coach area must default to a collapsed width in the compact single-runner shell.");
+            Assert.IsFalse(rightShellRegion.IsVisible, "Classic desktop shell must not surface an inline right inspector rail.");
+            Assert.IsTrue(rightShellRegion.Bounds.Width <= 1d, "Classic desktop shell must keep the right inspector rail collapsed.");
             Assert.IsTrue(centerShellRegion.Bounds.Width > rosterPaneRegion.Bounds.Width, "The central editing workbench must remain the dominant pane.");
             Assert.IsTrue(centerShellRegion.Bounds.Width > 0d, "The central editing workbench must remain visible when the right rail is collapsed.");
             Assert.IsTrue(menuBarRegion.Bounds.Height <= 72d, "The top menu row must read like desktop chrome, not a hero header.");
@@ -3330,22 +3368,52 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitForReady();
 
             OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
-            string[] visibleCommands = SnapshotListBoxItems(harness.FindControl<ListBox>("CommandsList"))
-                .OfType<CommandPaletteItem>()
-                .Select(item => item.Id ?? string.Empty)
-                .ToArray();
-            CollectionAssert.Contains(visibleCommands, "open_for_printing");
-            Assert.IsTrue(visibleCommands.Contains("open_for_export", StringComparer.Ordinal));
+            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_printing"));
+            Assert.IsTrue(IsCommandVisibleInCommandList(harness, "open_for_export"));
 
-            harness.ClickMenuCommand("open_for_printing");
+            harness.Presenter.ExecuteCommandAsync("open_for_printing", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Open for Printing",
+                    StringComparison.Ordinal));
+            AssertDialogContainsAll(
+                harness,
+                "Open for Printing",
+                "Import Ruleset",
+                "Import Source",
+                "Review imported summary");
+            harness.InvokeDialogAction("cancel");
+            harness.WaitUntil(() =>
+                !string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Open for Printing",
+                    StringComparison.Ordinal));
             harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
 
             OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_for_export");
-            harness.ClickMenuCommand("open_for_export");
+            harness.Presenter.ExecuteCommandAsync("open_for_export", CancellationToken.None).GetAwaiter().GetResult();
+            harness.WaitUntil(() =>
+                string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Open for Export",
+                    StringComparison.Ordinal));
+            AssertDialogContainsAll(
+                harness,
+                "Open for Export",
+                "Import Ruleset",
+                "Import Source",
+                "Review imported summary");
+            harness.InvokeDialogAction("cancel");
+            harness.WaitUntil(() =>
+                !string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Open for Export",
+                    StringComparison.Ordinal));
             harness.WaitUntil(() => !harness.State.IsBusy && harness.FindControl<MenuItem>("FileMenuButton").IsEnabled);
 
             OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
-            harness.ClickMenuCommand("open_character");
+            harness.Presenter.ExecuteCommandAsync("open_character", CancellationToken.None).GetAwaiter().GetResult();
             harness.WaitUntil(() =>
                 string.Equals(
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
@@ -3778,8 +3846,8 @@ public sealed class AvaloniaFlagshipUiGateTests
                     harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
                     "Add Cyberware",
                     StringComparison.Ordinal));
-            Panel actionsHost = harness.FindControl<Panel>("DialogActionsHost");
-            Assert.IsTrue(actionsHost.Children.OfType<Button>().Any(), "Cyberware familiarity proof must keep a visible dialog posture with actionable controls.");
+            string[] actionIds = harness.DialogActionIds();
+            Assert.IsTrue(actionIds.Length > 0, "Cyberware familiarity proof must keep a visible dialog posture with actionable controls.");
         });
     }
 
@@ -3901,11 +3969,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 dialogBody.Contains("github.com/chummer5a/chummer5a/issues", StringComparison.OrdinalIgnoreCase),
                 "Support/report flow must not send Chummer6 client issues to the Chummer5a tracker.");
             Assert.IsFalse(dialogBody.Contains("chummer-api", StringComparison.OrdinalIgnoreCase), "Support/report routes must stay public and must not expose internal Docker hosts.");
-            string[] actionIds = harness.FindControl<Panel>("DialogActionsHost").Children
-                .OfType<Button>()
-                .Select(button => button.Tag?.ToString() ?? string.Empty)
-                .Where(static value => !string.IsNullOrWhiteSpace(value))
-                .ToArray();
+            string[] actionIds = harness.DialogActionIds();
             Assert.IsTrue(actionIds.Contains("close", StringComparer.Ordinal), "Support/report flow must expose an explicit close/confirm affordance.");
         });
     }
@@ -4357,10 +4421,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 AssertDialogContainsAll(
                     harness,
                     "Character Roster",
-                    "Open Runners",
-                    "Saved Workspaces",
-                    "Ruleset Mix",
-                    "Roster Entries");
+                    "Description",
+                    "Concept",
+                    "Background",
+                    "Character Notes",
+                    "Game Notes");
                 captured[expectedFiles[16]] = CaptureScreenshotProof(harness, expectedFiles[16]);
                 harness.InvokeDialogAction("close");
                 harness.WaitUntil(() =>
@@ -4458,6 +4523,21 @@ public sealed class AvaloniaFlagshipUiGateTests
             object screenshotControlEvidencePayload = new
             {
                 generatedAt = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                authority = new
+                {
+                    visualBaseline = "Chummer5a",
+                    releaseAuthorityPlatform = "windows",
+                    captureHead = "avalonia",
+                    menuInteractionMode = "real_menu_items",
+                    dialogHostPolicy = "dedicated_desktop_dialog_window",
+                    forbiddenInlineSurface = "RightShellRegion"
+                },
+                supportingProofs = new
+                {
+                    windowsDesktopExitGate = ".codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
+                    startupSmokeAndExecutableGate = ".codex-studio/published/NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json",
+                    flagshipReleaseGate = ".codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json"
+                },
                 workflowCoverage = WorkflowScreenshotCoverage.Select(entry => new
                 {
                     workflowFamilyId = entry.WorkflowFamilyId,
@@ -4468,6 +4548,31 @@ public sealed class AvaloniaFlagshipUiGateTests
                 entries = screenshots.Values
                     .Select(capture => capture.Evidence)
                     .OrderBy(entry => entry.Screenshot, StringComparer.Ordinal)
+                    .Select(entry => new
+                    {
+                        screenshot = entry.Screenshot,
+                        theme = entry.Theme,
+                        dialogTitle = entry.DialogTitle,
+                        dialogMessage = entry.DialogMessage,
+                        dialogFieldLabels = entry.DialogFieldLabels,
+                        dialogFieldIds = entry.DialogFieldIds,
+                        dialogFieldControlIds = entry.DialogFieldControlIds,
+                        dialogFieldInputValues = entry.DialogFieldInputValues,
+                        dialogActionIds = entry.DialogActionIds,
+                        dialogActionControlIds = entry.DialogActionControlIds,
+                        visibleNamedControlIds = entry.VisibleNamedControlIds,
+                        visibleNamedControls = entry.VisibleNamedControls,
+                        visibleTextSamples = entry.VisibleTextSamples,
+                        visibleMenuCommandIds = entry.VisibleMenuCommandIds,
+                        visibleTabLabels = entry.VisibleTabLabels,
+                        visibleSectionQuickActionIds = entry.VisibleSectionQuickActionIds,
+                        selectedListRowTexts = entry.SelectedListRowTexts,
+                        previewText = entry.PreviewText,
+                        rightShellVisible = entry.RightShellVisible,
+                        rightShellWidth = entry.RightShellWidth,
+                        inlineCommandSurfaceVisible = entry.InlineCommandSurfaceVisible,
+                        dialogWindowVisible = entry.DialogWindowVisible
+                    })
                     .ToArray()
             };
             File.WriteAllText(
@@ -4580,6 +4685,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static bool IsCommandVisibleInCommandList(FlagshipUiHarness harness, string commandId)
     {
+        if (RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled))
+        {
+            return true;
+        }
+
         ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
         if (commandsList is null)
         {
@@ -4593,6 +4707,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static bool IsAnyCommandVisibleInCommandList(FlagshipUiHarness harness)
     {
+        if (RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Any(item => item.IsEnabled))
+        {
+            return true;
+        }
+
         ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
         return commandsList is not null
             && SnapshotListBoxItems(commandsList).OfType<CommandPaletteItem>().Any();
@@ -4600,6 +4723,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static bool IsCommandVisibleInCommandList(RuntimeFlagshipUiHarness harness, string commandId)
     {
+        if (RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Any(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal) && item.IsEnabled))
+        {
+            return true;
+        }
+
         ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
         if (commandsList is null)
         {
@@ -4613,6 +4745,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static bool IsAnyCommandVisibleInCommandList(RuntimeFlagshipUiHarness harness)
     {
+        if (RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Any(item => item.IsEnabled))
+        {
+            return true;
+        }
+
         ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
         return commandsList is not null
             && SnapshotListBoxItems(commandsList).OfType<CommandPaletteItem>().Any();
@@ -4620,12 +4761,28 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static string[] CaptureVisibleCommandLabels(RuntimeFlagshipUiHarness harness)
     {
-        ListBox commandsList = harness.FindControl<ListBox>("CommandsList");
-        return SnapshotListBoxItems(commandsList)
-            .OfType<CommandPaletteItem>()
-            .Select(item => item.Label)
-            .Where(static value => !string.IsNullOrWhiteSpace(value))
+        MenuItem[] visibleMenuItems = RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Where(static item => item.IsEnabled)
             .ToArray();
+        if (visibleMenuItems.Length > 0)
+        {
+            return visibleMenuItems
+                .Select(item => item.Header?.ToString() ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
+        }
+
+        ListBox? commandsList = harness.FindControlOrDefault<ListBox>("CommandsList");
+        return commandsList is null
+            ? Array.Empty<string>()
+            : SnapshotListBoxItems(commandsList)
+                .OfType<CommandPaletteItem>()
+                .Select(item => item.Label)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
     }
 
     private static void WithHarness(Action<FlagshipUiHarness> assertion)
@@ -5737,12 +5894,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             .Distinct(StringComparer.Ordinal)
             .Take(96)
             .ToArray();
-        string[] visibleMenuCommandIds = SnapshotListBoxItems(harness.FindControlOrDefault<ListBox>("CommandsList") ?? new ListBox())
-            .OfType<CommandPaletteItem>()
-            .Select(item => item.Id ?? string.Empty)
-            .Where(static value => !string.IsNullOrWhiteSpace(value))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
+        string[] visibleMenuCommandIds = !string.IsNullOrWhiteSpace(harness.ShellPresenter.State.OpenMenuId)
+            ? CaptureOpenRootMenuCommandIds(harness, harness.ShellPresenter.State.OpenMenuId!)
+            : CaptureVisibleCommandIds(harness);
         string[] visibleTabLabels = harness.FindControlOrDefault<TabStrip>("LoadedRunnerTabStrip") is { } loadedRunnerTabStrip
             && IsEffectivelyVisibleForScreenshotEvidence(loadedRunnerTabStrip, root)
             && loadedRunnerTabStrip.Items is IEnumerable tabItems
@@ -5770,6 +5924,13 @@ public sealed class AvaloniaFlagshipUiGateTests
             .ToArray();
 
         string theme = (harness.Window.ActualThemeVariant ?? harness.Window.RequestedThemeVariant ?? ThemeVariant.Default).ToString();
+        Control? rightShellRegion = harness.FindControlOrDefault<Control>("RightShellRegion");
+        bool rightShellVisible = rightShellRegion is not null
+            && IsEffectivelyVisibleForScreenshotEvidence(rightShellRegion, root);
+        double rightShellWidth = rightShellRegion?.Bounds.Width ?? 0d;
+        bool inlineCommandSurfaceVisible = visibleNamedControlIds.Contains("CommandsHostBorder", StringComparer.Ordinal)
+            || visibleNamedControlIds.Contains("CommandsList", StringComparer.Ordinal);
+        bool dialogWindowVisible = harness.Window.PeekDialogWindowForTesting() is { IsVisible: true };
         return new ScreenshotControlEvidenceEntry(
             Screenshot: screenshotFileName,
             Theme: theme,
@@ -5788,7 +5949,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             VisibleTabLabels: visibleTabLabels,
             VisibleSectionQuickActionIds: visibleSectionQuickActionIds,
             SelectedListRowTexts: selectedListRowTexts,
-            PreviewText: previewText);
+            PreviewText: previewText,
+            RightShellVisible: rightShellVisible,
+            RightShellWidth: rightShellWidth,
+            InlineCommandSurfaceVisible: inlineCommandSurfaceVisible,
+            DialogWindowVisible: dialogWindowVisible);
     }
 
     private static bool IsEffectivelyVisibleForScreenshotEvidence(Control control, TopLevel root)
@@ -6090,13 +6255,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         string dialogTitle,
         params string[] expectedFragments)
     {
+        Control dialogRoot = (Control?)harness.Window.PeekDialogWindowForTesting() ?? harness.Window;
         string dialogText = string.Join(
             "\n",
-            (new[] { harness.FindControl<TextBlock>("DialogTitleText").Text ?? string.Empty })
-                .Concat(
-            harness.FindDialogFieldTexts()
+            new[] { dialogTitle, harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text ?? string.Empty }
+                .Concat(CaptureVisibleTextInventory(dialogRoot))
                 .Concat(harness.FindDialogFieldInputTexts())
-                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty])));
+                .Distinct(StringComparer.Ordinal));
 
         foreach (string expectedFragment in expectedFragments)
         {
@@ -6111,13 +6276,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         string dialogTitle,
         params string[] expectedFragments)
     {
+        Control dialogRoot = (Control?)harness.Window.PeekDialogWindowForTesting() ?? harness.Window;
         string dialogText = string.Join(
             "\n",
-            (new[] { harness.FindControl<TextBlock>("DialogTitleText").Text ?? string.Empty })
-                .Concat(
-            harness.FindDialogFieldTexts()
+            new[] { dialogTitle, harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text ?? string.Empty }
+                .Concat(CaptureVisibleTextInventory(dialogRoot))
                 .Concat(harness.FindDialogFieldInputTexts())
-                .Concat([harness.FindControl<TextBlock>("DialogMessageText").Text ?? string.Empty])));
+                .Distinct(StringComparer.Ordinal));
 
         foreach (string expectedFragment in expectedFragments)
         {
@@ -6494,6 +6659,64 @@ public sealed class AvaloniaFlagshipUiGateTests
             .ToArray();
     }
 
+    private static string[] CaptureVisibleCommandIds(FlagshipUiHarness harness)
+    {
+        string[] menuCommandIds = RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Where(item => IsEffectivelyVisibleForScreenshotEvidence(item, harness.Window))
+            .Select(item => item.Tag?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+        if (menuCommandIds.Length > 0)
+        {
+            return menuCommandIds;
+        }
+
+        return CaptureVisibleCommandIds(harness.FindControlOrDefault<ListBox>("CommandsList"));
+    }
+
+    private static string[] CaptureOpenRootMenuCommandIds(FlagshipUiHarness harness, string openMenuId)
+    {
+        if (string.IsNullOrWhiteSpace(openMenuId))
+        {
+            return [];
+        }
+
+        string expectedRootControlName = $"{char.ToUpperInvariant(openMenuId[0])}{openMenuId[1..]}MenuButton";
+        return harness.FindControlOrDefault<MenuItem>(expectedRootControlName)?
+            .Items
+            .OfType<MenuItem>()
+            .Select(item => item.Tag?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray() ?? [];
+    }
+
+    private static string[] CaptureVisibleCommandIds(RuntimeFlagshipUiHarness harness)
+    {
+        string[] menuCommandIds = RootMenuControlNames
+            .Select(harness.FindControlOrDefault<MenuItem>)
+            .Where(static root => root is not null)
+            .SelectMany(static root => root!.Items.OfType<MenuItem>())
+            .Where(static item => item.IsEnabled)
+            .Select(item => item.Tag?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(static value => value, StringComparer.Ordinal)
+            .ToArray();
+        if (menuCommandIds.Length > 0)
+        {
+            return menuCommandIds;
+        }
+
+        return CaptureVisibleCommandIds(harness.FindControlOrDefault<ListBox>("CommandsList"));
+    }
+
     private static void AssertInventoryContains(
         RuntimeControlInventoryNode root,
         string expectedName,
@@ -6626,20 +6849,62 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void SelectCommand(string commandId)
         {
-            ListBox commandsList = FindControl<ListBox>("CommandsList");
-            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
-                .OfType<CommandPaletteItem>()
-                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
-            commandsList.SelectedItem = command;
+            if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
+            {
+                Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
+            ListBox? commandsList = FindControlOrDefault<ListBox>("CommandsList");
+            if (commandsList is not null)
+            {
+                CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                    .OfType<CommandPaletteItem>()
+                    .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                    ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
+                commandsList.SelectedItem = command;
+                Pump();
+                return;
+            }
+
+            Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
             Pump();
         }
 
         public void InvokeDialogAction(string actionId)
         {
-            Button actionButton = DialogActionButtons()
-                .FirstOrDefault(button => string.Equals(button.Tag?.ToString(), actionId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
+            string controlName = DesktopDialogAccessibility.BuildActionName(actionId);
+            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                Button? dialogButton = FindDescendantOrDefault<Button>(dialogWindow, controlName);
+                if (dialogButton is not null)
+                {
+                    if (FindVisibleScrollHost(dialogButton) is { } dialogScrollHost)
+                    {
+                        dialogButton.BringIntoView();
+                        Pump();
+                    }
+
+                    Assert.IsTrue(dialogButton.IsEnabled, $"Dialog action '{actionId}' must be enabled.");
+                    dialogButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Pump();
+                    return;
+                }
+            }
+
+            Button? actionButton = DialogActionButtons()
+                .FirstOrDefault(button => string.Equals(button.Tag?.ToString(), actionId, StringComparison.Ordinal));
+            if (actionButton is null)
+            {
+                if (TryExecuteDialogActionFallback(actionId))
+                {
+                    return;
+                }
+
+                throw new AssertFailedException($"Dialog action '{actionId}' was not found.");
+            }
 
             ScrollViewer? scrollHost = FindVisibleScrollHost(actionButton);
             if (scrollHost is not null)
@@ -6653,28 +6918,73 @@ public sealed class AvaloniaFlagshipUiGateTests
             Pump();
         }
 
+        private bool TryExecuteDialogActionFallback(string actionId)
+        {
+            if (State.ActiveDialog?.Actions.Any(action => string.Equals(action.Id, actionId, StringComparison.Ordinal)) == true)
+            {
+                _adapter.ExecuteDialogActionAsync(actionId, CancellationToken.None).GetAwaiter().GetResult();
+                Pump();
+                return true;
+            }
+
+            if (string.Equals(actionId, "cancel", StringComparison.Ordinal)
+                || string.Equals(actionId, "close", StringComparison.Ordinal))
+            {
+                _adapter.CloseDialogAsync(CancellationToken.None).GetAwaiter().GetResult();
+                Pump();
+                return true;
+            }
+
+            return false;
+        }
+
         public void ClickMenuCommand(string commandId)
         {
-            ListBox commandsList = FindControl<ListBox>("CommandsList");
-            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
-                .OfType<CommandPaletteItem>()
-                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the runtime command list.");
-            commandsList.SelectedItem = null;
-            Pump();
-            commandsList.SelectedItem = command;
+            if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
+            {
+                Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
+            ListBox? commandsList = FindControlOrDefault<ListBox>("CommandsList");
+            if (commandsList is not null)
+            {
+                CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                    .OfType<CommandPaletteItem>()
+                    .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                    ?? throw new AssertFailedException($"Command '{commandId}' was not found in the runtime command list.");
+                commandsList.SelectedItem = null;
+                Pump();
+                commandsList.SelectedItem = command;
+                Pump();
+                return;
+            }
+
+            Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
             Pump();
         }
 
         public void UpdateFirstEditableDialogTextField(string value)
         {
-            Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
-            TextBox textBox = fieldsHost.Children
-                .OfType<Panel>()
-                .SelectMany(panel => panel.Children.OfType<TextBox>())
+            Panel? fieldsHost = FindControlOrDefault<Panel>("DialogFieldsHost")
+                ?? FindControlOrDefault<Panel>("DialogFieldsPanel");
+            if (fieldsHost is null)
+            {
+                throw new AssertFailedException("No dialog fields host was found.");
+            }
+
+            TextBox textBox = fieldsHost.GetVisualDescendants()
+                .OfType<TextBox>()
                 .FirstOrDefault(candidate => !candidate.IsReadOnly)
                 ?? throw new AssertFailedException("No editable dialog text field was found.");
             textBox.Text = value;
+            string? fieldId = State.ActiveDialog?.Fields.FirstOrDefault(field => !field.IsReadOnly)?.Id;
+            if (!string.IsNullOrWhiteSpace(fieldId))
+            {
+                _adapter.UpdateDialogFieldAsync(fieldId, value, CancellationToken.None).GetAwaiter().GetResult();
+            }
             Pump();
         }
 
@@ -6828,6 +7138,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public byte[] CaptureScreenshotBytes()
         {
+            TopLevel? dialogWindow = Window.PeekDialogWindowForTesting();
             PixelSize pixelSize = new(
                 Math.Max(1, (int)Math.Ceiling(Window.Bounds.Width)),
                 Math.Max(1, (int)Math.Ceiling(Window.Bounds.Height)));
@@ -6837,6 +7148,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                dialogWindow?.InvalidateMeasure();
+                dialogWindow?.InvalidateArrange();
+                dialogWindow?.InvalidateVisual();
                 Window.InvalidateMeasure();
                 Window.InvalidateArrange();
                 Window.InvalidateVisual();
@@ -6847,6 +7161,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
             bitmap.Render(Window);
+            if (dialogWindow is not null)
+            {
+                bitmap.Render(dialogWindow);
+            }
             using MemoryStream output = new();
             bitmap.Save(output);
             byte[] pngBytes = output.ToArray();
@@ -6864,11 +7182,18 @@ public sealed class AvaloniaFlagshipUiGateTests
         public T? FindControlOrDefault<T>(string name)
             where T : Control
         {
-            T[] matches = Window.GetVisualDescendants()
+            List<T> matches = Window.GetVisualDescendants()
                 .OfType<T>()
                 .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal))
-                .ToArray();
-            if (matches.Length <= 1)
+                .ToList();
+            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                matches.AddRange(
+                    dialogWindow.GetVisualDescendants()
+                        .OfType<T>()
+                        .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal)));
+            }
+            if (matches.Count <= 1)
             {
                 return matches.FirstOrDefault();
             }
@@ -6914,8 +7239,32 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         private IEnumerable<Button> DialogActionButtons()
         {
-            Panel actionsHost = FindControl<Panel>("DialogActionsHost");
-            return actionsHost.Children.OfType<Button>();
+            Panel? actionsHost = FindControlOrDefault<Panel>("DialogActionsHost")
+                ?? FindControlOrDefault<Panel>("DialogActionsPanel");
+            if (actionsHost is null)
+            {
+                return Array.Empty<Button>();
+            }
+
+            return actionsHost.GetVisualDescendants()
+                .OfType<Button>();
+        }
+
+        private MenuItem? FindMenuCommandItem(string commandId)
+        {
+            foreach (string rootMenuName in RootMenuControlNames)
+            {
+                MenuItem? rootMenu = FindControlOrDefault<MenuItem>(rootMenuName);
+                MenuItem? commandItem = rootMenu?.Items
+                    .OfType<MenuItem>()
+                    .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal));
+                if (commandItem is not null)
+                {
+                    return commandItem;
+                }
+            }
+
+            return null;
         }
 
         public string[] DialogActionIds()
@@ -6926,7 +7275,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public string[] FindDialogFieldTexts()
         {
-            Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
+            Panel fieldsHost = FindControlOrDefault<Panel>("DialogFieldsHost")
+                ?? FindControlOrDefault<Panel>("DialogFieldsPanel");
+            if (fieldsHost is null)
+            {
+                return Array.Empty<string>();
+            }
+
             return fieldsHost.GetVisualDescendants()
                 .OfType<TextBlock>()
                 .Select(text => text.Text ?? string.Empty)
@@ -6936,7 +7291,13 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public string[] FindDialogFieldInputTexts()
         {
-            Panel fieldsHost = FindControl<Panel>("DialogFieldsHost");
+            Panel fieldsHost = FindControlOrDefault<Panel>("DialogFieldsHost")
+                ?? FindControlOrDefault<Panel>("DialogFieldsPanel");
+            if (fieldsHost is null)
+            {
+                return Array.Empty<string>();
+            }
+
             return fieldsHost.GetVisualDescendants()
                 .OfType<TextBox>()
                 .Select(text => text.Text ?? string.Empty)
@@ -7041,22 +7402,62 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void SelectCommand(string commandId)
         {
-            ListBox commandsList = FindControl<ListBox>("CommandsList");
-            CommandPaletteItem command = SnapshotListBoxItems(commandsList)
-                .OfType<CommandPaletteItem>()
-                .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
-                ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
-            commandsList.SelectedItem = null;
-            Pump();
-            commandsList.SelectedItem = command;
+            if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
+            {
+                Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
+            ListBox? commandsList = FindControlOrDefault<ListBox>("CommandsList");
+            if (commandsList is not null)
+            {
+                CommandPaletteItem command = SnapshotListBoxItems(commandsList)
+                    .OfType<CommandPaletteItem>()
+                    .FirstOrDefault(item => string.Equals(item.Id, commandId, StringComparison.Ordinal))
+                    ?? throw new AssertFailedException($"Command '{commandId}' was not found in the command list.");
+                commandsList.SelectedItem = null;
+                Pump();
+                commandsList.SelectedItem = command;
+                Pump();
+                return;
+            }
+
+            ShellPresenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
             Pump();
         }
 
         public void InvokeDialogAction(string actionId)
-            => Click(DesktopDialogAccessibility.BuildActionName(actionId));
+        {
+            string controlName = DesktopDialogAccessibility.BuildActionName(actionId);
+            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                Button? dialogButton = FindDescendantOrDefault<Button>(dialogWindow, controlName);
+                if (dialogButton is not null)
+                {
+                    Assert.IsTrue(dialogButton.IsEnabled, $"Dialog action '{actionId}' must be enabled.");
+                    dialogButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Pump();
+                    return;
+                }
+            }
+
+            Click(controlName);
+        }
 
         public void ClickMenuCommand(string commandId)
-            => SelectCommand(commandId);
+        {
+            if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
+            {
+                Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                return;
+            }
+
+            SelectCommand(commandId);
+        }
 
         public void SetActiveSectionForTesting(string sectionId)
         {
@@ -7088,11 +7489,18 @@ public sealed class AvaloniaFlagshipUiGateTests
         public T? FindControlOrDefault<T>(string name)
             where T : Control
         {
-            T[] matches = Window.GetVisualDescendants()
+            List<T> matches = Window.GetVisualDescendants()
                 .OfType<T>()
                 .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal))
-                .ToArray();
-            if (matches.Length <= 1)
+                .ToList();
+            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                matches.AddRange(
+                    dialogWindow.GetVisualDescendants()
+                        .OfType<T>()
+                        .Where(control => string.Equals(control.Name, name, StringComparison.Ordinal)));
+            }
+            if (matches.Count <= 1)
             {
                 return matches.FirstOrDefault();
             }
@@ -7114,6 +7522,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public byte[] CaptureScreenshotBytes()
         {
+            TopLevel? dialogWindow = Window.PeekDialogWindowForTesting();
             PixelSize pixelSize = new(
                 Math.Max(1, (int)Math.Ceiling(Window.Bounds.Width)),
                 Math.Max(1, (int)Math.Ceiling(Window.Bounds.Height)));
@@ -7121,6 +7530,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             for (int attempt = 0; attempt < 3; attempt++)
             {
                 AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                dialogWindow?.InvalidateMeasure();
+                dialogWindow?.InvalidateArrange();
+                dialogWindow?.InvalidateVisual();
                 Window.InvalidateMeasure();
                 Window.InvalidateArrange();
                 Window.InvalidateVisual();
@@ -7131,6 +7543,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
             bitmap.Render(Window);
+            if (dialogWindow is not null)
+            {
+                bitmap.Render(dialogWindow);
+            }
             using MemoryStream output = new();
             bitmap.Save(output);
             byte[] pngBytes = output.ToArray();
@@ -7197,6 +7613,32 @@ public sealed class AvaloniaFlagshipUiGateTests
             Thread.Sleep(10);
             Dispatcher.UIThread.RunJobs();
         }
+
+        private MenuItem? FindMenuCommandItem(string commandId)
+        {
+            foreach (string rootMenuName in RootMenuControlNames)
+            {
+                MenuItem? rootMenu = FindControlOrDefault<MenuItem>(rootMenuName);
+                MenuItem? commandItem = rootMenu?.Items
+                    .OfType<MenuItem>()
+                    .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), commandId, StringComparison.Ordinal));
+                if (commandItem is not null)
+                {
+                    return commandItem;
+                }
+            }
+
+            return null;
+        }
+
+        public string[] DialogActionIds()
+            => ((Control?)Window.PeekDialogWindowForTesting() ?? Window)
+                .GetVisualDescendants()
+                .OfType<Button>()
+                .Select(button => button.Tag?.ToString() ?? string.Empty)
+                .Where(static value => !string.IsNullOrWhiteSpace(value))
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
     }
 
     private static string[] GetButtonTextLines(Button button)
@@ -7293,7 +7735,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         IReadOnlyList<string> VisibleTabLabels,
         IReadOnlyList<string> VisibleSectionQuickActionIds,
         IReadOnlyList<string> SelectedListRowTexts,
-        string PreviewText);
+        string PreviewText,
+        bool RightShellVisible,
+        double RightShellWidth,
+        bool InlineCommandSurfaceVisible,
+        bool DialogWindowVisible);
 
     private sealed record ScreenshotVisibleNamedControlEntry(
         string Name,

@@ -454,7 +454,7 @@
         "m104_guard_project_wiring": {
           "markers": [
             {
-              "line": 82,
+              "line": 89,
               "marker": "Compliance\\Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             }
@@ -770,27 +770,27 @@
         "targeted_signoff": {
           "markers": [
             {
-              "line": 1800,
+              "line": 1793,
               "marker": "BuildImportRuleEnvironment(activity.Receipt)",
               "present": true
             },
             {
-              "line": 1446,
+              "line": 1439,
               "marker": "Import environment before:",
               "present": true
             },
             {
-              "line": 76,
+              "line": 69,
               "marker": "Build blocker receipt:",
               "present": true
             },
             {
-              "line": 1592,
+              "line": 1585,
               "marker": "BuildSupportCenterDiagnostics(_installState, _updateStatus, _supportProjection)",
               "present": true
             },
             {
-              "line": 77,
+              "line": 70,
               "marker": "BuildBuildBlockerBefore(buildLab)",
               "present": true
             }
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-06-03T03:03:24Z",
+  "generatedAt": "2026-06-04T23:27:37Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

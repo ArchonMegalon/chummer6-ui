@@ -84,6 +84,46 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         Assert.IsFalse(sectionHostText.Contains("RowSpacing=\"6\"", StringComparison.Ordinal), "Dense workbench defaults must avoid oversized row spacing.");
     }
 
+    [TestMethod]
+    public void Pixefy_visual_verifier_fail_closes_without_windows_authority_and_forbidden_inline_shell_checks()
+    {
+        string verifierPath = FindPath("scripts", "verify_pixefy_chummer5a_screenshot_comparison.py");
+        string verifierText = File.ReadAllText(verifierPath);
+
+        StringAssert.Contains(verifierText, "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json");
+        StringAssert.Contains(verifierText, "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json");
+        StringAssert.Contains(verifierText, "releaseAuthorityPlatform");
+        StringAssert.Contains(verifierText, "real_menu_items");
+        StringAssert.Contains(verifierText, "dedicated_desktop_dialog_window");
+        StringAssert.Contains(verifierText, "forbiddenInlineSurface");
+        StringAssert.Contains(verifierText, "02-menu-open-light.png");
+        StringAssert.Contains(verifierText, "rightShellVisible");
+        StringAssert.Contains(verifierText, "rightShellWidth");
+        StringAssert.Contains(verifierText, "inlineCommandSurfaceVisible");
+        StringAssert.Contains(verifierText, "dialogWindowVisible");
+        StringAssert.Contains(verifierText, "Select Build Method");
+    }
+
+    [TestMethod]
+    public void Screenshot_control_evidence_source_pins_authority_metadata_and_forbidden_inline_shell_markers()
+    {
+        string gateTestsPath = FindPath("Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs");
+        string gateTestsText = File.ReadAllText(gateTestsPath);
+
+        StringAssert.Contains(gateTestsText, "visualBaseline = \"Chummer5a\"");
+        StringAssert.Contains(gateTestsText, "releaseAuthorityPlatform = \"windows\"");
+        StringAssert.Contains(gateTestsText, "menuInteractionMode = \"real_menu_items\"");
+        StringAssert.Contains(gateTestsText, "dialogHostPolicy = \"dedicated_desktop_dialog_window\"");
+        StringAssert.Contains(gateTestsText, "forbiddenInlineSurface = \"RightShellRegion\"");
+        StringAssert.Contains(gateTestsText, "windowsDesktopExitGate = \".codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json\"");
+        StringAssert.Contains(gateTestsText, "startupSmokeAndExecutableGate = \".codex-studio/published/NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json\"");
+        StringAssert.Contains(gateTestsText, "RightShellVisible: rightShellVisible");
+        StringAssert.Contains(gateTestsText, "RightShellWidth: rightShellWidth");
+        StringAssert.Contains(gateTestsText, "InlineCommandSurfaceVisible: inlineCommandSurfaceVisible");
+        StringAssert.Contains(gateTestsText, "DialogWindowVisible: dialogWindowVisible");
+        StringAssert.Contains(gateTestsText, "string[] visibleMenuCommandIds = CaptureVisibleCommandIds(harness);");
+    }
+
     private static string[] ExtractScreenshotSet(string scriptText, string listName)
     {
         Match listMatch = Regex.Match(
