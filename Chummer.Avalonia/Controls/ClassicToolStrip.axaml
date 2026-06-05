@@ -66,6 +66,12 @@
                 Content="Home"
                 ToolTip.Tip="Desktop Home"
                 Click="DesktopHomeButton_OnClick" />
+        <Button x:Name="HorizonsButton"
+                MinWidth="90"
+                Padding="10,4"
+                Content="Horizons"
+                ToolTip.Tip="Open Horizons"
+                Click="HorizonsButton_OnClick" />
         <Button x:Name="CampaignWorkspaceButton"
                 IsVisible="False"
                 MinWidth="86"

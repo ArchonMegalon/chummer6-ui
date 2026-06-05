@@ -17,6 +17,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
         [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
         [nameof(DesktopHomeButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/user_add.png",
+        [nameof(HorizonsButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
         [nameof(ImportFileButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_page.png",
         [nameof(CloseWorkspaceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/cancel.png",
         [nameof(OpenForPrintingButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_print.png",
@@ -38,6 +39,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
     public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? HorizonsRequested;
     public event EventHandler? GmPrepRequested;
     public event EventHandler? RosterMovementRequested;
     public event EventHandler? RuleEnvironmentStudioRequested;
@@ -92,10 +94,12 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
     {
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
+        _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", language);
         SetButtonLabel(SaveButton, "Save Workspace", "Save");
         SetButtonLabel(PrintButton, "Print Character", "Print");
         SetButtonLabel(CopyButton, "Copy", "Copy");
         SetButtonLabel(DesktopHomeButton, "Desktop Home", "Home");
+        SetButtonLabel(HorizonsButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", language));
         SetButtonLabel(ImportFileButton, DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.import_character_file", language), "Open");
         SetButtonLabel(CloseWorkspaceButton, "Close Active Workspace", "Close");
         SetButtonLabel(OpenForPrintingButton, "Open Character for Printing");
@@ -206,6 +210,11 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
     private void DesktopHomeButton_OnClick(object? sender, RoutedEventArgs e)
     {
         DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void HorizonsButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        HorizonsRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e)

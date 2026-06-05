@@ -1846,12 +1846,14 @@ public sealed class AccessibilitySignoffSmokeTests
     {
         string toolStripMarkup = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml");
         RequireContains(toolStripMarkup, "x:Name=\"DesktopHomeButton\"");
+        RequireContains(toolStripMarkup, "x:Name=\"HorizonsButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"CampaignWorkspaceButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"UpdateStatusButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"InstallLinkingButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"SupportButton\"");
         RequireContains(toolStripMarkup, "x:Name=\"ReportIssueButton\"");
         RequireContains(toolStripMarkup, "DesktopHomeButton_OnClick");
+        RequireContains(toolStripMarkup, "HorizonsButton_OnClick");
         RequireContains(toolStripMarkup, "CampaignWorkspaceButton_OnClick");
         RequireContains(toolStripMarkup, "UpdateStatusButton_OnClick");
         RequireContains(toolStripMarkup, "InstallLinkingButton_OnClick");
@@ -1860,12 +1862,14 @@ public sealed class AccessibilitySignoffSmokeTests
 
         string toolStripSource = ReadSource("Chummer.Avalonia/Controls/ToolStripControl.axaml.cs");
         RequireContains(toolStripSource, "DesktopHomeRequested");
+        RequireContains(toolStripSource, "HorizonsRequested");
         RequireContains(toolStripSource, "CampaignWorkspaceRequested");
         RequireContains(toolStripSource, "UpdateStatusRequested");
         RequireContains(toolStripSource, "InstallLinkingRequested");
         RequireContains(toolStripSource, "SupportRequested");
         RequireContains(toolStripSource, "ReportIssueRequested");
         RequireContains(toolStripSource, "desktop.shell.tool.desktop_home");
+        RequireContains(toolStripSource, "desktop.shell.tool.horizons");
         RequireContains(toolStripSource, "desktop.shell.tool.campaign_workspace");
         RequireContains(toolStripSource, "desktop.shell.tool.update_status");
         RequireContains(toolStripSource, "desktop.shell.tool.link_copy");
@@ -1891,6 +1895,7 @@ public sealed class AccessibilitySignoffSmokeTests
 
         string bindingSource = ReadSource("Chummer.Avalonia/MainWindow.ControlBinding.cs");
         RequireContains(bindingSource, "onDesktopHomeRequested");
+        RequireContains(bindingSource, "onHorizonsRequested");
         RequireContains(bindingSource, "onCampaignWorkspaceRequested");
         RequireContains(bindingSource, "onUpdateStatusRequested");
         RequireContains(bindingSource, "onInstallLinkingRequested");
@@ -1900,6 +1905,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(bindingSource, "AttachToolStripHandlers(toolStrip);");
         RequireContains(bindingSource, "AttachToolStripHandlers(classicToolStrip);");
         RequireContains(bindingSource, "surface.DesktopHomeRequested +=");
+        RequireContains(bindingSource, "surface.HorizonsRequested +=");
         RequireContains(bindingSource, "surface.CampaignWorkspaceRequested +=");
         RequireContains(bindingSource, "surface.UpdateStatusRequested +=");
         RequireContains(bindingSource, "surface.InstallLinkingRequested +=");
@@ -1909,6 +1915,7 @@ public sealed class AccessibilitySignoffSmokeTests
 
         string eventHandlerSource = ReadSource("Chummer.Avalonia/MainWindow.EventHandlers.cs");
         RequireContains(eventHandlerSource, "ToolStrip_OnDesktopHomeRequested");
+        RequireContains(eventHandlerSource, "ToolStrip_OnHorizonsRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnCampaignWorkspaceRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnUpdateStatusRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnInstallLinkingRequested");
@@ -1916,6 +1923,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(eventHandlerSource, "ToolStrip_OnReportIssueRequested");
         RequireContains(eventHandlerSource, "ToolStrip_OnSettingsRequested");
         RequireContains(eventHandlerSource, "DesktopHomeWindow.ShowAsync(this, \"avalonia\")");
+        RequireContains(eventHandlerSource, "DesktopHorizonsWindow.ShowAsync(this, DesktopHeadId)");
         RequireContains(eventHandlerSource, "DesktopCampaignWorkspaceWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopUpdateWindow.ShowAsync(this, \"avalonia\")");
         RequireContains(eventHandlerSource, "DesktopSupportWindow.ShowAsync(this, \"avalonia\")");

@@ -17,6 +17,7 @@ using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Controls.Primitives;
 using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
@@ -38,6 +39,7 @@ using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using Chummer.Infrastructure.Workspaces;
 using Chummer.Infrastructure.Xml;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Rulesets;
 using Chummer.Presentation.Shell;
@@ -46,6 +48,7 @@ using Chummer.Rulesets.Hosting.Presentation;
 using Chummer.Rulesets.Sr4;
 using Chummer.Rulesets.Sr5;
 using Chummer.Rulesets.Sr6;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -224,6 +227,241 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsFalse(
                 harness.TryWaitUntil(() => !harness.Window.IsVisible, timeoutMs: 250),
                 "Fresh launch must stay alive instead of terminating shortly after startup.");
+        });
+    }
+
+    [TestMethod]
+    public void Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open native Horizons hub from shell chrome");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+            Assert.IsNotNull(harness.FindControlInWindowOrDefault<TextBlock>(hubWindow, "HorizonsPostureText"));
+            StringAssert.Contains(harness.FindControlInWindow<TextBlock>(hubWindow, "HorizonsFilterStatusText").Text ?? string.Empty, "Showing");
+            TextBox searchBox = harness.FindControlInWindow<TextBox>(hubWindow, "HorizonsSearchBox");
+            Assert.IsTrue(harness.FindControlInWindow<StackPanel>(hubWindow, "HorizonsCatalogStack").IsVisible);
+            Assert.IsNotNull(harness.FindControlInWindowOrDefault<Border>(hubWindow, "HorizonsSectionBadge_build_and_rules"));
+
+            foreach (DesktopHorizonWorkbenchEntry entry in DesktopHorizonWorkbenchCatalog.ListEntries())
+            {
+                string openWorkbenchButtonName = $"HorizonsOpenWorkbench_{entry.Id}";
+                Assert.IsNotNull(
+                    harness.FindControlInWindowOrDefault<Button>(hubWindow, openWorkbenchButtonName),
+                    $"Horizons hub must render a native workbench launch for '{entry.Id}'.");
+            }
+
+            searchBox.Text = "Karma";
+            harness.AdvanceFrames(12);
+            StringAssert.Contains(harness.FindControlInWindow<TextBlock>(hubWindow, "HorizonsFilterStatusText").Text ?? string.Empty, "matched 1");
+            Assert.IsNotNull(harness.FindControlInWindowOrDefault<Button>(hubWindow, "HorizonsOpenWorkbench_karma_forge"));
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<Button>(hubWindow, "HorizonsOpenWorkbench_black_ledger"),
+                "A narrowed search must remove non-matching horizon cards instead of leaving the full list visible.");
+
+            searchBox.Text = "no-such-horizon";
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<TextBlock>(hubWindow, "HorizonsEmptyStateText") is { IsVisible: true },
+                context: "show explicit empty state when the Horizons search has no matches");
+
+            searchBox.Text = string.Empty;
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<Button>(hubWindow, "HorizonsOpenWorkbench_black_ledger") is { IsVisible: true },
+                context: "restore full native horizon catalog after clearing the filter");
+
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
+        });
+    }
+
+    [TestMethod]
+    public void Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before launching native workbenches");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+            AssertNativeWorkbenchLaunch(
+                harness,
+                hubWindow,
+                "HorizonsOpenWorkbench_karma_forge",
+                "Karma Forge",
+                "KarmaForgeStatusCard",
+                "KarmaForgeBadgeContext",
+                "KarmaForgeBadgeHandoffs",
+                "KarmaForgeTargetCombo",
+                "KarmaForgeOpenSelectedButton");
+            AssertNativeWorkbenchLaunch(
+                harness,
+                hubWindow,
+                "HorizonsOpenWorkbench_alice",
+                "ALICE",
+                "AliceLeadHandoffCard",
+                "AliceBadgeContext",
+                "AliceAccountHandoffsCard");
+            AssertNativeWorkbenchLaunch(
+                harness,
+                hubWindow,
+                "HorizonsOpenWorkbench_run_control",
+                "Run Control",
+                "RunControlStatusCard",
+                "RunControlBadgeRuns",
+                "RunControlRunsCard");
+            AssertNativeWorkbenchLaunch(
+                harness,
+                hubWindow,
+                "HorizonsOpenWorkbench_black_ledger",
+                "Black Ledger",
+                "BlackLedgerStatusCard",
+                "BlackLedgerBadgeCampaigns",
+                "BlackLedgerWorkspacesCard");
+
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
+        });
+    }
+
+    [TestMethod]
+    public void Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating in-window detail interactions");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+            Button karmaForgeLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_karma_forge");
+            RaiseClick(karmaForgeLaunchButton);
+            harness.WaitUntil(() => DesktopKarmaForgeWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Karma Forge workbench");
+            Window karmaForgeWindow = DesktopKarmaForgeWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Karma Forge workbench did not stay open.");
+            ComboBox karmaForgeTargetCombo = harness.FindControlInWindow<ComboBox>(karmaForgeWindow, "KarmaForgeTargetCombo");
+            TextBlock karmaForgeTargetSummaryText = harness.FindControlInWindow<TextBlock>(karmaForgeWindow, "KarmaForgeTargetSummaryText");
+            string initialKarmaForgeSummary = karmaForgeTargetSummaryText.Text ?? string.Empty;
+            Assert.IsTrue((karmaForgeTargetCombo.ItemCount) > 1, "Karma Forge must expose more than one target in the native desktop workbench.");
+            karmaForgeTargetCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(karmaForgeTargetSummaryText.Text, initialKarmaForgeSummary, StringComparison.Ordinal), context: "changing the Karma Forge target must update the desktop detail summary");
+            karmaForgeWindow.Close();
+            harness.WaitUntil(() => DesktopKarmaForgeWindow.LastOpenedWindowForTesting is null, context: "close Karma Forge workbench after interaction check");
+
+            Button aliceLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_alice");
+            RaiseClick(aliceLaunchButton);
+            harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open ALICE workbench");
+            Window aliceWindow = DesktopAliceWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("ALICE workbench did not stay open.");
+            ComboBox aliceDetailModeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceDetailModeCombo");
+            TextBlock aliceSelectedHandoffDetailText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceSelectedHandoffDetailText");
+            string initialAliceDetail = aliceSelectedHandoffDetailText.Text ?? string.Empty;
+            aliceDetailModeCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(aliceSelectedHandoffDetailText.Text, initialAliceDetail, StringComparison.Ordinal), context: "changing the ALICE detail mode must update the selected handoff detail");
+            aliceWindow.Close();
+            harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE workbench after interaction check");
+
+            Button runControlLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_run_control");
+            RaiseClick(runControlLaunchButton);
+            harness.WaitUntil(() => DesktopRunControlWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Run Control workbench");
+            Window runControlWindow = DesktopRunControlWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Run Control workbench did not stay open.");
+            ComboBox runControlDetailModeCombo = harness.FindControlInWindow<ComboBox>(runControlWindow, "RunControlDetailModeCombo");
+            TextBlock runControlSelectedRunDetailText = harness.FindControlInWindow<TextBlock>(runControlWindow, "RunControlSelectedRunDetailText");
+            string initialRunControlDetail = runControlSelectedRunDetailText.Text ?? string.Empty;
+            runControlDetailModeCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(runControlSelectedRunDetailText.Text, initialRunControlDetail, StringComparison.Ordinal), context: "changing the Run Control detail mode must update the selected run detail");
+            runControlWindow.Close();
+            harness.WaitUntil(() => DesktopRunControlWindow.LastOpenedWindowForTesting is null, context: "close Run Control workbench after interaction check");
+
+            Button blackLedgerLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_black_ledger");
+            RaiseClick(blackLedgerLaunchButton);
+            harness.WaitUntil(() => DesktopBlackLedgerWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Black Ledger workbench");
+            Window blackLedgerWindow = DesktopBlackLedgerWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Black Ledger workbench did not stay open.");
+            ComboBox blackLedgerDetailModeCombo = harness.FindControlInWindow<ComboBox>(blackLedgerWindow, "BlackLedgerDetailModeCombo");
+            TextBlock blackLedgerSelectedWorkspaceDetailText = harness.FindControlInWindow<TextBlock>(blackLedgerWindow, "BlackLedgerSelectedWorkspaceDetailText");
+            string initialBlackLedgerDetail = blackLedgerSelectedWorkspaceDetailText.Text ?? string.Empty;
+            blackLedgerDetailModeCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(blackLedgerSelectedWorkspaceDetailText.Text, initialBlackLedgerDetail, StringComparison.Ordinal), context: "changing the Black Ledger detail mode must update the selected workspace detail");
+            blackLedgerWindow.Close();
+            harness.WaitUntil(() => DesktopBlackLedgerWindow.LastOpenedWindowForTesting is null, context: "close Black Ledger workbench after interaction check");
+
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
+        });
+    }
+
+    [TestMethod]
+    public void Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before launching remaining native workbenches");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_jackpoint", "Jackpoint", "JackpointBadgePublications");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_table_pulse", "Table Pulse", "TablePulseBadgeRuns");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_community_hub", "Community Hub", "CommunityHubBadgeOperations");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_quicksilver", "Quicksilver", "QuicksilverBadgeHandoffs");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_runner_passport", "Runner Passport", "RunnerPassportBadgeDossiers");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorBadgeRules");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyBadgeRuns");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireBadgeRuns");
+
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
+        });
+    }
+
+    [TestMethod]
+    public void Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating remaining native workbench detail interactions");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_jackpoint", "Jackpoint", "JackpointDetailModeCombo", "JackpointDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_table_pulse", "Table Pulse", "TablePulseDetailModeCombo", "TablePulseDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_community_hub", "Community Hub", "CommunityHubDetailModeCombo", "CommunityHubDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_runner_passport", "Runner Passport", "RunnerPassportDetailModeCombo", "RunnerPassportDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorDetailModeCombo", "LocalCoProcessorDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyDetailModeCombo", "AnarchyDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireDetailModeCombo", "GhostwireDetailText");
+
+            Button quicksilverLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_quicksilver");
+            RaiseClick(quicksilverLaunchButton);
+            harness.WaitUntil(() => DesktopQuicksilverWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Quicksilver workbench");
+            Window quicksilverWindow = DesktopQuicksilverWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Quicksilver workbench did not stay open.");
+            ComboBox quicksilverTargetCombo = harness.FindControlInWindow<ComboBox>(quicksilverWindow, "QuicksilverTargetCombo");
+            TextBlock quicksilverTargetSummaryText = harness.FindControlInWindow<TextBlock>(quicksilverWindow, "QuicksilverTargetSummaryText");
+            string initialQuicksilverSummary = quicksilverTargetSummaryText.Text ?? string.Empty;
+            Assert.IsTrue(quicksilverTargetCombo.ItemCount > 1, "Quicksilver must expose more than one jump target in the native command deck.");
+            quicksilverTargetCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(quicksilverTargetSummaryText.Text, initialQuicksilverSummary, StringComparison.Ordinal), context: "changing the Quicksilver target must update the command deck detail summary");
+            quicksilverWindow.Close();
+            harness.WaitUntil(() => DesktopQuicksilverWindow.LastOpenedWindowForTesting is null, context: "close Quicksilver workbench after interaction check");
+
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
         });
     }
 
@@ -1762,6 +2000,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.SaveRequested += (_, _) => raisedEvents.Add("save");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
+            control.HorizonsRequested += (_, _) => raisedEvents.Add("horizons");
             control.CampaignWorkspaceRequested += (_, _) => raisedEvents.Add("campaign_workspace");
             control.UpdateStatusRequested += (_, _) => raisedEvents.Add("update_status");
             control.InstallLinkingRequested += (_, _) => raisedEvents.Add("install_linking");
@@ -1773,6 +2012,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             (string ButtonName, string EventId)[] buttonMap =
             [
                 ("DesktopHomeButton", "desktop_home"),
+                ("HorizonsButton", "horizons"),
                 ("CampaignWorkspaceButton", "campaign_workspace"),
                 ("LoadDemoRunnerButton", "load_demo_runner"),
                 ("ImportFileButton", "import_file"),
@@ -6759,6 +6999,78 @@ public sealed class AvaloniaFlagshipUiGateTests
         PumpStandaloneUi();
     }
 
+    private static void AssertNativeWorkbenchLaunch(
+        RuntimeFlagshipUiHarness harness,
+        Window hubWindow,
+        string launchButtonName,
+        string expectedWindowTitle,
+        params string[] requiredControlNames)
+    {
+        Button launchButton = harness.FindControlInWindow<Button>(hubWindow, launchButtonName);
+        RaiseClick(launchButton);
+        harness.WaitUntil(() => FindTrackedWorkbenchWindow(expectedWindowTitle) is { IsVisible: true }, context: $"open native workbench '{expectedWindowTitle}' from Horizons hub");
+
+        Window workbenchWindow = FindTrackedWorkbenchWindow(expectedWindowTitle)
+            ?? throw new AssertFailedException($"Native workbench '{expectedWindowTitle}' did not stay open.");
+        foreach (string requiredControlName in requiredControlNames)
+        {
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<Control>(workbenchWindow, requiredControlName),
+                $"Workbench '{expectedWindowTitle}' must render control '{requiredControlName}'.");
+        }
+
+        workbenchWindow.Close();
+        harness.WaitUntil(
+            () => FindTrackedWorkbenchWindow(expectedWindowTitle) is null,
+            context: $"close native workbench '{expectedWindowTitle}' before continuing");
+    }
+
+    private static Window? FindTrackedWorkbenchWindow(string title)
+        => title switch
+        {
+            "Karma Forge" => DesktopKarmaForgeWindow.LastOpenedWindowForTesting,
+            "ALICE" => DesktopAliceWindow.LastOpenedWindowForTesting,
+            "Run Control" => DesktopRunControlWindow.LastOpenedWindowForTesting,
+            "Black Ledger" => DesktopBlackLedgerWindow.LastOpenedWindowForTesting,
+            "Jackpoint" => DesktopJackpointWindow.LastOpenedWindowForTesting,
+            "Table Pulse" => DesktopTablePulseWindow.LastOpenedWindowForTesting,
+            "Community Hub" => DesktopCommunityHubWindow.LastOpenedWindowForTesting,
+            "Quicksilver" => DesktopQuicksilverWindow.LastOpenedWindowForTesting,
+            "Runner Passport" => DesktopRunnerPassportWindow.LastOpenedWindowForTesting,
+            "Local Co-Processor" => DesktopLocalCoProcessorWindow.LastOpenedWindowForTesting,
+            "Anarchy" => DesktopAnarchyWindow.LastOpenedWindowForTesting,
+            "Ghostwire" => DesktopGhostwireWindow.LastOpenedWindowForTesting,
+            "Horizons" => DesktopHorizonsWindow.LastOpenedWindowForTesting,
+            _ => null
+        };
+
+    private static void AssertDetailModeInteraction(
+        RuntimeFlagshipUiHarness harness,
+        Window hubWindow,
+        string launchButtonName,
+        string expectedWindowTitle,
+        string detailModeComboName,
+        string detailTextName)
+    {
+        Button launchButton = harness.FindControlInWindow<Button>(hubWindow, launchButtonName);
+        RaiseClick(launchButton);
+        harness.WaitUntil(() => FindTrackedWorkbenchWindow(expectedWindowTitle) is { IsVisible: true }, context: $"open native workbench '{expectedWindowTitle}' for detail interaction");
+
+        Window workbenchWindow = FindTrackedWorkbenchWindow(expectedWindowTitle)
+            ?? throw new AssertFailedException($"Native workbench '{expectedWindowTitle}' did not stay open.");
+        ComboBox detailModeCombo = harness.FindControlInWindow<ComboBox>(workbenchWindow, detailModeComboName);
+        TextBlock detailText = harness.FindControlInWindow<TextBlock>(workbenchWindow, detailTextName);
+        string initialDetailText = detailText.Text ?? string.Empty;
+        Assert.IsTrue(detailModeCombo.ItemCount > 1, $"Workbench '{expectedWindowTitle}' must expose more than one detail mode.");
+        detailModeCombo.SelectedIndex = 1;
+        harness.WaitUntil(() => !string.Equals(detailText.Text, initialDetailText, StringComparison.Ordinal), context: $"changing the detail mode must update visible detail text in '{expectedWindowTitle}'");
+
+        workbenchWindow.Close();
+        harness.WaitUntil(
+            () => FindTrackedWorkbenchWindow(expectedWindowTitle) is null,
+            context: $"close native workbench '{expectedWindowTitle}' after detail interaction");
+    }
+
     private static void PumpStandaloneUi()
     {
         Dispatcher.UIThread.RunJobs();
@@ -7315,6 +7627,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     private sealed class RuntimeFlagshipUiHarness : IDisposable
     {
         private readonly CharacterOverviewViewModelAdapter _adapter;
+        private readonly ServiceProvider _runtimeServices;
 
         public RuntimeFlagshipUiHarness()
         {
@@ -7326,6 +7639,11 @@ public sealed class AvaloniaFlagshipUiGateTests
                 shellCatalogResolver,
                 rulesetSelectionPolicy: selectionPolicy);
             var bootstrapProvider = new ShellBootstrapDataProvider(client);
+            ServiceCollection runtimeServices = new();
+            runtimeServices.AddSingleton<IChummerClient>(client);
+            _runtimeServices = runtimeServices.BuildServiceProvider();
+            typeof(App).GetProperty("Services", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
+                .SetValue(null, _runtimeServices);
 
             ShellPresenter = new ShellPresenter(client, bootstrapProvider);
             Presenter = new CharacterOverviewPresenter(
@@ -7554,6 +7872,36 @@ public sealed class AvaloniaFlagshipUiGateTests
             return pngBytes;
         }
 
+        public Window? FindOpenWindowByTitle(string title)
+        {
+            if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                return null;
+            }
+
+            return desktop.Windows
+                .Where(window => !ReferenceEquals(window, Window))
+                .Where(window => window.IsVisible)
+                .OrderByDescending(window => window.IsActive)
+                .ThenByDescending(window => window.IsVisible)
+                .FirstOrDefault(window => string.Equals(window.Title, title, StringComparison.Ordinal));
+        }
+
+        public T FindControlInWindow<T>(Window window, string name)
+            where T : Control
+        {
+            return FindControlInWindowOrDefault<T>(window, name)
+                ?? throw new AssertFailedException($"Control '{name}' of type {typeof(T).Name} was not found in window '{window.Title}'.");
+        }
+
+        public T? FindControlInWindowOrDefault<T>(Window window, string name)
+            where T : Control
+        {
+            return window.GetVisualDescendants()
+                .OfType<T>()
+                .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
+        }
+
         public string[] FindDialogFieldTexts()
         {
             return Window.GetVisualDescendants()
@@ -7605,6 +7953,9 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             Window.Close();
             _adapter.Dispose();
+            typeof(App).GetProperty("Services", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
+                .SetValue(null, null);
+            _runtimeServices.Dispose();
         }
 
         private static void Pump()

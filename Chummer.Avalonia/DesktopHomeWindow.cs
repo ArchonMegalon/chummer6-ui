@@ -36,6 +36,7 @@ internal sealed class DesktopHomeWindow : Window
     private readonly TextBlock _campaignText;
     private readonly TextBlock _supportText;
     private readonly TextBlock _buildExplainText;
+    private readonly Control _horizonsBody;
     private readonly TextBlock _workspaceSummaryText;
     private readonly StackPanel _installActionsRow;
     private readonly StackPanel _updateActionsRow;
@@ -154,6 +155,8 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _horizonsBody = CreateHorizonsWorkbenchBody();
+
         _workspaceSummaryText = new TextBlock
         {
             Text = BuildWorkspaceSummary(),
@@ -199,6 +202,10 @@ internal sealed class DesktopHomeWindow : Window
                             DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.build_explain", _preferences.Language),
                             _buildExplainText,
                             _buildActionsRow),
+                        CreateSection(
+                            DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.horizons", _preferences.Language),
+                            _horizonsBody,
+                            null),
                         CreateSection(
                             DesktopLocalizationCatalog.GetRequiredString("desktop.home.section.language_trust", _preferences.Language),
                             F(
@@ -1134,6 +1141,91 @@ internal sealed class DesktopHomeWindow : Window
     private IReadOnlyList<Button> CreateLanguageActions()
         => [CreateButton(S("desktop.home.button.open_settings"), OpenSettingsAsync)];
 
+    private Control CreateHorizonsWorkbenchBody()
+    {
+        StackPanel stack = new()
+        {
+            Spacing = 8
+        };
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = S("desktop.home.horizons.summary"),
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        stack.Children.Add(CreateHorizonQuickLaunchRow(
+            "Karma Forge",
+            "Packages, tracked package shelf, and direct package intake from desktop.",
+            CreateButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId), isPrimary: true),
+            CreateButton("Browse packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/packages")),
+            CreateButton("Create package", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/participate/karma-forge#karma-forge-intake")),
+            CreateButton("My packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"))));
+
+        foreach (DesktopHorizonWorkbenchEntry entry in DesktopHorizonWorkbenchCatalog.ListEntries()
+                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal)))
+        {
+            List<Button> buttons =
+            [
+                CreateButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry), isPrimary: true),
+                CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref))
+            ];
+
+            if (entry.SecondaryAction is not null)
+            {
+                buttons.Add(CreateButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref)));
+            }
+
+            if (entry.TertiaryAction is not null)
+            {
+                buttons.Add(CreateButton(entry.TertiaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.TertiaryAction.RelativeHref)));
+            }
+
+            stack.Children.Add(CreateHorizonQuickLaunchRow(entry.Title, entry.Summary, buttons.ToArray()));
+        }
+
+        stack.Children.Add(CreateActionRow(
+        [
+            CreateButton(S("desktop.home.button.open_settings"), OpenSettingsAsync),
+            CreateButton(S("desktop.home.button.open_horizons_public"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons"))
+        ]));
+
+        return stack;
+    }
+
+    private static Border CreateHorizonQuickLaunchRow(string title, string summary, params Button[] actions)
+    {
+        StackPanel content = new()
+        {
+            Spacing = 6,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = title,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                new TextBlock
+                {
+                    Text = summary,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                CreateActionRow(actions)
+            }
+        };
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#FFFFFF")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(8),
+            Child = content
+        };
+    }
+
     private static string CreateNextSafeActionButtonLabel(string nextSafeAction, string fallbackLabel, string? prefixLabel = null)
     {
         if (string.IsNullOrWhiteSpace(nextSafeAction))
@@ -1426,7 +1518,18 @@ internal sealed class DesktopHomeWindow : Window
         ToolTip.SetTip(body, title);
         StackPanel content = new()
         {
-            Spacing = 0
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = title,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = new SolidColorBrush(Color.Parse("#17324F")),
+                    TextWrapping = TextWrapping.Wrap
+                },
+                body
+            }
         };
 
         if (actionContent is not null)

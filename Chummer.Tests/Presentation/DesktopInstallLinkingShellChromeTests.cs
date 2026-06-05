@@ -50,7 +50,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
     {
         string path = DesktopInstallLinkingRuntime.BuildClaimPortalRelativePathForInstall(CreateInstallState(status: "guest"));
 
-        StringAssert.StartsWith(path, "/auth/google/start?next=");
+        StringAssert.StartsWith(path, "/login?next=");
         StringAssert.Contains(path, Uri.EscapeDataString("/account/access/install-link?"));
         StringAssert.Contains(path, Uri.EscapeDataString("installationId=install-1"));
         StringAssert.Contains(path, Uri.EscapeDataString("installLinkMode=browser_callback"));
@@ -87,6 +87,18 @@ public sealed class DesktopInstallLinkingShellChromeTests
             programText.Contains("InitializeForStartupAsync(\n", StringComparison.Ordinal)
             || programText.Contains("InitializeForStartupAsync(\r\n", StringComparison.Ordinal),
             "Program.cs should not directly call the async startup entrypoint.");
+    }
+
+    [TestMethod]
+    public void Guest_install_link_window_keeps_login_path_but_allows_explicit_exit()
+    {
+        string source = FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs");
+        string text = File.ReadAllText(source);
+
+        StringAssert.Contains(text, "desktop.install_link.button.exit_desktop");
+        StringAssert.Contains(text, "_allowGuestClose = true;");
+        StringAssert.Contains(text, "DesktopInstallLinkingRuntime.IsClaimed(_state) || _allowGuestClose");
+        StringAssert.Contains(text, "desktop.install_link.button.login_website");
     }
 
     private static string FindPath(params string[] parts)

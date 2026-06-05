@@ -90,6 +90,7 @@ public partial class MainWindow : Window
             onPrintRequested: ToolStrip_OnPrintRequested,
             onCopyRequested: ToolStrip_OnCopyRequested,
             onDesktopHomeRequested: ToolStrip_OnDesktopHomeRequested,
+            onHorizonsRequested: ToolStrip_OnHorizonsRequested,
             onGmPrepRequested: ToolStrip_OnGmPrepRequested,
             onRosterMovementRequested: ToolStrip_OnRosterMovementRequested,
             onRuleEnvironmentStudioRequested: ToolStrip_OnRuleEnvironmentStudioRequested,

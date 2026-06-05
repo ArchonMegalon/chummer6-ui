@@ -109,6 +109,17 @@ public partial class MainWindow
             "open desktop home");
     }
 
+    private async void ToolStrip_OnHorizonsRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopHorizonsWindow.ShowAsync(this, DesktopHeadId);
+                MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
+            },
+            "open horizons");
+    }
+
     private async void ToolStrip_OnCloseWorkspaceRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(

@@ -17,6 +17,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
         [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
         [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
         [nameof(DesktopHomeButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/user_add.png",
+        [nameof(HorizonsButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
         [nameof(ImportFileButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_page.png",
         [nameof(CloseWorkspaceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/cancel.png",
         [nameof(OpenForPrintingButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_print.png",
@@ -40,6 +41,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
     public event EventHandler? DesktopHomeRequested;
+    public event EventHandler? HorizonsRequested;
     public event EventHandler? GmPrepRequested;
     public event EventHandler? RosterMovementRequested;
     public event EventHandler? RuleEnvironmentStudioRequested;
@@ -88,6 +90,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
         SetButtonLabel("SettingsButton", "Global Settings", "Settings");
         SetButtonLabel("ImportRawButton", "Import Raw XML", "Raw XML");
         SetButtonLabel("DesktopHomeButton", "Desktop Home", "Home");
+        SetButtonLabel("HorizonsButton", DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", DesktopLocalizationCatalog.GetCurrentLanguage()), "Horizons");
         SetButtonLabel("CampaignWorkspaceButton", "Campaign Workspace", "Campaign");
         SetButtonLabel("GmPrepButton", "Open GM Prep Packets", "GM Prep");
         SetButtonLabel("RosterMovementButton", "Open Roster Movement", "Roster");
@@ -166,6 +169,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     private void PrintButton_OnClick(object? sender, RoutedEventArgs e) => PrintRequested?.Invoke(this, EventArgs.Empty);
     private void CopyButton_OnClick(object? sender, RoutedEventArgs e) => CopyRequested?.Invoke(this, EventArgs.Empty);
     private void DesktopHomeButton_OnClick(object? sender, RoutedEventArgs e) => DesktopHomeRequested?.Invoke(this, EventArgs.Empty);
+    private void HorizonsButton_OnClick(object? sender, RoutedEventArgs e) => HorizonsRequested?.Invoke(this, EventArgs.Empty);
     private void GmPrepButton_OnClick(object? sender, RoutedEventArgs e) => GmPrepRequested?.Invoke(this, EventArgs.Empty);
     private void RosterMovementButton_OnClick(object? sender, RoutedEventArgs e) => RosterMovementRequested?.Invoke(this, EventArgs.Empty);
     private void RuleEnvironmentStudioButton_OnClick(object? sender, RoutedEventArgs e) => RuleEnvironmentStudioRequested?.Invoke(this, EventArgs.Empty);

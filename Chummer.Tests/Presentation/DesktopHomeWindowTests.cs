@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using Chummer.Avalonia;
 using Chummer.Contracts.Characters;
@@ -198,6 +199,25 @@ public sealed class DesktopHomeWindowTests
             supportProjection: CreateSupportProjection(needsAttention: false));
 
         Assert.IsTrue(shouldShow, "Unlinked installs must not expose local workbench content even when local workspaces already exist.");
+    }
+
+    [TestMethod]
+    public void DesktopHome_source_wires_horizon_workbench_and_keeps_section_copy_visible()
+    {
+        string repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));
+
+        StringAssert.Contains(source, "desktop.home.section.horizons");
+        StringAssert.Contains(source, "desktop.home.horizons.summary");
+        StringAssert.Contains(source, "CreateHorizonsWorkbenchBody()");
+        StringAssert.Contains(source, "DesktopHorizonWorkbenchCatalog.ListEntries()");
+        StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId)");
+        StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry)");
+        StringAssert.Contains(source, "\"/participate/karma-forge#karma-forge-intake\"");
+        StringAssert.Contains(source, "CreateHorizonQuickLaunchRow(");
+        StringAssert.Contains(source, "Children =");
+        StringAssert.Contains(source, "body");
+        StringAssert.Contains(source, "content.Children.Add(actionContent);");
     }
 
     private static bool InvokeShouldShowOnStartup(

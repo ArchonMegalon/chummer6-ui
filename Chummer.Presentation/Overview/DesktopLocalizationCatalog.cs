@@ -22,6 +22,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.menu.windows"] = "Windows",
         ["desktop.shell.menu.help"] = "Help",
         ["desktop.shell.tool.desktop_home"] = "Desktop Home",
+        ["desktop.shell.tool.horizons"] = "Horizons",
         ["desktop.shell.tool.campaign_workspace"] = "Campaign Workspace",
         ["desktop.shell.tool.update_status"] = "Update Status",
         ["desktop.shell.tool.link_copy"] = "Link This Copy",
@@ -84,8 +85,14 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.section.campaign_return"] = "Campaign return and restore",
         ["desktop.home.section.support_closure"] = "Support closure and fix notices",
         ["desktop.home.section.build_explain"] = "Build and explain next",
+        ["desktop.home.section.horizons"] = "Horizons and web workbenches",
         ["desktop.home.section.language_trust"] = "Language and trust surfaces",
         ["desktop.home.section.recent_workspaces"] = "Recent workspaces",
+        ["desktop.home.horizons.summary"] = "Open the shipped horizon lanes directly from desktop home. Karma Forge, ALICE, Run Control, Black Ledger, Quicksilver, and the rest stay one click away instead of hiding behind browser hunting.",
+        ["desktop.horizons.title"] = "Horizons",
+        ["desktop.horizons.heading"] = "Horizons",
+        ["desktop.horizons.intro"] = "Open shipped horizon lanes from one desktop hub. Use native workbenches first, then fall through to the signed-in or public web lane only when that lane is actually the right target.",
+        ["desktop.horizons.button.open_public_index"] = "Open public index",
         ["desktop.campaign.title"] = "Campaign workspace",
         ["desktop.campaign.heading"] = "Campaign workspace",
         ["desktop.campaign.section.runboard"] = "Session readiness and runboard",
@@ -119,6 +126,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.install_link.button.link_copy"] = "Link This Copy",
         ["desktop.install_link.button.redeem_claim_code"] = "Redeem In App",
         ["desktop.install_link.button.login_website"] = "Log in on website",
+        ["desktop.install_link.button.exit_desktop"] = "Exit desktop",
         ["desktop.home.language_summary"] = "Language: {0}\nShipping locales: {1}\nLanguage changes apply fully on restart during the current desktop wave.",
         ["desktop.home.next_safe_action"] = "Next safe action: {0}",
         ["desktop.home.watchout"] = "Watchout: {0}",
@@ -169,6 +177,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.button.open_support_center"] = "Open Support Center",
         ["desktop.home.button.open_report_issue"] = "Report Issue",
         ["desktop.home.button.open_settings"] = "Open Settings",
+        ["desktop.home.button.open_horizons_public"] = "Open Horizons",
         ["desktop.dialog.action.close"] = "Close",
         ["desktop.dialog.action.save"] = "Save",
         ["desktop.dialog.action.cancel"] = "Cancel",
@@ -419,6 +428,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.windows"] = "Fenster";
             localized["desktop.shell.menu.help"] = "Hilfe";
             localized["desktop.shell.tool.desktop_home"] = "Desktop Start";
+            localized["desktop.shell.tool.horizons"] = "Horizonte";
             localized["desktop.shell.tool.campaign_workspace"] = "Kampagnen-Arbeitsbereich";
             localized["desktop.shell.tool.update_status"] = "Update-Status";
             localized["desktop.shell.tool.link_copy"] = "Kopie verknüpfen";
@@ -491,8 +501,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.campaign_return"] = "Kampagnen-Ruckkehr und Wiederherstellung";
             localized["desktop.home.section.support_closure"] = "Support-Abschluss und Fix-Hinweise";
             localized["desktop.home.section.build_explain"] = "Build und Explain als Nächstes";
+            localized["desktop.home.section.horizons"] = "Horizons und Web-Werkbänke";
             localized["desktop.home.section.language_trust"] = "Sprache und Vertrauensoberflächen";
             localized["desktop.home.section.recent_workspaces"] = "Letzte Arbeitsbereiche";
+            localized["desktop.home.horizons.summary"] = "Öffne die ausgelieferten Horizon-Lanes direkt aus dem Desktop Home. Karma Forge, ALICE, Run Control, Black Ledger, Quicksilver und der Rest bleiben einen Klick entfernt statt in Browser-Suchen zu verschwinden.";
+            localized["desktop.horizons.title"] = "Horizonte";
+            localized["desktop.horizons.heading"] = "Horizonte";
+            localized["desktop.horizons.intro"] = "Öffne ausgelieferte Horizon-Lanes aus einem Desktop-Hub. Nutze zuerst native Workbenches und wechsle nur dann in die angemeldete oder öffentliche Web-Lane, wenn sie wirklich das richtige Ziel ist.";
+            localized["desktop.horizons.button.open_public_index"] = "Öffentlichen Index öffnen";
             localized["desktop.home.button.continue"] = "Weiter";
             localized["desktop.home.button.open_install_support"] = "Installations-Support öffnen";
             localized["desktop.home.button.open_update_support"] = "Update-Support öffnen";
@@ -513,6 +529,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_support_center"] = "Support-Center öffnen";
             localized["desktop.home.button.open_report_issue"] = "Fehler melden";
             localized["desktop.home.button.open_settings"] = "Einstellungen öffnen";
+            localized["desktop.home.button.open_horizons_public"] = "Horizons öffnen";
             localized["desktop.home.install_summary.install_id"] = "Installations-ID: {0}";
             localized["desktop.home.install_summary.head"] = "Head: {0}";
             localized["desktop.home.install_summary.version"] = "Version: {0}";
@@ -574,6 +591,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Diese Kopie verknüpfen";
             localized["desktop.install_link.button.redeem_claim_code"] = "In App einlösen";
             localized["desktop.install_link.button.login_website"] = "Auf der Website anmelden";
+            localized["desktop.install_link.button.exit_desktop"] = "Desktop beenden";
             localized["desktop.install_link.shipping_locales"] = "Shipping-Lokale: {0}. Install-, Update- und Support-Vertrauensflusse sollen in dieser Desktop-Welle ausgerichtet bleiben.";
             localized["desktop.install_link.claim_code_watermark"] = "Fugen Sie den Installations-Handoff aus dem angemeldeten Chummer-Download oder Wiederherstellungsablauf ein";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Wenn der gefuhrte Installations-Handoff diese Kopie noch nicht verknupft hat, fugen Sie hier den angemeldeten Installations-Handoff ein, damit Chummer ihn in-app einlosen kann.";
@@ -815,6 +833,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.windows"] = "Fenêtres";
             localized["desktop.shell.menu.help"] = "Aide";
             localized["desktop.shell.tool.desktop_home"] = "Accueil";
+            localized["desktop.shell.tool.horizons"] = "Horizons web";
             localized["desktop.shell.tool.campaign_workspace"] = "Espace de campagne";
             localized["desktop.shell.tool.update_status"] = "État de la mise à jour";
             localized["desktop.shell.tool.link_copy"] = "Lier cette copie";
@@ -887,8 +906,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.campaign_return"] = "Retour de campagne et reprise";
             localized["desktop.home.section.support_closure"] = "Clôture du support et avis de correctifs";
             localized["desktop.home.section.build_explain"] = "Build et Explain ensuite";
+            localized["desktop.home.section.horizons"] = "Horizons et établis web";
             localized["desktop.home.section.language_trust"] = "Langue et surfaces de confiance";
             localized["desktop.home.section.recent_workspaces"] = "Espaces de travail récents";
+            localized["desktop.home.horizons.summary"] = "Ouvrez les lanes Horizon expédiées directement depuis l’accueil desktop. Karma Forge, ALICE, Run Control, Black Ledger, Quicksilver et le reste restent à un clic au lieu de se perdre dans le navigateur.";
+            localized["desktop.horizons.title"] = "Horizons";
+            localized["desktop.horizons.heading"] = "Horizons";
+            localized["desktop.horizons.intro"] = "Ouvrez les lanes Horizon livrées depuis un hub desktop unique. Utilisez d’abord les établis natifs, puis basculez vers la lane web connectée ou publique seulement quand c’est réellement la bonne cible.";
+            localized["desktop.horizons.button.open_public_index"] = "Ouvrir l’index public";
             localized["desktop.home.button.continue"] = "Continuer";
             localized["desktop.home.button.open_install_support"] = "Ouvrir le support d'installation";
             localized["desktop.home.button.open_update_support"] = "Ouvrir le support des mises à jour";
@@ -909,6 +934,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_support_center"] = "Ouvrir le centre de support";
             localized["desktop.home.button.open_report_issue"] = "Signaler un problème";
             localized["desktop.home.button.open_settings"] = "Ouvrir les paramètres";
+            localized["desktop.home.button.open_horizons_public"] = "Ouvrir Horizons";
             localized["desktop.home.install_summary.install_id"] = "ID d'installation : {0}";
             localized["desktop.home.install_summary.head"] = "Head : {0}";
             localized["desktop.home.install_summary.version"] = "Version : {0}";
@@ -970,6 +996,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Lier cette copie";
             localized["desktop.install_link.button.redeem_claim_code"] = "Utiliser dans l'app";
             localized["desktop.install_link.button.login_website"] = "Se connecter sur le site";
+            localized["desktop.install_link.button.exit_desktop"] = "Quitter le client";
             localized["desktop.install_link.shipping_locales"] = "Locales livrees : {0}. Les flux de confiance installation, mise a jour et support doivent rester alignes dans cette vague desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Collez le relais d'installation depuis le telechargement Chummer connecte ou le flux de recuperation guide";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Si le relais guide d'installation n'a pas termine la liaison de cette copie, collez ici le relais d'installation connecte pour que Chummer le traite dans l'app.";
@@ -1211,6 +1238,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.windows"] = "ウィンドウ";
             localized["desktop.shell.menu.help"] = "ヘルプ";
             localized["desktop.shell.tool.desktop_home"] = "デスクトップホーム";
+            localized["desktop.shell.tool.horizons"] = "ホライズン";
             localized["desktop.shell.tool.campaign_workspace"] = "キャンペーンワークスペース";
             localized["desktop.shell.tool.update_status"] = "更新ステータス";
             localized["desktop.shell.tool.link_copy"] = "このコピーをリンク";
@@ -1283,8 +1311,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.campaign_return"] = "キャンペーン復帰と復元";
             localized["desktop.home.section.support_closure"] = "サポート完了と修正通知";
             localized["desktop.home.section.build_explain"] = "次のビルドとExplain";
+            localized["desktop.home.section.horizons"] = "Horizons と Web ワークベンチ";
             localized["desktop.home.section.language_trust"] = "言語と信頼サーフェス";
             localized["desktop.home.section.recent_workspaces"] = "最近のワークスペース";
+            localized["desktop.home.horizons.summary"] = "出荷済みの Horizon レーンを desktop home から直接開きます。Karma Forge、ALICE、Run Control、Black Ledger、Quicksilver などに、ブラウザを探し回らず 1 クリックで到達できます。";
+            localized["desktop.horizons.title"] = "Horizons";
+            localized["desktop.horizons.heading"] = "Horizons";
+            localized["desktop.horizons.intro"] = "出荷済みの Horizon レーンを 1 つのデスクトップハブから開きます。まずネイティブなワークベンチを使い、サインイン済みまたは公開 Web レーンに切り替えるのは、それが本当に正しい到達先である場合だけにします。";
+            localized["desktop.horizons.button.open_public_index"] = "公開インデックスを開く";
             localized["desktop.home.button.continue"] = "続行";
             localized["desktop.home.button.open_install_support"] = "インストールサポートを開く";
             localized["desktop.home.button.open_update_support"] = "更新サポートを開く";
@@ -1305,6 +1339,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_support_center"] = "サポートセンターを開く";
             localized["desktop.home.button.open_report_issue"] = "問題を報告";
             localized["desktop.home.button.open_settings"] = "設定を開く";
+            localized["desktop.home.button.open_horizons_public"] = "Horizons を開く";
             localized["desktop.home.install_summary.install_id"] = "インストール ID: {0}";
             localized["desktop.home.install_summary.head"] = "ヘッド: {0}";
             localized["desktop.home.install_summary.version"] = "バージョン: {0}";
@@ -1366,6 +1401,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "このコピーをリンク";
             localized["desktop.install_link.button.redeem_claim_code"] = "アプリ内で引き換え";
             localized["desktop.install_link.button.login_website"] = "Webサイトでログイン";
+            localized["desktop.install_link.button.exit_desktop"] = "デスクトップを終了";
             localized["desktop.install_link.shipping_locales"] = "出荷ロケール: {0}。このデスクトップ波では、インストール・更新・サポートの信頼フローを揃える必要があります。";
             localized["desktop.install_link.claim_code_watermark"] = "サインイン済み Chummer ダウンロードまたはガイド付き復旧フローのインストール引き継ぎを貼り付けてください";
             localized["desktop.install_link.status.prompt_guest_claim"] = "ガイド付きインストール引き継ぎでこのコピーのリンクが完了しなかった場合は、ここにサインイン済みのインストール引き継ぎを貼り付けて、Chummer がアプリ内で処理できるようにしてください。";
@@ -1607,6 +1643,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.windows"] = "Janelas";
             localized["desktop.shell.menu.help"] = "Ajuda";
             localized["desktop.shell.tool.desktop_home"] = "Início";
+            localized["desktop.shell.tool.horizons"] = "Horizontes";
             localized["desktop.shell.tool.campaign_workspace"] = "Espaço de campanha";
             localized["desktop.shell.tool.update_status"] = "Status da atualização";
             localized["desktop.shell.tool.link_copy"] = "Vincular esta cópia";
@@ -1679,8 +1716,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.campaign_return"] = "Retorno de campanha e restauração";
             localized["desktop.home.section.support_closure"] = "Fechamento de suporte e avisos de correção";
             localized["desktop.home.section.build_explain"] = "Build e Explain em seguida";
+            localized["desktop.home.section.horizons"] = "Horizons e bancadas web";
             localized["desktop.home.section.language_trust"] = "Idioma e superfícies de confiança";
             localized["desktop.home.section.recent_workspaces"] = "Workspaces recentes";
+            localized["desktop.home.horizons.summary"] = "Abra as lanes Horizon entregues diretamente da home do desktop. Karma Forge, ALICE, Run Control, Black Ledger, Quicksilver e o restante ficam a um clique, sem caça no navegador.";
+            localized["desktop.horizons.title"] = "Horizons";
+            localized["desktop.horizons.heading"] = "Horizons";
+            localized["desktop.horizons.intro"] = "Abra as lanes Horizon entregues a partir de um único hub do desktop. Use primeiro as workbenches nativas e só caia para a lane web autenticada ou pública quando ela for de fato o alvo certo.";
+            localized["desktop.horizons.button.open_public_index"] = "Abrir índice público";
             localized["desktop.home.button.continue"] = "Continuar";
             localized["desktop.home.button.open_install_support"] = "Abrir suporte de instalação";
             localized["desktop.home.button.open_update_support"] = "Abrir suporte de atualização";
@@ -1701,6 +1744,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_support_center"] = "Abrir central de suporte";
             localized["desktop.home.button.open_report_issue"] = "Reportar problema";
             localized["desktop.home.button.open_settings"] = "Abrir configurações";
+            localized["desktop.home.button.open_horizons_public"] = "Abrir Horizons";
             localized["desktop.home.install_summary.install_id"] = "ID da instalacao: {0}";
             localized["desktop.home.install_summary.head"] = "Head: {0}";
             localized["desktop.home.install_summary.version"] = "Versao: {0}";
@@ -2003,6 +2047,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.menu.windows"] = "窗口";
             localized["desktop.shell.menu.help"] = "帮助";
             localized["desktop.shell.tool.desktop_home"] = "桌面首页";
+            localized["desktop.shell.tool.horizons"] = "视界入口";
             localized["desktop.shell.tool.campaign_workspace"] = "战役工作区";
             localized["desktop.shell.tool.update_status"] = "更新状态";
             localized["desktop.shell.tool.link_copy"] = "绑定此副本";
@@ -2075,8 +2120,14 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.section.campaign_return"] = "战役回归与恢复";
             localized["desktop.home.section.support_closure"] = "支持闭环与修复通知";
             localized["desktop.home.section.build_explain"] = "下一步构建与Explain";
+            localized["desktop.home.section.horizons"] = "Horizons 与网页工作台";
             localized["desktop.home.section.language_trust"] = "语言与信任界面";
             localized["desktop.home.section.recent_workspaces"] = "最近工作区";
+            localized["desktop.home.horizons.summary"] = "直接从桌面主页打开已交付的 Horizon 线路。Karma Forge、ALICE、Run Control、Black Ledger、Quicksilver 等都保持一键可达，而不是让你去浏览器里找。";
+            localized["desktop.horizons.title"] = "Horizons";
+            localized["desktop.horizons.heading"] = "Horizons";
+            localized["desktop.horizons.intro"] = "从一个桌面中枢打开已交付的 Horizon 线路。优先使用原生工作台，只有在网页线路确实才是正确目标时，才切换到登录或公开网页线路。";
+            localized["desktop.horizons.button.open_public_index"] = "打开公开索引";
             localized["desktop.home.button.continue"] = "继续";
             localized["desktop.home.button.open_install_support"] = "打开安装支持";
             localized["desktop.home.button.open_update_support"] = "打开更新支持";
@@ -2097,6 +2148,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_support_center"] = "打开支持中心";
             localized["desktop.home.button.open_report_issue"] = "报告问题";
             localized["desktop.home.button.open_settings"] = "打开设置";
+            localized["desktop.home.button.open_horizons_public"] = "打开 Horizons";
             localized["desktop.home.install_summary.install_id"] = "安装 ID: {0}";
             localized["desktop.home.install_summary.head"] = "头部: {0}";
             localized["desktop.home.install_summary.version"] = "版本: {0}";

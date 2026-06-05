@@ -12,6 +12,7 @@ public interface IToolStripSurface
     event EventHandler? PrintRequested;
     event EventHandler? CopyRequested;
     event EventHandler? DesktopHomeRequested;
+    event EventHandler? HorizonsRequested;
     event EventHandler? GmPrepRequested;
     event EventHandler? RosterMovementRequested;
     event EventHandler? RuleEnvironmentStudioRequested;

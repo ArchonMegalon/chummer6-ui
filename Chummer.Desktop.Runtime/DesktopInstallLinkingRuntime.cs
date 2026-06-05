@@ -57,6 +57,7 @@ public static class DesktopInstallLinkingRuntime
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
+    private const string DefaultPublicWebBaseUrl = "https://chummer.run/";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string InstallLinkCallbackEnvironmentVariable = "CHUMMER_INSTALL_LINK_CALLBACK_URI";
     private const string ClaimCodeSwitch = "--install-claim-code";
@@ -447,7 +448,7 @@ public static class DesktopInstallLinkingRuntime
         ArgumentNullException.ThrowIfNull(state);
 
         string next = BuildAccountPortalRelativePathForInstall(state);
-        return $"/auth/google/start?next={Uri.EscapeDataString(next)}";
+        return $"/login?next={Uri.EscapeDataString(next)}";
     }
 
     public static string BuildSupportPortalRelativePathForUpdate(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus)
@@ -1424,13 +1425,63 @@ public static class DesktopInstallLinkingRuntime
 
     private static Uri ResolvePublicWebAddress()
     {
-        string? configured = Environment.GetEnvironmentVariable(WebBaseUrlEnvironmentVariable);
-        if (!string.IsNullOrWhiteSpace(configured) && Uri.TryCreate(configured, UriKind.Absolute, out Uri? uri))
+        if (TryResolvePublicPortalAddress(WebBaseUrlEnvironmentVariable, out Uri? uri))
         {
-            return uri;
+            return uri!;
         }
 
-        return ResolveApiBaseAddress();
+        if (TryResolvePublicPortalAddress(ApiBaseUrlEnvironmentVariable, out uri))
+        {
+            return uri!;
+        }
+
+        return new Uri(DefaultPublicWebBaseUrl, UriKind.Absolute);
+    }
+
+    private static bool TryResolvePublicPortalAddress(string environmentVariable, out Uri? uri)
+    {
+        uri = null;
+        string? configured = Environment.GetEnvironmentVariable(environmentVariable);
+        if (string.IsNullOrWhiteSpace(configured)
+            || !Uri.TryCreate(configured, UriKind.Absolute, out Uri? parsed)
+            || !IsSafePublicPortalAddress(parsed))
+        {
+            return false;
+        }
+
+        uri = parsed;
+        return true;
+    }
+
+    private static bool IsSafePublicPortalAddress(Uri uri)
+    {
+        if (!uri.IsAbsoluteUri)
+        {
+            return false;
+        }
+
+        if (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string host = uri.Host.Trim();
+        if (string.IsNullOrWhiteSpace(host))
+        {
+            return false;
+        }
+
+        if (uri.IsLoopback
+            || string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return !string.Equals(host, "chummer-api", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(host, "chummer-web", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryOpenPublicPortal(string relativePath)

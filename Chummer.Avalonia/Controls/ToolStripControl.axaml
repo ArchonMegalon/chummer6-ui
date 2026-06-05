@@ -10,6 +10,7 @@
       <Button x:Name="PrintButton" Classes="shell-action tool-icon" MinWidth="54" Height="24" Padding="5,1" Margin="0,0,2,0" Click="PrintButton_OnClick" />
       <Button x:Name="CopyButton" Classes="shell-action tool-icon" MinWidth="52" Height="24" Padding="5,1" Margin="0,0,2,0" Click="CopyButton_OnClick" />
       <Button x:Name="DesktopHomeButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="54" Height="24" Padding="5,1" Margin="0,0,2,0" Click="DesktopHomeButton_OnClick" />
+      <Button x:Name="HorizonsButton" Classes="shell-action tool-icon" MinWidth="72" Height="24" Padding="5,1" Margin="0,0,2,0" Click="HorizonsButton_OnClick" />
       <Button x:Name="ImportFileButton" Classes="shell-action tool-icon" MinWidth="54" Height="24" Padding="5,1" Margin="0,0,2,0" Click="ImportFileButton_OnClick" />
       <Button x:Name="CloseWorkspaceButton" Classes="shell-action tool-icon" MinWidth="54" Height="24" Padding="5,1" Margin="0,0,2,0" Click="CloseWorkspaceButton_OnClick" />
       <Button x:Name="OpenForPrintingButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="76" Height="24" Padding="5,1" Margin="0,0,2,0" Click="OpenForPrintingButton_OnClick" />

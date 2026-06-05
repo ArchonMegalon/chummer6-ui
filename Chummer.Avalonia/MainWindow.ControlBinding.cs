@@ -30,6 +30,7 @@ internal static class MainWindowControlBinder
         EventHandler onPrintRequested,
         EventHandler onCopyRequested,
         EventHandler onDesktopHomeRequested,
+        EventHandler onHorizonsRequested,
         EventHandler onGmPrepRequested,
         EventHandler onRosterMovementRequested,
         EventHandler onRuleEnvironmentStudioRequested,
@@ -113,6 +114,7 @@ internal static class MainWindowControlBinder
             surface.PrintRequested += onPrintRequested;
             surface.CopyRequested += onCopyRequested;
             surface.DesktopHomeRequested += onDesktopHomeRequested;
+            surface.HorizonsRequested += onHorizonsRequested;
             surface.GmPrepRequested += onGmPrepRequested;
             surface.RosterMovementRequested += onRosterMovementRequested;
             surface.RuleEnvironmentStudioRequested += onRuleEnvironmentStudioRequested;

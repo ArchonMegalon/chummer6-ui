@@ -4,10 +4,12 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.UiKit;
 using System.IO;
@@ -222,7 +224,172 @@ public partial class DesktopDialogWindow : Window
             CreateLegacySettingsPairRow(hideMasterIndexField, null),
             CreateLegacyRosterPathRow(rosterPathField)));
 
+        shell.Children.Add(CreateLegacyHorizonWorkbenchPane());
+
         return shell;
+    }
+
+    private Control CreateLegacyHorizonWorkbenchPane()
+    {
+        StackPanel content = new()
+        {
+            Spacing = 10
+        };
+
+        content.Children.Add(new TextBlock
+        {
+            Text = "Desktop Horizon Integrations",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Open the current first-party horizon lanes from desktop settings. Karma Forge includes package browsing, tracked packages, and direct create-package intake.",
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        content.Children.Add(CreateKarmaForgeWorkbenchRow());
+
+        foreach (DesktopHorizonWorkbenchEntry entry in DesktopHorizonWorkbenchCatalog.ListEntries()
+                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal)))
+        {
+            content.Children.Add(CreateHorizonWorkbenchRow(entry));
+        }
+
+        return CreateLegacyFieldGroup("Horizons", content);
+    }
+
+    private Control CreateKarmaForgeWorkbenchRow()
+    {
+        IReadOnlyList<DesktopHorizonRouteOption> targets = DesktopHorizonWorkbenchCatalog.ListKarmaForgeTargets();
+        ComboBox targetCombo = new()
+        {
+            MinWidth = 220,
+            ItemsSource = targets,
+            SelectedIndex = 0,
+            ItemTemplate = new FuncDataTemplate<DesktopHorizonRouteOption>((option, _) =>
+                new TextBlock
+                {
+                    Text = option.Label,
+                    TextWrapping = TextWrapping.Wrap
+                })
+        };
+
+        Button openSelectedButton = CreateHorizonRouteButton(
+            "Open workbench",
+            () => DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, "avalonia"));
+
+        Button openSelectedRouteButton = CreateHorizonRouteButton(
+            "Open selected route",
+            () =>
+            {
+                if (targetCombo.SelectedItem is DesktopHorizonRouteOption selected)
+                {
+                    DesktopInstallLinkingRuntime.TryOpenRelativePortal(selected.RelativeHref);
+                }
+            });
+
+        Button createPackageButton = CreateHorizonRouteButton(
+            "Create new package",
+            () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/participate/karma-forge#karma-forge-intake"));
+
+        Button openTrackedPackagesButton = CreateHorizonRouteButton(
+            "Open my packages",
+            () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"));
+
+        return CreateHorizonWorkbenchCard(
+            "Karma Forge",
+            "Browse package candidates, open the signed-in package shelf, and jump straight into a new package intake.",
+            targetCombo,
+            openSelectedButton,
+            openSelectedRouteButton,
+            createPackageButton,
+            openTrackedPackagesButton);
+    }
+
+    private Control CreateHorizonWorkbenchRow(DesktopHorizonWorkbenchEntry entry)
+    {
+        List<Control> actions =
+        [
+            CreateHorizonRouteButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, "avalonia", entry)),
+            CreateHorizonRouteButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref))
+        ];
+
+        if (entry.SecondaryAction is not null)
+        {
+            actions.Add(CreateHorizonRouteButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref)));
+        }
+
+        if (entry.TertiaryAction is not null)
+        {
+            actions.Add(CreateHorizonRouteButton(entry.TertiaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.TertiaryAction.RelativeHref)));
+        }
+
+        return CreateHorizonWorkbenchCard(entry.Title, entry.Summary, null, actions.ToArray());
+    }
+
+    private static Control CreateHorizonWorkbenchCard(
+        string title,
+        string summary,
+        Control? leadControl,
+        params Control[] actions)
+    {
+        StackPanel card = new()
+        {
+            Spacing = 8
+        };
+
+        card.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+        card.Children.Add(new TextBlock
+        {
+            Text = summary,
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        if (leadControl is not null)
+        {
+            card.Children.Add(leadControl);
+        }
+
+        WrapPanel actionsPanel = new()
+        {
+            Orientation = Orientation.Horizontal,
+            ItemHeight = double.NaN,
+            ItemWidth = double.NaN
+        };
+        foreach (Control action in actions)
+        {
+            actionsPanel.Children.Add(action);
+        }
+
+        card.Children.Add(actionsPanel);
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.Parse("#C7D2E1")),
+            Background = new SolidColorBrush(Color.Parse("#F7FAFD")),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10),
+            Child = card
+        };
+    }
+
+    private static Button CreateHorizonRouteButton(string label, Action onClick)
+    {
+        Button button = new()
+        {
+            Content = label,
+            MinWidth = 128,
+            Margin = new Thickness(0, 0, 8, 8)
+        };
+        button.Click += (_, _) => onClick();
+        return button;
     }
 
     private Control CreateLegacyGlobalAppearanceRow(DesktopDialogField themeField, DesktopDialogField uiScaleField)

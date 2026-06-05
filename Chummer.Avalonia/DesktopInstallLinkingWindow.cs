@@ -24,6 +24,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly Button _followThroughButton;
     private readonly Button _accountButton;
     private readonly Button _redeemClaimCodeButton;
+    private readonly Button _exitButton;
+    private bool _allowGuestClose;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context)
     {
@@ -80,6 +82,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
+        _exitButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.exit_desktop", _language),
+            ExitDesktopAsync);
         _claimCodeEntryRow = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -154,7 +159,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
                                 Children =
                                 {
                                     _followThroughButton,
-                                    _accountButton
+                                    _accountButton,
+                                    _exitButton
                                 }
                             },
                             _moreToolsHeading,
@@ -333,6 +339,13 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
+    private Task ExitDesktopAsync()
+    {
+        _allowGuestClose = true;
+        Close();
+        return Task.CompletedTask;
+    }
+
     private void RefreshSummary()
     {
         _summaryText.Text = BuildSummary(_state, _updateStatus, _language);
@@ -348,6 +361,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
         _followThroughButton.IsVisible = claimed;
+        _exitButton.IsVisible = !claimed;
         _claimCodeHintText.IsVisible = !claimed;
         _claimCodeLabelText.IsVisible = !claimed;
         _claimCodeEntryRow.IsVisible = !claimed;
@@ -357,7 +371,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
-        if (DesktopInstallLinkingRuntime.IsClaimed(_state))
+        if (DesktopInstallLinkingRuntime.IsClaimed(_state) || _allowGuestClose)
         {
             return;
         }

@@ -42,6 +42,7 @@ public class DesktopLocalizationCatalogTests
         [
             "desktop.shell.menu.file",
             "desktop.shell.tool.desktop_home",
+            "desktop.shell.tool.horizons",
             "desktop.home.section.install_support",
             "desktop.home.title",
             "desktop.support.title"
@@ -92,6 +93,7 @@ public class DesktopLocalizationCatalogTests
         string[] releaseCriticalSeedKeys =
         [
             "desktop.shell.menu.file",
+            "desktop.shell.tool.horizons",
             "desktop.shell.tool.update_status",
             "desktop.shell.tool.open_support",
             "desktop.shell.tool.report_issue",
@@ -142,6 +144,27 @@ public class DesktopLocalizationCatalogTests
             Assert.IsTrue(
                 keys.Any(key => key.StartsWith(prefix, StringComparison.Ordinal)),
                 $"Expected flagship localization trust-surface coverage for prefix '{prefix}'.");
+        }
+    }
+
+    [TestMethod]
+    public void Horizon_home_seed_keys_are_localized_for_every_shipping_language_without_fallback_markers()
+    {
+        string[] keys =
+        [
+            "desktop.home.section.horizons",
+            "desktop.home.horizons.summary",
+            "desktop.home.button.open_horizons_public"
+        ];
+
+        foreach (string languageCode in DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code))
+        {
+            foreach (string key in keys)
+            {
+                string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                Assert.IsFalse(string.IsNullOrWhiteSpace(localizedValue), $"Expected localized value for {key} / {languageCode}.");
+                Assert.IsFalse(localizedValue.Contains("[en-US fallback]", StringComparison.Ordinal), $"Expected non-fallback horizon-home value for {key} / {languageCode}.");
+            }
         }
     }
 }
