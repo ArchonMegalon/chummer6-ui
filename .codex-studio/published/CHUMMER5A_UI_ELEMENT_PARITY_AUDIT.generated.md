@@ -1,6 +1,6 @@
 # Chummer5A UI Element Parity Audit
 
-Generated at: 2026-06-05T04:02:19.258525Z
+Generated at: 2026-06-05T05:08:26.048599Z
 
 ## Scope
 This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.
@@ -11,7 +11,7 @@ This matrix covers every parity-tracked visible surface and currently-present di
 - Behavioral parity yes/no: 84/0
 - Chummer6-only extras present: 0
 - Removable extras present: 0
-- Active/productive/nonproductive shard runs: 3/0/0
+- Active/productive/nonproductive shard runs: 0/0/0
 
 ## Top findings
 - No parity findings were emitted from the current audit inputs.

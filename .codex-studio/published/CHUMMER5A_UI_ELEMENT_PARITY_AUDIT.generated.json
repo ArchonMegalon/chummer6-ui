@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T04:02:19.258525Z",
+  "generated_at": "2026-06-05T05:08:26.048599Z",
   "probe_kind": "ui_parity_audit",
   "status": "pass",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
@@ -12,7 +12,7 @@
     "chummer6_only_extra_present_count": 0,
     "removable_extra_present_count": 0,
     "coverage_gap_keys": [],
-    "active_runs_count": 3,
+    "active_runs_count": 0,
     "productive_active_runs_count": 0,
     "nonproductive_active_runs_count": 0
   },
@@ -40,8 +40,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -57,8 +57,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -74,8 +74,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -91,8 +91,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -108,8 +108,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -125,8 +125,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -141,8 +141,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -157,8 +157,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -173,8 +173,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -189,8 +189,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -205,8 +205,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -221,8 +221,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -237,8 +237,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -253,8 +253,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -269,8 +269,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -285,8 +285,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -301,8 +301,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -317,8 +317,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -333,8 +333,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -349,8 +349,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -365,8 +365,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -381,8 +381,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -397,8 +397,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -413,8 +413,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -429,7 +429,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -444,7 +444,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -459,7 +459,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -474,7 +474,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -489,7 +489,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -504,7 +504,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -519,7 +519,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -534,7 +534,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -549,7 +549,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -564,7 +564,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -580,8 +580,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -599,8 +599,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -618,8 +618,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -637,8 +637,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -656,8 +656,8 @@
       "reason": "Runtime-backed settings-route parity is directly covered by the current file/settings proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -675,8 +675,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -694,8 +694,8 @@
       "reason": "Catalog, dialog-factory, and dialog-coordinator proofs directly cover the Hero Lab importer route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -713,8 +713,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -732,8 +732,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -751,8 +751,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -770,8 +770,8 @@
       "reason": "Runtime-backed open-for-export route parity is directly covered by the current file-menu proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -789,8 +789,8 @@
       "reason": "Runtime-backed open-route parity is directly covered by the current file-menu proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -808,8 +808,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -827,9 +827,9 @@
       "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the Translator route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -846,8 +846,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -865,9 +865,9 @@
       "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the XML Amendment Editor route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -884,7 +884,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -900,7 +900,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -916,7 +916,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -932,7 +932,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -948,7 +948,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -964,7 +964,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -980,7 +980,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -996,7 +996,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1012,7 +1012,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1028,7 +1028,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1044,7 +1044,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1060,7 +1060,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1076,7 +1076,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1092,7 +1092,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1108,7 +1108,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1124,7 +1124,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1140,7 +1140,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1156,7 +1156,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1172,7 +1172,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1188,8 +1188,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1205,8 +1205,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1222,8 +1222,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1239,8 +1239,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1256,10 +1256,10 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:translator', 'menu:xml_editor'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -1276,13 +1276,13 @@
       "reason": "Route-local dense workbench proof cites ruleset tabs, workspace actions, screenshot review, and the published flagship workflow receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
       ]
     },
     {
@@ -1298,10 +1298,10 @@
       "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -1317,10 +1317,10 @@
       "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -1336,9 +1336,9 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:hero_lab_importer', 'workflow:import_oracle'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -1356,8 +1356,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:character_roster_multi_character_flow', 'workflow:multi_character'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -1373,8 +1373,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:rules', 'workflow:sources', 'baseline:menu_tools_settings_masterindex_roster'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -1390,10 +1390,10 @@
       "reason": "Route-local print, export, and exchange proof cites menu parity, screenshot review markers, and deterministic workspace-exchange receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     },
     {
@@ -1409,8 +1409,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:first_launch_workbench_or_restore', 'baseline:menu_windows_help_liveness'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -1426,8 +1426,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:master_index_dense_reference_flow', 'workflow:sources'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -1443,9 +1443,9 @@
       "reason": "Route-local SR6 supplement and house-rule proof cites screenshot review markers, rule studio surface proof, and deterministic successor-lane receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     }
   ],
@@ -1463,8 +1463,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1480,8 +1480,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1497,8 +1497,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1514,8 +1514,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1531,8 +1531,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1548,8 +1548,8 @@
       "reason": "The screenshot baseline and matching runtime interaction proof are both present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1564,8 +1564,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1580,8 +1580,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1596,8 +1596,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1612,8 +1612,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1628,8 +1628,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1644,8 +1644,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1660,8 +1660,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1676,8 +1676,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1692,8 +1692,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1708,8 +1708,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1724,8 +1724,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1740,8 +1740,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1756,8 +1756,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1772,8 +1772,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1788,8 +1788,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1804,8 +1804,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1820,8 +1820,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1836,8 +1836,8 @@
       "removable_without_workflow_degradation": "no",
       "reason": "Required screenshot is present and the matching runtime-backed interaction proof is passing.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1852,7 +1852,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1867,7 +1867,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1882,7 +1882,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1897,7 +1897,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1912,7 +1912,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1927,7 +1927,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1942,7 +1942,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1957,7 +1957,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1972,7 +1972,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -1987,7 +1987,7 @@
       "removable_without_workflow_degradation": "no",
       "reason": "This Chummer5A dense-workbench landmark is still present in the successor workbench proof.",
       "evidence": [
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2003,8 +2003,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2022,8 +2022,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2041,8 +2041,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2060,8 +2060,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2079,8 +2079,8 @@
       "reason": "Runtime-backed settings-route parity is directly covered by the current file/settings proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2098,8 +2098,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2117,8 +2117,8 @@
       "reason": "Catalog, dialog-factory, and dialog-coordinator proofs directly cover the Hero Lab importer route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2136,8 +2136,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2155,8 +2155,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2174,8 +2174,8 @@
       "reason": "Master Index and Character Roster runtime-backed route proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.first_class_master_index_and_roster",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2193,8 +2193,8 @@
       "reason": "Runtime-backed open-for-export route parity is directly covered by the current file-menu proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2212,8 +2212,8 @@
       "reason": "Runtime-backed open-route parity is directly covered by the current file-menu proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2231,8 +2231,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2250,9 +2250,9 @@
       "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the Translator route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -2269,8 +2269,8 @@
       "reason": "Runtime-backed menu-bar label and clickability proofs are passing.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.top_menu_landmarks",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2288,9 +2288,9 @@
       "reason": "Catalog, presenter, dialog-factory, and dual-head acceptance proofs directly cover the XML Amendment Editor route.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml#oracle_surface_extract.source_line_proofs.file_and_settings_routes",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -2307,7 +2307,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2323,7 +2323,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2339,7 +2339,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2355,7 +2355,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2371,7 +2371,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2387,7 +2387,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2403,7 +2403,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2419,7 +2419,7 @@
       "reason": "This Chummer5A non-negotiable is directly backed by the current screenshot/runtime parity evidence.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/parity_lab_capture_pack.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2435,7 +2435,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2451,7 +2451,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2467,7 +2467,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2483,7 +2483,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2499,7 +2499,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2515,7 +2515,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2531,7 +2531,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2547,7 +2547,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2563,7 +2563,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2579,7 +2579,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2595,7 +2595,7 @@
       "reason": "This required Chummer5A landmark is directly backed by current screenshot/runtime proof.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2611,8 +2611,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2628,8 +2628,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2645,8 +2645,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2662,8 +2662,8 @@
       "reason": "Required baseline captures and the matching veteran workflow interaction proof are present.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json"
       ]
     },
     {
@@ -2679,10 +2679,10 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:translator', 'menu:xml_editor'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
     },
@@ -2699,13 +2699,13 @@
       "reason": "Route-local dense workbench proof cites ruleset tabs, workspace actions, screenshot review, and the published flagship workflow receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json",
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CLASSIC_DENSE_WORKBENCH_POSTURE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json"
       ]
     },
     {
@@ -2721,10 +2721,10 @@
       "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -2740,10 +2740,10 @@
       "reason": "Route-local contacts, lifestyles, and history proof cites section-host parity, current contacts and diary screenshots, and deterministic workflow-state receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
       ]
     },
     {
@@ -2759,9 +2759,9 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['menu:hero_lab_importer', 'workflow:import_oracle'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
         "/docker/chummercomplete/chummer6-core/.codex-studio/published/IMPORT_PARITY_CERTIFICATION.generated.json",
         "/docker/chummercomplete/chummer-core-engine/docs/NEXT90_M141_IMPORT_ROUTE_RECEIPTS.md"
       ]
@@ -2779,8 +2779,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:character_roster_multi_character_flow', 'workflow:multi_character'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2796,8 +2796,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['workflow:rules', 'workflow:sources', 'baseline:menu_tools_settings_masterindex_roster'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2813,10 +2813,10 @@
       "reason": "Route-local print, export, and exchange proof cites menu parity, screenshot review markers, and deterministic workspace-exchange receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     },
     {
@@ -2832,8 +2832,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:first_launch_workbench_or_restore', 'baseline:menu_windows_help_liveness'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2849,8 +2849,8 @@
       "reason": "All declared compare artifacts for this Chummer5A family are directly backed by current parity proof: ['baseline:master_index_dense_reference_flow', 'workflow:sources'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2866,9 +2866,9 @@
       "reason": "Route-local SR6 supplement and house-rule proof cites screenshot review markers, rule studio surface proof, and deterministic successor-lane receipts directly.",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
-        "/docker/chummercomplete/chummer6-ui/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M143_UI_DIRECT_OUTPUT_PROOF.generated.json"
       ]
     }
   ]

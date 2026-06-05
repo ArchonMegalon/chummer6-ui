@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-03T07:11:58Z",
-  "generatedAt": "2026-06-03T07:11:58Z",
+  "generated_at": "2026-06-05T05:05:03Z",
+  "generatedAt": "2026-06-05T05:05:03Z",
   "contract_name": "Chummer.Hub.Registry.Contracts",
   "contractName": "Chummer.Hub.Registry.Contracts",
   "version": "run-20260601-070650",
   "channel": "public_stable",
-  "publishedAt": "2026-06-03T07:11:58Z",
+  "publishedAt": "2026-06-05T05:05:03Z",
   "downloads": [
     {
       "id": "avalonia-linux-x64-installer",
@@ -55,8 +55,8 @@
       "id": "avalonia-win-x64-installer",
       "platform": "Avalonia Desktop Windows X64 Installer",
       "url": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "sha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
-      "sizeBytes": 239554300,
+      "sha256": "996d42acf54d4f26840a4bc79ea4b87a58f2528769ec8d9bb253b84d1bbe4ca7",
+      "sizeBytes": 142758270,
       "format": "exe",
       "flavor": "installer",
       "kind": "installer",
@@ -72,6 +72,50 @@
       "compatibilityReason": null,
       "installAccessClass": "account_required",
       "artifactId": "avalonia-win-x64-installer"
+    },
+    {
+      "id": "avalonia-win-x64-portable",
+      "platform": "Avalonia Desktop Windows X64 Portable",
+      "url": "/downloads/files/chummer-avalonia-win-x64.exe",
+      "sha256": "25ef3d27e1f00079135f4adbb06bc8da1647f06018f77f6403dfbd0b400a310a",
+      "sizeBytes": 110738700,
+      "format": "exe",
+      "flavor": "portable",
+      "kind": "portable",
+      "head": "avalonia",
+      "platformId": "windows",
+      "arch": "x64",
+      "fileName": "chummer-avalonia-win-x64.exe",
+      "channelId": "public_stable",
+      "channel": "public_stable",
+      "version": "run-20260601-070650",
+      "releaseVersion": "run-20260601-070650",
+      "compatibilityState": "compatible",
+      "compatibilityReason": null,
+      "installAccessClass": "account_required",
+      "artifactId": "avalonia-win-x64-portable"
+    },
+    {
+      "id": "avalonia-win-x64-archive",
+      "platform": "Avalonia Desktop Windows X64 Portable",
+      "url": "/downloads/files/chummer-avalonia-win-x64.zip",
+      "sha256": "2fcdeb63698a5a888998c16901cf2d7dce409b397040e78b75c7a4007f1cd94c",
+      "sizeBytes": 45461475,
+      "format": "zip",
+      "flavor": "archive",
+      "kind": "archive",
+      "head": "avalonia",
+      "platformId": "windows",
+      "arch": "x64",
+      "fileName": "chummer-avalonia-win-x64.zip",
+      "channelId": "public_stable",
+      "channel": "public_stable",
+      "version": "run-20260601-070650",
+      "releaseVersion": "run-20260601-070650",
+      "compatibilityState": "compatible",
+      "compatibilityReason": null,
+      "installAccessClass": "open_public",
+      "artifactId": "avalonia-win-x64-archive"
     }
   ],
   "source": "registry",
@@ -85,7 +129,7 @@
   "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
   "releaseProof": {
     "status": "passed",
-    "generatedAt": "2026-06-02T17:14:57Z",
+    "generatedAt": "2026-06-05T04:10:25Z",
     "baseUrl": "https://chummer.run",
     "journeysPassed": [
       "install_claim_restore_continue",
@@ -108,7 +152,7 @@
     ],
     "uiLocalizationReleaseGate": {
       "status": "pass",
-      "generatedAt": "2026-06-03T03:43:35Z",
+      "generatedAt": "2026-06-05T03:16:17Z",
       "defaultKeyCount": 389,
       "explicitFallbackRuntime": "pass",
       "signoffSmokeRunnerStatus": "pass",
@@ -791,13 +835,13 @@
     },
     "proofFreshness": {
       "status": "fresh",
-      "releaseProofGeneratedAt": "2026-06-02T17:14:57Z",
-      "releaseProofAgeSeconds": 50221,
+      "releaseProofGeneratedAt": "2026-06-05T04:10:25Z",
+      "releaseProofAgeSeconds": 3278,
       "releaseProofMaxAgeSeconds": 604800,
-      "uiLocalizationGeneratedAt": "2026-06-03T03:43:35Z",
-      "uiLocalizationAgeSeconds": 12503,
+      "uiLocalizationGeneratedAt": "2026-06-05T03:16:17Z",
+      "uiLocalizationAgeSeconds": 6526,
       "uiLocalizationMaxAgeSeconds": 604800,
-      "summary": "Release proof age is 50221s (max 604800s) and UI localization gate age is 12503s (max 604800s)."
+      "summary": "Release proof age is 3278s (max 604800s) and UI localization gate age is 6526s (max 604800s)."
     },
     "revocationFacts": {
       "status": "clear",
@@ -814,10 +858,10 @@
     "releaseVersion": "run-20260601-070650",
     "persistence": {
       "contractName": "Chummer.Hub.Registry.Contracts",
-      "artifactCount": 3,
+      "artifactCount": 5,
       "runtimeBundleHeadCount": 0,
       "registryProjectionCount": 12,
-      "summary": "Registry persistence owns 3 published artifacts, 0 runtime bundle heads, and 12 governed projection rows for public_stable/run-20260601-070650."
+      "summary": "Registry persistence owns 5 published artifacts, 0 runtime bundle heads, and 12 governed projection rows for public_stable/run-20260601-070650."
     },
     "releaseChannel": {
       "publicationStatus": "published",
@@ -852,12 +896,12 @@
       "summary": "Entitlement and install-hand-off truth spans 3 install-aware registry rows, 3 desktop surface refs, 1 guest-readable surfaces, and 2 account-required surfaces."
     },
     "compatibility": {
-      "compatibleArtifactCount": 3,
+      "compatibleArtifactCount": 5,
       "compatibleRuntimeBundleHeadCount": 0,
       "compatibleExchangeArtifactCount": 0,
       "unknownArtifactCount": 0,
       "unknownRuntimeBundleHeadCount": 0,
-      "summary": "Compatibility boundary tracks 3 compatible artifacts, 0 compatible runtime bundle heads, and 0 compatible exchange-lineage rows while 0 artifact rows and 0 runtime bundle heads remain unknown."
+      "summary": "Compatibility boundary tracks 5 compatible artifacts, 0 compatible runtime bundle heads, and 0 compatible exchange-lineage rows while 0 artifact rows and 0 runtime bundle heads remain unknown."
     },
     "summary": "Registry boundary coverage is closed for public_stable/run-20260601-070650 across persistence, release-channel, artifact-lineage, publication, entitlement, and compatibility surfaces."
   }
