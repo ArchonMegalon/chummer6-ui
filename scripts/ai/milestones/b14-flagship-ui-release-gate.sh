@@ -197,13 +197,6 @@ run_dual_head_acceptance_tests() {
     rm -f "$test_log"
     return 0
   fi
-  if [[ $rc -eq 8 ]] \
-    && rg -q "Assert\\.Inconclusive failed\\. Chummer API runtime socket error" "$test_log" \
-    && rg -q "failed: 0" "$test_log"; then
-    echo "[b14] WARN: cross-head workflow parity tests were skipped because the Chummer API runtime is unavailable; treating the all-skipped run as non-blocking." >&2
-    rm -f "$test_log"
-    return 0
-  fi
   cat "$test_log" >&2
   rm -f "$test_log"
   return $rc

@@ -554,6 +554,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         string appCssText = File.ReadAllText(appCssPath);
 
         StringAssert.Contains(releaseGateText, "chummer5a-layout-hard-gate.sh");
+        Assert.IsFalse(
+            releaseGateText.Contains("treating the all-skipped run as non-blocking", StringComparison.Ordinal),
+            "B14 must fail closed when the API-backed dual-head parity lane is fully skipped.");
+        Assert.IsFalse(
+            releaseGateText.Contains("Assert\\.Inconclusive failed\\. Chummer API runtime socket error", StringComparison.Ordinal),
+            "B14 must not special-case API runtime socket errors into a release pass.");
         StringAssert.Contains(visualGateText, "chummer5a-layout-hard-gate.sh");
         StringAssert.Contains(visualGateText, "promote_fresh_runtime_screenshot_pack");
         StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-ultimate-parity-tester/live/screenshots/actual");
