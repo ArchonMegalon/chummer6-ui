@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-06-05T03:15:41Z",
+  "generatedAt": "2026-06-07T18:23:22Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -169,9 +169,9 @@
         "path": "Chummer.Avalonia/DesktopHomeWindow.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "add40625",
-        "subject": "Harden desktop gold gates",
-        "sha": "add4062577c9e87abf94f06ee1b139559921e296",
+        "commit": "cd900ea4",
+        "subject": "Deepen desktop horizon workbench interactions",
+        "sha": "cd900ea49cfeea5d5a1d7a4b358420f076db265d",
         "paths": [
           "Chummer.Avalonia/DesktopHomeWindow.cs"
         ],
@@ -225,9 +225,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "389b5d4e",
-        "subject": "Harden desktop flagship gates and continuity",
-        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
+        "commit": "d2a42210",
+        "subject": "Harden release mirrors and desktop runtime fallbacks",
+        "sha": "d2a4221070774ff593ead21807e9305e79deda35",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -239,9 +239,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "389b5d4e",
-        "subject": "Harden desktop flagship gates and continuity",
-        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
+        "commit": "d2a42210",
+        "subject": "Harden release mirrors and desktop runtime fallbacks",
+        "sha": "d2a4221070774ff593ead21807e9305e79deda35",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -253,9 +253,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "389b5d4e",
-        "subject": "Harden desktop flagship gates and continuity",
-        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
+        "commit": "cd900ea4",
+        "subject": "Deepen desktop horizon workbench interactions",
+        "sha": "cd900ea49cfeea5d5a1d7a4b358420f076db265d",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "389b5d4e",
-        "subject": "Harden desktop flagship gates and continuity",
-        "sha": "389b5d4ee54c33d64ad76b191856ccb60487f936",
+        "commit": "12a49de8",
+        "subject": "Harden Chummer5a parity release gates",
+        "sha": "12a49de819605b588872f8d5527087d87ef366bd",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -391,15 +391,10 @@
         "scripts/ai/verify.sh",
         ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
       ],
-      "has_relevant_changes": true,
-      "changes": [
-        {
-          "status": " M",
-          "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
-        }
-      ]
+      "has_relevant_changes": false,
+      "changes": []
     },
-    "headCommit": "389b5d4ee54c33d64ad76b191856ccb60487f936",
+    "headCommit": "d6de7e90df97ba308ca2503802e151d6fa48859a",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
@@ -419,12 +414,12 @@
             {
               "marker": "BuildCampaignBody()",
               "present": true,
-              "line": 138
+              "line": 139
             },
             {
               "marker": "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1170
+              "line": 1262
             }
           ],
           "missingMarkers": []
@@ -435,17 +430,17 @@
             {
               "marker": "Stale state: server continuity is unavailable",
               "present": true,
-              "line": 828
+              "line": 835
             },
             {
               "marker": "ReadCampaignWorkspaceServerPlaneAsync",
               "present": true,
-              "line": 278
+              "line": 285
             },
             {
               "marker": "GetCampaignWorkspaceServerPlaneAsync",
               "present": true,
-              "line": 541
+              "line": 548
             }
           ],
           "missingMarkers": []
@@ -456,17 +451,17 @@
             {
               "marker": "_campaignProjection.Watchouts",
               "present": true,
-              "line": 672
+              "line": 679
             },
             {
               "marker": "DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(_installState, ResolveSupportWorkspace())",
               "present": true,
-              "line": 1217
+              "line": 1309
             },
             {
               "marker": "DesktopSupportWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1176
+              "line": 1268
             }
           ],
           "missingMarkers": []
@@ -477,12 +472,12 @@
             {
               "marker": "OpenUpdateSupport",
               "present": true,
-              "line": 1005
+              "line": 1012
             },
             {
               "marker": "DesktopDevicesAccessWindow.ShowAsync(this, _installState.HeadId)",
               "present": true,
-              "line": 1182
+              "line": 1274
             }
           ],
           "missingMarkers": []
@@ -576,27 +571,27 @@
             {
               "marker": "Workspace continuity: support can review the current continuity packet.",
               "present": true,
-              "line": 509
+              "line": 510
             },
             {
               "marker": "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
               "present": true,
-              "line": 408
+              "line": 409
             },
             {
               "marker": "Local workspace state stays under explicit user control.",
               "present": true,
-              "line": 409
+              "line": 410
             },
             {
               "marker": "BuildSupportPortalRelativePathForWorkspace",
               "present": true,
-              "line": 322
+              "line": 323
             },
             {
               "marker": "BuildSupportPortalRelativePathForInstall",
               "present": true,
-              "line": 309
+              "line": 310
             }
           ],
           "missingMarkers": []

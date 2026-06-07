@@ -1806,6 +1806,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "Vincular esta cópia";
             localized["desktop.install_link.button.redeem_claim_code"] = "Resgatar no app";
             localized["desktop.install_link.button.login_website"] = "Entrar no site";
+            localized["desktop.install_link.button.exit_desktop"] = "Sair do desktop";
             localized["desktop.install_link.shipping_locales"] = "Locales de envio: {0}. Os fluxos de confianca de instalacao, atualizacao e suporte devem permanecer alinhados nesta onda desktop.";
             localized["desktop.install_link.claim_code_watermark"] = "Cole a transferência da instalação vinda do download conectado do Chummer ou do fluxo guiado de recuperação";
             localized["desktop.install_link.status.prompt_guest_claim"] = "Se a transferência guiada da instalação não terminou de vincular esta cópia, cole aqui a transferência conectada para que o Chummer a resolva dentro do app.";
@@ -2210,6 +2211,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.install_link.button.link_copy"] = "绑定此副本";
             localized["desktop.install_link.button.redeem_claim_code"] = "在应用内兑换";
             localized["desktop.install_link.button.login_website"] = "在网站登录";
+            localized["desktop.install_link.button.exit_desktop"] = "退出桌面客户端";
             localized["desktop.install_link.shipping_locales"] = "出货语言: {0}。本轮桌面波次中，安装、更新和支持的信任流程应保持一致。";
             localized["desktop.install_link.claim_code_watermark"] = "粘贴来自已登录 Chummer 下载或引导恢复流程的安装接续";
             localized["desktop.install_link.status.prompt_guest_claim"] = "如果引导安装接续尚未完成此副本的绑定，请在此粘贴已登录安装接续，让 Chummer 在应用内完成处理。";

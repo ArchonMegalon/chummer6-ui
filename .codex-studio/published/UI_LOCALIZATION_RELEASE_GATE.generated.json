@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-05T03:16:17Z",
+  "generated_at": "2026-06-07T18:23:56Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 389,
+  "default_key_count": 398,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 207ms"
+      "  duration: 191ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 389,
-      "minimum_override_count": 389,
-      "default_key_count": 389,
+      "override_count": 398,
+      "minimum_override_count": 398,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 389,
+      "override_count": 398,
       "minimum_override_count": 40,
-      "default_key_count": 389,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 389,
+      "override_count": 398,
       "minimum_override_count": 40,
-      "default_key_count": 389,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 389,
+      "override_count": 398,
       "minimum_override_count": 40,
-      "default_key_count": 389,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 389,
+      "override_count": 398,
       "minimum_override_count": 40,
-      "default_key_count": 389,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 389,
+      "override_count": 398,
       "minimum_override_count": 40,
-      "default_key_count": 389,
+      "default_key_count": 398,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-05T03:15:49Z",
+    "generated_at": "2026-06-07T18:23:29Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -201,8 +201,8 @@
   "domain_evidence": {
     "app_chrome": {
       "status": "pass",
-      "matched_default_key_count": 148,
-      "required_key_count": 148,
+      "matched_default_key_count": 152,
+      "required_key_count": 152,
       "required_keys": [
         "desktop.dialog.action.cancel",
         "desktop.dialog.action.close",
@@ -228,6 +228,7 @@
         "desktop.home.button.open_current_campaign_workspace",
         "desktop.home.button.open_current_workspace",
         "desktop.home.button.open_devices_access",
+        "desktop.home.button.open_horizons_public",
         "desktop.home.button.open_install_support",
         "desktop.home.button.open_mission_briefing",
         "desktop.home.button.open_my_artifacts",
@@ -240,6 +241,7 @@
         "desktop.home.button.open_update_support",
         "desktop.home.button.open_work_support",
         "desktop.home.button.open_workspace_followthrough",
+        "desktop.home.horizons.summary",
         "desktop.home.install_summary.channel",
         "desktop.home.install_summary.claim_error",
         "desktop.home.install_summary.head",
@@ -262,6 +264,7 @@
         "desktop.home.next_safe_action",
         "desktop.home.section.build_explain",
         "desktop.home.section.campaign_return",
+        "desktop.home.section.horizons",
         "desktop.home.section.install_support",
         "desktop.home.section.language_trust",
         "desktop.home.section.recent_workspaces",
@@ -334,6 +337,7 @@
         "desktop.shell.tool.campaign_workspace",
         "desktop.shell.tool.close_active_workspace",
         "desktop.shell.tool.desktop_home",
+        "desktop.shell.tool.horizons",
         "desktop.shell.tool.import_character_file",
         "desktop.shell.tool.import_raw_xml",
         "desktop.shell.tool.link_copy",
@@ -366,8 +370,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 228,
-      "required_key_count": 228,
+      "matched_default_key_count": 229,
+      "required_key_count": 229,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -436,6 +440,7 @@
         "desktop.home.section.install_support",
         "desktop.home.section.update_posture",
         "desktop.install_link.button.copy_install_id",
+        "desktop.install_link.button.exit_desktop",
         "desktop.install_link.button.link_copy",
         "desktop.install_link.button.login_website",
         "desktop.install_link.button.open_account",

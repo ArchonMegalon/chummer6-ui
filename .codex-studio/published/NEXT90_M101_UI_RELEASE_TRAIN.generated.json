@@ -1514,7 +1514,7 @@
         "status": "pass"
       },
       "windows": {
-        "artifactDigest": "sha256:54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+        "artifactDigest": "sha256:996d42acf54d4f26840a4bc79ea4b87a58f2528769ec8d9bb253b84d1bbe4ca7",
         "artifactId": "avalonia-win-x64-installer",
         "expectedPublicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
         "expectedRouteTupleId": "avalonia:windows:win-x64",
@@ -1916,7 +1916,7 @@
     "verifyScriptPath": "/docker/chummercomplete/chummer-presentation/scripts/ai/verify.sh"
   },
   "frontierId": 2450443084,
-  "generatedAt": "2026-06-03T03:03:19Z",
+  "generatedAt": "2026-06-07T18:23:17Z",
   "landedCommit": "c9c0d84f",
   "milestoneId": 101,
   "ownedSurfaces": [

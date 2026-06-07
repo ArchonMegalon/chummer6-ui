@@ -1,6 +1,6 @@
 {
   "contractName": "chummer6-ui.avalonia_primary_route_proof",
-  "generatedAt": "2026-06-05T03:15:14Z",
+  "generatedAt": "2026-06-07T18:23:04Z",
   "status": "pass",
   "primaryHead": "avalonia",
   "requiredPlatforms": [
@@ -45,7 +45,7 @@
       "head": "avalonia",
       "rid": "win-x64",
       "artifactId": "avalonia-win-x64-installer",
-      "artifactSha256": "54966da8ac6f1ca7321b301b025bfb626398f461c78441c132d5c59d9c2bedde",
+      "artifactSha256": "996d42acf54d4f26840a4bc79ea4b87a58f2528769ec8d9bb253b84d1bbe4ca7",
       "status": "pass",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "proofSource": "startup-smoke",
