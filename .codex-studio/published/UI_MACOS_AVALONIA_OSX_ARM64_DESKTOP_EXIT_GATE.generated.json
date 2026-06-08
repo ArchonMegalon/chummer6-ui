@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.macos_desktop_exit_gate",
-  "generated_at": "2026-06-03T07:21:51Z",
+  "generated_at": "2026-06-08T12:08:30Z",
   "channelId": "public_stable",
   "releaseVersion": "run-20260601-070650",
   "status": "passed",
@@ -55,7 +55,7 @@
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
     ],
     "receipt_recorded_at": "2026-06-03T00:42:06Z",
-    "receipt_age_seconds": 23985,
+    "receipt_age_seconds": 473184,
     "receipt_max_age_seconds": 604800,
     "receipt_max_future_skew_seconds": 300,
     "external_blocker": "",
@@ -117,14 +117,14 @@
       "platformLabel": "Avalonia Desktop macOS ARM64 Installer",
       "updateFeedUrl": null,
       "embeddedRuntimeBundleHeadId": null,
+      "compatibilityState": "compatible",
+      "installAccessClass": "account_required",
       "channelId": "public_stable",
       "channel": "public_stable",
       "version": "run-20260601-070650",
       "releaseVersion": "run-20260601-070650",
-      "installAccessClass": "account_required",
-      "compatibilityState": "compatible",
-      "generated_at": "2026-06-03T04:59:05Z",
-      "generatedAt": "2026-06-03T04:59:05Z",
+      "generated_at": "2026-06-08T08:57:28Z",
+      "generatedAt": "2026-06-08T08:57:28Z",
       "id": "avalonia-osx-arm64-installer"
     },
     "artifact": {
@@ -180,7 +180,7 @@
         "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-osx-arm64-installer.dmg"
       ],
       "receipt_recorded_at": "2026-06-03T00:42:06Z",
-      "receipt_age_seconds": 23985,
+      "receipt_age_seconds": 473184,
       "receipt_max_age_seconds": 604800,
       "receipt_max_future_skew_seconds": 300,
       "external_blocker": "",

@@ -335,8 +335,8 @@ else:
     linux_gate_mouse_first_observed_input_events = linux_gate_mouse_first_receipt.get("observedInputEvents")
     if not isinstance(linux_gate_mouse_first_observed_input_events, list) or len(linux_gate_mouse_first_observed_input_events) < 8:
         reasons.append("Linux mouse_first_journey primary receipt must publish observed input events.")
-    if not isinstance(linux_gate_mouse_first_screenshots, list) or len(linux_gate_mouse_first_screenshots) < 4:
-        reasons.append("Linux mouse_first_journey primary receipt must publish four screenshot-backed review frames.")
+    if not isinstance(linux_gate_mouse_first_screenshots, list) or len(linux_gate_mouse_first_screenshots) < 5:
+        reasons.append("Linux mouse_first_journey primary receipt must publish five screenshot-backed review frames.")
     if not linux_gate_mouse_first_trace_path:
         reasons.append("Linux mouse_first_journey primary receipt must publish a tracePath.")
 

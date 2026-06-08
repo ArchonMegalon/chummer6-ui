@@ -9,9 +9,9 @@ using Chummer.Avalonia.Controls;
 using Chummer.Contracts.Workspaces;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.Shell;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 
 namespace Chummer.Avalonia;
 
@@ -22,10 +22,6 @@ internal static class DesktopMouseFirstJourneyRunner
     private static readonly TimeSpan HardTimeoutGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
     private static readonly TimeSpan TransitionSettleTimeout = TimeSpan.FromSeconds(2);
-    private static readonly Regex WorkspaceStripRegex = new(
-        @"^(?:Workspace|Arbeitsbereich|Espace de travail|ワークスペース|工作区):\s*(?<workspaceId>.+?)\s+\((?:open|offen|ouverts|オープン|已打开):\s*(?<openCount>\d+),\s*(?<saveStatus>[^)]+)\)$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
     public static async Task RunAsync(MainWindow window, string headId)
     {
         ArgumentNullException.ThrowIfNull(window);
@@ -97,6 +93,10 @@ internal static class DesktopMouseFirstJourneyRunner
         try
         {
             using CancellationTokenSource journeyTimeout = new(JourneyTimeout);
+            string language = DesktopLocalizationCatalog.GetCurrentLanguage();
+            const string expectedCharacterName = "Mouse Journey Runner";
+            const string expectedCharacterAlias = "MouseRoute";
+            const string expectedRulesetId = "sr5";
             RecordStep(steps, "start mouse-first live binary journey");
             string initialWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
 
@@ -146,54 +146,37 @@ internal static class DesktopMouseFirstJourneyRunner
                 recordPointerAction,
                 "workspace creation dialog closed after mouse-first creation flow",
                 () => ResolveVisibleDialogWindow() is null);
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-post-dialog-close");
             await WaitForAsync(
                 steps,
-                "workspace strip published after mouse-first creation flow",
-                () =>
-                {
-                    WorkspaceStripState workspaceStripState = ReadWorkspaceStripState(window);
-                    if (workspaceStripState.HasActiveWorkspace && workspaceStripState.OpenCount > 0)
-                    {
-                        return true;
-                    }
-
-                    CharacterOverviewState state = window.SnapshotStateForAutomation();
-                    return state.WorkspaceId is not null && !state.IsBusy;
-                },
+                "character workspace published after mouse-first creation flow",
+                () => HasOpenedCharacterEvidence(window, language, expectedCharacterName, expectedCharacterAlias, expectedRulesetId),
                 journeyTimeout.Token);
             string openedWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
+            DesktopMouseFirstJourneyVisibleShellState openedVisibleState = ReadVisibleShellState(window, language);
             RecordStep(
                 steps,
                 HasWorkspaceStripTransition(initialWorkspaceStripText, openedWorkspaceStripText)
                     ? $"workspace strip changed to {openedWorkspaceStripText}"
-                    : "workspace strip did not visibly transition during open confirmation; internal shell state confirmed the opened workspace");
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-workspace-opened");
+                    : $"workspace strip stayed stable while live shell content confirmed opened character {expectedCharacterName} ({openedVisibleState.RulesetId ?? expectedRulesetId})");
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-workspace-opened");
 
             await ClickFileMenuCommandAsync(window, "save_character", steps, journeyTimeout.Token, recordPointerAction);
             await WaitForAsync(
                 steps,
                 "workspace saved after pointer-first flow",
-                () =>
-                {
-                    if (ReadWorkspaceStripState(window).IsSaved)
-                    {
-                        return true;
-                    }
-
-                    CharacterOverviewState state = window.SnapshotStateForAutomation();
-                    return state.HasSavedWorkspace && state.WorkspaceId is not null && !state.IsBusy;
-                },
+                () => ReadVisibleShellState(window, language) is { HasActiveWorkspace: true, IsSaved: true, CharacterLoaded: true },
                 journeyTimeout.Token);
             string savedWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
+            DesktopMouseFirstJourneyVisibleShellState savedVisibleState = ReadVisibleShellState(window, language);
             RecordStep(
                 steps,
                 HasWorkspaceStripTransition(openedWorkspaceStripText, savedWorkspaceStripText)
                     ? $"workspace strip changed to {savedWorkspaceStripText}"
-                    : "workspace strip did not visibly transition during save confirmation; internal shell state confirmed the saved workspace");
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-workspace-saved");
+                    : $"workspace strip stayed stable while visible shell state confirmed saved workspace {savedVisibleState.WorkspaceId ?? "(missing)"}");
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "05-workspace-saved");
 
-            WorkspaceStripState finalWorkspaceStripState = ReadWorkspaceStripState(window);
-            CharacterOverviewState finalState = window.SnapshotStateForAutomation();
+            DesktopMouseFirstJourneyVisibleShellState finalVisibleState = ReadVisibleShellState(window, language);
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
             DesktopMouseFirstJourneyRuntime.WriteSuccessReceipt(
                 context,
@@ -206,11 +189,11 @@ internal static class DesktopMouseFirstJourneyRunner
                     UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
                     UsedComboSelectionFallback: getUsedComboSelectionFallback(),
                     ObservedInputEvents: observedInputEvents,
-                    WorkspaceId: finalWorkspaceStripState.WorkspaceId ?? finalState.WorkspaceId?.Value,
-                    CharacterName: finalState.Profile?.Name ?? "Mouse Journey Runner",
-                    CharacterAlias: finalState.Profile?.Alias ?? "MouseRoute",
-                    RulesetId: finalState.Rules?.GameEdition ?? finalState.OpenWorkspaces.FirstOrDefault()?.RulesetId ?? "sr5",
-                    HasSavedWorkspace: finalWorkspaceStripState.IsSaved || finalState.HasSavedWorkspace,
+                    WorkspaceId: finalVisibleState.WorkspaceId,
+                    CharacterName: expectedCharacterName,
+                    CharacterAlias: expectedCharacterAlias,
+                    RulesetId: finalVisibleState.RulesetId ?? expectedRulesetId,
+                    HasSavedWorkspace: finalVisibleState.IsSaved,
                     ActiveDialogId: ResolveVisibleDialogWindow()?.BoundDialogId,
                     VerificationNotes:
                     [
@@ -222,8 +205,7 @@ internal static class DesktopMouseFirstJourneyRunner
         }
         catch (Exception ex)
         {
-            WorkspaceStripState workspaceStripState = ReadWorkspaceStripState(window);
-            CharacterOverviewState state = window.SnapshotStateForAutomation();
+            DesktopMouseFirstJourneyVisibleShellState visibleState = ReadVisibleShellState(window, DesktopLocalizationCatalog.GetCurrentLanguage());
             DesktopMouseFirstJourneyRuntime.WriteObservedInputTrace(context, observedInputEvents);
             DesktopMouseFirstJourneyRuntime.WriteFailureArtifacts(
                 context,
@@ -237,7 +219,7 @@ internal static class DesktopMouseFirstJourneyRunner
                 usedComboSelectionFallback: getUsedComboSelectionFallback(),
                 observedInputEvents: observedInputEvents,
                 activeDialogId: ResolveVisibleDialogWindow()?.BoundDialogId,
-                workspaceId: workspaceStripState.WorkspaceId ?? state.WorkspaceId?.Value);
+                workspaceId: visibleState.WorkspaceId);
             Console.Error.WriteLine($"Desktop mouse-first journey failed: {ex}");
             Environment.ExitCode = 1;
         }
@@ -450,7 +432,7 @@ internal static class DesktopMouseFirstJourneyRunner
     {
         TextBlock? workspaceText = window.GetVisualDescendants()
             .OfType<TextBlock>()
-            .FirstOrDefault(control => string.Equals(control.Name, "WorkspaceText", StringComparison.Ordinal) && control.IsVisible);
+            .FirstOrDefault(control => string.Equals(control.Name, "WorkspaceText", StringComparison.Ordinal));
         return workspaceText?.Text?.Trim() ?? string.Empty;
     }
 
@@ -458,36 +440,63 @@ internal static class DesktopMouseFirstJourneyRunner
     {
         TextBlock? characterStateText = window.GetVisualDescendants()
             .OfType<TextBlock>()
-            .FirstOrDefault(control => string.Equals(control.Name, "CharacterStateText", StringComparison.Ordinal) && control.IsVisible);
+            .FirstOrDefault(control => string.Equals(control.Name, "CharacterStateText", StringComparison.Ordinal));
         return characterStateText?.Text?.Trim() ?? string.Empty;
     }
 
-    private static WorkspaceStripState ReadWorkspaceStripState(MainWindow window)
+    private static string ReadToolStripStatusText(MainWindow window)
     {
-        string workspaceStripText = ReadWorkspaceStripText(window);
-        if (string.IsNullOrWhiteSpace(workspaceStripText))
-        {
-            return WorkspaceStripState.Empty;
-        }
-
-        Match match = WorkspaceStripRegex.Match(workspaceStripText);
-        if (!match.Success)
-        {
-            return new WorkspaceStripState(null, 0, false, workspaceStripText);
-        }
-
-        string? workspaceId = match.Groups["workspaceId"].Value.Trim();
-        if (string.Equals(workspaceId, "none", StringComparison.OrdinalIgnoreCase))
-        {
-            workspaceId = null;
-        }
-
-        int openCount = int.TryParse(match.Groups["openCount"].Value, out int parsedOpenCount)
-            ? parsedOpenCount
-            : 0;
-        bool isSaved = string.Equals(match.Groups["saveStatus"].Value.Trim(), "saved", StringComparison.OrdinalIgnoreCase);
-        return new WorkspaceStripState(workspaceId, openCount, isSaved, workspaceStripText);
+        TextBlock? toolStripStatusText = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(control => string.Equals(control.Name, "StatusText", StringComparison.Ordinal));
+        return toolStripStatusText?.Text?.Trim() ?? string.Empty;
     }
+
+    private static string ReadComplianceStateText(MainWindow window)
+    {
+        TextBlock? complianceStateText = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(control => string.Equals(control.Name, "ComplianceStateText", StringComparison.Ordinal));
+        return complianceStateText?.Text?.Trim() ?? string.Empty;
+    }
+
+    private static DesktopMouseFirstJourneyVisibleShellState ReadVisibleShellState(MainWindow window, string language)
+    {
+        return DesktopMouseFirstJourneyVisibleShellStateReader.Read(
+            ReadWorkspaceStripText(window),
+            ReadToolStripStatusText(window),
+            ReadCharacterStateText(window),
+            ReadComplianceStateText(window),
+            language);
+    }
+
+    private static bool HasOpenedCharacterEvidence(
+        MainWindow window,
+        string language,
+        string expectedCharacterName,
+        string expectedCharacterAlias,
+        string expectedRulesetId)
+    {
+        string windowTextSnapshot = ReadWindowTextSnapshot(window);
+        string expectedRulesetToken = expectedRulesetId.ToUpperInvariant();
+        return ContainsWindowText(windowTextSnapshot, expectedCharacterName)
+            && ContainsWindowText(windowTextSnapshot, expectedCharacterAlias)
+            && ContainsWindowText(windowTextSnapshot, expectedRulesetToken);
+    }
+
+    private static string ReadWindowTextSnapshot(MainWindow window)
+    {
+        return string.Join(
+            Environment.NewLine,
+            window.GetVisualDescendants()
+                .OfType<TextBlock>()
+                .Select(control => control.Text?.Trim())
+                .Where(static text => !string.IsNullOrWhiteSpace(text))
+                .Distinct(StringComparer.Ordinal));
+    }
+
+    private static bool ContainsWindowText(string snapshot, string expectedText)
+        => snapshot.Contains(expectedText, StringComparison.OrdinalIgnoreCase);
 
     private static bool HasWorkspaceStripTransition(string previousText, string currentText)
         => !string.IsNullOrWhiteSpace(currentText)
@@ -685,14 +694,4 @@ internal static class DesktopMouseFirstJourneyRunner
                 && control.IsVisible);
     }
 
-    private readonly record struct WorkspaceStripState(
-        string? WorkspaceId,
-        int OpenCount,
-        bool IsSaved,
-        string RawText)
-    {
-        public static WorkspaceStripState Empty => new(null, 0, false, string.Empty);
-
-        public bool HasActiveWorkspace => !string.IsNullOrWhiteSpace(WorkspaceId);
-    }
 }

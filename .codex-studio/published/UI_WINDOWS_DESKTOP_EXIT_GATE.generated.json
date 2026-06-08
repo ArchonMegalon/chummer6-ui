@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.windows_desktop_exit_gate",
-  "generated_at": "2026-06-05T05:06:13Z",
+  "generated_at": "2026-06-08T12:08:30Z",
   "channelId": "public_stable",
   "releaseVersion": "run-20260601-070650",
   "status": "passed",
@@ -13,9 +13,9 @@
   },
   "summary": "Windows desktop exit gate passed.",
   "checks": {
-    "release_channel_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "release_channel_path": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "windows_installer_path_override": "",
-    "windows_local_desktop_files_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+    "windows_local_desktop_files_root": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files",
     "ui_local_release_proof_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json",
     "ui_flagship_release_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "desktop_workflow_execution_gate_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json",
@@ -28,9 +28,9 @@
     "release_channel_status": "published",
     "release_channel_id": "public_stable",
     "release_channel_version": "run-20260601-070650",
-    "windows_installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
+    "windows_installer_path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe",
     "windows_installer_candidate_paths": [
-      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe"
+      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe"
     ],
     "installer_exists": true,
     "installer_size_bytes": 142758270,
@@ -39,7 +39,7 @@
     "expected_windows_rid": "win-x64",
     "expected_windows_arch": "x64",
     "expected_windows_file_name": "chummer-avalonia-win-x64-installer.exe",
-    "windows_installer_primary_shelf_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
+    "windows_installer_primary_shelf_root": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files",
     "windows_installer_from_primary_shelf": true,
     "release_channel_windows_artifact": {
       "artifactId": "avalonia-win-x64-installer",
@@ -61,8 +61,8 @@
       "channel": "public_stable",
       "version": "run-20260601-070650",
       "releaseVersion": "run-20260601-070650",
-      "generated_at": "2026-06-05T05:05:03Z",
-      "generatedAt": "2026-06-05T05:05:03Z",
+      "generated_at": "2026-06-08T08:57:28Z",
+      "generatedAt": "2026-06-08T08:57:28Z",
       "id": "avalonia-win-x64-installer"
     },
     "embedded_payload_marker_present": true,
@@ -72,8 +72,8 @@
     "startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
     "startup_smoke_receipt_candidates": [
       "/docker/chummercomplete/chummer6-ui/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
+      "/docker/chummercomplete/chummer6-ui/.tmp/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer6-ui/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
@@ -95,14 +95,14 @@
     "startup_smoke_operating_system": "Microsoft Windows 10.0.19045",
     "startup_smoke_artifact_path": "files/chummer-avalonia-win-x64-installer.exe",
     "startup_smoke_artifact_path_candidates": [
-      "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files/chummer-avalonia-win-x64-installer.exe",
-      "/docker/chummercomplete/chummer-hub-registry/.codex-studio/files/chummer-avalonia-win-x64-installer.exe",
+      "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/files/chummer-avalonia-win-x64-installer.exe",
+      "/docker/chummercomplete/chummer6-ui/.tmp/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummercomplete/chummer6-ui/files/chummer-avalonia-win-x64-installer.exe",
       "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe"
     ],
     "startup_smoke_completed_at": "2026-06-05T05:04:49Z",
-    "startup_smoke_age_seconds": 84,
+    "startup_smoke_age_seconds": 284621,
     "startup_smoke_max_age_seconds": 604800,
     "startup_smoke_max_future_skew_seconds": 300,
     "ui_local_release_status": "passed",

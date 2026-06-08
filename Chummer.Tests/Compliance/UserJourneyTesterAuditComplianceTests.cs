@@ -25,7 +25,7 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "minimal_character_build_save_reload");
         StringAssert.Contains(scriptText, "mouse_first_journey");
         StringAssert.Contains(scriptText, "mouse_first_live_binary");
-        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish four screenshot-backed review frames.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish five screenshot-backed review frames.");
         StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish observed input events.");
         StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must fail closed on combo selection fallback.");
         StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must fail closed on forced combo dropdown open.");
@@ -78,14 +78,19 @@ public sealed class UserJourneyTesterAuditComplianceTests
         Assert.IsFalse(
             runnerText.Contains("PeekDialogWindowForTesting", System.StringComparison.Ordinal),
             "The live-binary mouse-first journey should resolve the visible dialog window instead of relying on a test-only dialog hook.");
+        Assert.IsFalse(
+            runnerText.Contains("SnapshotStateForAutomation", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should prove completion from visible shell state instead of internal adapter snapshots.");
         StringAssert.Contains(runnerText, "TextInputEventArgs");
         StringAssert.Contains(runnerText, "InputElement.TextInputEvent");
         StringAssert.Contains(runnerText, "ReadWorkspaceStripTextAsync");
         StringAssert.Contains(runnerText, "WorkspaceText");
+        StringAssert.Contains(runnerText, "ReadComplianceStateText");
+        StringAssert.Contains(runnerText, "ReadVisibleShellState(window, language)");
         StringAssert.Contains(runnerText, "ResolveVisibleDialogWindow()");
-        StringAssert.Contains(runnerText, "WorkspaceStripState workspaceStripState = ReadWorkspaceStripState(window);");
-        StringAssert.Contains(runnerText, "CharacterOverviewState state = window.SnapshotStateForAutomation();");
-        StringAssert.Contains(runnerText, "ReadWorkspaceStripState(window).IsSaved");
+        StringAssert.Contains(runnerText, "HasOpenedCharacterEvidence(window, language, expectedCharacterName, expectedCharacterAlias, expectedRulesetId)");
+        StringAssert.Contains(runnerText, "ReadWindowTextSnapshot(window)");
+        StringAssert.Contains(runnerText, "DesktopMouseFirstJourneyVisibleShellStateReader.Read(");
     }
 
     [TestMethod]

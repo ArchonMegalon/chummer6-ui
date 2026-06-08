@@ -2096,7 +2096,7 @@ PY
       )
     fi
 
-    "${design_supervisor_command[@]}" <<'PY'
+    if ! "${design_supervisor_command[@]}" <<'PY'
 from __future__ import annotations
 
 import sys
@@ -2148,6 +2148,9 @@ for refresh_root in refresh_roots:
     except Exception:
         continue
 PY
+    then
+      :
+    fi
   fi
 }
 
@@ -2444,11 +2447,13 @@ announce_stage() {
 }
 
 cleanup_snapshot() {
+  set +e
   if [[ -n "$SOURCE_SNAPSHOT_ROOT" && -d "$SOURCE_SNAPSHOT_ROOT" ]]; then
     rm -rf "$SOURCE_SNAPSHOT_ROOT" || true
   fi
-  release_build_lock
-  prune_old_run_roots
+  release_build_lock || true
+  prune_old_run_roots || true
+  return 0
 }
 
 run_snapshot_command() {
@@ -2723,7 +2728,7 @@ prune_old_run_roots() {
 }
 
 trap on_error ERR
-trap 'cleanup_snapshot' EXIT
+trap 'cleanup_snapshot || true' EXIT
 
 mkdir -p "$PUBLISH_DIR" "$DIST_DIR" "$TEST_RESULTS_DIR" "$SMOKE_ARCHIVE_DIR" "$SMOKE_INSTALLER_DIR"
 printf '%s\n' "$$" >"$RUN_OWNER_PID_PATH"
@@ -3687,7 +3692,7 @@ else:
                     reasons.append("Linux mouse-first journey receipt does not prove character creation.")
                 if not any("save" in step for step in lowered_steps):
                     reasons.append("Linux mouse-first journey receipt does not prove save interaction.")
-            if not isinstance(mouse_screenshot_paths, list) or len(mouse_screenshot_paths) < 4:
+            if not isinstance(mouse_screenshot_paths, list) or len(mouse_screenshot_paths) < 5:
                 reasons.append("Linux mouse-first journey receipt does not carry enough screenshot evidence.")
             else:
                 resolved_screenshot_paths = []
@@ -3702,8 +3707,9 @@ else:
                 expected_screenshot_stems = {
                     "01-new-character-dialog.png",
                     "02-priority-workflow.png",
-                    "03-workspace-opened.png",
-                    "04-workspace-saved.png",
+                    "03-post-dialog-close.png",
+                    "04-workspace-opened.png",
+                    "05-workspace-saved.png",
                 }
                 actual_screenshot_stems = {path.name for path in resolved_screenshot_paths}
                 if not expected_screenshot_stems.issubset(actual_screenshot_stems):
