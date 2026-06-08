@@ -170,6 +170,20 @@ public sealed class DesktopExecutableGateComplianceTests
     }
 
     [TestMethod]
+    public void Linux_desktop_exit_gate_only_requires_promoted_installer_byte_parity_in_promoted_mode()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "elif promoted_mode:");
+        StringAssert.Contains(scriptText, "if promoted_mode and expected_digest and receipt_digest != expected_digest:");
+        StringAssert.Contains(scriptText, "if promoted_mode and expected_digest and mouse_digest != expected_digest:");
+        StringAssert.Contains(scriptText, "elif [[ -n \"${CI:-}\" ]]; then");
+        StringAssert.Contains(scriptText, "USE_PROMOTED_INSTALLER=\"0\"");
+    }
+
+    [TestMethod]
     public void Release_manifest_generation_prefers_startup_smoke_receipts_that_match_current_download_bytes()
     {
         string repoRoot = FindRepoRoot();
@@ -983,10 +997,8 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(visualScriptText, "canonical_required_desktop_heads = [\"avalonia\"]");
         StringAssert.Contains(visualScriptText, "flagship_missing_canonical_required_desktop_heads");
         StringAssert.Contains(visualScriptText, "Flagship UI release gate desktopHeads is missing canonical required desktop head(s) for milestone-3 per-head visual proof:");
-        StringAssert.Contains(
-            visualScriptText,
-            "Flagship UI release gate is missing or not passing."
-        );
+        StringAssert.Contains(visualScriptText, "if not flagship_gate_path.is_file() or not flagship_gate:");
+        StringAssert.Contains(visualScriptText, "\"flagship_gate_path\": str(flagship_gate_path)");
 
         StringAssert.Contains(workflowScriptText, "CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH");
         StringAssert.Contains(workflowScriptText, "release_channel_channel_id");
@@ -1457,5 +1469,23 @@ public sealed class DesktopExecutableGateComplianceTests
         }
 
         throw new DirectoryNotFoundException("Unable to locate chummer6-ui repo root for compliance test.");
+    }
+
+    [TestMethod]
+    public void Linux_desktop_exit_gate_requires_mouse_first_journey_and_headless_coverage()
+    {
+        string repoRoot = FindRepoRoot();
+        string scriptPath = Path.Combine(repoRoot, "scripts", "materialize-linux-desktop-exit-gate.sh");
+        string scriptText = File.ReadAllText(scriptPath);
+
+        StringAssert.Contains(scriptText, "DesktopMouseFirstJourneyRuntimeTests");
+        StringAssert.Contains(scriptText, "AvaloniaHeadlessSmokeTests");
+        StringAssert.Contains(scriptText, "ARCHIVE_MOUSE_FIRST_JOURNEY_RECEIPT_PATH");
+        StringAssert.Contains(scriptText, "INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH");
+        StringAssert.Contains(scriptText, "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT");
+        StringAssert.Contains(scriptText, "\"mouse_first_journey\"");
+        StringAssert.Contains(scriptText, "Linux mouse-first journey receipt is missing");
+        StringAssert.Contains(scriptText, "Linux mouse-first journey receipt does not prove a saved workspace.");
+        StringAssert.Contains(scriptText, "Linux mouse-first journey receipt does not prove the File menu path.");
     }
 }

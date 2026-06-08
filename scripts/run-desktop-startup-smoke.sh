@@ -351,6 +351,22 @@ run_startup_smoke_process() {
   "$launch_path" --startup-smoke
 }
 
+run_mouse_first_journey_process() {
+  local launch_path="$1"
+
+  if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    run_windows_binary "$launch_path" --mouse-first-user-journey
+    return
+  fi
+
+  if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" && ! "$(command -v xvfb-run 2>/dev/null)" ]]; then
+    echo "xvfb-run is required for mouse-first desktop journey smoke when no interactive display is available." >&2
+    return 1
+  fi
+
+  run_with_optional_xvfb "$launch_path" --mouse-first-user-journey
+}
+
 run_head_smoke() {
   local launch_path="$1"
   local receipt_path="$RECEIPT_PATH"
@@ -400,6 +416,33 @@ run_head_smoke() {
   XDG_STATE_HOME="$runtime_home/.local/state" \
   XDG_CACHE_HOME="$runtime_home/.cache" \
   run_startup_smoke_process "$launch_path" >>"$LOG_PATH" 2>&1
+
+  local mouse_journey_receipt_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT:-}"
+  if [[ -z "$mouse_journey_receipt_path" ]]; then
+    return 0
+  fi
+
+  local mouse_journey_failure_packet_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET:-$OUTPUT_DIR/mouse-first-journey-$APP_KEY-$RID.failure.json}"
+  local mouse_journey_screenshot_dir="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR:-$OUTPUT_DIR/mouse-first-journey-screenshots-$APP_KEY-$RID}"
+  local mouse_journey_trace_path="${CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE:-$OUTPUT_DIR/mouse-first-journey-$APP_KEY-$RID.trace.json}"
+  mkdir -p "$(dirname "$mouse_journey_receipt_path")" "$mouse_journey_screenshot_dir" "$(dirname "$mouse_journey_trace_path")"
+
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$mouse_journey_receipt_path" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$mouse_journey_failure_packet_path" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$mouse_journey_screenshot_dir" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$mouse_journey_trace_path" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_ARTIFACT_DIGEST="sha256:${artifact_sha}" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_HOST_CLASS="$HOST_CLASS" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
+  CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+  DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
+  HOME="$runtime_home" \
+  XDG_CONFIG_HOME="$runtime_home/.config" \
+  XDG_DATA_HOME="$runtime_home/.local/share" \
+  XDG_STATE_HOME="$runtime_home/.local/state" \
+  XDG_CACHE_HOME="$runtime_home/.cache" \
+  run_mouse_first_journey_process "$launch_path" >>"$LOG_PATH" 2>&1
 }
 
 run_windows_smoke() {

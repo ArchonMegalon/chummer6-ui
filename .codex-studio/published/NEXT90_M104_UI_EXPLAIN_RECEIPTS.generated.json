@@ -454,7 +454,7 @@
         "m104_guard_project_wiring": {
           "markers": [
             {
-              "line": 89,
+              "line": 90,
               "marker": "Compliance\\Next90M104ExplainReceiptsGuardTests.cs",
               "present": true
             }
@@ -884,7 +884,7 @@
     },
     "wave": "W7"
   },
-  "generatedAt": "2026-06-04T23:27:37Z",
+  "generatedAt": "2026-06-08T04:46:57Z",
   "reviews": {
     "localRepoCitationReview": {
       "reasons": [],

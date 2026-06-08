@@ -23,6 +23,15 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "master_index_search_focus_stability");
         StringAssert.Contains(scriptText, "file_new_character_visible_workspace");
         StringAssert.Contains(scriptText, "minimal_character_build_save_reload");
+        StringAssert.Contains(scriptText, "mouse_first_journey");
+        StringAssert.Contains(scriptText, "mouse_first_live_binary");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish four screenshot-backed review frames.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish observed input events.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must fail closed on combo selection fallback.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must fail closed on forced combo dropdown open.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt directTextMutationCount must be zero.");
+        StringAssert.Contains(scriptText, "Linux mouse_first_journey primary receipt must publish a tracePath.");
+        StringAssert.Contains(scriptText, "\"linux_gate_mouse_first_journey_screenshot_count\"");
         StringAssert.Contains(scriptText, "major_navigation_sanity");
         StringAssert.Contains(scriptText, "validation_or_export_smoke");
         StringAssert.Contains(scriptText, "focus_preserved_after_typing");
@@ -42,6 +51,32 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(scriptText, "if [[ -z \"${CHUMMER_USER_JOURNEY_TESTER_LINUX_GATE_PATH:-}\" ]]; then");
         StringAssert.Contains(scriptText, "linux_gate_temp_path=\"$(mktemp)\"");
         StringAssert.Contains(scriptText, "CHUMMER_UI_LINUX_DESKTOP_EXIT_GATE_PATH=\"$linux_gate_path\" \\");
+    }
+
+    [TestMethod]
+    public void Mouse_first_live_binary_runner_uses_file_menu_save_instead_of_internal_save_shortcut()
+    {
+        string repoRoot = FindRepoRoot();
+        string runnerPath = Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopMouseFirstJourneyRunner.cs");
+        string runnerText = File.ReadAllText(runnerPath);
+
+        StringAssert.Contains(runnerText, "ClickFileMenuCommandAsync(window, \"save_character\"");
+        StringAssert.Contains(runnerText, "WriteObservedInputTrace");
+        StringAssert.Contains(runnerText, "ObservedInputTraceCollector");
+        Assert.IsFalse(
+            runnerText.Contains("SaveWorkspaceForAutomationAsync", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should save through the visible shell command route, not the internal save helper.");
+        Assert.IsFalse(
+            runnerText.Contains("textBox.Text =", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should use routed text input instead of direct TextBox mutation.");
+        Assert.IsFalse(
+            runnerText.Contains("Button.ClickEvent", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should fail closed instead of forcing button click events.");
+        Assert.IsFalse(
+            runnerText.Contains("IsSubMenuOpen = true", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should fail closed instead of forcing submenu visibility.");
+        StringAssert.Contains(runnerText, "TextInputEventArgs");
+        StringAssert.Contains(runnerText, "InputElement.TextInputEvent");
     }
 
     [TestMethod]

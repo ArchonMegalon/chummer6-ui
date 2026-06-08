@@ -5,8 +5,10 @@ using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 using Chummer.Presentation.Shell;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -29,9 +31,17 @@ builder.Services.AddScoped<IShellSurfaceResolver, ShellSurfaceResolver>();
 
 WebApplication app = builder.Build();
 
-app.UseStaticFiles();
 app.UseAntiforgery();
 
+app.MapGet("/health", () => Results.Ok(new
+{
+    ok = true,
+    service = "Chummer",
+    status = "running",
+    head = "blazor"
+}));
+
+app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

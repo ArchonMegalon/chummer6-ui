@@ -162,6 +162,24 @@ public class MigrationComplianceTests
     }
 
     [TestMethod]
+    public void Local_e2e_wrappers_fail_closed_and_default_to_live_playwright()
+    {
+        string uiScriptPath = FindPath("scripts", "e2e-ui.sh");
+        string portalScriptPath = FindPath("scripts", "e2e-portal.sh");
+        string uiScriptText = File.ReadAllText(uiScriptPath);
+        string portalScriptText = File.ReadAllText(portalScriptPath);
+
+        StringAssert.Contains(uiScriptText, "RUN_PLAYWRIGHT=\"1\"");
+        StringAssert.Contains(uiScriptText, "PLAYWRIGHT_SOFT_FAIL=\"0\"");
+        StringAssert.Contains(uiScriptText, "playwright ui e2e is mandatory for local verification");
+
+        StringAssert.Contains(portalScriptText, "RUN_PORTAL_PLAYWRIGHT=\"1\"");
+        StringAssert.Contains(portalScriptText, "PLAYWRIGHT_SOFT_FAIL=\"0\"");
+        StringAssert.Contains(portalScriptText, "portal route probe is mandatory for local release proof");
+        StringAssert.Contains(portalScriptText, "\"status\": \"passed\" if route_probe_executed else \"failed\"");
+    }
+
+    [TestMethod]
     public void Next90_m103_veteran_certification_receipt_proves_completed_promoted_head_parity()
     {
         string receiptPath = FindPath(".codex-studio", "published", "NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json");
@@ -2994,12 +3012,14 @@ public class MigrationComplianceTests
         StringAssert.Contains(uiE2eText, "docker compose --profile test run --build --rm -T chummer-playwright");
         StringAssert.Contains(migrationLoopText, "bash scripts/e2e-ui.sh");
 
-        StringAssert.Contains(playwrightScriptText, "input[type=\"file\"]");
+        StringAssert.Contains(playwrightScriptText, "[data-testid=\"startup-workbench\"]");
+        StringAssert.Contains(playwrightScriptText, "[data-startup-command=\"new_character\"]");
         StringAssert.Contains(playwrightScriptText, "CHUMMER_UI_SAMPLE_FILE");
         StringAssert.Contains(playwrightScriptText, "BLUE.chum5");
-        StringAssert.Contains(playwrightScriptText, "#tab-skills");
-        StringAssert.Contains(playwrightScriptText, "global_settings");
-        StringAssert.Contains(playwrightScriptText, "Save Workspace");
+        StringAssert.Contains(playwrightScriptText, "select build method");
+        StringAssert.Contains(playwrightScriptText, "select metatype priority");
+        StringAssert.Contains(playwrightScriptText, "Playwright Runner");
+        StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
     }
 
@@ -3027,15 +3047,19 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
-        StringAssert.Contains(portalRouteProbeText, "'/participate'");
+        StringAssert.Contains(portalRouteProbeText, "'/now'");
+        StringAssert.Contains(portalRouteProbeText, "'/help'");
+        StringAssert.Contains(portalRouteProbeText, "'/signup'");
+        StringAssert.Contains(portalRouteProbeText, "'/ledger'");
         StringAssert.Contains(portalRouteProbeText, "'/contact'");
-        StringAssert.Contains(portalRouteProbeText, "'/what-is-chummer'");
-        StringAssert.Contains(portalRouteProbeText, "'/artifacts'");
         StringAssert.Contains(portalRouteProbeText, "'/faq'");
         StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/login?next=%2Faccount')");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/downloads/releases.json`");
-        StringAssert.Contains(portalRouteProbeText, "Install the current preview");
+        StringAssert.Contains(portalRouteProbeText, "Install Chummer");
         StringAssert.Contains(portalRouteProbeText, "What Is Chummer?");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/play`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/status`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/ledger`");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
         StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
@@ -5264,7 +5288,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(linuxGateScriptText, "mapfile -t RELEASE_PROMOTED_TUPLE");
         StringAssert.Contains(linuxGateScriptText, "APP_KEY=\"${APP_KEY_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[0]:-avalonia}}\"");
         StringAssert.Contains(linuxGateScriptText, "RID=\"${RID_OVERRIDE:-${RELEASE_PROMOTED_TUPLE[1]:-linux-x64}}\"");
-        StringAssert.Contains(linuxGateScriptText, "USE_PROMOTED_INSTALLER=\"${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}\"");
+        StringAssert.Contains(linuxGateScriptText, "CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER");
+        StringAssert.Contains(linuxGateScriptText, "elif [[ -n \"${CI:-}\" ]]; then");
+        StringAssert.Contains(linuxGateScriptText, "USE_PROMOTED_INSTALLER=\"0\"");
         StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"platform\")) == \"linux\"");
         StringAssert.Contains(linuxGateScriptText, "and normalize(item.get(\"kind\")) == \"installer\"");
         StringAssert.Contains(linuxGateScriptText, "if app_key_override:");

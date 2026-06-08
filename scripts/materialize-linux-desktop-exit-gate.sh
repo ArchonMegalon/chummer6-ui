@@ -104,7 +104,7 @@ esac
 PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PROJECT_PATH:-$DEFAULT_PROJECT_PATH}"
 TEST_PROJECT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_PROJECT_PATH:-Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj}"
 TEST_ASSEMBLY_NAME="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_ASSEMBLY_NAME:-Chummer.Desktop.Runtime.Tests.dll}"
-TEST_FILTER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_FILTER:-FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests}"
+TEST_FILTER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_TEST_FILTER:-FullyQualifiedName~DesktopCrashRuntimeTests|FullyQualifiedName~DesktopPreferenceRuntimeTests|FullyQualifiedName~DesktopStartupSmokeRuntimeTests|FullyQualifiedName~DesktopMouseFirstJourneyRuntimeTests|FullyQualifiedName~DesktopUpdateRuntimeTests|FullyQualifiedName~DesktopInstallLinkingRuntimeTests|FullyQualifiedName~AvaloniaHeadlessSmokeTests}"
 RID="${RID:-linux-x64}"
 LAUNCH_TARGET="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LAUNCH_TARGET:-$DEFAULT_LAUNCH_TARGET}"
 RELEASE_CHANNEL_ID_DEFAULT="$(
@@ -162,7 +162,13 @@ PACKAGE_PLANE_LOCK_ROOT_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_ROOT:-$WORKSPACE_R
 PACKAGE_PLANE_LOCK_PATH_DEFAULT="${CHUMMER_PACKAGE_PLANE_LOCK_FILE:-$PACKAGE_PLANE_LOCK_ROOT_DEFAULT/with-package-plane.lock}"
 BUILD_LOCK_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_PATH:-$PACKAGE_PLANE_LOCK_PATH_DEFAULT}"
 LOCAL_DESKTOP_FILES_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_LOCAL_DESKTOP_FILES_ROOT:-$REPO_ROOT/Docker/Downloads/files}"
-USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-1}"
+if [[ -n "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER:-}" ]]; then
+  USE_PROMOTED_INSTALLER="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_USE_PROMOTED_INSTALLER}"
+elif [[ -n "${CI:-}" ]]; then
+  USE_PROMOTED_INSTALLER="1"
+else
+  USE_PROMOTED_INSTALLER="0"
+fi
 FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_RUN_FLAGSHIP_UI_GATE:-1}"
 FLAGSHIP_UI_GATE_SCRIPT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_SCRIPT:-$REPO_ROOT/scripts/ai/milestones/b14-flagship-ui-release-gate.sh}"
 FLAGSHIP_UI_GATE_RECEIPT_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_FLAGSHIP_UI_GATE_RECEIPT_PATH:-$REPO_ROOT/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json}"
@@ -197,6 +203,14 @@ TEST_TRX_PATH="$TEST_RESULTS_DIR/desktop-runtime-tests.trx"
 TEST_STATUS_PATH="$TEST_RESULTS_DIR/desktop-runtime-tests.status.json"
 ARCHIVE_RECEIPT_PATH="$SMOKE_ARCHIVE_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
 INSTALLER_RECEIPT_PATH="$SMOKE_INSTALLER_DIR/startup-smoke-$APP_KEY-$RID.receipt.json"
+ARCHIVE_MOUSE_FIRST_JOURNEY_RECEIPT_PATH="$SMOKE_ARCHIVE_DIR/mouse-first-journey-$APP_KEY-$RID.receipt.json"
+ARCHIVE_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH="$SMOKE_ARCHIVE_DIR/mouse-first-journey-$APP_KEY-$RID.failure.json"
+ARCHIVE_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$SMOKE_ARCHIVE_DIR/mouse-first-journey-screenshots-$APP_KEY-$RID"
+ARCHIVE_MOUSE_FIRST_JOURNEY_TRACE_PATH="$SMOKE_ARCHIVE_DIR/mouse-first-journey-$APP_KEY-$RID.trace.json"
+INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH="$SMOKE_INSTALLER_DIR/mouse-first-journey-$APP_KEY-$RID.receipt.json"
+INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH="$SMOKE_INSTALLER_DIR/mouse-first-journey-$APP_KEY-$RID.failure.json"
+INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$SMOKE_INSTALLER_DIR/mouse-first-journey-screenshots-$APP_KEY-$RID"
+INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH="$SMOKE_INSTALLER_DIR/mouse-first-journey-$APP_KEY-$RID.trace.json"
 BUILD_LOCK_FD=""
 BUILD_LOCK_DIR=""
 BUILD_LOCK_WAIT_SECONDS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_BUILD_LOCK_WAIT_SECONDS:-10}"
@@ -613,7 +627,9 @@ GATE_INPUT_MARKERS = (
     # drags in large linked fixture payloads that are irrelevant to the linux
     # desktop gate and can exhaust disk before publish even starts.
     "Chummer.Tests/DesktopPreferenceRuntimeTests.cs",
+    "Chummer.Tests/DesktopMouseFirstJourneyRuntimeTests.cs",
     "Chummer.Tests/DesktopStartupSmokeRuntimeTests.cs",
+    "Chummer.Tests/Presentation/AvaloniaHeadlessSmokeTests.cs",
     "Chummer.Tests/DesktopUpdateRuntimeTests.cs",
     "Chummer.Presentation/",
     "scripts/ai/",
@@ -1064,6 +1080,7 @@ write_proof() {
   python3 - "$RUN_PROOF_PATH" "$REPO_ROOT" "$OUTPUT_BASE_ROOT" "$PROOF_PATH" "$proof_status" "$reason" "$CURRENT_STAGE" "$exit_code" \
     "$APP_KEY" "$PROJECT_PATH" "$TEST_PROJECT_PATH" "$TEST_ASSEMBLY_NAME" "$RID" "$LAUNCH_TARGET" "$VERSION" "$CHANNEL" "$FRAMEWORK" \
     "$READY_CHECKPOINT" "$RUN_ROOT" "$PUBLISH_DIR" "$DIST_DIR" "$ARCHIVE_PATH" "$INSTALLER_PATH" "$ARCHIVE_RECEIPT_PATH" "$INSTALLER_RECEIPT_PATH" \
+    "$ARCHIVE_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$ARCHIVE_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" "$ARCHIVE_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" "$INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
     "$TEST_RESULTS_DIR" "$TEST_TRX_PATH" "$TEST_STATUS_PATH" "$GIT_START_PATH" "$GIT_FINISH_PATH" "$SOURCE_SNAPSHOT_MANIFEST_PATH" \
     "$RELEASE_CHANNEL_PATH" "$LOCAL_DESKTOP_FILES_ROOT" "$USE_PROMOTED_INSTALLER" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$PROMOTED_INSTALLER_PATH" \
     "$FAILURE_REASONS_PATH" "$FLAGSHIP_UI_SCREENSHOT_GATE_ENABLED" "$FLAGSHIP_UI_GATE_RECEIPT_PATH" "$FLAGSHIP_UI_GATE_SCREENSHOT_DIR" "$FLAGSHIP_UI_GATE_SCRIPT" <<'PY'
@@ -1105,6 +1122,12 @@ import xml.etree.ElementTree as ET
     installer_path,
     archive_receipt_path,
     installer_receipt_path,
+    archive_mouse_first_journey_receipt_path,
+    installer_mouse_first_journey_receipt_path,
+    archive_mouse_first_journey_failure_packet_path,
+    installer_mouse_first_journey_failure_packet_path,
+    archive_mouse_first_journey_screenshot_dir,
+    installer_mouse_first_journey_screenshot_dir,
     test_results_dir,
     test_trx_path,
     test_status_path,
@@ -1462,6 +1485,8 @@ def read_git_metadata(repo_root_text: str, output_base_root_text: str, canonical
 
 archive_receipt = load_json(archive_receipt_path)
 installer_receipt = load_json(installer_receipt_path)
+archive_mouse_first_journey_receipt = load_json(archive_mouse_first_journey_receipt_path)
+installer_mouse_first_journey_receipt = load_json(installer_mouse_first_journey_receipt_path)
 test_status_payload = load_json(test_status_path) or {}
 test_status, test_summary = derive_test_status(test_trx_path)
 if isinstance(test_status_payload, dict):
@@ -1507,9 +1532,15 @@ host_supports_linux_startup_smoke = (
     and bool(shutil.which("dpkg-deb"))
 )
 startup_smoke_receipt_exists = pathlib.Path(installer_receipt_path).is_file()
+mouse_first_journey_receipt_exists = pathlib.Path(installer_mouse_first_journey_receipt_path).is_file()
 startup_smoke_external_blocker = (
     "missing_linux_host_capability"
     if (not startup_smoke_receipt_exists and not host_supports_linux_startup_smoke)
+    else ""
+)
+mouse_first_journey_external_blocker = (
+    "missing_linux_graphical_runtime"
+    if (not mouse_first_journey_receipt_exists and host_operating_system_normalized == "linux")
     else ""
 )
 release_channel_payload = load_json(release_channel_path) if release_channel_path else None
@@ -1685,6 +1716,9 @@ payload = {
         "startup_smoke_receipt_found": startup_smoke_receipt_exists,
         "startup_smoke_receipt_path": installer_receipt_path,
         "startup_smoke_external_blocker": startup_smoke_external_blocker,
+        "mouse_first_journey_receipt_found": mouse_first_journey_receipt_exists,
+        "mouse_first_journey_receipt_path": installer_mouse_first_journey_receipt_path,
+        "mouse_first_journey_external_blocker": mouse_first_journey_external_blocker,
         "flagship_ui_screenshot_gate_status": flagship_ui_status,
         "flagship_ui_screenshot_gate_receipt_path": flagship_ui_gate_receipt_path,
         "flagship_ui_screenshot_count": len(flagship_ui_screenshot_files),
@@ -1722,6 +1756,9 @@ payload = {
         "host_operating_system_normalized": host_operating_system_normalized,
         "host_supports_linux_startup_smoke": host_supports_linux_startup_smoke,
         "startup_smoke_external_blocker": startup_smoke_external_blocker,
+        "mouse_first_journey_receipt_found": mouse_first_journey_receipt_exists,
+        "mouse_first_journey_receipt_path": installer_mouse_first_journey_receipt_path,
+        "mouse_first_journey_external_blocker": mouse_first_journey_external_blocker,
     },
     "startup_smoke": {
         "primary": {
@@ -1737,6 +1774,26 @@ payload = {
             "receipt_path": archive_receipt_path,
             "status": "passed" if archive_receipt else ("missing" if pathlib.Path(archive_path).is_file() else "not_built"),
             "receipt": archive_receipt,
+        },
+    },
+    "mouse_first_journey": {
+        "primary": {
+            "package_kind": "deb",
+            "artifact_path": installer_path,
+            "receipt_path": installer_mouse_first_journey_receipt_path,
+            "failure_packet_path": installer_mouse_first_journey_failure_packet_path,
+            "screenshot_dir": installer_mouse_first_journey_screenshot_dir,
+            "status": "passed" if installer_mouse_first_journey_receipt else ("missing" if pathlib.Path(installer_path).is_file() else "not_built"),
+            "receipt": installer_mouse_first_journey_receipt,
+        },
+        "fallback": {
+            "package_kind": "archive",
+            "artifact_path": archive_path,
+            "receipt_path": archive_mouse_first_journey_receipt_path,
+            "failure_packet_path": archive_mouse_first_journey_failure_packet_path,
+            "screenshot_dir": archive_mouse_first_journey_screenshot_dir,
+            "status": "passed" if archive_mouse_first_journey_receipt else ("missing" if pathlib.Path(archive_path).is_file() else "not_built"),
+            "receipt": archive_mouse_first_journey_receipt,
         },
     },
     "unit_tests": {
@@ -2601,22 +2658,26 @@ if [[ "$USE_PROMOTED_INSTALLER" == "1" && "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_PRO
   if [[ -z "$PROMOTED_INSTALLER_PATH" ]]; then
     PROMOTED_INSTALLER_PATH="$(resolve_promoted_installer_path || true)"
   fi
-  PROMOTED_STARTUP_SMOKE_RECEIPT_PATH="$(resolve_promoted_startup_smoke_receipt_path || true)"
-  if [[ -n "$PROMOTED_INSTALLER_PATH" && -f "$PROMOTED_INSTALLER_PATH" \
-    && -n "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" && -f "$PROMOTED_STARTUP_SMOKE_RECEIPT_PATH" ]]; then
+  if [[ -n "$PROMOTED_INSTALLER_PATH" && -f "$PROMOTED_INSTALLER_PATH" ]]; then
     mkdir -p "$DIST_DIR" "$SMOKE_INSTALLER_DIR"
     cp "$PROMOTED_INSTALLER_PATH" "$INSTALLER_PATH"
     INSTALLER_SMOKE_ARTIFACT_PATH="$INSTALLER_PATH"
 
     CURRENT_STAGE="startup_smoke_installer"
     announce_stage "$CURRENT_STAGE" "running startup smoke against promoted installer"
-    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "promoted installer startup smoke" \
+    CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
+      CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" \
+      CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
+      CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
+      CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
+      run_with_heartbeat "promoted installer startup smoke" \
       run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
     test -f "$INSTALLER_RECEIPT_PATH"
+    test -f "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH"
 
     CURRENT_STAGE="promoted_installer_proof_integrity"
     announce_stage "$CURRENT_STAGE" "verifying promoted installer receipt integrity"
-    "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+    "$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -2633,6 +2694,7 @@ import sys
     rid,
     installer_smoke_artifact_path_text,
     installer_receipt_path_text,
+    installer_mouse_first_journey_receipt_path_text,
     use_promoted_installer,
     failure_reasons_path_text,
 ) = sys.argv[1:]
@@ -2642,6 +2704,7 @@ repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
+installer_mouse_first_journey_receipt_path = pathlib.Path(installer_mouse_first_journey_receipt_path_text)
 failure_reasons_path = pathlib.Path(failure_reasons_path_text)
 
 reasons: list[str] = []
@@ -2851,6 +2914,59 @@ if expected_artifact is not None:
             except Exception:
                 reasons.append(f"Linux startup smoke {key} proof path is outside the UI repo root: {value}")
 
+    mouse_receipt = load_json(installer_mouse_first_journey_receipt_path)
+    if not mouse_receipt:
+        reasons.append(f"Linux mouse-first journey receipt is missing or unreadable: {installer_mouse_first_journey_receipt_path}")
+    else:
+        if normalize_token(mouse_receipt.get("status")) not in {"pass", "passed", "ready"}:
+            reasons.append("Linux mouse-first journey receipt status is not passing.")
+        if normalize_token(mouse_receipt.get("journeyMode")) != "mouse_first_live_binary":
+            reasons.append("Linux mouse-first journey receipt journeyMode is not mouse_first_live_binary.")
+        if normalize_token(mouse_receipt.get("headId")) != normalize_token(app_key):
+            reasons.append("Linux mouse-first journey receipt headId does not match promoted head.")
+        if normalize_token(mouse_receipt.get("platform")) != "linux":
+            reasons.append("Linux mouse-first journey receipt platform is not linux.")
+        if normalize_token(mouse_receipt.get("rid")) != normalize_token(rid):
+            reasons.append("Linux mouse-first journey receipt rid does not match promoted RID.")
+        mouse_digest = normalize_token(mouse_receipt.get("artifactDigest"))
+        expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+        if expected_sha and mouse_digest != expected_digest:
+            reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")
+        if expected_channel and not startup_smoke_channel_proves_release(
+            str(mouse_receipt.get("channelId") or mouse_receipt.get("channel") or ""),
+            expected_channel,
+            mouse_digest,
+            expected_digest,
+        ):
+            reasons.append("Linux mouse-first journey receipt channelId does not match release channel.")
+        mouse_version = str(mouse_receipt.get("version") or mouse_receipt.get("releaseVersion") or "").strip()
+        if expected_version and not startup_smoke_version_proves_release(
+            mouse_version,
+            expected_version,
+            mouse_digest,
+            expected_digest,
+        ):
+            reasons.append("Linux mouse-first journey receipt version does not match release channel version.")
+        if not bool(mouse_receipt.get("hasSavedWorkspace")):
+            reasons.append("Linux mouse-first journey receipt does not prove a saved workspace.")
+        if not str(mouse_receipt.get("workspaceId") or "").strip():
+            reasons.append("Linux mouse-first journey receipt workspaceId is missing.")
+        if not str(mouse_receipt.get("characterName") or "").strip():
+            reasons.append("Linux mouse-first journey receipt characterName is missing.")
+        if not str(mouse_receipt.get("characterAlias") or "").strip():
+            reasons.append("Linux mouse-first journey receipt characterAlias is missing.")
+        steps = mouse_receipt.get("steps") or []
+        if not isinstance(steps, list) or len(steps) < 4:
+            reasons.append("Linux mouse-first journey receipt does not contain enough interaction steps.")
+        else:
+            lowered_steps = [normalize_token(item) for item in steps]
+            if not any("file menu" in step for step in lowered_steps):
+                reasons.append("Linux mouse-first journey receipt does not prove the File menu path.")
+            if not any("create_character" in step or "create character" in step for step in lowered_steps):
+                reasons.append("Linux mouse-first journey receipt does not prove character creation.")
+            if not any("save" in step for step in lowered_steps):
+                reasons.append("Linux mouse-first journey receipt does not prove save interaction.")
+
 if reasons:
     failure_reasons_path.parent.mkdir(parents=True, exist_ok=True)
     failure_reasons_path.write_text(json.dumps({"reasons": reasons}, indent=2) + "\n", encoding="utf-8")
@@ -2921,19 +3037,31 @@ fi
 
 CURRENT_STAGE="startup_smoke_archive"
 announce_stage "$CURRENT_STAGE" "running startup smoke against archive artifact"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "archive startup smoke" \
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$ARCHIVE_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$ARCHIVE_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$ARCHIVE_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$ARCHIVE_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
+  run_with_heartbeat "archive startup smoke" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$ARCHIVE_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_ARCHIVE_DIR" "$VERSION"
 test -f "$ARCHIVE_RECEIPT_PATH"
+test -f "$ARCHIVE_MOUSE_FIRST_JOURNEY_RECEIPT_PATH"
 
 CURRENT_STAGE="startup_smoke_installer"
 announce_stage "$CURRENT_STAGE" "running startup smoke against installer artifact"
-CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" run_with_heartbeat "installer startup smoke" \
+CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RECEIPT="$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_FAILURE_PACKET="$INSTALLER_MOUSE_FIRST_JOURNEY_FAILURE_PACKET_PATH" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR="$INSTALLER_MOUSE_FIRST_JOURNEY_SCREENSHOT_DIR" \
+  CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_TRACE="$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" \
+  run_with_heartbeat "installer startup smoke" \
   run_snapshot_command bash "$SOURCE_SNAPSHOT_ROOT/scripts/run-desktop-startup-smoke.sh" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$APP_KEY" "$RID" "$LAUNCH_TARGET" "$SMOKE_INSTALLER_DIR" "$VERSION"
 test -f "$INSTALLER_RECEIPT_PATH"
+test -f "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH"
 
 CURRENT_STAGE="promoted_installer_proof_integrity"
 announce_stage "$CURRENT_STAGE" "verifying release-channel and smoke receipt integrity"
-"$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
+"$PYTHON_BIN" - "$RELEASE_CHANNEL_PATH" "$REPO_ROOT" "$LOCAL_DESKTOP_FILES_ROOT" "$APP_KEY" "$RID" "$INSTALLER_SMOKE_ARTIFACT_PATH" "$INSTALLER_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_RECEIPT_PATH" "$INSTALLER_MOUSE_FIRST_JOURNEY_TRACE_PATH" "$EFFECTIVE_USE_PROMOTED_INSTALLER" "$FAILURE_REASONS_PATH" <<'PY'
 from __future__ import annotations
 
 import datetime as dt
@@ -2953,6 +3081,8 @@ import sys
     rid,
     installer_smoke_artifact_path_text,
     installer_receipt_path_text,
+    installer_mouse_first_journey_receipt_path_text,
+    installer_mouse_first_journey_trace_path_text,
     use_promoted_installer,
     failure_reasons_path_text,
 ) = sys.argv[1:]
@@ -2962,6 +3092,8 @@ repo_root = pathlib.Path(repo_root_text)
 local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
+installer_mouse_first_journey_receipt_path = pathlib.Path(installer_mouse_first_journey_receipt_path_text)
+installer_mouse_first_journey_trace_path = pathlib.Path(installer_mouse_first_journey_trace_path_text)
 failure_reasons_path = pathlib.Path(failure_reasons_path_text)
 
 max_age_seconds = int(
@@ -3159,7 +3291,7 @@ else:
                 reasons.append(
                     f"Linux startup smoke installer artifact path is missing: {installer_smoke_artifact_path}"
                 )
-            else:
+            elif promoted_mode:
                 smoke_artifact_sha = hashlib.sha256(installer_smoke_artifact_path.read_bytes()).hexdigest().lower()
                 if expected_sha and smoke_artifact_sha != expected_sha:
                     reasons.append(
@@ -3286,7 +3418,7 @@ else:
                 )
             ):
                 reasons.append("Linux startup smoke receipt version does not match release channel version.")
-            if expected_digest and receipt_digest != expected_digest:
+            if promoted_mode and expected_digest and receipt_digest != expected_digest:
                 reasons.append("Linux startup smoke receipt artifactDigest does not match promoted installer bytes.")
             if not receipt_artifact_path:
                 reasons.append("Linux startup smoke receipt artifactPath is missing.")
@@ -3333,6 +3465,164 @@ else:
                         reasons.append(f"Linux startup smoke receipt is stale ({age_seconds}s old).")
                 except ValueError:
                     reasons.append("Linux startup smoke receipt timestamp is invalid.")
+
+        if not installer_mouse_first_journey_receipt_path.is_file():
+            reasons.append(f"Linux mouse-first journey receipt is missing: {installer_mouse_first_journey_receipt_path}")
+        else:
+            try:
+                mouse_receipt = json.loads(installer_mouse_first_journey_receipt_path.read_text(encoding="utf-8-sig"))
+            except Exception as ex:
+                reasons.append(f"Linux mouse-first journey receipt is unreadable: {ex}")
+                mouse_receipt = {}
+
+            mouse_status = str(mouse_receipt.get("status") or "").strip().lower()
+            mouse_mode = str(mouse_receipt.get("journeyMode") or "").strip().lower()
+            mouse_head = str(mouse_receipt.get("headId") or "").strip().lower()
+            mouse_platform = str(mouse_receipt.get("platform") or "").strip().lower()
+            mouse_arch = str(mouse_receipt.get("arch") or "").strip().lower()
+            mouse_rid = str(mouse_receipt.get("rid") or "").strip().lower()
+            mouse_channel = str(mouse_receipt.get("channelId") or mouse_receipt.get("channel") or "").strip().lower()
+            mouse_digest = str(mouse_receipt.get("artifactDigest") or "").strip().lower()
+            mouse_release_version = str(mouse_receipt.get("releaseVersion") or "").strip()
+            mouse_version = str(mouse_receipt.get("version") or mouse_receipt.get("releaseVersion") or "").strip()
+            mouse_host_class = str(mouse_receipt.get("hostClass") or "").strip().lower()
+            mouse_operating_system = str(mouse_receipt.get("operatingSystem") or "").strip()
+            mouse_steps = mouse_receipt.get("steps") or []
+            mouse_screenshot_paths = mouse_receipt.get("screenshotPaths") or []
+            mouse_trace_path = pathlib.Path(str(mouse_receipt.get("tracePath") or "").strip()) if str(mouse_receipt.get("tracePath") or "").strip() else installer_mouse_first_journey_trace_path
+            mouse_pointer_action_count = int(mouse_receipt.get("pointerActionCount") or 0)
+            mouse_text_entry_action_count = int(mouse_receipt.get("textEntryActionCount") or 0)
+            mouse_direct_text_mutation_count = int(mouse_receipt.get("directTextMutationCount") or 0)
+            mouse_used_forced_combo_dropdown_open = bool(mouse_receipt.get("usedForcedComboDropdownOpen"))
+            mouse_used_combo_selection_fallback = bool(mouse_receipt.get("usedComboSelectionFallback"))
+            mouse_observed_input_events = mouse_receipt.get("observedInputEvents") or []
+            mouse_workspace_id = str(mouse_receipt.get("workspaceId") or "").strip()
+            mouse_character_name = str(mouse_receipt.get("characterName") or "").strip()
+            mouse_character_alias = str(mouse_receipt.get("characterAlias") or "").strip()
+            expected_digest = f"sha256:{expected_sha}" if expected_sha else ""
+
+            if mouse_status not in {"pass", "passed", "ready"}:
+                reasons.append("Linux mouse-first journey receipt status is not passing.")
+            if mouse_mode != "mouse_first_live_binary":
+                reasons.append("Linux mouse-first journey receipt journeyMode is not mouse_first_live_binary.")
+            if mouse_head != app_key.lower():
+                reasons.append("Linux mouse-first journey receipt headId does not match promoted head.")
+            if mouse_platform != "linux":
+                reasons.append("Linux mouse-first journey receipt platform is not linux.")
+            if not mouse_host_class:
+                reasons.append("Linux mouse-first journey receipt hostClass is missing.")
+            elif not host_class_matches_platform(mouse_host_class, "linux"):
+                reasons.append("Linux mouse-first journey receipt hostClass does not identify a Linux host.")
+            if not mouse_operating_system:
+                reasons.append("Linux mouse-first journey receipt operatingSystem is missing.")
+            if expected_arch and mouse_arch != expected_arch:
+                reasons.append("Linux mouse-first journey receipt arch does not match promoted RID.")
+            if mouse_rid != rid.lower():
+                reasons.append("Linux mouse-first journey receipt rid does not match promoted RID.")
+            if expected_channel and not startup_smoke_channel_proves_release(mouse_channel, expected_channel, mouse_digest, expected_digest):
+                reasons.append("Linux mouse-first journey receipt channelId does not match release channel.")
+            if expected_version and not mouse_release_version:
+                reasons.append("Linux mouse-first journey receipt releaseVersion is missing.")
+            if (
+                expected_version
+                and mouse_release_version
+                and not startup_smoke_version_proves_release(mouse_release_version, expected_version, mouse_digest, expected_digest)
+                and not startup_smoke_version_proves_release(mouse_version, expected_version, mouse_digest, expected_digest)
+            ):
+                reasons.append("Linux mouse-first journey receipt releaseVersion does not match release channel version.")
+            if promoted_mode and expected_digest and mouse_digest != expected_digest:
+                reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")
+            if not bool(mouse_receipt.get("hasSavedWorkspace")):
+                reasons.append("Linux mouse-first journey receipt does not prove a saved workspace.")
+            if not mouse_workspace_id:
+                reasons.append("Linux mouse-first journey receipt workspaceId is missing.")
+            if not mouse_character_name:
+                reasons.append("Linux mouse-first journey receipt characterName is missing.")
+            if not mouse_character_alias:
+                reasons.append("Linux mouse-first journey receipt characterAlias is missing.")
+            if mouse_pointer_action_count <= 0:
+                reasons.append("Linux mouse-first journey receipt pointerActionCount is missing.")
+            if mouse_text_entry_action_count <= 0:
+                reasons.append("Linux mouse-first journey receipt textEntryActionCount is missing.")
+            if mouse_pointer_action_count <= mouse_text_entry_action_count:
+                reasons.append("Linux mouse-first journey receipt does not prove a pointer-dominant interaction mix.")
+            if mouse_direct_text_mutation_count != 0:
+                reasons.append("Linux mouse-first journey receipt directTextMutationCount must be zero.")
+            if mouse_used_forced_combo_dropdown_open:
+                reasons.append("Linux mouse-first journey receipt usedForcedComboDropdownOpen must be false.")
+            if mouse_used_combo_selection_fallback:
+                reasons.append("Linux mouse-first journey receipt usedComboSelectionFallback must be false.")
+            if not isinstance(mouse_observed_input_events, list) or len(mouse_observed_input_events) < (mouse_pointer_action_count * 2):
+                reasons.append("Linux mouse-first journey receipt does not publish enough observed input events.")
+            if not isinstance(mouse_steps, list) or len(mouse_steps) < 4:
+                reasons.append("Linux mouse-first journey receipt does not contain enough interaction steps.")
+            else:
+                lowered_steps = [normalize_token(item) for item in mouse_steps]
+                if not any("file menu" in step for step in lowered_steps):
+                    reasons.append("Linux mouse-first journey receipt does not prove the File menu path.")
+                if not any("create_character" in step or "create character" in step for step in lowered_steps):
+                    reasons.append("Linux mouse-first journey receipt does not prove character creation.")
+                if not any("save" in step for step in lowered_steps):
+                    reasons.append("Linux mouse-first journey receipt does not prove save interaction.")
+            if not isinstance(mouse_screenshot_paths, list) or len(mouse_screenshot_paths) < 4:
+                reasons.append("Linux mouse-first journey receipt does not carry enough screenshot evidence.")
+            else:
+                resolved_screenshot_paths = []
+                for raw_path in mouse_screenshot_paths:
+                    candidate = pathlib.Path(str(raw_path or "").strip())
+                    if not str(candidate):
+                        reasons.append("Linux mouse-first journey receipt carries a blank screenshot path.")
+                        continue
+                    if not candidate.is_absolute():
+                        candidate = (repo_root / candidate).resolve()
+                    resolved_screenshot_paths.append(candidate)
+                expected_screenshot_stems = {
+                    "01-new-character-dialog.png",
+                    "02-priority-workflow.png",
+                    "03-workspace-opened.png",
+                    "04-workspace-saved.png",
+                }
+                actual_screenshot_stems = {path.name for path in resolved_screenshot_paths}
+                if not expected_screenshot_stems.issubset(actual_screenshot_stems):
+                    reasons.append("Linux mouse-first journey screenshot evidence is missing one or more required stage captures.")
+                for candidate in resolved_screenshot_paths:
+                    if not candidate.is_file():
+                        reasons.append(f"Linux mouse-first journey screenshot is missing on disk: {candidate}")
+                        continue
+                    if candidate.suffix.lower() != ".png":
+                        reasons.append(f"Linux mouse-first journey screenshot is not a PNG path: {candidate}")
+                        continue
+                    payload = candidate.read_bytes()
+                    if not payload.startswith(b"\x89PNG\r\n\x1a\n"):
+                        reasons.append(f"Linux mouse-first journey screenshot is not a valid PNG file: {candidate}")
+                    if len(payload) < 1024:
+                        reasons.append(f"Linux mouse-first journey screenshot is too small to count as credible evidence: {candidate}")
+            if not mouse_trace_path.is_absolute():
+                mouse_trace_path = (repo_root / mouse_trace_path).resolve()
+            if not mouse_trace_path.is_file():
+                reasons.append(f"Linux mouse-first journey trace is missing: {mouse_trace_path}")
+            else:
+                try:
+                    mouse_trace = json.loads(mouse_trace_path.read_text(encoding="utf-8-sig"))
+                except Exception as ex:
+                    reasons.append(f"Linux mouse-first journey trace is unreadable: {ex}")
+                    mouse_trace = {}
+                observed_trace_events = mouse_trace.get("observedInputEvents") if isinstance(mouse_trace, dict) else None
+                if not isinstance(observed_trace_events, list) or not observed_trace_events:
+                    reasons.append("Linux mouse-first journey trace does not contain observedInputEvents.")
+                else:
+                    normalized_trace_names = {
+                        normalize_token(event.get("controlName"))
+                        for event in observed_trace_events
+                        if isinstance(event, dict)
+                    }
+                    required_control_names = {
+                        "filemenubutton",
+                        "dialogaction_create_character",
+                        "dialogaction_complete_new_character_workflow",
+                    }
+                    if not required_control_names.issubset(normalized_trace_names):
+                        reasons.append("Linux mouse-first journey trace is missing required control interaction evidence.")
 
 if reasons:
     failure_reasons_path.parent.mkdir(parents=True, exist_ok=True)

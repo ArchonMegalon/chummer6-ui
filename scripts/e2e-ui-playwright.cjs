@@ -32,140 +32,80 @@ async function openRootWithRetry(page) {
   throw lastError || new Error(`Unable to open ${UI_URL}/`);
 }
 
+async function openNewCharacterDialog(page) {
+  const newCharacterButton = page.locator('[data-startup-command="new_character"]').first();
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    await newCharacterButton.click();
+    try {
+      await page.waitForSelector('#dialogTitle', { timeout: 5000 });
+      return;
+    } catch (error) {
+      if (attempt >= 3) {
+        throw error;
+      }
+
+      await delay(1000);
+    }
+  }
+}
+
 async function run() {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   try {
     await openRootWithRetry(page);
-    await page.waitForSelector('text=Import Character File', { timeout: 15000 });
+    await page.waitForSelector('[data-testid="startup-workbench"]', { timeout: 15000 });
+    await openNewCharacterDialog(page);
 
-    const workspaceButtons = page.locator('#openCharactersTree .command-button');
-    if (await workspaceButtons.count() === 0) {
-      const waitForImportOutcome = async (timeout) => {
-        const handle = await page.waitForFunction(() => {
-          const workspaceButton = document.querySelector('#openCharactersTree .command-button');
-          if (workspaceButton) {
-            return 'workspace-ready';
-          }
-
-          const importError = document.querySelector('section.import .error');
-          if (importError && importError.textContent && importError.textContent.trim().length > 0) {
-            return 'import-error';
-          }
-
-          const resultError = document.querySelector('.results .error');
-          if (resultError && resultError.textContent && resultError.textContent.trim().length > 0) {
-            return 'result-error';
-          }
-
-          const serviceState = document.querySelector('#serviceState');
-          if (serviceState && serviceState.textContent && serviceState.textContent.toLowerCase().includes('error')) {
-            return 'service-error';
-          }
-
-          return '';
-        }, { timeout });
-        return handle.jsonValue();
-      };
-
-      const importInput = page.locator('section.import input[type="file"]').first();
-      await importInput.setInputFiles(SAMPLE_CHARACTER_FILE);
-
-      let importOutcome = '';
-      try {
-        importOutcome = await waitForImportOutcome(45000);
-      } catch (error) {
-        importOutcome = '';
-      }
-
-      if (importOutcome !== 'workspace-ready') {
-        const readOptionalText = async (selector) => {
-          const locator = page.locator(selector).first();
-          if (await locator.count() === 0) {
-            return '';
-          }
-
-          return (await locator.textContent()) || '';
-        };
-
-        const importError = await readOptionalText('section.import .error');
-        const resultError = await readOptionalText('.results .error');
-        const resultNote = await readOptionalText('.results .note');
-        const importPanelHtml = await page.locator('section.import').first().innerHTML();
-        const resultPanelHtml = await page.locator('.results').first().innerHTML();
-        throw new Error(
-          `Import did not produce workspace (${importOutcome || 'timeout'}). ` +
-          `importError='${(importError || '').trim()}' resultError='${(resultError || '').trim()}' note='${(resultNote || '').trim()}'. ` +
-          `importPanel='${importPanelHtml.replace(/\s+/g, ' ').trim()}' ` +
-          `resultPanel='${resultPanelHtml.replace(/\s+/g, ' ').trim()}'`);
-      }
+    let dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+    if (!dialogTitle.toLowerCase().includes('select build method')) {
+      throw new Error(`Expected build-method dialog, got '${dialogTitle}'.`);
     }
 
-    await page.locator('#openCharactersTree .command-button').first().click();
+    const dialog = page.locator('#dialogBackdrop');
+    await dialog.getByLabel('Character Name').fill('Playwright Runner');
+    await dialog.getByLabel('Alias').fill('PW');
 
-    const skillsTab = page.locator('#tab-skills').first();
-    const hasSkillsTab = await skillsTab.count() > 0;
-    const canSelectSkillsTab = hasSkillsTab && !(await skillsTab.isDisabled());
-    if (canSelectSkillsTab) {
-      await skillsTab.click();
-      await page.waitForFunction(() => {
-        const title = document.querySelector('.section-preview h2');
-        return title && title.textContent && title.textContent.toLowerCase().includes('skills');
-      }, { timeout: 15000 });
-    } else {
-      const firstEnabledTab = page.locator('.tabs .tab-btn:not([disabled])').first();
-      await firstEnabledTab.click();
-      await page.waitForFunction(() => {
-        const title = document.querySelector('.section-preview h2');
-        return title && title.textContent && title.textContent.trim().length > 0;
-      }, { timeout: 15000 });
+    const rulesetInput = dialog.locator('input[aria-label="Ruleset"]').first();
+    const buildMethodInput = dialog.locator('input[aria-label="Build Method"]').first();
+    if ((await rulesetInput.inputValue()).trim().toLowerCase() !== 'sr5') {
+      throw new Error(`Expected default ruleset 'sr5', got '${await rulesetInput.inputValue()}'.`);
     }
 
-    const nameInput = page.locator('section.metadata label:has-text("Name") input').first();
-    const aliasInput = page.locator('section.metadata label:has-text("Alias") input').first();
-    await nameInput.fill('Playwright Runner');
-    await aliasInput.fill('PW');
+    if ((await buildMethodInput.inputValue()).trim().toLowerCase() !== 'priority') {
+      throw new Error(`Expected default build method 'priority', got '${await buildMethodInput.inputValue()}'.`);
+    }
 
-    await page.getByRole('button', { name: 'Update Metadata' }).click();
+    await dialog.getByRole('button', { name: 'OK' }).click();
+    await page.waitForFunction(() => {
+      const title = document.querySelector('#dialogTitle');
+      return title && title.textContent && title.textContent.toLowerCase().includes('select metatype priority');
+    }, { timeout: 15000 });
+
+    dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
+    if (!dialogTitle.toLowerCase().includes('select metatype priority')) {
+      throw new Error(`Expected metatype-priority dialog, got '${dialogTitle}'.`);
+    }
+
+    await page.locator('#dialogBackdrop').getByRole('button', { name: 'OK' }).click();
     await page.waitForFunction(() => {
       const summaryName = document.querySelector('#summaryName');
       const summaryAlias = document.querySelector('#summaryAlias');
+      const charState = document.querySelector('#charState');
       return summaryName instanceof HTMLInputElement
         && summaryAlias instanceof HTMLInputElement
         && summaryName.value === 'Playwright Runner'
-        && summaryAlias.value === 'PW';
-    }, { timeout: 15000 });
+        && summaryAlias.value === 'PW'
+        && charState
+        && charState.textContent
+        && charState.textContent.toLowerCase().includes('loaded');
+    }, { timeout: 20000 });
 
-    const settingsButton = page.locator('.commands .command-button:has-text("global_settings")').first();
-    await settingsButton.waitFor({ state: 'visible', timeout: 15000 });
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      if (!(await settingsButton.isDisabled())) {
-        break;
-      }
-
-      await page.waitForTimeout(250);
+    const saveButton = page.getByRole('button', { name: 'Save' }).first();
+    if (await saveButton.isDisabled()) {
+      throw new Error('Save stayed disabled after opening the new workspace.');
     }
-
-    if (await settingsButton.isDisabled()) {
-      throw new Error('global_settings command stayed disabled for too long.');
-    }
-
-    await settingsButton.click();
-    await page.waitForSelector('#dialogTitle', { timeout: 20000 });
-
-    const dialogTitle = (await page.locator('#dialogTitle').textContent()) || '';
-    if (!dialogTitle.toLowerCase().includes('global settings')) {
-      throw new Error(`Expected Global Settings dialog, got '${dialogTitle}'.`);
-    }
-
-    await page.locator('#dialogClose').click();
-
-    await page.getByRole('button', { name: 'Save Workspace' }).click();
-    await page.waitForFunction(() => {
-      const note = document.querySelector('.results .note');
-      return note && note.textContent && note.textContent.toLowerCase().includes('workspace saved');
-    }, { timeout: 15000 });
 
     console.log('playwright UI flow completed');
   } finally {

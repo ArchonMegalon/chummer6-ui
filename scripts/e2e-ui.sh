@@ -5,6 +5,10 @@ API_URL="${CHUMMER_API_BASE_URL:-${CHUMMER_WEB_BASE_URL:-http://127.0.0.1:${CHUM
 UI_URL="${CHUMMER_BLAZOR_BASE_URL:-http://127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}}"
 PLAYWRIGHT_UI_URL="${CHUMMER_UI_PLAYWRIGHT_BASE_URL:-http://127.0.0.1:${CHUMMER_BLAZOR_PORT:-8089}}"
 API_KEY="${CHUMMER_API_KEY:-}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PLAYWRIGHT_SCRIPT="$SCRIPT_DIR/e2e-ui-playwright.cjs"
+PLAYWRIGHT_SAMPLE_FILE="${CHUMMER_UI_SAMPLE_FILE:-$REPO_ROOT/chummer-presentation/Chummer.Tests/TestFiles/BLUE.chum5}"
 MAX_CURL_ATTEMPTS="${CHUMMER_E2E_CURL_ATTEMPTS:-5}"
 MAX_CURL_SECONDS="${CHUMMER_E2E_CURL_MAX_SECONDS:-30}"
 CURL_ARGS=(--connect-timeout 5 --max-time "$MAX_CURL_SECONDS")
@@ -13,14 +17,14 @@ if [[ -n "${CHUMMER_UI_PLAYWRIGHT:-}" ]]; then
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   RUN_PLAYWRIGHT="1"
 else
-  RUN_PLAYWRIGHT="0"
+  RUN_PLAYWRIGHT="1"
 fi
 if [[ -n "${CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL:-}" ]]; then
   PLAYWRIGHT_SOFT_FAIL="$CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   PLAYWRIGHT_SOFT_FAIL="0"
 else
-  PLAYWRIGHT_SOFT_FAIL="1"
+  PLAYWRIGHT_SOFT_FAIL="0"
 fi
 if [[ -n "${CHUMMER_E2E_DOCKER_FALLBACK:-}" ]]; then
   USE_DOCKER_FALLBACK="$CHUMMER_E2E_DOCKER_FALLBACK"
@@ -32,6 +36,7 @@ fi
 DOCKER_FALLBACK_AVAILABLE="1"
 DOCKER_DAEMON_PERMISSION_DENIED="0"
 SKIP_REASON=""
+LOCAL_PLAYWRIGHT_NODE_PATH=""
 
 is_docker_permission_error_text() {
   local source_file="$1"
@@ -56,6 +61,36 @@ probe_docker_fallback_access() {
   fi
   rm -f "$probe_log"
   return 0
+}
+
+detect_local_playwright() {
+  if ! command -v node >/dev/null 2>&1; then
+    return 1
+  fi
+
+  local candidates=()
+  if [[ -n "${NODE_PATH:-}" ]]; then
+    candidates+=("$NODE_PATH")
+  fi
+  candidates+=(
+    "$REPO_ROOT/chummer.run-services/node_modules"
+    "$REPO_ROOT/node_modules"
+    "$SCRIPT_DIR/node_modules"
+  )
+
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [[ -z "$candidate" || ! -d "$candidate" ]]; then
+      continue
+    fi
+
+    if NODE_PATH="$candidate" node -e "require('playwright');" >/dev/null 2>&1; then
+      LOCAL_PLAYWRIGHT_NODE_PATH="$candidate"
+      return 0
+    fi
+  done
+
+  return 1
 }
 
 curl_with_retries() {
@@ -221,27 +256,43 @@ if [[ "$RUN_PLAYWRIGHT" == "1" ]]; then
   fi
 
   echo "running playwright ui e2e against ${PLAYWRIGHT_UI_URL} (timeout: ${PLAYWRIGHT_TIMEOUT_SECONDS}s)"
-  playwright_log="$(mktemp)"
-  set +e
-  CHUMMER_API_KEY="$API_KEY" CHUMMER_UI_PLAYWRIGHT_BASE_URL="$PLAYWRIGHT_UI_URL" \
-    timeout "${PLAYWRIGHT_TIMEOUT_SECONDS}"s docker compose --profile test run --build --rm -T chummer-playwright \
-    2>&1 | tee "$playwright_log"
-  playwright_status=${PIPESTATUS[0]}
-  set -e
-  if [[ "$playwright_status" -ne 0 ]]; then
-    if [[ "$PLAYWRIGHT_SOFT_FAIL" == "1" ]] && is_docker_permission_error_text "$playwright_log"; then
-      echo "skipping playwright ui e2e: docker daemon permission denied in this environment."
-      rm -f "$playwright_log"
-      exit 0
+  if detect_local_playwright; then
+    set +e
+    NODE_PATH="$LOCAL_PLAYWRIGHT_NODE_PATH" \
+      CHUMMER_API_KEY="$API_KEY" \
+      CHUMMER_BLAZOR_BASE_URL="$PLAYWRIGHT_UI_URL" \
+      CHUMMER_UI_SAMPLE_FILE="$PLAYWRIGHT_SAMPLE_FILE" \
+      timeout "${PLAYWRIGHT_TIMEOUT_SECONDS}"s node "$PLAYWRIGHT_SCRIPT"
+    playwright_status=$?
+    set -e
+    if [[ "$playwright_status" -ne 0 ]]; then
+      echo "local playwright ui e2e failed or timed out after ${PLAYWRIGHT_TIMEOUT_SECONDS}s" >&2
+      exit "$playwright_status"
     fi
+  else
+    playwright_log="$(mktemp)"
+    set +e
+    CHUMMER_API_KEY="$API_KEY" CHUMMER_UI_PLAYWRIGHT_BASE_URL="$PLAYWRIGHT_UI_URL" \
+      timeout "${PLAYWRIGHT_TIMEOUT_SECONDS}"s docker compose --profile test run --build --rm -T chummer-playwright \
+      2>&1 | tee "$playwright_log"
+    playwright_status=${PIPESTATUS[0]}
+    set -e
+    if [[ "$playwright_status" -ne 0 ]]; then
+      if [[ "$PLAYWRIGHT_SOFT_FAIL" == "1" ]] && is_docker_permission_error_text "$playwright_log"; then
+        echo "skipping playwright ui e2e: docker daemon permission denied in this environment."
+        rm -f "$playwright_log"
+        exit 0
+      fi
 
+      rm -f "$playwright_log"
+      echo "playwright ui e2e failed or timed out after ${PLAYWRIGHT_TIMEOUT_SECONDS}s" >&2
+      exit "$playwright_status"
+    fi
     rm -f "$playwright_log"
-    echo "playwright ui e2e failed or timed out after ${PLAYWRIGHT_TIMEOUT_SECONDS}s" >&2
-    exit "$playwright_status"
   fi
-  rm -f "$playwright_log"
 else
-  echo "skipping playwright ui e2e (set CHUMMER_UI_PLAYWRIGHT=1 to enable)"
+  echo "playwright ui e2e is mandatory for local verification; set CHUMMER_UI_PLAYWRIGHT=1 or remove the disable override." >&2
+  exit 1
 fi
 
 echo "ui E2E completed"

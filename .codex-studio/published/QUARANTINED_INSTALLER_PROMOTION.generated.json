@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-06-05T19:29:47Z",
-  "generated_at": "2026-06-05T19:29:47Z",
+  "generatedAt": "2026-06-08T04:34:12Z",
+  "generated_at": "2026-06-08T04:34:12Z",
   "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-  "downloadsDir": "/tmp/chummer-publish-download-bundle-5221cfccd7ce4a89ba4f90afff033073/files",
-  "startupSmokeDir": "/tmp/chummer-publish-download-bundle-5221cfccd7ce4a89ba4f90afff033073/startup-smoke",
+  "downloadsDir": "/tmp/chummer-publish-download-bundle-22614523ce2143b0a69c2dc54234435f/files",
+  "startupSmokeDir": "/tmp/chummer-publish-download-bundle-22614523ce2143b0a69c2dc54234435f/startup-smoke",
   "releaseChannel": "public_stable",
   "releaseVersion": "run-20260601-070650",
   "quarantineDirs": [

@@ -9,9 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
 
-#if false
 [TestClass]
-[Ignore("Temporarily disabled in Linux CI due Avalonia headless runtime deadlock; kept as migration gate scaffold.")]
 public sealed class AvaloniaHeadlessSmokeTests
 {
     private static readonly object HeadlessInitLock = new();
@@ -61,4 +59,3 @@ public sealed class AvaloniaHeadlessSmokeTests
         }
     }
 }
-#endif

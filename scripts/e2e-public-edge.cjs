@@ -13,10 +13,11 @@ const defaultHeaders = useForwardedPublicHeaders
 
 const requiredLandingLinks = [
   '/downloads',
-  '/participate',
+  '/now',
+  '/help',
+  '/signup',
+  '/ledger',
   '/contact',
-  '/what-is-chummer',
-  '/artifacts',
   '/faq'
 ];
 
@@ -25,18 +26,19 @@ const checks = [
     url: `${baseUrl}/`,
     assert: text =>
       text.includes('Chummer')
-      && text.includes('Create account to install')
+      && text.includes('Open downloads')
+      && text.includes('Black Ledger command deck')
       && requiredLandingLinks.every(link => text.includes(link))
   },
   {
     url: `${baseUrl}/downloads/`,
     assert: text =>
-      text.includes('Install the current preview')
-      && text.includes('Install Chummer')
+      text.includes('Install Chummer')
+      && text.includes('guided install handoff')
+      && text.includes('Create an account first')
       && text.includes('Main platform downloads')
       && text.includes('Chummer for Windows')
-      && text.includes('avalonia-win-x64-installer')
-      && !text.includes('Create account to get preview')
+      && text.includes('Recommended desktop build for Linux')
   },
   {
     url: `${baseUrl}/downloads/`,
@@ -45,9 +47,9 @@ const checks = [
     },
     assert: text =>
       text.includes('Recommended for Windows')
-      && text.includes('Create account to install')
-      && text.includes('avalonia-win-x64-installer')
-      && !text.includes('Open Windows preview build')
+      && text.includes('Chummer for Windows')
+      && text.includes('guided install handoff')
+      && text.includes('Open downloads')
   },
   {
     url: `${baseUrl}/downloads/releases.json`,
@@ -65,7 +67,7 @@ const checks = [
     assert: (_text, response) => {
       const location = response.headers.get('location') || '';
       return [301, 302, 303, 307, 308].includes(response.status)
-        && location.includes('/auth/google/start?next=')
+        && location.includes('/login?next=')
         && decodeURIComponent(location).includes('/downloads/install/avalonia-linux-x64-installer');
     }
   },
@@ -76,7 +78,7 @@ const checks = [
       const location = response.headers.get('location') || '';
       return (
         ([301, 302, 303, 307, 308].includes(response.status)
-          && location.includes('/auth/google/start?next=')
+          && location.includes('/login?next=')
           && decodeURIComponent(location).includes('/downloads/install/avalonia-win-x64-installer'))
         || (response.status === 200
           && text.includes('Start download again')
@@ -85,20 +87,25 @@ const checks = [
     }
   },
   {
-    url: `${baseUrl}/roadmap/shadowcasters-network`,
+    url: `${baseUrl}/play`,
     assert: text =>
-      text.includes('SHADOWCASTERS NETWORK')
-      && text.includes('Why this horizon matters now')
-      && text.includes('Need a decision instead?')
-      && text.includes('/roadmap/black-ledger')
+      text.includes('Player entry')
+      && text.includes('Installable app shell live')
+      && text.includes('Offline and reconnect lane cached')
   },
   {
-    url: `${baseUrl}/roadmap/black-ledger`,
+    url: `${baseUrl}/status`,
     assert: text =>
-      text.includes('BLACK LEDGER')
-      && text.includes('Why this horizon matters now')
-      && text.includes('Need a decision instead?')
-      && text.includes('/artifacts/replay-after-action')
+      text.includes('Current status')
+      && text.includes('Public Stable')
+      && text.includes('What works now, what needs caution, and where to go next')
+  },
+  {
+    url: `${baseUrl}/ledger`,
+    assert: text =>
+      text.includes('Black Ledger command deck')
+      && text.includes('Emerald Sprawl: First Pressure')
+      && text.includes('Open command map')
   },
   {
     url: `${baseUrl}/contact`,
@@ -112,7 +119,7 @@ const checks = [
   },
   {
     url: `${baseUrl}/artifacts`,
-    assert: text => text.includes('Artifacts')
+    assert: text => text.includes('Proof gallery')
   },
   {
     url: `${baseUrl}/faq`,
@@ -134,25 +141,25 @@ const checks = [
     url: `${baseUrl}/blazor/`,
     assert: (text, response) =>
       /\/downloads\/?$/.test(response.url)
-      && text.includes('Install the current preview')
+      && text.includes('Install Chummer')
   },
   {
     url: `${baseUrl}/avalonia/`,
     assert: (text, response) =>
       /\/downloads\/?$/.test(response.url)
-      && text.includes('Install the current preview')
+      && text.includes('Install Chummer')
   },
   {
     url: `${baseUrl}/session/`,
     assert: (text, response) =>
-      /\/participate\/?$/.test(response.url)
-      && text.includes('Participate')
+      /\/play\/?$/.test(response.url)
+      && text.includes('Player entry')
   },
   {
     url: `${baseUrl}/coach/`,
     assert: (text, response) =>
       /\/status\/?$/.test(response.url)
-      && text.includes('Status')
+      && text.includes('Current status')
   }
 ];
 

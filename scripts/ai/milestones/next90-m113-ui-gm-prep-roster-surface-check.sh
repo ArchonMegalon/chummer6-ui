@@ -11,7 +11,7 @@ receipt_path="${CHUMMER_NEXT90_M113_UI_RECEIPT_PATH:-$repo_root/.codex-studio/pu
 local_release_proof_path="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 
 mkdir -p "$(dirname "$receipt_path")"
-CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=1 CHUMMER_PORTAL_PLAYWRIGHT=0 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
+CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=1 CHUMMER_PORTAL_PLAYWRIGHT=1 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
 
 python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$local_release_proof_path" "$repo_root" <<'PY'
 from __future__ import annotations

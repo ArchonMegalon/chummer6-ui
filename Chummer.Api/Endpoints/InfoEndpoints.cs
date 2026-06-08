@@ -7,6 +7,14 @@ public static class InfoEndpoints
 {
     public static IEndpointRouteBuilder MapInfoEndpoints(this IEndpointRouteBuilder app)
     {
+        static object BuildHealthPayload(string head) => new
+        {
+            ok = true,
+            service = "Chummer",
+            status = "running",
+            head
+        };
+
         app.MapGet("/api/info", (IContentOverlayCatalogService overlays) => Results.Ok(new
         {
             service = "Chummer",
@@ -19,12 +27,8 @@ public static class InfoEndpoints
             }
         }));
 
-        app.MapGet("/health", () => Results.Ok(new
-        {
-            service = "Chummer",
-            status = "running",
-            head = "api"
-        }));
+        app.MapGet("/health", () => Results.Ok(BuildHealthPayload("api")));
+        app.MapGet("/api/health", () => Results.Ok(BuildHealthPayload("api")));
 
         return app;
     }

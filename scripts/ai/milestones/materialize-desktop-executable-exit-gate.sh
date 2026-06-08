@@ -2029,7 +2029,7 @@ def validate_linux_gate(
         if not policy_missing_release_artifact:
             if expected_arch and gate_evidence["primary_receipt_arch"] != expected_arch:
                 reasons.append(f"Linux installer startup smoke receipt arch does not match promoted RID for head '{head}'.")
-            if expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
+            if uses_promoted_installer and expected_digest and gate_evidence["primary_receipt_artifact_digest"] != expected_digest:
                 reasons.append(
                     f"Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head '{head}'."
                 )

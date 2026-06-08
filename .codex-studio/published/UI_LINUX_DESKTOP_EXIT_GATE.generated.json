@@ -1,12 +1,12 @@
 {
   "contract_name": "chummer6-ui.linux_desktop_exit_gate",
-  "generated_at": "2026-06-07T17:40:05Z",
+  "generated_at": "2026-06-08T06:02:43Z",
   "status": "passed",
   "reason": "linux desktop build, startup smoke, and unit tests passed",
   "reasons": [],
   "stage": "complete",
   "exit_code": 0,
-  "run_root": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW",
+  "run_root": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq",
   "head": {
     "app_key": "avalonia",
     "project_path": "Chummer.Avalonia/Chummer.Avalonia.csproj",
@@ -36,63 +36,68 @@
       "platformLabel": "Avalonia Desktop Linux X64 Installer",
       "updateFeedUrl": null,
       "embeddedRuntimeBundleHeadId": null,
-      "compatibilityState": "unknown",
+      "compatibilityState": "compatible",
       "installAccessClass": "open_public",
-      "compatibilityReason": null,
       "channelId": "public_stable",
       "channel": "public_stable",
       "version": "run-20260601-070650",
       "releaseVersion": "run-20260601-070650",
-      "generated_at": "2026-06-05T15:02:00Z",
-      "generatedAt": "2026-06-05T15:02:00Z",
+      "generated_at": "2026-06-07T17:41:06Z",
+      "generatedAt": "2026-06-07T17:41:06Z",
       "id": "avalonia-linux-x64-installer"
     },
     "startup_smoke_receipt_found": true,
-    "startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+    "startup_smoke_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
     "startup_smoke_external_blocker": "",
+    "mouse_first_journey_receipt_found": true,
+    "mouse_first_journey_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.receipt.json",
+    "mouse_first_journey_external_blocker": "",
     "flagship_ui_screenshot_gate_status": "pass",
     "flagship_ui_screenshot_gate_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
     "flagship_ui_screenshot_count": 40
   },
   "build": {
     "output_base_root": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate",
-    "publish_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/publish/avalonia-linux-x64",
-    "dist_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist",
-    "binary_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/publish/avalonia-linux-x64/Chummer.Avalonia",
+    "publish_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/publish/avalonia-linux-x64",
+    "dist_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist",
+    "binary_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/publish/avalonia-linux-x64/Chummer.Avalonia",
     "binary_exists": true,
-    "binary_sha256": "cec540d32aa21fac10345d1d84ffa01d7f4aefe2b4c4b0fa83987c53d395f0a2",
-    "binary_bytes": 104456647,
+    "binary_sha256": "25126cae921f436eb27b6fad9f350e53696872c2abb1dab5fd9ae6832c3f5947",
+    "binary_bytes": 104523719,
     "binary_executable": true,
     "publish_exists": true,
     "self_contained": true,
     "single_file": true,
     "primary_package_kind": "deb",
     "fallback_package_kind": "archive",
-    "archive_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64.tar.gz",
+    "archive_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64.tar.gz",
     "archive_exists": true,
-    "archive_sha256": "d839bf85c064fafb6a3357c18f347cb9711424706bdf1e810002684f353d58b8",
-    "archive_bytes": 43492747,
-    "installer_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64-installer.deb",
+    "archive_sha256": "6c66484dfd6a1fb18abcd56b4c3f24e25fcd690c817fded5256f99d364a16019",
+    "archive_bytes": 43531498,
+    "installer_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64-installer.deb",
     "installer_exists": true,
-    "installer_sha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
-    "installer_bytes": 34999182
+    "installer_sha256": "5a72b7bc18847085087e112c2e96f11cf6f81ff887d4a1a8d41524a13786519f",
+    "installer_bytes": 35335592
   },
   "release_channel": {
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "local_desktop_files_root": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files",
-    "use_promoted_installer": true,
-    "installer_smoke_artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64-installer.deb",
-    "promoted_installer_path": "/docker/chummercomplete/chummer6-ui/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
+    "use_promoted_installer": false,
+    "installer_smoke_artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64-installer.deb",
+    "promoted_installer_path": "",
     "host_operating_system": "Linux",
     "host_operating_system_normalized": "linux",
     "host_supports_linux_startup_smoke": true,
-    "startup_smoke_external_blocker": ""
+    "startup_smoke_external_blocker": "",
+    "mouse_first_journey_receipt_found": true,
+    "mouse_first_journey_receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.receipt.json",
+    "mouse_first_journey_external_blocker": ""
   },
   "startup_smoke": {
     "primary": {
       "package_kind": "deb",
-      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64-installer.deb",
-      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64-installer.deb",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/startup-smoke-avalonia-linux-x64.receipt.json",
       "status": "passed",
       "receipt": {
         "status": "pass",
@@ -105,71 +110,752 @@
         "rid": "linux-x64",
         "readyCheckpoint": "pre_ui_event_loop",
         "hostClass": "local-linux-x64",
-        "processPath": "/tmp/chummer-linux-smoke.GUgERW/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
-        "artifactDigest": "sha256:ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
-        "artifactDigestSource": "environment",
-        "framework": ".NET 10.0.8",
-        "operatingSystem": "Ubuntu 24.04.4 LTS",
-        "recordedAtUtc": "2026-06-07T17:40:03.9371472+00:00",
-        "startedAtUtc": "2026-06-07T17:40:03.934641+00:00",
-        "completedAtUtc": "2026-06-07T17:40:03.9371666+00:00",
-        "artifactInstallMode": "dpkg_rootless_install",
-        "artifactInstallVerificationPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
-        "artifactInstallDpkgLogPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/dpkg-avalonia-linux-x64.log",
-        "artifactInstallLaunchCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
-        "artifactInstallWrapperCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
-        "artifactInstallDesktopEntryCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
-        "artifactPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64-installer.deb",
-        "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
-        "fileName": "chummer-avalonia-linux-x64-installer.deb",
-        "artifactRelativePath": "dist/chummer-avalonia-linux-x64-installer.deb",
-        "artifactSha256": "ae0b9ac6e932a160c10da7b92f01425713ce6d63d15834864b8e425b706cfe67",
-        "artifactId": "avalonia-linux-x64-installer"
-      }
-    },
-    "fallback": {
-      "package_kind": "archive",
-      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64.tar.gz",
-      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
-      "status": "passed",
-      "receipt": {
-        "status": "pass",
-        "headId": "avalonia",
-        "version": "run-20260601-070650",
-        "releaseVersion": "run-20260601-070650",
-        "channelId": "public_stable",
-        "platform": "linux",
-        "arch": "x64",
-        "rid": "linux-x64",
-        "readyCheckpoint": "pre_ui_event_loop",
-        "hostClass": "local-linux-x64",
-        "processPath": "/tmp/chummer-linux-smoke.0rgDhB/Chummer.Avalonia",
-        "artifactDigest": "sha256:d839bf85c064fafb6a3357c18f347cb9711424706bdf1e810002684f353d58b8",
+        "processPath": "/tmp/chummer-linux-smoke.ZSlZR5/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
+        "artifactDigest": "sha256:5a72b7bc18847085087e112c2e96f11cf6f81ff887d4a1a8d41524a13786519f",
         "artifactDigestSource": "environment",
         "installLinkingStatus": "guest",
         "installLinkingPromptRequired": true,
         "installLinkingPromptReason": "claim_required",
         "installLinkingLaunchCount": 1,
-        "installLinkingInstallationId": "ins-28b1483826a7406788bb7446fa8d270c",
+        "installLinkingInstallationId": "ins-062da358dab24abeba29e30fe8b4b838",
         "framework": ".NET 10.0.8",
         "operatingSystem": "Ubuntu 24.04.4 LTS",
-        "recordedAtUtc": "2026-06-07T17:40:00.0202002+00:00",
-        "startedAtUtc": "2026-06-07T17:40:00.0176798+00:00",
-        "completedAtUtc": "2026-06-07T17:40:00.0202139+00:00",
-        "artifactPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/dist/chummer-avalonia-linux-x64.tar.gz",
+        "recordedAtUtc": "2026-06-08T06:02:38.0335859+00:00",
+        "startedAtUtc": "2026-06-08T06:02:38.0304252+00:00",
+        "completedAtUtc": "2026-06-08T06:02:38.0336038+00:00",
+        "artifactInstallMode": "dpkg_rootless_install",
+        "artifactInstallVerificationPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/install-verification-avalonia-linux-x64.json",
+        "artifactInstallDpkgLogPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/dpkg-avalonia-linux-x64.log",
+        "artifactInstallLaunchCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/installed-launch-avalonia-linux-x64.bin",
+        "artifactInstallWrapperCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/installed-wrapper-avalonia-linux-x64.sh",
+        "artifactInstallDesktopEntryCapturePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/installed-desktop-entry-avalonia-linux-x64.desktop",
+        "artifactPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64-installer.deb",
+        "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
+        "fileName": "chummer-avalonia-linux-x64-installer.deb",
+        "artifactRelativePath": "dist/chummer-avalonia-linux-x64-installer.deb",
+        "artifactSha256": "5a72b7bc18847085087e112c2e96f11cf6f81ff887d4a1a8d41524a13786519f",
+        "artifactId": "avalonia-linux-x64-installer"
+      }
+    },
+    "fallback": {
+      "package_kind": "archive",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64.tar.gz",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/startup-smoke-avalonia-linux-x64.receipt.json",
+      "status": "passed",
+      "receipt": {
+        "status": "pass",
+        "headId": "avalonia",
+        "version": "run-20260601-070650",
+        "releaseVersion": "run-20260601-070650",
+        "channelId": "public_stable",
+        "platform": "linux",
+        "arch": "x64",
+        "rid": "linux-x64",
+        "readyCheckpoint": "pre_ui_event_loop",
+        "hostClass": "local-linux-x64",
+        "processPath": "/tmp/chummer-linux-smoke.2KGlfF/Chummer.Avalonia",
+        "artifactDigest": "sha256:6c66484dfd6a1fb18abcd56b4c3f24e25fcd690c817fded5256f99d364a16019",
+        "artifactDigestSource": "environment",
+        "installLinkingStatus": "guest",
+        "installLinkingPromptRequired": true,
+        "installLinkingPromptReason": "claim_required",
+        "installLinkingLaunchCount": 1,
+        "installLinkingInstallationId": "ins-e6b3811fc4a449da8d6c786196ac0f38",
+        "framework": ".NET 10.0.8",
+        "operatingSystem": "Ubuntu 24.04.4 LTS",
+        "recordedAtUtc": "2026-06-08T06:02:29.41101+00:00",
+        "startedAtUtc": "2026-06-08T06:02:29.4094101+00:00",
+        "completedAtUtc": "2026-06-08T06:02:29.4110252+00:00",
+        "artifactPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64.tar.gz",
         "artifactFileName": "chummer-avalonia-linux-x64.tar.gz",
         "fileName": "chummer-avalonia-linux-x64.tar.gz",
         "artifactRelativePath": "dist/chummer-avalonia-linux-x64.tar.gz",
-        "artifactSha256": "d839bf85c064fafb6a3357c18f347cb9711424706bdf1e810002684f353d58b8",
+        "artifactSha256": "6c66484dfd6a1fb18abcd56b4c3f24e25fcd690c817fded5256f99d364a16019",
         "artifactId": "avalonia-linux-x64-installer"
+      }
+    }
+  },
+  "mouse_first_journey": {
+    "primary": {
+      "package_kind": "deb",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64-installer.deb",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.receipt.json",
+      "failure_packet_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.failure.json",
+      "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64",
+      "status": "passed",
+      "receipt": {
+        "status": "pass",
+        "journeyMode": "mouse_first_live_binary",
+        "headId": "avalonia",
+        "version": "run-20260601-070650",
+        "releaseVersion": "run-20260601-070650",
+        "channelId": "public_stable",
+        "platform": "linux",
+        "arch": "x64",
+        "rid": "linux-x64",
+        "hostClass": "local-linux-x64",
+        "processPath": "/tmp/chummer-linux-smoke.ZSlZR5/opt/chummer6/avalonia-linux-x64/Chummer.Avalonia",
+        "artifactDigest": "sha256:5a72b7bc18847085087e112c2e96f11cf6f81ff887d4a1a8d41524a13786519f",
+        "artifactDigestSource": "environment",
+        "framework": ".NET 10.0.8",
+        "operatingSystem": "Ubuntu 24.04.4 LTS",
+        "startedAtUtc": "2026-06-08T06:02:39.3726128+00:00",
+        "completedAtUtc": "2026-06-08T06:02:42.2057965+00:00",
+        "recordedAtUtc": "2026-06-08T06:02:42.2057965+00:00",
+        "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64",
+        "tracePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-avalonia-linux-x64.trace.json",
+        "steps": [
+          "start mouse-first live binary journey",
+          "wait success: desktop shell initialized",
+          "click file menu",
+          "wait success: menu command new_character available",
+          "click file menu command new_character",
+          "wait success: dialog dialog.new_character visible",
+          "wait success: dialog field newCharacterName available",
+          "type dialog field newCharacterName = Mouse Journey Runner",
+          "wait success: dialog field newCharacterAlias available",
+          "type dialog field newCharacterAlias = MouseRoute",
+          "wait success: dialog select field newCharacterRulesetId available",
+          "confirm dialog field newCharacterRulesetId = sr5",
+          "wait success: dialog select field newCharacterBuildMethod available",
+          "confirm dialog field newCharacterBuildMethod = Priority",
+          "wait success: dialog action create_character available",
+          "click dialog action create_character",
+          "wait success: new character continuation dialog rendered",
+          "wait success: dialog action complete_new_character_workflow available",
+          "click dialog action complete_new_character_workflow",
+          "wait success: workspace opened from mouse-first creation flow",
+          "click file menu",
+          "wait success: menu command save_character available",
+          "click file menu command save_character",
+          "wait success: workspace saved after pointer-first flow"
+        ],
+        "screenshotPaths": [
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/01-new-character-dialog.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/02-priority-workflow.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/03-workspace-opened.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-installer/mouse-first-journey-screenshots-avalonia-linux-x64/04-workspace-saved.png"
+        ],
+        "pointerActionCount": 6,
+        "textEntryActionCount": 2,
+        "directTextMutationCount": 0,
+        "usedForcedComboDropdownOpen": false,
+        "usedComboSelectionFallback": false,
+        "observedInputEvents": [
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.4964894+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.5781362+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.5784763+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.5791046+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.5792779+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.5792981+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.6373776+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.6385351+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:39.6386008+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:39.6666771+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:40.9165532+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:40.920395+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:40.9204712+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:40.9417354+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:40.941775+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:40.9417806+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:41.0576454+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:41.0581882+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:41.0582265+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.1404917+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.1405403+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.1405462+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6373204+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6569231+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6569712+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6569985+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6570098+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.6570145+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.7882414+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.7886926+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.7887487+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:41.8121788+00:00"
+          }
+        ],
+        "workspaceId": "aaefde5f051d469382ac7286fc3593d3",
+        "characterName": "Mouse Journey Runner",
+        "characterAlias": "MouseRoute",
+        "rulesetId": "SR5",
+        "hasSavedWorkspace": true,
+        "activeDialogId": null,
+        "verificationNotes": [
+          "Binary was launched in mouse-first live journey mode.",
+          "Character creation used menu clicks, dialog clicks, and only rare text entry for name/alias.",
+          "Workspace reached a saved state without invoking file-picker shortcuts or internal API-only test routes."
+        ],
+        "error": null
+      }
+    },
+    "fallback": {
+      "package_kind": "archive",
+      "artifact_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/dist/chummer-avalonia-linux-x64.tar.gz",
+      "receipt_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-avalonia-linux-x64.receipt.json",
+      "failure_packet_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-avalonia-linux-x64.failure.json",
+      "screenshot_dir": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64",
+      "status": "passed",
+      "receipt": {
+        "status": "pass",
+        "journeyMode": "mouse_first_live_binary",
+        "headId": "avalonia",
+        "version": "run-20260601-070650",
+        "releaseVersion": "run-20260601-070650",
+        "channelId": "public_stable",
+        "platform": "linux",
+        "arch": "x64",
+        "rid": "linux-x64",
+        "hostClass": "local-linux-x64",
+        "processPath": "/tmp/chummer-linux-smoke.2KGlfF/Chummer.Avalonia",
+        "artifactDigest": "sha256:6c66484dfd6a1fb18abcd56b4c3f24e25fcd690c817fded5256f99d364a16019",
+        "artifactDigestSource": "environment",
+        "framework": ".NET 10.0.8",
+        "operatingSystem": "Ubuntu 24.04.4 LTS",
+        "startedAtUtc": "2026-06-08T06:02:31.0752493+00:00",
+        "completedAtUtc": "2026-06-08T06:02:33.9699267+00:00",
+        "recordedAtUtc": "2026-06-08T06:02:33.9699267+00:00",
+        "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64",
+        "tracePath": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-avalonia-linux-x64.trace.json",
+        "steps": [
+          "start mouse-first live binary journey",
+          "wait success: desktop shell initialized",
+          "click file menu",
+          "wait success: menu command new_character available",
+          "click file menu command new_character",
+          "wait success: dialog dialog.new_character visible",
+          "wait success: dialog field newCharacterName available",
+          "type dialog field newCharacterName = Mouse Journey Runner",
+          "wait success: dialog field newCharacterAlias available",
+          "type dialog field newCharacterAlias = MouseRoute",
+          "wait success: dialog select field newCharacterRulesetId available",
+          "confirm dialog field newCharacterRulesetId = sr5",
+          "wait success: dialog select field newCharacterBuildMethod available",
+          "confirm dialog field newCharacterBuildMethod = Priority",
+          "wait success: dialog action create_character available",
+          "click dialog action create_character",
+          "wait success: new character continuation dialog rendered",
+          "wait success: dialog action complete_new_character_workflow available",
+          "click dialog action complete_new_character_workflow",
+          "wait success: workspace opened from mouse-first creation flow",
+          "click file menu",
+          "wait success: menu command save_character available",
+          "click file menu command save_character",
+          "wait success: workspace saved after pointer-first flow"
+        ],
+        "screenshotPaths": [
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64/01-new-character-dialog.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64/02-priority-workflow.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64/03-workspace-opened.png",
+          "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/startup-smoke-archive/mouse-first-journey-screenshots-avalonia-linux-x64/04-workspace-saved.png"
+        ],
+        "pointerActionCount": 6,
+        "textEntryActionCount": 2,
+        "directTextMutationCount": 0,
+        "usedForcedComboDropdownOpen": false,
+        "usedComboSelectionFallback": false,
+        "observedInputEvents": [
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.2196547+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.2650098+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.265455+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.2660935+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.2662562+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.2662751+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.3160606+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.3172741+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:31.3173046+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "new_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:31.3445985+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:32.6992653+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:32.70458+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character",
+            "recordedAtUtc": "2026-06-08T06:02:32.7046371+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.7303398+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.7303791+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_create_character",
+            "controlTag": "create_character",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.7303858+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.834244+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.8345497+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": "dialog.new_character.priority_workflow",
+            "recordedAtUtc": "2026-06-08T06:02:32.8345717+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:32.933398+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:32.9334462+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "Button",
+            "controlName": "DialogAction_complete_new_character_workflow",
+            "controlTag": "complete_new_character_workflow",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:32.9334525+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4030534+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4228781+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4229182+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4229444+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4229528+00:00"
+          },
+          {
+            "eventKind": "tapped",
+            "controlType": "MenuItem",
+            "controlName": "FileMenuButton",
+            "controlTag": "file",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.4229571+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.5416138+00:00"
+          },
+          {
+            "eventKind": "pointer_pressed",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.5422609+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.5422997+00:00"
+          },
+          {
+            "eventKind": "pointer_released",
+            "controlType": "MenuItem",
+            "controlName": null,
+            "controlTag": "save_character",
+            "dialogId": null,
+            "recordedAtUtc": "2026-06-08T06:02:33.5576137+00:00"
+          }
+        ],
+        "workspaceId": "0b7fb0245c5c45deb2536da10f53f6e1",
+        "characterName": "Mouse Journey Runner",
+        "characterAlias": "MouseRoute",
+        "rulesetId": "SR5",
+        "hasSavedWorkspace": true,
+        "activeDialogId": null,
+        "verificationNotes": [
+          "Binary was launched in mouse-first live journey mode.",
+          "Character creation used menu clicks, dialog clicks, and only rare text entry for name/alias.",
+          "Workspace reached a saved state without invoking file-picker shortcuts or internal API-only test routes."
+        ],
+        "error": null
       }
     }
   },
   "unit_tests": {
     "project_path": "Chummer.Desktop.Runtime.Tests/Chummer.Desktop.Runtime.Tests.csproj",
     "framework": "net10.0",
-    "results_directory": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/test-results",
-    "trx_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/test-results/desktop-runtime-tests.trx",
+    "results_directory": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/test-results",
+    "trx_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/test-results/desktop-runtime-tests.trx",
     "status": "passed",
     "summary": {
       "total": 23,
@@ -329,41 +1015,41 @@
   "git": {
     "repo_root": "/docker/chummercomplete/chummer6-ui",
     "available": true,
-    "head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-    "tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-    "tracked_diff_line_count": 433,
+    "head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+    "tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
+    "tracked_diff_line_count": 435,
     "start": {
       "repo_root": "/docker/chummercomplete/chummer6-ui",
       "available": true,
-      "head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-      "tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-      "tracked_diff_line_count": 433
+      "head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+      "tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
+      "tracked_diff_line_count": 435
     },
     "finish": {
       "repo_root": "/docker/chummercomplete/chummer6-ui",
       "available": true,
-      "head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-      "tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-      "tracked_diff_line_count": 433
+      "head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+      "tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
+      "tracked_diff_line_count": 435
     },
     "current": {
       "repo_root": "/docker/chummercomplete/chummer6-ui",
       "available": true,
-      "head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-      "tracked_diff_sha256": "9a9fcb04f4e9a9112b5de1ef08f1ba6f2fe901aeb0b46e30c06df423fd6d500a",
-      "tracked_diff_line_count": 674
+      "head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+      "tracked_diff_sha256": "6dc2045761307a839795953fbd27354100a20aa3244e3928608f7f4bd0f50084",
+      "tracked_diff_line_count": 677
     },
     "identity_stable": true
   },
   "source_snapshot": {
     "mode": "filesystem_copy",
     "repo_root": "/docker/chummercomplete/chummer6-ui",
-    "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.eRFpZo",
-    "entries_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.MuPOeW/source-snapshot.entries.txt",
-    "entry_count": 433,
-    "worktree_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-    "finish_worktree_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-    "finish_entry_count": 433,
+    "snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.68d4aO",
+    "entries_path": "/docker/chummercomplete/chummer6-ui/.codex-studio/out/linux-desktop-exit-gate/run.eQfLaq/source-snapshot.entries.txt",
+    "entry_count": 437,
+    "worktree_sha256": "c15756cb78630ecc905f3eb4f4902eebec5a1b1dd5cddc3dac7a34f3d1df3e19",
+    "finish_worktree_sha256": "c15756cb78630ecc905f3eb4f4902eebec5a1b1dd5cddc3dac7a34f3d1df3e19",
+    "finish_entry_count": 437,
     "ignored_extra_entry_count": 692,
     "ignored_extra_entries_sample": [
       "Chummer.Avalonia/bin/Release/net10.0/linux-x64/Avalonia.Base.dll",
@@ -420,22 +1106,22 @@
     "identity_stable": true
   },
   "current_git_available": true,
-  "current_git_head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-  "current_tracked_diff_sha256": "9a9fcb04f4e9a9112b5de1ef08f1ba6f2fe901aeb0b46e30c06df423fd6d500a",
+  "current_git_head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+  "current_tracked_diff_sha256": "6dc2045761307a839795953fbd27354100a20aa3244e3928608f7f4bd0f50084",
   "proof_git_available": true,
-  "proof_git_head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-  "proof_git_start_head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-  "proof_git_finish_head": "d6de7e90df97ba308ca2503802e151d6fa48859a",
-  "proof_git_start_tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-  "proof_git_finish_tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
+  "proof_git_head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+  "proof_git_start_head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+  "proof_git_finish_head": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+  "proof_git_start_tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
+  "proof_git_finish_tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
   "proof_git_identity_stable": true,
   "proof_git_head_matches_current": true,
-  "proof_tracked_diff_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
+  "proof_tracked_diff_sha256": "dc5624318ec8c3ed5dc67aa8307c6d7ed51408a19cf3a1f592e59836eb0d70dd",
   "source_snapshot_mode": "filesystem_copy",
-  "source_snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.eRFpZo",
-  "source_snapshot_entry_count": 433,
-  "source_snapshot_finish_entry_count": 433,
-  "source_snapshot_worktree_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
-  "source_snapshot_finish_worktree_sha256": "8d499030425fc8e8b8a27a5b7269f6b05f657ac2f071ea5c5108e407602a66b7",
+  "source_snapshot_root": "/docker/chummercomplete/.linux-desktop-exit-gate-source.68d4aO",
+  "source_snapshot_entry_count": 437,
+  "source_snapshot_finish_entry_count": 437,
+  "source_snapshot_worktree_sha256": "c15756cb78630ecc905f3eb4f4902eebec5a1b1dd5cddc3dac7a34f3d1df3e19",
+  "source_snapshot_finish_worktree_sha256": "c15756cb78630ecc905f3eb4f4902eebec5a1b1dd5cddc3dac7a34f3d1df3e19",
   "source_snapshot_identity_stable": true
 }

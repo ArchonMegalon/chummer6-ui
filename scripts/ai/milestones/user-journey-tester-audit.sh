@@ -302,6 +302,44 @@ if not linux_gate:
 if linux_gate and not status_ok(linux_gate.get("status")):
     reasons.append("Linux desktop exit gate is not passing.")
 
+linux_gate_mouse_first = linux_gate.get("mouse_first_journey")
+linux_gate_mouse_first_primary = (
+    linux_gate_mouse_first.get("primary")
+    if isinstance(linux_gate_mouse_first, dict)
+    else {}
+)
+linux_gate_mouse_first_receipt = (
+    linux_gate_mouse_first_primary.get("receipt")
+    if isinstance(linux_gate_mouse_first_primary, dict)
+    else {}
+)
+if not isinstance(linux_gate_mouse_first_receipt, dict) or not linux_gate_mouse_first_receipt:
+    reasons.append("Linux desktop exit gate must embed a mouse_first_journey primary receipt.")
+else:
+    if not status_ok(linux_gate_mouse_first_receipt.get("status")):
+        reasons.append("Linux mouse_first_journey primary receipt is not passing.")
+    if string_value(linux_gate_mouse_first_receipt, "journeyMode") != "mouse_first_live_binary":
+        reasons.append("Linux mouse_first_journey primary receipt must prove mouse_first_live_binary.")
+    if linux_gate_mouse_first_receipt.get("hasSavedWorkspace") is not True:
+        reasons.append("Linux mouse_first_journey primary receipt must prove a saved workspace.")
+    linux_gate_mouse_first_screenshots = linux_gate_mouse_first_receipt.get("screenshotPaths")
+    linux_gate_mouse_first_trace_path = string_value(linux_gate_mouse_first_receipt, "tracePath")
+    if int(linux_gate_mouse_first_receipt.get("pointerActionCount") or 0) <= int(linux_gate_mouse_first_receipt.get("textEntryActionCount") or 0):
+        reasons.append("Linux mouse_first_journey primary receipt must prove a pointer-dominant interaction mix.")
+    if int(linux_gate_mouse_first_receipt.get("directTextMutationCount") or 0) != 0:
+        reasons.append("Linux mouse_first_journey primary receipt directTextMutationCount must be zero.")
+    if bool(linux_gate_mouse_first_receipt.get("usedForcedComboDropdownOpen")):
+        reasons.append("Linux mouse_first_journey primary receipt must fail closed on forced combo dropdown open.")
+    if bool(linux_gate_mouse_first_receipt.get("usedComboSelectionFallback")):
+        reasons.append("Linux mouse_first_journey primary receipt must fail closed on combo selection fallback.")
+    linux_gate_mouse_first_observed_input_events = linux_gate_mouse_first_receipt.get("observedInputEvents")
+    if not isinstance(linux_gate_mouse_first_observed_input_events, list) or len(linux_gate_mouse_first_observed_input_events) < 8:
+        reasons.append("Linux mouse_first_journey primary receipt must publish observed input events.")
+    if not isinstance(linux_gate_mouse_first_screenshots, list) or len(linux_gate_mouse_first_screenshots) < 4:
+        reasons.append("Linux mouse_first_journey primary receipt must publish four screenshot-backed review frames.")
+    if not linux_gate_mouse_first_trace_path:
+        reasons.append("Linux mouse_first_journey primary receipt must publish a tracePath.")
+
 tester_shard_id = string_value(trace, "tester_shard_id")
 fix_shard_id = string_value(trace, "fix_shard_id")
 fix_shard_separate = bool(tester_shard_id and fix_shard_id and tester_shard_id != fix_shard_id)
@@ -419,6 +457,15 @@ payload: dict[str, Any] = {
         "flagship_gate_path": str(flagship_gate_path),
         "screenshot_dir": str(screenshot_dir),
         "linux_gate_status": str(linux_gate.get("status") or "").strip(),
+        "linux_gate_mouse_first_journey_status": str(linux_gate_mouse_first_primary.get("status") or "").strip(),
+        "linux_gate_mouse_first_journey_mode": string_value(linux_gate_mouse_first_receipt, "journeyMode"),
+        "linux_gate_mouse_first_journey_pointer_action_count": int(linux_gate_mouse_first_receipt.get("pointerActionCount") or 0),
+        "linux_gate_mouse_first_journey_text_entry_action_count": int(linux_gate_mouse_first_receipt.get("textEntryActionCount") or 0),
+        "linux_gate_mouse_first_journey_screenshot_count": (
+            len(linux_gate_mouse_first_receipt.get("screenshotPaths"))
+            if isinstance(linux_gate_mouse_first_receipt.get("screenshotPaths"), list)
+            else 0
+        ),
         "flagship_gate_status": str(flagship_gate.get("status") or "").strip(),
         "tester_shard_id": tester_shard_id,
         "fix_shard_id": fix_shard_id,

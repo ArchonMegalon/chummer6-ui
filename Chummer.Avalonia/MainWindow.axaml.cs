@@ -1,7 +1,9 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Chummer.Contracts.Presentation;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
@@ -192,4 +194,43 @@ public partial class MainWindow : Window
 
     internal DesktopDialogWindow? PeekDialogWindowForTesting()
         => _transientStateCoordinator.PeekDialogWindowForTesting();
+
+    internal MainWindowControls ControlsForAutomation => _controls;
+
+    internal CharacterOverviewState SnapshotStateForAutomation() => _adapter.State;
+
+    internal Task SaveWorkspaceForAutomationAsync(CancellationToken ct)
+        => _interactionCoordinator.SaveAsync(ct);
+
+    internal byte[] CaptureScreenshotBytesForAutomation()
+    {
+        TopLevel? dialogWindow = PeekDialogWindowForTesting();
+        PixelSize pixelSize = new(
+            Math.Max(1, (int)Math.Ceiling(Bounds.Width)),
+            Math.Max(1, (int)Math.Ceiling(Bounds.Height)));
+
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            dialogWindow?.InvalidateMeasure();
+            dialogWindow?.InvalidateArrange();
+            dialogWindow?.InvalidateVisual();
+            InvalidateMeasure();
+            InvalidateArrange();
+            InvalidateVisual();
+            Measure(new Size(pixelSize.Width, pixelSize.Height));
+            Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+        bitmap.Render(this);
+        if (dialogWindow is not null)
+        {
+            bitmap.Render(dialogWindow);
+        }
+
+        using MemoryStream output = new();
+        bitmap.Save(output);
+        return output.ToArray();
+    }
 }

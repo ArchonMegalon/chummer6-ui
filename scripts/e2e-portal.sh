@@ -13,19 +13,34 @@ if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   RUN_PORTAL_PLAYWRIGHT="1"
 else
-  RUN_PORTAL_PLAYWRIGHT="0"
+  RUN_PORTAL_PLAYWRIGHT="1"
 fi
 if [[ -n "${CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL:-}" ]]; then
   PLAYWRIGHT_SOFT_FAIL="$CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
   PLAYWRIGHT_SOFT_FAIL="0"
 else
-  PLAYWRIGHT_SOFT_FAIL="1"
+  PLAYWRIGHT_SOFT_FAIL="0"
 fi
 
 is_docker_permission_error_text() {
   local source_file="$1"
   grep -Eqi "permission denied while trying to connect to the Docker daemon socket|operation not permitted|got permission denied while trying to connect to the docker daemon socket" "$source_file"
+}
+
+wait_for_portal_url() {
+  local url="$1"
+  local max_attempts="${2:-45}"
+  local sleep_seconds="${3:-2}"
+  local attempt
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    if curl -fsS --connect-timeout 5 --max-time 20 "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep "$sleep_seconds"
+  done
+  echo "Timed out waiting for $url" >&2
+  return 1
 }
 
 if [[ -n "$CHUMMER_API_KEY" ]]; then
@@ -70,6 +85,9 @@ else
   rm -f "$compose_up_log"
 fi
 
+wait_for_portal_url "$PORTAL_BASE_URL/" 45 2
+wait_for_portal_url "$PORTAL_BASE_URL/downloads/releases.json" 45 2
+
 if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
   echo "running portal route probe (timeout: ${PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS}s)"
   route_probe_log="$(mktemp)"
@@ -91,7 +109,8 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
   fi
   rm -f "$route_probe_log"
 else
-  echo "skipping portal route probe (set CHUMMER_PORTAL_PLAYWRIGHT=1 to enable)"
+  echo "portal route probe is mandatory for local release proof; set CHUMMER_PORTAL_PLAYWRIGHT=1 or remove the disable override." >&2
+  exit 1
 fi
 
 mkdir -p "$(dirname "$PORTAL_LOCAL_PROOF_PATH")"
@@ -119,7 +138,7 @@ if receipt_path.is_file():
 payload = {
     "contract_name": "chummer6-ui.local_release_proof",
     "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-    "status": "passed",
+    "status": "passed" if route_probe_executed else "failed",
     "base_url": base_url,
     "compose_file": compose_file,
     "playwright_timeout_seconds": int(timeout_seconds),

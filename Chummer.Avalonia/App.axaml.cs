@@ -157,6 +157,12 @@ public partial class App : global::Avalonia.Application
 
         owner.Opened -= MainWindow_OnOpened;
 
+        if (DesktopMouseFirstJourneyRuntime.ShouldRun(Environment.GetCommandLineArgs()))
+        {
+            await DesktopMouseFirstJourneyRunner.RunAsync(owner, "avalonia");
+            return;
+        }
+
         bool crashRecoveryShown = false;
         try
         {
