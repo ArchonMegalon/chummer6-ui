@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 STRICT_FILTER="${TEST_FILTER:-${1:-}}"
 STRICT_FRAMEWORK="${TEST_FRAMEWORK:-${2:-net10.0}}"
-STRICT_LOCAL_FILTER_DEFAULT="FullyQualifiedName!~Chummer.Tests.ApiIntegrationTests&FullyQualifiedName!~Chummer.Tests.Presentation.DualHeadAcceptanceTests&FullyQualifiedName!~Chummer.Tests.ChummerTest"
+STRICT_LOCAL_FILTER_DEFAULT="FullyQualifiedName!~Chummer.Tests.ApiIntegrationTests&FullyQualifiedName!~Chummer.Tests.ChummerTest"
 STRICT_LOCAL_FILTER="${TEST_LOCAL_FILTER:-$STRICT_FILTER}"
 STRICT_ALLOW_WORKTREE_DRIFT="${STRICT_ALLOW_WORKTREE_DRIFT:-0}"
 

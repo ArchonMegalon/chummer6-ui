@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.local_release_proof",
-  "generated_at": "2026-06-08T08:02:02Z",
+  "generated_at": "2026-06-08T08:58:05Z",
   "status": "passed",
   "base_url": "http://127.0.0.1:8091",
   "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",

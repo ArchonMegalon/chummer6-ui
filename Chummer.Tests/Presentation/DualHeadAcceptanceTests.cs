@@ -55,7 +55,7 @@ public class DualHeadAcceptanceTests
 
         if (!_isRuntimeReachable.Value)
         {
-            Assert.Inconclusive(_runtimeReachabilityFailure);
+            Assert.Fail(_runtimeReachabilityFailure);
         }
 
         await ClearAllWorkspacesAsync();

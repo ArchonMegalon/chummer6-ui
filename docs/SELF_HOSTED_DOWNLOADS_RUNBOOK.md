@@ -117,7 +117,7 @@ Prerequisite probe:
 Single wrapper command:
 1. `bash scripts/runbook-strict-host-gates.sh [optionalTestFilter] [optionalFramework]`
 2. If no framework is provided, strict wrapper defaults to `net10.0` to keep host runs on the cross-platform test leg.
-3. Local strict stage defaults to `FullyQualifiedName!~Chummer.Tests.ApiIntegrationTests&FullyQualifiedName!~Chummer.Tests.Presentation.DualHeadAcceptanceTests&FullyQualifiedName!~Chummer.Tests.ChummerTest`; override with `TEST_LOCAL_FILTER` when needed.
+3. Local strict stage defaults to `FullyQualifiedName!~Chummer.Tests.ApiIntegrationTests&FullyQualifiedName!~Chummer.Tests.ChummerTest`; dual-head acceptance is now mandatory in the default local strict lane. Override with `TEST_LOCAL_FILTER` only when you are intentionally narrowing scope.
 4. Wrapper fails when tracked `git` worktree state changes during the run; set `STRICT_ALLOW_WORKTREE_DRIFT=1` only when this is intentionally expected.
 
 Local tests:
