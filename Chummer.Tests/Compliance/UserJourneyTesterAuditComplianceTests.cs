@@ -75,10 +75,17 @@ public sealed class UserJourneyTesterAuditComplianceTests
         Assert.IsFalse(
             runnerText.Contains("IsSubMenuOpen = true", System.StringComparison.Ordinal),
             "The live-binary mouse-first journey should fail closed instead of forcing submenu visibility.");
+        Assert.IsFalse(
+            runnerText.Contains("PeekDialogWindowForTesting", System.StringComparison.Ordinal),
+            "The live-binary mouse-first journey should resolve the visible dialog window instead of relying on a test-only dialog hook.");
         StringAssert.Contains(runnerText, "TextInputEventArgs");
         StringAssert.Contains(runnerText, "InputElement.TextInputEvent");
         StringAssert.Contains(runnerText, "ReadWorkspaceStripTextAsync");
         StringAssert.Contains(runnerText, "WorkspaceText");
+        StringAssert.Contains(runnerText, "ResolveVisibleDialogWindow()");
+        StringAssert.Contains(runnerText, "WorkspaceStripState workspaceStripState = ReadWorkspaceStripState(window);");
+        StringAssert.Contains(runnerText, "CharacterOverviewState state = window.SnapshotStateForAutomation();");
+        StringAssert.Contains(runnerText, "ReadWorkspaceStripState(window).IsSaved");
     }
 
     [TestMethod]
