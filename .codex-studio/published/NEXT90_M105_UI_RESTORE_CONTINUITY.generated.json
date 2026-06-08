@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-06-08T06:20:37Z",
+  "generatedAt": "2026-06-08T08:01:51Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "3e8e3ef3",
-        "subject": "Refresh desktop release gates and localization proofs",
-        "sha": "3e8e3ef373217de817ff549c0608b3f4cd9d529e",
+        "commit": "0aeb9c27",
+        "subject": "Tighten local desktop proof and release gates",
+        "sha": "0aeb9c27b2b6dac39fef6b2ade2e5f8e7d289f9b",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -391,15 +391,10 @@
         "scripts/ai/verify.sh",
         ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
       ],
-      "has_relevant_changes": true,
-      "changes": [
-        {
-          "status": " M",
-          "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
-        }
-      ]
+      "has_relevant_changes": false,
+      "changes": []
     },
-    "headCommit": "bdd3773bf68d61e30d2195e136a5ec15c968fee5",
+    "headCommit": "0aeb9c27b2b6dac39fef6b2ade2e5f8e7d289f9b",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",

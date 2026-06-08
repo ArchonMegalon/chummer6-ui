@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-07T18:02:37.047694Z",
+  "generatedAt": "2026-06-08T06:32:13.932153Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for recovery-reload-migration-roundtrips.",
@@ -59,7 +59,7 @@
         "Menu_click_surfaces_visible_command_choices_in_shell": "/docker/chummercomplete/chummer-presentation/.codex-studio/out/workflow-family-parity/executed/sr6/28-Menu_click_surfaces_visible_command_choices_in_shell.trx"
       },
       "exitCode": 0,
-      "attemptCount": 2,
+      "attemptCount": 1,
       "maxAttempts": 2
     },
     "apiProbe": {

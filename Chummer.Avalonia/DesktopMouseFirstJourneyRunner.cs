@@ -19,6 +19,7 @@ internal static class DesktopMouseFirstJourneyRunner
     private static readonly TimeSpan JourneyTimeout = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan HardTimeoutGrace = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan TransitionSettleTimeout = TimeSpan.FromSeconds(2);
 
     public static async Task RunAsync(MainWindow window, string headId)
     {
@@ -92,6 +93,7 @@ internal static class DesktopMouseFirstJourneyRunner
         {
             using CancellationTokenSource journeyTimeout = new(JourneyTimeout);
             RecordStep(steps, "start mouse-first live binary journey");
+            string initialWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
 
             await WaitForAsync(
                 steps,
@@ -114,28 +116,29 @@ internal static class DesktopMouseFirstJourneyRunner
             recordTextEntryAction();
             await VerifyDialogSelectFieldValueAsync(window, "newCharacterRulesetId", "sr5", steps, journeyTimeout.Token);
             await VerifyDialogSelectFieldValueAsync(window, "newCharacterBuildMethod", "Priority", steps, journeyTimeout.Token);
-            await ClickDialogActionAsync(window, "create_character", steps, journeyTimeout.Token, recordPointerAction);
-
-            await WaitForAsync(
+            await ClickDialogActionUntilAsync(
+                window,
+                "create_character",
                 steps,
+                journeyTimeout.Token,
+                recordPointerAction,
                 "new character continuation dialog rendered",
                 () =>
                 {
                     Visual dialogRoot = ResolveDialogRoot(window);
                     return FindVisibleDescendant<Button>(
                                dialogRoot,
-                               DesktopDialogAccessibility.BuildActionName("complete_new_character_workflow")) is not null
-                        || FindVisibleDescendant<Button>(
-                               dialogRoot,
-                               DesktopDialogAccessibility.BuildActionName("cancel")) is not null;
-                },
-                journeyTimeout.Token);
+                               DesktopDialogAccessibility.BuildActionName("complete_new_character_workflow")) is not null;
+                });
             inputTraceCollector.ObserveDialogWindow(window.PeekDialogWindowForTesting());
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02-priority-workflow");
 
-            await ClickDialogActionAsync(window, "complete_new_character_workflow", steps, journeyTimeout.Token, recordPointerAction);
-            await WaitForAsync(
+            await ClickDialogActionUntilAsync(
+                window,
+                "complete_new_character_workflow",
                 steps,
+                journeyTimeout.Token,
+                recordPointerAction,
                 "workspace opened from mouse-first creation flow",
                 () =>
                 {
@@ -143,8 +146,13 @@ internal static class DesktopMouseFirstJourneyRunner
                     return state.WorkspaceId is not null
                         && state.ActiveDialog is null
                         && !state.IsBusy;
-                },
-                journeyTimeout.Token);
+                });
+            string openedWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
+            RecordStep(
+                steps,
+                HasWorkspaceStripTransition(initialWorkspaceStripText, openedWorkspaceStripText)
+                    ? $"workspace strip changed to {openedWorkspaceStripText}"
+                    : "workspace strip did not visibly transition during open confirmation; internal shell state confirmed the opened workspace");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "03-workspace-opened");
 
             await ClickFileMenuCommandAsync(window, "save_character", steps, journeyTimeout.Token, recordPointerAction);
@@ -159,6 +167,12 @@ internal static class DesktopMouseFirstJourneyRunner
                         && !state.IsBusy;
                 },
                 journeyTimeout.Token);
+            string savedWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
+            RecordStep(
+                steps,
+                HasWorkspaceStripTransition(openedWorkspaceStripText, savedWorkspaceStripText)
+                    ? $"workspace strip changed to {savedWorkspaceStripText}"
+                    : "workspace strip did not visibly transition during save confirmation; internal shell state confirmed the saved workspace");
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "04-workspace-saved");
 
             CharacterOverviewState finalState = window.SnapshotStateForAutomation();
@@ -271,6 +285,34 @@ internal static class DesktopMouseFirstJourneyRunner
         RecordStep(steps, $"click dialog action {actionId}");
     }
 
+    private static async Task ClickDialogActionUntilAsync(
+        MainWindow window,
+        string actionId,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        string transitionDescription,
+        Func<bool> transitionPredicate,
+        int maxAttempts = 3)
+    {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            await ClickDialogActionAsync(window, actionId, steps, ct, recordPointerAction);
+            if (await WaitForConditionWithinAsync(transitionPredicate, ct, TransitionSettleTimeout))
+            {
+                RecordStep(steps, $"wait success: {transitionDescription}");
+                return;
+            }
+
+            if (attempt < maxAttempts)
+            {
+                RecordStep(steps, $"retry dialog action {actionId} after attempt {attempt} did not trigger {transitionDescription}");
+            }
+        }
+
+        throw new TimeoutException($"Timed out while waiting for {transitionDescription}.");
+    }
+
     private static async Task SetDialogTextFieldAsync(MainWindow window, string fieldId, string value, List<string> steps, CancellationToken ct)
     {
         string controlName = DesktopDialogAccessibility.BuildFieldInputName(fieldId);
@@ -314,18 +356,10 @@ internal static class DesktopMouseFirstJourneyRunner
 
     private static async Task WaitForAsync(List<string> steps, string description, Func<bool> predicate, CancellationToken ct)
     {
-        DateTimeOffset deadline = DateTimeOffset.UtcNow + WaitTimeout;
-        while (DateTimeOffset.UtcNow < deadline)
+        if (await WaitForConditionWithinAsync(predicate, ct, WaitTimeout))
         {
-            ct.ThrowIfCancellationRequested();
-            bool matched = await Dispatcher.UIThread.InvokeAsync(predicate);
-            if (matched)
-            {
-                RecordStep(steps, $"wait success: {description}");
-                return;
-            }
-
-            await Task.Delay(PollInterval);
+            RecordStep(steps, $"wait success: {description}");
+            return;
         }
 
         throw new TimeoutException($"Timed out while waiting for {description}.");
@@ -390,6 +424,39 @@ internal static class DesktopMouseFirstJourneyRunner
             TappedEventArgs tapped = new(InputElement.TappedEvent, released);
             control.RaiseEvent(tapped);
         });
+    }
+
+    private static async Task<string> ReadWorkspaceStripTextAsync(MainWindow window)
+        => await Dispatcher.UIThread.InvokeAsync(() => ReadWorkspaceStripText(window));
+
+    private static string ReadWorkspaceStripText(MainWindow window)
+    {
+        TextBlock? workspaceText = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(control => string.Equals(control.Name, "WorkspaceText", StringComparison.Ordinal) && control.IsVisible);
+        return workspaceText?.Text?.Trim() ?? string.Empty;
+    }
+
+    private static bool HasWorkspaceStripTransition(string previousText, string currentText)
+        => !string.IsNullOrWhiteSpace(currentText)
+            && !string.Equals(previousText, currentText, StringComparison.Ordinal);
+
+    private static async Task<bool> WaitForConditionWithinAsync(Func<bool> predicate, CancellationToken ct, TimeSpan timeout)
+    {
+        DateTimeOffset deadline = DateTimeOffset.UtcNow + timeout;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            ct.ThrowIfCancellationRequested();
+            bool matched = await Dispatcher.UIThread.InvokeAsync(predicate);
+            if (matched)
+            {
+                return true;
+            }
+
+            await Task.Delay(PollInterval);
+        }
+
+        return false;
     }
 
     private static async Task EnterTextAsync(TextBox textBox, string value)

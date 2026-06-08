@@ -1852,13 +1852,12 @@ PY
 }
 
 publish_canonical_proof() {
-  local lock_fd=9
-  exec {lock_fd}>"$PUBLISH_LOCK_PATH"
-  if command -v flock >/dev/null 2>&1; then
-    flock "$lock_fd"
-  fi
+  local -a publish_command=(
+    "$PYTHON_BIN" - "$RUN_PROOF_PATH" "$PROOF_PATH" "$LATEST_LINK" "$RUN_ROOT"
+  )
 
-  "$PYTHON_BIN" - "$RUN_PROOF_PATH" "$PROOF_PATH" "$LATEST_LINK" "$RUN_ROOT" <<'PY'
+  if command -v flock >/dev/null 2>&1; then
+    flock "$PUBLISH_LOCK_PATH" "${publish_command[@]}" <<'PY'
 import json
 import pathlib
 import sys
@@ -1970,10 +1969,134 @@ if publish:
         latest_link_path.unlink()
     latest_link_path.symlink_to(publish_run_root)
 PY
+  else
+    "${publish_command[@]}" <<'PY'
+import json
+import pathlib
+import sys
+
+new_path = pathlib.Path(sys.argv[1])
+canonical_path = pathlib.Path(sys.argv[2])
+latest_link_path = pathlib.Path(sys.argv[3])
+run_root = pathlib.Path(sys.argv[4])
+
+
+def load(path: pathlib.Path):
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception:
+        return None
+
+
+def proof_identity(payload):
+    git = dict(payload.get("git") or {})
+    git_start = dict(git.get("start") or {})
+    source_snapshot = dict(payload.get("source_snapshot") or {})
+    return (
+        str(git_start.get("head") or git.get("head") or "").strip(),
+        str(
+            source_snapshot.get("worktree_sha256")
+            or git_start.get("tracked_diff_sha256")
+            or git.get("tracked_diff_sha256")
+            or ""
+        ).strip(),
+        int(source_snapshot.get("entry_count") or 0),
+    )
+
+
+def normalized_status(payload):
+    return str(payload.get("status") or "").strip().lower()
+
+
+def parse_generated_at(payload):
+    raw = str(payload.get("generated_at") or payload.get("generatedAt") or "").strip()
+    if not raw:
+        return ""
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    return raw
+
+
+def latest_passing_receipt_for_identity(identity, root: pathlib.Path):
+    best_payload = None
+    best_receipt_path = None
+    best_generated_at = ""
+
+    for receipt_path in sorted(root.glob(f"run.*/{canonical_path.name}")):
+        payload = load(receipt_path)
+        if not payload or normalized_status(payload) != "passed":
+            continue
+        if proof_identity(payload) != identity:
+            continue
+        generated_at = parse_generated_at(payload)
+        if best_payload is None or generated_at >= best_generated_at:
+            best_payload = payload
+            best_receipt_path = receipt_path
+            best_generated_at = generated_at
+
+    return best_payload, best_receipt_path
+
+
+new_payload = load(new_path)
+existing_payload = load(canonical_path)
+publish = True
+publish_source_path = new_path
+publish_run_root = run_root
+
+if new_payload and existing_payload:
+    same_identity = proof_identity(new_payload) == proof_identity(existing_payload)
+    existing_stage = str(existing_payload.get("stage") or "").strip()
+    new_stage = str(new_payload.get("stage") or "").strip()
+    # Preserve the last passing receipt when a same-identity rerun dies before
+    # any build, smoke, or test evidence could be regenerated.
+    early_infra_failure_stages = {"source_snapshot", "build_lock"}
+    if (
+        existing_payload
+        and same_identity
+        and str(existing_payload.get("status") or "").strip() == "passed"
+        and str(new_payload.get("status") or "").strip() != "passed"
+        and new_stage in early_infra_failure_stages
+    ):
+        publish = False
+
+if new_payload:
+    new_stage = str(new_payload.get("stage") or "").strip()
+    new_identity = proof_identity(new_payload)
+    early_infra_failure_stages = {"source_snapshot", "build_lock"}
+    if normalized_status(new_payload) != "passed" and new_stage in early_infra_failure_stages:
+        best_payload, best_receipt_path = latest_passing_receipt_for_identity(new_identity, run_root.parent)
+        if best_payload and best_receipt_path:
+            publish = True
+            publish_source_path = best_receipt_path
+            publish_run_root = best_receipt_path.parent
+
+if publish:
+    canonical_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = canonical_path.parent / f".{canonical_path.name}.{new_payload.get('stage') if new_payload else 'unknown'}.tmp"
+    temp_path.write_text(publish_source_path.read_text(encoding="utf-8"), encoding="utf-8")
+    temp_path.replace(canonical_path)
+    latest_link_path.parent.mkdir(parents=True, exist_ok=True)
+    if latest_link_path.is_symlink() or latest_link_path.exists():
+        latest_link_path.unlink()
+    latest_link_path.symlink_to(publish_run_root)
+PY
+  fi
 
   local fleet_root="${CHUMMER_FLEET_ROOT:-/docker/fleet}"
   if [[ "${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SKIP_DESIGN_SUPERVISOR_REFRESH:-0}" != "1" && -d "$fleet_root" && -f "$fleet_root/scripts/chummer_design_supervisor.py" ]]; then
-    "$PYTHON_BIN" - "$fleet_root" <<'PY'
+    local design_supervisor_timeout_seconds="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_DESIGN_SUPERVISOR_TIMEOUT_SECONDS:-30}"
+    local -a design_supervisor_command=(
+      "$PYTHON_BIN" - "$fleet_root"
+    )
+    if command -v timeout >/dev/null 2>&1; then
+      design_supervisor_command=(
+        timeout "${design_supervisor_timeout_seconds}s" "${design_supervisor_command[@]}"
+      )
+    fi
+
+    "${design_supervisor_command[@]}" <<'PY'
 from __future__ import annotations
 
 import sys

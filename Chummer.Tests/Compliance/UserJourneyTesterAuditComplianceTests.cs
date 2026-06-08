@@ -77,6 +77,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
             "The live-binary mouse-first journey should fail closed instead of forcing submenu visibility.");
         StringAssert.Contains(runnerText, "TextInputEventArgs");
         StringAssert.Contains(runnerText, "InputElement.TextInputEvent");
+        StringAssert.Contains(runnerText, "ReadWorkspaceStripTextAsync");
+        StringAssert.Contains(runnerText, "WorkspaceText");
     }
 
     [TestMethod]
