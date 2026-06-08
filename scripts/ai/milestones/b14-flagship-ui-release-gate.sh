@@ -266,7 +266,7 @@ else
 fi
 
 if [[ ! -f "$sample_path" ]]; then
-  echo "[b14] FAIL: bundled demo runner fixture missing from Release output: $sample_path" >&2
+  echo "[b14] FAIL: bundled sample-character fixture missing from Release output: $sample_path" >&2
   exit 41
 fi
 

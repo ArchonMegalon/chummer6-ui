@@ -99,7 +99,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
         SetButtonLabel("InstallLinkingButton", "Link This Copy", "Link Copy");
         SetButtonLabel("SupportButton", "Open Support", "Support");
         SetButtonLabel("ReportIssueButton", "Report Issue", "Issue");
-        SetButtonLabel("LoadDemoRunnerButton", "Load Demo Runner", "Demo");
+        SetButtonLabel("LoadDemoRunnerButton", "Open Sample Character", "Sample");
         SetButtonLabel("CloseWorkspaceButton", "Close Active Workspace", "Close");
     }
 

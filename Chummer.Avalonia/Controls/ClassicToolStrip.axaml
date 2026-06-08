@@ -131,8 +131,8 @@
                 IsVisible="False"
                 MinWidth="84"
                 Padding="10,4"
-                Content="Demo"
-                ToolTip.Tip="Load Demo Runner"
+                Content="Sample"
+                ToolTip.Tip="Open Sample Character"
                 Click="LoadDemoRunnerButton_OnClick" />
         <Button x:Name="CloseWorkspaceButton"
                 MinWidth="72"

@@ -618,7 +618,7 @@ evidence["installer_payload_validation_mode"] = "release-channel digest-size-and
 if installer_exists and not (payload_marker_present or appended_payload_marker_present):
     reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
 if installer_exists and not sample_marker_present:
-    reasons.append("Published Windows installer is missing the bundled demo runner sample marker.")
+    reasons.append("Published Windows installer is missing the bundled sample-character marker.")
 
 startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
 if startup_smoke_receipt_override:

@@ -1891,7 +1891,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                     .Where(static value => !string.IsNullOrWhiteSpace(value))
                     .Distinct(StringComparer.Ordinal)
                     .ToArray();
-                CollectionAssert.DoesNotContain(visibleTextSamples, "Open Demo");
+                CollectionAssert.DoesNotContain(visibleTextSamples, "Open Sample");
                 CollectionAssert.DoesNotContain(visibleTextSamples, "Demo");
                 Assert.IsFalse(
                     visibleTextSamples.Any(text =>

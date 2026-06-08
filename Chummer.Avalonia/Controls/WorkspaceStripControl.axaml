@@ -20,7 +20,7 @@
                  Text="Start:" />
       <Button x:Name="LoadDemoRunnerQuickActionButton"
               Classes="shell-action quiet"
-              Content="Open Demo"
+              Content="Open Sample"
               Click="LoadDemoRunnerQuickActionButton_OnClick" />
     </StackPanel>
     <TextBlock x:Name="WorkspaceCaptionText"

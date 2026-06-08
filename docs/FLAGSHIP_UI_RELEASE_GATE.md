@@ -8,14 +8,14 @@ This repo-level gate implements the product requirement defined in `chummer6-des
 
 The executable gate is green only when all of the following are true:
 
-1. The promoted desktop output physically contains the bundled demo runner fixture at `Samples/Legacy/Soma-Career.chum5`.
+1. The promoted desktop output physically contains the bundled sample-character fixture at `Samples/Legacy/Soma-Career.chum5`.
 2. Headless interaction tests prove that:
    - top-level menu clicks expose visible command choices
    - the real runtime-backed menu bar keeps the classic `File / Edit / Special / Tools / Windows / Help` labels visible
    - the primary top-level menus that are supposed to be actionable actually open visible command choices under runtime-backed interaction
    - settings opens an in-shell interactive dialog state instead of only mutating hidden state
    - the shell remains responsive after settings opens
-   - the bundled demo runner button really dispatches an import when the fixture is available
+   - the bundled sample-character button really dispatches an import when the fixture is available
    - core keyboard shortcuts resolve to the same shell commands
    - full dual-head desktop workflow equivalence is present for legacy builder/editor families, not only shell-level interaction smoke
    - explicit Chummer5a parity, SR4 parity, SR6 parity, and SR4/SR6 frontier parity receipts are all passing in the same gate run

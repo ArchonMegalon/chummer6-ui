@@ -48,7 +48,7 @@ public partial class MainWindow
         MainWindowFeedbackCoordinator.ShowBundledDemoRunnerLoading(_controls.ToolStrip, importFile.SourceLabel);
         await RunUiActionAsync(
             () => _adapter.ImportAsync(importFile.Payload, CancellationToken.None),
-            "load bundled demo runner");
+            "open bundled sample character");
     }
 
     private async void OnOpened(object? sender, EventArgs e)

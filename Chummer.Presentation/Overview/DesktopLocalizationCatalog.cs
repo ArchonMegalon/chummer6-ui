@@ -29,7 +29,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.tool.open_support"] = "Open Support",
         ["desktop.shell.tool.report_issue"] = "Report Issue",
         ["desktop.shell.tool.settings"] = "Settings",
-        ["desktop.shell.tool.load_demo_runner"] = "Load Demo Runner",
+        ["desktop.shell.tool.load_demo_runner"] = "Open Sample Character",
         ["desktop.shell.tool.import_character_file"] = "Import Character File",
         ["desktop.shell.tool.import_raw_xml"] = "Import Raw XML",
         ["desktop.shell.tool.save_workspace"] = "Save Workspace",
@@ -50,7 +50,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (open: {1}, {2})",
         ["desktop.shell.workspace_strip.empty"] = "Workspace: none",
         ["desktop.shell.workspace_strip.caption"] = "Ruleset, file, and active tab stay visible while you move through dense builder sections.",
-        ["desktop.shell.workspace_strip.quick_start_caption"] = "Inspect the bundled Soma-Career sample before you start a blank build.",
+        ["desktop.shell.workspace_strip.quick_start_caption"] = "Open the bundled Soma-Career sample before you start a blank build.",
         ["desktop.shell.summary.name"] = "Name",
         ["desktop.shell.summary.alias"] = "Alias",
         ["desktop.shell.summary.karma"] = "Karma",
@@ -66,8 +66,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.feedback.import_raw_required"] = "State: provide debug XML content before importing.",
         ["desktop.shell.feedback.import_file_unavailable"] = "State: file picker unavailable on this platform.",
         ["desktop.shell.feedback.import_file_cancelled"] = "State: {0} selection cancelled.",
-        ["desktop.shell.feedback.demo_runner_unavailable"] = "State: bundled demo runner is unavailable in this build.",
-        ["desktop.shell.feedback.demo_runner_loading"] = "State: loading bundled demo runner from {0}.",
+        ["desktop.shell.feedback.demo_runner_unavailable"] = "State: the bundled sample character is unavailable in this build.",
+        ["desktop.shell.feedback.demo_runner_loading"] = "State: opening bundled sample character from {0}.",
         ["desktop.shell.feedback.no_active_workspace"] = "State: no active workspace to close.",
         ["desktop.shell.feedback.desktop_home_reviewed"] = "State: desktop home reviewed.",
         ["desktop.shell.feedback.campaign_workspace_reviewed"] = "State: campaign workspace reviewed.",
@@ -439,7 +439,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.import_raw_xml"] = "Raw-XML importieren";
             localized["desktop.shell.tool.save_workspace"] = "Arbeitsbereich speichern";
             localized["desktop.shell.tool.close_active_workspace"] = "Aktiven Arbeitsbereich schließen";
-            localized["desktop.shell.tool.load_demo_runner"] = "Demo-Runner laden";
+            localized["desktop.shell.tool.load_demo_runner"] = "Beispielcharakter öffnen";
             localized["desktop.shell.tool.status_idle"] = "Status: inaktiv";
             localized["desktop.shell.state.value.ready"] = "bereit";
             localized["desktop.shell.state.value.busy"] = "beschaftigt";
@@ -455,8 +455,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.import_raw_required"] = "Status: Fugen Sie vor dem Import Debug-XML-Inhalt ein.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: Dateiauswahl ist auf dieser Plattform nicht verfugbar.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Status: Auswahl fur {0} wurde abgebrochen.";
-            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: Der gebundelte Demo-Runner ist in diesem Build nicht verfugbar.";
-            localized["desktop.shell.feedback.demo_runner_loading"] = "Status: Gebundelter Demo-Runner wird aus {0} geladen.";
+            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: Der mitgelieferte Beispielcharakter ist in diesem Build nicht verfugbar.";
+            localized["desktop.shell.feedback.demo_runner_loading"] = "Status: Mitgelieferter Beispielcharakter wird aus {0} geöffnet.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Status: Kein aktiver Arbeitsbereich zum Schliessen.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Status: Desktop-Start wurde gepruft.";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Status: Kampagnen-Arbeitsbereich wurde gepruft.";
@@ -479,7 +479,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.workspace_strip.summary"] = "Arbeitsbereich: {0} (offen: {1}, {2})";
             localized["desktop.shell.workspace_strip.empty"] = "Arbeitsbereich: keiner";
             localized["desktop.shell.workspace_strip.caption"] = "Regelsatz, Datei und aktiver Tab bleiben sichtbar, wahrend Sie durch dichte Builder-Bereiche wechseln.";
-            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Prufen Sie das mitgelieferte Soma-Career-Beispiel, bevor Sie mit einem leeren Build starten.";
+            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Öffnen Sie das mitgelieferte Soma-Career-Beispiel, bevor Sie mit einem leeren Build starten.";
             localized["desktop.shell.status.character"] = "Charakter: {0}";
             localized["desktop.shell.status.service"] = "Dienst: {0}";
             localized["desktop.shell.status.time"] = "Zeit: {0}";
@@ -840,7 +840,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.open_support"] = "Ouvrir le support";
             localized["desktop.shell.tool.report_issue"] = "Signaler un problème";
             localized["desktop.shell.tool.settings"] = "Paramètres";
-            localized["desktop.shell.tool.load_demo_runner"] = "Charger le runner démo";
+            localized["desktop.shell.tool.load_demo_runner"] = "Ouvrir le personnage d'exemple";
             localized["desktop.shell.tool.import_character_file"] = "Importer un fichier personnage";
             localized["desktop.shell.tool.import_raw_xml"] = "Importer un XML brut";
             localized["desktop.shell.tool.save_workspace"] = "Enregistrer l'espace de travail";
@@ -860,8 +860,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.import_raw_required"] = "Etat : fournissez le contenu XML de debug avant l'import.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Etat : le selecteur de fichier est indisponible sur cette plateforme.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Etat : la selection de fichier {0} a ete annulee.";
-            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Etat : le runner de demonstration fourni est indisponible dans ce build.";
-            localized["desktop.shell.feedback.demo_runner_loading"] = "Etat : chargement du runner de demonstration depuis {0}.";
+            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Etat : le personnage d'exemple fourni est indisponible dans ce build.";
+            localized["desktop.shell.feedback.demo_runner_loading"] = "Etat : ouverture du personnage d'exemple fourni depuis {0}.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Etat : aucun workspace actif a fermer.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Etat : accueil desktop verifie.";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Etat : workspace de campagne verifie.";
@@ -884,7 +884,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.workspace_strip.summary"] = "Espace de travail : {0} (ouverts : {1}, {2})";
             localized["desktop.shell.workspace_strip.empty"] = "Espace de travail : aucun";
             localized["desktop.shell.workspace_strip.caption"] = "Le ruleset, le fichier et l'onglet actif restent visibles pendant la navigation des sections denses du builder.";
-            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Inspectez l'exemple Soma-Career fourni avant de démarrer une création vide.";
+            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Ouvrez l'exemple Soma-Career fourni avant de démarrer une création vide.";
             localized["desktop.shell.status.character"] = "Personnage : {0}";
             localized["desktop.shell.status.service"] = "Service : {0}";
             localized["desktop.shell.status.time"] = "Heure : {0}";
@@ -1245,7 +1245,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.open_support"] = "サポートを開く";
             localized["desktop.shell.tool.report_issue"] = "問題を報告";
             localized["desktop.shell.tool.settings"] = "設定";
-            localized["desktop.shell.tool.load_demo_runner"] = "デモランナーを読み込む";
+            localized["desktop.shell.tool.load_demo_runner"] = "サンプルキャラクターを開く";
             localized["desktop.shell.tool.import_character_file"] = "キャラクターファイルをインポート";
             localized["desktop.shell.tool.import_raw_xml"] = "Raw XML をインポート";
             localized["desktop.shell.tool.save_workspace"] = "ワークスペースを保存";
@@ -1265,8 +1265,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.import_raw_required"] = "状態: インポート前にデバッグ XML 内容を入力してください。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状態: このプラットフォームではファイルピッカーを利用できません。";
             localized["desktop.shell.feedback.import_file_cancelled"] = "状態: {0} のファイル選択は取り消されました。";
-            localized["desktop.shell.feedback.demo_runner_unavailable"] = "状態: このビルドでは同梱デモランナーを利用できません。";
-            localized["desktop.shell.feedback.demo_runner_loading"] = "状態: 同梱デモランナーを {0} から読み込み中です。";
+            localized["desktop.shell.feedback.demo_runner_unavailable"] = "状態: このビルドでは同梱サンプルキャラクターを利用できません。";
+            localized["desktop.shell.feedback.demo_runner_loading"] = "状態: 同梱サンプルキャラクターを {0} から開いています。";
             localized["desktop.shell.feedback.no_active_workspace"] = "状態: 閉じるアクティブワークスペースがありません。";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "状態: デスクトップホームを確認しました。";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状態: キャンペーンワークスペースを確認しました。";
@@ -1289,7 +1289,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.workspace_strip.summary"] = "ワークスペース: {0} (オープン: {1}, {2})";
             localized["desktop.shell.workspace_strip.empty"] = "ワークスペース: なし";
             localized["desktop.shell.workspace_strip.caption"] = "ルールセット、ファイル、アクティブタブを表示したまま、高密度ビルダー区画を移動できます。";
-            localized["desktop.shell.workspace_strip.quick_start_caption"] = "空のビルドを始める前に、同梱のSoma-Careerサンプルを確認してください。";
+            localized["desktop.shell.workspace_strip.quick_start_caption"] = "空のビルドを始める前に、同梱のSoma-Careerサンプルを開いて確認してください。";
             localized["desktop.shell.status.character"] = "キャラクター: {0}";
             localized["desktop.shell.status.service"] = "サービス: {0}";
             localized["desktop.shell.status.time"] = "時刻: {0}";
@@ -1650,7 +1650,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.open_support"] = "Abrir suporte";
             localized["desktop.shell.tool.report_issue"] = "Reportar problema";
             localized["desktop.shell.tool.settings"] = "Configurações";
-            localized["desktop.shell.tool.load_demo_runner"] = "Carregar runner de demonstração";
+            localized["desktop.shell.tool.load_demo_runner"] = "Abrir personagem de exemplo";
             localized["desktop.shell.tool.import_character_file"] = "Importar arquivo de personagem";
             localized["desktop.shell.tool.import_raw_xml"] = "Importar XML bruto";
             localized["desktop.shell.tool.save_workspace"] = "Salvar workspace";
@@ -1670,8 +1670,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.import_raw_required"] = "Status: forneca o conteudo XML de debug antes de importar.";
             localized["desktop.shell.feedback.import_file_unavailable"] = "Status: seletor de arquivo indisponivel nesta plataforma.";
             localized["desktop.shell.feedback.import_file_cancelled"] = "Status: selecao de arquivo {0} cancelada.";
-            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: o runner de demonstracao incluido esta indisponivel neste build.";
-            localized["desktop.shell.feedback.demo_runner_loading"] = "Status: carregando runner de demonstracao incluso de {0}.";
+            localized["desktop.shell.feedback.demo_runner_unavailable"] = "Status: o personagem de exemplo incluido esta indisponivel neste build.";
+            localized["desktop.shell.feedback.demo_runner_loading"] = "Status: abrindo personagem de exemplo incluido de {0}.";
             localized["desktop.shell.feedback.no_active_workspace"] = "Status: nenhum workspace ativo para fechar.";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "Status: painel inicial revisado.";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "Status: workspace de campanha revisado.";
@@ -1694,7 +1694,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (abertos: {1}, {2})";
             localized["desktop.shell.workspace_strip.empty"] = "Workspace: nenhum";
             localized["desktop.shell.workspace_strip.caption"] = "Ruleset, arquivo e guia ativa permanecem visiveis enquanto voce navega por secoes densas do builder.";
-            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Inspecione o exemplo Soma-Career incluso antes de iniciar um build em branco.";
+            localized["desktop.shell.workspace_strip.quick_start_caption"] = "Abra o exemplo Soma-Career incluso antes de iniciar um build em branco.";
             localized["desktop.shell.status.character"] = "Personagem: {0}";
             localized["desktop.shell.status.service"] = "Servico: {0}";
             localized["desktop.shell.status.time"] = "Hora: {0}";
@@ -2055,7 +2055,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.tool.open_support"] = "打开支持";
             localized["desktop.shell.tool.report_issue"] = "报告问题";
             localized["desktop.shell.tool.settings"] = "设置";
-            localized["desktop.shell.tool.load_demo_runner"] = "加载演示跑者";
+            localized["desktop.shell.tool.load_demo_runner"] = "打开示例角色";
             localized["desktop.shell.tool.import_character_file"] = "导入角色文件";
             localized["desktop.shell.tool.import_raw_xml"] = "导入原始 XML";
             localized["desktop.shell.tool.save_workspace"] = "保存工作区";
@@ -2075,8 +2075,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.feedback.import_raw_required"] = "状态: 导入前请先提供调试 XML 内容。";
             localized["desktop.shell.feedback.import_file_unavailable"] = "状态: 此平台无法使用文件选择器。";
             localized["desktop.shell.feedback.import_file_cancelled"] = "状态: 已取消 {0} 文件选择。";
-            localized["desktop.shell.feedback.demo_runner_unavailable"] = "状态: 此构建中的内置演示跑者不可用。";
-            localized["desktop.shell.feedback.demo_runner_loading"] = "状态: 正在从 {0} 加载内置演示跑者。";
+            localized["desktop.shell.feedback.demo_runner_unavailable"] = "状态: 此构建中的内置示例角色不可用。";
+            localized["desktop.shell.feedback.demo_runner_loading"] = "状态: 正在从 {0} 打开内置示例角色。";
             localized["desktop.shell.feedback.no_active_workspace"] = "状态: 没有可关闭的活动工作区。";
             localized["desktop.shell.feedback.desktop_home_reviewed"] = "状态: 已查看桌面首页。";
             localized["desktop.shell.feedback.campaign_workspace_reviewed"] = "状态: 已查看战役工作区。";
@@ -2099,7 +2099,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.shell.workspace_strip.summary"] = "工作区: {0} (已打开: {1}, {2})";
             localized["desktop.shell.workspace_strip.empty"] = "工作区: 无";
             localized["desktop.shell.workspace_strip.caption"] = "在穿梭高密度构建区时，规则集、文件和活动标签页保持可见。";
-            localized["desktop.shell.workspace_strip.quick_start_caption"] = "开始空白构建前，请先查看内置的 Soma-Career 示例。";
+            localized["desktop.shell.workspace_strip.quick_start_caption"] = "开始空白构建前，请先打开内置的 Soma-Career 示例。";
             localized["desktop.shell.status.character"] = "角色: {0}";
             localized["desktop.shell.status.service"] = "服务: {0}";
             localized["desktop.shell.status.time"] = "时间: {0}";

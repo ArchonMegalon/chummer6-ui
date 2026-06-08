@@ -874,7 +874,7 @@ def build_no_noise_artifact(matrix_rows: list[dict[str, Any]]) -> dict[str, Any]
 
     forbidden_controls = ["LoadDemoRunnerButton", "QuickStartContainer", "GmPrepButton", "RosterMovementButton"]
     forbidden_copy = [
-        "Open Demo",
+        "Open Sample",
         "Open GM Prep Packets",
         "Open Roster Movement",
         "Living World",
