@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-08T08:58:40Z",
+  "generated_at": "2026-06-08T12:40:47Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -31,7 +31,7 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 294ms"
+      "  duration: 245ms"
     ]
   },
   "locale_summary": [
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-08T08:58:05Z",
+    "generated_at": "2026-06-08T12:40:16Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",

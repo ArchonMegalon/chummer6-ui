@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Desktop.Runtime;
@@ -376,8 +377,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
             return;
         }
 
-        e.Cancel = true;
-        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language));
+        _allowGuestClose = true;
+        if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
+        {
+            desktopLifetime.Shutdown();
+            return;
+        }
+
+        Close();
     }
 
     private void SetStatus(string message)

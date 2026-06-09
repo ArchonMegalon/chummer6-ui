@@ -97,8 +97,11 @@ public sealed class DesktopInstallLinkingShellChromeTests
 
         StringAssert.Contains(text, "desktop.install_link.button.exit_desktop");
         StringAssert.Contains(text, "_allowGuestClose = true;");
-        StringAssert.Contains(text, "DesktopInstallLinkingRuntime.IsClaimed(_state) || _allowGuestClose");
+        StringAssert.Contains(text, "desktopLifetime.Shutdown();");
         StringAssert.Contains(text, "desktop.install_link.button.login_website");
+        Assert.IsFalse(
+            text.Contains("e.Cancel = true;", StringComparison.Ordinal),
+            "Closing the unlinked install-link window should exit the desktop instead of trapping the user in the dialog.");
     }
 
     private static string FindPath(params string[] parts)

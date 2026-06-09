@@ -57,6 +57,7 @@ public static class DesktopInstallLinkingRuntime
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
+    private const string PublicWebBaseUrlEnvironmentVariable = "CHUMMER_PUBLIC_WEB_BASE_URL";
     private const string DefaultPublicWebBaseUrl = "https://chummer.run/";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string InstallLinkCallbackEnvironmentVariable = "CHUMMER_INSTALL_LINK_CALLBACK_URI";
@@ -1429,12 +1430,13 @@ public static class DesktopInstallLinkingRuntime
 
     private static Uri ResolvePublicWebAddress()
     {
-        if (TryResolvePublicPortalAddress(WebBaseUrlEnvironmentVariable, out Uri? uri))
+        Uri? uri;
+        if (TryResolvePublicPortalAddress(PublicWebBaseUrlEnvironmentVariable, out uri))
         {
             return uri!;
         }
 
-        if (TryResolvePublicPortalAddress(ApiBaseUrlEnvironmentVariable, out uri))
+        if (TryResolvePublicPortalAddress(WebBaseUrlEnvironmentVariable, out uri))
         {
             return uri!;
         }
