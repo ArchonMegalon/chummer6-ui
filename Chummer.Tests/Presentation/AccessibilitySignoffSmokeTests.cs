@@ -2008,7 +2008,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.RedeemClaimCodeAsync");
         RequireContains(source, "RefreshActionState()");
         RequireContains(source, "desktop.install_link.button.login_website");
-        RequireContains(source, "e.Cancel = true;");
+        RequireContains(source, "desktopLifetime.Shutdown();");
+        RequireDoesNotContain(source, "e.Cancel = true;");
         RequireDoesNotContain(source, "ContinueAsGuestAsync");
         RequireDoesNotContain(source, "desktop.install_link.button.continue_guest");
         RequireContains(source, "desktop.install_link.summary.last_claim_attempt");
