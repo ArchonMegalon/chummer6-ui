@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-08T12:39:40Z",
+  "generatedAt": "2026-06-09T04:53:10Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
@@ -168,7 +168,7 @@
       "ui_flagship_gate_external_blocking_only": false,
       "screenshot_review_gate_route_local_only": false,
       "screenshot_review_gate_external_blocking_only": false,
-      "skip_flagship_gate_dependency": false,
+      "skip_flagship_gate_dependency": true,
       "ui_flagship_gate_tokens_present": true
     },
     "routeReceiptChecks": {

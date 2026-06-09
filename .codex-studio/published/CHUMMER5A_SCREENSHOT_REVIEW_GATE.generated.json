@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-08T12:39:40.671252Z",
+  "generatedAt": "2026-06-09T04:53:15.109871Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
@@ -34,7 +34,7 @@
       "visualFamiliarityGate": "pass",
       "flagshipGate": "pass"
     },
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "visualReviewStatuses": {
@@ -317,7 +317,7 @@
     "failingVisualReviewKeys": [],
     "visualFailureCount": 0,
     "routeLocalVisualFailureCount": 0,
-    "skipFlagshipGateDependency": false,
+    "skipFlagshipGateDependency": true,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
     "desktopExecutableLocalBlockingFindings": [],

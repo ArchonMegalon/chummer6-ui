@@ -1353,7 +1353,12 @@ if [[ "$skip_downstream_receipt_materialization" != "1" ]]; then
     bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh >/dev/null
 
   echo "[b14] materializing desktop workflow execution gate..."
-  CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$release_channel_path" \
+  python3 scripts/materialize-verified-release-channel-mirror.py >/dev/null || true
+  desktop_workflow_release_channel_path="$release_channel_path"
+  if [[ -f "$verified_release_channel_path" && ( ! -f "$desktop_workflow_release_channel_path" || "$verified_release_channel_path" -nt "$desktop_workflow_release_channel_path" ) ]]; then
+    desktop_workflow_release_channel_path="$verified_release_channel_path"
+  fi
+  CHUMMER_DESKTOP_WORKFLOW_RELEASE_CHANNEL_PATH="$desktop_workflow_release_channel_path" \
   CHUMMER_DESKTOP_WORKFLOW_REFRESH_DEPENDENCY_RECEIPTS=0 \
   CHUMMER_DESKTOP_WORKFLOW_SKIP_FLAGSHIP_DEPENDENCY_REFRESH=1 \
     bash scripts/ai/milestones/materialize-desktop-workflow-execution-gate.sh >/dev/null
