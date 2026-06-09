@@ -259,6 +259,7 @@ public sealed class DesktopWorkflowExecutionGateRefreshComplianceTests
         string scriptText = File.ReadAllText(scriptPath);
 
         StringAssert.Contains(scriptText, "republish_screenshot_pack_freshness_if_complete()");
+        StringAssert.Contains(scriptText, "verified_release_channel_path=\"$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json\"");
         StringAssert.Contains(scriptText, "control_evidence_path = target / \"SCREENSHOT_CONTROL_EVIDENCE.generated.json\"");
         StringAssert.Contains(scriptText, "for path in list(target.glob(\"*.png\")) + [control_evidence_path]:");
         StringAssert.Contains(scriptText, "os.utime(path, (proof_timestamp, proof_timestamp))");

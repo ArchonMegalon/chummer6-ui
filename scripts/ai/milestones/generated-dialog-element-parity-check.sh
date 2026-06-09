@@ -14,6 +14,7 @@ import json
 import re
 import subprocess
 import sys
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -173,6 +174,9 @@ PATHS = {
     "verify_script": repo_root / "scripts/ai/verify.sh",
     "m103_receipt": repo_root / ".codex-studio/published/NEXT90_M103_UI_VETERAN_CERTIFICATION.generated.json",
 }
+
+BUILD_TIMEOUT_SECONDS = int(os.environ.get("CHUMMER_GENERATED_DIALOG_BUILD_TIMEOUT_SECONDS", "1800"))
+TEST_TIMEOUT_SECONDS = int(os.environ.get("CHUMMER_GENERATED_DIALOG_TEST_TIMEOUT_SECONDS", "300"))
 
 
 def now_iso() -> str:
@@ -478,6 +482,8 @@ test_commands = [
 ]
 evidence["testCommands"] = test_commands
 evidence["testProject"] = "Chummer.Tests/Chummer.Tests.csproj"
+evidence["buildTimeoutSeconds"] = BUILD_TIMEOUT_SECONDS
+evidence["testTimeoutSeconds"] = TEST_TIMEOUT_SECONDS
 
 build_result: subprocess.CompletedProcess[str] | None = None
 test_results: list[dict[str, Any]] = []
@@ -497,50 +503,79 @@ if not reasons:
     ]
     evidence["buildCommand"] = build_command
 
-    build_result = subprocess.run(
-        build_command,
-        cwd=repo_root,
-        text=True,
-        capture_output=True,
-    )
-    evidence["buildExitCode"] = build_result.returncode
-    evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
-    if build_result.returncode != 0:
+    try:
+        build_result = subprocess.run(
+            build_command,
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            timeout=BUILD_TIMEOUT_SECONDS,
+        )
+        evidence["buildExitCode"] = build_result.returncode
+        evidence["buildOutputTail"] = tail_lines((build_result.stdout or "") + "\n" + (build_result.stderr or ""))
+        if build_result.returncode != 0:
+            add_failure(
+                f"Generated dialog parity build slice failed with exit code {build_result.returncode}.",
+                execution_failures,
+            )
+        else:
+            for test_command in test_commands:
+                try:
+                    test_result = subprocess.run(
+                        test_command,
+                        cwd=repo_root,
+                        text=True,
+                        capture_output=True,
+                        timeout=TEST_TIMEOUT_SECONDS,
+                    )
+                    combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
+                    output_tail = tail_lines(combined_output)
+                    output_lower = combined_output.lower()
+                    no_matches = "no test matches the given testcase filter" in output_lower
+                    test_results.append(
+                        {
+                            "command": test_command,
+                            "exitCode": test_result.returncode,
+                            "noMatches": no_matches,
+                            "outputTail": output_tail,
+                            "timedOut": False,
+                        }
+                    )
+                    if test_result.returncode != 0:
+                        add_failure(
+                            f"Generated dialog parity test slice failed with exit code {test_result.returncode}: {' '.join(test_command)}",
+                            execution_failures,
+                        )
+                    elif no_matches:
+                        add_failure(
+                            f"Generated dialog parity test slice matched zero tests: {' '.join(test_command)}",
+                            execution_failures,
+                        )
+                except subprocess.TimeoutExpired as exc:
+                    combined_output = (exc.stdout or "") + "\n" + (exc.stderr or "")
+                    test_results.append(
+                        {
+                            "command": test_command,
+                            "exitCode": None,
+                            "noMatches": False,
+                            "outputTail": tail_lines(combined_output),
+                            "timedOut": True,
+                        }
+                    )
+                    add_failure(
+                        f"Generated dialog parity test slice timed out after {TEST_TIMEOUT_SECONDS}s: {' '.join(test_command)}",
+                        execution_failures,
+                    )
+            evidence["testResults"] = test_results
+    except subprocess.TimeoutExpired as exc:
+        combined_output = (exc.stdout or "") + "\n" + (exc.stderr or "")
+        evidence["buildExitCode"] = None
+        evidence["buildTimedOut"] = True
+        evidence["buildOutputTail"] = tail_lines(combined_output)
         add_failure(
-            f"Generated dialog parity build slice failed with exit code {build_result.returncode}.",
+            f"Generated dialog parity build slice timed out after {BUILD_TIMEOUT_SECONDS}s.",
             execution_failures,
         )
-    else:
-        for test_command in test_commands:
-            test_result = subprocess.run(
-                test_command,
-                cwd=repo_root,
-                text=True,
-                capture_output=True,
-            )
-            combined_output = (test_result.stdout or "") + "\n" + (test_result.stderr or "")
-            output_tail = tail_lines(combined_output)
-            output_lower = combined_output.lower()
-            no_matches = "no test matches the given testcase filter" in output_lower
-            test_results.append(
-                {
-                    "command": test_command,
-                    "exitCode": test_result.returncode,
-                    "noMatches": no_matches,
-                    "outputTail": output_tail,
-                }
-            )
-            if test_result.returncode != 0:
-                add_failure(
-                    f"Generated dialog parity test slice failed with exit code {test_result.returncode}: {' '.join(test_command)}",
-                    execution_failures,
-                )
-            elif no_matches:
-                add_failure(
-                    f"Generated dialog parity test slice matched zero tests: {' '.join(test_command)}",
-                    execution_failures,
-                )
-        evidence["testResults"] = test_results
 
 if not reasons:
     payload["status"] = "pass"

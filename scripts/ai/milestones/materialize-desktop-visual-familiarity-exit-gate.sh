@@ -20,6 +20,7 @@ flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINE
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
 presentation_release_channel_path="/docker/chummercomplete/chummer-presentation/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json"
+verified_release_channel_path="$repo_root/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
 if [[ -n "$canonical_release_channel_path" && -f "$canonical_release_channel_path" ]]; then
   release_channel_path_default="$canonical_release_channel_path"
 else
@@ -27,6 +28,10 @@ else
   if [[ -f "$presentation_release_channel_path" ]] && [[ ! -f "$default_release_channel_path" || "$presentation_release_channel_path" -nt "$default_release_channel_path" ]]; then
     release_channel_path_default="$presentation_release_channel_path"
   fi
+fi
+if [[ -f "$verified_release_channel_path" \
+  && ( ! -f "$release_channel_path_default" || "$verified_release_channel_path" -nt "$release_channel_path_default" ) ]]; then
+  release_channel_path_default="$verified_release_channel_path"
 fi
 release_channel_path="${CHUMMER_DESKTOP_VISUAL_RELEASE_CHANNEL_PATH:-$release_channel_path_default}"
 release_gate_lock_dir="$repo_root/.codex-studio/locks/b14-flagship-ui-release-gate.lock"

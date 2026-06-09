@@ -45,6 +45,12 @@ public sealed class GeneratedDialogElementParityComplianceTests
         StringAssert.Contains(scriptText, "\"m103EvidenceReview\"");
         StringAssert.Contains(scriptText, "\"executionReview\"");
         StringAssert.Contains(scriptText, "\"failureCount\"");
+        StringAssert.Contains(scriptText, "CHUMMER_GENERATED_DIALOG_BUILD_TIMEOUT_SECONDS");
+        StringAssert.Contains(scriptText, "CHUMMER_GENERATED_DIALOG_TEST_TIMEOUT_SECONDS");
+        StringAssert.Contains(scriptText, "timeout=BUILD_TIMEOUT_SECONDS");
+        StringAssert.Contains(scriptText, "timeout=TEST_TIMEOUT_SECONDS");
+        StringAssert.Contains(scriptText, "\"timedOut\": True");
+        StringAssert.Contains(scriptText, "evidence[\"buildTimedOut\"] = True");
     }
 
     [TestMethod]
