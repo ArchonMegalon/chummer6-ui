@@ -59,9 +59,8 @@ public static class ClassicFormPortViewModelBridge
     public static ClassicFormPortViewModels Create(
         ClassicFormPortState state,
         ClassicFormDesignerSnapshot snapshot,
-        ClassicFormPortActionCommands? commands = null)
+        ClassicFormPortActionCommands commands)
     {
-        commands ??= ClassicFormPortActionCommands.NoOp;
         ClassicFormPortDomainModel domain = state.DomainModel;
         IReadOnlyList<string> actions = ClassicFormPortSurfaceControl.CollectActionLabelsForBridge(state);
 
@@ -119,15 +118,7 @@ public sealed record ClassicFormPortActionCommands(
     ICommand EditCommand,
     ICommand DeleteCommand,
     ICommand SearchCommand,
-    ICommand CommitCommand)
-{
-    public static ClassicFormPortActionCommands NoOp { get; } = new(
-        new ClassicFormPortCommand(static _ => { }),
-        new ClassicFormPortCommand(static _ => { }),
-        new ClassicFormPortCommand(static _ => { }),
-        new ClassicFormPortCommand(static _ => { }),
-        new ClassicFormPortCommand(static _ => { }));
-}
+    ICommand CommitCommand);
 
 public sealed class ClassicFormPortCommand : ICommand
 {
