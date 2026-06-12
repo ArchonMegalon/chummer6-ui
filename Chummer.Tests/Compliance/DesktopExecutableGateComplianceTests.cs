@@ -1487,5 +1487,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(scriptText, "Linux mouse-first journey receipt is missing");
         StringAssert.Contains(scriptText, "Linux mouse-first journey receipt does not prove a saved workspace.");
         StringAssert.Contains(scriptText, "Linux mouse-first journey receipt does not prove the File menu path.");
+        StringAssert.Contains(scriptText, "Linux mouse-first journey receipt does not prove authentication portal was opened.");
+        StringAssert.Contains(scriptText, "Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.");
     }
 }

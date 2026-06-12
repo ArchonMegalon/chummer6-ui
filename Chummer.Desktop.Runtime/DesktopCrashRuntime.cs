@@ -241,43 +241,111 @@ public static class DesktopCrashRuntime
             return false;
         }
 
-        try
-        {
-            ProcessStartInfo startInfo = OperatingSystem.IsWindows()
-                ? new ProcessStartInfo("explorer.exe", $"\"{path}\"")
-                {
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-                : OperatingSystem.IsMacOS()
-                    ? new ProcessStartInfo("open", $"\"{path}\"")
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }
-                    : new ProcessStartInfo("xdg-open", $"\"{path}\"")
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-            Process.Start(startInfo);
-            return true;
-        }
-        catch
+        static bool TryStart(ProcessStartInfo processStartInfo)
         {
             try
             {
-                Process.Start(new ProcessStartInfo
+                using Process? process = Process.Start(processStartInfo);
+                if (process is null)
                 {
-                    FileName = path,
-                    UseShellExecute = true
-                });
+                    return false;
+                }
+
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        static string? Which(string name)
+        {
+            try
+            {
+                ProcessStartInfo? resolverInfo = new()
+                {
+                    FileName = OperatingSystem.IsWindows() ? "where" : "which",
+                    Arguments = name,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                using Process? resolver = Process.Start(resolverInfo);
+                if (resolver is null)
+                {
+                    return null;
+                }
+
+                string output = resolver.StandardOutput.ReadToEnd();
+                resolver.WaitForExit(2000);
+                return resolver.ExitCode == 0 && !string.IsNullOrWhiteSpace(output)
+                    ? name
+                    : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        try
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                ProcessStartInfo windowsStartInfo = new()
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                };
+                return TryStart(windowsStartInfo);
+            }
+
+            if (OperatingSystem.IsMacOS())
+            {
+                return TryStart(
+                    new ProcessStartInfo("open", $"\"{path}\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    })
+                    || TryStart(new ProcessStartInfo("open", path) { UseShellExecute = true });
+            }
+
+            string? xdgOpen = Which("xdg-open");
+            if (!string.IsNullOrWhiteSpace(xdgOpen)
+                && TryStart(
+                    new ProcessStartInfo(xdgOpen, $"\"{path}\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }))
+            {
+                return true;
+            }
+
+            string? gioOpen = Which("gio");
+            if (!string.IsNullOrWhiteSpace(gioOpen)
+                && TryStart(
+                    new ProcessStartInfo(gioOpen, $"open \"{path}\"")
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }))
+            {
+                return true;
+            }
+
+            return TryStart(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            return false;
         }
     }
 

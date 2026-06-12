@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-08T12:05:34.707425Z",
+  "generatedAt": "2026-06-12T17:22:50.537793Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms.",
@@ -66,7 +66,7 @@
       "maxAttempts": 2
     },
     "apiProbe": {
-      "baseUrl": "http://127.0.0.1:8088",
+      "baseUrl": "http://127.0.0.1:5090",
       "results": [
         {
           "path": "/api/workspaces?maxCount=1",

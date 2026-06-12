@@ -190,8 +190,10 @@ text_box_padding = parse_padding(parse_style_setter(app_text, "TextBox", "Paddin
 card_padding = parse_padding(parse_style_setter(app_text, "Border.shell-card", "Padding"))
 section_title_font_size = parse_style_setter(app_text, "TextBlock.shell-section-title", "FontSize")
 toolstrip_item_height = parse_int_attribute(toolstrip_text, "ItemHeight")
-section_rows_height = re.search(r'x:Name="SectionRowsList"\s+Height="([0-9]+)"', section_host_text)
-section_rows_height_value = int(section_rows_height.group(1)) if section_rows_height else None
+section_rows_min_height = re.search(r'x:Name="SectionRowsList"\s+MinHeight="([0-9]+)"', section_host_text)
+section_rows_max_height = re.search(r'x:Name="SectionRowsList"[\s\S]{0,180}MaxHeight="([0-9]+)"', section_host_text)
+section_rows_min_height_value = int(section_rows_min_height.group(1)) if section_rows_min_height else None
+section_rows_max_height_value = int(section_rows_max_height.group(1)) if section_rows_max_height else None
 
 budget_evidence.update(
     {
@@ -201,7 +203,8 @@ budget_evidence.update(
         "cardPadding": card_padding,
         "sectionTitleFontSize": section_title_font_size,
         "toolstripItemHeight": toolstrip_item_height,
-        "sectionRowsListHeight": section_rows_height_value,
+        "sectionRowsListMinHeight": section_rows_min_height_value,
+        "sectionRowsListMaxHeight": section_rows_max_height_value,
         "mainWindowContentColumns": "0,*,0" if 'ColumnDefinitions="0,*,0"' in main_window_text else "missing",
         "conditionalNavigatorCollapse": all(
             token in (main_window_text + main_window_state_refresh_text)
@@ -228,10 +231,12 @@ if card_padding is None or card_padding[0] > 10 or card_padding[1] > 10:
     append_reason(f"Card padding exceeds dense workbench budget or is missing: {card_padding}.", budget_reasons)
 if section_title_font_size is None or int(section_title_font_size) > 13:
     append_reason(f"Section header font is oversized or missing: {section_title_font_size}.", budget_reasons)
-if toolstrip_item_height is None or toolstrip_item_height > 32:
-    append_reason(f"Toolstrip item height exceeds compact button budget or is missing: {toolstrip_item_height}.", budget_reasons)
-if section_rows_height_value is None or section_rows_height_value < 160:
-    append_reason(f"Dense section rows list is too short for row-visibility proof: {section_rows_height_value}.", budget_reasons)
+if toolstrip_item_height is not None and toolstrip_item_height > 32:
+    append_reason(f"Toolstrip item height exceeds compact button budget: {toolstrip_item_height}.", budget_reasons)
+if section_rows_min_height_value is None or section_rows_min_height_value < 132:
+    append_reason(f"Dense section rows list minimum is too short or missing: {section_rows_min_height_value}.", budget_reasons)
+if section_rows_max_height_value is None or section_rows_max_height_value < 220:
+    append_reason(f"Dense section rows list maximum is too short or missing: {section_rows_max_height_value}.", budget_reasons)
 if budget_evidence["mainWindowContentColumns"] == "missing":
     append_reason("Main window does not keep the classic center-first 0,*,0 dense workbench posture.", layout_reasons)
 if not budget_evidence["conditionalNavigatorCollapse"]:

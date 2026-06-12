@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.next90_m105_ui_restore_continuity",
-  "generatedAt": "2026-06-08T12:40:05Z",
+  "generatedAt": "2026-06-09T07:18:48Z",
   "status": "pass",
   "reasons": [],
   "summary": "Next-90 milestone 105.2 keeps the desktop continuity routes wired while proving the noisy restore-choice/conflict-choice chrome has been retired from the Avalonia primary route.",
@@ -225,9 +225,9 @@
         "path": "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "d2a42210",
-        "subject": "Harden release mirrors and desktop runtime fallbacks",
-        "sha": "d2a4221070774ff593ead21807e9305e79deda35",
+        "commit": "205fbd76",
+        "subject": "Harden desktop account linking follow-through",
+        "sha": "205fbd7634354aa4602b7091b896510b11c28879",
         "paths": [
           "Chummer.Desktop.Runtime/DesktopInstallLinkingRuntime.cs"
         ],
@@ -239,9 +239,9 @@
         "path": "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "d2a42210",
-        "subject": "Harden release mirrors and desktop runtime fallbacks",
-        "sha": "d2a4221070774ff593ead21807e9305e79deda35",
+        "commit": "205fbd76",
+        "subject": "Harden desktop account linking follow-through",
+        "sha": "205fbd7634354aa4602b7091b896510b11c28879",
         "paths": [
           "Chummer.Tests/DesktopInstallLinkingRuntimeTests.cs"
         ],
@@ -253,9 +253,9 @@
         "path": "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs",
         "pathAllowed": true,
         "exists": true,
-        "commit": "cd900ea4",
-        "subject": "Deepen desktop horizon workbench interactions",
-        "sha": "cd900ea49cfeea5d5a1d7a4b358420f076db265d",
+        "commit": "c8a379c0",
+        "subject": "Align desktop signoff proof with exit behavior",
+        "sha": "c8a379c0d516ada1eb8955fc2aa52dd174ef67d3",
         "paths": [
           "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs"
         ],
@@ -309,9 +309,9 @@
         "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json",
         "pathAllowed": true,
         "exists": true,
-        "commit": "61d6b77c",
-        "subject": "Tighten local desktop parity verification",
-        "sha": "61d6b77c3390e1578d9b812c93bdec7c1ac636a8",
+        "commit": "205fbd76",
+        "subject": "Harden desktop account linking follow-through",
+        "sha": "205fbd7634354aa4602b7091b896510b11c28879",
         "paths": [
           ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
         ],
@@ -391,10 +391,15 @@
         "scripts/ai/verify.sh",
         ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
       ],
-      "has_relevant_changes": false,
-      "changes": []
+      "has_relevant_changes": true,
+      "changes": [
+        {
+          "status": " M",
+          "path": ".codex-studio/published/NEXT90_M105_UI_RESTORE_CONTINUITY.generated.json"
+        }
+      ]
     },
-    "headCommit": "5c37631986a2e02cfefb526b7e67a46ffa4418ed",
+    "headCommit": "03ff77f9e7d54205ad36bdcc8eeff32cd388cd5e",
     "landedCommit": "54c27661",
     "allowedPaths": [
       "Chummer.Avalonia",
@@ -571,27 +576,27 @@
             {
               "marker": "Workspace continuity: support can review the current continuity packet.",
               "present": true,
-              "line": 510
+              "line": 511
             },
             {
               "marker": "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
               "present": true,
-              "line": 409
+              "line": 410
             },
             {
               "marker": "Local workspace state stays under explicit user control.",
               "present": true,
-              "line": 410
+              "line": 411
             },
             {
               "marker": "BuildSupportPortalRelativePathForWorkspace",
               "present": true,
-              "line": 323
+              "line": 324
             },
             {
               "marker": "BuildSupportPortalRelativePathForInstall",
               "present": true,
-              "line": 310
+              "line": 311
             }
           ],
           "missingMarkers": []

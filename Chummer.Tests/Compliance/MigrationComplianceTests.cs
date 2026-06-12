@@ -7672,7 +7672,9 @@ public class MigrationComplianceTests
         StringAssert.Contains(commandPanelText, "Items=\"@(Commands.ToArray())\"");
         StringAssert.Contains(commandPanelText, "ItemSize=\"42\"");
         StringAssert.Contains(sectionHostText, "<VirtualizingStackPanel");
-        StringAssert.Contains(sectionHostText, "x:Name=\"SectionPayloadExpander\"");
+        Assert.IsFalse(sectionHostText.Contains("x:Name=\"SectionPayloadExpander\"", StringComparison.Ordinal));
+        StringAssert.Contains(sectionHostText, "x:Name=\"SectionPreviewBox\"");
+        StringAssert.Contains(sectionHostText, "MaxHeight=\"220\"");
         StringAssert.Contains(sectionHostText, "x:Name=\"RawXmlImportBorder\"");
         StringAssert.Contains(sectionHostText, "IsVisible=\"False\"");
         string sectionPanePath = FindPath("Chummer.Blazor", "Components", "Shell", "SectionPane.razor");

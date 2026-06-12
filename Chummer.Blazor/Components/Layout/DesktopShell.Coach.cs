@@ -81,7 +81,7 @@ public partial class DesktopShell
 
         if (!result.IsImplemented)
         {
-            _coachErrorMessage = result.NotImplemented?.Message ?? "Coach sidecar route is not implemented yet.";
+            _coachErrorMessage = result.NotImplemented?.Message ?? "Coach sidecar is offline in this build; core desktop workflows remain available.";
             return false;
         }
 

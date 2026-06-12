@@ -1,0 +1,27 @@
+{
+  "failures": [],
+  "generated_at": "2026-06-12T18:54:09Z",
+  "normalized_artifacts": {
+    "parity_inventory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PARITY_INVENTORY.generated.json",
+    "public_surface_qa_targets": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json"
+  },
+  "proof_statuses": {
+    "layout_hard_gate": "pass",
+    "sr4_sr6_frontier": "pass",
+    "sr4_workflow": "pass",
+    "sr6_workflow": "pass",
+    "ui_element_parity": "pass",
+    "user_journey": "pass",
+    "visual_familiarity": "pass",
+    "workflow_execution": "pass"
+  },
+  "source_checks": {
+    "coach_sidecar_has_no_unimplemented_user_copy": true,
+    "raw_xml_input_is_not_fixed_height": true,
+    "section_host_has_no_hidden_payload_expander": true,
+    "section_rows_are_not_fixed_height": true,
+    "toolstrip_uses_min_height_not_fixed_button_height": true
+  },
+  "status": "pass",
+  "verdict": "UI_GOLD_PROOF_DEPTH_READY"
+}

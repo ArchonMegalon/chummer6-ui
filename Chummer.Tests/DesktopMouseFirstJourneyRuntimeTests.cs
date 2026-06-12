@@ -106,6 +106,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                     CharacterAlias: "MouseRoute",
                     RulesetId: "sr5",
                     HasSavedWorkspace: true,
+                    AuthenticationPortalOpened: true,
+                    AuthenticationPortalUri: "https://chummer.run/account/access/install-link?login=1",
                     ActiveDialogId: null,
                     VerificationNotes: ["saved"]));
 
@@ -120,6 +122,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             Assert.AreEqual(4, receipt.RootElement.GetProperty("pointerActionCount").GetInt32());
             Assert.AreEqual(1, receipt.RootElement.GetProperty("textEntryActionCount").GetInt32());
             Assert.AreEqual(0, receipt.RootElement.GetProperty("directTextMutationCount").GetInt32());
+            Assert.IsTrue(receipt.RootElement.GetProperty("authenticationPortalOpened").GetBoolean());
+            Assert.AreEqual("https://chummer.run/account/access/install-link?login=1", receipt.RootElement.GetProperty("authenticationPortalUri").GetString());
             Assert.IsFalse(receipt.RootElement.GetProperty("usedForcedComboDropdownOpen").GetBoolean());
             Assert.IsFalse(receipt.RootElement.GetProperty("usedComboSelectionFallback").GetBoolean());
             Assert.AreEqual(1, receipt.RootElement.GetProperty("observedInputEvents").GetArrayLength());
@@ -176,7 +180,9 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                     new DesktopMouseFirstJourneyObservedInputEvent("tapped", "ComboBox", "dialog.field.newCharacterRulesetId", null, "dialog.new_character", DateTimeOffset.UtcNow)
                 ],
                 activeDialogId: "dialog.new_character",
-                workspaceId: "ws-fail");
+                workspaceId: "ws-fail",
+                authenticationPortalOpened: true,
+                authenticationPortalUri: "https://chummer.run/login?next=%2Faccount%2Faccess");
 
             using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
             Assert.AreEqual("fail", receipt.RootElement.GetProperty("status").GetString());
@@ -200,6 +206,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             Assert.IsTrue(packet.RootElement.GetProperty("usedForcedComboDropdownOpen").GetBoolean());
             Assert.IsTrue(packet.RootElement.GetProperty("usedComboSelectionFallback").GetBoolean());
             Assert.AreEqual(1, packet.RootElement.GetProperty("observedInputEvents").GetArrayLength());
+            Assert.IsTrue(packet.RootElement.GetProperty("authenticationPortalOpened").GetBoolean());
+            Assert.AreEqual("https://chummer.run/login?next=%2Faccount%2Faccess", packet.RootElement.GetProperty("authenticationPortalUri").GetString());
         }
         finally
         {

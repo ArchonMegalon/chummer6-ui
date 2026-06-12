@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-09T04:48:09.556097Z",
+  "generatedAt": "2026-06-09T07:08:51.250112Z",
   "contract_name": "chummer6-ui.interactive_control_inventory",
   "status": "pass",
   "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
@@ -262,7 +262,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (10s 628ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 11s 105ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 622ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 7s 876ms"
       },
       "mainWindowInteractionInventory": {
         "command": [
@@ -279,7 +279,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (11s 068ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 11s 995ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 358ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 7s 653ms"
       },
       "blazorKeyboardInventory": {
         "command": [
@@ -296,7 +296,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 471ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 3s 202ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (834ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 124ms"
       },
       "desktopShortcutInventory": {
         "command": [
@@ -313,7 +313,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (867ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 1s 348ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (619ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 846ms"
       }
     },
     "missingFiles": [],
@@ -411,8 +411,8 @@
       "-p:NuGetAudit=false"
     ],
     "restoreExitCode": 0,
-    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj (in 240 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj (in 12 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Core/Chummer.Core.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj (in 96 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj (in 9 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Chummer.Avalonia.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Api/Chummer.Api.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 22 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 6 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 0.9 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj (in 9 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj (in 10 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/Chummer.Hub.Web.csproj (in 7 ms).",
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:01:11.69",
+    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj (in 253 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj (in 17 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Api/Chummer.Api.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/Chummer.Hub.Web.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj (in 11 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj (in 72 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj (in 6 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 27 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Core/Chummer.Core.csproj (in 7 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Chummer.Avalonia.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj (in 10 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj (in 10 ms).",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:58.12",
     "fullInteractiveControlInventory": "pass",
     "mainWindowInteractionInventory": "pass",
     "failureCount": 0,
@@ -575,7 +575,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (10s 628ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 11s 105ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+7/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 622ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 7s 876ms"
       },
       "mainWindowInteractionInventory": {
         "command": [
@@ -592,7 +592,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+0/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (11s 068ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 11s 995ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+4/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (7s 358ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 7s 653ms"
       },
       "blazorKeyboardInventory": {
         "command": [
@@ -609,7 +609,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (2s 471ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 3s 202ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (834ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 124ms"
       },
       "desktopShortcutInventory": {
         "command": [
@@ -626,7 +626,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (867ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 1s 348ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (619ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 846ms"
       }
     }
   }

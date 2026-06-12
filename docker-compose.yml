@@ -3,8 +3,8 @@ services:
   chummer-api:
     image: chummer-api:local
     build:
-      context: .
-      dockerfile: Chummer.Api/Dockerfile
+      context: ..
+      dockerfile: chummer-presentation/Chummer.Api/Dockerfile
     environment:
       CHUMMER_STATE_PATH: "/app/state"
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"

@@ -177,6 +177,8 @@ FLAGSHIP_UI_SCREENSHOT_CONTROL_EVIDENCE_PATH="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_
 SNAPSHOT_WRITABLE_STATE_ROOT="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_WRITABLE_STATE_ROOT:-$WORKSPACE_ROOT/.tmp/ai/linux-desktop-exit-gate}"
 SNAPSHOT_NUGET_PACKAGES="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_NUGET_PACKAGES:-$WORKSPACE_ROOT/.tmp/ai/nuget/packages}"
 SOURCE_SNAPSHOT_CLONE_MODE="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_SOURCE_SNAPSHOT_CLONE_MODE:-copy}"
+EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_LINUX_DESKTOP_EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}"
+export CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="$EXIT_GATE_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS"
 
 mkdir -p "$OUTPUT_BASE_ROOT"
 RUN_ROOT="$(mktemp -d "$OUTPUT_BASE_ROOT/run.XXXXXX")"
@@ -2812,7 +2814,9 @@ import datetime as dt
 import hashlib
 import json
 import pathlib
+import os
 import sys
+from urllib.parse import urlparse
 
 (
     release_channel_path_text,
@@ -2928,6 +2932,66 @@ def parse_iso(value: object) -> dt.datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=dt.timezone.utc)
     return parsed.astimezone(dt.timezone.utc)
+
+
+def is_internal_public_authentication_host_override_enabled() -> bool:
+    normalized = str(os.getenv("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "")).strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _is_unsafe_public_authentication_host(host: str) -> bool:
+    normalized = str(host or "").strip().lower().strip(".")
+    if not normalized:
+        return True
+
+    if normalized in {"localhost", "127.0.0.1", "::1"}:
+        return False
+
+    try:
+        from ipaddress import ip_address
+
+        if not ip_address(normalized).is_loopback:
+            return True
+    except Exception:
+        pass
+
+    if is_internal_public_authentication_host_override_enabled():
+        return False
+
+    blocked_tokens = ("chummer-api", "chummer-web", "host.docker.internal")
+    for token in blocked_tokens:
+        if normalized == token:
+            return True
+        if (
+            normalized.startswith(f"{token}.")
+            or normalized.endswith(f".{token}")
+            or normalized.startswith(f"{token}-")
+            or normalized.endswith(f"-{token}")
+            or f".{token}." in normalized
+            or f".{token}-" in normalized
+            or f"-{token}." in normalized
+            or f"-{token}-" in normalized
+        ):
+            return True
+
+    return False
+
+
+def is_unsafe_public_authentication_host(host: str) -> bool:
+    return _is_unsafe_public_authentication_host(host)
+
+
+def is_safe_public_authentication_uri(value: object) -> bool:
+    raw_uri = str(value or "").strip()
+    if not raw_uri:
+        return False
+    parsed = urlparse(raw_uri)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return False
+    host = str(parsed.hostname or "").strip().lower()
+    if not host:
+        return False
+    return not _is_unsafe_public_authentication_host(host)
 
 
 release_channel = load_json(release_channel_path)
@@ -3075,6 +3139,10 @@ if expected_artifact is not None:
             expected_digest,
         ):
             reasons.append("Linux mouse-first journey receipt version does not match release channel version.")
+        if not bool(mouse_receipt.get("authenticationPortalOpened")):
+            reasons.append("Linux mouse-first journey receipt does not prove authentication portal was opened.")
+        if not is_safe_public_authentication_uri(mouse_receipt.get("authenticationPortalUri")):
+            reasons.append("Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.")
         if not bool(mouse_receipt.get("hasSavedWorkspace")):
             reasons.append("Linux mouse-first journey receipt does not prove a saved workspace.")
         if not str(mouse_receipt.get("workspaceId") or "").strip():
@@ -3200,6 +3268,7 @@ import pathlib
 import platform
 import shutil
 import sys
+from urllib.parse import urlparse
 
 (
     release_channel_path_text,
@@ -3310,6 +3379,61 @@ def startup_smoke_version_proves_release(
     if version == release_version:
         return True
     return version.lower().startswith("smoke-") and bool(expected_digest) and startup_digest == expected_digest
+
+
+def is_internal_public_authentication_host_override_enabled() -> bool:
+    normalized = str(os.getenv("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "")).strip().lower()
+    return normalized in {"1", "true", "yes", "on"}
+
+
+def _is_unsafe_public_authentication_host(host: str) -> bool:
+    normalized = str(host or "").strip().lower().strip(".")
+    if not normalized:
+        return True
+
+    if normalized in {"localhost", "127.0.0.1", "::1"}:
+        return False
+
+    try:
+        import ipaddress
+
+        return not ipaddress.ip_address(normalized).is_loopback
+    except Exception:
+        pass
+
+    if is_internal_public_authentication_host_override_enabled():
+        return False
+
+    blocked_tokens = ("chummer-api", "chummer-web", "host.docker.internal")
+    for token in blocked_tokens:
+        if normalized == token:
+            return True
+        if (
+            normalized.startswith(f"{token}.")
+            or normalized.endswith(f".{token}")
+            or normalized.startswith(f"{token}-")
+            or normalized.endswith(f"-{token}")
+            or f".{token}." in normalized
+            or f".{token}-" in normalized
+            or f"-{token}." in normalized
+            or f"-{token}-" in normalized
+        ):
+            return True
+
+    return False
+
+
+def is_safe_public_authentication_uri(value: object) -> bool:
+    raw_uri = str(value or "").strip()
+    if not raw_uri:
+        return False
+    parsed = urlparse(raw_uri)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return False
+    host = str(parsed.hostname or "").strip().lower()
+    if not host:
+        return False
+    return not _is_unsafe_public_authentication_host(host)
 
 
 def path_uses_legacy_chummer5a_root(path: pathlib.Path) -> bool:
@@ -3658,6 +3782,10 @@ else:
                 and not startup_smoke_version_proves_release(mouse_version, expected_version, mouse_digest, expected_digest)
             ):
                 reasons.append("Linux mouse-first journey receipt releaseVersion does not match release channel version.")
+            if not bool(mouse_receipt.get("authenticationPortalOpened")):
+                reasons.append("Linux mouse-first journey receipt does not prove authentication portal was opened.")
+            if not is_safe_public_authentication_uri(mouse_receipt.get("authenticationPortalUri")):
+                reasons.append("Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.")
             if promoted_mode and expected_digest and mouse_digest != expected_digest:
                 reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")
             if not bool(mouse_receipt.get("hasSavedWorkspace")):

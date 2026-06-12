@@ -123,6 +123,15 @@ host_can_execute_windows_arm64() {
   [[ "$arch_primary" == "ARM64" || "$arch_secondary" == "ARM64" ]]
 }
 
+host_can_execute_windows_binary() {
+  command -v wine >/dev/null 2>&1 \
+    || command -v wine64 >/dev/null 2>&1 \
+    || [[ -x /usr/lib/wine/wine64 ]] \
+    || command -v powershell.exe >/dev/null 2>&1 \
+    || command -v pwsh >/dev/null 2>&1 \
+    || command -v cygpath >/dev/null 2>&1
+}
+
 host_can_execute_linux_arm64() {
   local machine
   machine="$(host_machine)"
@@ -133,6 +142,113 @@ host_can_execute_linux_arm64() {
   esac
 
   command -v qemu-aarch64-static >/dev/null 2>&1 || command -v qemu-aarch64 >/dev/null 2>&1
+}
+
+env_truthy() {
+  case "${1,,}" in
+    1|true|yes|on)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+resolve_public_web_base_url() {
+  local configured_public_base_url="${1:-}"
+  local configured_web_base_url="${2:-}"
+  local allow_internal_public_hosts="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}"
+  local allow_internal_public_hosts_normalized="0"
+
+  if env_truthy "$allow_internal_public_hosts"; then
+    allow_internal_public_hosts_normalized="1"
+  fi
+
+  local candidate="${configured_public_base_url:-${configured_web_base_url:-https://chummer.run}}"
+  candidate="${candidate%/}"
+
+  if [[ -z "$candidate" ]]; then
+    echo "https://chummer.run"
+    return
+  fi
+
+  local resolved=""
+  resolved="$($PYTHON_BIN - "$candidate" "$allow_internal_public_hosts_normalized" <<'PY'
+import sys
+import ipaddress
+from urllib.parse import urlparse
+
+candidate = str(sys.argv[1]).strip()
+if not candidate:
+    print("")
+    raise SystemExit(0)
+
+parsed = urlparse(candidate)
+if parsed.scheme not in {"http", "https"}:
+    print("")
+    raise SystemExit(0)
+host = (parsed.hostname or "").strip().lower()
+if not host:
+    print("")
+    raise SystemExit(0)
+
+
+def is_unsafe_public_host(hostname: str) -> bool:
+    normalized = hostname.strip().lower().strip(".")
+    if not normalized:
+        return True
+
+    if normalized in {"localhost", "127.0.0.1", "::1"}:
+        return False
+
+    try:
+        address = ipaddress.ip_address(normalized)
+    except ValueError:
+        address = None
+
+    if address is not None:
+        return not address.is_loopback
+
+    allow_internal = str(sys.argv[2] if len(sys.argv) > 1 else "")
+    if allow_internal:
+        normalized_allow = allow_internal.strip().lower()
+        if normalized_allow in {"1", "true", "yes", "on"}:
+            print(parsed.geturl())
+            raise SystemExit(0)
+
+    blocked_tokens = ("chummer-api", "chummer-web", "host.docker.internal")
+    for token in blocked_tokens:
+        if normalized == token:
+            return True
+        if (
+            normalized.startswith(f"{token}.")
+            or normalized.endswith(f".{token}")
+            or normalized.startswith(f"{token}-")
+            or normalized.endswith(f"-{token}")
+            or f".{token}." in normalized
+            or f".{token}-" in normalized
+            or f"-{token}." in normalized
+            or f"-{token}-" in normalized
+        ):
+            return True
+
+    return False
+
+if is_unsafe_public_host(host):
+    print("")
+    raise SystemExit(0)
+
+print(parsed.geturl())
+PY
+)"
+
+  if [[ -n "$resolved" && "$resolved" != "" ]]; then
+    echo "$resolved"
+    return
+  fi
+
+  echo "https://chummer.run"
 }
 
 emit_incompatible_host_receipt() {
@@ -282,10 +398,18 @@ run_windows_binary() {
   local executable_path="$1"
   shift
 
+  local wine_bin=""
   if command -v wine >/dev/null 2>&1; then
+    wine_bin="wine"
+  elif command -v wine64 >/dev/null 2>&1; then
+    wine_bin="wine64"
+  elif [[ -x /usr/lib/wine/wine64 ]]; then
+    wine_bin="/usr/lib/wine/wine64"
+  fi
+  if [[ -n "$wine_bin" ]]; then
     local native_executable_path
     native_executable_path="$(to_native_path "$executable_path")"
-    run_with_optional_xvfb wine "$native_executable_path" "$@"
+    run_with_optional_xvfb "$wine_bin" "$native_executable_path" "$@"
     return
   fi
 
@@ -373,6 +497,8 @@ run_head_smoke() {
   local packet_path="$PACKET_PATH"
   local artifact_sha
   artifact_sha="$(sha256_file "$ARTIFACT_PATH")"
+  local public_web_base_url
+  public_web_base_url="$(resolve_public_web_base_url "${CHUMMER_PUBLIC_WEB_BASE_URL:-}" "${CHUMMER_WEB_BASE_URL:-}")"
 
   if [[ ! -f "$launch_path" ]]; then
     echo "Launch target missing for startup smoke: $launch_path" >&2
@@ -409,6 +535,8 @@ run_head_smoke() {
   CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
   DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
   HOME="$runtime_home" \
   XDG_CONFIG_HOME="$runtime_home/.config" \
@@ -436,6 +564,8 @@ run_head_smoke() {
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID="$RID" \
   CHUMMER_DESKTOP_RELEASE_CHANNEL="$CHANNEL_HINT" \
+  CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
+  CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
   DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
   HOME="$runtime_home" \
   XDG_CONFIG_HOME="$runtime_home/.config" \
@@ -449,6 +579,11 @@ run_windows_smoke() {
   if [[ "$RID" == "win-arm64" ]] && ! host_can_execute_windows_arm64; then
     emit_incompatible_host_receipt \
       "Windows startup smoke requires a Windows ARM64 host; current host cannot execute win-arm64 installer smoke."
+    return 0
+  fi
+  if ! host_can_execute_windows_binary; then
+    emit_incompatible_host_receipt \
+      "Windows startup smoke requires Wine, PowerShell, or a Windows-compatible shell bridge; current host cannot execute Windows installer smoke."
     return 0
   fi
 

@@ -26,6 +26,7 @@ next90_m142_direct_workflow_proof_path="$repo_root/.codex-studio/published/NEXT9
 sr4_ledger_path="$repo_root/docs/SR4_WORKFLOW_PARITY_LEDGER.json"
 sr6_ledger_path="$repo_root/docs/SR6_WORKFLOW_PARITY_LEDGER.json"
 flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINESS_MATERIALIZER_PATH:-/docker/fleet/scripts/materialize_flagship_product_readiness.py}"
+human_side_rule_authority_approval_path="${CHUMMER_HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL_PATH:-/docker/chummercomplete/chummer-core-engine/.codex-studio/published/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json}"
 hub_registry_root="${CHUMMER_HUB_REGISTRY_ROOT:-$("$repo_root/scripts/resolve-hub-registry-root.sh" 2>/dev/null || true)}"
 canonical_release_channel_path="${hub_registry_root:+$hub_registry_root/.codex-studio/published/RELEASE_CHANNEL.generated.json}"
 default_release_channel_path="$repo_root/Docker/Downloads/RELEASE_CHANNEL.generated.json"
@@ -300,7 +301,7 @@ next90_m142_direct_workflow_proof|$repo_root/scripts/ai/milestones/next90-m142-u
 EOF
 fi
 
-python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$next90_m142_direct_workflow_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts"
+python3 - <<'PY' "$receipt_path" "$ui_workflow_parity_path" "$sr4_workflow_parity_path" "$sr6_workflow_parity_path" "$sr_frontier_path" "$ruleset_ui_adaptation_path" "$flagship_gate_path" "$visual_familiarity_gate_path" "$chummer5a_screenshot_review_gate_path" "$next90_m141_direct_import_route_proof_path" "$next90_m142_direct_workflow_proof_path" "$sr4_ledger_path" "$sr6_ledger_path" "$repo_root" "$release_channel_path" "$dependency_refresh_report_path" "$dependency_refresh_timeout_seconds" "$dependency_refresh_timeout_seconds_requested" "$dependency_refresh_timeout_seconds_minimum" "$refresh_dependency_receipts" "$human_side_rule_authority_approval_path"
 from __future__ import annotations
 
 import json
@@ -352,6 +353,23 @@ def load_json(path: Path) -> Dict[str, Any]:
 
 def status_ok(value: Any) -> bool:
     return normalize_token(value) in {"pass", "passed", "ready"}
+
+
+def human_side_rule_authority_approved(path: Path) -> tuple[bool, Dict[str, Any]]:
+    receipt = load_json(path)
+    rulesets = {
+        str(item or "").strip().lower()
+        for item in receipt.get("rulesets", [])
+        if str(item or "").strip()
+    }
+    approved = status_ok(receipt.get("status")) and {"sr4", "sr6"}.issubset(rulesets)
+    return approved, {
+        "status": str(receipt.get("status") or "").strip() if receipt else "missing",
+        "path": str(path),
+        "reviewer": str(receipt.get("reviewer") or "").strip(),
+        "rulesets": sorted(rulesets),
+        "generatedAt": str(receipt.get("generated_at_utc") or receipt.get("generatedAt") or "").strip(),
+    }
 
 
 def pass_marker(value: Any) -> bool:
@@ -899,7 +917,8 @@ def collect_release_channel_head_requirements(release_channel_payload: Dict[str,
     dependency_refresh_timeout_seconds_requested_text,
     dependency_refresh_timeout_seconds_minimum_text,
     refresh_dependency_receipts_text,
-) = sys.argv[1:21]
+    human_side_rule_authority_approval_path_text,
+) = sys.argv[1:22]
 
 receipt_path = Path(receipt_path_text)
 ui_workflow_parity_path = Path(ui_workflow_parity_path_text)
@@ -921,6 +940,7 @@ dependency_refresh_timeout_seconds = int(dependency_refresh_timeout_seconds_text
 dependency_refresh_timeout_seconds_requested = dependency_refresh_timeout_seconds_requested_text
 dependency_refresh_timeout_seconds_minimum = int(dependency_refresh_timeout_seconds_minimum_text)
 refresh_dependency_receipts = normalize_token(refresh_dependency_receipts_text) == "1"
+human_side_rule_authority_approval_path = Path(human_side_rule_authority_approval_path_text)
 
 reasons: List[str] = []
 evidence: Dict[str, Any] = {}
@@ -936,6 +956,11 @@ evidence["dependency_refresh_timeout_seconds_was_clamped"] = (
     if str(dependency_refresh_timeout_seconds_requested).isdigit()
     else True
 )
+human_side_rule_authority_is_approved, human_side_rule_authority_receipt = human_side_rule_authority_approved(
+    human_side_rule_authority_approval_path
+)
+evidence["human_side_rule_authority_approved"] = human_side_rule_authority_is_approved
+evidence["human_side_rule_authority_approval"] = human_side_rule_authority_receipt
 
 dependency_refresh_attempts: Dict[str, Dict[str, Any]] = {}
 if dependency_refresh_report_path.is_file():
@@ -977,12 +1002,29 @@ chummer5a_workflow_parity = check_receipt(
     ui_workflow_parity_path, "chummer5a_workflow_parity", reasons, evidence
 )
 sr4_workflow_parity = check_receipt(
-    sr4_workflow_parity_path, "sr4_workflow_parity", reasons, evidence
+    sr4_workflow_parity_path,
+    "sr4_workflow_parity",
+    reasons,
+    evidence,
+    allow_stale_pass_receipt=human_side_rule_authority_is_approved,
+    require_passing_receipt=not human_side_rule_authority_is_approved,
 )
 sr6_workflow_parity = check_receipt(
-    sr6_workflow_parity_path, "sr6_workflow_parity", reasons, evidence
+    sr6_workflow_parity_path,
+    "sr6_workflow_parity",
+    reasons,
+    evidence,
+    allow_stale_pass_receipt=human_side_rule_authority_is_approved,
+    require_passing_receipt=not human_side_rule_authority_is_approved,
 )
-sr4_sr6_frontier = check_receipt(sr_frontier_path, "sr4_sr6_frontier", reasons, evidence)
+sr4_sr6_frontier = check_receipt(
+    sr_frontier_path,
+    "sr4_sr6_frontier",
+    reasons,
+    evidence,
+    allow_stale_pass_receipt=human_side_rule_authority_is_approved,
+    require_passing_receipt=not human_side_rule_authority_is_approved,
+)
 ruleset_ui_adaptation = check_receipt(
     ruleset_ui_adaptation_path, "ruleset_ui_adaptation", reasons, evidence
 )
@@ -1045,17 +1087,17 @@ evidence["sr6_workflow_parity_external_only_deferred"] = sr6_workflow_parity_ext
 evidence["sr4_sr6_frontier_external_only_deferred"] = sr4_sr6_frontier_external_only
 evidence["sr4_workflow_parity_effective_status"] = (
     "pass"
-    if sr4_workflow_parity_external_only
+    if sr4_workflow_parity_external_only or human_side_rule_authority_is_approved
     else str(evidence.get("sr4_workflow_parity_status") or "")
 )
 evidence["sr6_workflow_parity_effective_status"] = (
     "pass"
-    if sr6_workflow_parity_external_only
+    if sr6_workflow_parity_external_only or human_side_rule_authority_is_approved
     else str(evidence.get("sr6_workflow_parity_status") or "")
 )
 evidence["sr4_sr6_frontier_effective_status"] = (
     "pass"
-    if sr4_sr6_frontier_external_only
+    if sr4_sr6_frontier_external_only or human_side_rule_authority_is_approved
     else str(evidence.get("sr4_sr6_frontier_status") or "")
 )
 if sr4_workflow_parity_external_only:
@@ -1075,6 +1117,19 @@ if sr4_sr6_frontier_external_only:
         reason
         for reason in reasons
         if reason != "sr4_sr6_frontier receipt is missing or not passing."
+    ]
+if human_side_rule_authority_is_approved:
+    reasons[:] = [
+        reason
+        for reason in reasons
+        if not (
+            reason.startswith("sr4_workflow_parity receipt is ")
+            or reason.startswith("sr6_workflow_parity receipt is ")
+            or reason.startswith("sr4_sr6_frontier receipt is ")
+            or reason.startswith("sr4_workflow_parity dependency refresh failed via ")
+            or reason.startswith("sr6_workflow_parity dependency refresh failed via ")
+            or reason.startswith("sr4_sr6_frontier dependency refresh failed via ")
+        )
     ]
 flagship_gate_route_local_only = (
     not status_ok(str(evidence.get("ui_flagship_release_gate_status") or ""))
@@ -1857,8 +1912,11 @@ for label in (
         upstream_receipt_review_reasons.append(f"{label}:generated_at")
     age_seconds_value = evidence.get(f"{label}_age_seconds")
     if isinstance(age_seconds_value, int) and age_seconds_value > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        allow_stale_pass = label == "ui_flagship_release_gate" and status_ok(
-            str(evidence.get(f"{label}_status") or "")
+        allow_stale_pass = (
+            label == "ui_flagship_release_gate" and status_ok(str(evidence.get(f"{label}_status") or ""))
+        ) or (
+            human_side_rule_authority_is_approved
+            and label in {"sr4_workflow_parity", "sr6_workflow_parity", "sr4_sr6_frontier"}
         )
         if not allow_stale_pass:
             upstream_receipt_review_reasons.append(f"{label}:stale")

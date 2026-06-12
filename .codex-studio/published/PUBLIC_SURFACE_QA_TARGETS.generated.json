@@ -1,23 +1,68 @@
 {
-  "generated_at_utc": "2026-05-29T19:30:00Z",
-  "provider": "Pixefy",
-  "scope": "public_routes_only",
+  "capture_evidence": {
+    "live_public_web_recrawl": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/LIVE_PUBLIC_WEB_RECRAWL.generated.json",
+    "public_shell_clickability": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/PUBLIC_SHELL_CLICKABILITY_GATE.generated.json",
+    "public_ui_frame_integrity": "/docker/chummercomplete/chummer.run-services/tests/public/ui-frame-integrity.spec.ts"
+  },
+  "generated_at_utc": "2026-06-12T18:54:09Z",
   "privacy_boundary": {
     "no_private_campaign_data": true,
     "no_private_runner_sheets": true,
     "screenshots_may_be_committed_only_when_public_safe": true
   },
+  "provider": "Playwright public UI frame integrity + live public recrawl",
   "routes": [
-    { "id": "home", "url": "https://chummer.run/", "required": true },
-    { "id": "downloads", "url": "https://chummer.run/downloads", "required": true },
-    { "id": "status", "url": "https://chummer.run/status", "required": true },
-    { "id": "ledger", "url": "https://chummer.run/ledger", "required": true },
-    { "id": "ledger_map", "url": "https://chummer.run/ledger/map", "required": true },
-    { "id": "ledger_factions", "url": "https://chummer.run/ledger/factions", "required": true },
-    { "id": "ledger_newsroom", "url": "https://chummer.run/ledger/newsroom", "required": true },
-    { "id": "play", "url": "https://chummer.run/play", "required": true },
-    { "id": "help", "url": "https://chummer.run/help", "required": true },
-    { "id": "feedback", "url": "https://chummer.run/feedback", "required": true }
+    {
+      "id": "home",
+      "required": true,
+      "url": "https://chummer.run/"
+    },
+    {
+      "id": "downloads",
+      "required": true,
+      "url": "https://chummer.run/downloads"
+    },
+    {
+      "id": "status",
+      "required": true,
+      "url": "https://chummer.run/status"
+    },
+    {
+      "id": "ledger",
+      "required": true,
+      "url": "https://chummer.run/ledger"
+    },
+    {
+      "id": "ledger_map",
+      "required": true,
+      "url": "https://chummer.run/ledger/map"
+    },
+    {
+      "id": "ledger_factions",
+      "required": true,
+      "url": "https://chummer.run/ledger/factions"
+    },
+    {
+      "id": "ledger_newsroom",
+      "required": true,
+      "url": "https://chummer.run/ledger/newsroom"
+    },
+    {
+      "id": "play",
+      "required": true,
+      "url": "https://chummer.run/play"
+    },
+    {
+      "id": "help",
+      "required": true,
+      "url": "https://chummer.run/help"
+    },
+    {
+      "id": "feedback",
+      "required": true,
+      "url": "https://chummer.run/feedback"
+    }
   ],
-  "status": "ready_for_pixefy_capture"
+  "scope": "public_routes_only",
+  "status": "captured_and_reviewed"
 }

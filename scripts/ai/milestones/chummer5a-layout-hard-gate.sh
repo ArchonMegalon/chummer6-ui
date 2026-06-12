@@ -359,23 +359,21 @@ for token in required_section_tokens:
             avalonia_layout_reasons,
         )
 
-section_payload_index = section_host_text.find('Header="Section Payload"')
-section_payload_snippet = (
-    section_host_text[section_payload_index:section_payload_index + 320]
-    if section_payload_index >= 0
+if 'Header="Section Payload"' in section_host_text or 'x:Name="SectionPayloadExpander"' in section_host_text:
+    append_reason(
+        'Section host still carries the hidden zero-height "Section Payload" expander contract.',
+        avalonia_layout_reasons,
+    )
+
+section_preview_index = section_host_text.find('x:Name="SectionPreviewBox"')
+section_preview_snippet = (
+    section_host_text[section_preview_index:section_preview_index + 260]
+    if section_preview_index >= 0
     else ""
 )
-required_collapsed_section_payload_tokens = [
-    'Height="0"',
-    'MinHeight="0"',
-    'MaxHeight="0"',
-    'Opacity="0"',
-    'IsHitTestVisible="False"',
-    'ClipToBounds="True"',
-]
-if section_payload_index < 0 or any(token not in section_payload_snippet for token in required_collapsed_section_payload_tokens):
+if section_preview_index < 0 or 'MinHeight="80"' not in section_preview_snippet or 'MaxHeight="220"' not in section_preview_snippet:
     append_reason(
-        'Section host is missing the zero-height "Section Payload" expander contract.',
+        'Section preview must use bounded min/max height instead of a clipped hidden payload frame.',
         avalonia_layout_reasons,
     )
 

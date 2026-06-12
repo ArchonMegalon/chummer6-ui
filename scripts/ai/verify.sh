@@ -122,6 +122,9 @@ bash scripts/ai/milestones/ruleset-ui-adaptation-check.sh
 echo "[verify] checking Chummer5a layout hard gate..."
 bash scripts/ai/milestones/chummer5a-layout-hard-gate.sh
 
+echo "[verify] checking UI gold proof-depth hardening gate..."
+bash scripts/ai/milestones/ui-gold-proof-depth-gate.sh
+
 echo "[verify] checking delegate and command-route parity guard..."
 bash scripts/ai/milestones/delegate-command-route-parity-check.sh
 

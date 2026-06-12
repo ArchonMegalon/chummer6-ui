@@ -2216,7 +2216,8 @@ public partial class SectionHostControl : UserControl
     {
         if (AttributeParityEditorBorder.IsVisible)
         {
-            SectionRowsList.Height = 0d;
+            SectionRowsList.MinHeight = 132d;
+            SectionRowsList.MaxHeight = 360d;
             return;
         }
 
@@ -2235,7 +2236,8 @@ public partial class SectionHostControl : UserControl
             rowHeight -= 20d;
         }
 
-        SectionRowsList.Height = Math.Max(132d, rowHeight);
+        SectionRowsList.MinHeight = Math.Max(132d, Math.Min(rowHeight, 260d));
+        SectionRowsList.MaxHeight = Math.Max(220d, rowHeight);
     }
 }
 

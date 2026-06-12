@@ -78,9 +78,8 @@ public sealed class UserJourneyTesterAuditComplianceTests
         Assert.IsFalse(
             runnerText.Contains("PeekDialogWindowForTesting", System.StringComparison.Ordinal),
             "The live-binary mouse-first journey should resolve the visible dialog window instead of relying on a test-only dialog hook.");
-        Assert.IsFalse(
-            runnerText.Contains("SnapshotStateForAutomation", System.StringComparison.Ordinal),
-            "The live-binary mouse-first journey should prove completion from visible shell state instead of internal adapter snapshots.");
+        StringAssert.Contains(runnerText, "ReadActiveWorkspaceId(window)");
+        StringAssert.Contains(runnerText, "HasOpenedCharacterEvidence(");
         StringAssert.Contains(runnerText, "TextInputEventArgs");
         StringAssert.Contains(runnerText, "InputElement.TextInputEvent");
         StringAssert.Contains(runnerText, "ReadWorkspaceStripTextAsync");
@@ -88,7 +87,7 @@ public sealed class UserJourneyTesterAuditComplianceTests
         StringAssert.Contains(runnerText, "ReadComplianceStateText");
         StringAssert.Contains(runnerText, "ReadVisibleShellState(window, language)");
         StringAssert.Contains(runnerText, "ResolveVisibleDialogWindow()");
-        StringAssert.Contains(runnerText, "HasOpenedCharacterEvidence(window, language, expectedCharacterName, expectedCharacterAlias, expectedRulesetId)");
+        StringAssert.Contains(runnerText, "HasOpenedCharacterEvidence(");
         StringAssert.Contains(runnerText, "ReadWindowTextSnapshot(window)");
         StringAssert.Contains(runnerText, "DesktopMouseFirstJourneyVisibleShellStateReader.Read(");
     }

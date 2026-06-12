@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-08T12:40:47Z",
+  "generated_at": "2026-06-12T14:40:55Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -31,7 +31,7 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 245ms"
+      "  duration: 334ms"
     ]
   },
   "locale_summary": [
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-08T12:40:16Z",
+    "generated_at": "2026-06-11T06:13:35Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -131,7 +131,7 @@
     ],
     "receipts": [
       {
-        "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": "/tmp/m113-proof-9055e11f161944489ea11fe5e9851910/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [

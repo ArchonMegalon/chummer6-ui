@@ -280,21 +280,87 @@ public sealed class DesktopInstallLinkingRuntimeTests
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string[] blockedBaseCandidates =
+        [
+            "http://chummer-api:8080/",
+            "http://api.chummer-api:8080/",
+            "http://foo.chummer-api:8080/",
+            "http://chummer-api.internal:8080/",
+            "http://10.0.0.1:8080/",
+            "https://chummer-web:4443/",
+            "https://foo-chummer-web:4443/",
+            "https://chummer-web.internal:4443/",
+            "https://host.docker.internal:8080/"
+        ];
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
-            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
-            Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", "http://chummer-api:8080/");
+            foreach (string blockedCandidate in blockedBaseCandidates)
+            {
+                Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", blockedCandidate);
+                Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", blockedCandidate);
 
-            string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/account/access/install-link");
+                string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/account/access/install-link");
 
-            Assert.AreEqual("https://chummer.run/account/access/install-link", absoluteUri);
+                Assert.AreEqual("https://chummer.run/account/access/install-link", absoluteUri, blockedCandidate);
+            }
         }
         finally
         {
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
+        }
+    }
+
+    [TestMethod]
+    public void BuildPublicPortalAbsoluteUri_allows_internal_container_host_when_internal_host_override_is_set()
+    {
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string? previousInternalPortalOverride = Environment.GetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", "http://chummer-api:8080/");
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
+            Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "1");
+
+            string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/account/access/install-link");
+
+            Assert.AreEqual("http://chummer-api:8080/account/access/install-link", absoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", previousInternalPortalOverride);
+        }
+    }
+
+    [TestMethod]
+    public void BuildPublicPortalAbsoluteUri_allows_internal_tunneled_google_auth_url_when_internal_host_override_is_set()
+    {
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string? previousInternalPortalOverride = Environment.GetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
+            Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "true");
+            string claimRelativePath =
+                "/auth/google/start?next=%2Faccount%2Faccess%2Finstall-link%3FinstallationId%3Dins-edbf4c698ef24c9ea6899364dc6d1a9e%26headId%3Davalonia%26applicationVersion%3Drun-20260601-070650%26releaseChannel%3Dpublic_stable%26platform%3Dwindows%26ar";
+
+            string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(claimRelativePath);
+
+            Assert.AreEqual(
+                "http://chummer-api:8080/auth/google/start?next=%2Faccount%2Faccess%2Finstall-link%3FinstallationId%3Dins-edbf4c698ef24c9ea6899364dc6d1a9e%26headId%3Davalonia%26applicationVersion%3Drun-20260601-070650%26releaseChannel%3Dpublic_stable%26platform%3Dwindows%26ar",
+                absoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", previousInternalPortalOverride);
         }
     }
 

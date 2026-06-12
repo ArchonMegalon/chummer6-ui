@@ -107,6 +107,8 @@ public static class DesktopMouseFirstJourneyRuntime
             CharacterAlias: evidence.CharacterAlias,
             RulesetId: evidence.RulesetId,
             HasSavedWorkspace: evidence.HasSavedWorkspace,
+            AuthenticationPortalOpened: evidence.AuthenticationPortalOpened,
+            AuthenticationPortalUri: evidence.AuthenticationPortalUri,
             ActiveDialogId: evidence.ActiveDialogId,
             VerificationNotes: evidence.VerificationNotes,
             Error: null);
@@ -125,7 +127,9 @@ public static class DesktopMouseFirstJourneyRuntime
         bool usedComboSelectionFallback = false,
         IReadOnlyList<DesktopMouseFirstJourneyObservedInputEvent>? observedInputEvents = null,
         string? activeDialogId = null,
-        string? workspaceId = null)
+        string? workspaceId = null,
+        bool authenticationPortalOpened = false,
+        string? authenticationPortalUri = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(ex);
@@ -167,6 +171,8 @@ public static class DesktopMouseFirstJourneyRuntime
                 CharacterAlias: null,
                 RulesetId: null,
                 HasSavedWorkspace: false,
+                AuthenticationPortalOpened: authenticationPortalOpened,
+                AuthenticationPortalUri: authenticationPortalUri,
                 ActiveDialogId: activeDialogId,
                 VerificationNotes: [],
                 Error: ex.Message);
@@ -196,6 +202,8 @@ public static class DesktopMouseFirstJourneyRuntime
             UsedForcedComboDropdownOpen: usedForcedComboDropdownOpen,
             UsedComboSelectionFallback: usedComboSelectionFallback,
             ObservedInputEvents: observedInputEvents ?? [],
+            AuthenticationPortalOpened: authenticationPortalOpened,
+            AuthenticationPortalUri: authenticationPortalUri,
             Steps: steps);
         WriteJson(context.FailurePacketPath, packet);
     }
@@ -390,6 +398,8 @@ public sealed record DesktopMouseFirstJourneyEvidence(
     string? CharacterAlias,
     string? RulesetId,
     bool HasSavedWorkspace,
+    bool AuthenticationPortalOpened,
+    string? AuthenticationPortalUri,
     string? ActiveDialogId,
     IReadOnlyList<string> VerificationNotes);
 
@@ -427,6 +437,8 @@ public sealed record DesktopMouseFirstJourneyReceipt(
     string? CharacterAlias,
     string? RulesetId,
     bool HasSavedWorkspace,
+    bool AuthenticationPortalOpened,
+    string? AuthenticationPortalUri,
     string? ActiveDialogId,
     IReadOnlyList<string> VerificationNotes,
     string? Error);
@@ -448,6 +460,8 @@ public sealed record DesktopMouseFirstJourneyFailurePacket(
     int DirectTextMutationCount,
     bool UsedForcedComboDropdownOpen,
     bool UsedComboSelectionFallback,
+    bool AuthenticationPortalOpened,
+    string? AuthenticationPortalUri,
     IReadOnlyList<DesktopMouseFirstJourneyObservedInputEvent> ObservedInputEvents,
     IReadOnlyList<string> Steps);
 

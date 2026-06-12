@@ -108,7 +108,8 @@
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          MinHeight="208">
+                          MinHeight="208"
+                          MaxHeight="360">
               <StackPanel x:Name="AttributeParityRowsHost"
                           Spacing="2" />
             </ScrollViewer>
@@ -134,7 +135,8 @@
                 Padding="3,2">
           <StackPanel Spacing="1">
             <ListBox x:Name="SectionRowsList"
-                     Height="168"
+                     MinHeight="132"
+                     MaxHeight="360"
                      BorderThickness="0"
                      Background="Transparent">
               <ListBox.ItemTemplate>
@@ -160,16 +162,6 @@
             </ListBox>
           </StackPanel>
         </Border>
-        <Expander Grid.Row="5"
-                  x:Name="SectionPayloadExpander"
-                  Header="Section Payload"
-                  Height="0"
-                  MinHeight="0"
-                  MaxHeight="0"
-                  Opacity="0"
-                  IsHitTestVisible="False"
-                  ClipToBounds="True"
-                  IsExpanded="False" />
         <Border Grid.Row="5"
                 x:Name="SectionReviewPanel"
                 Classes="shell-panel subtle"
@@ -180,7 +172,7 @@
                    TextWrapping="Wrap"
                    IsReadOnly="True"
                    MinHeight="80"
-                   MaxHeight="120" />
+                   MaxHeight="220" />
         </Border>
         <Border Grid.Row="6"
                 x:Name="SectionQuickActionsBorder"
@@ -201,7 +193,8 @@
           <TextBox x:Name="XmlInputBox"
                    AcceptsReturn="True"
                    TextWrapping="Wrap"
-                   Height="64"
+                   MinHeight="64"
+                   MaxHeight="220"
                    ToolTip.Tip="Paste raw XML when you need a direct import or diagnostics." />
         </StackPanel>
       </Expander>

@@ -4570,6 +4570,7 @@ allowed_desktop_install_artifact_keys = {
     "channel",
     "channelId",
     "compatibilityState",
+    "compatibilityReason",
     "downloadUrl",
     "embeddedRuntimeBundleHeadId",
     "fileName",

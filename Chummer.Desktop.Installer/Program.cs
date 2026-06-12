@@ -94,15 +94,24 @@ internal static class Program
         IProgress<InstallProgressUpdate> progress = new Progress<InstallProgressUpdate>(splash.ApplyProgress);
         progress.Report(new InstallProgressUpdate("Preparing installer"));
 
+        Stopwatch installStopwatch = Stopwatch.StartNew();
+        TimeSpan lastPulse = TimeSpan.Zero;
         Task<string> installTask = Task.Run(() => CompleteInstall(metadata, payloadPathOverride, claimCode, progress));
         try
         {
             while (!installTask.Wait(50))
             {
+                if (installStopwatch.Elapsed - lastPulse >= TimeSpan.FromSeconds(1))
+                {
+                    splash.ApplyElapsed(installStopwatch.Elapsed);
+                    lastPulse = installStopwatch.Elapsed;
+                }
+
                 Application.DoEvents();
                 Thread.Sleep(15);
             }
 
+            splash.ApplyElapsed(installStopwatch.Elapsed);
             Application.DoEvents();
         }
         finally
@@ -231,7 +240,7 @@ internal static class Program
                 if (Directory.Exists(targetDir))
                 {
                     progress?.Report(new InstallProgressUpdate("Replacing existing install"));
-                    TryDeleteDirectory(targetDir);
+                    TryDeleteDirectory(targetDir, progress, "Removing previous install");
                 }
 
                 Directory.CreateDirectory(targetDir);
@@ -245,7 +254,7 @@ internal static class Program
             if (Directory.Exists(targetDir))
             {
                 progress?.Report(new InstallProgressUpdate("Replacing existing install"));
-                TryDeleteDirectory(targetDir);
+                TryDeleteDirectory(targetDir, progress, "Removing previous install");
             }
 
             Directory.CreateDirectory(targetDir);
@@ -272,7 +281,14 @@ internal static class Program
         progress?.Report(new InstallProgressUpdate("Caching packaged files"));
         using (FileStream zipFile = File.Create(payloadZipPath))
         {
-            payload.CopyTo(zipFile);
+            CopyStreamWithProgress(
+                payload,
+                zipFile,
+                TryGetStreamLength(payload),
+                bytesCopied => progress?.Report(new InstallProgressUpdate(
+                    $"Caching packaged files ({FormatBytes(bytesCopied)} copied)",
+                    ToProgressUnits(bytesCopied, TryGetStreamLength(payload)),
+                    ProgressUnitScale)));
         }
 
         using (ZipArchive archive = ZipFile.OpenRead(payloadZipPath))
@@ -282,6 +298,8 @@ internal static class Program
                 .Where(static entry => !string.IsNullOrWhiteSpace(entry.Name))
                 .ToArray();
             int extractedFiles = 0;
+            long totalBytes = Math.Max(1L, fileEntries.Sum(static entry => Math.Max(0L, entry.Length)));
+            long extractedBytes = 0L;
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
                 string destinationPath = Path.GetFullPath(Path.Combine(tempExtractDir, entry.FullName));
@@ -303,7 +321,24 @@ internal static class Program
                     Directory.CreateDirectory(destinationDirectory);
                 }
 
-                entry.ExtractToFile(destinationPath, overwrite: true);
+                using (Stream entryStream = entry.Open())
+                using (FileStream destinationStream = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    CopyStreamWithProgress(
+                        entryStream,
+                        destinationStream,
+                        entry.Length,
+                        bytesCopied =>
+                        {
+                            long totalExtracted = Interlocked.Read(ref extractedBytes) + bytesCopied;
+                            progress?.Report(new InstallProgressUpdate(
+                                $"Extracting {Path.GetFileName(entry.FullName)} ({FormatBytes(totalExtracted)} of {FormatBytes(totalBytes)})",
+                                ToProgressUnits(totalExtracted, totalBytes),
+                                ProgressUnitScale));
+                        });
+                }
+
+                Interlocked.Add(ref extractedBytes, Math.Max(0L, entry.Length));
                 extractedFiles++;
                 progress?.Report(new InstallProgressUpdate("Extracting application files", extractedFiles, fileEntries.Length));
             }
@@ -869,7 +904,19 @@ internal static class Program
             string relative = Path.GetRelativePath(sourceDir, file);
             string destination = Path.Combine(targetDir, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            File.Copy(file, destination, overwrite: true);
+            using (FileStream sourceStream = File.OpenRead(file))
+            using (FileStream destinationStream = new(destination, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                CopyStreamWithProgress(
+                    sourceStream,
+                    destinationStream,
+                    sourceStream.Length,
+                    bytesCopied => progress?.Report(new InstallProgressUpdate(
+                        $"Copying {Path.GetFileName(file)}",
+                        copiedFiles * ProgressUnitScale + ToProgressUnits(bytesCopied, Math.Max(1L, sourceStream.Length)),
+                        Math.Max(1, files.Length) * ProgressUnitScale)));
+            }
+
             copiedFiles++;
             progress?.Report(new InstallProgressUpdate("Copying application files", copiedFiles, files.Length));
         }
@@ -879,6 +926,85 @@ internal static class Program
         => path.EndsWith(Path.DirectorySeparatorChar) || path.EndsWith(Path.AltDirectorySeparatorChar)
             ? path
             : path + Path.DirectorySeparatorChar;
+
+    private const int ProgressUnitScale = 1000;
+
+    private static int ToProgressUnits(long completed, long? total)
+    {
+        if (total is null or <= 0)
+        {
+            return 0;
+        }
+
+        decimal ratio = Math.Clamp((decimal)completed / total.Value, 0m, 1m);
+        return (int)Math.Round(ratio * ProgressUnitScale, MidpointRounding.AwayFromZero);
+    }
+
+    private static long? TryGetStreamLength(Stream stream)
+    {
+        try
+        {
+            return stream.CanSeek ? stream.Length : null;
+        }
+        catch (NotSupportedException)
+        {
+            return null;
+        }
+        catch (ObjectDisposedException)
+        {
+            return null;
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double value = Math.Max(0L, bytes);
+        int unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+
+        return unit == 0
+            ? $"{value:0} {units[unit]}"
+            : $"{value:0.0} {units[unit]}";
+    }
+
+    private static void CopyStreamWithProgress(
+        Stream source,
+        Stream destination,
+        long? totalBytes,
+        Action<long>? reportCopiedBytes)
+    {
+        byte[] buffer = new byte[1024 * 1024];
+        long copied = 0L;
+        int lastReportedUnit = -1;
+
+        while (true)
+        {
+            int bytesRead = source.Read(buffer, 0, buffer.Length);
+            if (bytesRead <= 0)
+            {
+                break;
+            }
+
+            destination.Write(buffer, 0, bytesRead);
+            copied += bytesRead;
+
+            int currentUnit = ToProgressUnits(copied, totalBytes);
+            if (currentUnit == lastReportedUnit && copied != totalBytes)
+            {
+                continue;
+            }
+
+            lastReportedUnit = currentUnit;
+            reportCopiedBytes?.Invoke(copied);
+        }
+
+        reportCopiedBytes?.Invoke(copied);
+    }
 
     private static void CopyExactBytes(Stream source, Stream destination, long bytesToCopy)
     {
@@ -897,7 +1023,10 @@ internal static class Program
         }
     }
 
-    private static void TryDeleteDirectory(string path)
+    private static void TryDeleteDirectory(
+        string path,
+        IProgress<InstallProgressUpdate>? progress = null,
+        string stage = "Removing temporary files")
     {
         if (!Directory.Exists(path))
         {
@@ -906,7 +1035,31 @@ internal static class Program
 
         try
         {
-            Directory.Delete(path, recursive: true);
+            string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+            string[] directories = Directory.GetDirectories(path, "*", SearchOption.AllDirectories)
+                .OrderByDescending(static directory => directory.Length)
+                .ToArray();
+            int total = Math.Max(1, files.Length + directories.Length + 1);
+            int completed = 0;
+
+            progress?.Report(new InstallProgressUpdate(stage, completed, total));
+            foreach (string file in files)
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+                completed++;
+                progress?.Report(new InstallProgressUpdate(stage, completed, total));
+            }
+
+            foreach (string directory in directories)
+            {
+                Directory.Delete(directory, recursive: false);
+                completed++;
+                progress?.Report(new InstallProgressUpdate(stage, completed, total));
+            }
+
+            Directory.Delete(path, recursive: false);
+            progress?.Report(new InstallProgressUpdate(stage, total, total));
         }
         catch (Exception ex)
         {
@@ -954,7 +1107,54 @@ internal static class Program
             startInfo.Arguments = $"{ClaimCodeSwitch} {QuoteArgument(normalizedClaimCode)}";
         }
 
-        Process.Start(startInfo);
+        using InstallSplashForm launchSplash = new(metadata.DisplayName);
+        launchSplash.Show();
+        launchSplash.ApplyProgress(new InstallProgressUpdate($"Starting {head.DisplayName}"));
+        Application.DoEvents();
+
+        Process? process = Process.Start(startInfo);
+        if (process is null)
+        {
+            launchSplash.ApplyProgress(new InstallProgressUpdate("Launch requested"));
+            PumpLaunchSplash(launchSplash, TimeSpan.FromSeconds(2));
+            return;
+        }
+
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (!process.HasExited && stopwatch.Elapsed < TimeSpan.FromSeconds(15))
+        {
+            try
+            {
+                if (process.WaitForInputIdle(250))
+                {
+                    launchSplash.ApplyProgress(new InstallProgressUpdate("Chummer is starting"));
+                    PumpLaunchSplash(launchSplash, TimeSpan.FromMilliseconds(600));
+                    return;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                break;
+            }
+
+            launchSplash.ApplyProgress(new InstallProgressUpdate($"Starting {head.DisplayName} ({Math.Max(1, (int)stopwatch.Elapsed.TotalSeconds)}s)"));
+            Application.DoEvents();
+        }
+
+        launchSplash.ApplyProgress(new InstallProgressUpdate("Chummer is starting"));
+        PumpLaunchSplash(launchSplash, TimeSpan.FromSeconds(2));
+    }
+
+    private static void PumpLaunchSplash(Form form, TimeSpan duration)
+    {
+        Stopwatch stopwatch = Stopwatch.StartNew();
+        while (stopwatch.Elapsed < duration)
+        {
+            Application.DoEvents();
+            Thread.Sleep(50);
+        }
+
+        form.Close();
     }
 
     private static void StagePendingClaimCode(InstallerMetadata metadata, string claimCode)
@@ -1341,6 +1541,7 @@ internal static class Program
     private sealed class InstallSplashForm : Form
     {
         private readonly Label _statusLabel;
+        private readonly Label _elapsedLabel;
         private readonly ProgressBar _progressBar;
 
         public InstallSplashForm(string displayName)
@@ -1402,10 +1603,21 @@ internal static class Program
                 Margin = new Padding(0, 0, 0, 12)
             };
 
+            _elapsedLabel = new Label
+            {
+                AutoSize = false,
+                Text = "Elapsed: 0s",
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(178, 190, 208),
+                Dock = DockStyle.Top,
+                Height = 22,
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+
             Label hintLabel = new()
             {
                 AutoSize = false,
-                Text = "This can take a minute while packaged files are unpacked and copied.",
+                Text = "This can take a minute while packaged files are unpacked, old files are removed, and new files are copied.",
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(160, 174, 192),
                 Dock = DockStyle.Top,
@@ -1420,11 +1632,20 @@ internal static class Program
             };
 
             body.Controls.Add(hintLabel);
+            body.Controls.Add(_elapsedLabel);
             body.Controls.Add(_progressBar);
             body.Controls.Add(_statusLabel);
             body.Controls.Add(copyLabel);
             body.Controls.Add(titleLabel);
             Controls.Add(body);
+        }
+
+        public void ApplyElapsed(TimeSpan elapsed)
+        {
+            string elapsedText = elapsed.TotalMinutes >= 1
+                ? $"Elapsed: {(int)elapsed.TotalMinutes}m {elapsed.Seconds:00}s"
+                : $"Elapsed: {Math.Max(0, (int)elapsed.TotalSeconds)}s";
+            _elapsedLabel.Text = elapsedText;
         }
 
         public void ApplyProgress(InstallProgressUpdate update)
