@@ -1010,8 +1010,8 @@ build_windows_installer() {
     -p:PublishTrimmed=false \
     -p:EnableCompressionInSingleFile=true \
     -p:IncludeNativeLibrariesForSelfExtract=true \
-    -p:IncludeAllContentForSelfExtract=true \
     -p:ChummerInstallerEmbedPayload=false \
+    -p:ChummerInstallerIncludeSidecarPayload=false \
     -p:ChummerInstallerAssemblyName="Chummer6Installer-$APP_KEY-$RID" \
     -p:InstallerPayloadZip="$payload_zip" \
     -p:ChummerInstallerPayloadResourceName="$payload_resource_name" \

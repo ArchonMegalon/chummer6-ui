@@ -15,6 +15,8 @@ public sealed class DesktopInstallerParityComplianceTests
         string repoRoot = FindRepoRoot();
         string installerScriptPath = Path.Combine(repoRoot, "scripts", "build-desktop-installer.sh");
         string installerScriptText = File.ReadAllText(installerScriptPath);
+        string installerProjectPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Chummer.Desktop.Installer.csproj");
+        string installerProjectText = File.ReadAllText(installerProjectPath);
         string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");
         string installerProgramText = File.ReadAllText(installerProgramPath);
         string selectionHandlersPath = Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.SelectionHandlers.cs");
@@ -30,6 +32,8 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"AvaloniaDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"BlazorDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Debug.WriteLine($\"Chummer installer could not prune legacy install directory");
+        StringAssert.Contains(installerProjectText, "<ChummerInstallerIncludeSidecarPayload Condition=\"'$(ChummerInstallerIncludeSidecarPayload)' == ''\">false</ChummerInstallerIncludeSidecarPayload>");
+        StringAssert.Contains(installerScriptText, "-p:ChummerInstallerIncludeSidecarPayload=false");
         StringAssert.Contains(selectionHandlersText, "DesktopReportIssueWindow.ShowAsync(this, DesktopHeadId)");
         Assert.IsFalse(selectionHandlersText.Contains("LegacyReportBugUrl", StringComparison.Ordinal));
     }

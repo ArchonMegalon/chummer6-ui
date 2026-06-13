@@ -1449,6 +1449,7 @@ def summarize_quarantine_installer_markers(paths: List[str], platform: str = "")
     summary: Dict[str, Any] = {
         "candidate_count": len(paths),
         "payload_marker_present_paths": [],
+        "appended_payload_marker_present_paths": [],
         "sample_marker_present_paths": [],
         "payload_and_sample_marker_present_paths": [],
         "payload_or_sample_marker_missing_paths": [],
@@ -1457,6 +1458,7 @@ def summarize_quarantine_installer_markers(paths: List[str], platform: str = "")
         "unreadable_paths": [],
     }
     payload_marker = b"ChummerInstaller.Payload.zip"
+    appended_payload_marker = b"CHUMMER6PAYLOAD1"
     sample_marker = b"Samples/Legacy/Soma-Career.chum5"
     for raw_path in paths:
         path = Path(str(raw_path))
@@ -1475,12 +1477,15 @@ def summarize_quarantine_installer_markers(paths: List[str], platform: str = "")
             summary["unreadable_paths"].append(str(path))
             continue
         payload_present = payload_marker in blob
+        appended_payload_present = appended_payload_marker in blob
         sample_present = sample_marker in blob
         if payload_present:
             summary["payload_marker_present_paths"].append(str(path))
+        if appended_payload_present:
+            summary["appended_payload_marker_present_paths"].append(str(path))
         if sample_present:
             summary["sample_marker_present_paths"].append(str(path))
-        if payload_present and sample_present:
+        if (payload_present or appended_payload_present) and sample_present:
             summary["payload_and_sample_marker_present_paths"].append(str(path))
         else:
             summary["payload_or_sample_marker_missing_paths"].append(str(path))
@@ -2552,8 +2557,8 @@ def validate_windows_gate(
                     f"Windows startup smoke receipt is stale for promoted installer bytes ({startup_smoke_age_seconds}s old)."
                 )
 
-    if not embedded_payload_marker_present:
-        reasons.append(f"Windows installer receipt does not confirm embedded payload marker for promoted tuple {gate_label}.")
+    if not (embedded_payload_marker_present or appended_payload_marker_present):
+        reasons.append(f"Windows installer receipt does not confirm a recognizable payload marker for promoted tuple {gate_label}.")
     if not embedded_sample_marker_present:
         reasons.append(f"Windows installer receipt does not confirm bundled demo sample marker for promoted tuple {gate_label}.")
 

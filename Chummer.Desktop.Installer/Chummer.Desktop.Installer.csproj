@@ -24,6 +24,7 @@
     <ChummerInstallerPayloadResourceName Condition="'$(ChummerInstallerPayloadResourceName)' == ''">ChummerInstaller.Payload.zip</ChummerInstallerPayloadResourceName>
     <ChummerInstallerPayloadRequired Condition="'$(ChummerInstallerPayloadRequired)' == ''">true</ChummerInstallerPayloadRequired>
     <ChummerInstallerEmbedPayload Condition="'$(ChummerInstallerEmbedPayload)' == ''">true</ChummerInstallerEmbedPayload>
+    <ChummerInstallerIncludeSidecarPayload Condition="'$(ChummerInstallerIncludeSidecarPayload)' == ''">false</ChummerInstallerIncludeSidecarPayload>
     <ApplicationIcon>..\Chummer\chummer.ico</ApplicationIcon>
     <Win32Icon>..\Chummer\chummer.ico</Win32Icon>
   </PropertyGroup>
@@ -32,7 +33,7 @@
     <EmbeddedResource Include="$(InstallerPayloadZip)" LogicalName="$(ChummerInstallerPayloadResourceName)" />
   </ItemGroup>
 
-  <ItemGroup Condition="Exists('$(InstallerPayloadZip)') and '$(ChummerInstallerEmbedPayload)' != 'true'">
+  <ItemGroup Condition="Exists('$(InstallerPayloadZip)') and '$(ChummerInstallerEmbedPayload)' != 'true' and '$(ChummerInstallerIncludeSidecarPayload)' == 'true'">
     <Content Include="$(InstallerPayloadZip)">
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
       <ExcludeFromSingleFile>false</ExcludeFromSingleFile>
