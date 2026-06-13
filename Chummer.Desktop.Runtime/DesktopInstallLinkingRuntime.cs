@@ -1600,11 +1600,18 @@ public static class DesktopInstallLinkingRuntime
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        AppLocalCallbackListenerState listenerState = EnsureAppLocalCallbackListenerStarted();
-        UriBuilder builder = new(listenerState.BaseAddress);
-        builder.Path = AppLocalInstallLinkCallbackPath;
-        builder.Query = $"state=desktop&installationId={Uri.EscapeDataString(state.InstallationId)}&headId={Uri.EscapeDataString(state.HeadId)}";
-        return builder.Uri.ToString();
+        try
+        {
+            AppLocalCallbackListenerState listenerState = EnsureAppLocalCallbackListenerStarted();
+            UriBuilder builder = new(listenerState.BaseAddress);
+            builder.Path = AppLocalInstallLinkCallbackPath;
+            builder.Query = $"state=desktop&installationId={Uri.EscapeDataString(state.InstallationId)}&headId={Uri.EscapeDataString(state.HeadId)}";
+            return builder.Uri.ToString();
+        }
+        catch (Exception)
+        {
+            return "chummer://install-link";
+        }
     }
 
     private static AppLocalCallbackListenerState EnsureAppLocalCallbackListenerStarted()
