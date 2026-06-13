@@ -63,7 +63,10 @@ public sealed class DesktopInstallLinkingRuntimeTests
         StringAssert.Contains(path, "installationId=ins-avalonia-1", StringComparison.Ordinal);
         StringAssert.Contains(path, "installLinkMode=browser_callback", StringComparison.Ordinal);
         StringAssert.Contains(path, "installLinkTransport=grant_callback", StringComparison.Ordinal);
-        StringAssert.Contains(path, "installLinkCallbackUri=chummer%3A%2F%2Finstall-link", StringComparison.Ordinal);
+        StringAssert.Contains(path, "installLinkCallbackUri=http%3A%2F%2F127.0.0.1%3A", StringComparison.Ordinal);
+        StringAssert.Contains(path, "install-link%2Fcallback", StringComparison.Ordinal);
+        StringAssert.Contains(path, "state%3Ddesktop", StringComparison.Ordinal);
+        StringAssert.Contains(path, "headId%3Davalonia", StringComparison.Ordinal);
     }
 
     [TestMethod]

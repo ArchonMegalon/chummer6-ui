@@ -32,6 +32,11 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"AvaloniaDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"BlazorDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Debug.WriteLine($\"Chummer installer could not prune legacy install directory");
+        StringAssert.Contains(installerProgramText, "RegisterUrlProtocol(metadata);");
+        StringAssert.Contains(installerProgramText, "UnregisterUrlProtocol();");
+        StringAssert.Contains(installerProgramText, "Software\\Classes\\{ChummerProtocolScheme}");
+        StringAssert.Contains(installerProgramText, "\"URL: Chummer Protocol\"");
+        StringAssert.Contains(installerProgramText, "commandKey.SetValue(string.Empty, $\"\\\"{launchPath}\\\" {InstallLinkCallbackSwitch} \\\"%1\\\"\")");
         StringAssert.Contains(installerProjectText, "<ChummerInstallerIncludeSidecarPayload Condition=\"'$(ChummerInstallerIncludeSidecarPayload)' == ''\">false</ChummerInstallerIncludeSidecarPayload>");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerIncludeSidecarPayload=false");
         StringAssert.Contains(selectionHandlersText, "DesktopReportIssueWindow.ShowAsync(this, DesktopHeadId)");

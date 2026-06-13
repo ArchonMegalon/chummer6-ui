@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -69,8 +70,11 @@ public static class DesktopInstallLinkingRuntime
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
     private const string ProtectedPrivateKeyFileName = "private-key.protected";
+    private const string AppLocalInstallLinkCallbackPath = "/install-link/callback";
     private const string GuestStatus = "guest";
     private const string ClaimedStatus = "claimed";
+    private static readonly object AppLocalCallbackListenerSync = new();
+    private static AppLocalCallbackListenerState? _appLocalCallbackListener;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -446,7 +450,7 @@ public static class DesktopInstallLinkingRuntime
         AppendQueryParameter(query, "arch", state.Arch);
         AppendQueryParameter(query, "installLinkMode", "browser_callback");
         AppendQueryParameter(query, "installLinkTransport", "grant_callback");
-        AppendQueryParameter(query, "installLinkCallbackUri", BuildInstallLinkCallbackUri());
+        AppendQueryParameter(query, "installLinkCallbackUri", BuildInstallLinkCallbackUri(state));
 
         return query.Count == 0
             ? "/account/access/install-link"
@@ -1592,9 +1596,193 @@ public static class DesktopInstallLinkingRuntime
         query.Add($"{Uri.EscapeDataString(key)}={Uri.EscapeDataString(value.Trim())}");
     }
 
-    private static string BuildInstallLinkCallbackUri()
+    private static string BuildInstallLinkCallbackUri(DesktopInstallLinkingState state)
     {
-        return "chummer://install-link";
+        ArgumentNullException.ThrowIfNull(state);
+
+        AppLocalCallbackListenerState listenerState = EnsureAppLocalCallbackListenerStarted();
+        UriBuilder builder = new(listenerState.BaseAddress);
+        builder.Path = AppLocalInstallLinkCallbackPath;
+        builder.Query = $"state=desktop&installationId={Uri.EscapeDataString(state.InstallationId)}&headId={Uri.EscapeDataString(state.HeadId)}";
+        return builder.Uri.ToString();
+    }
+
+    private static AppLocalCallbackListenerState EnsureAppLocalCallbackListenerStarted()
+    {
+        lock (AppLocalCallbackListenerSync)
+        {
+            if (_appLocalCallbackListener is not null)
+            {
+                return _appLocalCallbackListener;
+            }
+
+            TcpListener listener = new(IPAddress.Loopback, 0);
+            listener.Start();
+            int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            AppLocalCallbackListenerState state = new(
+                listener,
+                new Uri($"http://127.0.0.1:{port}/", UriKind.Absolute));
+            _ = Task.Run(() => RunAppLocalCallbackListenerAsync(state));
+            _appLocalCallbackListener = state;
+            return state;
+        }
+    }
+
+    private static async Task RunAppLocalCallbackListenerAsync(AppLocalCallbackListenerState listenerState)
+    {
+        while (true)
+        {
+            TcpClient? client = null;
+            try
+            {
+                client = await listenerState.Listener.AcceptTcpClientAsync().ConfigureAwait(false);
+                _ = Task.Run(() => ProcessAppLocalCallbackClientAsync(listenerState, client));
+            }
+            catch (ObjectDisposedException)
+            {
+                client?.Dispose();
+                break;
+            }
+            catch
+            {
+                client?.Dispose();
+            }
+        }
+    }
+
+    private static async Task ProcessAppLocalCallbackClientAsync(AppLocalCallbackListenerState listenerState, TcpClient client)
+    {
+        using (client)
+        {
+            try
+            {
+                using NetworkStream stream = client.GetStream();
+                using StreamReader reader = new(stream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
+
+                string? requestLine = await reader.ReadLineAsync().ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(requestLine))
+                {
+                    await WriteAppLocalCallbackResponseAsync(stream, 400, "Bad request", "Chummer could not read the browser handoff request.").ConfigureAwait(false);
+                    return;
+                }
+
+                string[] requestParts = requestLine.Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
+                if (requestParts.Length < 2
+                    || !string.Equals(requestParts[0], "GET", StringComparison.OrdinalIgnoreCase)
+                    || !Uri.TryCreate(listenerState.BaseAddress, requestParts[1], out Uri? requestUri))
+                {
+                    await WriteAppLocalCallbackResponseAsync(stream, 400, "Unsupported request", "Chummer expected a browser callback GET request.").ConfigureAwait(false);
+                    return;
+                }
+
+                while (!string.IsNullOrEmpty(await reader.ReadLineAsync().ConfigureAwait(false)))
+                {
+                }
+
+                AppLocalCallbackResult result = await HandleAppLocalCallbackAsync(requestUri).ConfigureAwait(false);
+                await WriteAppLocalCallbackResponseAsync(
+                    stream,
+                    result.Success ? 200 : 400,
+                    result.Success ? "Chummer linked" : "Chummer link failed",
+                    result.Message).ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private static async Task<AppLocalCallbackResult> HandleAppLocalCallbackAsync(Uri callbackUri)
+    {
+        if (!TryExtractBrowserCallbackCodeFromCallbackUri(callbackUri.ToString(), out string? callbackCode))
+        {
+            return new AppLocalCallbackResult(false, "Chummer did not receive a valid install-link callback code.");
+        }
+
+        Dictionary<string, string> query = ParseQueryParameters(callbackUri.Query);
+        if (!query.TryGetValue("headId", out string? headId) || string.IsNullOrWhiteSpace(headId))
+        {
+            return new AppLocalCallbackResult(false, "Chummer could not match the browser callback to an installed desktop head.");
+        }
+
+        DesktopInstallLinkingState state = LoadOrCreateState(headId.Trim());
+        if (query.TryGetValue("installationId", out string? installationId)
+            && !string.IsNullOrWhiteSpace(installationId)
+            && !string.Equals(state.InstallationId, installationId.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return new AppLocalCallbackResult(false, "This browser callback does not match the current Chummer installation.");
+        }
+
+        DesktopInstallClaimResult result = await ExchangeBrowserCallbackCodeAsync(headId.Trim(), callbackCode!, state, CancellationToken.None).ConfigureAwait(false);
+        return new AppLocalCallbackResult(result.Succeeded, result.Message);
+    }
+
+    private static async Task WriteAppLocalCallbackResponseAsync(NetworkStream stream, int statusCode, string title, string message)
+    {
+        string body = $$"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{WebUtility.HtmlEncode(title)}}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1115; color: #f5f7fa; margin: 0; }
+    main { max-width: 36rem; margin: 10vh auto; padding: 1.5rem; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.75rem; }
+    p { line-height: 1.5; color: #d2d8e1; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>{{WebUtility.HtmlEncode(title)}}</h1>
+    <p>{{WebUtility.HtmlEncode(message)}}</p>
+    <p>You can return to Chummer now.</p>
+  </main>
+</body>
+</html>
+""";
+        byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
+        string header =
+            $"HTTP/1.1 {statusCode} {(statusCode == 200 ? "OK" : "Bad Request")}\r\n" +
+            "Content-Type: text/html; charset=utf-8\r\n" +
+            $"Content-Length: {bodyBytes.Length}\r\n" +
+            "Connection: close\r\n\r\n";
+        byte[] headerBytes = Encoding.ASCII.GetBytes(header);
+        await stream.WriteAsync(headerBytes).ConfigureAwait(false);
+        await stream.WriteAsync(bodyBytes).ConfigureAwait(false);
+        await stream.FlushAsync().ConfigureAwait(false);
+    }
+
+    private static Dictionary<string, string> ParseQueryParameters(string? rawQuery)
+    {
+        Dictionary<string, string> query = new(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(rawQuery))
+        {
+            return query;
+        }
+
+        ReadOnlySpan<char> querySpan = rawQuery.AsSpan().Trim();
+        if (querySpan.Length > 0 && querySpan[0] == '?')
+        {
+            querySpan = querySpan[1..];
+        }
+
+        foreach (string segment in querySpan.ToString().Split('&', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int separatorIndex = segment.IndexOf('=');
+            string key = separatorIndex >= 0 ? segment[..separatorIndex] : segment;
+            string value = separatorIndex >= 0 ? segment[(separatorIndex + 1)..] : string.Empty;
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                continue;
+            }
+
+            query[Uri.UnescapeDataString(key.Replace('+', ' '))] =
+                Uri.UnescapeDataString(value.Replace('+', ' '));
+        }
+
+        return query;
     }
 
     private static string BuildErrorMessage(HttpResponseMessage response, string responseText)
@@ -1874,6 +2062,14 @@ public static class DesktopInstallLinkingRuntime
         string? Title,
         string? Detail,
         int? Status);
+
+    private sealed record AppLocalCallbackListenerState(
+        TcpListener Listener,
+        Uri BaseAddress);
+
+    private sealed record AppLocalCallbackResult(
+        bool Success,
+        string Message);
 
     private sealed record DesktopRuntimeReleaseMetadata(
         string HeadId,

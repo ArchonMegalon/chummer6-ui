@@ -17,9 +17,11 @@ internal static class Program
     private const string AppendedPayloadMagic = "CHUMMER6PAYLOAD1";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string ClaimCodeSwitch = "--install-claim-code";
+    private const string InstallLinkCallbackSwitch = "--install-link-callback";
     private const string ExplicitStateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string ChummerIconFileName = "chummer.ico";
+    private const string ChummerProtocolScheme = "chummer";
 
     [STAThread]
     private static int Main(string[] args)
@@ -167,6 +169,8 @@ internal static class Program
 
         progress?.Report(new InstallProgressUpdate("Registering uninstall entry"));
         RegisterUninstall(metadata, installedInstallerPath);
+        progress?.Report(new InstallProgressUpdate("Registering Chummer link handler"));
+        RegisterUrlProtocol(metadata);
         progress?.Report(new InstallProgressUpdate("Install complete"));
         return targetDir;
     }
@@ -180,6 +184,7 @@ internal static class Program
         }
 
         UnregisterUninstall(metadata);
+        UnregisterUrlProtocol();
         ScheduleDirectoryRemoval(metadata.InstallDirectory);
         MessageBox.Show(
             $"{metadata.DisplayName} is being removed from:\n{metadata.InstallDirectory}",
@@ -1273,9 +1278,32 @@ internal static class Program
         key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
     }
 
+    private static void RegisterUrlProtocol(InstallerMetadata metadata)
+    {
+        string launchPath = metadata.PrimaryHead.ResolveLaunchPath(metadata.InstallDirectory);
+        using RegistryKey protocolKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{ChummerProtocolScheme}", writable: true)
+            ?? throw new InvalidOperationException("Could not create Chummer protocol registry entry.");
+        protocolKey.SetValue(string.Empty, "URL: Chummer Protocol");
+        protocolKey.SetValue("URL Protocol", string.Empty);
+
+        using RegistryKey defaultIconKey = protocolKey.CreateSubKey("DefaultIcon", writable: true)
+            ?? throw new InvalidOperationException("Could not create Chummer protocol icon registry entry.");
+        defaultIconKey.SetValue(string.Empty, ResolveShortcutIconPath(launchPath));
+
+        using RegistryKey commandKey = protocolKey
+            .CreateSubKey(@"shell\open\command", writable: true)
+            ?? throw new InvalidOperationException("Could not create Chummer protocol command registry entry.");
+        commandKey.SetValue(string.Empty, $"\"{launchPath}\" {InstallLinkCallbackSwitch} \"%1\"");
+    }
+
     private static void UnregisterUninstall(InstallerMetadata metadata)
     {
         Registry.CurrentUser.DeleteSubKeyTree(metadata.UninstallRegistryKeyPath, throwOnMissingSubKey: false);
+    }
+
+    private static void UnregisterUrlProtocol()
+    {
+        Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ChummerProtocolScheme}", throwOnMissingSubKey: false);
     }
 
     private static void CreateShortcut(string shortcutPath, string targetPath, string description)
