@@ -28,7 +28,7 @@ Run:
 bash scripts/migration-loop.sh 1
 bash scripts/audit-ui-parity.sh
 docker compose --profile test run --rm chummer-tests \
-  dotnet test Chummer.Tests/Chummer.Tests.csproj -c Release -f net10.0 \
+  dotnet test --project Chummer.Tests/Chummer.Tests.csproj -c Release -f net10.0 \
   --filter "FullyQualifiedName~ArchitectureGuardrailTests|FullyQualifiedName~MigrationComplianceTests|FullyQualifiedName~DualHeadAcceptanceTests|FullyQualifiedName~WorkflowParityGateTests"
 ```
 

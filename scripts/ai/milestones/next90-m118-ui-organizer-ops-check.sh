@@ -43,8 +43,8 @@ EXPECTED_SURFACES = [
     "organizer_roles_ui",
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M118OrganizerOperationsGuardTests" --no-restore'
-EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "AccessibilitySignoffSmokeTests" --no-restore'
+EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M118OrganizerOperationsGuardTests" --no-restore'
+EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "AccessibilitySignoffSmokeTests" --no-restore'
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_COMPLETION_ACTION = "verify_closed_package_only"
 EXPECTED_DO_NOT_REOPEN_REASON = "M118 chummer6-ui organizer desktop operations are complete; future shards must verify the"

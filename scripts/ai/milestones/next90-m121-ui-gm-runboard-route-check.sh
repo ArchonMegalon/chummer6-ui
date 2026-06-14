@@ -44,8 +44,8 @@ EXPECTED_SURFACES = [
 EXPECTED_COMPLETION_ACTION = "verify_closed_package_only"
 EXPECTED_DO_NOT_REOPEN_REASON = "M121 chummer6-ui desktop GM Runboard route is complete; future shards must verify the desktop runboard proof, focused guard tests, canonical registry row, and queue mirrors instead of reopening this slice."
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M121GmRunboardRouteGuardTests" --no-restore'
-EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "FullyQualifiedName~AccessibilitySignoffSmokeTests" --no-restore'
+EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M121GmRunboardRouteGuardTests" --no-restore'
+EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter "FullyQualifiedName~AccessibilitySignoffSmokeTests" --no-restore'
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_EVIDENCE = [
     f"{repo_root}/Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs now provides a dedicated GM Runboard desktop surface with initiative, action-budget, scene-objective, heat-posture, opposition-ref, and ResolutionReport-entry summaries plus focused follow-through actions.",

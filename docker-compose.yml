@@ -118,7 +118,7 @@ services:
       CHUMMER_API_KEY: "${CHUMMER_API_KEY:-}"
       CHUMMER_AMENDS_EXPECTED_ID: "${CHUMMER_AMENDS_EXPECTED_ID:-local-test-amend}"
     command: >
-      dotnet test Chummer.Tests/Chummer.Tests.csproj
+      dotnet test --project Chummer.Tests/Chummer.Tests.csproj
       -c Release
       -f net10.0
       -p:TargetFramework=net10.0

@@ -138,7 +138,7 @@ EXPECTED_SURFACES = [
     "capture_direct_screenshot_and_runtime_proof_for_translat:ui",
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m141-ui-direct-import-route-proof-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M141DirectImportRouteProofGuardTests" --no-restore'
+EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M141DirectImportRouteProofGuardTests" --no-restore'
 EXPECTED_DESIGN_QUEUE_PATH = f"{repo_root}/.codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_SCREENSHOTS = [
     "38-translator-dialog-light.png",

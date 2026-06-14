@@ -63,7 +63,7 @@ EXPECTED_SURFACES = [
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh"
 EXPECTED_TARGETED_TEST_COMMAND = (
-    'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M143DirectOutputProofGuardTests" --no-restore'
+    'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M143DirectOutputProofGuardTests" --no-restore'
 )
 EXPECTED_PROOF = [
     f"{canonical_ui_root}/Chummer.Tests/Compliance/Next90M143DirectOutputProofGuardTests.cs",
@@ -213,7 +213,7 @@ SOURCE_MARKERS = {
     ],
     "scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh": [
         'NEXT90_M114_UI_RULE_STUDIO.generated.json',
-        'EXPECTED_TARGETED_TEST_COMMAND = \'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests" --no-restore\'',
+        'EXPECTED_TARGETED_TEST_COMMAND = \'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests" --no-restore\'',
     ],
     "scripts/ai/milestones/b14-flagship-ui-release-gate.sh": [
         '"18-import-dialog-light.png"',

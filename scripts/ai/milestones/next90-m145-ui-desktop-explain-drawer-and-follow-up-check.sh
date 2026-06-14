@@ -59,8 +59,8 @@ EXPECTED_PROOF_ITEMS = [
     "bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh",
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m145-ui-desktop-explain-drawer-and-follow-up-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M145DesktopExplainDrawerGuardTests" --no-restore'
-EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy|FullyQualifiedName~Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up|FullyQualifiedName~Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer" --no-restore -p:BuildProjectReferences=false'
+EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M145DesktopExplainDrawerGuardTests" --no-restore'
+EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy|FullyQualifiedName~Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up|FullyQualifiedName~Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer" --no-restore -p:BuildProjectReferences=false'
 REGISTRY_TASK_ANCHOR = """- id: '145.2'
       owner: chummer6-ui
       title: Wire the desktop explain drawer, source-anchor launch, stale-state handling, and text-first follow-up on promoted workbench routes."""

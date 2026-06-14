@@ -52,7 +52,7 @@ EXPECTED_SURFACES = [
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh"
 EXPECTED_TARGETED_TEST_COMMAND = (
-    'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests" --no-restore'
+    'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests" --no-restore'
 )
 EXPECTED_PROOF = [
     f"{published_repo_root}/Chummer.Tests/Compliance/Next90M142DirectWorkflowProofGuardTests.cs",

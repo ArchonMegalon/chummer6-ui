@@ -23,7 +23,7 @@ The UI-side ruleset adaptation lane is now published in `docs/RULESET_UI_DIRECTI
 
 1. `bash scripts/migration-loop.sh 1`
 2. `bash scripts/audit-ui-parity.sh`
-3. `dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~ArchitectureGuardrailTests|FullyQualifiedName~MigrationComplianceTests|FullyQualifiedName~DualHeadAcceptanceTests"`
+3. `dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~ArchitectureGuardrailTests|FullyQualifiedName~MigrationComplianceTests|FullyQualifiedName~DualHeadAcceptanceTests"`
 
 ## Backlog
 

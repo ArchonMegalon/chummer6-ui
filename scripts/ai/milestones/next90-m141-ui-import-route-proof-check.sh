@@ -43,7 +43,7 @@ EXPECTED_SURFACES = [
     "capture_direct_screenshot_and_runtime_proof_for_translat:ui",
 ]
 EXPECTED_DIRECT_PROOF_COMMAND = "bash scripts/ai/milestones/next90-m141-ui-import-route-proof-check.sh"
-EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "Next90M141UiImportRouteProofGuardTests|DesktopDialogFactoryTests|CharacterOverviewPresenterTests|DualHeadAcceptanceTests|AvaloniaFlagshipUiGateTests" --no-restore'
+EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "Next90M141UiImportRouteProofGuardTests|DesktopDialogFactoryTests|CharacterOverviewPresenterTests|DualHeadAcceptanceTests|AvaloniaFlagshipUiGateTests" --no-restore'
 EXPECTED_DESIGN_QUEUE_PATH = "/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"
 EXPECTED_SCREENSHOTS = [
     "38-translator-dialog-light.png",
