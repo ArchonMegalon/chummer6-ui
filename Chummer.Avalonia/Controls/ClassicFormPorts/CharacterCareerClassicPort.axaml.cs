@@ -49,34 +49,34 @@ public partial class CharacterCareerClassicPort : ClassicFormPortSurfaceControl
         SetActiveTab(_tabs, state.ActiveTabId, "Character", "Advancement", "Gear", "Armor", "Weapons", "Contacts", "Notes");
         ClassicCareerPortViewModel viewModel = ClassicFormPortViewModelBridge.Create(state, snapshot, CreateCommandSet(_noticeText)).Career;
         DataContext = viewModel;
-        PopulateClassicSelector(_actionSelector, viewModel.Actions.Select(static action => action.Detail), "No actions");
+        PopulateClassicSelector(_actionSelector, viewModel.Actions.Select(static action => action.Value), "No actions");
 
         PopulateClassicList(
             _snapshotList,
-            viewModel.Snapshot,
+            viewModel.Snapshot.Select(static item => item.ToLineItem()),
             "No core career metadata is currently available.");
 
         PopulateClassicTree(
             _advancementTree,
-            viewModel.Advancement,
+            viewModel.Advancement.Select(static item => item.ToLineItem()),
             "Advancement details are not ready.");
 
-        PopulateClassicList(_gearList, viewModel.Gear, "No gear values are available yet.");
+        PopulateClassicList(_gearList, viewModel.Gear.Select(static item => item.ToLineItem()), "No gear values are available yet.");
 
-        PopulateClassicList(_armorList, viewModel.Armor, "Armor fields are currently empty.");
+        PopulateClassicList(_armorList, viewModel.Armor.Select(static item => item.ToLineItem()), "Armor fields are currently empty.");
 
-        PopulateClassicList(_weaponsList, viewModel.Weapons, "No weapon items are loaded yet.");
+        PopulateClassicList(_weaponsList, viewModel.Weapons.Select(static item => item.ToLineItem()), "No weapon items are loaded yet.");
 
         PopulateClassicTree(
             _contactsTree,
-            viewModel.Contacts,
+            viewModel.Contacts.Select(static item => item.ToLineItem()),
             "No contacts have been loaded for this surface.");
 
-        PopulateClassicList(_notesList, viewModel.Notes, "No notes are visible yet.");
+        PopulateClassicList(_notesList, viewModel.Notes.Select(static item => item.ToLineItem()), "No notes are visible yet.");
 
         PopulateClassicList(
             _actionsList,
-            viewModel.Actions,
+            viewModel.Actions.Select(static item => item.ToLineItem()),
             "No live actions are currently exposed for this surface.");
     }
 }

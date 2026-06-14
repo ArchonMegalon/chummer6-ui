@@ -43,15 +43,15 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         DataContext = viewModel;
 
         PopulateClassicSelector(_categorySelector, viewModel.Categories, "No gear categories");
-        PopulateClassicList(_categoryList, viewModel.CategoryRows, "No gear categories are currently visible.");
+        PopulateClassicList(_categoryList, viewModel.CategoryRows.Select(static item => item.ToLineItem()), "No gear categories are currently visible.");
 
         PopulateClassicTree(
             _filterTree,
-            viewModel.Filters,
+            viewModel.Filters.Select(static item => item.ToLineItem()),
             "No legacy filter groups were exposed.");
 
-        PopulateClassicList(_detailList, viewModel.Details, "Select an item to show classic detail values.");
+        PopulateClassicList(_detailList, viewModel.Details.Select(static item => item.ToLineItem()), "Select an item to show classic detail values.");
 
-        PopulateClassicList(_purchaseList, viewModel.PurchaseActions, "No purchase actions are available yet.");
+        PopulateClassicList(_purchaseList, viewModel.PurchaseActions.Select(static item => item.ToLineItem()), "No purchase actions are available yet.");
     }
 }

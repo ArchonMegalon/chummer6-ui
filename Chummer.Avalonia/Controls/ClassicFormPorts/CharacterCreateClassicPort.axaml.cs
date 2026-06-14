@@ -51,22 +51,22 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
 
         PopulateClassicList(
             _prioritiesList,
-            viewModel.PrioritySummary,
+            viewModel.PrioritySummary.Select(static item => item.ToLineItem()),
             "No priority values are ready yet.");
 
-        PopulateClassicList(_attributesList, viewModel.Attributes, "Attribute ladder is not populated yet.");
+        PopulateClassicList(_attributesList, viewModel.Attributes.Select(static item => item.ToLineItem()), "Attribute ladder is not populated yet.");
 
-        PopulateClassicTree(_skillsTree, viewModel.Skills, "Skill and specialization values are not yet available.");
+        PopulateClassicTree(_skillsTree, viewModel.Skills.Select(static item => item.ToLineItem()), "Skill and specialization values are not yet available.");
 
-        PopulateClassicList(_gearList, viewModel.Gear, "Starting gear is not loaded yet.");
+        PopulateClassicList(_gearList, viewModel.Gear.Select(static item => item.ToLineItem()), "Starting gear is not loaded yet.");
 
-        PopulateClassicTree(_spellsTree, viewModel.Spells, "No spell list is visible yet.");
+        PopulateClassicTree(_spellsTree, viewModel.Spells.Select(static item => item.ToLineItem()), "No spell list is visible yet.");
 
         PopulateClassicList(
             _finalList,
-            viewModel.FinalSummary,
+            viewModel.FinalSummary.Select(static item => item.ToLineItem()),
             "No finalization summary yet.");
 
-        PopulateClassicList(_actionsList, viewModel.Actions, "No creation actions are currently available.");
+        PopulateClassicList(_actionsList, viewModel.Actions.Select(static item => item.ToLineItem()), "No creation actions are currently available.");
     }
 }

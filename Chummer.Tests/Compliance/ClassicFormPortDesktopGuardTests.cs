@@ -91,7 +91,10 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(bridgeText.Contains("foreach (var row in state.Rows)", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("ContainsAny(haystack", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("ReadPreviewFacts(state.PreviewJson)", StringComparison.Ordinal));
-        StringAssert.Contains(bridgeText, "ClassifyBySchemaKey");
+        StringAssert.Contains(bridgeText, "ClassicFormPortDocument");
+        StringAssert.Contains(bridgeText, "CreateFromSectionRows");
+        Assert.IsFalse(bridgeText.Contains("CreateFromRows(IReadOnlyList<SectionRowDisplayItem> rows)", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("IReadOnlyList<ClassicPortLineItem>", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCareerClassicPort.axaml", "CharacterCareerClassicPort.axaml.cs");
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCreateClassicPort.axaml", "CharacterCreateClassicPort.axaml.cs");

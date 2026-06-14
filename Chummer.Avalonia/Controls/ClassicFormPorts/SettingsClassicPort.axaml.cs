@@ -42,12 +42,12 @@ public partial class SettingsClassicPort : ClassicFormPortSurfaceControl
         DataContext = viewModel;
 
         PopulateClassicSelector(_globalSelector, viewModel.GlobalLabels, "No global settings");
-        PopulateClassicList(_globalList, viewModel.GlobalRows, "No global settings are currently loaded.");
+        PopulateClassicList(_globalList, viewModel.GlobalRows.Select(static item => item.ToLineItem()), "No global settings are currently loaded.");
 
-        PopulateClassicList(_customDataList, viewModel.CustomDataActions, "Custom data actions are not available yet.");
+        PopulateClassicList(_customDataList, viewModel.CustomDataActions.Select(static item => item.ToLineItem()), "Custom data actions are not available yet.");
 
-        PopulateClassicTree(_githubIssuesTree, viewModel.GitHubIssueChannels, "No GitHub issue metadata is currently available.");
+        PopulateClassicTree(_githubIssuesTree, viewModel.GitHubIssueChannels.Select(static item => item.ToLineItem()), "No GitHub issue metadata is currently available.");
 
-        PopulateClassicTree(_pluginsTree, viewModel.Plugins, "Plugin context menu data is currently unavailable.");
+        PopulateClassicTree(_pluginsTree, viewModel.Plugins.Select(static item => item.ToLineItem()), "Plugin context menu data is currently unavailable.");
     }
 }
