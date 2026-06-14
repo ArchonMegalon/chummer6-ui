@@ -1910,6 +1910,57 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void RebuildDynamicDialog_priority_route_filters_metatypes_by_heritage_priority_and_repairs_invalid_selection()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        DesktopDialogState trollDialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPriorityHeritage", "A"));
+        DesktopDialogState selectedTrollDialog = RebuildDynamicDialog(UpdateDialogField(trollDialog, "newCharacterMetatype", "Troll"));
+        DesktopDialogState narrowedDialog = RebuildDynamicDialog(UpdateDialogField(selectedTrollDialog, "newCharacterPriorityHeritage", "D"));
+
+        string[] metatypeOptions = narrowedDialog.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal))
+            .Options!
+            .Select(option => option.Value)
+            .ToArray();
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(narrowedDialog, "newCharacterPriorityWorkflowState"));
+
+        CollectionAssert.AreEquivalent(new[] { "Human", "Elf" }, metatypeOptions);
+        Assert.AreEqual("Elf", DesktopDialogFieldValueParser.GetValue(narrowedDialog, "newCharacterMetatype"));
+        Assert.AreEqual("1", runtimeState.SpecialAttributes);
+    }
+
+    [TestMethod]
+    public void RebuildDynamicDialog_priority_route_surfaces_show_all_priority_metatypes_for_c_or_better()
+    {
+        DesktopDialogState dialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher");
+
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterMetatypeCategory", "Show All"));
+        dialog = RebuildDynamicDialog(UpdateDialogField(dialog, "newCharacterPriorityHeritage", "C"));
+
+        string[] metatypeOptions = dialog.Fields
+            .Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal))
+            .Options!
+            .Select(option => option.Value)
+            .ToArray();
+
+        CollectionAssert.AreEquivalent(
+            new[] { "Human", "Elf", "Ork", "Shapeshifter: Vulpine" },
+            metatypeOptions);
+    }
+
+    [TestMethod]
     public void BuildNewCharacterContinuationDialog_uses_karma_route_for_non_priority_builds()
     {
         DesktopDialogState dialog = BuildNewCharacterContinuationDialog(

@@ -51,22 +51,22 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
 
         PopulateClassicList(
             _prioritiesList,
-            viewModel.PrioritySummary.Select(static item => item.ToLineItem()),
+            ProjectLines(viewModel.PrioritySummary, static item => item.Label, static item => item.Value),
             "No priority values are ready yet.");
 
-        PopulateClassicList(_attributesList, viewModel.Attributes.Select(static item => item.ToLineItem()), "Attribute ladder is not populated yet.");
+        PopulateClassicList(_attributesList, ProjectLines(viewModel.Attributes, static item => item.Label, static item => item.Value), "Attribute ladder is not populated yet.");
 
-        PopulateClassicTree(_skillsTree, viewModel.Skills.Select(static item => item.ToLineItem()), "Skill and specialization values are not yet available.");
+        PopulateClassicTree(_skillsTree, ProjectLines(viewModel.Skills, static item => item.Label, static item => item.Value), "Skill and specialization values are not yet available.");
 
-        PopulateClassicList(_gearList, viewModel.Gear.Select(static item => item.ToLineItem()), "Starting gear is not loaded yet.");
+        PopulateClassicList(_gearList, ProjectLines(viewModel.Gear, static item => item.Label, static item => item.Value), "Starting gear is not loaded yet.");
 
-        PopulateClassicTree(_spellsTree, viewModel.Spells.Select(static item => item.ToLineItem()), "No spell list is visible yet.");
+        PopulateClassicTree(_spellsTree, ProjectLines(viewModel.Spells, static item => item.Label, static item => item.Value), "No spell list is visible yet.");
 
         PopulateClassicList(
             _finalList,
-            viewModel.FinalSummary.Select(static item => item.ToLineItem()),
+            ProjectLines(viewModel.FinalSummary, static item => item.Label, static item => item.Value),
             "No finalization summary yet.");
 
-        PopulateClassicList(_actionsList, viewModel.Actions.Select(static item => item.ToLineItem()), "No creation actions are currently available.");
+        PopulateClassicList(_actionsList, ProjectLines(viewModel.Actions, static item => item.Label, static item => item.Value), "No creation actions are currently available.");
     }
 }

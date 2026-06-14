@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T16:53:22.171223Z",
+  "generatedAt": "2026-06-14T19:40:38.059480Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for attributes-skills-skill-groups-specializations-knowledge-languages.",
@@ -60,7 +60,7 @@
       "maxAttempts": 2
     },
     "apiProbe": {
-      "baseUrl": "http://127.0.0.1:5089",
+      "baseUrl": "http://127.0.0.1:8088",
       "results": [
         {
           "path": "/api/workspaces?maxCount=1",

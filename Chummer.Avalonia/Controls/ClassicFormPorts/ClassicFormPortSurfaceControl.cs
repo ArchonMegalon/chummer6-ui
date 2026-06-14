@@ -137,6 +137,14 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
         comboBox.SelectedIndex = 0;
     }
 
+    protected static IReadOnlyList<ClassicPortLineItem> ProjectLines<T>(
+        IEnumerable<T> entries,
+        Func<T, string> labelSelector,
+        Func<T, string> detailSelector)
+        => entries
+            .Select(entry => new ClassicPortLineItem(labelSelector(entry), detailSelector(entry)))
+            .ToArray();
+
     protected static void SetLeadNotice(TextBlock textBlock, string notice, string fallback)
     {
         textBlock.Text = string.IsNullOrWhiteSpace(notice) ? fallback : notice;

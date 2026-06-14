@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ClassicMenuBar">
-  <Border BorderBrush="#69737a"
+  <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,0,0,1"
-          Background="#eff2f4"
+          Background="{DynamicResource ChummerShellChromeBrush}"
           Padding="0">
     <Menu x:Name="MenuBarPanel"
           Background="Transparent">

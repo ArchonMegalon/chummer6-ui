@@ -3017,6 +3017,92 @@ public sealed class AvaloniaFlagshipUiGateTests
         });
     }
 
+    [TestMethod]
+    public void Runtime_priority_workflow_heritage_change_refreshes_visible_metatype_list_and_repairs_invalid_selection()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            harness.WaitForReady();
+
+            harness.Click("FileMenuButton");
+            harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "new_character"));
+            harness.ClickMenuCommand("new_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character", StringComparison.Ordinal)
+                && !harness.State.IsBusy);
+
+            harness.InvokeDialogAction("create_character");
+            harness.WaitUntil(() =>
+                string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal),
+                context: "open priority workflow dialog");
+
+            DesktopDialogWindow dialogWindow = harness.Window.PeekDialogWindowForTesting()
+                ?? throw new AssertFailedException("Priority workflow dialog window was not opened.");
+            string heritageInputName = DesktopDialogAccessibility.BuildFieldInputName("newCharacterPriorityHeritage");
+            string metatypeInputName = DesktopDialogAccessibility.BuildFieldInputName("newCharacterMetatype");
+
+            ComboBox heritageCombo = FindDescendant<ComboBox>(dialogWindow, heritageInputName);
+            DesktopDialogFieldOption heritageA = heritageCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, "A", StringComparison.Ordinal));
+            heritageCombo.SelectedItem = heritageA;
+            harness.WaitUntil(() =>
+                string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterPriorityHeritage"),
+                    "A",
+                    StringComparison.Ordinal),
+                context: "set metatype priority to A");
+
+            ListBox metatypeList = FindDescendant<ListBox>(dialogWindow, metatypeInputName);
+            DesktopDialogFieldOption troll = SnapshotListBoxItems(metatypeList)
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, "Troll", StringComparison.Ordinal));
+            metatypeList.SelectedItem = troll;
+            harness.WaitUntil(() =>
+                string.Equals(
+                    DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterMetatype"),
+                    "Troll",
+                    StringComparison.Ordinal),
+                context: "select Troll while metatype priority is A");
+
+            dialogWindow = harness.Window.PeekDialogWindowForTesting()
+                ?? throw new AssertFailedException("Priority workflow dialog window closed unexpectedly after Troll selection.");
+            heritageCombo = FindDescendant<ComboBox>(dialogWindow, heritageInputName);
+            DesktopDialogFieldOption heritageD = heritageCombo.ItemsSource
+                .OfType<DesktopDialogFieldOption>()
+                .First(option => string.Equals(option.Value, "D", StringComparison.Ordinal));
+            heritageCombo.SelectedItem = heritageD;
+
+            harness.WaitUntil(() =>
+            {
+                if (!string.Equals(harness.State.ActiveDialog?.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                DesktopDialogWindow? currentDialog = harness.Window.PeekDialogWindowForTesting();
+                if (currentDialog is null)
+                {
+                    return false;
+                }
+
+                ListBox currentMetatypeList = FindDescendant<ListBox>(currentDialog, metatypeInputName);
+                string[] visibleMetatypes = SnapshotListBoxItems(currentMetatypeList)
+                    .OfType<DesktopDialogFieldOption>()
+                    .Select(option => option.Label)
+                    .ToArray();
+                string selectedMetatype = (currentMetatypeList.SelectedItem as DesktopDialogFieldOption)?.Value ?? string.Empty;
+
+                return string.Equals(
+                           DesktopDialogFieldValueParser.GetValue(harness.State.ActiveDialog!, "newCharacterPriorityHeritage"),
+                           "D",
+                           StringComparison.Ordinal)
+                    && visibleMetatypes.SequenceEqual(["Human", "Elf"])
+                    && string.Equals(selectedMetatype, "Elf", StringComparison.Ordinal);
+            }, context: "narrow metatype list to D-tier options and repair the invalid Troll selection");
+        });
+    }
+
     private static BuildLabConceptIntakeState CreateBuildLabCompanionState()
         => new(
             WorkspaceId: "lab-intake",

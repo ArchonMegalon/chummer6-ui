@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ClassicToolStrip">
-  <Border BorderBrush="#6f7a82"
+  <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,0,0,1"
-          Background="#d9dfe4"
+          Background="{DynamicResource ChummerShellChromeBrush}"
           Padding="6,4">
     <Grid RowDefinitions="Auto,Auto"
           RowSpacing="4">
@@ -145,10 +145,10 @@
       <Border x:Name="StatusTextBorder"
               Grid.Row="1"
               IsVisible="False"
-              BorderBrush="#8d969c"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
               CornerRadius="3"
-              Background="#f8fafb"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               Padding="8,3"
               HorizontalAlignment="Left"
               VerticalAlignment="Center">

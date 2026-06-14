@@ -1,10 +1,12 @@
 {
-  "generatedAt": "2026-06-12T17:23:06.137324Z",
+  "generatedAt": "2026-06-14T19:40:38.292194Z",
   "contract_name": "chummer6-ui.sr4_desktop_workflow_parity",
   "channelId": "public_stable",
-  "status": "pass",
-  "summary": "SR4 desktop workflow parity is explicitly proven across source artifacts, release-channel identity, oracle provenance, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
-  "reasons": [],
+  "status": "fail",
+  "summary": "SR4 desktop workflow parity is not yet exhaustively proven against the local Chummer4 oracle.",
+  "reasons": [
+    "Release channel receipt is stale (89444 seconds old)."
+  ],
   "evidence": {
     "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
@@ -21,8 +23,8 @@
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-12T12:29:42Z",
-    "releaseChannelAgeSeconds": 17604,
+    "releaseChannelGeneratedAt": "2026-06-13T18:49:54Z",
+    "releaseChannelAgeSeconds": 89444,
     "releaseChannelFutureSkewSeconds": 0,
     "sourceRepoPath": "/docker/fleet/repos/chummer4",
     "sourceRepoHead": "fe9a0c0e67be86785ccce1be041d098f3b5cfa71",
@@ -88,7 +90,7 @@
       "uiGateTests": true,
       "workflowGateTests": true
     },
-    "failureCount": 0
+    "failureCount": 1
   },
   "sourceArtifactReview": {
     "status": "pass",
@@ -104,13 +106,15 @@
     }
   },
   "releaseChannelReview": {
-    "status": "pass",
-    "summary": "SR4 workflow parity proof is aligned to a current release-channel identity.",
-    "reasons": [],
+    "status": "fail",
+    "summary": "SR4 workflow parity proof is missing or drifting from release-channel identity.",
+    "reasons": [
+      "Release channel receipt is stale (89444 seconds old)."
+    ],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-12T12:29:42Z",
-    "ageSeconds": 17604,
+    "generatedAt": "2026-06-13T18:49:54Z",
+    "ageSeconds": 89444,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300

@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-12T14:40:55Z",
+  "generated_at": "2026-06-14T06:37:06Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -31,7 +31,7 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 334ms"
+      "  duration: 193ms"
     ]
   },
   "locale_summary": [

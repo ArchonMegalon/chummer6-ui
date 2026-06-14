@@ -105,8 +105,8 @@
     ],
     "proofCommands": {
       "directProofCommand": "bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh",
-      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M121GmRunboardRouteGuardTests\" --no-restore",
-      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
+      "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M121GmRunboardRouteGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
     },
     "closedPackage": {
       "completionAction": "verify_closed_package_only",
@@ -122,8 +122,8 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
         "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh",
         "bash scripts/ai/milestones/next90-m121-ui-gm-runboard-route-check.sh",
-        "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M121GmRunboardRouteGuardTests\" --no-restore",
-        "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
+        "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M121GmRunboardRouteGuardTests\" --no-restore",
+        "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore"
       ]
     }
   },

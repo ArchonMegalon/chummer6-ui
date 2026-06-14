@@ -6,8 +6,8 @@
              mc:Ignorable="d"
              x:Class="Chummer.Avalonia.Controls.SummaryHeaderControl">
   <Border x:Name="RootBorder"
-          Background="#E9EEF4"
-          BorderBrush="#C8D2DD"
+          Background="{DynamicResource ChummerShellChromeSubtleBrush}"
+          BorderBrush="{DynamicResource ChummerShellBorderBrush}"
           BorderThickness="0,0,0,1"
           Padding="10,6"
           IsVisible="False">
@@ -20,14 +20,14 @@
                    IsVisible="False"
                    FontSize="12"
                    FontWeight="SemiBold"
-                   Foreground="#4D6175" />
+                   Foreground="{DynamicResource ChummerShellMutedForegroundBrush}" />
         <WrapPanel x:Name="NavigationTabsButtonsPanel"
                    HorizontalAlignment="Left" />
       </StackPanel>
 
       <Border x:Name="RestoreContinuityStatusBorder"
-              Background="#F7FAFD"
-              BorderBrush="#9EB2C7"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
               CornerRadius="8"
               Padding="8,6"
@@ -47,8 +47,8 @@
       </Border>
 
       <Border x:Name="RestoreContinuityActionPanel"
-              Background="#FFFFFF"
-              BorderBrush="#C8D2DD"
+              Background="{DynamicResource ChummerShellSurfaceBrush}"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
               CornerRadius="8"
               Padding="8,6"
@@ -95,7 +95,7 @@
                      IsVisible="False"
                      TextWrapping="Wrap"
                      FontSize="12"
-                     Foreground="#41566A" />
+                     Foreground="{DynamicResource ChummerShellMutedForegroundBrush}" />
         </StackPanel>
       </Border>
     </StackPanel>

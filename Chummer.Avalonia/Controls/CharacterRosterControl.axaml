@@ -42,14 +42,14 @@
                       IsVisible="{Binding ShowInitialBadge}"
                       Width="24"
                       Height="24"
-                      Background="#E0E0E0"
+                      Background="{DynamicResource ChummerShellPanelMutedBrush}"
                       CornerRadius="2"
                       Margin="0,0,4,0">
                   <TextBlock Text="{Binding Initials}"
                              HorizontalAlignment="Center"
                              VerticalAlignment="Center"
                              FontSize="10"
-                             Foreground="#666" />
+                             Foreground="{DynamicResource ChummerShellMutedForegroundBrush}" />
                 </Border>
                 <!-- Character name and metadata -->
                 <StackPanel Grid.Column="1" Spacing="0">

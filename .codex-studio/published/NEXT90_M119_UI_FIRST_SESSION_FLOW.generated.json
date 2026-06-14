@@ -30,8 +30,8 @@
     ],
     "proofCommands": [
       "bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh",
-      "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore",
-      "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+      "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore",
+      "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
     ],
     "queueChecks": {
       "registry_has_m119_milestone": true,

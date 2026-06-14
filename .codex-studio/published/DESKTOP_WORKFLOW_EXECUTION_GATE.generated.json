@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T18:24:39.944266Z",
+  "generatedAt": "2026-06-14T19:36:31Z",
   "contract_name": "chummer6-ui.desktop_workflow_execution_gate",
   "channelId": "public_stable",
   "releaseVersion": "run-20260612-121055",
@@ -301,5 +301,7 @@
     "workflow_family_review_deferred_reasons": [],
     "workflow_execution_review_deferred_reasons": [],
     "failureCount": 0
-  }
+  },
+  "generated_at": "2026-06-14T19:36:31Z",
+  "dependencyRefreshGeneratedAt": "2026-06-14T19:36:31Z"
 }

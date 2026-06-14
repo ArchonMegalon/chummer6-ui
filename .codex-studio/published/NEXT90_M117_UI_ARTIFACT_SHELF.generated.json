@@ -97,8 +97,8 @@
     },
     "proofCommands": {
       "directProofCommand": "bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
-      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
-      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+      "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
     },
     "closedPackage": {
       "completionAction": "verify_closed_package_only",
@@ -112,8 +112,8 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M117_UI_ARTIFACT_SHELF.generated.json",
         "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
         "bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
-        "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
-        "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+        "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+        "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
       ]
     },
     "proofFiles": [

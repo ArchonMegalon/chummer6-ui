@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Avalonia.Controls;
@@ -30,6 +32,7 @@ internal static class DesktopMouseFirstJourneyRunner
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
         DesktopMouseFirstJourneyContext context = DesktopMouseFirstJourneyRuntime.BuildContext(headId, DateTimeOffset.UtcNow);
+        DesktopMouseFirstJourneyPlan plan = DesktopMouseFirstJourneyRuntime.ReadPlan();
         List<string> steps = [];
         List<string> screenshotPaths = [];
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents = [];
@@ -43,12 +46,15 @@ internal static class DesktopMouseFirstJourneyRunner
         Task journeyTask = RunJourneyAsync(
             window,
             context,
+            plan,
             steps,
             screenshotPaths,
             inputTraceCollector,
             observedInputEvents,
             () => pointerActionCount++,
             () => textEntryActionCount++,
+            () => usedForcedComboDropdownOpen = true,
+            () => usedComboSelectionFallback = true,
             () => pointerActionCount,
             () => textEntryActionCount,
             () => directTextMutationCount,
@@ -70,6 +76,13 @@ internal static class DesktopMouseFirstJourneyRunner
                 directTextMutationCount: directTextMutationCount,
                 usedForcedComboDropdownOpen: usedForcedComboDropdownOpen,
                 usedComboSelectionFallback: usedComboSelectionFallback,
+                scenarioId: plan.ScenarioId,
+                buildMethod: plan.BuildMethod,
+                metatypeCategory: plan.MetatypeCategory,
+                priorityHeritage: plan.PriorityHeritage,
+                metatype: plan.Metatype,
+                priorityTalent: plan.PriorityTalent,
+                priorityTalentChoice: plan.PriorityTalentChoice,
                 authenticationPortalOpened: authenticationPortalState.Opened,
                 authenticationPortalUri: authenticationPortalState.Uri,
                 observedInputEvents: observedInputEvents);
@@ -84,12 +97,15 @@ internal static class DesktopMouseFirstJourneyRunner
     private static async Task RunJourneyAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
+        DesktopMouseFirstJourneyPlan plan,
         List<string> steps,
         List<string> screenshotPaths,
         ObservedInputTraceCollector inputTraceCollector,
         List<DesktopMouseFirstJourneyObservedInputEvent> observedInputEvents,
         Action recordPointerAction,
         Action recordTextEntryAction,
+        Action markForcedComboDropdownOpen,
+        Action markSelectionFallback,
         Func<int> getPointerActionCount,
         Func<int> getTextEntryActionCount,
         Func<int> getDirectTextMutationCount,
@@ -101,10 +117,10 @@ internal static class DesktopMouseFirstJourneyRunner
         {
             using CancellationTokenSource journeyTimeout = new(JourneyTimeout);
             string language = DesktopLocalizationCatalog.GetCurrentLanguage();
-            const string expectedCharacterName = "Mouse Journey Runner";
-            const string expectedCharacterAlias = "MouseRoute";
-            const string expectedRulesetId = "sr5";
-            RecordStep(steps, "start mouse-first live binary journey");
+            string expectedCharacterName = plan.CharacterName;
+            string expectedCharacterAlias = plan.CharacterAlias;
+            string expectedRulesetId = plan.RulesetId;
+            RecordStep(steps, $"start mouse-first live binary journey ({plan.ScenarioId})");
             string initialWorkspaceStripText = await ReadWorkspaceStripTextAsync(window);
             string? initialWorkspaceId = ReadActiveWorkspaceId(window);
             IReadOnlyList<OpenWorkspaceState> initialOpenWorkspaces = ReadOpenWorkspaces(window);
@@ -144,12 +160,28 @@ internal static class DesktopMouseFirstJourneyRunner
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "01-new-character-dialog");
 
-            await SetDialogTextFieldAsync(window, "newCharacterName", "Mouse Journey Runner", steps, journeyTimeout.Token);
+            await SetDialogTextFieldAsync(window, "newCharacterName", expectedCharacterName, steps, journeyTimeout.Token);
             recordTextEntryAction();
-            await SetDialogTextFieldAsync(window, "newCharacterAlias", "MouseRoute", steps, journeyTimeout.Token);
+            await SetDialogTextFieldAsync(window, "newCharacterAlias", expectedCharacterAlias, steps, journeyTimeout.Token);
             recordTextEntryAction();
-            await VerifyDialogSelectFieldValueAsync(window, "newCharacterRulesetId", "sr5", steps, journeyTimeout.Token);
-            await VerifyDialogSelectFieldValueAsync(window, "newCharacterBuildMethod", "Priority", steps, journeyTimeout.Token);
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterRulesetId",
+                plan.RulesetId,
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction,
+                markForcedComboDropdownOpen,
+                markSelectionFallback);
+            await SetDialogSelectFieldAsync(
+                window,
+                "newCharacterBuildMethod",
+                plan.BuildMethod,
+                steps,
+                journeyTimeout.Token,
+                recordPointerAction,
+                markForcedComboDropdownOpen,
+                markSelectionFallback);
             await ClickDialogActionUntilAsync(
                 window,
                 "create_character",
@@ -166,6 +198,75 @@ internal static class DesktopMouseFirstJourneyRunner
                 });
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
             await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02-priority-workflow");
+
+            if (string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrWhiteSpace(plan.MetatypeCategory))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterMetatypeCategory",
+                        plan.MetatypeCategory,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                if (!string.IsNullOrWhiteSpace(plan.PriorityHeritage))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterPriorityHeritage",
+                        plan.PriorityHeritage,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                if (!string.IsNullOrWhiteSpace(plan.PriorityTalent))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterPriorityTalent",
+                        plan.PriorityTalent,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                if (!string.IsNullOrWhiteSpace(plan.PriorityTalentChoice))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterPriorityTalentChoice",
+                        plan.PriorityTalentChoice,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                if (!string.IsNullOrWhiteSpace(plan.Metatype))
+                {
+                    await SetDialogListFieldAsync(
+                        window,
+                        "newCharacterMetatype",
+                        plan.Metatype,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markSelectionFallback);
+                }
+
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-priority-configured");
+            }
 
             await ClickDialogActionUntilAsync(
                 window,
@@ -265,11 +366,18 @@ internal static class DesktopMouseFirstJourneyRunner
                     UsedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
                     UsedComboSelectionFallback: getUsedComboSelectionFallback(),
                     ObservedInputEvents: observedInputEvents,
+                    ScenarioId: plan.ScenarioId,
                     WorkspaceId: createdWorkspaceState?.Id.Value
                         ?? finalVisibleState.WorkspaceId,
                     CharacterName: expectedCharacterName,
                     CharacterAlias: expectedCharacterAlias,
                     RulesetId: finalVisibleState.RulesetId ?? expectedRulesetId,
+                    BuildMethod: plan.BuildMethod,
+                    MetatypeCategory: plan.MetatypeCategory,
+                    PriorityHeritage: plan.PriorityHeritage,
+                    Metatype: plan.Metatype,
+                    PriorityTalent: plan.PriorityTalent,
+                    PriorityTalentChoice: plan.PriorityTalentChoice,
                     HasSavedWorkspace: hasSavedWorkspaceEvidence || finalVisibleState.IsSaved,
                     AuthenticationPortalOpened: authenticationPortalState.Opened,
                     AuthenticationPortalUri: authenticationPortalState.Uri,
@@ -296,6 +404,13 @@ internal static class DesktopMouseFirstJourneyRunner
                 directTextMutationCount: getDirectTextMutationCount(),
                 usedForcedComboDropdownOpen: getUsedForcedComboDropdownOpen(),
                 usedComboSelectionFallback: getUsedComboSelectionFallback(),
+                scenarioId: plan.ScenarioId,
+                buildMethod: plan.BuildMethod,
+                metatypeCategory: plan.MetatypeCategory,
+                priorityHeritage: plan.PriorityHeritage,
+                metatype: plan.Metatype,
+                priorityTalent: plan.PriorityTalent,
+                priorityTalentChoice: plan.PriorityTalentChoice,
                 authenticationPortalOpened: authenticationPortalState.Opened,
                 authenticationPortalUri: authenticationPortalState.Uri,
                 observedInputEvents: observedInputEvents,
@@ -421,7 +536,15 @@ internal static class DesktopMouseFirstJourneyRunner
         RecordStep(steps, $"type dialog field {fieldId} = {value}");
     }
 
-    private static async Task VerifyDialogSelectFieldValueAsync(MainWindow window, string fieldId, string value, List<string> steps, CancellationToken ct)
+    private static async Task SetDialogSelectFieldAsync(
+        MainWindow window,
+        string fieldId,
+        string value,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        Action markForcedComboDropdownOpen,
+        Action markSelectionFallback)
     {
         string controlName = DesktopDialogAccessibility.BuildFieldInputName(fieldId);
         await WaitForAsync(
@@ -432,12 +555,134 @@ internal static class DesktopMouseFirstJourneyRunner
 
         ComboBox comboBox = FindVisibleDescendant<ComboBox>(ResolveDialogRoot(window), controlName)
             ?? throw new InvalidOperationException($"Dialog select field '{fieldId}' was not found.");
-        bool matches = await Dispatcher.UIThread.InvokeAsync(() => string.Equals(ReadDialogOptionValue(comboBox.SelectedItem ?? comboBox.SelectionBoxItem ?? comboBox), value, StringComparison.Ordinal));
-        if (!matches)
+
+        if (await Dispatcher.UIThread.InvokeAsync(() => ComboBoxSelectionMatches(comboBox, value)))
         {
-            throw new InvalidOperationException($"Dialog select field '{fieldId}' was expected to default to '{value}'.");
+            RecordStep(steps, $"confirm dialog field {fieldId} = {value}");
+            return;
         }
-        RecordStep(steps, $"confirm dialog field {fieldId} = {value}");
+
+        await RoutePointerClickAsync(comboBox);
+        recordPointerAction();
+
+        ComboBoxItem? comboBoxItem = await FindComboBoxItemAsync(comboBox, value);
+        if (comboBoxItem is null)
+        {
+            await Task.Delay(200, ct);
+            comboBoxItem = await FindComboBoxItemAsync(comboBox, value);
+        }
+
+        if (comboBoxItem is null)
+        {
+            ToggleButton? toggleButton = await FindComboBoxToggleButtonAsync(comboBox);
+            if (toggleButton is not null)
+            {
+                await RoutePointerClickAsync(toggleButton);
+                recordPointerAction();
+                await Task.Delay(200, ct);
+                comboBoxItem = await FindComboBoxItemAsync(comboBox, value);
+            }
+        }
+
+        if (comboBoxItem is null)
+        {
+            await Dispatcher.UIThread.InvokeAsync(() => comboBox.IsDropDownOpen = true);
+            markForcedComboDropdownOpen();
+            comboBoxItem = await FindComboBoxItemAsync(comboBox, value);
+        }
+
+        if (comboBoxItem is not null)
+        {
+            await RoutePointerClickAsync(comboBoxItem);
+            recordPointerAction();
+            bool itemClickSelected = await WaitForConditionWithinAsync(
+                () =>
+                {
+                    ComboBox? activeComboBox = FindVisibleDescendant<ComboBox>(ResolveDialogRoot(window), controlName);
+                    return activeComboBox is not null && ComboBoxSelectionMatches(activeComboBox, value);
+                },
+                ct,
+                TransitionSettleTimeout);
+            if (itemClickSelected)
+            {
+                RecordStep(steps, $"dialog field {fieldId} selected with pointer = {value}");
+                return;
+            }
+        }
+
+        bool selected = await Dispatcher.UIThread.InvokeAsync(() => TrySetComboBoxSelectedValue(comboBox, value));
+        if (!selected)
+        {
+            throw new InvalidOperationException($"Dialog select field '{fieldId}' does not expose option '{value}'.");
+        }
+
+        markSelectionFallback();
+
+        await WaitForAsync(
+            steps,
+            $"dialog field {fieldId} updated to {value}",
+            () =>
+            {
+                ComboBox? activeComboBox = FindVisibleDescendant<ComboBox>(ResolveDialogRoot(window), controlName);
+                return activeComboBox is not null && ComboBoxSelectionMatches(activeComboBox, value);
+            },
+            ct);
+    }
+
+    private static async Task SetDialogListFieldAsync(
+        MainWindow window,
+        string fieldId,
+        string value,
+        List<string> steps,
+        CancellationToken ct,
+        Action recordPointerAction,
+        Action markSelectionFallback)
+    {
+        string controlName = DesktopDialogAccessibility.BuildFieldInputName(fieldId);
+        await WaitForAsync(
+            steps,
+            $"dialog list field {fieldId} available",
+            () => FindVisibleDescendant<ListBox>(ResolveDialogRoot(window), controlName) is not null,
+            ct);
+
+        ListBox listBox = FindVisibleDescendant<ListBox>(ResolveDialogRoot(window), controlName)
+            ?? throw new InvalidOperationException($"Dialog list field '{fieldId}' was not found.");
+
+        if (await Dispatcher.UIThread.InvokeAsync(() => ListBoxSelectionMatches(listBox, value)))
+        {
+            RecordStep(steps, $"confirm dialog list field {fieldId} = {value}");
+            return;
+        }
+
+        ListBoxItem? listBoxItem = await Dispatcher.UIThread.InvokeAsync(() =>
+            listBox.GetVisualDescendants()
+                .OfType<ListBoxItem>()
+                .FirstOrDefault(item => MatchesOptionValue(item, value)));
+        if (listBoxItem is not null)
+        {
+            await RoutePointerClickAsync(listBoxItem);
+            recordPointerAction();
+        }
+        else
+        {
+            bool selected = await Dispatcher.UIThread.InvokeAsync(() => TrySetListBoxSelectedValue(listBox, value));
+            if (!selected)
+            {
+                throw new InvalidOperationException($"Dialog list field '{fieldId}' does not expose option '{value}'.");
+            }
+
+            markSelectionFallback();
+        }
+
+        await WaitForAsync(
+            steps,
+            $"dialog list field {fieldId} updated to {value}",
+            () =>
+            {
+                ListBox? activeListBox = FindVisibleDescendant<ListBox>(ResolveDialogRoot(window), controlName);
+                return activeListBox is not null && ListBoxSelectionMatches(activeListBox, value);
+            },
+            ct);
     }
 
     private static async Task WaitForAsync(
@@ -456,6 +701,138 @@ internal static class DesktopMouseFirstJourneyRunner
         throw new TimeoutException($"Timed out while waiting for {description}.");
     }
 
+    private static async Task<ComboBoxItem?> FindComboBoxItemAsync(ComboBox comboBox, string value)
+    {
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            ComboBoxItem? localItem = comboBox.GetLogicalDescendants()
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(item => item.IsVisible && MatchesOptionValue(item, value));
+            if (localItem is not null)
+            {
+                return localItem;
+            }
+
+            localItem = comboBox.GetVisualDescendants()
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(item => item.IsVisible && MatchesOptionValue(item, value));
+            if (localItem is not null)
+            {
+                return localItem;
+            }
+
+            if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                return null;
+            }
+
+            return desktop.Windows
+                .OfType<Window>()
+                .SelectMany(window => window.GetVisualDescendants().OfType<ComboBoxItem>())
+                .FirstOrDefault(item => item.IsVisible && MatchesOptionValue(item, value));
+        });
+    }
+
+    private static async Task<ToggleButton?> FindComboBoxToggleButtonAsync(ComboBox comboBox)
+    {
+        return await Dispatcher.UIThread.InvokeAsync(() =>
+            comboBox.GetVisualDescendants()
+                .OfType<ToggleButton>()
+                .FirstOrDefault(button => button.IsVisible && button.IsEnabled));
+    }
+
+    private static bool ComboBoxSelectionMatches(ComboBox comboBox, string expectedValue)
+        => string.Equals(
+            ReadDialogOptionValue(comboBox.SelectedItem)
+            ?? ReadDialogOptionValue(comboBox.SelectionBoxItem),
+            expectedValue,
+            StringComparison.Ordinal);
+
+    private static bool ListBoxSelectionMatches(ListBox listBox, string expectedValue)
+        => string.Equals(
+            ReadDialogOptionValue(listBox.SelectedItem),
+            expectedValue,
+            StringComparison.Ordinal);
+
+    private static bool TrySetComboBoxSelectedValue(ComboBox comboBox, string value)
+    {
+        object? option = ResolveItemByValue(comboBox.ItemsSource, value);
+        if (option is null)
+        {
+            return false;
+        }
+
+        comboBox.SelectedItem = option;
+        comboBox.IsDropDownOpen = false;
+        return true;
+    }
+
+    private static bool TrySetListBoxSelectedValue(ListBox listBox, string value)
+    {
+        object? option = ResolveItemByValue(listBox.ItemsSource, value);
+        if (option is null)
+        {
+            return false;
+        }
+
+        listBox.SelectedItem = option;
+        return true;
+    }
+
+    private static object? ResolveItemByValue(object? itemsSource, string value)
+    {
+        if (itemsSource is not System.Collections.IEnumerable enumerable)
+        {
+            return null;
+        }
+
+        foreach (object? item in enumerable)
+        {
+            if (MatchesOptionValue(item, value))
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool MatchesOptionValue(object? candidate, string expectedValue)
+    {
+        if (candidate is null)
+        {
+            return false;
+        }
+
+        if (candidate is Control control && control.DataContext is not null)
+        {
+            return MatchesOptionValue(control.DataContext, expectedValue);
+        }
+
+        string? directValue = ReadDialogOptionValue(candidate);
+        if (string.Equals(directValue, expectedValue, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        string? label = candidate.GetType().GetProperty("Label")?.GetValue(candidate)?.ToString();
+        if (string.Equals(label, expectedValue, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (candidate is ContentControl contentControl)
+        {
+            string? contentText = contentControl.Content?.ToString();
+            if (string.Equals(contentText, expectedValue, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static async Task CaptureEvidenceScreenshotAsync(
         MainWindow window,
         DesktopMouseFirstJourneyContext context,
@@ -469,7 +846,11 @@ internal static class DesktopMouseFirstJourneyRunner
 
         string screenshotDirectory = context.ScreenshotDirectory;
         string screenshotPath = Path.Combine(screenshotDirectory, $"{fileStem}.png");
-        byte[] pngBytes = await Dispatcher.UIThread.InvokeAsync(window.CaptureScreenshotBytesForAutomation);
+        byte[] pngBytes = await Dispatcher.UIThread.InvokeAsync(() =>
+        {
+            DesktopDialogWindow? dialogWindow = ResolveVisibleDialogWindow();
+            return dialogWindow?.CaptureScreenshotBytesForAutomation() ?? window.CaptureScreenshotBytesForAutomation();
+        });
         Directory.CreateDirectory(screenshotDirectory);
         await File.WriteAllBytesAsync(screenshotPath, pngBytes);
         screenshotPaths.Add(screenshotPath);
@@ -908,8 +1289,13 @@ internal static class DesktopMouseFirstJourneyRunner
         Console.Error.WriteLine($"[mouse-first-journey] {description}");
     }
 
-    private static string? ReadDialogOptionValue(object candidate)
+    private static string? ReadDialogOptionValue(object? candidate)
     {
+        if (candidate is null)
+        {
+            return null;
+        }
+
         return candidate.GetType()
             .GetProperty("Value")?
             .GetValue(candidate)?

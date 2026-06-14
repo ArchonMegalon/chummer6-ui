@@ -1,9 +1,9 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ClassicStatusStrip">
-  <Border BorderBrush="#7e878d"
+  <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,1,0,0"
-          Background="#eceeef"
+          Background="{DynamicResource ChummerShellChromeSubtleBrush}"
           Padding="8,4">
     <Grid ColumnDefinitions="2*,Auto,Auto,Auto,120"
           ColumnSpacing="12">
@@ -12,27 +12,27 @@
                  Text="Ready. Classic desktop is active."
                  FontSize="12" />
       <Border Grid.Column="1"
-              BorderBrush="#8b9297"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
-              Background="#f7f8f9"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               Padding="8,2">
         <TextBlock x:Name="ServiceStateText"
                    Text="Services ready"
                    FontSize="11" />
       </Border>
       <Border Grid.Column="2"
-              BorderBrush="#8b9297"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
-              Background="#f7f8f9"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               Padding="8,2">
         <TextBlock x:Name="TimeStateText"
                    Text="Mode: Classic"
                    FontSize="11" />
       </Border>
       <Border Grid.Column="3"
-              BorderBrush="#8b9297"
+              BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
-              Background="#f7f8f9"
+              Background="{DynamicResource ChummerShellSurfaceAltBrush}"
               Padding="8,2">
         <TextBlock x:Name="ComplianceStateText"
                    Text="Workspace: Ready"

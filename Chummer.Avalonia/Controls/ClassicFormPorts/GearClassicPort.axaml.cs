@@ -43,15 +43,15 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         DataContext = viewModel;
 
         PopulateClassicSelector(_categorySelector, viewModel.Categories, "No gear categories");
-        PopulateClassicList(_categoryList, viewModel.CategoryRows.Select(static item => item.ToLineItem()), "No gear categories are currently visible.");
+        PopulateClassicList(_categoryList, ProjectLines(viewModel.CategoryRows, static item => item.Label, static item => item.Value), "No gear categories are currently visible.");
 
         PopulateClassicTree(
             _filterTree,
-            viewModel.Filters.Select(static item => item.ToLineItem()),
+            ProjectLines(viewModel.Filters, static item => item.Label, static item => item.Value),
             "No legacy filter groups were exposed.");
 
-        PopulateClassicList(_detailList, viewModel.Details.Select(static item => item.ToLineItem()), "Select an item to show classic detail values.");
+        PopulateClassicList(_detailList, ProjectLines(viewModel.Details, static item => item.Label, static item => item.Value), "Select an item to show classic detail values.");
 
-        PopulateClassicList(_purchaseList, viewModel.PurchaseActions.Select(static item => item.ToLineItem()), "No purchase actions are available yet.");
+        PopulateClassicList(_purchaseList, ProjectLines(viewModel.PurchaseActions, static item => item.Label, static item => item.Value), "No purchase actions are available yet.");
     }
 }

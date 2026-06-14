@@ -92,7 +92,8 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(bridgeText.Contains("ContainsAny(haystack", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("ReadPreviewFacts(state.PreviewJson)", StringComparison.Ordinal));
         StringAssert.Contains(bridgeText, "ClassicFormPortDocument");
-        StringAssert.Contains(bridgeText, "CreateFromSectionRows");
+        StringAssert.Contains(bridgeText, "CreateFromPreview");
+        Assert.IsFalse(bridgeText.Contains("CreateFromSectionRows", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("CreateFromRows(IReadOnlyList<SectionRowDisplayItem> rows)", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("IReadOnlyList<ClassicPortLineItem>", StringComparison.Ordinal));
         Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));

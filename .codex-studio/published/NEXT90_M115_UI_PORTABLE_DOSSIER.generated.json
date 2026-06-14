@@ -102,8 +102,8 @@
     },
     "proofCommands": {
       "directProofCommand": "bash scripts/ai/milestones/next90-m115-ui-portable-dossier-check.sh",
-      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M115PortableDossierGuardTests\" --no-restore",
-      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+      "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M115PortableDossierGuardTests\" --no-restore",
+      "presentationTestCommand": "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/Chummer.Avalonia/DesktopHomeWindow.cs",

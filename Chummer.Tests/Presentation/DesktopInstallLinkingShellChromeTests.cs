@@ -24,25 +24,50 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
-    public void BuildShellWindowTitle_appends_linked_user_for_claimed_install()
+    public void BuildShellWindowTitle_appends_human_facing_linked_identity_for_claimed_install()
     {
         string title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(
             DesktopLocalizationCatalog.GetRequiredString("desktop.shell.window_title", DesktopLocalizationCatalog.DefaultLanguage),
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", DesktopLocalizationCatalog.DefaultLanguage),
-            CreateInstallState(status: "claimed", userId: "user-runner-7"));
+            CreateInstallState(status: "claimed", userId: "runner@chummer.run"));
 
-        Assert.AreEqual("Chummer Desktop · user-runner-7", title);
+        Assert.AreEqual("Chummer Desktop · runner@chummer.run", title);
     }
 
     [TestMethod]
-    public void ResolveLinkedUserLabel_falls_back_to_subject_then_installation_id()
+    public void BuildShellWindowTitle_prefers_linked_email_over_opaque_ids_when_available()
+    {
+        string title = DesktopInstallLinkingRuntime.BuildShellWindowTitle(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.shell.window_title", DesktopLocalizationCatalog.DefaultLanguage),
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", DesktopLocalizationCatalog.DefaultLanguage),
+            CreateInstallState(
+                status: "claimed",
+                userId: "1234543",
+                subjectId: "subject-42",
+                linkedEmail: "runner@example.test"));
+
+        Assert.AreEqual("Chummer Desktop · runner@example.test", title);
+    }
+
+    [TestMethod]
+    public void ResolveLinkedUserLabel_suppresses_opaque_ids_and_prefers_human_labels()
     {
         Assert.AreEqual(
-            "subject-42",
+            "subject@example.test",
+            DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: null, subjectId: "subject@example.test")));
+        Assert.AreEqual(
+            "linked account",
+            DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: "1234543", subjectId: null)));
+        Assert.AreEqual(
+            "linked account",
             DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: null, subjectId: "subject-42")));
         Assert.AreEqual(
-            "install-1",
-            DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(status: "claimed", userId: null, subjectId: null)));
+            "runner@example.test",
+            DesktopInstallLinkingRuntime.ResolveLinkedUserLabel(CreateInstallState(
+                status: "claimed",
+                userId: "1234543",
+                subjectId: "subject-42",
+                linkedEmail: "runner@example.test")));
     }
 
     [TestMethod]
@@ -124,7 +149,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
     private static DesktopInstallLinkingState CreateInstallState(
         string status,
         string? userId = "user-runner-7",
-        string? subjectId = "subject-runner-7")
+        string? subjectId = "subject-runner-7",
+        string? linkedEmail = null)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         bool claimed = string.Equals(status, "claimed", StringComparison.Ordinal);
@@ -146,6 +172,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             PrivateKey: "private",
             GrantToken: claimed ? "grant-token" : null,
             UserId: claimed ? userId : null,
-            SubjectId: claimed ? subjectId : null);
+            SubjectId: claimed ? subjectId : null,
+            LinkedEmail: claimed ? linkedEmail : null);
     }
 }

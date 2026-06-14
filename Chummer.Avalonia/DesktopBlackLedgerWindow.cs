@@ -14,6 +14,11 @@ internal sealed class DesktopBlackLedgerWindow : Window
     internal static DesktopBlackLedgerWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
 
+    private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
+        => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
+            ? brush
+            : new SolidColorBrush(Color.Parse(fallbackHex));
+
     private DesktopBlackLedgerWindow(AccountCampaignSummary? campaignSummary)
     {
         _campaignSummary = campaignSummary;
@@ -255,7 +260,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                 new Border
                 {
                     Name = "BlackLedgerSelectedWorkspaceCard",
-                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -317,9 +322,9 @@ internal sealed class DesktopBlackLedgerWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.Parse("#F7FAFD")),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7F4EC"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -340,8 +345,8 @@ internal sealed class DesktopBlackLedgerWindow : Window
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
+            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
         }
 
         button.Click += (_, _) => action();
@@ -364,8 +369,8 @@ internal sealed class DesktopBlackLedgerWindow : Window
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
+            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
         }
 
         button.Click += async (_, _) =>

@@ -1,96 +1,43 @@
+using System.Text.Json.Nodes;
 using System.Windows.Input;
 
 namespace Chummer.Avalonia.Controls;
 
-public sealed record CareerSnapshotEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record CareerSnapshotEntry(string Label, string Value);
 
-public sealed record AdvancementEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record AdvancementEntry(string Label, string Value);
 
-public sealed record GearEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record GearEntry(string Label, string Value);
 
-public sealed record ArmorEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record ArmorEntry(string Label, string Value);
 
-public sealed record WeaponEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record WeaponEntry(string Label, string Value);
 
-public sealed record ContactEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record ContactEntry(string Label, string Value);
 
-public sealed record NoteEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record NoteEntry(string Label, string Value);
 
-public sealed record PriorityChoice(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record PriorityChoice(string Label, string Value);
 
-public sealed record AttributeEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record AttributeEntry(string Label, string Value);
 
-public sealed record SkillEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record SkillEntry(string Label, string Value);
 
-public sealed record SpellEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record SpellEntry(string Label, string Value);
 
-public sealed record GearCategoryEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record GearCategoryEntry(string Label, string Value);
 
-public sealed record GearFilterEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record GearFilterEntry(string Label, string Value);
 
-public sealed record GearDetailEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record GearDetailEntry(string Label, string Value);
 
-public sealed record BrowseEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record BrowseEntry(string Label, string Value);
 
-public sealed record ChromeEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record ChromeEntry(string Label, string Value);
 
-public sealed record SettingEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record SettingEntry(string Label, string Value);
 
-public sealed record ActionEntry(string Label, string Value)
-{
-    public ClassicPortLineItem ToLineItem() => new(Label, Value);
-}
+public sealed record ActionEntry(string Label, string Value);
 
 public sealed record ClassicCareerPortViewModel(
     ClassicFormPortActionCommands Commands,
@@ -253,235 +200,616 @@ public sealed record ClassicFormPortDocument(
     IReadOnlyList<BrowseEntry> IndexRows,
     IReadOnlyList<SettingEntry> Settings)
 {
-    public static ClassicFormPortDocument CreateFromSectionRows(IReadOnlyList<SectionRowDisplayItem> sourceRows)
+    public static ClassicFormPortDocument CreateFromPreview(string previewJson, string runtimeSectionId)
     {
-        IReadOnlyList<ClassicPortRowFact> facts = ClassicFormPortDocumentFacts.ParseDocumentRows(sourceRows);
+        JsonObject? root = ClassicFormPortPreviewReader.Parse(previewJson);
+        string sectionId = string.IsNullOrWhiteSpace(runtimeSectionId)
+            ? ClassicFormPortPreviewReader.FirstNonBlank(
+                ClassicFormPortPreviewReader.ReadString(root, "sectionId"),
+                ClassicFormPortPreviewReader.ReadString(root, "section"))
+                ?? string.Empty
+            : runtimeSectionId;
+
+        IReadOnlyList<CareerSnapshotEntry> careerSnapshot = ClassicFormPortPreviewReader.ReadCareerSnapshot(root);
+        IReadOnlyList<AdvancementEntry> advancement = ClassicFormPortPreviewReader.ReadAdvancement(root);
+        IReadOnlyList<GearEntry> gear = ClassicFormPortPreviewReader.ReadGear(root);
+        IReadOnlyList<ArmorEntry> armor = ClassicFormPortPreviewReader.ReadArmor(root);
+        IReadOnlyList<WeaponEntry> weapons = ClassicFormPortPreviewReader.ReadWeapons(root);
+        IReadOnlyList<ContactEntry> contacts = ClassicFormPortPreviewReader.ReadContacts(root);
+        IReadOnlyList<NoteEntry> notes = ClassicFormPortPreviewReader.ReadNotes(root, sectionId);
+        IReadOnlyList<PriorityChoice> priorityFacts = ClassicFormPortPreviewReader.ReadPriorityFacts(root, sectionId);
+        IReadOnlyList<PriorityChoice> prioritySummary = ClassicFormPortPreviewReader.ReadPrioritySummary(root, priorityFacts);
+        IReadOnlyList<AttributeEntry> attributes = ClassicFormPortPreviewReader.ReadAttributes(root);
+        IReadOnlyList<SkillEntry> skills = ClassicFormPortPreviewReader.ReadSkills(root);
+        IReadOnlyList<SpellEntry> spells = ClassicFormPortPreviewReader.ReadSpells(root);
+        IReadOnlyList<GearEntry> creationGear = ClassicFormPortPreviewReader.ReadCreationGear(root, gear, armor, weapons, sectionId);
+        IReadOnlyList<CareerSnapshotEntry> finalSummary = ClassicFormPortPreviewReader.ReadFinalSummary(root, prioritySummary, careerSnapshot);
+        IReadOnlyList<GearCategoryEntry> gearCategories = ClassicFormPortPreviewReader.ReadGearCategories(root, gear, armor, weapons, sectionId);
+        IReadOnlyList<GearFilterEntry> filters = ClassicFormPortPreviewReader.ReadFilters(root, sectionId);
+        IReadOnlyList<GearDetailEntry> details = ClassicFormPortPreviewReader.ReadGearDetails(root, gear, armor, weapons, sectionId);
+        IReadOnlyList<BrowseEntry> indexRows = ClassicFormPortPreviewReader.ReadIndexRows(root, sectionId);
+        IReadOnlyList<SettingEntry> settings = ClassicFormPortPreviewReader.ReadSettings(root, sectionId);
 
         return new ClassicFormPortDocument(
-            CareerSnapshot: SelectKeys(facts, "name", "lifestyle", "buildmethod", "streetcred", "essence", "karma", "nuyen")
-                .Select(static item => new CareerSnapshotEntry(item.Label, item.Value))
-                .ToArray(),
-            Advancement: SelectBucket(facts, ClassicPortRowKind.Advancement, 12)
-                .Select(static item => new AdvancementEntry(item.Label, item.Value))
-                .ToArray(),
-            CareerGear: SelectBucket(facts, ClassicPortRowKind.Gear, 12)
-                .Select(static item => new GearEntry(item.Label, item.Value))
-                .ToArray(),
-            Armor: SelectBucket(facts, ClassicPortRowKind.Armor, 12)
-                .Select(static item => new ArmorEntry(item.Label, item.Value))
-                .ToArray(),
-            Weapons: SelectBucket(facts, ClassicPortRowKind.Weapon, 12)
-                .Select(static item => new WeaponEntry(item.Label, item.Value))
-                .ToArray(),
-            Contacts: SelectBucket(facts, ClassicPortRowKind.Contact, 12)
-                .Select(static item => new ContactEntry(item.Label, item.Value))
-                .ToArray(),
-            Notes: SelectBucket(facts, ClassicPortRowKind.Note, 12)
-                .Select(static item => new NoteEntry(item.Label, item.Value))
-                .ToArray(),
-            PriorityFacts: SelectBucket(facts, ClassicPortRowKind.Priority, 10)
-                .Select(static item => new PriorityChoice(item.Label, item.Value))
-                .ToArray(),
-            PrioritySummary: SelectKeys(facts, "gameedition", "buildmethod", "metatype", "priority")
-                .Select(static item => new PriorityChoice(item.Label, item.Value))
-                .ToArray(),
-            Attributes: SelectBucket(facts, ClassicPortRowKind.Attribute, 20)
-                .Select(static item => new AttributeEntry(item.Label, item.Value))
-                .ToArray(),
-            Skills: SelectBucket(facts, ClassicPortRowKind.Skill, 20)
-                .Select(static item => new SkillEntry(item.Label, item.Value))
-                .ToArray(),
-            CreationGear: SelectBuckets(facts, [ClassicPortRowKind.Gear, ClassicPortRowKind.Armor, ClassicPortRowKind.Weapon], 15)
-                .Select(static item => new GearEntry(item.Label, item.Value))
-                .ToArray(),
-            Spells: SelectBucket(facts, ClassicPortRowKind.Spell, 10)
-                .Select(static item => new SpellEntry(item.Label, item.Value))
-                .ToArray(),
-            FinalSummary: SelectKeys(facts, "buildmethod", "metatype", "settings")
-                .Select(static item => new CareerSnapshotEntry(item.Label, item.Value))
-                .ToArray(),
-            GearCategories: SelectBuckets(facts, [ClassicPortRowKind.Gear, ClassicPortRowKind.Armor, ClassicPortRowKind.Weapon], 18)
-                .Select(static item => new GearCategoryEntry(item.Label, item.Value))
-                .ToArray(),
-            Filters: SelectBucket(facts, ClassicPortRowKind.Filter, 8)
-                .Select(static item => new GearFilterEntry(item.Label, item.Value))
-                .ToArray(),
-            GearDetails: SelectBucket(facts, ClassicPortRowKind.Detail, 16)
-                .Select(static item => new GearDetailEntry(item.Label, item.Value))
-                .ToArray(),
-            IndexRows: SelectBucket(facts, ClassicPortRowKind.Index, 12)
-                .Select(static item => new BrowseEntry(item.Label, item.Value))
-                .ToArray(),
-            Settings: SelectBucket(facts, ClassicPortRowKind.Setting, 32)
-                .Select(static item => new SettingEntry(item.Label, item.Value))
-                .ToArray());
+            CareerSnapshot: careerSnapshot,
+            Advancement: advancement,
+            CareerGear: gear,
+            Armor: armor,
+            Weapons: weapons,
+            Contacts: contacts,
+            Notes: notes,
+            PriorityFacts: priorityFacts,
+            PrioritySummary: prioritySummary,
+            Attributes: attributes,
+            Skills: skills,
+            CreationGear: creationGear,
+            Spells: spells,
+            FinalSummary: finalSummary,
+            GearCategories: gearCategories,
+            Filters: filters,
+            GearDetails: details,
+            IndexRows: indexRows,
+            Settings: settings);
+    }
+}
+
+internal static class ClassicFormPortPreviewReader
+{
+    public static JsonObject? Parse(string previewJson)
+    {
+        if (string.IsNullOrWhiteSpace(previewJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(previewJson) as JsonObject;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
-    private static IReadOnlyList<ClassicPortRowFact> SelectKeys(IReadOnlyList<ClassicPortRowFact> facts, params string[] keys)
-        => keys.Select(key =>
-            {
-                ClassicPortRowFact? fact = facts.FirstOrDefault(item => string.Equals(item.Key, key, StringComparison.OrdinalIgnoreCase));
-                return fact ?? new ClassicPortRowFact(key, Title(key), "n/a", ClassicPortRowKind.Snapshot);
-            })
-            .ToArray();
-
-    private static IReadOnlyList<ClassicPortRowFact> SelectBucket(IReadOnlyList<ClassicPortRowFact> facts, ClassicPortRowKind bucket, int maxCount)
-        => SelectBuckets(facts, [bucket], maxCount);
-
-    private static IReadOnlyList<ClassicPortRowFact> SelectBuckets(IReadOnlyList<ClassicPortRowFact> facts, IReadOnlyList<ClassicPortRowKind> buckets, int maxCount)
-        => facts
-            .Where(item => buckets.Contains(item.Kind))
-            .GroupBy(item => item.Label, StringComparer.OrdinalIgnoreCase)
-            .Select(static group => group.First())
-            .Take(maxCount)
-            .ToArray();
-
-    private static string Title(string key)
-        => key switch
-        {
-            "gameedition" => "Ruleset",
-            "buildmethod" => "Build Method",
-            "streetcred" => "Street Cred",
-            _ => string.Concat(key[..1].ToUpperInvariant(), key[1..])
-        };
-}
-
-internal enum ClassicPortRowKind
-{
-    Snapshot,
-    Advancement,
-    Gear,
-    Armor,
-    Weapon,
-    Contact,
-    Note,
-    Priority,
-    Attribute,
-    Skill,
-    Spell,
-    Filter,
-    Detail,
-    Index,
-    Setting
-}
-
-internal sealed record ClassicPortRowFact(string Key, string Label, string Value, ClassicPortRowKind Kind);
-
-internal static class ClassicFormPortDocumentFacts
-{
-    public static IReadOnlyList<ClassicPortRowFact> ParseDocumentRows(IReadOnlyList<SectionRowDisplayItem> sourceRows)
+    public static IReadOnlyList<CareerSnapshotEntry> ReadCareerSnapshot(JsonObject? root)
     {
-        List<ClassicPortRowFact> facts = [];
-        foreach (SectionRowDisplayItem sourceRow in sourceRows)
+        List<CareerSnapshotEntry> entries = [];
+        Append(entries, "Name", FirstNonBlank(ReadString(root, "alias"), ReadString(root, "name")));
+        Append(entries, "Metatype", ReadString(root, "metatype"));
+        Append(entries, "Concept", ReadString(root, "concept"));
+        Append(entries, "Role", ReadString(root, "role"));
+        Append(entries, "Build Method", FirstNonBlank(ReadString(root, "buildMethod"), ReadString(root, "buildmethod"), ReadString(root, "priority")));
+        Append(entries, "Ruleset", FirstNonBlank(ReadString(root, "gameEdition"), ReadString(root, "ruleset"))?.ToUpperInvariant());
+        Append(entries, "Lifestyle", ReadString(root, "lifestyle"));
+        Append(entries, "Street Cred", ReadScalar(root, "streetCred"));
+        Append(entries, "Essence", FirstNonBlank(ReadScalar(root, "essence"), ReadScalar(ReadObject(root, "combat"), "essence")));
+        Append(entries, "Karma", ReadScalar(root, "karma"));
+        Append(entries, "Nuyen", ReadScalar(root, "nuyen"));
+
+        return entries.Count == 0
+            ? [new CareerSnapshotEntry("Classic surface", "No active character data")]
+            : entries.Take(10).ToArray();
+    }
+
+    public static IReadOnlyList<AdvancementEntry> ReadAdvancement(JsonObject? root)
+    {
+        List<AdvancementEntry> entries = [];
+        Append(entries, "Karma", ReadScalar(root, "karma"));
+        Append(entries, "Total Karma", ReadScalar(root, "totalKarma"));
+        Append(entries, "Street Cred", ReadScalar(root, "streetCred"));
+        Append(entries, "Notoriety", ReadScalar(root, "notoriety"));
+        Append(entries, "Public Awareness", ReadScalar(root, "publicAwareness"));
+        Append(entries, "Special Attributes", ReadScalar(root, "specialAttributes"));
+
+        JsonObject? combat = ReadObject(root, "combat");
+        Append(entries, "Initiative", ReadString(combat, "initiative"));
+        Append(entries, "Armor", ReadScalar(combat, "armor"));
+
+        return entries.Take(12).ToArray();
+    }
+
+    public static IReadOnlyList<GearEntry> ReadGear(JsonObject? root)
+        => ReadLabelValueEntries(root, "gear", "gear", "name", "label", maxCount: 12, fallbackKeys: ["cyberware", "bioware", "augmentation"]);
+
+    public static IReadOnlyList<ArmorEntry> ReadArmor(JsonObject? root)
+        => ReadLabelValueEntries(root, "armor", "armor", "name", "label", maxCount: 12)
+            .Select(static item => new ArmorEntry(item.Label, item.Value))
+            .ToArray();
+
+    public static IReadOnlyList<WeaponEntry> ReadWeapons(JsonObject? root)
+        => ReadLabelValueEntries(root, "weapons", "weapon", "name", "label", maxCount: 12)
+            .Select(static item => new WeaponEntry(item.Label, item.Value))
+            .ToArray();
+
+    public static IReadOnlyList<ContactEntry> ReadContacts(JsonObject? root)
+        => ReadLabelValueEntries(root, "contacts", "contact", "name", "label", maxCount: 12)
+            .Select(static item => new ContactEntry(item.Label, item.Value))
+            .ToArray();
+
+    public static IReadOnlyList<NoteEntry> ReadNotes(JsonObject? root, string sectionId)
+    {
+        List<NoteEntry> entries = ReadLabelValueEntries(root, "notes", "note", "name", "label", maxCount: 12)
+            .Select(static item => new NoteEntry(item.Label, item.Value))
+            .ToList();
+
+        if (entries.Count == 0)
         {
-            string path = sourceRow.Path ?? string.Empty;
-            string value = Clean(sourceRow.Value ?? string.Empty);
-            if (string.IsNullOrWhiteSpace(value))
+            foreach (string value in ReadStringArray(root, "rows").Take(6))
+            {
+                entries.Add(new NoteEntry(FormatSectionLabel(sectionId), value));
+            }
+        }
+
+        return entries;
+    }
+
+    public static IReadOnlyList<PriorityChoice> ReadPriorityFacts(JsonObject? root, string sectionId)
+    {
+        List<PriorityChoice> entries = [];
+        Append(entries, "Ruleset", FirstNonBlank(ReadString(root, "gameEdition"), ReadString(root, "ruleset"))?.ToUpperInvariant());
+        Append(entries, "Build Method", FirstNonBlank(ReadString(root, "buildMethod"), ReadString(root, "buildmethod")));
+        Append(entries, "Metatype", ReadString(root, "metatype"));
+        Append(entries, "Priority", ReadString(root, "priority"));
+
+        if (entries.Count == 0 && IsCreateSection(sectionId))
+        {
+            foreach (string value in ReadStringArray(root, "rows").Take(6))
+            {
+                entries.Add(new PriorityChoice("Workflow", value));
+            }
+        }
+
+        return entries;
+    }
+
+    public static IReadOnlyList<PriorityChoice> ReadPrioritySummary(JsonObject? root, IReadOnlyList<PriorityChoice> priorityFacts)
+    {
+        List<PriorityChoice> entries = [];
+        Append(entries, "Ruleset", FirstNonBlank(ReadString(root, "gameEdition"), ReadString(root, "ruleset"))?.ToUpperInvariant());
+        Append(entries, "Build Method", FirstNonBlank(ReadString(root, "buildMethod"), ReadString(root, "buildmethod")));
+        Append(entries, "Metatype", ReadString(root, "metatype"));
+        Append(entries, "Priority", ReadString(root, "priority"));
+
+        return entries.Count > 0 ? entries : priorityFacts.Take(4).ToArray();
+    }
+
+    public static IReadOnlyList<AttributeEntry> ReadAttributes(JsonObject? root)
+    {
+        List<AttributeEntry> entries = [];
+        if (ReadArray(root, "attributes") is { Count: > 0 } attributeArray)
+        {
+            foreach (JsonNode? node in attributeArray)
+            {
+                if (node is not JsonObject attribute)
+                {
+                    continue;
+                }
+
+                string? name = FirstNonBlank(ReadString(attribute, "name"), ReadString(attribute, "label"));
+                string? value = FirstNonBlank(
+                    ReadScalar(attribute, "totalValue"),
+                    ReadScalar(attribute, "baseValue"),
+                    ReadScalar(attribute, "value"),
+                    ReadScalar(attribute, "base"));
+                Append(entries, name, value);
+            }
+        }
+
+        if (entries.Count == 0 && ReadObject(root, "attributes") is { } attributesObject)
+        {
+            foreach (string key in OrderedAttributes)
+            {
+                Append(entries, key, ReadScalar(attributesObject, key));
+            }
+        }
+
+        return entries.Take(20).ToArray();
+    }
+
+    public static IReadOnlyList<SkillEntry> ReadSkills(JsonObject? root)
+        => ReadLabelValueEntries(root, "skills", "skill", "name", "label", maxCount: 20)
+            .Select(static item => new SkillEntry(item.Label, item.Value))
+            .ToArray();
+
+    public static IReadOnlyList<SpellEntry> ReadSpells(JsonObject? root)
+        => ReadLabelValueEntries(root, "spells", "spell", "name", "label", maxCount: 10)
+            .Select(static item => new SpellEntry(item.Label, item.Value))
+            .ToArray();
+
+    public static IReadOnlyList<GearEntry> ReadCreationGear(
+        JsonObject? root,
+        IReadOnlyList<GearEntry> gear,
+        IReadOnlyList<ArmorEntry> armor,
+        IReadOnlyList<WeaponEntry> weapons,
+        string sectionId)
+    {
+        List<GearEntry> entries = [];
+        entries.AddRange(gear);
+        entries.AddRange(armor.Select(static item => new GearEntry(item.Label, item.Value)));
+        entries.AddRange(weapons.Select(static item => new GearEntry(item.Label, item.Value)));
+
+        if (entries.Count == 0 && IsGearSection(sectionId))
+        {
+            entries.AddRange(ReadStringArray(root, "rows").Take(8).Select(value => new GearEntry("Selection", value)));
+        }
+
+        return entries.Take(15).ToArray();
+    }
+
+    public static IReadOnlyList<CareerSnapshotEntry> ReadFinalSummary(
+        JsonObject? root,
+        IReadOnlyList<PriorityChoice> prioritySummary,
+        IReadOnlyList<CareerSnapshotEntry> snapshot)
+    {
+        List<CareerSnapshotEntry> entries = [];
+        entries.AddRange(prioritySummary.Select(static item => new CareerSnapshotEntry(item.Label, item.Value)));
+
+        foreach (CareerSnapshotEntry item in snapshot)
+        {
+            if (entries.Any(existing => string.Equals(existing.Label, item.Label, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }
 
-            string key = NormalizeKey(path.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? path);
-            facts.Add(new ClassicPortRowFact(key, BuildDisplayLabel(path), value, ResolveRowKind(key, path)));
+            entries.Add(item);
+            if (entries.Count >= 6)
+            {
+                break;
+            }
         }
 
-        if (facts.Count == 0)
+        return entries.Take(6).ToArray();
+    }
+
+    public static IReadOnlyList<GearCategoryEntry> ReadGearCategories(
+        JsonObject? root,
+        IReadOnlyList<GearEntry> gear,
+        IReadOnlyList<ArmorEntry> armor,
+        IReadOnlyList<WeaponEntry> weapons,
+        string sectionId)
+    {
+        List<GearCategoryEntry> entries = [];
+        entries.AddRange(gear.Select(static item => new GearCategoryEntry(item.Label, item.Value)));
+        entries.AddRange(armor.Select(static item => new GearCategoryEntry(item.Label, item.Value)));
+        entries.AddRange(weapons.Select(static item => new GearCategoryEntry(item.Label, item.Value)));
+
+        if (entries.Count == 0 && IsGearSection(sectionId))
         {
-            facts.Add(new ClassicPortRowFact("empty", "Classic surface", "No active character data", ClassicPortRowKind.Snapshot));
+            entries.AddRange(ReadStringArray(root, "rows").Take(10).Select(value => new GearCategoryEntry("Category", value)));
         }
 
-        return facts;
+        return entries.Take(18).ToArray();
     }
 
-    private static string BuildDisplayLabel(string path)
-        => new SectionRowDisplayItem(path, string.Empty).DisplayPath;
-
-    private static ClassicPortRowKind ResolveRowKind(string key, string path)
+    public static IReadOnlyList<GearFilterEntry> ReadFilters(JsonObject? root, string sectionId)
     {
-        if (AdvancementKeys.Contains(key)) return ClassicPortRowKind.Advancement;
-        if (ArmorKeys.Contains(key)) return ClassicPortRowKind.Armor;
-        if (WeaponKeys.Contains(key)) return ClassicPortRowKind.Weapon;
-        if (GearKeys.Contains(key)) return ClassicPortRowKind.Gear;
-        if (ContactKeys.Contains(key)) return ClassicPortRowKind.Contact;
-        if (NoteKeys.Contains(key)) return ClassicPortRowKind.Note;
-        if (PriorityKeys.Contains(key)) return ClassicPortRowKind.Priority;
-        if (AttributeKeys.Contains(key)) return ClassicPortRowKind.Attribute;
-        if (SkillKeys.Contains(key)) return ClassicPortRowKind.Skill;
-        if (SpellKeys.Contains(key)) return ClassicPortRowKind.Spell;
-        if (FilterKeys.Contains(key)) return ClassicPortRowKind.Filter;
-        if (DetailKeys.Contains(key)) return ClassicPortRowKind.Detail;
-        if (SettingKeys.Contains(key)) return ClassicPortRowKind.Setting;
-        return path.Count(static character => character == '/') <= 1 ? ClassicPortRowKind.Snapshot : ClassicPortRowKind.Index;
+        List<GearFilterEntry> entries = [];
+        JsonObject? filters = ReadObject(root, "filters");
+        if (filters is not null)
+        {
+            foreach ((string key, JsonNode? valueNode) in filters)
+            {
+                Append(entries, Title(key), DescribeNode(valueNode));
+            }
+        }
+
+        Append(entries, "Category", ReadString(root, "category"));
+        Append(entries, "Source", ReadString(root, "source"));
+        Append(entries, "Search", ReadString(root, "search"));
+
+        if (entries.Count == 0 && IsGearSection(sectionId))
+        {
+            entries.AddRange(ReadStringArray(root, "rows").Take(4).Select(value => new GearFilterEntry("Filter", value)));
+        }
+
+        return entries.Take(8).ToArray();
     }
 
-    private static string Clean(string value)
-        => string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
-
-    private static string NormalizeKey(string value)
-        => new(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
-
-    private static readonly HashSet<string> AdvancementKeys = new(StringComparer.OrdinalIgnoreCase)
+    public static IReadOnlyList<GearDetailEntry> ReadGearDetails(
+        JsonObject? root,
+        IReadOnlyList<GearEntry> gear,
+        IReadOnlyList<ArmorEntry> armor,
+        IReadOnlyList<WeaponEntry> weapons,
+        string sectionId)
     {
-        "karma", "totalkarma", "streetcred", "notoriety", "publicawareness", "metatype", "specialattributes"
-    };
+        List<GearDetailEntry> entries = [];
+        Append(entries, "Availability", ReadScalar(root, "availability"));
+        Append(entries, "Cost", FirstNonBlank(ReadScalar(root, "cost"), ReadScalar(root, "nuyen")));
+        Append(entries, "License", ReadString(root, "license"));
+        Append(entries, "Sourcebook", ReadString(root, "sourcebook"));
 
-    private static readonly HashSet<string> ArmorKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "armor", "armorname", "armorvalue", "armorjackets", "clothing", "protection"
-    };
+        if (entries.Count == 0)
+        {
+            IEnumerable<string> sourceItems = gear.Select(static item => item.Value)
+                .Concat(armor.Select(static item => item.Value))
+                .Concat(weapons.Select(static item => item.Value));
+            entries.AddRange(sourceItems.Take(8).Select(value => new GearDetailEntry("Detail", value)));
+        }
 
-    private static readonly HashSet<string> WeaponKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "weapon", "weaponname", "damage", "accuracy", "ap", "mode", "recoil", "ranged", "melee"
-    };
+        if (entries.Count == 0 && IsGearSection(sectionId))
+        {
+            entries.AddRange(ReadStringArray(root, "rows").Take(8).Select(value => new GearDetailEntry("Detail", value)));
+        }
 
-    private static readonly HashSet<string> GearKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "gear", "gearname", "cyberware", "bioware", "augmentation", "device", "rating", "quantity"
-    };
+        return entries.Take(16).ToArray();
+    }
 
-    private static readonly HashSet<string> ContactKeys = new(StringComparer.OrdinalIgnoreCase)
+    public static IReadOnlyList<BrowseEntry> ReadIndexRows(JsonObject? root, string sectionId)
     {
-        "contact", "contacts", "loyalty", "connection", "name", "role"
-    };
+        List<BrowseEntry> entries = [];
+        foreach (string value in ReadStringArray(root, "rows").Take(12))
+        {
+            entries.Add(new BrowseEntry(FormatSectionLabel(sectionId), value));
+        }
 
-    private static readonly HashSet<string> NoteKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "note", "notes", "description", "memo", "comment", "summary"
-    };
+        string? sectionValue = FirstNonBlank(ReadString(root, "sectionId"), ReadString(root, "section"));
+        if (!string.IsNullOrWhiteSpace(sectionValue))
+        {
+            entries.Add(new BrowseEntry("Section", sectionValue));
+        }
 
-    private static readonly HashSet<string> PriorityKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "priority", "prioritytable", "resources", "buildmethod", "gameedition"
-    };
+        string? rulesetValue = FirstNonBlank(ReadString(root, "gameEdition"), ReadString(root, "ruleset"))?.ToUpperInvariant();
+        if (!string.IsNullOrWhiteSpace(rulesetValue))
+        {
+            entries.Add(new BrowseEntry("Ruleset", rulesetValue));
+        }
 
-    private static readonly HashSet<string> AttributeKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "body", "agility", "reaction", "strength", "willpower", "logic", "intuition", "charisma", "edge", "magic", "resonance", "essence", "initiative"
-    };
+        return entries.Take(12).ToArray();
+    }
 
-    private static readonly HashSet<string> SkillKeys = new(StringComparer.OrdinalIgnoreCase)
+    public static IReadOnlyList<SettingEntry> ReadSettings(JsonObject? root, string sectionId)
     {
-        "skill", "skills", "knowledge", "language", "group", "dicepool"
-    };
+        List<SettingEntry> entries = [];
+        if (ReadObject(root, "settings") is { } settingsObject)
+        {
+            foreach ((string key, JsonNode? valueNode) in settingsObject)
+            {
+                Append(entries, Title(key), DescribeNode(valueNode));
+            }
+        }
 
-    private static readonly HashSet<string> SpellKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "spell", "spells", "tradition", "drain", "force", "ritual"
-    };
+        Append(entries, "Ruleset", FirstNonBlank(ReadString(root, "gameEdition"), ReadString(root, "ruleset"))?.ToUpperInvariant());
+        Append(entries, "Language", ReadString(root, "language"));
+        Append(entries, "Version", ReadString(root, "version"));
 
-    private static readonly HashSet<string> FilterKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "filter", "search", "sort", "category", "source"
-    };
+        if (entries.Count == 0 && IsSettingsSection(sectionId))
+        {
+            entries.AddRange(ReadStringArray(root, "rows").Take(12).Select(value => new SettingEntry("Setting", value)));
+        }
 
-    private static readonly HashSet<string> DetailKeys = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "detail", "quality", "availability", "cost", "nuyen", "license", "sourcebook"
-    };
+        return entries.Take(32).ToArray();
+    }
 
-    private static readonly HashSet<string> SettingKeys = new(StringComparer.OrdinalIgnoreCase)
+    private static IReadOnlyList<GearEntry> ReadLabelValueEntries(
+        JsonObject? root,
+        string arrayProperty,
+        string singularLabel,
+        string preferredNameProperty,
+        string fallbackNameProperty,
+        int maxCount,
+        params IReadOnlyList<string> fallbackKeys)
     {
-        "settings", "setting", "global", "language", "ruleset", "version", "option"
-    };
+        List<GearEntry> entries = [];
+        if (ReadArray(root, arrayProperty) is { Count: > 0 } items)
+        {
+            foreach (JsonNode? node in items)
+            {
+                Append(entries, EntryFromNode(node, singularLabel, preferredNameProperty, fallbackNameProperty));
+            }
+        }
+
+        if (entries.Count == 0 && ReadObject(root, arrayProperty) is { } obj)
+        {
+            foreach ((string key, JsonNode? valueNode) in obj)
+            {
+                Append(entries, new GearEntry(Title(key), DescribeNode(valueNode)));
+            }
+        }
+
+        foreach (string fallbackKey in fallbackKeys)
+        {
+            string? value = ReadScalar(root, fallbackKey);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                entries.Add(new GearEntry(Title(fallbackKey), value));
+            }
+        }
+
+        return Deduplicate(entries).Take(maxCount).ToArray();
+    }
+
+    private static GearEntry? EntryFromNode(JsonNode? node, string singularLabel, string preferredNameProperty, string fallbackNameProperty)
+    {
+        return node switch
+        {
+            JsonObject obj => new GearEntry(
+                FirstNonBlank(ReadString(obj, preferredNameProperty), ReadString(obj, fallbackNameProperty), Title(singularLabel)) ?? Title(singularLabel),
+                FirstNonBlank(
+                    ReadScalar(obj, "summary"),
+                    ReadScalar(obj, "value"),
+                    ReadScalar(obj, "rating"),
+                    ReadScalar(obj, "description"),
+                    DescribeObject(obj)) ?? string.Empty),
+            JsonValue value => new GearEntry(Title(singularLabel), DescribeNode(value)),
+            _ => null
+        };
+    }
+
+    private static string? DescribeObject(JsonObject obj)
+    {
+        List<string> parts = [];
+        foreach (string key in new[] { "value", "summary", "rating", "cost", "availability", "description" })
+        {
+            string? value = ReadScalar(obj, key);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                parts.Add($"{Title(key)} {value}");
+            }
+        }
+
+        return parts.Count > 0 ? string.Join(" • ", parts) : null;
+    }
+
+    private static IReadOnlyList<GearEntry> Deduplicate(IEnumerable<GearEntry> entries)
+        => entries
+            .Where(static entry => !string.IsNullOrWhiteSpace(entry.Value))
+            .GroupBy(static entry => $"{entry.Label}|{entry.Value}", StringComparer.OrdinalIgnoreCase)
+            .Select(static group => group.First())
+            .ToArray();
+
+    private static void Append(List<CareerSnapshotEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new CareerSnapshotEntry(label, value));
+        }
+    }
+
+    private static void Append(List<AdvancementEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new AdvancementEntry(label, value));
+        }
+    }
+
+    private static void Append(List<PriorityChoice> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new PriorityChoice(label, value));
+        }
+    }
+
+    private static void Append(List<AttributeEntry> entries, string? label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(label) && !string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new AttributeEntry(label, value));
+        }
+    }
+
+    private static void Append(List<GearFilterEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new GearFilterEntry(label, value));
+        }
+    }
+
+    private static void Append(List<GearDetailEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new GearDetailEntry(label, value));
+        }
+    }
+
+    private static void Append(List<SettingEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new SettingEntry(label, value));
+        }
+    }
+
+    private static void Append(List<NoteEntry> entries, string label, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            entries.Add(new NoteEntry(label, value));
+        }
+    }
+
+    private static void Append(List<GearEntry> entries, GearEntry? entry)
+    {
+        if (entry is not null && !string.IsNullOrWhiteSpace(entry.Value))
+        {
+            entries.Add(entry);
+        }
+    }
+
+    public static string? ReadString(JsonObject? node, string propertyName)
+        => node?[propertyName]?.GetValue<string?>();
+
+    public static string? ReadScalar(JsonObject? node, string propertyName)
+        => node?[propertyName] switch
+        {
+            null => null,
+            JsonValue value => value.ToJsonString().Trim('"'),
+            JsonObject obj => DescribeObject(obj),
+            JsonArray array => string.Join(", ", array.Select(DescribeNode).Where(static item => !string.IsNullOrWhiteSpace(item))),
+            _ => node[propertyName]?.ToJsonString()
+        };
+
+    public static JsonObject? ReadObject(JsonObject? node, string propertyName)
+        => node?[propertyName] as JsonObject;
+
+    public static JsonArray? ReadArray(JsonObject? node, string propertyName)
+        => node?[propertyName] as JsonArray;
+
+    public static IReadOnlyList<string> ReadStringArray(JsonObject? node, string propertyName)
+        => ReadArray(node, propertyName)?
+            .Select(DescribeNode)
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .Cast<string>()
+            .ToArray()
+            ?? Array.Empty<string>();
+
+    public static string? FirstNonBlank(params string?[] values)
+        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value));
+
+    private static string DescribeNode(JsonNode? node)
+        => node switch
+        {
+            null => string.Empty,
+            JsonValue value => value.ToJsonString().Trim('"'),
+            JsonObject obj => DescribeObject(obj) ?? string.Join(", ", obj.Select(pair => $"{Title(pair.Key)} {DescribeNode(pair.Value)}").Where(static value => !string.IsNullOrWhiteSpace(value))),
+            JsonArray array => string.Join(", ", array.Select(DescribeNode).Where(static value => !string.IsNullOrWhiteSpace(value))),
+            _ => node.ToJsonString()
+        };
+
+    private static string Title(string key)
+        => key switch
+        {
+            "gameEdition" => "Ruleset",
+            "buildMethod" => "Build Method",
+            "streetCred" => "Street Cred",
+            "totalKarma" => "Total Karma",
+            "publicAwareness" => "Public Awareness",
+            _ => string.Concat(key[..1].ToUpperInvariant(), key[1..])
+        };
+
+    private static string FormatSectionLabel(string sectionId)
+        => string.IsNullOrWhiteSpace(sectionId) ? "Section" : Title(sectionId.Replace("_", " ", StringComparison.Ordinal));
+
+    private static bool IsCreateSection(string sectionId)
+        => sectionId.Contains("create", StringComparison.OrdinalIgnoreCase)
+            || sectionId.Contains("priority", StringComparison.OrdinalIgnoreCase)
+            || sectionId.Contains("metatype", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsGearSection(string sectionId)
+        => sectionId.Contains("gear", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSettingsSection(string sectionId)
+        => sectionId.Contains("settings", StringComparison.OrdinalIgnoreCase)
+            || sectionId.Contains("global", StringComparison.OrdinalIgnoreCase);
+
+    private static readonly string[] OrderedAttributes =
+    [
+        "Body",
+        "Agility",
+        "Reaction",
+        "Strength",
+        "Willpower",
+        "Logic",
+        "Intuition",
+        "Charisma",
+        "Edge",
+        "Magic",
+        "Resonance",
+        "Essence",
+        "Initiative"
+    ];
 }

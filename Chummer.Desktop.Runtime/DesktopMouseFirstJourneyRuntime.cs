@@ -17,6 +17,16 @@ public static class DesktopMouseFirstJourneyRuntime
     public const string ReleaseVersionEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RELEASE_VERSION";
     public const string RidEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RID";
     public const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
+    public const string ScenarioIdEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_SCENARIO_ID";
+    public const string CharacterNameEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CHARACTER_NAME";
+    public const string CharacterAliasEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_CHARACTER_ALIAS";
+    public const string RulesetIdEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_RULESET_ID";
+    public const string BuildMethodEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_BUILD_METHOD";
+    public const string MetatypeCategoryEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_METATYPE_CATEGORY";
+    public const string PriorityHeritageEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_HERITAGE";
+    public const string MetatypeEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_METATYPE";
+    public const string PriorityTalentEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT";
+    public const string PriorityTalentChoiceEnvironmentVariable = "CHUMMER_DESKTOP_MOUSE_FIRST_JOURNEY_PRIORITY_TALENT_CHOICE";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -61,6 +71,48 @@ public static class DesktopMouseFirstJourneyRuntime
             TracePath: string.IsNullOrWhiteSpace(tracePath) ? null : tracePath);
     }
 
+    public static DesktopMouseFirstJourneyPlan ReadPlan()
+    {
+        string rulesetId = NormalizeOptional(
+            Environment.GetEnvironmentVariable(RulesetIdEnvironmentVariable),
+            "sr5");
+        string buildMethod = NormalizeBuildMethod(Environment.GetEnvironmentVariable(BuildMethodEnvironmentVariable));
+        string characterName = NormalizeOptional(
+            Environment.GetEnvironmentVariable(CharacterNameEnvironmentVariable),
+            "Mouse Journey Runner");
+        string characterAlias = NormalizeOptional(
+            Environment.GetEnvironmentVariable(CharacterAliasEnvironmentVariable),
+            "MouseRoute");
+        string? metatypeCategory = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeCategoryEnvironmentVariable));
+        string? priorityHeritage = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityHeritageEnvironmentVariable));
+        string? metatype = NormalizeNullable(Environment.GetEnvironmentVariable(MetatypeEnvironmentVariable));
+        string? priorityTalent = NormalizePriorityLetter(Environment.GetEnvironmentVariable(PriorityTalentEnvironmentVariable));
+        string? priorityTalentChoice = NormalizeNullable(Environment.GetEnvironmentVariable(PriorityTalentChoiceEnvironmentVariable));
+
+        if (!string.Equals(buildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
+        {
+            priorityHeritage = null;
+            priorityTalent = null;
+            priorityTalentChoice = null;
+        }
+
+        string scenarioId = NormalizeOptional(
+            Environment.GetEnvironmentVariable(ScenarioIdEnvironmentVariable),
+            BuildScenarioId(rulesetId, buildMethod, metatypeCategory, priorityHeritage, metatype, priorityTalentChoice));
+
+        return new DesktopMouseFirstJourneyPlan(
+            ScenarioId: scenarioId,
+            CharacterName: characterName,
+            CharacterAlias: characterAlias,
+            RulesetId: rulesetId,
+            BuildMethod: buildMethod,
+            MetatypeCategory: metatypeCategory,
+            PriorityHeritage: priorityHeritage,
+            Metatype: metatype,
+            PriorityTalent: priorityTalent,
+            PriorityTalentChoice: priorityTalentChoice);
+    }
+
     public static void WriteSuccessReceipt(
         DesktopMouseFirstJourneyContext context,
         DesktopMouseFirstJourneyEvidence evidence)
@@ -84,6 +136,7 @@ public static class DesktopMouseFirstJourneyRuntime
             Arch: context.Arch,
             Rid: context.Rid,
             HostClass: context.HostClass,
+            ScenarioId: evidence.ScenarioId,
             ProcessPath: context.ProcessPath,
             ArtifactDigest: context.ArtifactDigest,
             ArtifactDigestSource: context.ArtifactDigestSource,
@@ -106,6 +159,12 @@ public static class DesktopMouseFirstJourneyRuntime
             CharacterName: evidence.CharacterName,
             CharacterAlias: evidence.CharacterAlias,
             RulesetId: evidence.RulesetId,
+            BuildMethod: evidence.BuildMethod,
+            MetatypeCategory: evidence.MetatypeCategory,
+            PriorityHeritage: evidence.PriorityHeritage,
+            Metatype: evidence.Metatype,
+            PriorityTalent: evidence.PriorityTalent,
+            PriorityTalentChoice: evidence.PriorityTalentChoice,
             HasSavedWorkspace: evidence.HasSavedWorkspace,
             AuthenticationPortalOpened: evidence.AuthenticationPortalOpened,
             AuthenticationPortalUri: evidence.AuthenticationPortalUri,
@@ -126,6 +185,13 @@ public static class DesktopMouseFirstJourneyRuntime
         bool usedForcedComboDropdownOpen = false,
         bool usedComboSelectionFallback = false,
         IReadOnlyList<DesktopMouseFirstJourneyObservedInputEvent>? observedInputEvents = null,
+        string? scenarioId = null,
+        string? buildMethod = null,
+        string? metatypeCategory = null,
+        string? priorityHeritage = null,
+        string? metatype = null,
+        string? priorityTalent = null,
+        string? priorityTalentChoice = null,
         string? activeDialogId = null,
         string? workspaceId = null,
         bool authenticationPortalOpened = false,
@@ -148,6 +214,7 @@ public static class DesktopMouseFirstJourneyRuntime
                 Arch: context.Arch,
                 Rid: context.Rid,
                 HostClass: context.HostClass,
+                ScenarioId: scenarioId,
                 ProcessPath: context.ProcessPath,
                 ArtifactDigest: context.ArtifactDigest,
                 ArtifactDigestSource: context.ArtifactDigestSource,
@@ -170,6 +237,12 @@ public static class DesktopMouseFirstJourneyRuntime
                 CharacterName: null,
                 CharacterAlias: null,
                 RulesetId: null,
+                BuildMethod: buildMethod,
+                MetatypeCategory: metatypeCategory,
+                PriorityHeritage: priorityHeritage,
+                Metatype: metatype,
+                PriorityTalent: priorityTalent,
+                PriorityTalentChoice: priorityTalentChoice,
                 HasSavedWorkspace: false,
                 AuthenticationPortalOpened: authenticationPortalOpened,
                 AuthenticationPortalUri: authenticationPortalUri,
@@ -193,6 +266,13 @@ public static class DesktopMouseFirstJourneyRuntime
             ArtifactDigestSource: context.ArtifactDigestSource,
             StartedAtUtc: context.StartedAtUtc,
             RecordedAtUtc: DateTimeOffset.UtcNow,
+            ScenarioId: scenarioId,
+            BuildMethod: buildMethod,
+            MetatypeCategory: metatypeCategory,
+            PriorityHeritage: priorityHeritage,
+            Metatype: metatype,
+            PriorityTalent: priorityTalent,
+            PriorityTalentChoice: priorityTalentChoice,
             Error: ex.ToString(),
             ActiveDialogId: activeDialogId,
             WorkspaceId: workspaceId,
@@ -351,6 +431,114 @@ public static class DesktopMouseFirstJourneyRuntime
         return string.IsNullOrWhiteSpace(overrideRid) ? string.Empty : overrideRid.Trim().ToLowerInvariant();
     }
 
+    private static string NormalizeOptional(string? value, string fallback)
+    {
+        string? normalized = NormalizeNullable(value);
+        return string.IsNullOrWhiteSpace(normalized) ? fallback : normalized;
+    }
+
+    private static string? NormalizeNullable(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
+    }
+
+    private static string NormalizeBuildMethod(string? value)
+    {
+        string normalized = NormalizeOptional(value, "Priority");
+        if (normalized.Equals("karma", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Karma";
+        }
+
+        if (normalized.Equals("bp", StringComparison.OrdinalIgnoreCase))
+        {
+            return "BP";
+        }
+
+        return normalized.Equals("priority", StringComparison.OrdinalIgnoreCase)
+            ? "Priority"
+            : normalized;
+    }
+
+    private static string? NormalizePriorityLetter(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string normalized = value.Trim().ToUpperInvariant();
+        return normalized is "A" or "B" or "C" or "D" or "E"
+            ? normalized
+            : null;
+    }
+
+    private static string BuildScenarioId(
+        string rulesetId,
+        string buildMethod,
+        string? metatypeCategory,
+        string? priorityHeritage,
+        string? metatype,
+        string? priorityTalentChoice)
+    {
+        List<string> parts =
+        [
+            NormalizeOptional(rulesetId, "sr5").ToLowerInvariant(),
+            NormalizeOptional(buildMethod, "Priority").ToLowerInvariant()
+        ];
+
+        if (!string.IsNullOrWhiteSpace(metatypeCategory))
+        {
+            parts.Add(Slugify(metatypeCategory));
+        }
+
+        if (!string.IsNullOrWhiteSpace(priorityHeritage))
+        {
+            parts.Add(priorityHeritage.ToLowerInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(metatype))
+        {
+            parts.Add(Slugify(metatype));
+        }
+
+        if (!string.IsNullOrWhiteSpace(priorityTalentChoice))
+        {
+            parts.Add(Slugify(priorityTalentChoice));
+        }
+
+        return string.Join("-", parts.Where(part => !string.IsNullOrWhiteSpace(part)));
+    }
+
+    private static string Slugify(string value)
+    {
+        Span<char> buffer = stackalloc char[value.Length];
+        int index = 0;
+        bool lastWasDash = false;
+        foreach (char character in value.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                buffer[index++] = character;
+                lastWasDash = false;
+                continue;
+            }
+
+            if (!lastWasDash && index > 0)
+            {
+                buffer[index++] = '-';
+                lastWasDash = true;
+            }
+        }
+
+        return new string(buffer[..index]).Trim('-');
+    }
+
     private static void WriteJson<T>(string path, T payload)
     {
         string? directory = Path.GetDirectoryName(path);
@@ -393,10 +581,17 @@ public sealed record DesktopMouseFirstJourneyEvidence(
     bool UsedForcedComboDropdownOpen,
     bool UsedComboSelectionFallback,
     IReadOnlyList<DesktopMouseFirstJourneyObservedInputEvent> ObservedInputEvents,
+    string ScenarioId,
     string? WorkspaceId,
     string? CharacterName,
     string? CharacterAlias,
     string? RulesetId,
+    string BuildMethod,
+    string? MetatypeCategory,
+    string? PriorityHeritage,
+    string? Metatype,
+    string? PriorityTalent,
+    string? PriorityTalentChoice,
     bool HasSavedWorkspace,
     bool AuthenticationPortalOpened,
     string? AuthenticationPortalUri,
@@ -414,6 +609,7 @@ public sealed record DesktopMouseFirstJourneyReceipt(
     string Arch,
     string Rid,
     string HostClass,
+    string? ScenarioId,
     string ProcessPath,
     string? ArtifactDigest,
     string ArtifactDigestSource,
@@ -436,6 +632,12 @@ public sealed record DesktopMouseFirstJourneyReceipt(
     string? CharacterName,
     string? CharacterAlias,
     string? RulesetId,
+    string? BuildMethod,
+    string? MetatypeCategory,
+    string? PriorityHeritage,
+    string? Metatype,
+    string? PriorityTalent,
+    string? PriorityTalentChoice,
     bool HasSavedWorkspace,
     bool AuthenticationPortalOpened,
     string? AuthenticationPortalUri,
@@ -452,6 +654,13 @@ public sealed record DesktopMouseFirstJourneyFailurePacket(
     string ArtifactDigestSource,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset RecordedAtUtc,
+    string? ScenarioId,
+    string? BuildMethod,
+    string? MetatypeCategory,
+    string? PriorityHeritage,
+    string? Metatype,
+    string? PriorityTalent,
+    string? PriorityTalentChoice,
     string Error,
     string? ActiveDialogId,
     string? WorkspaceId,
@@ -481,3 +690,15 @@ public sealed record DesktopMouseFirstJourneyObservedInputEvent(
     string? ControlTag,
     string? DialogId,
     DateTimeOffset RecordedAtUtc);
+
+public sealed record DesktopMouseFirstJourneyPlan(
+    string ScenarioId,
+    string CharacterName,
+    string CharacterAlias,
+    string RulesetId,
+    string BuildMethod,
+    string? MetatypeCategory,
+    string? PriorityHeritage,
+    string? Metatype,
+    string? PriorityTalent,
+    string? PriorityTalentChoice);

@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Chummer.Desktop.Runtime\Chummer.Desktop.Runtime.csproj" />
     <ProjectReference Include="..\Chummer.Presentation\Chummer.Presentation.csproj" />
+    <ProjectReference Include="..\..\chummer.run-services\Chummer.Run.Contracts\Chummer.Run.Contracts.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Application\Chummer.Application.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Contracts\Chummer.Contracts.csproj" />
     <ProjectReference Include="..\..\chummer-core-engine\Chummer.Infrastructure\Chummer.Infrastructure.csproj" />

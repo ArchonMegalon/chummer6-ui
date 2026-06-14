@@ -9,6 +9,11 @@ namespace Chummer.Avalonia;
 
 internal static class DesktopHorizonWindowScaffold
 {
+    private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
+        => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
+            ? brush
+            : new SolidColorBrush(Color.Parse(fallbackHex));
+
     public static ScrollViewer CreateScroller(string title, string intro, params Control[] sections)
     {
         StackPanel root = new()
@@ -89,9 +94,9 @@ internal static class DesktopHorizonWindowScaffold
 
         return new Border
         {
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.Parse("#F7FAFD")),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7F4EC"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -126,13 +131,13 @@ internal static class DesktopHorizonWindowScaffold
         return new Border
         {
             Name = name,
-            Background = new SolidColorBrush(Color.Parse("#E4EDF5")),
+            Background = ResolveThemeBrush("ChummerShellChromeAccentBrush", "#E6E2DA"),
             CornerRadius = new CornerRadius(999),
             Padding = new Thickness(8, 4),
             Child = new TextBlock
             {
                 Text = $"{label}: {value}",
-                Foreground = new SolidColorBrush(Color.Parse("#24527A")),
+                Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#0A246A"),
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             }
@@ -151,8 +156,8 @@ internal static class DesktopHorizonWindowScaffold
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
+            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
         }
 
         button.Click += (_, _) => action();
@@ -183,8 +188,8 @@ internal static class DesktopHorizonWindowScaffold
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
+            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
         }
 
         button.Click += async (_, _) =>

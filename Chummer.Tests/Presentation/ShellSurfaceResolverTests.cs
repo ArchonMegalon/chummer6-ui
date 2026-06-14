@@ -259,6 +259,72 @@ public sealed class ShellSurfaceResolverTests
         Assert.AreEqual("sr4", catalogResolver.LastWorkspaceActionRulesetId);
     }
 
+    [TestMethod]
+    public void Resolve_prefers_overview_active_workspace_ruleset_when_shell_active_ruleset_lags()
+    {
+        var infoTab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, "sr6");
+        var shellWorkspaceId = new Chummer.Contracts.Workspaces.CharacterWorkspaceId("ws-shell-sr5");
+        var overviewWorkspaceId = new Chummer.Contracts.Workspaces.CharacterWorkspaceId("ws-overview-sr6");
+        var shellState = ShellState.Empty with
+        {
+            ActiveWorkspaceId = shellWorkspaceId,
+            ActiveRulesetId = "sr5",
+            PreferredRulesetId = "sr5",
+            OpenWorkspaces =
+            [
+                new ShellWorkspaceState(
+                    Id: shellWorkspaceId,
+                    Name: "SR5 Runner",
+                    Alias: "SR5",
+                    LastOpenedUtc: DateTimeOffset.UtcNow.AddMinutes(-10),
+                    RulesetId: "sr5",
+                    HasSavedWorkspace: true)
+            ],
+            NavigationTabs = [infoTab],
+            ActiveTabId = infoTab.Id
+        };
+
+        CharacterOverviewState overviewState = CharacterOverviewState.Empty with
+        {
+            Session = new WorkspaceSessionState(
+                ActiveWorkspaceId: overviewWorkspaceId,
+                OpenWorkspaces:
+                [
+                    new OpenWorkspaceState(
+                        Id: overviewWorkspaceId,
+                        Name: "SR6 Runner",
+                        Alias: "SR6",
+                        LastOpenedUtc: DateTimeOffset.UtcNow,
+                        RulesetId: "sr6",
+                        HasSavedWorkspace: true)
+                ],
+                RecentWorkspaceIds: [overviewWorkspaceId]),
+            OpenWorkspaces =
+            [
+                new OpenWorkspaceState(
+                    Id: overviewWorkspaceId,
+                    Name: "SR6 Runner",
+                    Alias: "SR6",
+                    LastOpenedUtc: DateTimeOffset.UtcNow,
+                    RulesetId: "sr6",
+                    HasSavedWorkspace: true)
+            ],
+            WorkspaceId = overviewWorkspaceId
+        };
+
+        var resolver = new ShellSurfaceResolver(
+            new StubShellCatalogResolver([]),
+            new StubAvailabilityEvaluator(
+                commandEnabled: true,
+                tabEnabled: true,
+                actionEnabled: true));
+
+        ShellSurfaceState surface = resolver.Resolve(overviewState, shellState);
+
+        Assert.AreEqual("sr6", surface.ActiveRulesetId);
+        Assert.AreEqual("ws-overview-sr6", surface.ActiveWorkspaceId?.Value);
+    }
+
     private sealed class StubShellCatalogResolver : IRulesetShellCatalogResolver
     {
         private readonly IReadOnlyList<WorkspaceSurfaceActionDefinition> _workspaceActions;

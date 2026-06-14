@@ -142,8 +142,8 @@
         "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M118_UI_ORGANIZER_OPS.generated.json",
         "/docker/chummercomplete/chummer-presentation/scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh",
         "bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh",
-        "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore",
-        "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
+        "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore",
+        "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore"
       ]
     }
   }

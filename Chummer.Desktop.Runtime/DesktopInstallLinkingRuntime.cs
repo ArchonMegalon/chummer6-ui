@@ -52,7 +52,8 @@ public sealed record DesktopInstallLinkingState(
     DateTimeOffset? GrantIssuedAtUtc = null,
     DateTimeOffset? GrantExpiresAtUtc = null,
     string? UserId = null,
-    string? SubjectId = null);
+    string? SubjectId = null,
+    string? LinkedEmail = null);
 
 public static class DesktopInstallLinkingRuntime
 {
@@ -280,17 +281,87 @@ public static class DesktopInstallLinkingRuntime
     {
         ArgumentNullException.ThrowIfNull(state);
 
-        if (!string.IsNullOrWhiteSpace(state.UserId))
+        string? linkedEmail = NormalizeLinkedIdentityLabel(state.LinkedEmail);
+        if (!string.IsNullOrWhiteSpace(linkedEmail))
         {
-            return state.UserId.Trim();
+            return linkedEmail;
         }
 
-        if (!string.IsNullOrWhiteSpace(state.SubjectId))
+        string? userId = NormalizeLinkedIdentityLabel(state.UserId);
+        if (!string.IsNullOrWhiteSpace(userId))
         {
-            return state.SubjectId.Trim();
+            return userId;
         }
 
-        return state.InstallationId;
+        string? subjectId = NormalizeLinkedIdentityLabel(state.SubjectId);
+        if (!string.IsNullOrWhiteSpace(subjectId))
+        {
+            return subjectId;
+        }
+
+        return "linked account";
+    }
+
+    private static string? NormalizeLinkedIdentityLabel(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        string normalized = value.Trim();
+        if (normalized.Contains('@', StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        if (LooksOpaqueIdentityToken(normalized))
+        {
+            return null;
+        }
+
+        return normalized;
+    }
+
+    private static bool LooksOpaqueIdentityToken(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        if (value.All(char.IsDigit))
+        {
+            return true;
+        }
+
+        return value.StartsWith("user-", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("subject-", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("sub-", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("uid-", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? ResolveLinkedEmail(string? userId, string? subjectId, string? existingLinkedEmail)
+    {
+        string? userEmail = NormalizeLinkedIdentityLabel(userId);
+        if (!string.IsNullOrWhiteSpace(userEmail) && userEmail.Contains('@', StringComparison.Ordinal))
+        {
+            return userEmail;
+        }
+
+        string? subjectEmail = NormalizeLinkedIdentityLabel(subjectId);
+        if (!string.IsNullOrWhiteSpace(subjectEmail) && subjectEmail.Contains('@', StringComparison.Ordinal))
+        {
+            return subjectEmail;
+        }
+
+        string? existingEmail = NormalizeLinkedIdentityLabel(existingLinkedEmail);
+        if (!string.IsNullOrWhiteSpace(existingEmail) && existingEmail.Contains('@', StringComparison.Ordinal))
+        {
+            return existingEmail;
+        }
+
+        return null;
     }
 
     public static IReadOnlyList<string> BuildSupportDiagnosticsReceiptLines(
@@ -754,7 +825,11 @@ public static class DesktopInstallLinkingRuntime
                 GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
                 GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
                 UserId = accepted.Installation.UserId,
-                SubjectId = accepted.Installation.SubjectId
+                SubjectId = accepted.Installation.SubjectId,
+                LinkedEmail = ResolveLinkedEmail(
+                    accepted.Installation.UserId,
+                    accepted.Installation.SubjectId,
+                    currentState.LinkedEmail)
             };
             SaveState(claimedState);
             return new DesktopInstallClaimResult(
@@ -873,7 +948,11 @@ public static class DesktopInstallLinkingRuntime
                 GrantIssuedAtUtc = accepted.Grant.IssuedAtUtc,
                 GrantExpiresAtUtc = accepted.Grant.ExpiresAtUtc,
                 UserId = accepted.Installation.UserId,
-                SubjectId = accepted.Installation.SubjectId
+                SubjectId = accepted.Installation.SubjectId,
+                LinkedEmail = ResolveLinkedEmail(
+                    accepted.Installation.UserId,
+                    accepted.Installation.SubjectId,
+                    currentState.LinkedEmail)
             };
             SaveState(claimedState);
             return new DesktopInstallClaimResult(

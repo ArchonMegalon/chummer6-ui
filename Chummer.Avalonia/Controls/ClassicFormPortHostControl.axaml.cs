@@ -43,7 +43,9 @@ public partial class ClassicFormPortHostControl : UserControl
             _portTitleText.Text = port.SurfaceTitle;
         }
 
-        ClassicFormPortDocument document = ClassicFormPortDocument.CreateFromSectionRows(state.Rows);
+        ClassicFormPortDocument document = ClassicFormPortDocument.CreateFromPreview(
+            state.PreviewJson,
+            state.SectionId ?? selectedCommandId ?? string.Empty);
 
         port.SetState(new ClassicFormPortState(
             port.SurfaceId,

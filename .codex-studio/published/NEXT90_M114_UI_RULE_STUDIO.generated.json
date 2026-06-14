@@ -16,8 +16,8 @@
     "packageId": "next90-m114-ui-rule-studio",
     "proofCommands": {
       "directProofCommand": "bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh",
-      "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
-      "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore"
+      "presentationTestCommand": "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+      "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore"
     },
     "proofFiles": [
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M114_UI_RULE_STUDIO.generated.json",

@@ -27,6 +27,7 @@ public sealed partial class CharacterOverviewPresenter
             Publish(result.State);
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
+            await SyncShellWorkspaceContextAsync(ct);
         }
         catch (Exception ex)
         {
@@ -250,6 +251,7 @@ public sealed partial class CharacterOverviewPresenter
             Publish(result.State);
             await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
             await EnsureDefaultWorkspaceSurfaceAsync(ct);
+            await SyncShellWorkspaceContextAsync(ct);
         }
         catch (Exception ex)
         {
@@ -266,18 +268,32 @@ public sealed partial class CharacterOverviewPresenter
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.SwitchAsync(State, id, ct);
         Publish(result.State);
         await RefreshNavigationContextForCurrentWorkspaceAsync(ct);
+        await SyncShellWorkspaceContextAsync(ct);
     }
 
     public async Task CloseWorkspaceAsync(CharacterWorkspaceId id, CancellationToken ct)
     {
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAsync(State, id, ct);
         Publish(result.State);
+        await SyncShellWorkspaceContextAsync(ct);
     }
 
     private async Task CloseAllWorkspacesAsync(CancellationToken ct, string notice)
     {
         WorkspaceOverviewLifecycleResult result = await _workspaceOverviewLifecycleCoordinator.CloseAllAsync(State, ct, notice);
         Publish(result.State);
+        await SyncShellWorkspaceContextAsync(ct);
+    }
+
+    private Task SyncShellWorkspaceContextAsync(CancellationToken ct)
+    {
+        if (_shellPresenter is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        CharacterWorkspaceId? activeWorkspaceId = ResolveCurrentWorkspaceId();
+        return _shellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, ct);
     }
 
     private CharacterOverviewState CreateWorkspaceResetState(string commandId, string notice)

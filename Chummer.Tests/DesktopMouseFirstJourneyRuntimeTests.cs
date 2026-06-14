@@ -101,10 +101,17 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                     [
                         new DesktopMouseFirstJourneyObservedInputEvent("tapped", "MenuItem", "FileMenuButton", null, null, DateTimeOffset.UtcNow)
                     ],
+                    ScenarioId: "sr5-priority",
                     WorkspaceId: "ws-1",
                     CharacterName: "Mouse Journey Runner",
                     CharacterAlias: "MouseRoute",
                     RulesetId: "sr5",
+                    BuildMethod: "Priority",
+                    MetatypeCategory: "Standard",
+                    PriorityHeritage: "E",
+                    Metatype: "Human",
+                    PriorityTalent: "B",
+                    PriorityTalentChoice: "Mystic Adept",
                     HasSavedWorkspace: true,
                     AuthenticationPortalOpened: true,
                     AuthenticationPortalUri: "https://chummer.run/account/access/install-link?login=1",
@@ -114,9 +121,16 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             using JsonDocument receipt = JsonDocument.Parse(File.ReadAllText(receiptPath));
             Assert.AreEqual("pass", receipt.RootElement.GetProperty("status").GetString());
             Assert.AreEqual("mouse_first_live_binary", receipt.RootElement.GetProperty("journeyMode").GetString());
+            Assert.AreEqual("sr5-priority", receipt.RootElement.GetProperty("scenarioId").GetString());
             Assert.AreEqual("ws-1", receipt.RootElement.GetProperty("workspaceId").GetString());
             Assert.IsTrue(receipt.RootElement.GetProperty("hasSavedWorkspace").GetBoolean());
             Assert.AreEqual("Mouse Journey Runner", receipt.RootElement.GetProperty("characterName").GetString());
+            Assert.AreEqual("Priority", receipt.RootElement.GetProperty("buildMethod").GetString());
+            Assert.AreEqual("Standard", receipt.RootElement.GetProperty("metatypeCategory").GetString());
+            Assert.AreEqual("E", receipt.RootElement.GetProperty("priorityHeritage").GetString());
+            Assert.AreEqual("Human", receipt.RootElement.GetProperty("metatype").GetString());
+            Assert.AreEqual("B", receipt.RootElement.GetProperty("priorityTalent").GetString());
+            Assert.AreEqual("Mystic Adept", receipt.RootElement.GetProperty("priorityTalentChoice").GetString());
             Assert.AreEqual("/tmp/screens", receipt.RootElement.GetProperty("screenshotDirectory").GetString());
             Assert.AreEqual("/tmp/mouse-trace.json", receipt.RootElement.GetProperty("tracePath").GetString());
             Assert.AreEqual(4, receipt.RootElement.GetProperty("pointerActionCount").GetInt32());
@@ -179,6 +193,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
                 [
                     new DesktopMouseFirstJourneyObservedInputEvent("tapped", "ComboBox", "dialog.field.newCharacterRulesetId", null, "dialog.new_character", DateTimeOffset.UtcNow)
                 ],
+                priorityTalent: "B",
+                priorityTalentChoice: "Mystic Adept",
                 activeDialogId: "dialog.new_character",
                 workspaceId: "ws-fail",
                 authenticationPortalOpened: true,
@@ -188,6 +204,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             Assert.AreEqual("fail", receipt.RootElement.GetProperty("status").GetString());
             Assert.AreEqual("dialog.new_character", receipt.RootElement.GetProperty("activeDialogId").GetString());
             Assert.AreEqual("ws-fail", receipt.RootElement.GetProperty("workspaceId").GetString());
+            Assert.AreEqual("B", receipt.RootElement.GetProperty("priorityTalent").GetString());
+            Assert.AreEqual("Mystic Adept", receipt.RootElement.GetProperty("priorityTalentChoice").GetString());
             Assert.AreEqual(2, receipt.RootElement.GetProperty("screenshotPaths").GetArrayLength());
             Assert.AreEqual(screenshotPaths[0], receipt.RootElement.GetProperty("screenshotPaths")[0].GetString());
             Assert.AreEqual(3, receipt.RootElement.GetProperty("pointerActionCount").GetInt32());
@@ -200,6 +218,8 @@ public sealed class DesktopMouseFirstJourneyRuntimeTests
             using JsonDocument packet = JsonDocument.Parse(File.ReadAllText(packetPath));
             Assert.AreEqual("desktop_mouse_first_journey_failure", packet.RootElement.GetProperty("signalClass").GetString());
             Assert.AreEqual("ws-fail", packet.RootElement.GetProperty("workspaceId").GetString());
+            Assert.AreEqual("B", packet.RootElement.GetProperty("priorityTalent").GetString());
+            Assert.AreEqual("Mystic Adept", packet.RootElement.GetProperty("priorityTalentChoice").GetString());
             Assert.AreEqual(3, packet.RootElement.GetProperty("pointerActionCount").GetInt32());
             Assert.AreEqual(1, packet.RootElement.GetProperty("textEntryActionCount").GetInt32());
             Assert.AreEqual(1, packet.RootElement.GetProperty("directTextMutationCount").GetInt32());

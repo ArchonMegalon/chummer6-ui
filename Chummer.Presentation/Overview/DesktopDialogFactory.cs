@@ -897,7 +897,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Elf", "Elf"),
                 new DesktopDialogFieldOption("Dwarf", "Dwarf"),
                 new DesktopDialogFieldOption("Ork", "Ork"),
-                new DesktopDialogFieldOption("Troll", "Troll")
+                new DesktopDialogFieldOption("Troll", "Troll"),
+                new DesktopDialogFieldOption("Shapeshifter: Vulpine", "Shapeshifter: Vulpine")
             ],
             _ =>
             [
@@ -908,6 +909,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Troll", "Troll")
             ]
         };
+    }
+
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityMetatypeOptions(string? category, string heritagePriority)
+    {
+        int heritageRank = ResolvePriorityHeritageRank(heritagePriority);
+        return BuildMetatypeOptions(category)
+            .Where(option => heritageRank >= ResolveMinimumHeritageRank(option.Value))
+            .ToArray();
     }
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetavariantOptions(string metatype)
@@ -976,6 +985,35 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string ResolveDefaultMetatype(string? category)
         => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
 
+    private static string ResolveDefaultPriorityMetatype(string? category, string heritagePriority)
+        => BuildPriorityMetatypeOptions(category, heritagePriority)
+            .FirstOrDefault()?.Value
+            ?? ResolveDefaultMetatype(category);
+
+    private static string ResolvePriorityMetatypeSelection(
+        string? currentMetatype,
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        string? category)
+    {
+        if (options.Count == 0)
+        {
+            return ResolveDefaultMetatype(category);
+        }
+
+        if (!string.IsNullOrWhiteSpace(currentMetatype)
+            && options.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal)))
+        {
+            return currentMetatype;
+        }
+
+        return options
+            .OrderByDescending(option => ResolveMinimumHeritageRank(option.Value))
+            .ThenBy(option => option.Label, StringComparer.Ordinal)
+            .Select(option => option.Value)
+            .FirstOrDefault()
+            ?? options[0].Value;
+    }
+
     private static PriorityWorkflowResolution ResolvePriorityWorkflowResolution(
         string rulesetId,
         string buildMethod,
@@ -1000,20 +1038,36 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .Select(option => option.Value)
             .FirstOrDefault(option => string.Equals(option, category, StringComparison.Ordinal))
             ?? "Standard";
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(normalizedCategory).ToArray();
-        string resolvedMetatype = metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal))
-            ? metatype
-            : metatypeOptions[0].Value;
+        string normalizedHeritagePriority = NormalizePriorityLetter(heritagePriority, "D");
+        DesktopDialogFieldOption[] metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, normalizedHeritagePriority).ToArray();
+        if (metatypeOptions.Length == 0)
+        {
+            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E").ToArray();
+        }
+        string resolvedMetatype = ResolvePriorityMetatypeSelection(
+            metatype,
+            metatypeOptions,
+            normalizedCategory);
 
         Dictionary<string, string> priorities = new(StringComparer.Ordinal)
         {
-            ["newCharacterPriorityHeritage"] = NormalizePriorityLetter(heritagePriority, "D"),
+            ["newCharacterPriorityHeritage"] = normalizedHeritagePriority,
             ["newCharacterPriorityAttributes"] = NormalizePriorityLetter(attributesPriority, "B"),
             ["newCharacterPriorityTalent"] = NormalizePriorityLetter(talentPriority, "E"),
             ["newCharacterPrioritySkills"] = NormalizePriorityLetter(skillsPriority, "C"),
             ["newCharacterPriorityResources"] = NormalizePriorityLetter(resourcesPriority, "A"),
         };
         ReconcilePriorityLetters(buildMethod, lastChangedFieldId, priorities);
+
+        metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, priorities["newCharacterPriorityHeritage"]).ToArray();
+        if (metatypeOptions.Length == 0)
+        {
+            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E").ToArray();
+        }
+        resolvedMetatype = ResolvePriorityMetatypeSelection(
+            resolvedMetatype,
+            metatypeOptions,
+            normalizedCategory);
 
         DesktopDialogFieldOption[] metavariantOptions = BuildMetavariantOptions(resolvedMetatype).ToArray();
         string resolvedMetavariant = metavariantOptions.Any(option => string.Equals(option.Value, metavariant, StringComparison.Ordinal))
@@ -1514,13 +1568,34 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     {
         return heritagePriority switch
         {
-            "A" => "9",
-            "B" => "7",
-            "C" => "5",
-            "D" => "3",
-            _ => "1"
+            "A" => "4",
+            "B" => "3",
+            "C" => "2",
+            "D" => "1",
+            _ => "0"
         };
     }
+
+    private static int ResolvePriorityHeritageRank(string heritagePriority)
+        => heritagePriority switch
+        {
+            "A" => 4,
+            "B" => 3,
+            "C" => 2,
+            "D" => 1,
+            _ => 0
+        };
+
+    private static int ResolveMinimumHeritageRank(string metatype)
+        => metatype switch
+        {
+            "Troll" => 4,
+            "Dwarf" => 3,
+            "Ork" => 2,
+            "Shapeshifter: Vulpine" => 2,
+            "Elf" => 1,
+            _ => 0
+        };
 
     private static string ResolveMetatypeSource(string rulesetId, string metatype, string metavariant)
     {

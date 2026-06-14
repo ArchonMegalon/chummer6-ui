@@ -39,7 +39,7 @@ release_gate_lock_owner_pid_path="$release_gate_lock_dir/owner.pid"
 app_axaml_path="$repo_root/Chummer.Avalonia/App.axaml"
 main_window_axaml_path="$repo_root/Chummer.Avalonia/MainWindow.axaml"
 navigator_axaml_path="$repo_root/Chummer.Avalonia/Controls/NavigatorPaneControl.axaml"
-toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml"
+toolstrip_axaml_path="$repo_root/Chummer.Avalonia/Controls/ClassicToolStrip.axaml"
 toolstrip_codebehind_path="$repo_root/Chummer.Avalonia/Controls/ToolStripControl.axaml.cs"
 summary_header_axaml_path="$repo_root/Chummer.Avalonia/Controls/SummaryHeaderControl.axaml"
 ui_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
@@ -1269,9 +1269,9 @@ if missing_desktop_shell_tests:
 toolstrip_axaml_text = toolstrip_axaml_path.read_text(encoding="utf-8") if toolstrip_axaml_path.is_file() else ""
 toolstrip_codebehind_text = toolstrip_codebehind_path.read_text(encoding="utf-8") if toolstrip_codebehind_path.is_file() else ""
 required_toolstrip_markers = [
-    "shell-toolstrip-band",
-    "shell-toolstrip-state",
-    "WrapPanel Orientation=\"Horizontal\" ItemHeight=\"30\"",
+    "WrapPanel x:Name=\"ClassicActionStrip\"",
+    "Orientation=\"Horizontal\"",
+    "ItemHeight=\"28\"",
     "button.Content = label;",
 ]
 missing_toolstrip_markers = [

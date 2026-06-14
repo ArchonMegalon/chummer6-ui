@@ -40,10 +40,10 @@ public partial class MasterIndexClassicPort : ClassicFormPortSurfaceControl
         DataContext = viewModel;
 
         PopulateClassicSelector(_browseSelector, viewModel.BrowseLabels, "No index rows");
-        PopulateClassicTree(_browseTree, viewModel.BrowseRows.Select(static item => item.ToLineItem()), "Browse results will appear here once the index loads.");
+        PopulateClassicTree(_browseTree, ProjectLines(viewModel.BrowseRows, static item => item.Label, static item => item.Value), "Browse results will appear here once the index loads.");
 
-        PopulateClassicList(_searchList, viewModel.SearchActions.Select(static item => item.ToLineItem()), "Search actions are not available yet.");
+        PopulateClassicList(_searchList, ProjectLines(viewModel.SearchActions, static item => item.Label, static item => item.Value), "Search actions are not available yet.");
 
-        PopulateClassicList(_sourceList, viewModel.SourceFacts.Select(static item => item.ToLineItem()), "Source chrome metadata is unavailable.");
+        PopulateClassicList(_sourceList, ProjectLines(viewModel.SourceFacts, static item => item.Label, static item => item.Value), "Source chrome metadata is unavailable.");
     }
 }

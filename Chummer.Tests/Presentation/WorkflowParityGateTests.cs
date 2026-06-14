@@ -396,10 +396,7 @@ public sealed class WorkflowParityGateTests
                 mutatedDialog,
                 "newCharacterMetatype",
                 "Elf",
-                ("Elf", "Elf"),
-                ("Dwarf", "Dwarf"),
-                ("Ork", "Ork"),
-                ("Troll", "Troll"));
+                ("Elf", "Elf"));
             AssertExactVisibleSelectField(
                 mutatedDialog,
                 "newCharacterPriorityTalentChoice",
@@ -547,6 +544,34 @@ public sealed class WorkflowParityGateTests
 
         CollectionAssert.Contains(talentChoiceField.Options!.Select(option => option.Value).ToArray(), "Aspected Magician");
         Assert.AreEqual("newCharacterPriorityTalent", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityLastChangedFieldId"));
+    }
+
+    [TestMethod]
+    public async Task Priority_workflow_heritage_selection_rebuilds_metatype_options_and_repairs_invalid_selection()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr5);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr5, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr5);
+        harness.UpdateDialogField("newCharacterBuildMethod", "Priority");
+        await harness.ActAsync("create_character");
+
+        harness.UpdateDialogField("newCharacterPriorityHeritage", "A");
+        harness.UpdateDialogField("newCharacterMetatype", "Troll");
+        harness.UpdateDialogField("newCharacterPriorityHeritage", "D");
+
+        Assert.IsNotNull(harness.State.ActiveDialog);
+        DesktopDialogState priorityDialog = harness.State.ActiveDialog!;
+        PriorityWorkflowDialogRuntimeState runtimeState = PriorityWorkflowDialogRuntimeStateSerializer.Parse(
+            DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterPriorityWorkflowState"));
+        DesktopDialogField metatypeField = priorityDialog.Fields.Single(field => string.Equals(field.Id, "newCharacterMetatype", StringComparison.Ordinal));
+
+        CollectionAssert.AreEquivalent(
+            new[] { "Human", "Elf" },
+            metatypeField.Options!.Select(option => option.Value).ToArray(),
+            "Heritage priority changes must rebuild the metatype list.");
+        Assert.AreEqual("Elf", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterMetatype"));
+        Assert.AreEqual("1", runtimeState.SpecialAttributes);
     }
 
     [TestMethod]
@@ -747,7 +772,7 @@ public sealed class WorkflowParityGateTests
         foreach (DesktopDialogField field in visibleSelectFields)
         {
             Assert.IsTrue(
-                TryResolveExactVisibleSelectContract(rulesetId, dialog.Id, field.Id, out ExactVisibleSelectContract? contract),
+                TryResolveExactVisibleSelectContract(rulesetId, dialog, field.Id, out ExactVisibleSelectContract? contract),
                 $"'{dialog.Id}' visible select field '{field.Id}' must carry an exact option contract.");
 
             DesktopDialogFieldOption[] actualOptions = (field.Options ?? Array.Empty<DesktopDialogFieldOption>()).ToArray();
@@ -803,7 +828,7 @@ public sealed class WorkflowParityGateTests
 
     private static bool TryResolveExactVisibleSelectContract(
         string rulesetId,
-        string dialogId,
+        DesktopDialogState dialog,
         string fieldId,
         out ExactVisibleSelectContract? contract)
     {
@@ -813,7 +838,7 @@ public sealed class WorkflowParityGateTests
                 selectedValue);
 
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
-        contract = (dialogId, fieldId, normalizedRulesetId) switch
+        contract = (dialog.Id, fieldId, normalizedRulesetId) switch
         {
             ("dialog.open_character", "importRulesetId", _)
                 or ("dialog.open_for_export", "importRulesetId", _)
@@ -858,8 +883,9 @@ public sealed class WorkflowParityGateTests
                     ("Metahuman", "Metahuman"),
                     ("Show All", "Show All")),
 
-            ("dialog.new_character.priority_workflow", "newCharacterMetatype", _)
-                or ("dialog.new_character.karma_workflow", "newCharacterMetatype", _) => Create(
+            ("dialog.new_character.priority_workflow", "newCharacterMetatype", _) => ResolvePriorityMetatypeContract(dialog),
+
+            ("dialog.new_character.karma_workflow", "newCharacterMetatype", _) => Create(
                     "Human",
                     ("Human", "Human"),
                     ("Elf", "Elf"),
@@ -950,6 +976,41 @@ public sealed class WorkflowParityGateTests
         };
 
         return contract is not null;
+    }
+
+    private static ExactVisibleSelectContract ResolvePriorityMetatypeContract(DesktopDialogState dialog)
+    {
+        static ExactDialogFieldOptionContract Option(string value)
+            => new(value, value);
+
+        string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
+        string heritagePriority = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPriorityHeritage") ?? "D";
+        string selectedValue = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? "Human";
+
+        string[] optionValues = (category, heritagePriority) switch
+        {
+            ("Metahuman", "A") => ["Elf", "Dwarf", "Ork", "Troll"],
+            ("Metahuman", "B") => ["Elf", "Dwarf", "Ork"],
+            ("Metahuman", "C") => ["Elf", "Ork"],
+            ("Metahuman", "D") => ["Elf"],
+            ("Metahuman", _) => [],
+
+            ("Show All", "A") => ["Human", "Elf", "Dwarf", "Ork", "Troll", "Shapeshifter: Vulpine"],
+            ("Show All", "B") => ["Human", "Elf", "Dwarf", "Ork", "Shapeshifter: Vulpine"],
+            ("Show All", "C") => ["Human", "Elf", "Ork", "Shapeshifter: Vulpine"],
+            ("Show All", "D") => ["Human", "Elf"],
+            ("Show All", _) => ["Human"],
+
+            ("Standard", "A") => ["Human", "Elf", "Dwarf", "Ork", "Troll"],
+            ("Standard", "B") => ["Human", "Elf", "Dwarf", "Ork"],
+            ("Standard", "C") => ["Human", "Elf", "Ork"],
+            ("Standard", "D") => ["Human", "Elf"],
+            _ => ["Human"]
+        };
+
+        return new ExactVisibleSelectContract(
+            optionValues.Select(Option).ToArray(),
+            selectedValue);
     }
 
     private static void AssertInventoryDialogParity(string rulesetId, string workflowId, DesktopDialogState dialog)

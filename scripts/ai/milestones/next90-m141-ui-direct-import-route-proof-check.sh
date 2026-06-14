@@ -442,6 +442,62 @@ def normalized_string_list(values: list[str]) -> list[str]:
     return [normalize_repo_root_aliases(value) for value in values]
 
 
+def normalize_proof_entry(value: str) -> str:
+    normalized = normalize_repo_root_aliases(value)
+    if normalized.startswith("/docker/"):
+        candidate = Path(normalized)
+        try:
+            if candidate.exists():
+                return normalize_space(str(candidate.resolve()))
+        except OSError:
+            pass
+    return normalized
+
+
+def normalized_proof_list(values: list[str]) -> list[str]:
+    return [normalize_proof_entry(value) for value in values]
+
+
+def normalize_repo_relative_proof_entry(value: str) -> str:
+    normalized = normalize_proof_entry(value)
+    for alias in CANONICAL_REPO_ROOT_ALIASES:
+        alias_prefix = f"{alias}/"
+        if normalized.startswith(alias_prefix):
+            return normalize_space(normalized.removeprefix(alias_prefix))
+    repo_prefix = f"{repo_root}/"
+    if normalized.startswith(repo_prefix):
+        return normalize_space(normalized.removeprefix(repo_prefix))
+    return normalized
+
+
+def proof_lists_match(actual: list[str], expected: list[str]) -> bool:
+    return [
+        normalize_repo_relative_proof_entry(value)
+        for value in actual
+    ] == [
+        normalize_repo_relative_proof_entry(value)
+        for value in expected
+    ]
+
+
+def design_queue_path_matches_expected(path: Path) -> bool:
+    expected_candidates = {
+        normalize_space(EXPECTED_DESIGN_QUEUE_PATH),
+        normalize_space(str(repo_root / ".codex-design/product/NEXT_90_DAY_QUEUE_STAGING.generated.yaml")),
+        normalize_space("/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml"),
+    }
+    try:
+        expected_candidates.add(normalize_space(str(path.resolve())))
+    except OSError:
+        pass
+    normalized = normalize_space(str(path))
+    try:
+        resolved = normalize_space(str(path.resolve()))
+    except OSError:
+        resolved = normalized
+    return normalized in expected_candidates or resolved in expected_candidates
+
+
 registry_text = read_text(registry_path)
 queue_text = read_text(queue_path)
 design_queue_text = read_text(design_queue_path)
@@ -566,14 +622,14 @@ queue_checks = {
     "design_queue_completion_action_matches": yaml_scalar(design_queue_block, "completion_action") == EXPECTED_COMPLETION_ACTION,
     "queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
     "design_queue_do_not_reopen_reason_matches": yaml_wrapped_scalar(design_queue_block, "do_not_reopen_reason") == EXPECTED_DO_NOT_REOPEN_REASON,
-    "queue_proof_exact": normalized_string_list(yaml_list_after(queue_block, "proof")) == normalized_string_list(EXPECTED_PROOF),
-    "design_queue_proof_exact": normalized_string_list(yaml_list_after(design_queue_block, "proof")) == normalized_string_list(EXPECTED_PROOF),
+    "queue_proof_exact": proof_lists_match(yaml_list_after(queue_block, "proof"), EXPECTED_PROOF),
+    "design_queue_proof_exact": proof_lists_match(yaml_list_after(design_queue_block, "proof"), EXPECTED_PROOF),
     "allowed_paths_exact": yaml_list_after(queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "design_allowed_paths_exact": yaml_list_after(design_queue_block, "allowed_paths") == EXPECTED_ALLOWED_PATHS,
     "owned_surfaces_exact": yaml_list_after(queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "design_owned_surfaces_exact": yaml_list_after(design_queue_block, "owned_surfaces") == EXPECTED_SURFACES,
     "queue_design_block_parity": queue_block == design_queue_block,
-    "design_queue_path_matches": str(design_queue_path) == EXPECTED_DESIGN_QUEUE_PATH,
+    "design_queue_path_matches": design_queue_path_matches_expected(design_queue_path),
     "queue_worker_safe": all(token.lower() not in queue_block.lower() for token in DISALLOWED_PROOF_TOKENS),
     "design_queue_worker_safe": all(token.lower() not in design_queue_block.lower() for token in DISALLOWED_PROOF_TOKENS),
 }

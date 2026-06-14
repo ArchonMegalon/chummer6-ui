@@ -25,8 +25,8 @@
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
-    "presentationTestCommand": "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
-    "targetedTestCommand": "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore"
+    "presentationTestCommand": "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
+    "targetedTestCommand": "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore"
   },
   "proofFiles": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",

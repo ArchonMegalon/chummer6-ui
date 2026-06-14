@@ -164,7 +164,7 @@
       },
       "scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh": {
         "NEXT90_M114_UI_RULE_STUDIO.generated.json": true,
-        "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore'": true
+        "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore'": true
       },
       "scripts/ai/milestones/b14-flagship-ui-release-gate.sh": {
         "\"18-import-dialog-light.png\"": true,
@@ -203,7 +203,7 @@
     ],
     "proofCommands": [
       "bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh",
-      "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore"
+      "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore"
     ],
     "supportingReceipts": {
       "parityAudit": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",

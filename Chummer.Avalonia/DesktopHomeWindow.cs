@@ -70,7 +70,7 @@ internal sealed class DesktopHomeWindow : Window
         MinWidth = 680;
         MinHeight = 480;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        Background = new SolidColorBrush(Color.Parse("#EEF2F7"));
+        Background = ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#EEF2F7");
 
         _flagshipEyebrowText = new TextBlock
         {
@@ -78,7 +78,7 @@ internal sealed class DesktopHomeWindow : Window
             IsVisible = false,
             FontSize = 11,
             FontWeight = FontWeight.Bold,
-            Foreground = new SolidColorBrush(Color.Parse("#4A607A")),
+            Foreground = ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4A607A"),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -88,7 +88,7 @@ internal sealed class DesktopHomeWindow : Window
             IsVisible = false,
             FontSize = 22,
             FontWeight = FontWeight.SemiBold,
-            Foreground = new SolidColorBrush(Color.Parse("#17324F")),
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#17324F"),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -98,7 +98,7 @@ internal sealed class DesktopHomeWindow : Window
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
             FontSize = 14,
-            Foreground = new SolidColorBrush(Color.Parse("#2A425C"))
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#2A425C")
         };
 
         _flagshipSpotlightText = new TextBlock
@@ -106,7 +106,7 @@ internal sealed class DesktopHomeWindow : Window
             Text = BuildFlagshipSpotlight(),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#405870"))
+            Foreground = ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#405870")
         };
 
         _flagshipFactsText = new TextBlock
@@ -114,7 +114,7 @@ internal sealed class DesktopHomeWindow : Window
             Text = BuildFlagshipFacts(),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#4B6278"))
+            Foreground = ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4B6278")
         };
 
         _flagshipHeroBorder = CreateFlagshipHero();
@@ -1217,8 +1217,8 @@ internal sealed class DesktopHomeWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#FFFFFF")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE7"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(8),
@@ -1525,7 +1525,7 @@ internal sealed class DesktopHomeWindow : Window
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
-                    Foreground = new SolidColorBrush(Color.Parse("#17324F")),
+                    Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#17324F"),
                     TextWrapping = TextWrapping.Wrap
                 },
                 body
@@ -1539,8 +1539,8 @@ internal sealed class DesktopHomeWindow : Window
 
         return new Border
         {
-            Background = new SolidColorBrush(Color.Parse("#F8FAFD")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F8FAFD"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE7"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(8),
@@ -1593,9 +1593,15 @@ internal sealed class DesktopHomeWindow : Window
             MinHeight = 30,
             Padding = new Thickness(12, 6),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Background = new SolidColorBrush(Color.Parse(isPrimary ? "#163A59" : "#FFFFFF")),
-            Foreground = new SolidColorBrush(Color.Parse(isPrimary ? "#F8FBFF" : "#17324F")),
-            BorderBrush = new SolidColorBrush(Color.Parse(isPrimary ? "#7FB3DA" : "#B8C7D9")),
+            Background = isPrimary
+                ? ResolveThemeBrush("ChummerShellAccentButtonBrush", "#163A59")
+                : ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            Foreground = isPrimary
+                ? ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#F8FBFF")
+                : ResolveThemeBrush("ChummerShellForegroundBrush", "#17324F"),
+            BorderBrush = isPrimary
+                ? ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#7FB3DA")
+                : ResolveThemeBrush("ChummerShellBorderBrush", "#B8C7D9"),
             BorderThickness = new Thickness(1)
         };
         if (isPrimary)
@@ -1633,33 +1639,58 @@ internal sealed class DesktopHomeWindow : Window
     private IBrush BuildFlagshipHeroBackground()
         => ResolveFlagshipRulesetId() switch
         {
-            RulesetDefaults.Sr4 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
-            RulesetDefaults.Sr5 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
-            RulesetDefaults.Sr6 => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7"),
-            _ => CreateGradientBrush("#F8FAFD", "#F3F6FA", "#EDF2F7")
+            RulesetDefaults.Sr4 => CreateGradientBrush("ChummerShellSurfaceAltBrush", "ChummerShellSurfaceBrush", "ChummerShellChromeSubtleBrush", "#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            RulesetDefaults.Sr5 => CreateGradientBrush("ChummerShellSurfaceAltBrush", "ChummerShellSurfaceBrush", "ChummerShellChromeSubtleBrush", "#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            RulesetDefaults.Sr6 => CreateGradientBrush("ChummerShellSurfaceAltBrush", "ChummerShellSurfaceBrush", "ChummerShellChromeSubtleBrush", "#F8FAFD", "#F3F6FA", "#EDF2F7"),
+            _ => CreateGradientBrush("ChummerShellSurfaceAltBrush", "ChummerShellSurfaceBrush", "ChummerShellChromeSubtleBrush", "#F8FAFD", "#F3F6FA", "#EDF2F7")
         };
 
     private IBrush BuildFlagshipHeroBorderBrush()
-        => new SolidColorBrush(ResolveFlagshipRulesetId() switch
+        => ResolveFlagshipRulesetId() switch
         {
-            RulesetDefaults.Sr4 => Color.Parse("#E6B86A"),
-            RulesetDefaults.Sr5 => Color.Parse("#8FD0F8"),
-            RulesetDefaults.Sr6 => Color.Parse("#7DDDB3"),
-            _ => Color.Parse("#C9D7E8")
-        });
+            RulesetDefaults.Sr4 => ResolveThemeBrush("ChummerShellWarningBrush", "#E6B86A"),
+            RulesetDefaults.Sr5 => ResolveThemeBrush("ChummerShellInfoBrush", "#8FD0F8"),
+            RulesetDefaults.Sr6 => ResolveThemeBrush("ChummerShellSuccessBrush", "#7DDDB3"),
+            _ => ResolveThemeBrush("ChummerShellBorderBrush", "#C9D7E8")
+        };
 
-    private static LinearGradientBrush CreateGradientBrush(string start, string middle, string end)
+    private static LinearGradientBrush CreateGradientBrush(
+        string startResourceKey,
+        string middleResourceKey,
+        string endResourceKey,
+        string startFallbackHex,
+        string middleFallbackHex,
+        string endFallbackHex)
         => new()
         {
             StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
             EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
             GradientStops = new GradientStops
             {
-                new GradientStop(Color.Parse(start), 0),
-                new GradientStop(Color.Parse(middle), 0.55),
-                new GradientStop(Color.Parse(end), 1)
+                new GradientStop(ResolveThemeColor(startResourceKey, startFallbackHex), 0),
+                new GradientStop(ResolveThemeColor(middleResourceKey, middleFallbackHex), 0.55),
+                new GradientStop(ResolveThemeColor(endResourceKey, endFallbackHex), 1)
             }
         };
+
+    private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
+    {
+        if (App.Current?.TryFindResource(resourceKey, out object? resource) == true
+            && resource is IBrush brush)
+        {
+            return brush;
+        }
+
+        return new SolidColorBrush(Color.Parse(fallbackHex));
+    }
+
+    private static Color ResolveThemeColor(string resourceKey, string fallbackHex)
+    {
+        IBrush brush = ResolveThemeBrush(resourceKey, fallbackHex);
+        return brush is ISolidColorBrush solidColorBrush
+            ? solidColorBrush.Color
+            : Color.Parse(fallbackHex);
+    }
 
     private static string FormatFlagshipWorkspace(WorkspaceListItem workspace)
     {
