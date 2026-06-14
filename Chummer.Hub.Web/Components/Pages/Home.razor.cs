@@ -6,37 +6,37 @@ using Microsoft.AspNetCore.Components;
 
 namespace Chummer.Hub.Web.Components.Pages;
 
-public partial class Home : ComponentBase
+public class HomeBase : ComponentBase
 {
-    [Inject] private BrowserHubApiClient HubClient { get; set; } = null!;
-    [Inject] private BrowserHubCoachApiClient CoachClient { get; set; } = null!;
+    [Inject] protected BrowserHubApiClient HubClient { get; set; } = null!;
+    [Inject] protected BrowserHubCoachApiClient CoachClient { get; set; } = null!;
 
-    private HubCatalogResultPage _catalog = new(new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title), [], [], [], 0);
-    private HubProjectDetailProjection? _selectedDetail;
-    private HubProjectCompatibilityMatrix? _compatibility;
-    private HubProjectInstallPreviewReceipt? _installPreview;
-    private HubPublishDraftList _drafts = new([]);
-    private HubDraftDetailProjection? _selectedDraftDetail;
-    private HubModerationQueue _moderationQueue = new([]);
-    private AiGatewayStatusProjection? _coachStatus;
-    private AiProviderHealthProjection? _coachProvider;
-    private AiConversationAuditSummary? _coachAudit;
-    private string? _statusMessage;
-    private string? _errorMessage;
-    private string _draftProjectId = string.Empty;
-    private string _draftTitle = string.Empty;
-    private string _draftSummary = string.Empty;
-    private string _draftDescription = string.Empty;
-    private string _submissionNotes = string.Empty;
-    private string _moderationState = string.Empty;
-    private string _moderationNotes = string.Empty;
+    protected HubCatalogResultPage _catalog = new(new BrowseQuery(string.Empty, new Dictionary<string, IReadOnlyList<string>>(), HubCatalogSortIds.Title), [], [], [], 0);
+    protected HubProjectDetailProjection? _selectedDetail;
+    protected HubProjectCompatibilityMatrix? _compatibility;
+    protected HubProjectInstallPreviewReceipt? _installPreview;
+    protected HubPublishDraftList _drafts = new([]);
+    protected HubDraftDetailProjection? _selectedDraftDetail;
+    protected HubModerationQueue _moderationQueue = new([]);
+    protected AiGatewayStatusProjection? _coachStatus;
+    protected AiProviderHealthProjection? _coachProvider;
+    protected AiConversationAuditSummary? _coachAudit;
+    protected string? _statusMessage;
+    protected string? _errorMessage;
+    protected string _draftProjectId = string.Empty;
+    protected string _draftTitle = string.Empty;
+    protected string _draftSummary = string.Empty;
+    protected string _draftDescription = string.Empty;
+    protected string _submissionNotes = string.Empty;
+    protected string _moderationState = string.Empty;
+    protected string _moderationNotes = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         await Task.WhenAll(LoadCatalogAsync(), LoadCoachAsync());
     }
 
-    private async Task LoadCatalogAsync()
+    protected async Task LoadCatalogAsync()
     {
         try
         {
@@ -50,21 +50,21 @@ public partial class Home : ComponentBase
         }
     }
 
-    private async Task LoadCoachAsync()
+    protected async Task LoadCoachAsync()
     {
         _coachStatus = await CoachClient.GetStatusAsync();
         _coachProvider = (await CoachClient.GetProviderHealthAsync(AiRouteTypes.Coach)).FirstOrDefault();
         _coachAudit = (await CoachClient.GetConversationAuditsAsync(AiRouteTypes.Coach, 3)).FirstOrDefault();
     }
 
-    private async Task SelectItemAsync(HubCatalogItem item)
+    protected async Task SelectItemAsync(HubCatalogItem item)
     {
         _selectedDetail = await HubClient.GetProjectDetailAsync(item.Kind, item.ItemId);
         _compatibility = await HubClient.GetCompatibilityAsync(item.Kind, item.ItemId);
         _installPreview = null;
     }
 
-    private async Task PreviewInstallAsync()
+    protected async Task PreviewInstallAsync()
     {
         if (_selectedDetail is null)
         {
@@ -74,18 +74,18 @@ public partial class Home : ComponentBase
         _installPreview = await HubClient.PreviewInstallAsync(_selectedDetail.Summary.Kind, _selectedDetail.Summary.ItemId);
     }
 
-    private async Task LoadDraftsAsync()
+    protected async Task LoadDraftsAsync()
     {
         _drafts = await HubClient.ListDraftsAsync();
     }
 
-    private async Task SelectDraftAsync(string draftId)
+    protected async Task SelectDraftAsync(string draftId)
     {
         _selectedDraftDetail = await HubClient.GetDraftDetailAsync(draftId);
         HydrateDraftEditor(_selectedDraftDetail.Draft, _selectedDraftDetail.Description);
     }
 
-    private async Task CreateDraftAsync()
+    protected async Task CreateDraftAsync()
     {
         HubPublishDraftReceipt created = await HubClient.CreateDraftAsync(new HubPublishDraftRequest(
             ProjectKind: HubCatalogItemKinds.RuleProfile,
@@ -99,7 +99,7 @@ public partial class Home : ComponentBase
         _drafts = new HubPublishDraftList([created]);
     }
 
-    private async Task SaveDraftAsync()
+    protected async Task SaveDraftAsync()
     {
         if (_selectedDraftDetail is null)
         {
@@ -120,7 +120,7 @@ public partial class Home : ComponentBase
         };
     }
 
-    private async Task SubmitDraftAsync()
+    protected async Task SubmitDraftAsync()
     {
         if (_selectedDraftDetail is null)
         {
@@ -133,7 +133,7 @@ public partial class Home : ComponentBase
         _statusMessage = $"Submitted draft '{draft.ProjectId}' for review.";
     }
 
-    private async Task ArchiveDraftAsync()
+    protected async Task ArchiveDraftAsync()
     {
         if (_selectedDraftDetail is null)
         {
@@ -145,7 +145,7 @@ public partial class Home : ComponentBase
         _selectedDraftDetail = _selectedDraftDetail with { Draft = archived };
     }
 
-    private async Task DeleteDraftAsync()
+    protected async Task DeleteDraftAsync()
     {
         if (_selectedDraftDetail is null)
         {
@@ -159,26 +159,26 @@ public partial class Home : ComponentBase
         _drafts = new HubPublishDraftList([]);
     }
 
-    private async Task LoadModerationQueueAsync()
+    protected async Task LoadModerationQueueAsync()
     {
         _moderationQueue = await HubClient.ListModerationQueueAsync(_moderationState);
     }
 
-    private async Task ApproveModerationAsync(string caseId)
+    protected async Task ApproveModerationAsync(string caseId)
     {
         HubModerationDecisionReceipt receipt = await HubClient.ApproveModerationAsync(caseId, new HubModerationDecisionRequest(_moderationNotes));
         _statusMessage = $"Approved moderation case '{caseId}'.";
         ReplaceModerationItem(receipt);
     }
 
-    private async Task RejectModerationAsync(string caseId)
+    protected async Task RejectModerationAsync(string caseId)
     {
         HubModerationDecisionReceipt receipt = await HubClient.RejectModerationAsync(caseId, new HubModerationDecisionRequest(_moderationNotes));
         _statusMessage = $"Rejected moderation case '{caseId}'.";
         ReplaceModerationItem(receipt);
     }
 
-    private void ReplaceModerationItem(HubModerationDecisionReceipt receipt)
+    protected void ReplaceModerationItem(HubModerationDecisionReceipt receipt)
     {
         _moderationQueue = new HubModerationQueue(_moderationQueue.Items
             .Select(item => string.Equals(item.CaseId, receipt.CaseId, StringComparison.Ordinal)
@@ -187,7 +187,7 @@ public partial class Home : ComponentBase
             .ToArray());
     }
 
-    private void HydrateDraftEditor(HubPublishDraftReceipt draft, string? description)
+    protected void HydrateDraftEditor(HubPublishDraftReceipt draft, string? description)
     {
         _draftProjectId = draft.ProjectId;
         _draftTitle = draft.Title;
@@ -195,7 +195,7 @@ public partial class Home : ComponentBase
         _draftDescription = description ?? string.Empty;
     }
 
-    private string BuildCoachLaunchUri(string? conversationId, string? runtimeFingerprint, string? rulesetId)
+    protected string BuildCoachLaunchUri(string? conversationId, string? runtimeFingerprint, string? rulesetId)
         => AiCoachLaunchQuery.BuildRelativeUri(
             "/coach/",
             new AiCoachLaunchContext(
@@ -204,35 +204,35 @@ public partial class Home : ComponentBase
                 RuntimeFingerprint: runtimeFingerprint,
                 RulesetId: rulesetId));
 
-    private string? ResolveRulesetId()
+    protected string? ResolveRulesetId()
         => _selectedDetail?.Summary.RulesetId
             ?? _catalog.Items.FirstOrDefault()?.RulesetId
             ?? RulesetDefaults.Sr5;
 
-    private static string FormatTransport(AiProviderHealthProjection provider)
+    protected static string FormatTransport(AiProviderHealthProjection provider)
         => $"ready · base {(provider.TransportBaseUrlConfigured ? "yes" : "no")} · model {(provider.TransportModelConfigured ? "yes" : "no")} · keys primary {provider.PrimaryCredentialCount} / fallback {provider.FallbackCredentialCount} · route {provider.LastRouteType} · binding {provider.LastCredentialTier} / slot {provider.LastCredentialSlotIndex}";
 
-    private static string FormatBudget(AiBudgetSnapshot? budget)
+    protected static string FormatBudget(AiBudgetSnapshot? budget)
         => budget is null
             ? "n/a"
             : $"{budget.MonthlyConsumed} / {budget.MonthlyAllowance} {budget.BudgetUnit}";
 
-    private static string FormatRecommendations(AiStructuredAnswer? answer)
+    protected static string FormatRecommendations(AiStructuredAnswer? answer)
         => answer is null || answer.Recommendations.Count == 0
             ? "0"
             : $"{answer.Recommendations.Count} · {answer.Recommendations[0].Title}";
 
-    private static string FormatEvidence(AiStructuredAnswer? answer)
+    protected static string FormatEvidence(AiStructuredAnswer? answer)
         => answer is null || answer.Evidence.Count == 0
             ? "0"
             : $"{answer.Evidence.Count} · {answer.Evidence[0].Title}";
 
-    private static string FormatRisks(AiStructuredAnswer? answer)
+    protected static string FormatRisks(AiStructuredAnswer? answer)
         => answer is null || answer.Risks.Count == 0
             ? "0"
             : $"{answer.Risks.Count} · {answer.Risks[0].Title}";
 
-    private static string FormatSources(AiStructuredAnswer? answer)
+    protected static string FormatSources(AiStructuredAnswer? answer)
         => answer is null
             ? "0 sources / 0 action drafts"
             : $"{answer.Sources.Count} sources / {answer.ActionDrafts.Count} action drafts";
