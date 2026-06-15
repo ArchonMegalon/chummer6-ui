@@ -5419,8 +5419,10 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static string ResolveTestFilesDirectory()
     {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string[] candidates =
         {
+            Path.Combine(repoRoot, "Chummer.Tests", "TestFiles"),
             Path.Combine(Directory.GetCurrentDirectory(), "Chummer.Tests", "TestFiles"),
             Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"),
             Path.Combine(AppContext.BaseDirectory, "TestFiles"),
@@ -5445,10 +5447,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             return Path.GetFullPath(configuredPath);
         }
 
-        string docsDirectory = Path.GetDirectoryName(ResolveSourceFile("docs", "PARITY_ORACLE.json"))
-            ?? throw new DirectoryNotFoundException("Could not resolve docs directory for fixture UI reconstruction receipts.");
-        string repoRoot = Directory.GetParent(docsDirectory)?.FullName
-            ?? throw new DirectoryNotFoundException("Could not resolve repo root for fixture UI reconstruction receipts.");
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         return Path.GetFullPath(
             Path.Combine(
                 repoRoot,
@@ -6063,6 +6062,7 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         string relativePath = Path.Combine(segments);
         string? match = ResolveExistingPath(
+            Path.Combine(TestContextLocator.ResolveChummerPresentationRepoRoot(), relativePath),
             relativePath,
             Path.Combine("/docker/chummercomplete/chummer6-ui-finish", relativePath),
             Path.Combine("/docker/chummercomplete/chummer-presentation", relativePath),
@@ -6113,6 +6113,8 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static IEnumerable<string> EnumerateSearchRoots()
     {
+        yield return TestContextLocator.ResolveChummerPresentationRepoRoot();
+
         foreach (string root in EnumerateAncestorDirectories(Directory.GetCurrentDirectory()))
         {
             yield return root;
@@ -6214,9 +6216,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             return Path.GetFullPath(configuredPath);
         }
 
-        string testSourceFile = ResolveSourceFile("Chummer.Tests", "Presentation", "AvaloniaFlagshipUiGateTests.cs");
-        string repoRoot = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(testSourceFile))!)
-            ?? throw new DirectoryNotFoundException("Could not locate the chummer6-ui repo root for screenshot publication.");
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
 
         return Path.GetFullPath(
             Path.Combine(

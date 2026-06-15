@@ -62,7 +62,10 @@ internal static class Program
 
         PhotinoBlazorAppBuilder builder = PhotinoBlazorAppBuilder.CreateDefault(args);
         builder.Services.AddSingleton(installLinking);
-        builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory(), "blazor-desktop");
+        string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory());
+        builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "blazor-desktop");
         builder.Services.AddSingleton<IShellBootstrapDataProvider, ShellBootstrapDataProvider>();
         builder.Services.AddSingleton<ICharacterOverviewPresenter, CharacterOverviewPresenter>();
         builder.Services.AddSingleton<IShellPresenter, ShellPresenter>();

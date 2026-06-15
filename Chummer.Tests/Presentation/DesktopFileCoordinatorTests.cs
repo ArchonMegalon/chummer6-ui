@@ -53,7 +53,7 @@ public sealed class DesktopFileCoordinatorTests
             sourceText.Contains("/docker/chummercomplete/chummer-presentation/Chummer.Avalonia", StringComparison.Ordinal),
             "Bundled demo-runner resolution should not depend on a single repo checkout path.");
         StringAssert.Contains(sourceText, "CHUMMER_BUNDLED_DEMO_RUNNER_PATH", StringComparison.Ordinal);
-        StringAssert.Contains(sourceText, "Chummer.sln", StringComparison.Ordinal);
+        StringAssert.Contains(sourceText, "DesktopRepoRootLocator", StringComparison.Ordinal);
     }
 
     private static string FindRepoRoot()

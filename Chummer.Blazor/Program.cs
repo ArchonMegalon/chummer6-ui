@@ -12,7 +12,10 @@ StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configurat
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
+    AppContext.BaseDirectory,
+    Directory.GetCurrentDirectory());
+builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot);
 builder.Services.AddScoped<EngineClient>(_ =>
 {
     HttpClient client = new()

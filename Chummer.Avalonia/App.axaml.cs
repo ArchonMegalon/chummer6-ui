@@ -81,7 +81,10 @@ public partial class App : global::Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory(), "avalonia");
+        string contentRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory());
+        services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot, "avalonia");
         services.AddSingleton(CreateApiHttpClient());
         if (UseHttpCoachSidecar())
         {

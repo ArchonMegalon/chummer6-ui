@@ -61,6 +61,7 @@
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopMouseFirstJourneyRuntimeTests.cs" />
     <Compile Include="DesktopPreferenceRuntimeTests.cs" />
+    <Compile Include="DesktopRepoRootLocatorTests.cs" />
     <Compile Include="DesktopStartupSmokeRuntimeTests.cs" />
     <Compile Include="DesktopUpdateManifestParserTests.cs" />
     <Compile Include="DesktopUpdateRuntimeTests.cs" />
@@ -160,6 +161,7 @@
     <Compile Include="DesktopInstallLinkingRuntimeTests.cs" />
     <Compile Include="DesktopCrashRuntimeTests.cs" />
     <Compile Include="DesktopMouseFirstJourneyRuntimeTests.cs" />
+    <Compile Include="DesktopRepoRootLocatorTests.cs" />
     <Compile Include="DesktopUpdateRuntimeTests.cs" />
     <Compile Include="ToolCatalogServiceTests.cs" />
     <Compile Include="XmlNodeExtensionsTests.cs" />

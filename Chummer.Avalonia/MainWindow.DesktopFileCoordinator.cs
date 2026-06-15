@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using Avalonia.Platform.Storage;
+using Chummer.Desktop.Runtime;
 using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Avalonia;
@@ -8,7 +9,6 @@ namespace Chummer.Avalonia;
 internal static class MainWindowDesktopFileCoordinator
 {
     private const string BundledDemoRelativePath = "Samples/Legacy/Soma-Career.chum5";
-    private const string RepoRootMarkerFileName = "Chummer.sln";
     private const string BundledDemoOverrideEnvironmentVariable = "CHUMMER_BUNDLED_DEMO_RUNNER_PATH";
     internal static Func<IStorageProvider, string, CancellationToken, Task<DesktopImportFileResult>>? OpenImportFileOverride { get; set; }
     internal static Func<IStorageProvider, string, CancellationToken, Task<string?>>? OpenFolderPickerOverride { get; set; }
@@ -84,9 +84,12 @@ internal static class MainWindowDesktopFileCoordinator
         }
 
         IEnumerable<string> workingDirectories = EnumerateWorkingDirectories();
-        IEnumerable<string> repoRootCandidates = workingDirectories
-            .Select(TryFindRepoRoot)
-            .Where(static path => !string.IsNullOrWhiteSpace(path))!;
+        string? repoRoot = DesktopRepoRootLocator.TryResolveChummerPresentationRepoRoot(
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory());
+        IEnumerable<string> repoRootCandidates = string.IsNullOrWhiteSpace(repoRoot)
+            ? Array.Empty<string>()
+            : [repoRoot];
         IEnumerable<string> candidates =
         [
             .. workingDirectories.Select(path => Path.Combine(path, BundledDemoRelativePath)),
@@ -107,27 +110,6 @@ internal static class MainWindowDesktopFileCoordinator
         yield return Path.Combine(AppContext.BaseDirectory, "..");
         yield return Path.Combine(AppContext.BaseDirectory, "..", "..");
         yield return Directory.GetCurrentDirectory();
-    }
-
-    private static string? TryFindRepoRoot(string startPath)
-    {
-        if (string.IsNullOrWhiteSpace(startPath))
-        {
-            return null;
-        }
-
-        DirectoryInfo? directory = new(Path.GetFullPath(startPath));
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, RepoRootMarkerFileName)))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        return null;
     }
 
     public static async Task<string?> OpenFolderAsync(
