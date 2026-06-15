@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Chummer.Avalonia;
 using Chummer.Presentation.Overview;
@@ -16,5 +18,23 @@ public sealed class DesktopHorizonWorkbenchLauncherTests
                 DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id),
                 $"Expected native workbench coverage for horizon '{entry.Id}'.");
         }
+    }
+
+    [TestMethod]
+    public void Horizon_catalog_keeps_native_adjunct_actions_for_deeper_native_horizon_lanes()
+    {
+        DesktopHorizonWorkbenchEntry nexusPan = DesktopHorizonWorkbenchCatalog.ListEntries().Single(static entry => entry.Id == "nexus_pan");
+        DesktopHorizonWorkbenchEntry runbookPress = DesktopHorizonWorkbenchCatalog.ListEntries().Single(static entry => entry.Id == "runbook_press");
+        DesktopHorizonWorkbenchEntry creatorOs = DesktopHorizonWorkbenchCatalog.ListEntries().Single(static entry => entry.Id == "creator_os");
+
+        CollectionAssert.AreEquivalent(
+            new[] { "workspace", "devices_access" },
+            nexusPan.NativeActions?.Select(static action => action.Id).ToArray() ?? Array.Empty<string>());
+        CollectionAssert.AreEquivalent(
+            new[] { "publication", "workspace" },
+            runbookPress.NativeActions?.Select(static action => action.Id).ToArray() ?? Array.Empty<string>());
+        CollectionAssert.AreEquivalent(
+            new[] { "publication", "workspace" },
+            creatorOs.NativeActions?.Select(static action => action.Id).ToArray() ?? Array.Empty<string>());
     }
 }

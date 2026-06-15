@@ -6,13 +6,18 @@ public sealed record DesktopHorizonRouteOption(
     string RelativeHref,
     string Summary);
 
+public sealed record DesktopHorizonNativeAction(
+    string Id,
+    string Label);
+
 public sealed record DesktopHorizonWorkbenchEntry(
     string Id,
     string Title,
     string Summary,
     DesktopHorizonRouteOption PrimaryAction,
     DesktopHorizonRouteOption? SecondaryAction = null,
-    DesktopHorizonRouteOption? TertiaryAction = null);
+    DesktopHorizonRouteOption? TertiaryAction = null,
+    IReadOnlyList<DesktopHorizonNativeAction>? NativeActions = null);
 
 public static class DesktopHorizonWorkbenchCatalog
 {
@@ -31,12 +36,17 @@ public static class DesktopHorizonWorkbenchCatalog
             "Open the build mentor lane and the signed-in handoff bench directly from desktop settings.",
             new DesktopHorizonRouteOption("alice_public", "Open ALICE", "/alice", "Open the public ALICE route."),
             new DesktopHorizonRouteOption("alice_account", "Open workbench", "/account/alice", "Open the signed-in ALICE bench.")),
-        new(
+        new DesktopHorizonWorkbenchEntry(
             "nexus_pan",
             "NEXUS-PAN",
             "Keep continuity, workspace recovery, and devices/access on adjacent native rails before widening into public continuity routes.",
             new DesktopHorizonRouteOption("nexus_pan_public", "Open public continuity", "/play/continuity", "Open the public continuity lane."),
-            new DesktopHorizonRouteOption("nexus_pan_account", "Open support rail", "/account/support", "Open the signed-in support rail when continuity recovery needs operator follow-through.")),
+            SecondaryAction: new DesktopHorizonRouteOption("nexus_pan_account", "Open support rail", "/account/support", "Open the signed-in support rail when continuity recovery needs operator follow-through."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("workspace", "Open workspace desk"),
+                new("devices_access", "Open devices & access")
+            }),
         new(
             "ready_for_tonight",
             "Ready for Tonight",
@@ -76,12 +86,17 @@ public static class DesktopHorizonWorkbenchCatalog
             "Open the session board and the signed-in run-control desk.",
             new DesktopHorizonRouteOption("run_control_public", "Open Run Control", "/run-control", "Open the public Run Control route."),
             new DesktopHorizonRouteOption("run_control_account", "Open desk", "/account/run-control", "Open the signed-in run-control desk.")),
-        new(
+        new DesktopHorizonWorkbenchEntry(
             "runbook_press",
             "Runbook Press",
             "Keep publication, workspace, and campaign-book follow-through on native desks before widening into the public publishing frontdoor.",
             new DesktopHorizonRouteOption("runbook_press_public", "Open public Runbook", "/runbook", "Open the public Runbook Press route."),
-            new DesktopHorizonRouteOption("runbook_press_creator", "Open public creator rail", "/creator", "Open the public creator rail when you need browser-side publishing follow-through.")),
+            SecondaryAction: new DesktopHorizonRouteOption("runbook_press_creator", "Open public creator rail", "/creator", "Open the public creator rail when you need browser-side publishing follow-through."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("publication", "Open publication desk"),
+                new("workspace", "Open workspace desk")
+            }),
         new(
             "table_pulse",
             "Table Pulse",
@@ -103,12 +118,17 @@ public static class DesktopHorizonWorkbenchCatalog
             new DesktopHorizonRouteOption("community_public", "Open Community", "/community", "Open the public Community Hub route."),
             new DesktopHorizonRouteOption("community_account", "Open board", "/account/community", "Open the signed-in community board."),
             new DesktopHorizonRouteOption("community_open_runs", "Open run venue", "/community/runs/open-run/venue", "Open a public-safe open-run venue posture.")),
-        new(
+        new DesktopHorizonWorkbenchEntry(
             "creator_os",
             "Creator OS",
             "Keep creator publication, workspace, and publishing-stack follow-through native before widening into the browser creator rail.",
             new DesktopHorizonRouteOption("creator_public", "Open public Creator OS", "/creator", "Open the public Creator OS route."),
-            new DesktopHorizonRouteOption("creator_account", "Open creator account rail", "/account/creator", "Open the signed-in creator browser rail when native follow-through is not enough.")),
+            SecondaryAction: new DesktopHorizonRouteOption("creator_account", "Open creator account rail", "/account/creator", "Open the signed-in creator browser rail when native follow-through is not enough."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("publication", "Open publication desk"),
+                new("workspace", "Open workspace desk")
+            }),
         new(
             "anarchy",
             "Anarchy",

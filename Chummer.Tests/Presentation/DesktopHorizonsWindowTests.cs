@@ -20,10 +20,8 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "CreateAliceCard(");
         StringAssert.Contains(source, "CreateRunControlCard(");
         StringAssert.Contains(source, "CreateBlackLedgerCard(");
-        StringAssert.Contains(source, "CreateNexusPanCard(");
-        StringAssert.Contains(source, "CreateRunbookPressCard(");
-        StringAssert.Contains(source, "CreateCreatorOsCard(");
         StringAssert.Contains(source, "CreateNativeLaunchCard(");
+        StringAssert.Contains(source, "CreateNativeAdjunctActionButton(");
         StringAssert.Contains(source, "DesktopKarmaForgeWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id)");
