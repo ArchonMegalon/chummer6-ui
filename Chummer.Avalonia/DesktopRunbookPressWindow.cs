@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
@@ -9,6 +10,8 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopRunbookPressWindow : Window
 {
+    private sealed record RunbookDeskEntry(string Title, string Kind, string Summary, string FollowUp);
+
     internal static DesktopRunbookPressWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
@@ -127,6 +130,7 @@ internal sealed class DesktopRunbookPressWindow : Window
 
     private Control CreateDetailCard()
     {
+        IReadOnlyList<RunbookDeskEntry> entries = BuildDetailEntries();
         IReadOnlyList<string> detailModes = ["Publication", "Campaign", "Distribution"];
 
         ComboBox detailModeCombo = new()
@@ -143,26 +147,73 @@ internal sealed class DesktopRunbookPressWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        TextBlock selectedEntryTitleText = new()
+        {
+            Name = "RunbookPressSelectedEntryTitleText",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock selectedEntryFollowUpText = new()
+        {
+            Name = "RunbookPressSelectedEntryFollowUpText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        ListBox entryList = new()
+        {
+            Name = "RunbookPressDetailList",
+            MinHeight = 160,
+            ItemsSource = entries,
+            SelectedIndex = entries.Count > 0 ? 0 : -1,
+            ItemTemplate = new FuncDataTemplate<RunbookDeskEntry>((entry, _) =>
+                new TextBlock
+                {
+                    Text = entry is null ? string.Empty : $"{entry.Title} [{entry.Kind}]",
+                    TextWrapping = TextWrapping.Wrap
+                })
+        };
+
         void RefreshDetail()
         {
-            CreatorPublicationProjection? leadPublication = _campaignSummary?.CreatorPublications
-                .OrderByDescending(static publication => publication.UpdatedAtUtc)
-                .FirstOrDefault();
-            CampaignProjection? leadCampaign = _campaignSummary?.Campaigns
-                .OrderByDescending(static campaign => campaign.UpdatedAtUtc)
-                .FirstOrDefault();
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Publication";
-            detailText.Text = mode switch
+            if (entryList.SelectedItem is not RunbookDeskEntry selectedEntry)
             {
-                "Campaign" => leadCampaign?.Summary
-                    ?? "Campaign module posture: no governed campaign is currently pinned for Runbook Press.",
-                "Distribution" => "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.",
-                _ => leadPublication?.Summary
-                    ?? "Publication posture: no creator publication is currently leading the runbook lane."
-            };
+                selectedEntryTitleText.Text = "No selected entry";
+                detailText.Text = mode switch
+                {
+                    "Campaign" => "Campaign module posture: no governed campaign is currently pinned for Runbook Press.",
+                    "Distribution" => "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.",
+                    _ => "Publication posture: no creator publication is currently leading the runbook lane."
+                };
+                selectedEntryFollowUpText.Text = "Reconnect a publication or campaign to populate the native runbook desk.";
+                return;
+            }
+
+            selectedEntryTitleText.Text = selectedEntry.Title;
+            switch (mode)
+            {
+                case "Campaign":
+                    detailText.Text = selectedEntry.Kind.Equals("campaign", StringComparison.OrdinalIgnoreCase)
+                        ? selectedEntry.Summary
+                        : "Campaign posture: pivot to the campaign lane before widening this publication into a module.";
+                    selectedEntryFollowUpText.Text = selectedEntry.Kind.Equals("campaign", StringComparison.OrdinalIgnoreCase)
+                        ? selectedEntry.FollowUp
+                        : "Open the creator desk or community hub to connect the current publication to a campaign lane.";
+                    break;
+                case "Distribution":
+                    detailText.Text = "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.";
+                    selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
+                    break;
+                default:
+                    detailText.Text = selectedEntry.Summary;
+                    selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
+                    break;
+            }
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        entryList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
         return DesktopHorizonWindowScaffold.CreateCard(
@@ -174,10 +225,52 @@ internal sealed class DesktopRunbookPressWindow : Window
                 Children =
                 {
                     detailModeCombo,
-                    detailText
+                    entryList,
+                    new Border
+                    {
+                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(4),
+                        Padding = new Thickness(10),
+                        Child = new StackPanel
+                        {
+                            Spacing = 4,
+                            Children =
+                            {
+                                selectedEntryTitleText,
+                                detailText,
+                                selectedEntryFollowUpText
+                            }
+                        }
+                    }
                 }
             },
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
+    }
+
+    private IReadOnlyList<RunbookDeskEntry> BuildDetailEntries()
+    {
+        List<RunbookDeskEntry> entries = new();
+        entries.AddRange((_campaignSummary?.CreatorPublications ?? Array.Empty<CreatorPublicationProjection>())
+            .OrderByDescending(static publication => publication.UpdatedAtUtc)
+            .Take(4)
+            .Select(static publication => new RunbookDeskEntry(
+                publication.Title,
+                publication.Kind,
+                publication.Summary,
+                publication.NextSafeAction
+                    ?? publication.CampaignReturnSummary
+                    ?? "No publication follow-through is currently pinned.")));
+        entries.AddRange((_campaignSummary?.Campaigns ?? Array.Empty<CampaignProjection>())
+            .OrderByDescending(static campaign => campaign.UpdatedAtUtc)
+            .Take(3)
+            .Select(static campaign => new RunbookDeskEntry(
+                campaign.Name,
+                "campaign",
+                campaign.Summary,
+                campaign.LatestContinuity?.Summary
+                    ?? "No campaign continuity packet is currently pinned.")));
+        return entries;
     }
 }

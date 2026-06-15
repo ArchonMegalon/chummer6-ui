@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
@@ -120,6 +121,10 @@ internal sealed class DesktopNexusPanWindow : Window
 
     private Control CreateDetailCard()
     {
+        IReadOnlyList<CampaignWorkspaceProjection> workspaces = _campaignSummary?.Workspaces
+            .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
+            .ToArray()
+            ?? Array.Empty<CampaignWorkspaceProjection>();
         IReadOnlyList<string> detailModes = ["Continuity", "Access", "Recovery"];
 
         ComboBox detailModeCombo = new()
@@ -136,24 +141,76 @@ internal sealed class DesktopNexusPanWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        TextBlock selectedWorkspaceTitleText = new()
+        {
+            Name = "NexusPanSelectedWorkspaceTitleText",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock selectedWorkspaceFollowUpText = new()
+        {
+            Name = "NexusPanSelectedWorkspaceFollowUpText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        ListBox workspaceList = new()
+        {
+            Name = "NexusPanWorkspaceList",
+            MinHeight = 160,
+            ItemsSource = workspaces,
+            SelectedIndex = workspaces.Count > 0 ? 0 : -1,
+            ItemTemplate = new FuncDataTemplate<CampaignWorkspaceProjection>((workspace, _) =>
+                new TextBlock
+                {
+                    Text = workspace is null ? string.Empty : $"{workspace.CampaignName} [{workspace.RuleEnvironment.CompatibilityFingerprint}]",
+                    TextWrapping = TextWrapping.Wrap
+                })
+        };
+
         void RefreshDetail()
         {
-            CampaignWorkspaceProjection? leadWorkspace = _campaignSummary?.Workspaces
-                .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
-                .FirstOrDefault();
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Continuity";
-            detailText.Text = mode switch
+            if (workspaceList.SelectedItem is not CampaignWorkspaceProjection selectedWorkspace)
             {
-                "Access" => "Access posture: keep device claims, grant follow-through, and desktop relinking visible before assuming the current continuity state is usable across heads.",
-                "Recovery" => leadWorkspace?.NextSafeAction
-                    ?? "Recovery posture: reopen devices and access first when the current desktop loses account or continuity context.",
-                _ => leadWorkspace?.ReturnSummary
-                    ?? leadWorkspace?.LatestContinuity?.Summary
-                    ?? "Continuity posture: no governed continuity capsule is currently pinned."
-            };
+                selectedWorkspaceTitleText.Text = "No selected workspace";
+                detailText.Text = mode switch
+                {
+                    "Access" => "Access posture: reconnect devices and grants before assuming the current continuity lane is usable across heads.",
+                    "Recovery" => "Recovery posture: reopen devices and access first when the current desktop loses account or continuity context.",
+                    _ => "Continuity posture: no governed continuity capsule is currently pinned."
+                };
+                selectedWorkspaceFollowUpText.Text = "Open or recover a workspace to populate the native continuity desk.";
+                return;
+            }
+
+            selectedWorkspaceTitleText.Text = selectedWorkspace.CampaignName;
+            switch (mode)
+            {
+                case "Access":
+                    detailText.Text = selectedWorkspace.NextSafeAction
+                        ?? "Access posture: keep device claims and relinking visible before assuming the current continuity lane is usable.";
+                    selectedWorkspaceFollowUpText.Text = selectedWorkspace.ReturnSummary;
+                    break;
+                case "Recovery":
+                    detailText.Text = selectedWorkspace.ReturnSummary;
+                    selectedWorkspaceFollowUpText.Text = selectedWorkspace.NextSessionCarryForward?.Summary
+                        ?? selectedWorkspace.CampaignMemory?.ReturnSummary
+                        ?? selectedWorkspace.NextSafeAction
+                        ?? "No recovery follow-through is currently pinned.";
+                    break;
+                default:
+                    detailText.Text = selectedWorkspace.LatestContinuity?.Summary
+                        ?? selectedWorkspace.ReturnSummary;
+                    selectedWorkspaceFollowUpText.Text = selectedWorkspace.ActiveSceneSummary
+                        ?? selectedWorkspace.NextSafeAction
+                        ?? "No live continuity follow-through is currently pinned.";
+                    break;
+            }
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        workspaceList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
         return DesktopHorizonWindowScaffold.CreateCard(
@@ -165,7 +222,24 @@ internal sealed class DesktopNexusPanWindow : Window
                 Children =
                 {
                     detailModeCombo,
-                    detailText
+                    workspaceList,
+                    new Border
+                    {
+                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(4),
+                        Padding = new Thickness(10),
+                        Child = new StackPanel
+                        {
+                            Spacing = 4,
+                            Children =
+                            {
+                                selectedWorkspaceTitleText,
+                                detailText,
+                                selectedWorkspaceFollowUpText
+                            }
+                        }
+                    }
                 }
             },
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: true),

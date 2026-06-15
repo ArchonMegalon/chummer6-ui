@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
@@ -9,6 +10,8 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopCreatorOsWindow : Window
 {
+    private sealed record CreatorDeskEntry(string Title, string Kind, string Summary, string FollowUp);
+
     internal static DesktopCreatorOsWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
@@ -128,6 +131,7 @@ internal sealed class DesktopCreatorOsWindow : Window
 
     private Control CreateDetailCard()
     {
+        IReadOnlyList<CreatorDeskEntry> entries = BuildDetailEntries();
         IReadOnlyList<string> detailModes = ["Desk", "Publishing", "Network"];
 
         ComboBox detailModeCombo = new()
@@ -144,27 +148,73 @@ internal sealed class DesktopCreatorOsWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        TextBlock selectedEntryTitleText = new()
+        {
+            Name = "CreatorOsSelectedEntryTitleText",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock selectedEntryFollowUpText = new()
+        {
+            Name = "CreatorOsSelectedEntryFollowUpText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        ListBox entryList = new()
+        {
+            Name = "CreatorOsDetailList",
+            MinHeight = 160,
+            ItemsSource = entries,
+            SelectedIndex = entries.Count > 0 ? 0 : -1,
+            ItemTemplate = new FuncDataTemplate<CreatorDeskEntry>((entry, _) =>
+                new TextBlock
+                {
+                    Text = entry is null ? string.Empty : $"{entry.Title} [{entry.Kind}]",
+                    TextWrapping = TextWrapping.Wrap
+                })
+        };
+
         void RefreshDetail()
         {
-            CreatorPublicationProjection? leadPublication = _campaignSummary?.CreatorPublications
-                .OrderByDescending(static publication => publication.UpdatedAtUtc)
-                .FirstOrDefault();
-            RunnerDossierProjection? leadDossier = _campaignSummary?.Dossiers
-                .OrderByDescending(static dossier => dossier.UpdatedAtUtc)
-                .FirstOrDefault();
             string mode = detailModeCombo.SelectedItem?.ToString() ?? "Desk";
-            detailText.Text = mode switch
+            if (entryList.SelectedItem is not CreatorDeskEntry selectedEntry)
             {
-                "Publishing" => leadPublication?.Summary
-                    ?? "Publishing posture: no creator publication is currently pinned for Creator OS.",
-                "Network" => leadDossier?.DisplayName is { Length: > 0 } displayName
-                    ? $"{displayName} is the current lead dossier across the creator-facing network rail."
-                    : "Network posture: no dossier is currently pinned across the creator-facing network rail.",
-                _ => "Desk posture: keep creator desk, Jackpoint, Runbook Press, and Community Hub adjacent instead of scattering creator follow-through across route-only shells."
-            };
+                selectedEntryTitleText.Text = "No selected entry";
+                detailText.Text = mode switch
+                {
+                    "Publishing" => "Publishing posture: no creator publication is currently pinned for Creator OS.",
+                    "Network" => "Network posture: no dossier is currently pinned across the creator-facing network rail.",
+                    _ => "Desk posture: keep creator desk, Jackpoint, Runbook Press, and Community Hub adjacent instead of scattering creator follow-through across route-only shells."
+                };
+                selectedEntryFollowUpText.Text = "Reconnect creator context to populate the native creator desk.";
+                return;
+            }
+
+            selectedEntryTitleText.Text = selectedEntry.Title;
+            switch (mode)
+            {
+                case "Publishing":
+                    detailText.Text = selectedEntry.Kind.Equals("publication", StringComparison.OrdinalIgnoreCase)
+                        ? selectedEntry.Summary
+                        : "Publishing posture: switch to a publication-led lane before widening creator output.";
+                    selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
+                    break;
+                case "Network":
+                    detailText.Text = selectedEntry.Kind.Equals("dossier", StringComparison.OrdinalIgnoreCase)
+                        ? selectedEntry.Summary
+                        : "Network posture: keep the current dossier and community-facing lane visible before widening creator output.";
+                    selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
+                    break;
+                default:
+                    detailText.Text = selectedEntry.Summary;
+                    selectedEntryFollowUpText.Text = selectedEntry.FollowUp;
+                    break;
+            }
         }
 
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        entryList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
         return DesktopHorizonWindowScaffold.CreateCard(
@@ -176,10 +226,61 @@ internal sealed class DesktopCreatorOsWindow : Window
                 Children =
                 {
                     detailModeCombo,
-                    detailText
+                    entryList,
+                    new Border
+                    {
+                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                        BorderThickness = new Thickness(1),
+                        CornerRadius = new CornerRadius(4),
+                        Padding = new Thickness(10),
+                        Child = new StackPanel
+                        {
+                            Spacing = 4,
+                            Children =
+                            {
+                                selectedEntryTitleText,
+                                detailText,
+                                selectedEntryFollowUpText
+                            }
+                        }
+                    }
                 }
             },
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
+    }
+
+    private IReadOnlyList<CreatorDeskEntry> BuildDetailEntries()
+    {
+        List<CreatorDeskEntry> entries = new();
+        entries.AddRange((_campaignSummary?.CreatorPublications ?? Array.Empty<CreatorPublicationProjection>())
+            .OrderByDescending(static publication => publication.UpdatedAtUtc)
+            .Take(4)
+            .Select(static publication => new CreatorDeskEntry(
+                publication.Title,
+                "publication",
+                publication.Summary,
+                publication.NextSafeAction
+                    ?? publication.CampaignReturnSummary
+                    ?? "No creator publication follow-through is currently pinned.")));
+        entries.AddRange((_campaignSummary?.Dossiers ?? Array.Empty<RunnerDossierProjection>())
+            .OrderByDescending(static dossier => dossier.UpdatedAtUtc)
+            .Take(3)
+            .Select(static dossier => new CreatorDeskEntry(
+                dossier.DisplayName,
+                "dossier",
+                $"{dossier.DisplayName} is the current dossier-facing creator identity on this desk.",
+                dossier.LatestContinuity?.Summary
+                    ?? "No dossier continuity packet is currently pinned.")));
+        entries.AddRange((_campaignSummary?.Campaigns ?? Array.Empty<CampaignProjection>())
+            .OrderByDescending(static campaign => campaign.UpdatedAtUtc)
+            .Take(2)
+            .Select(static campaign => new CreatorDeskEntry(
+                campaign.Name,
+                "campaign",
+                campaign.Summary,
+                campaign.LatestContinuity?.Summary
+                    ?? "No campaign continuity packet is currently pinned.")));
+        return entries;
     }
 }
