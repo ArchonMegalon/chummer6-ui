@@ -19,6 +19,8 @@ public sealed class DesktopCreatorOsWindowTests
         StringAssert.Contains(source, "CreatorOsDetailList");
         StringAssert.Contains(source, "CreatorOsDetailText");
         StringAssert.Contains(source, "CreatorOsSelectedEntryFollowUpText");
+        StringAssert.Contains(source, "DesktopCreatorPublicationWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopJackpointWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopRunbookPressWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopCommunityHubWindow.ShowAsync(this, _headId)");

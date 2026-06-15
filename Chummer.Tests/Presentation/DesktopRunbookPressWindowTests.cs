@@ -19,6 +19,8 @@ public sealed class DesktopRunbookPressWindowTests
         StringAssert.Contains(source, "RunbookPressDetailList");
         StringAssert.Contains(source, "RunbookPressDetailText");
         StringAssert.Contains(source, "RunbookPressSelectedEntryFollowUpText");
+        StringAssert.Contains(source, "DesktopCreatorPublicationWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopCreatorOsWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopJackpointWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopCommunityHubWindow.ShowAsync(this, _headId)");
