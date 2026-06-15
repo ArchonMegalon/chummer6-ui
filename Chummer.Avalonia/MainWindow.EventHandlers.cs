@@ -58,6 +58,7 @@ public partial class MainWindow
             {
                 await _shellPresenter.InitializeAsync(CancellationToken.None);
                 await _adapter.InitializeAsync(CancellationToken.None);
+                await TrackDesktopShellEventAsync("desktop_shell_opened", "main_window");
             },
             "initialize desktop shell");
     }
@@ -104,6 +105,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopHomeWindow.ShowAsync(this, "avalonia");
+                await TrackDesktopShellEventAsync("desktop_open_home", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
             },
             "open desktop home");
@@ -115,6 +117,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopHorizonsWindow.ShowAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_horizons", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowDesktopHomeReviewed(_controls.ToolStrip);
             },
             "open horizons");
@@ -133,6 +136,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_campaign_workspace", "gm_prep", new Dictionary<string, string?> { ["lane"] = "gm_prep" });
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open GM prep packets");
@@ -144,6 +148,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopCampaignWorkspaceWindow.ShowRosterMovementAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_campaign_workspace", "roster_movement", new Dictionary<string, string?> { ["lane"] = "roster_movement" });
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open roster movement");
@@ -171,6 +176,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopCampaignWorkspaceWindow.ShowAsync(this, "avalonia");
+                await TrackDesktopShellEventAsync("desktop_open_campaign_workspace", sender is Controls.SummaryHeaderControl ? "summary_header" : "toolstrip");
                 MainWindowFeedbackCoordinator.ShowCampaignWorkspaceReviewed(_controls.ToolStrip);
             },
             "open campaign workspace");
@@ -182,6 +188,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopUpdateWindow.ShowAsync(this, "avalonia");
+                await TrackDesktopShellEventAsync("desktop_open_update_status", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowUpdateReviewed(_controls.ToolStrip);
             },
             "open update status");
@@ -194,6 +201,7 @@ public partial class MainWindow
             {
                 await DesktopInstallLinkingWindow.ShowAsync(this, "avalonia");
                 ApplyInstallLinkingChrome(DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia"));
+                await TrackDesktopShellEventAsync("desktop_open_install_linking", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowInstallLinkingReviewed(_controls.ToolStrip);
             },
             "open install linking");
@@ -205,6 +213,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopSupportWindow.ShowAsync(this, "avalonia");
+                await TrackDesktopShellEventAsync("desktop_open_support", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
             },
             "open support");
@@ -216,6 +225,7 @@ public partial class MainWindow
             async () =>
             {
                 await DesktopReportIssueWindow.ShowAsync(this, "avalonia");
+                await TrackDesktopShellEventAsync("desktop_open_report_issue", "toolstrip");
                 MainWindowFeedbackCoordinator.ShowReportIssueReviewed(_controls.ToolStrip);
             },
             "open report issue");
@@ -224,6 +234,7 @@ public partial class MainWindow
     private async void ToolStrip_OnSettingsRequested(object? sender, EventArgs e)
     {
         await OpenDesktopCommandFromSurfaceAsync("global_settings", "open global settings");
+        await TrackDesktopShellEventAsync("desktop_open_settings", "toolstrip");
         MainWindowFeedbackCoordinator.ShowSettingsReviewed(_controls.ToolStrip);
     }
 
@@ -249,11 +260,13 @@ public partial class MainWindow
                 DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState(DesktopHeadId);
                 if (DesktopInstallLinkingRuntime.TryOpenSupportPortalForWorkspace(installState, ResolveActiveSupportWorkspace()))
                 {
+                    await TrackDesktopShellEventAsync("desktop_open_support", "summary_header", new Dictionary<string, string?> { ["lane"] = "workspace_support_portal" });
                     MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
                     return;
                 }
 
                 await DesktopSupportWindow.ShowAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_support", "summary_header", new Dictionary<string, string?> { ["lane"] = "workspace_support_dialog" });
                 MainWindowFeedbackCoordinator.ShowSupportReviewed(_controls.ToolStrip);
             },
             "open workspace support");

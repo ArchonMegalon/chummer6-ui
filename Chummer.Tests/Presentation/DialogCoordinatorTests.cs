@@ -36,7 +36,8 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalLanguage", "Language", "de-de", "en-us"),
                     new DesktopDialogField("globalSheetLanguage", "Sheet Language", "fr-fr", "en-us"),
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
-                    new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
+                    new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -60,6 +61,7 @@ public class DialogCoordinatorTests
         Assert.AreEqual("fr-fr", published.Preferences.SheetLanguage);
         Assert.IsTrue(published.Preferences.CompactMode);
         Assert.IsTrue(published.Preferences.HideMasterIndex);
+        Assert.IsTrue(published.Preferences.AnalyticsOptIn);
         StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
     }
 

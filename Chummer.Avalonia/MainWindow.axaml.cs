@@ -22,6 +22,7 @@ public partial class MainWindow : Window
     private readonly ICommandAvailabilityEvaluator _commandAvailabilityEvaluator;
     private readonly IShellSurfaceResolver _shellSurfaceResolver;
     private readonly IAvaloniaCoachSidecarClient _coachSidecarClient;
+    private readonly DesktopAnalyticsClient _desktopAnalyticsClient;
     private readonly CharacterOverviewViewModelAdapter _adapter;
     private readonly MainWindowActionExecutionCoordinator _actionExecutionCoordinator;
     private readonly MainWindowInteractionCoordinator _interactionCoordinator;
@@ -38,6 +39,7 @@ public partial class MainWindow : Window
             ResolveService<ICommandAvailabilityEvaluator>(),
             ResolveService<IShellSurfaceResolver>(),
             ResolveService<IAvaloniaCoachSidecarClient>(),
+            ResolveService<DesktopAnalyticsClient>(),
             ResolveService<CharacterOverviewViewModelAdapter>())
     {
     }
@@ -48,6 +50,25 @@ public partial class MainWindow : Window
         ICommandAvailabilityEvaluator commandAvailabilityEvaluator,
         IShellSurfaceResolver shellSurfaceResolver,
         IAvaloniaCoachSidecarClient coachSidecarClient,
+        CharacterOverviewViewModelAdapter adapter)
+        : this(
+            presenter,
+            shellPresenter,
+            commandAvailabilityEvaluator,
+            shellSurfaceResolver,
+            coachSidecarClient,
+            new DesktopAnalyticsClient(App.Services?.GetService<HttpClient>() ?? new HttpClient { BaseAddress = new Uri("https://chummer.run/") }),
+            adapter)
+    {
+    }
+
+    public MainWindow(
+        ICharacterOverviewPresenter presenter,
+        IShellPresenter shellPresenter,
+        ICommandAvailabilityEvaluator commandAvailabilityEvaluator,
+        IShellSurfaceResolver shellSurfaceResolver,
+        IAvaloniaCoachSidecarClient coachSidecarClient,
+        DesktopAnalyticsClient desktopAnalyticsClient,
         CharacterOverviewViewModelAdapter adapter)
     {
         _persistedPreferences = DesktopPreferenceRuntime.LoadOrCreateState(DesktopHeadId);
@@ -62,6 +83,7 @@ public partial class MainWindow : Window
         _commandAvailabilityEvaluator = commandAvailabilityEvaluator;
         _shellSurfaceResolver = shellSurfaceResolver;
         _coachSidecarClient = coachSidecarClient;
+        _desktopAnalyticsClient = desktopAnalyticsClient;
         _adapter = adapter;
         _actionExecutionCoordinator = new MainWindowActionExecutionCoordinator(
             adapter,
@@ -131,6 +153,13 @@ public partial class MainWindow : Window
 
         RefreshState();
     }
+
+    private Task TrackDesktopShellEventAsync(
+        string eventName,
+        string surface,
+        IReadOnlyDictionary<string, string?>? properties = null,
+        CancellationToken ct = default)
+        => _desktopAnalyticsClient.TrackShellEventAsync(DesktopHeadId, eventName, surface, properties, ct);
 
     private static T ResolveService<T>()
         where T : notnull

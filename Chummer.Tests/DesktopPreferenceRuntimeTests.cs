@@ -41,7 +41,8 @@ public sealed class DesktopPreferenceRuntimeTests
                 UpdateChannel = " Preview weekly ",
                 CharacterRosterPath = " /Tmp/Roster ",
                 PdfViewerPath = " /usr/bin/zathura ",
-                VisibleChromePolicy = " Compact shell only "
+                VisibleChromePolicy = " Compact shell only ",
+                AnalyticsOptIn = true
             });
 
         DesktopPreferenceState loaded = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
@@ -58,6 +59,7 @@ public sealed class DesktopPreferenceRuntimeTests
         Assert.AreEqual("/usr/bin/zathura", loaded.PdfViewerPath);
         Assert.AreEqual("Compact shell only", loaded.VisibleChromePolicy);
         Assert.AreEqual("de-de", loaded.SheetLanguage);
+        Assert.IsTrue(loaded.AnalyticsOptIn);
     }
 
     [TestMethod]

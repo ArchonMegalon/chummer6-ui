@@ -82,9 +82,9 @@ public partial class App : global::Avalonia.Application
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory(), "avalonia");
+        services.AddSingleton(CreateApiHttpClient());
         if (UseHttpCoachSidecar())
         {
-            services.AddSingleton(CreateApiHttpClient());
             services.AddSingleton<IAvaloniaCoachSidecarClient>(serviceProvider =>
                 new HttpAvaloniaCoachSidecarClient(serviceProvider.GetRequiredService<HttpClient>()));
         }
@@ -100,6 +100,7 @@ public partial class App : global::Avalonia.Application
         services.AddSingleton<ICommandAvailabilityEvaluator, DefaultCommandAvailabilityEvaluator>();
         services.AddSingleton<IShellSurfaceResolver, ShellSurfaceResolver>();
         services.AddSingleton<CharacterOverviewViewModelAdapter>();
+        services.AddSingleton<DesktopAnalyticsClient>();
         services.AddSingleton<MainWindow>();
     }
 

@@ -1873,7 +1873,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             CharacterRosterPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalCharacterRosterPath") ?? fallback.CharacterRosterPath,
             PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
             VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
-            HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex)
+            HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex),
+            AnalyticsOptIn = DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptIn", fallback.AnalyticsOptIn)
         });
     }
 
@@ -2672,7 +2673,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.HideMasterIndex ? "true" : "false",
                 "false",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            new DesktopDialogField(
+                "globalAnalyticsOptIn",
+                "Share anonymous desktop usage",
+                preferences.AnalyticsOptIn ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left)
         ];
     }
 
