@@ -56,7 +56,7 @@ internal static class DesktopHorizonWorkbenchLauncher
             "onramp" => DesktopOnrampWindow.ShowAsync(owner, headId),
             "jackpoint" => DesktopJackpointWindow.ShowAsync(owner, headId),
             "knowledge_fabric" => DesktopKnowledgeFabricWindow.ShowAsync(owner, headId),
-            "runsite" => DesktopCampaignWorkspaceWindow.ShowGmPrepAsync(owner, headId),
+            "runsite" => DesktopRunsiteWindow.ShowAsync(owner, headId),
             "run_control" => DesktopRunControlWindow.ShowAsync(owner, headId),
             "runbook_press" => DesktopCreatorPublicationWindow.ShowAsync(owner, headId),
             "table_pulse" => DesktopTablePulseWindow.ShowAsync(owner, headId),

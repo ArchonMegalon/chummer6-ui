@@ -4,8 +4,11 @@ using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
+using Chummer.Contracts.Content;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
+using Chummer.Contracts.Rulesets;
+using Chummer.Contracts.Workspaces;
 
 namespace Chummer.Avalonia;
 
@@ -13,10 +16,17 @@ internal sealed class DesktopAliceWindow : Window
 {
     internal static DesktopAliceWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
+    private readonly IReadOnlyList<DesktopBuildPathCandidate> _buildPathCandidates;
 
-    private DesktopAliceWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopAliceWindow(
+        AccountCampaignSummary? campaignSummary,
+        IReadOnlyList<WorkspaceListItem> recentWorkspaces,
+        IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates)
     {
         _campaignSummary = campaignSummary;
+        _recentWorkspaces = recentWorkspaces;
+        _buildPathCandidates = buildPathCandidates;
 
         Title = "ALICE";
         Width = 940;
@@ -49,6 +59,7 @@ internal sealed class DesktopAliceWindow : Window
                         },
                         CreateLeadHandoffCard(),
                         CreateHandoffListCard(),
+                        CreateBuildPathCard(),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -85,18 +96,26 @@ internal sealed class DesktopAliceWindow : Window
     private static async Task<DesktopAliceWindow> CreateAsync()
     {
         AccountCampaignSummary? summary = null;
+        IReadOnlyList<WorkspaceListItem> workspaces = Array.Empty<WorkspaceListItem>();
+        IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates = Array.Empty<DesktopBuildPathCandidate>();
         try
         {
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
                 ?? throw new InvalidOperationException("Desktop ALICE requires an IChummerClient instance."));
             summary = await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(true);
+            workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
+            string? effectiveRulesetId = ResolveRulesetId(workspaces);
+            IReadOnlyList<DesktopBuildPathSuggestion> suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(true);
+            buildPathCandidates = await ReadBuildPathCandidatesAsync(client, effectiveRulesetId, workspaces, suggestions).ConfigureAwait(true);
         }
         catch
         {
             summary = null;
+            workspaces = Array.Empty<WorkspaceListItem>();
+            buildPathCandidates = Array.Empty<DesktopBuildPathCandidate>();
         }
 
-        return new DesktopAliceWindow(summary);
+        return new DesktopAliceWindow(summary, workspaces, buildPathCandidates);
     }
 
     private Control CreateLeadHandoffCard()
@@ -296,6 +315,226 @@ internal sealed class DesktopAliceWindow : Window
             body,
             "AliceAccountHandoffsCard",
             CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceOpenAccountFromListButton"));
+    }
+
+    private Control CreateBuildPathCard()
+    {
+        IReadOnlyList<string> proposalModes = ["Summary", "Runtime", "Warnings"];
+        IReadOnlyList<DesktopBuildPathCandidate> candidates = _buildPathCandidates.Take(6).ToArray();
+
+        StackPanel body = new()
+        {
+            Spacing = 8
+        };
+
+        body.Children.Add(
+            DesktopHorizonWindowScaffold.CreateBadgeStrip(
+                DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeBuildPaths", "Build paths", _buildPathCandidates.Count.ToString()),
+                DesktopHorizonWindowScaffold.CreateMetricBadge("AliceBadgeWorkspaces", "Workspaces", _recentWorkspaces.Count.ToString())));
+
+        ComboBox proposalModeCombo = new()
+        {
+            Name = "AliceProposalModeCombo",
+            MinWidth = 220,
+            ItemsSource = proposalModes,
+            SelectedIndex = 0
+        };
+
+        ComboBox buildPathCombo = new()
+        {
+            Name = "AliceBuildPathCombo",
+            MinWidth = 320,
+            ItemsSource = candidates,
+            SelectedIndex = candidates.Count > 0 ? 0 : -1,
+            ItemTemplate = new FuncDataTemplate<DesktopBuildPathCandidate>((candidate, _) =>
+                new TextBlock
+                {
+                    Text = candidate is null ? string.Empty : $"{candidate.Suggestion.Title} [{candidate.Suggestion.TrustTier}]",
+                    TextWrapping = TextWrapping.Wrap
+                })
+        };
+
+        TextBlock selectedBuildPathTitleText = new()
+        {
+            Name = "AliceSelectedBuildPathTitleText",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock selectedBuildPathDetailText = new()
+        {
+            Name = "AliceSelectedBuildPathDetailText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock selectedBuildPathWarningsText = new()
+        {
+            Name = "AliceSelectedBuildPathWarningsText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        void RefreshSelectedBuildPath()
+        {
+            string mode = proposalModeCombo.SelectedItem?.ToString() ?? "Summary";
+            if (buildPathCombo.SelectedItem is DesktopBuildPathCandidate selected)
+            {
+                selectedBuildPathTitleText.Text = $"{selected.Suggestion.Title} [{selected.Suggestion.Visibility}]";
+                DesktopBuildPathPreview? preview = selected.Preview;
+                switch (mode)
+                {
+                    case "Runtime":
+                        selectedBuildPathDetailText.Text = preview?.RuntimeCompatibilitySummary
+                            ?? preview?.CampaignReturnSummary
+                            ?? "Runtime compatibility becomes explicit once a workspace-backed preview is available.";
+                        selectedBuildPathWarningsText.Text = preview?.SupportClosureSummary
+                            ?? (preview?.RequiresConfirmation == true
+                                ? "This build path still requires explicit confirmation before apply."
+                                : "Runtime and support closure remain on the bounded default posture.");
+                        break;
+                    case "Warnings":
+                        selectedBuildPathDetailText.Text = preview?.DiagnosticMessages.Count > 0
+                            ? string.Join(" | ", preview.DiagnosticMessages)
+                            : "No diagnostic warnings are currently attached to this build path.";
+                        selectedBuildPathWarningsText.Text = preview?.ChangeSummaries.Count > 0
+                            ? string.Join(" | ", preview.ChangeSummaries)
+                            : "No change summary is currently attached to this build path.";
+                        break;
+                    default:
+                        selectedBuildPathDetailText.Text = preview?.ChangeSummaries.Count > 0
+                            ? string.Join(" | ", preview.ChangeSummaries)
+                            : $"Targets: {string.Join(", ", selected.Suggestion.Targets)}";
+                        selectedBuildPathWarningsText.Text = preview?.CampaignReturnSummary
+                            ?? preview?.RuntimeCompatibilitySummary
+                            ?? $"Trust tier {selected.Suggestion.TrustTier} stays visible before any apply-safe follow-through.";
+                        break;
+                }
+            }
+            else
+            {
+                selectedBuildPathTitleText.Text = "No selected build path";
+                switch (mode)
+                {
+                    case "Runtime":
+                        selectedBuildPathDetailText.Text = "No runtime-backed build path preview is currently available.";
+                        selectedBuildPathWarningsText.Text = "Open or create a workspace to attach ALICE proposals to a governed preview lane.";
+                        break;
+                    case "Warnings":
+                        selectedBuildPathDetailText.Text = "No diagnostic lane is currently attached.";
+                        selectedBuildPathWarningsText.Text = "Reconnect a workspace-backed preview to inspect build path watchouts.";
+                        break;
+                    default:
+                        selectedBuildPathDetailText.Text = "No governed build path suggestion is currently available.";
+                        selectedBuildPathWarningsText.Text = "ALICE will surface proposal previews here once a compatible workspace and ruleset are available.";
+                        break;
+                }
+            }
+        }
+
+        buildPathCombo.SelectionChanged += (_, _) => RefreshSelectedBuildPath();
+        proposalModeCombo.SelectionChanged += (_, _) => RefreshSelectedBuildPath();
+        RefreshSelectedBuildPath();
+
+        if (_buildPathCandidates.Count == 0)
+        {
+            body.Children.Add(CreateDetailText("No preview-backed build path suggestions are currently available for the active desktop context."));
+        }
+
+        body.Children.Add(proposalModeCombo);
+        body.Children.Add(buildPathCombo);
+        body.Children.Add(
+            new Border
+            {
+                Name = "AliceSelectedBuildPathCard",
+                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10),
+                Child = new StackPanel
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        selectedBuildPathTitleText,
+                        selectedBuildPathDetailText,
+                        selectedBuildPathWarningsText
+                    }
+                }
+            });
+
+        return CreateCard(
+            "Proposal studio",
+            _buildPathCandidates.Count == 0
+                ? "Build path compare stays native, but the current desktop context has no preview-backed starter proposals yet."
+                : $"{_buildPathCandidates.Count} preview-backed build path candidate(s) are available on native ALICE rails.",
+            body,
+            "AliceBuildPathCard",
+            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceOpenAccountFromBuildPathsButton"),
+            CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicFromBuildPathsButton"));
+    }
+
+    private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
+    {
+        try
+        {
+            return await client.ListWorkspacesAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+            return Array.Empty<WorkspaceListItem>();
+        }
+    }
+
+    private static string? ResolveRulesetId(IReadOnlyList<WorkspaceListItem> workspaces)
+        => RulesetDefaults.NormalizeOptional(workspaces.FirstOrDefault()?.RulesetId);
+
+    private static async Task<IReadOnlyList<DesktopBuildPathCandidate>> ReadBuildPathCandidatesAsync(
+        IChummerClient client,
+        string? rulesetId,
+        IReadOnlyList<WorkspaceListItem> workspaces,
+        IReadOnlyList<DesktopBuildPathSuggestion> suggestions)
+    {
+        DesktopBuildPathSuggestion[] selectedSuggestions = suggestions
+            .OrderByDescending(static suggestion => suggestion.BuildKitId.Contains("starter", StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(static suggestion => string.Equals(suggestion.TrustTier, ArtifactTrustTiers.Curated, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(static suggestion => suggestion.Title, StringComparer.Ordinal)
+            .Take(4)
+            .ToArray();
+
+        if (selectedSuggestions.Length == 0)
+        {
+            return Array.Empty<DesktopBuildPathCandidate>();
+        }
+
+        if (workspaces.Count == 0)
+        {
+            return selectedSuggestions
+                .Select(static suggestion => new DesktopBuildPathCandidate(suggestion, Preview: null))
+                .ToArray();
+        }
+
+        CharacterWorkspaceId workspaceId = workspaces[0].Id;
+        Task<DesktopBuildPathCandidate>[] tasks = selectedSuggestions
+            .Select(async suggestion =>
+            {
+                DesktopBuildPathPreview? preview;
+                try
+                {
+                    preview = await client.GetBuildPathPreviewAsync(
+                        suggestion.BuildKitId,
+                        workspaceId,
+                        rulesetId,
+                        CancellationToken.None).ConfigureAwait(false);
+                }
+                catch
+                {
+                    preview = null;
+                }
+
+                return new DesktopBuildPathCandidate(suggestion, preview);
+            })
+            .ToArray();
+
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     private static TextBlock CreateDetailText(string text)

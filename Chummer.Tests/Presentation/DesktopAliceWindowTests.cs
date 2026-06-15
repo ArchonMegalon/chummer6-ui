@@ -13,7 +13,11 @@ public sealed class DesktopAliceWindowTests
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
 
         StringAssert.Contains(source, "GetAccountCampaignSummaryAsync");
+        StringAssert.Contains(source, "GetBuildPathSuggestionsAsync");
+        StringAssert.Contains(source, "GetBuildPathPreviewAsync");
         StringAssert.Contains(source, "BuildLabHandoffs");
+        StringAssert.Contains(source, "AliceBuildPathCombo");
+        StringAssert.Contains(source, "AliceProposalModeCombo");
         StringAssert.Contains(source, "OrderByDescending(item => item.UpdatedAtUtc)");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/alice\")");

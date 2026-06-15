@@ -366,8 +366,26 @@ public sealed class AvaloniaFlagshipUiGateTests
             string initialAliceDetail = aliceSelectedHandoffDetailText.Text ?? string.Empty;
             aliceDetailModeCombo.SelectedIndex = 1;
             harness.WaitUntil(() => !string.Equals(aliceSelectedHandoffDetailText.Text, initialAliceDetail, StringComparison.Ordinal), context: "changing the ALICE detail mode must update the selected handoff detail");
+            ComboBox aliceProposalModeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceProposalModeCombo");
+            TextBlock aliceBuildPathDetailText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceSelectedBuildPathDetailText");
+            string initialAliceBuildPathDetail = aliceBuildPathDetailText.Text ?? string.Empty;
+            aliceProposalModeCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(aliceBuildPathDetailText.Text, initialAliceBuildPathDetail, StringComparison.Ordinal), context: "changing the ALICE proposal mode must update the selected build-path detail");
             aliceWindow.Close();
             harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE workbench after interaction check");
+
+            Button runsiteLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_runsite");
+            RaiseClick(runsiteLaunchButton);
+            harness.WaitUntil(() => DesktopRunsiteWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Runsite workbench");
+            Window runsiteWindow = DesktopRunsiteWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Runsite workbench did not stay open.");
+            ComboBox runsiteDetailModeCombo = harness.FindControlInWindow<ComboBox>(runsiteWindow, "RunsiteDetailModeCombo");
+            TextBlock runsiteSelectedWorkspaceDetailText = harness.FindControlInWindow<TextBlock>(runsiteWindow, "RunsiteSelectedWorkspaceDetailText");
+            string initialRunsiteDetail = runsiteSelectedWorkspaceDetailText.Text ?? string.Empty;
+            runsiteDetailModeCombo.SelectedIndex = 1;
+            harness.WaitUntil(() => !string.Equals(runsiteSelectedWorkspaceDetailText.Text, initialRunsiteDetail, StringComparison.Ordinal), context: "changing the Runsite detail mode must update the selected workspace detail");
+            runsiteWindow.Close();
+            harness.WaitUntil(() => DesktopRunsiteWindow.LastOpenedWindowForTesting is null, context: "close Runsite workbench after interaction check");
 
             Button runControlLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_run_control");
             RaiseClick(runControlLaunchButton);
@@ -423,6 +441,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampBadgeWorkspaces");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricBadgeRules");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_runsite", "Runsite", "RunsiteBadgeWorkspaces");
 
             hubWindow.Close();
             harness.AdvanceFrames(12);
@@ -451,6 +470,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightDetailModeCombo", "ReadyForTonightDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampDetailModeCombo", "OnrampDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricDetailModeCombo", "KnowledgeFabricDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_runsite", "Runsite", "RunsiteDetailModeCombo", "RunsiteSelectedWorkspaceDetailText");
 
             Button quicksilverLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_quicksilver");
             RaiseClick(quicksilverLaunchButton);
@@ -7201,6 +7221,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             "Ready for Tonight" => DesktopReadyForTonightWindow.LastOpenedWindowForTesting,
             "Onramp" => DesktopOnrampWindow.LastOpenedWindowForTesting,
             "Knowledge Fabric" => DesktopKnowledgeFabricWindow.LastOpenedWindowForTesting,
+            "Runsite" => DesktopRunsiteWindow.LastOpenedWindowForTesting,
             "Horizons" => DesktopHorizonsWindow.LastOpenedWindowForTesting,
             _ => null
         };
