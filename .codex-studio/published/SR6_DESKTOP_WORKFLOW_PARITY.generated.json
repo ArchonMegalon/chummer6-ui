@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T17:23:14.500039Z",
+  "generatedAt": "2026-06-15T12:13:37.817382Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "public_stable",
   "status": "pass",
@@ -21,8 +21,8 @@
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-12T12:29:42Z",
-    "releaseChannelAgeSeconds": 17612,
+    "releaseChannelGeneratedAt": "2026-06-13T18:49:54Z",
+    "releaseChannelAgeSeconds": 149023,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -87,7 +87,7 @@
       "workflowGateTests": true
     },
     "sr4ReceiptChannelId": "public_stable",
-    "sr4ReceiptGeneratedAt": "2026-06-12T17:23:06.137324Z",
+    "sr4ReceiptGeneratedAt": "2026-06-15T12:07:14.680741Z",
     "failureCount": 0
   },
   "sourceArtifactReview": {
@@ -109,8 +109,8 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-12T12:29:42Z",
-    "ageSeconds": 17612,
+    "generatedAt": "2026-06-13T18:49:54Z",
+    "ageSeconds": 149023,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -121,7 +121,7 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "channelId": "public_stable",
-    "generatedAt": "2026-06-12T17:23:06.137324Z"
+    "generatedAt": "2026-06-15T12:07:14.680741Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

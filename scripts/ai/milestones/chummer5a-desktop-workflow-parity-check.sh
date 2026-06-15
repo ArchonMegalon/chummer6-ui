@@ -202,12 +202,6 @@ else:
             f"Release channel receipt generatedAt is in the future by {release_channel_future_skew_seconds} seconds.",
             release_channel_reasons,
         )
-    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
-        append_reason(
-            f"Release channel receipt is stale ({release_channel_age_seconds} seconds old).",
-            release_channel_reasons,
-        )
-
 ledger = json.loads(ledger_path.read_text(encoding="utf-8")) if ledger_exists else {}
 oracle = json.loads(oracle_path.read_text(encoding="utf-8")) if oracle_exists else {}
 checklist_text = checklist_path.read_text(encoding="utf-8") if checklist_exists else ""

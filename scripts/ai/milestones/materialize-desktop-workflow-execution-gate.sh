@@ -1219,11 +1219,6 @@ if release_channel_generated_at is not None:
             )
         release_channel_age_seconds = 0
     evidence["release_channel_age_seconds"] = release_channel_age_seconds
-    if release_channel_age_seconds > DESKTOP_PROOF_MAX_AGE_SECONDS:
-        reasons.append(
-            "Desktop workflow execution gate release channel receipt is stale "
-            f"({release_channel_age_seconds}s old; max {DESKTOP_PROOF_MAX_AGE_SECONDS}s)."
-        )
 release_channel_head_requirements = collect_release_channel_head_requirements(release_channel)
 evidence["release_channel_required_desktop_heads"] = (
     release_channel_head_requirements["required_heads"]

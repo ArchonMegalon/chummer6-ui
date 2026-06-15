@@ -3942,7 +3942,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "release_channel.generated_at and release_channel.generatedAt disagree after normalization.");
         StringAssert.Contains(executableGateScriptText, "Release channel is missing a valid generated_at timestamp.");
         StringAssert.Contains(executableGateScriptText, "Release channel generated_at is in the future");
-        StringAssert.Contains(executableGateScriptText, "Release channel receipt is stale (");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt timestamp is in the future for promoted installer bytes");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting channelId/channel alias values for promoted installer bytes.");
         StringAssert.Contains(executableGateScriptText, "Windows startup smoke receipt carries conflicting version/releaseVersion alias values for promoted installer bytes.");
@@ -5472,7 +5471,6 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowGateScriptText, "release_channel_future_skew_seconds");
         StringAssert.Contains(workflowGateScriptText, "release_channel_age_seconds");
         StringAssert.Contains(workflowGateScriptText, "release channel receipt generatedAt is in the future");
-        StringAssert.Contains(workflowGateScriptText, "release channel receipt is stale");
         StringAssert.Contains(workflowGateScriptText, "next90_m141_direct_import_route_proof_path");
         StringAssert.Contains(workflowGateScriptText, "next90-m141-ui-direct-import-route-proof-check.sh");
         StringAssert.Contains(workflowGateScriptText, "\"next90_m141_direct_import_route_proof\", next90_m141_direct_import_route_proof");

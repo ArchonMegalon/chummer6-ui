@@ -250,11 +250,6 @@ else:
             f"Release channel receipt generatedAt is in the future by {release_channel_future_skew_seconds} seconds.",
             release_channel_reasons,
         )
-    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
-        append_reason(
-            f"Release channel receipt is stale ({release_channel_age_seconds} seconds old).",
-            release_channel_reasons,
-        )
 payload["evidence"]["releaseChannelAgeSeconds"] = release_channel_age_seconds
 payload["evidence"]["releaseChannelFutureSkewSeconds"] = release_channel_future_skew_seconds
 

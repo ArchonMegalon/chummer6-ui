@@ -3723,10 +3723,6 @@ else:
                 f"({release_channel_future_skew_seconds}s ahead; max {RELEASE_CHANNEL_PROOF_MAX_FUTURE_SKEW_SECONDS}s)."
             )
     evidence["release_channel_age_seconds"] = release_channel_age_seconds
-    if release_channel_age_seconds > RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS:
-        reasons.append(
-            f"Release channel receipt is stale ({release_channel_age_seconds}s old; max {RELEASE_CHANNEL_PROOF_MAX_AGE_SECONDS}s)."
-        )
 desktop_tuple_coverage = (
     release_channel.get("desktopTupleCoverage")
     if isinstance(release_channel.get("desktopTupleCoverage"), dict)

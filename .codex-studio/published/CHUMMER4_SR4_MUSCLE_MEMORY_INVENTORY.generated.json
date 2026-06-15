@@ -285298,6 +285298,15 @@
             "y": 133,
             "width": 436,
             "height": 32
+          },
+          {
+            "fieldId": "globalAnalyticsOptIn",
+            "expectedLabel": "Share anonymous desktop usage",
+            "expectedInputType": "checkbox",
+            "expectedVisualKind": "default",
+            "expectedLayoutSlot": "left",
+            "optionsCount": 0,
+            "isVisible": true
           }
         ],
         "dialogActions": [
