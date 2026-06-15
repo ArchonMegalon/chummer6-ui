@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 
@@ -29,6 +30,7 @@ internal sealed class DesktopRunbookPressWindow : Window
             "Runbook Press keeps campaign books, module assembly, and creator follow-through on a dedicated native desk instead of aliasing the broader creator workbench.",
             CreatePublicationCard(),
             CreateCampaignBookCard(),
+            CreateDetailCard(),
             new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -121,5 +123,61 @@ internal sealed class DesktopRunbookPressWindow : Window
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open community hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Runbook", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runbook")));
+    }
+
+    private Control CreateDetailCard()
+    {
+        IReadOnlyList<string> detailModes = ["Publication", "Campaign", "Distribution"];
+
+        ComboBox detailModeCombo = new()
+        {
+            Name = "RunbookPressDetailModeCombo",
+            MinWidth = 220,
+            ItemsSource = detailModes,
+            SelectedIndex = 0
+        };
+
+        TextBlock detailText = new()
+        {
+            Name = "RunbookPressDetailText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        void RefreshDetail()
+        {
+            CreatorPublicationProjection? leadPublication = _campaignSummary?.CreatorPublications
+                .OrderByDescending(static publication => publication.UpdatedAtUtc)
+                .FirstOrDefault();
+            CampaignProjection? leadCampaign = _campaignSummary?.Campaigns
+                .OrderByDescending(static campaign => campaign.UpdatedAtUtc)
+                .FirstOrDefault();
+            string mode = detailModeCombo.SelectedItem?.ToString() ?? "Publication";
+            detailText.Text = mode switch
+            {
+                "Campaign" => leadCampaign?.Summary
+                    ?? "Campaign module posture: no governed campaign is currently pinned for Runbook Press.",
+                "Distribution" => "Distribution posture: keep creator desk, Jackpoint, and Community Hub connected before widening a runbook into public circulation.",
+                _ => leadPublication?.Summary
+                    ?? "Publication posture: no creator publication is currently leading the runbook lane."
+            };
+        }
+
+        detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        RefreshDetail();
+
+        return DesktopHorizonWindowScaffold.CreateCard(
+            "Detail modes",
+            "Runbook Press should separate publication assembly, campaign context, and distribution posture instead of collapsing them into one summary.",
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    detailModeCombo,
+                    detailText
+                }
+            },
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
 }

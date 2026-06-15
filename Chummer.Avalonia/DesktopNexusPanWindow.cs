@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 
@@ -29,6 +30,7 @@ internal sealed class DesktopNexusPanWindow : Window
             "NEXUS-PAN keeps continuity, devices, and access posture on a dedicated native desk so the desktop can show the current safe state before you jump into account routes.",
             CreateContinuityCard(),
             CreateAccessCard(),
+            CreateDetailCard(),
             new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -114,5 +116,59 @@ internal sealed class DesktopNexusPanWindow : Window
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open support", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/support")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public continuity", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/continuity")));
+    }
+
+    private Control CreateDetailCard()
+    {
+        IReadOnlyList<string> detailModes = ["Continuity", "Access", "Recovery"];
+
+        ComboBox detailModeCombo = new()
+        {
+            Name = "NexusPanDetailModeCombo",
+            MinWidth = 220,
+            ItemsSource = detailModes,
+            SelectedIndex = 0
+        };
+
+        TextBlock detailText = new()
+        {
+            Name = "NexusPanDetailText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        void RefreshDetail()
+        {
+            CampaignWorkspaceProjection? leadWorkspace = _campaignSummary?.Workspaces
+                .OrderByDescending(static workspace => workspace.LatestContinuity?.CapturedAtUtc ?? DateTimeOffset.MinValue)
+                .FirstOrDefault();
+            string mode = detailModeCombo.SelectedItem?.ToString() ?? "Continuity";
+            detailText.Text = mode switch
+            {
+                "Access" => "Access posture: keep device claims, grant follow-through, and desktop relinking visible before assuming the current continuity state is usable across heads.",
+                "Recovery" => leadWorkspace?.NextSafeAction
+                    ?? "Recovery posture: reopen devices and access first when the current desktop loses account or continuity context.",
+                _ => leadWorkspace?.ReturnSummary
+                    ?? leadWorkspace?.LatestContinuity?.Summary
+                    ?? "Continuity posture: no governed continuity capsule is currently pinned."
+            };
+        }
+
+        detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        RefreshDetail();
+
+        return DesktopHorizonWindowScaffold.CreateCard(
+            "Detail modes",
+            "NEXUS-PAN should show continuity, access, and recovery posture without forcing the user to infer which lane matters.",
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    detailModeCombo,
+                    detailText
+                }
+            },
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)));
     }
 }

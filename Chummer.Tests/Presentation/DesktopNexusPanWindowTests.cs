@@ -14,6 +14,8 @@ public sealed class DesktopNexusPanWindowTests
 
         StringAssert.Contains(source, "TryReadAccountCampaignSummaryAsync");
         StringAssert.Contains(source, "LatestContinuity?.Summary");
+        StringAssert.Contains(source, "NexusPanDetailModeCombo");
+        StringAssert.Contains(source, "NexusPanDetailText");
         StringAssert.Contains(source, "DesktopRunControlWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/play/continuity\")");

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
 
@@ -29,6 +30,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             "Creator OS keeps publication, dossier, and campaign-facing creator operations on a dedicated native desk instead of reusing the narrower Runbook Press assembly lane.",
             CreateCreatorDeskCard(),
             CreatePublishingStackCard(),
+            CreateDetailCard(),
             new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -122,5 +124,62 @@ internal sealed class DesktopCreatorOsWindow : Window
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community Hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Creator OS", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/creator")));
+    }
+
+    private Control CreateDetailCard()
+    {
+        IReadOnlyList<string> detailModes = ["Desk", "Publishing", "Network"];
+
+        ComboBox detailModeCombo = new()
+        {
+            Name = "CreatorOsDetailModeCombo",
+            MinWidth = 220,
+            ItemsSource = detailModes,
+            SelectedIndex = 0
+        };
+
+        TextBlock detailText = new()
+        {
+            Name = "CreatorOsDetailText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        void RefreshDetail()
+        {
+            CreatorPublicationProjection? leadPublication = _campaignSummary?.CreatorPublications
+                .OrderByDescending(static publication => publication.UpdatedAtUtc)
+                .FirstOrDefault();
+            RunnerDossierProjection? leadDossier = _campaignSummary?.Dossiers
+                .OrderByDescending(static dossier => dossier.UpdatedAtUtc)
+                .FirstOrDefault();
+            string mode = detailModeCombo.SelectedItem?.ToString() ?? "Desk";
+            detailText.Text = mode switch
+            {
+                "Publishing" => leadPublication?.Summary
+                    ?? "Publishing posture: no creator publication is currently pinned for Creator OS.",
+                "Network" => leadDossier?.DisplayName is { Length: > 0 } displayName
+                    ? $"{displayName} is the current lead dossier across the creator-facing network rail."
+                    : "Network posture: no dossier is currently pinned across the creator-facing network rail.",
+                _ => "Desk posture: keep creator desk, Jackpoint, Runbook Press, and Community Hub adjacent instead of scattering creator follow-through across route-only shells."
+            };
+        }
+
+        detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        RefreshDetail();
+
+        return DesktopHorizonWindowScaffold.CreateCard(
+            "Detail modes",
+            "Creator OS should separate the creator desk, publishing stack, and network-facing posture instead of flattening them into one paragraph.",
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    detailModeCombo,
+                    detailText
+                }
+            },
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
 }

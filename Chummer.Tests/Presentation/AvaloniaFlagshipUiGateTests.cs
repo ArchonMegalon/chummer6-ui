@@ -466,7 +466,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_jackpoint", "Jackpoint", "JackpointDetailModeCombo", "JackpointDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_table_pulse", "Table Pulse", "TablePulseDetailModeCombo", "TablePulseDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_community_hub", "Community Hub", "CommunityHubDetailModeCombo", "CommunityHubDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_nexus_pan", "NEXUS-PAN", "NexusPanDetailModeCombo", "NexusPanDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_runner_passport", "Runner Passport", "RunnerPassportDetailModeCombo", "RunnerPassportDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_runbook_press", "Runbook Press", "RunbookPressDetailModeCombo", "RunbookPressDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_creator_os", "Creator OS", "CreatorOsDetailModeCombo", "CreatorOsDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorDetailModeCombo", "LocalCoProcessorDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyDetailModeCombo", "AnarchyDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireDetailModeCombo", "GhostwireDetailText");
