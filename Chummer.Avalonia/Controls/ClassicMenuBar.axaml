@@ -14,69 +14,37 @@
                   Tag="file"
                   Header="File"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="New Character" />
-        <MenuItem Header="Open Character" />
-        <Separator />
-        <MenuItem Header="Save" />
-        <MenuItem Header="Save As" />
-        <Separator />
-        <MenuItem Header="Print" />
-        <MenuItem Header="Print Preview" />
-        <Separator />
-        <MenuItem Header="Exit" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
         <MenuItem x:Name="EditMenuButton"
                   Classes="menu-root"
                   Tag="edit"
                   Header="Edit"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="Add Item" />
-        <MenuItem Header="Remove Item" />
-        <Separator />
-        <MenuItem Header="Find" />
-        <MenuItem Header="Preferences" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
         <MenuItem x:Name="SpecialMenuButton"
                   Classes="menu-root"
                   Tag="special"
                   Header="Special"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="Character Sheet" />
-        <MenuItem Header="Master Index" />
-        <MenuItem Header="Gear Browser" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
         <MenuItem x:Name="ToolsMenuButton"
                   Classes="menu-root"
                   Tag="tools"
                   Header="Tools"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="Character Settings" />
-        <MenuItem Header="Global Settings" />
-        <MenuItem Header="Plugins" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
         <MenuItem x:Name="WindowsMenuButton"
                   Classes="menu-root"
                   Tag="windows"
                   Header="Windows"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="Character Sheet" />
-        <MenuItem Header="Contacts" />
-        <MenuItem Header="Initiative" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
         <MenuItem x:Name="HelpMenuButton"
                   Classes="menu-root"
                   Tag="help"
                   Header="Help"
                   Click="RootMenuItem_OnClick"
-                  SubmenuOpened="RootMenuItem_OnSubmenuOpened">
-        <MenuItem Header="Contents" />
-        <MenuItem Header="About Chummer" />
-      </MenuItem>
+                  SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
       </Menu>
       <Button x:Name="AutoAliceButton"
               Grid.Column="1"
