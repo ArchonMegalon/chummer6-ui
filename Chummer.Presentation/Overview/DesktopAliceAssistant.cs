@@ -34,9 +34,15 @@ internal static class DesktopAliceAssistant
         string workspaceId = currentWorkspace?.Value ?? string.Empty;
         string message = plan.SupportMode switch
         {
-            AliceSupportMode.QuickAddApply => $"ALICE can propose one scoped change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then apply it explicitly.",
-            AliceSupportMode.GuidedBuildPlan => "ALICE can shape the current build lane, but this frame still needs a guided workflow handoff instead of silent mutation.",
-            AliceSupportMode.SettingsHandoff => "ALICE can suggest a sane settings posture here, then hand you to the real settings form for deliberate edits.",
+            AliceSupportMode.QuickAddApply => IsPreviewRuleset(normalizedRulesetId)
+                ? $"ALICE can propose one scoped SR4 preview change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then review it before you apply."
+                : $"ALICE can propose one scoped change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then apply it explicitly.",
+            AliceSupportMode.GuidedBuildPlan => IsPreviewRuleset(normalizedRulesetId)
+                ? "ALICE can shape the SR4 preview build lane, but this frame still needs the explicit BP or Karma workflow handoff instead of silent mutation."
+                : "ALICE can shape the current build lane, but this frame still needs a guided workflow handoff instead of silent mutation.",
+            AliceSupportMode.SettingsHandoff => IsPreviewRuleset(normalizedRulesetId)
+                ? "ALICE can suggest an SR4-safe settings posture here, then hand you to the real settings form for deliberate edits."
+                : "ALICE can suggest a sane settings posture here, then hand you to the real settings form for deliberate edits.",
             _ => "No editable runner surface is active. Open a build, gear, combat, magic, contacts, or settings lane first."
         };
 
@@ -374,11 +380,13 @@ internal static class DesktopAliceAssistant
         string legality = DesktopDialogFieldValueParser.GetValue(dialog, LegalityFieldId) ?? "strict";
         string complexity = DesktopDialogFieldValueParser.GetValue(dialog, ComplexityFieldId) ?? "standard";
 
+        string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, RulesetFieldId)) ?? RulesetDefaults.Sr5;
+
         return plan.SupportMode switch
         {
-            AliceSupportMode.QuickAddApply => BuildQuickAddProposal(plan, archetype, optimization, legality, complexity),
-            AliceSupportMode.GuidedBuildPlan => BuildGuidedBuildProposal(plan, archetype, optimization, legality, complexity),
-            AliceSupportMode.SettingsHandoff => BuildSettingsProposal(plan, archetype, optimization, legality, complexity),
+            AliceSupportMode.QuickAddApply => BuildQuickAddProposal(plan, rulesetId, archetype, optimization, legality, complexity),
+            AliceSupportMode.GuidedBuildPlan => BuildGuidedBuildProposal(plan, rulesetId, archetype, optimization, legality, complexity),
+            AliceSupportMode.SettingsHandoff => BuildSettingsProposal(plan, rulesetId, archetype, optimization, legality, complexity),
             _ => new AliceProposal(
                 "No ALICE proposal is available from the current desktop surface.",
                 "ALICE could not find a supported editable frame. Open a gear, combat, magic, contacts, skills, or build surface first.",
@@ -393,6 +401,7 @@ internal static class DesktopAliceAssistant
 
     private static AliceProposal BuildQuickAddProposal(
         AliceSurfacePlan plan,
+        string rulesetId,
         string archetype,
         string optimization,
         string legality,
@@ -431,8 +440,17 @@ internal static class DesktopAliceAssistant
             "standard" => "Review table-specific legality and campaign overlays before applying.",
             _ => "Strict legality posture selected. ALICE stayed on safer defaults where possible."
         };
-        string summary = $"ALICE suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for a {FormatChoiceLabel(archetype)} with a {optimization} bias.";
-        string applyNotice = $"ALICE added '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}.";
+        if (IsPreviewRuleset(rulesetId))
+        {
+            warningList += $"{Environment.NewLine}SR4 preview lane: review BP/Karma legality, source coverage, and table posture before committing.";
+        }
+
+        string summary = IsPreviewRuleset(rulesetId)
+            ? $"ALICE suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for an SR4 {FormatChoiceLabel(archetype)} preview with a {optimization} bias."
+            : $"ALICE suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for a {FormatChoiceLabel(archetype)} with a {optimization} bias.";
+        string applyNotice = IsPreviewRuleset(rulesetId)
+            ? $"ALICE added SR4 preview item '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}."
+            : $"ALICE added '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}.";
 
         return new AliceProposal(
             $"Review the {plan.SurfaceLabel.ToLowerInvariant()} proposal, then apply it explicitly.",
@@ -447,22 +465,30 @@ internal static class DesktopAliceAssistant
 
     private static AliceProposal BuildGuidedBuildProposal(
         AliceSurfacePlan plan,
+        string rulesetId,
         string archetype,
         string optimization,
         string legality,
         string complexity)
     {
+        bool sr4Preview = IsPreviewRuleset(rulesetId);
         string changeList =
             $"Archetype | {FormatChoiceLabel(archetype)}{Environment.NewLine}" +
             $"Bias | {optimization}{Environment.NewLine}" +
             $"Legality | {legality}{Environment.NewLine}" +
             $"Complexity | {complexity}{Environment.NewLine}" +
-            "Next step | Open the guided new-character workflow";
-        string warningList = "This surface still needs the named character-creation workflow. ALICE is shaping the lane, not mutating the build silently.";
-        string summary = $"ALICE recommends a {FormatChoiceLabel(archetype)} start with {optimization} posture. Use the guided character workflow next.";
+            $"Next step | Open the guided {(sr4Preview ? "SR4 BP/Karma" : "new-character")} workflow";
+        string warningList = sr4Preview
+            ? "SR4 remains a promoted preview lane. ALICE is shaping the lane, not mutating the build silently, and the explicit BP or Karma workflow still owns the final build."
+            : "This surface still needs the named character-creation workflow. ALICE is shaping the lane, not mutating the build silently.";
+        string summary = sr4Preview
+            ? $"ALICE recommends an SR4 {FormatChoiceLabel(archetype)} preview start with {optimization} posture. Use the guided BP or Karma workflow next."
+            : $"ALICE recommends a {FormatChoiceLabel(archetype)} start with {optimization} posture. Use the guided character workflow next.";
 
         return new AliceProposal(
-            "ALICE shaped the build lane. Open the character workflow to continue.",
+            sr4Preview
+                ? "ALICE shaped the SR4 preview lane. Open the BP or Karma workflow to continue."
+                : "ALICE shaped the build lane. Open the character workflow to continue.",
             summary,
             changeList,
             warningList,
@@ -474,6 +500,7 @@ internal static class DesktopAliceAssistant
 
     private static AliceProposal BuildSettingsProposal(
         AliceSurfacePlan plan,
+        string rulesetId,
         string archetype,
         string optimization,
         string legality,
@@ -484,8 +511,12 @@ internal static class DesktopAliceAssistant
             $"Bias | {optimization}{Environment.NewLine}" +
             $"Legality posture | {legality}{Environment.NewLine}" +
             $"Archetype anchor | {FormatChoiceLabel(archetype)}";
-        string warningList = "Settings changes still require the named settings lane. ALICE is only suggesting defaults here.";
-        string summary = $"ALICE suggests calmer defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit.";
+        string warningList = IsPreviewRuleset(rulesetId)
+            ? "SR4 remains a preview lane. Settings changes still require the named settings form, and ALICE is only suggesting safer defaults here."
+            : "Settings changes still require the named settings lane. ALICE is only suggesting defaults here.";
+        string summary = IsPreviewRuleset(rulesetId)
+            ? $"ALICE suggests calmer SR4 preview defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit."
+            : $"ALICE suggests calmer defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit.";
 
         return new AliceProposal(
             "Review the suggested defaults, then open the settings lane.",
@@ -518,6 +549,9 @@ internal static class DesktopAliceAssistant
             "street_sam" or "adept" => new WorkspaceQuickAddRequest(WorkspaceQuickAddKinds.Weapon, "Colt M23", Category: "Heavy Pistols", Source: "Core Rulebook", Accuracy: "5", Damage: $"{ResolveScale(optimization, 7, 8, 9)}P", Ap: "-1", Mode: "SA"),
             _ => new WorkspaceQuickAddRequest(WorkspaceQuickAddKinds.Weapon, "Ares Predator V", Category: "Heavy Pistols", Source: "Core Rulebook", Accuracy: "5", Damage: "8P", Ap: "-1", Mode: "SA")
         };
+
+    private static bool IsPreviewRuleset(string rulesetId)
+        => string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal);
 
     private static WorkspaceQuickAddRequest BuildArmorRequest(string optimization)
         => new(WorkspaceQuickAddKinds.Armor, "Armor Jacket", Category: "Armor", Source: "Core Rulebook", ArmorValue: ResolveScale(optimization, 10, 12, 13).ToString());

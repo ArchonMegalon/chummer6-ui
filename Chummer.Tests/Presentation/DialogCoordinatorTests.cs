@@ -273,6 +273,38 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_auto_alice_preview_on_sr4_surfaces_preview_warning_and_summary()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "skills",
+            ActiveDialog = factory.CreateCommandDialog(
+                DesktopAliceAssistant.CommandId,
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: new CharacterWorkspaceId("runner-1"),
+                rulesetId: RulesetDefaults.Sr4,
+                activeSectionId: "skills")
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.PreviewActionId, context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "SR4");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "SR4 preview lane");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_auto_alice_apply_uses_real_quick_add_path()
     {
         DialogCoordinator coordinator = new();

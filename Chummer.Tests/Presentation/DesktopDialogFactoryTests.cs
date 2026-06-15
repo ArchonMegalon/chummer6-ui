@@ -1828,6 +1828,26 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_auto_alice_on_sr4_new_character_surface_surfaces_preview_posture()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4,
+            activeSectionId: "create",
+            activeDialogId: "dialog.new_character");
+
+        Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceRulesetId"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "SR4 preview build lane");
+        StringAssert.Contains(dialog.Message ?? string.Empty, "BP or Karma workflow");
+    }
+
+    [TestMethod]
     public void RebuildDynamicDialog_new_character_normalizes_build_method_for_selected_ruleset()
     {
         DesktopDialogState dialog = new(
