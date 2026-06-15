@@ -297,6 +297,21 @@ internal sealed class DesktopHorizonsWindow : Window
             return CreateBlackLedgerCard(entry);
         }
 
+        if (string.Equals(entry.Id, "nexus_pan", StringComparison.Ordinal))
+        {
+            return CreateNexusPanCard(entry);
+        }
+
+        if (string.Equals(entry.Id, "runbook_press", StringComparison.Ordinal))
+        {
+            return CreateRunbookPressCard(entry);
+        }
+
+        if (string.Equals(entry.Id, "creator_os", StringComparison.Ordinal))
+        {
+            return CreateCreatorOsCard(entry);
+        }
+
         if (DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id))
         {
             return CreateNativeLaunchCard(entry, () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, _headId, entry));
@@ -399,6 +414,60 @@ internal sealed class DesktopHorizonsWindow : Window
         if (entry.TertiaryAction is not null)
         {
             actions.Add(CreateButton(entry.TertiaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.TertiaryAction.RelativeHref), name: "HorizonsTertiaryRoute_black_ledger"));
+        }
+
+        return CreateCard(entry.Title, entry.Summary, CreatePostureLead(entry.Id), actions.ToArray());
+    }
+
+    private Control CreateNexusPanCard(DesktopHorizonWorkbenchEntry entry)
+    {
+        List<Button> actions =
+        [
+            CreateButton("Open workbench", () => DesktopNexusPanWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_nexus_pan"),
+            CreateButton("Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_nexus_pan"),
+            CreateButton("Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), name: "HorizonsNativeDevices_nexus_pan"),
+            CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_nexus_pan")
+        ];
+
+        if (entry.SecondaryAction is not null)
+        {
+            actions.Add(CreateButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref), name: "HorizonsSecondaryRoute_nexus_pan"));
+        }
+
+        return CreateCard(entry.Title, entry.Summary, CreatePostureLead(entry.Id), actions.ToArray());
+    }
+
+    private Control CreateRunbookPressCard(DesktopHorizonWorkbenchEntry entry)
+    {
+        List<Button> actions =
+        [
+            CreateButton("Open workbench", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_runbook_press"),
+            CreateButton("Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), name: "HorizonsNativePublication_runbook_press"),
+            CreateButton("Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_runbook_press"),
+            CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_runbook_press")
+        ];
+
+        if (entry.SecondaryAction is not null)
+        {
+            actions.Add(CreateButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref), name: "HorizonsSecondaryRoute_runbook_press"));
+        }
+
+        return CreateCard(entry.Title, entry.Summary, CreatePostureLead(entry.Id), actions.ToArray());
+    }
+
+    private Control CreateCreatorOsCard(DesktopHorizonWorkbenchEntry entry)
+    {
+        List<Button> actions =
+        [
+            CreateButton("Open workbench", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_creator_os"),
+            CreateButton("Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), name: "HorizonsNativePublication_creator_os"),
+            CreateButton("Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_creator_os"),
+            CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_creator_os")
+        ];
+
+        if (entry.SecondaryAction is not null)
+        {
+            actions.Add(CreateButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref), name: "HorizonsSecondaryRoute_creator_os"));
         }
 
         return CreateCard(entry.Title, entry.Summary, CreatePostureLead(entry.Id), actions.ToArray());

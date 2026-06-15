@@ -20,6 +20,9 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "CreateAliceCard(");
         StringAssert.Contains(source, "CreateRunControlCard(");
         StringAssert.Contains(source, "CreateBlackLedgerCard(");
+        StringAssert.Contains(source, "CreateNexusPanCard(");
+        StringAssert.Contains(source, "CreateRunbookPressCard(");
+        StringAssert.Contains(source, "CreateCreatorOsCard(");
         StringAssert.Contains(source, "CreateNativeLaunchCard(");
         StringAssert.Contains(source, "DesktopKarmaForgeWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, _headId)");
@@ -27,6 +30,12 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, _headId, entry)");
         StringAssert.Contains(source, "DesktopRunControlWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopBlackLedgerWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopNexusPanWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopRunbookPressWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopCreatorOsWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopCreatorPublicationWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/participate/karma-forge#karma-forge-intake\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/packages\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/horizons\")");

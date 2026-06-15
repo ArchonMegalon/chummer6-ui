@@ -34,9 +34,9 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "nexus_pan",
             "NEXUS-PAN",
-            "Open shared-state continuity and the desktop-linked access lane from the same settings shelf.",
-            new DesktopHorizonRouteOption("nexus_pan_public", "Open continuity", "/play/continuity", "Open the public continuity lane."),
-            new DesktopHorizonRouteOption("nexus_pan_account", "Devices & access", "/account/access#desktop", "Open the signed-in devices and access rail.")),
+            "Keep continuity, workspace recovery, and devices/access on adjacent native rails before widening into public continuity routes.",
+            new DesktopHorizonRouteOption("nexus_pan_public", "Open public continuity", "/play/continuity", "Open the public continuity lane."),
+            new DesktopHorizonRouteOption("nexus_pan_account", "Open support rail", "/account/support", "Open the signed-in support rail when continuity recovery needs operator follow-through.")),
         new(
             "ready_for_tonight",
             "Ready for Tonight",
@@ -79,9 +79,9 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "runbook_press",
             "Runbook Press",
-            "Open the campaign book assembly lane and the public publishing frontdoor.",
-            new DesktopHorizonRouteOption("runbook_press_public", "Open Runbook", "/runbook", "Open the public Runbook Press route."),
-            new DesktopHorizonRouteOption("runbook_press_creator", "Open creator desk", "/account/creator", "Use the signed-in creator desk for publication follow-through.")),
+            "Keep publication, workspace, and campaign-book follow-through on native desks before widening into the public publishing frontdoor.",
+            new DesktopHorizonRouteOption("runbook_press_public", "Open public Runbook", "/runbook", "Open the public Runbook Press route."),
+            new DesktopHorizonRouteOption("runbook_press_creator", "Open public creator rail", "/creator", "Open the public creator rail when you need browser-side publishing follow-through.")),
         new(
             "table_pulse",
             "Table Pulse",
@@ -106,9 +106,9 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "creator_os",
             "Creator OS",
-            "Open the creator desk and publication routes without hunting through the browser shell.",
-            new DesktopHorizonRouteOption("creator_public", "Open Creator", "/creator", "Open the public Creator OS route."),
-            new DesktopHorizonRouteOption("creator_account", "Open desk", "/account/creator", "Open the signed-in creator desk.")),
+            "Keep creator publication, workspace, and publishing-stack follow-through native before widening into the browser creator rail.",
+            new DesktopHorizonRouteOption("creator_public", "Open public Creator OS", "/creator", "Open the public Creator OS route."),
+            new DesktopHorizonRouteOption("creator_account", "Open creator account rail", "/account/creator", "Open the signed-in creator browser rail when native follow-through is not enough.")),
         new(
             "anarchy",
             "Anarchy",
