@@ -10,7 +10,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 {
     private readonly IReadOnlyList<MenuItem> _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
-    private readonly Button? _autoAliceButton;
 
     public ClassicMenuBar()
     {
@@ -27,11 +26,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
         .Where(static item => item is not null)
         .Cast<MenuItem>()
         .ToArray();
-        _autoAliceButton = this.FindControl<Button>("AutoAliceButton");
-        if (_autoAliceButton is not null)
-        {
-            _autoAliceButton.Content = ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId);
-        }
     }
 
     public event EventHandler<string>? MenuSelected;
@@ -61,11 +55,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
             RebuildMenuCommands(button);
         }
 
-        if (_autoAliceButton is not null)
-        {
-            _autoAliceButton.IsVisible = true;
-            _autoAliceButton.IsEnabled = !state.IsBusy;
-        }
     }
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e) => SelectRootMenuItem(sender);
@@ -89,11 +78,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
         {
             MenuCommandSelected?.Invoke(this, commandId);
         }
-    }
-
-    private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        MenuCommandSelected?.Invoke(this, DesktopAliceAssistant.CommandId);
     }
 
     private void RebuildMenuCommands(MenuItem rootMenuItem)

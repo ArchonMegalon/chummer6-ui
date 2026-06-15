@@ -80,8 +80,6 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             RebuildMenuItemCommands(button, commandsEnabled: known && hasCommands);
         }
 
-        AutoAliceButton.IsVisible = true;
-        AutoAliceButton.IsEnabled = !isBusy;
     }
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e)
@@ -128,16 +126,6 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         MenuCommandSelected?.Invoke(this, commandId);
     }
 
-    private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        if (_isBusy)
-        {
-            return;
-        }
-
-        MenuCommandSelected?.Invoke(this, DesktopAliceAssistant.CommandId);
-    }
-
     private void RebuildMenuItemCommands(MenuItem rootMenuItem, bool commandsEnabled)
     {
         rootMenuItem.Items.Clear();
@@ -176,7 +164,6 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         ToolsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.tools", language);
         WindowsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.windows", language);
         HelpMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.help", language);
-        AutoAliceButton.Content = ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId);
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.banner", language);
     }
 

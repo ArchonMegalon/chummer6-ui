@@ -145,6 +145,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
                     {
                         Text = shortLabel,
                         Classes = { "tool-button-label" },
+                        Foreground = button.Foreground,
                         VerticalAlignment = VerticalAlignment.Center
                     }
                 }

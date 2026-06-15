@@ -2114,10 +2114,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
-            RaiseClick(FindDescendant<Button>(control, "AutoAliceButton"));
-            CollectionAssert.Contains(selectedCommands, DesktopAliceAssistant.CommandId);
-            selectedCommands.Clear();
-
             control.SetMenuState(
                 openMenuId: "file",
                 knownMenuIds: menuIds,

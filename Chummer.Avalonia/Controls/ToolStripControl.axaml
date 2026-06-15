@@ -1,6 +1,18 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ToolStripControl">
+  <UserControl.Styles>
+    <Style Selector="Button#ToolStripAutoAliceButton">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellAccentButtonBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellAccentButtonForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellAccentButtonBrush}" />
+    </Style>
+    <Style Selector="Button#ToolStripAutoAliceButton:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellAccentButtonForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+  </UserControl.Styles>
   <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
     <WrapPanel Orientation="Horizontal"
                Grid.Column="0"

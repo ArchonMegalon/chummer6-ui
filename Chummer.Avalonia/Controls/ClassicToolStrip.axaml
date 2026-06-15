@@ -3,7 +3,7 @@
              x:Class="Chummer.Avalonia.Controls.ClassicToolStrip">
   <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,0,0,1"
-          Background="{DynamicResource ChummerShellChromeBrush}"
+          Background="{DynamicResource ChummerShellChromeSubtleBrush}"
           Padding="6,4">
     <Grid RowDefinitions="Auto,Auto"
           ColumnDefinitions="*,Auto"

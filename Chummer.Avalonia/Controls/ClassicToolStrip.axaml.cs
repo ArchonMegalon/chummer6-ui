@@ -126,6 +126,8 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
                     new TextBlock
                     {
                         Text = shortLabel,
+                        Classes = { "tool-button-label" },
+                        Foreground = button.Foreground,
                         VerticalAlignment = VerticalAlignment.Center
                     }
                 }

@@ -3,9 +3,9 @@
              x:Class="Chummer.Avalonia.Controls.ShellMenuBarControl">
   <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,0,0,1"
-          Background="{DynamicResource ChummerShellChromeBrush}"
+          Background="{DynamicResource ChummerShellMenuBarBrush}"
           Padding="2">
-    <Grid ColumnDefinitions="*,Auto">
+    <Grid ColumnDefinitions="*">
       <Menu x:Name="MenuBarPanel"
             Classes="classic-menu shell-menubar">
         <MenuItem x:Name="FileMenuButton"
@@ -51,13 +51,6 @@
                   PointerPressed="RootMenuItem_OnPointerPressed"
                   SubmenuOpened="RootMenuItem_OnSubmenuOpened" />
       </Menu>
-      <Button x:Name="AutoAliceButton"
-              Grid.Column="1"
-              Margin="8,0,0,0"
-              VerticalAlignment="Center"
-              Classes="shell-action primary"
-              Content="Auto ALICE"
-              Click="AutoAliceButton_OnClick" />
     </Grid>
   </Border>
 </UserControl>

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-15T17:48:03.7207394\u002B00:00",
+  "generatedAt": "2026-06-15T18:01:01.8863670\u002B00:00",
   "contractName": "chummer6-ui.interactive_runtime_route_inventory",
   "status": "pass",
   "summary": "Runtime route inventory captures recursive shell, popup, dialog, section, and ruleset-lane surfaces.",
@@ -24,7 +24,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Classic settings keeps global preferences, custom data, issues, and plugin posture grouped like the legacy dialog.",
@@ -57,7 +57,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=global_settings",
-        "Time: 2026-06-15 17:48:02Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Windows"
       ],
@@ -524,32 +524,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -1095,6 +1069,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -2696,7 +2713,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:02Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -2818,7 +2835,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:02Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -2845,7 +2862,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -2869,7 +2886,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=new_character",
-        "Time: 2026-06-15 17:48:02Z",
+        "Time: 2026-06-15 18:01:00Z",
         "Tools",
         "Windows"
       ],
@@ -3336,32 +3353,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -3907,6 +3898,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -4868,7 +4902,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:02Z",
+                                                        "text": "Time: 2026-06-15 18:01:00Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -4990,7 +5024,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:02Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:00Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -10787,7 +10821,7 @@
       "openMenuId": "file",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -10812,7 +10846,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Time: 2026-06-15 17:48:02Z",
+        "Time: 2026-06-15 18:01:00Z",
         "Tools",
         "Windows"
       ],
@@ -11279,32 +11313,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -11850,6 +11858,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -12811,7 +12862,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:02Z",
+                                                        "text": "Time: 2026-06-15 18:01:00Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -12933,7 +12984,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:02Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:00Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -12964,6 +13015,7 @@
         "140 lb",
         "35",
         "6 2",
+        "ALICE",
         "Adept",
         "Age",
         "Alias",
@@ -12971,7 +13023,6 @@
         "Armor",
         "Attribute Details",
         "Attributes",
-        "Auto ALICE",
         "Awakening",
         "Black",
         "Build Plan",
@@ -13006,7 +13057,7 @@
         "Magician",
         "Male",
         "Martial Arts",
-        "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Metatype",
         "Metavariant",
         "Movement",
@@ -13036,10 +13087,10 @@
         "Soma",
         "Special",
         "Spells",
-        "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Validate \u0026 Rebind",
         "Vehicles",
@@ -13512,32 +13563,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -14091,6 +14116,49 @@
                                                     ]
                                                   },
                                                   {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
                                                     "name": "StatusTextBorder",
                                                     "controlType": "Border",
                                                     "text": "",
@@ -14100,7 +14168,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -16582,7 +16650,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Menu \u0027tools\u0027 opened.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -18028,7 +18096,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 3606ce5655564376828ec5019bfc9b4b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=3606ce5655564376828ec5019bfc9b4b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 1ed10409a9324effb2279ad1cd761fa0\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=1ed10409a9324effb2279ad1cd761fa0\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -18117,7 +18185,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -18239,7 +18307,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -18266,7 +18334,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -18292,7 +18360,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Windows"
       ],
@@ -18759,32 +18827,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -19330,6 +19372,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -20988,7 +21073,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -21110,7 +21195,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 4 .chum4 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -21137,7 +21222,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -21163,7 +21248,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Windows"
       ],
@@ -21630,32 +21715,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -22201,6 +22260,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -23859,7 +23961,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -23981,7 +24083,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -24008,7 +24110,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -24034,7 +24136,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Windows"
       ],
@@ -24501,32 +24603,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -25072,6 +25148,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -26730,7 +26849,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -26852,7 +26971,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 6 .chum6 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -26883,6 +27002,7 @@
         "140 lb",
         "35",
         "6 2",
+        "ALICE",
         "Adept",
         "Age",
         "Alias",
@@ -26890,7 +27010,6 @@
         "Armor",
         "Attribute Details",
         "Attributes",
-        "Auto ALICE",
         "Awakening",
         "Black",
         "Build Plan",
@@ -26935,7 +27054,7 @@
         "Open Notes",
         "Open Print",
         "Playername",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Powers",
         "Print",
         "Profile",
@@ -26955,10 +27074,10 @@
         "Soma",
         "Special",
         "Spells",
-        "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Validate \u0026 Rebind",
         "Vehicles",
@@ -27431,32 +27550,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -28010,6 +28103,49 @@
                                                     ]
                                                   },
                                                   {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
                                                     "name": "StatusTextBorder",
                                                     "controlType": "Border",
                                                     "text": "",
@@ -28019,7 +28155,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -30501,7 +30637,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -31947,7 +32083,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 3606ce5655564376828ec5019bfc9b4b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=3606ce5655564376828ec5019bfc9b4b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 1ed10409a9324effb2279ad1cd761fa0\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=1ed10409a9324effb2279ad1cd761fa0\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -32036,7 +32172,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -32158,7 +32294,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -34198,7 +34334,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -34224,7 +34360,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Windows"
       ],
@@ -34691,32 +34827,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -35262,6 +35372,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -36920,7 +37073,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -37042,7 +37195,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -37073,6 +37226,7 @@
         "140 lb",
         "35",
         "6 2",
+        "ALICE",
         "Adept",
         "Age",
         "Alias",
@@ -37080,7 +37234,6 @@
         "Armor",
         "Attribute Details",
         "Attributes",
-        "Auto ALICE",
         "Awakening",
         "Black",
         "Build Plan",
@@ -37125,7 +37278,7 @@
         "Open Notes",
         "Open Print",
         "Playername",
-        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+        "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
         "Powers",
         "Print",
         "Profile",
@@ -37145,10 +37298,10 @@
         "Soma",
         "Special",
         "Spells",
-        "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+        "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
         "SumtoTen",
         "Technomancer",
-        "Time: 2026-06-15 17:48:03Z",
+        "Time: 2026-06-15 18:01:01Z",
         "Tools",
         "Validate \u0026 Rebind",
         "Vehicles",
@@ -37621,32 +37774,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -38200,6 +38327,49 @@
                                                     ]
                                                   },
                                                   {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
                                                     "name": "StatusTextBorder",
                                                     "controlType": "Border",
                                                     "text": "",
@@ -38209,7 +38379,7 @@
                                                       {
                                                         "name": "StatusText",
                                                         "controlType": "TextBlock",
-                                                        "text": "State: ready, workspace=3606ce5655564376828ec5019bfc9b4b, open=1, saved=unsaved, last-command=global_settings",
+                                                        "text": "State: ready, workspace=1ed10409a9324effb2279ad1cd761fa0, open=1, saved=unsaved, last-command=global_settings",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -40691,7 +40861,7 @@
                                                                               {
                                                                                 "name": "NoticeText",
                                                                                 "controlType": "TextBlock",
-                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 3606ce5655564376828ec5019bfc9b4b from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
+                                                                                "text": "Portable import ready: Portable import completed as governed dossier truth and is ready for normal use or portable export.\nImport rule environment: Target chummer.workspace.native-xml.v1 (compatible)\nImport receipt correlation key: import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f\nReceipt scope: import target chummer.workspace.native-xml.v1; before/after diff is copy-safe and excludes raw payload or merge actions until the user accepts the next safe action.\nImport support handoff receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with context, blocker, and explain text without mutating the local workspace.\nImport environment before: Soma was imported into governed dossier truth on sr5.\nImport environment after: Use the workspace normally or export a portable package when you need a governed cross-surface handoff.\nImport environment tuple diff: before workspace/current-source/support-local/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; correlation import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff before import: current workspace, support posture, and source toggles stay unchanged while chummer.workspace.native-xml.v1 is reviewed with payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f.\nEnvironment diff after import: accepted content remains compatible; next safe action Use the workspace normally or export a portable package when you need a governed cross-surface handoff; explain receipt Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nGrounded import explain receipt: target chummer.workspace.native-xml.v1; oracle Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5; blocker no grounded import blocker is present before acceptance.\nImport blocker receipt: no grounded import blocker is present before acceptance\nImport diagnostics receipt: before chummer.workspace.native-xml.v1/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f; after compatible/Use the workspace normally or export a portable package when you need a governed cross-surface handoff; blocker no grounded import blocker is present before acceptance; proof Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.\nImport diagnostics diff: Import diagnostics receipt: chummer.workspace.native-xml.v1; compatible. Import support diagnostics receipt: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.. Grounded import explain receipt: Imported workspace 1ed10409a9324effb2279ad1cd761fa0 from NativeXml with payload hash 26a113f69c00 on sr5.. Import blocker receipt: no grounded import blocker is present before acceptance. Environment diff before import: Soma was imported into governed dossier truth on sr5.. Environment diff after import: Use the workspace normally or export a portable package when you need a governed cross-surface handoff..\nImport support diagnostics receipt: support can cite import/chummer.workspace.native-xml.v1/compatible/26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with before/after environment truth, blocker text, and explain proof without changing local workspace state.\nSupport reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.\nImport support reuse: Support can cite payload 26a113f69c004ff0af0579f0d76dfb145671182d807bb75a25aca2b9183fd76f with compatible compatibility.",
                                                                                 "toolTip": "",
                                                                                 "isVisible": true,
                                                                                 "children": []
@@ -42137,7 +42307,7 @@
                                             "name": "CoachSidecarControl",
                                             "controlType": "CoachSidecarControl",
                                             "text": "",
-                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 3606ce5655564376828ec5019bfc9b4b\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=3606ce5655564376828ec5019bfc9b4b\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
+                                            "toolTip": "Status: unloaded\nPrompt policy: Policy not loaded yet\nBudget: Budget not loaded yet\nWorkspace: 1ed10409a9324effb2279ad1cd761fa0\nRuntime: No runtime fingerprint yet\nfile:///coach/%3FrouteType=coach\u0026workspaceId=1ed10409a9324effb2279ad1cd761fa0\nOpen Coach in your browser, or copy the link if you need to hand it off.\nError: disabled",
                                             "isVisible": true,
                                             "children": []
                                           }
@@ -42226,7 +42396,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:03Z",
+                                                        "text": "Time: 2026-06-15 18:01:01Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -42348,7 +42518,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 17:48:03Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: loaded | Service: online | Time: 2026-06-15 18:01:01Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
@@ -42375,7 +42545,7 @@
       "openMenuId": "",
       "visibleTexts": [
         "100%",
-        "Auto ALICE",
+        "ALICE",
         "Character: none",
         "Characters",
         "Close",
@@ -42399,7 +42569,7 @@
         "Settings",
         "Special",
         "State: ready, workspace=none, open=0, saved=unsaved, last-command=none",
-        "Time: 2026-06-15 17:48:02Z",
+        "Time: 2026-06-15 18:01:00Z",
         "Tools",
         "Windows"
       ],
@@ -42866,32 +43036,6 @@
                                                                 ]
                                                               }
                                                             ]
-                                                          }
-                                                        ]
-                                                      }
-                                                    ]
-                                                  },
-                                                  {
-                                                    "name": "AutoAliceButton",
-                                                    "controlType": "Button",
-                                                    "text": "Auto ALICE",
-                                                    "toolTip": "",
-                                                    "isVisible": true,
-                                                    "children": [
-                                                      {
-                                                        "name": "PART_ContentPresenter",
-                                                        "controlType": "ContentPresenter",
-                                                        "text": "",
-                                                        "toolTip": "",
-                                                        "isVisible": true,
-                                                        "children": [
-                                                          {
-                                                            "name": "",
-                                                            "controlType": "AccessText",
-                                                            "text": "Auto ALICE",
-                                                            "toolTip": "",
-                                                            "isVisible": true,
-                                                            "children": []
                                                           }
                                                         ]
                                                       }
@@ -43437,6 +43581,49 @@
                                                                     "children": []
                                                                   }
                                                                 ]
+                                                              }
+                                                            ]
+                                                          }
+                                                        ]
+                                                      }
+                                                    ]
+                                                  },
+                                                  {
+                                                    "name": "ClassicToolStripAutoAliceButton",
+                                                    "controlType": "Button",
+                                                    "text": "ALICE",
+                                                    "toolTip": "Auto ALICE",
+                                                    "isVisible": true,
+                                                    "children": [
+                                                      {
+                                                        "name": "PART_ContentPresenter",
+                                                        "controlType": "ContentPresenter",
+                                                        "text": "",
+                                                        "toolTip": "",
+                                                        "isVisible": true,
+                                                        "children": [
+                                                          {
+                                                            "name": "",
+                                                            "controlType": "StackPanel",
+                                                            "text": "",
+                                                            "toolTip": "",
+                                                            "isVisible": true,
+                                                            "children": [
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "Image",
+                                                                "text": "",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
+                                                              },
+                                                              {
+                                                                "name": "",
+                                                                "controlType": "TextBlock",
+                                                                "text": "ALICE",
+                                                                "toolTip": "",
+                                                                "isVisible": true,
+                                                                "children": []
                                                               }
                                                             ]
                                                           }
@@ -44398,7 +44585,7 @@
                                                       {
                                                         "name": "TimeStateText",
                                                         "controlType": "TextBlock",
-                                                        "text": "Time: 2026-06-15 17:48:02Z",
+                                                        "text": "Time: 2026-06-15 18:01:00Z",
                                                         "toolTip": "",
                                                         "isVisible": true,
                                                         "children": []
@@ -44520,7 +44707,7 @@
                                     "name": "StatusStripControl",
                                     "controlType": "StatusStripControl",
                                     "text": "",
-                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 17:48:02Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
+                                    "toolTip": "Character: none | Service: online | Time: 2026-06-15 18:01:00Z | Ruleset: Shadowrun 5 .chum5 | Workflows: 5 defs / 6 surfaces | Prefs: 100%/classic/en-us",
                                     "isVisible": false,
                                     "children": []
                                   }
