@@ -9,10 +9,12 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopNexusPanWindow : Window
 {
     internal static DesktopNexusPanWindow? LastOpenedWindowForTesting { get; private set; }
+    private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
 
-    private DesktopNexusPanWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopNexusPanWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
+        _headId = headId;
         _campaignSummary = campaignSummary;
 
         Title = "NEXUS-PAN";
@@ -45,7 +47,7 @@ internal sealed class DesktopNexusPanWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopNexusPanWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopNexusPanWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -56,8 +58,10 @@ internal sealed class DesktopNexusPanWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopNexusPanWindow> CreateAsync()
-        => new(await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop NEXUS-PAN requires an IChummerClient instance.").ConfigureAwait(true));
+    private static async Task<DesktopNexusPanWindow> CreateAsync(string headId)
+        => new(
+            headId,
+            await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop NEXUS-PAN requires an IChummerClient instance.").ConfigureAwait(true));
 
     private Control CreateContinuityCard()
     {
@@ -84,7 +88,7 @@ internal sealed class DesktopNexusPanWindow : Window
             "Keep the current continuity and return-safe state visible before widening into account devices or browser-only recovery flows.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public continuity", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/continuity"), isPrimary: true),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open return lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")));
     }
 
@@ -107,7 +111,7 @@ internal sealed class DesktopNexusPanWindow : Window
             "Devices and access",
             "NEXUS-PAN keeps the devices-and-access rail attached to continuity instead of treating it like a separate support shelf.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/access#desktop"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open support", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/support")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public continuity", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/continuity")));
     }

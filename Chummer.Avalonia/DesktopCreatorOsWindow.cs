@@ -9,10 +9,12 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopCreatorOsWindow : Window
 {
     internal static DesktopCreatorOsWindow? LastOpenedWindowForTesting { get; private set; }
+    private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
 
-    private DesktopCreatorOsWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopCreatorOsWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
+        _headId = headId;
         _campaignSummary = campaignSummary;
 
         Title = "Creator OS";
@@ -45,7 +47,7 @@ internal sealed class DesktopCreatorOsWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopCreatorOsWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopCreatorOsWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -56,8 +58,10 @@ internal sealed class DesktopCreatorOsWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopCreatorOsWindow> CreateAsync()
-        => new(await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Creator OS requires an IChummerClient instance.").ConfigureAwait(true));
+    private static async Task<DesktopCreatorOsWindow> CreateAsync(string headId)
+        => new(
+            headId,
+            await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Creator OS requires an IChummerClient instance.").ConfigureAwait(true));
 
     private Control CreateCreatorDeskCard()
     {
@@ -89,7 +93,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/creator"), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Creator OS", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/creator")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint")));
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
 
     private Control CreatePublishingStackCard()
@@ -115,8 +119,8 @@ internal sealed class DesktopCreatorOsWindow : Window
             "Publishing stack",
             "Creator OS owns the broader publishing stack around Runbook Press, public briefings, and community-facing distribution.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runbook"), isPrimary: true),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community Hub", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community Hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Creator OS", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/creator")));
     }
 }

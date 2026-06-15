@@ -21,14 +21,19 @@ public sealed class DesktopMissingHorizonsWindowTests
 
         StringAssert.Contains(nexusPanSource, "DesktopNexusPanWindow");
         StringAssert.Contains(nexusPanSource, "Open public continuity");
-        StringAssert.Contains(nexusPanSource, "/account/access#desktop");
+        StringAssert.Contains(nexusPanSource, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(nexusPanSource, "DesktopRunControlWindow.ShowAsync(this, _headId)");
 
         StringAssert.Contains(runbookSource, "DesktopRunbookPressWindow");
         StringAssert.Contains(runbookSource, "Open public Runbook");
-        StringAssert.Contains(runbookSource, "/account/creator");
+        StringAssert.Contains(runbookSource, "DesktopCreatorOsWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(runbookSource, "DesktopJackpointWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(runbookSource, "DesktopCommunityHubWindow.ShowAsync(this, _headId)");
 
         StringAssert.Contains(creatorOsSource, "DesktopCreatorOsWindow");
         StringAssert.Contains(creatorOsSource, "Open public Creator OS");
-        StringAssert.Contains(creatorOsSource, "Open Runbook Press");
+        StringAssert.Contains(creatorOsSource, "DesktopRunbookPressWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(creatorOsSource, "DesktopCommunityHubWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(creatorOsSource, "DesktopJackpointWindow.ShowAsync(this, _headId)");
     }
 }

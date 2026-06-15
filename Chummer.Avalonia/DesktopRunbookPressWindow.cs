@@ -9,10 +9,12 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopRunbookPressWindow : Window
 {
     internal static DesktopRunbookPressWindow? LastOpenedWindowForTesting { get; private set; }
+    private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
 
-    private DesktopRunbookPressWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopRunbookPressWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
+        _headId = headId;
         _campaignSummary = campaignSummary;
 
         Title = "Runbook Press";
@@ -45,7 +47,7 @@ internal sealed class DesktopRunbookPressWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopRunbookPressWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopRunbookPressWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -56,8 +58,10 @@ internal sealed class DesktopRunbookPressWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopRunbookPressWindow> CreateAsync()
-        => new(await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Runbook Press requires an IChummerClient instance.").ConfigureAwait(true));
+    private static async Task<DesktopRunbookPressWindow> CreateAsync(string headId)
+        => new(
+            headId,
+            await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Runbook Press requires an IChummerClient instance.").ConfigureAwait(true));
 
     private Control CreatePublicationCard()
     {
@@ -84,9 +88,9 @@ internal sealed class DesktopRunbookPressWindow : Window
             "Publication assembly",
             "Runbook Press owns campaign-book assembly, publication posture, and the jump back into the signed-in creator desk.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/creator"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Runbook", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runbook")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint")));
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
 
     private Control CreateCampaignBookCard()
@@ -114,8 +118,8 @@ internal sealed class DesktopRunbookPressWindow : Window
             "Campaign books and modules",
             "Keep the current campaign, dossier lane, and module follow-through visible without collapsing Runbook Press into generic creator chrome.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/creator"), isPrimary: true),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open community hub", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open community hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Runbook", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runbook")));
     }
 }
