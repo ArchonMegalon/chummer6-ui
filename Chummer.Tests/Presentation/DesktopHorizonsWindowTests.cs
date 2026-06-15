@@ -28,6 +28,10 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, _headId, entry)");
         StringAssert.Contains(source, "DesktopRunControlWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopBlackLedgerWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopReadyForTonightWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopKnowledgeFabricWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopTablePulseWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "DesktopGhostwireWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopCreatorPublicationWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");

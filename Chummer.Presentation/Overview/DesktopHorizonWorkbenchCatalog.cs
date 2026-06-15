@@ -33,9 +33,14 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "alice",
             "ALICE",
-            "Open the build mentor lane and the signed-in handoff bench directly from desktop settings.",
+            "Keep build mentor, rules explain, and first-session follow-through on native desks before widening into browser handoff rails.",
             new DesktopHorizonRouteOption("alice_public", "Open ALICE", "/alice", "Open the public ALICE route."),
-            new DesktopHorizonRouteOption("alice_account", "Open workbench", "/account/alice", "Open the signed-in ALICE bench.")),
+            new DesktopHorizonRouteOption("alice_account", "Open workbench", "/account/alice", "Open the signed-in ALICE bench."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("ready_for_tonight", "Open Ready for Tonight"),
+                new("knowledge_fabric", "Open Knowledge Fabric")
+            }),
         new DesktopHorizonWorkbenchEntry(
             "nexus_pan",
             "NEXUS-PAN",
@@ -83,9 +88,14 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "run_control",
             "Run Control",
-            "Open the session board and the signed-in run-control desk.",
+            "Keep runboard, table pressure, and campaign workspace follow-through on native desks before widening into browser rails.",
             new DesktopHorizonRouteOption("run_control_public", "Open Run Control", "/run-control", "Open the public Run Control route."),
-            new DesktopHorizonRouteOption("run_control_account", "Open desk", "/account/run-control", "Open the signed-in run-control desk.")),
+            new DesktopHorizonRouteOption("run_control_account", "Open desk", "/account/run-control", "Open the signed-in run-control desk."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("table_pulse", "Open Table Pulse"),
+                new("workspace", "Open workspace desk")
+            }),
         new DesktopHorizonWorkbenchEntry(
             "runbook_press",
             "Runbook Press",
@@ -107,10 +117,15 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "black_ledger",
             "Black Ledger",
-            "Open the globe, dispatch board, and validation lanes from the same desktop shelf.",
+            "Keep the world board, pulse follow-through, and replay-adjacent desks native before widening into browser validation lanes.",
             new DesktopHorizonRouteOption("black_ledger_public", "Open Ledger", "/ledger", "Open the public Black Ledger route."),
             new DesktopHorizonRouteOption("black_ledger_map", "Open map", "/ledger/map#ledger-map", "Open the command map route."),
-            new DesktopHorizonRouteOption("black_ledger_validation", "Validation", "/account/ledger/worldtick/validation", "Open the signed-in validation rail.")),
+            new DesktopHorizonRouteOption("black_ledger_validation", "Validation", "/account/ledger/worldtick/validation", "Open the signed-in validation rail."),
+            NativeActions: new DesktopHorizonNativeAction[]
+            {
+                new("table_pulse", "Open Table Pulse"),
+                new("ghostwire", "Open Ghostwire")
+            }),
         new(
             "community_hub",
             "Community Hub",

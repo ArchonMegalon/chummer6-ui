@@ -328,17 +328,7 @@ internal sealed class DesktopHorizonsWindow : Window
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: $"HorizonsPrimaryRoute_{entry.Id}")
         ];
 
-        if (entry.NativeActions is not null)
-        {
-            foreach (DesktopHorizonNativeAction nativeAction in entry.NativeActions)
-            {
-                Button? button = CreateNativeAdjunctActionButton(entry.Id, nativeAction);
-                if (button is not null)
-                {
-                    actions.Insert(actions.Count - 1, button);
-                }
-            }
-        }
+        InsertNativeAdjunctActions(actions, entry);
 
         if (entry.SecondaryAction is not null)
         {
@@ -353,13 +343,36 @@ internal sealed class DesktopHorizonsWindow : Window
         return CreateCard(entry.Title, entry.Summary, CreatePostureLead(entry.Id), actions.ToArray());
     }
 
+    private void InsertNativeAdjunctActions(List<Button> actions, DesktopHorizonWorkbenchEntry entry)
+    {
+        if (entry.NativeActions is null)
+        {
+            return;
+        }
+
+        foreach (DesktopHorizonNativeAction nativeAction in entry.NativeActions)
+        {
+            Button? button = CreateNativeAdjunctActionButton(entry.Id, nativeAction);
+            if (button is not null)
+            {
+                actions.Insert(actions.Count - 1, button);
+            }
+        }
+    }
+
     private Button? CreateNativeAdjunctActionButton(string horizonId, DesktopHorizonNativeAction action)
         => (horizonId, action.Id) switch
         {
+            ("alice", "ready_for_tonight") => CreateButton(action.Label, () => DesktopReadyForTonightWindow.ShowAsync(this, _headId), name: "HorizonsNativeReady_alice"),
+            ("alice", "knowledge_fabric") => CreateButton(action.Label, () => DesktopKnowledgeFabricWindow.ShowAsync(this, _headId), name: "HorizonsNativeKnowledge_alice"),
             ("nexus_pan", "workspace") => CreateButton(action.Label, () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_nexus_pan"),
             ("nexus_pan", "devices_access") => CreateButton(action.Label, () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), name: "HorizonsNativeDevices_nexus_pan"),
+            ("run_control", "table_pulse") => CreateButton(action.Label, () => DesktopTablePulseWindow.ShowAsync(this, _headId), name: "HorizonsNativePulse_run_control"),
+            ("run_control", "workspace") => CreateButton(action.Label, () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_run_control"),
             ("runbook_press", "publication") => CreateButton(action.Label, () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), name: "HorizonsNativePublication_runbook_press"),
             ("runbook_press", "workspace") => CreateButton(action.Label, () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_runbook_press"),
+            ("black_ledger", "table_pulse") => CreateButton(action.Label, () => DesktopTablePulseWindow.ShowAsync(this, _headId), name: "HorizonsNativePulse_black_ledger"),
+            ("black_ledger", "ghostwire") => CreateButton(action.Label, () => DesktopGhostwireWindow.ShowAsync(this, _headId), name: "HorizonsNativeGhostwire_black_ledger"),
             ("creator_os", "publication") => CreateButton(action.Label, () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), name: "HorizonsNativePublication_creator_os"),
             ("creator_os", "workspace") => CreateButton(action.Label, () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), name: "HorizonsNativeWorkspace_creator_os"),
             _ => null
@@ -372,6 +385,8 @@ internal sealed class DesktopHorizonsWindow : Window
             CreateButton("Open workbench", () => DesktopAliceWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_alice"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_alice")
         ];
+
+        InsertNativeAdjunctActions(actions, entry);
 
         if (entry.SecondaryAction is not null)
         {
@@ -394,6 +409,8 @@ internal sealed class DesktopHorizonsWindow : Window
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_run_control")
         ];
 
+        InsertNativeAdjunctActions(actions, entry);
+
         if (entry.SecondaryAction is not null)
         {
             actions.Add(CreateButton(entry.SecondaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.SecondaryAction.RelativeHref), name: "HorizonsSecondaryRoute_run_control"));
@@ -414,6 +431,8 @@ internal sealed class DesktopHorizonsWindow : Window
             CreateButton("Open workbench", () => DesktopBlackLedgerWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_black_ledger"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_black_ledger")
         ];
+
+        InsertNativeAdjunctActions(actions, entry);
 
         if (entry.SecondaryAction is not null)
         {
