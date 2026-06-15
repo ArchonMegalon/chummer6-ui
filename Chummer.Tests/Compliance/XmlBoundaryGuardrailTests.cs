@@ -128,7 +128,6 @@ public class XmlBoundaryGuardrailTests
         yield return Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT");
         yield return Directory.GetCurrentDirectory();
         yield return AppContext.BaseDirectory;
-        yield return "/docker/chummercomplete/chummer-presentation";
         yield return "/docker/chummercomplete";
         yield return "/src";
     }

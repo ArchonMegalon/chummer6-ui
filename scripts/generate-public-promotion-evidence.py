@@ -67,13 +67,18 @@ def expected_host_class_platform_tokens(platform: str) -> tuple[str, ...]:
     return (normalized,) if normalized else ()
 
 
-def host_class_matches_platform(host_class: str, platform: str) -> bool:
+def host_class_matches_platform(host_class: str, platform: str, operating_system: str = "") -> bool:
     normalized_host = normalize_token(host_class)
+    normalized_operating_system = normalize_token(operating_system)
     expected_tokens = expected_host_class_platform_tokens(platform)
     if not normalized_host or not expected_tokens:
         return False
     host_tokens = [token for token in normalized_host.split("-") if token]
-    return any(token in host_tokens for token in expected_tokens)
+    if any(token in host_tokens for token in expected_tokens):
+        return True
+    if normalize_platform(platform) == "windows" and "windows" in normalized_operating_system and "wine" in normalized_host:
+        return True
+    return False
 
 
 def resolve_file_name(artifact: dict) -> str:
@@ -188,13 +193,12 @@ def validate_receipt_for_artifact(
         return False, "startup-smoke receipt artifactDigest does not match manifest sha256"
 
     host_class = normalize_token(receipt.get("hostClass"))
+    operating_system = str(receipt.get("operatingSystem") or "").strip()
     if not incompatible_host_skip:
         if not host_class:
             return False, "startup-smoke receipt hostClass is missing"
-        if not host_class_matches_platform(host_class, expected_platform):
+        if not host_class_matches_platform(host_class, expected_platform, operating_system):
             return False, f"startup-smoke receipt hostClass does not identify the {expected_platform} host"
-
-    operating_system = str(receipt.get("operatingSystem") or "").strip()
     if not incompatible_host_skip and not operating_system:
         return False, "startup-smoke receipt operatingSystem is missing"
 

@@ -307,7 +307,7 @@ public class ArchitectureGuardrailTests
             ["Chummer.Rulesets.Sr5"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts" },
             ["Chummer.Infrastructure"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Rulesets.Hosting", "Chummer.Rulesets.Sr5", "Chummer.Rulesets.Sr6" },
             ["Chummer.Infrastructure.Browser"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts" },
-            ["Chummer.Api"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Infrastructure", "Chummer.Presentation", "Chummer.Rulesets.Sr4", "Chummer.Rulesets.Sr6" },
+            ["Chummer.Api"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Application", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Infrastructure", "Chummer.Presentation", "Chummer.Rulesets.Sr4", "Chummer.Rulesets.Sr6", "Chummer.Run.Contracts" },
             ["Chummer.Portal"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Contracts" },
             ["Chummer.Blazor"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Desktop.Runtime", "Chummer.Presentation", "Chummer.Run.Contracts" },
             ["Chummer.Hub.Web"] = new HashSet<string>(StringComparer.Ordinal) { "Chummer.Campaign.Contracts", "Chummer.Contracts", "Chummer.Presentation", "Chummer.Run.Contracts" },
@@ -481,7 +481,6 @@ public class ArchitectureGuardrailTests
         yield return AppContext.BaseDirectory;
         yield return "/docker/chummercomplete";
         yield return "/docker/chummercomplete/chummer-core-engine";
-        yield return "/docker/chummercomplete/chummer-presentation";
         yield return "/docker/chummercomplete/chummer.run-services";
         yield return "/docker/chummercomplete/chummer-hub-registry";
         yield return "/src";

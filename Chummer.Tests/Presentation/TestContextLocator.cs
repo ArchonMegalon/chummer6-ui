@@ -7,9 +7,8 @@ internal static class TestContextLocator
 {
     public static string ResolveChummerPresentationRepoRoot()
     {
-        return DesktopRepoRootLocator.TryResolveChummerPresentationRepoRoot(
-                AppContext.BaseDirectory,
-                Directory.GetCurrentDirectory())
-            ?? "/docker/chummercomplete/chummer-presentation";
+        return DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory());
     }
 }

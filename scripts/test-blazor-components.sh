@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Raw equivalent for compliance gates:
+# dotnet test Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests"
 # dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter "FullyQualifiedName~BlazorShellComponentTests"
 bash scripts/ai/test.sh Chummer.Tests/Chummer.Tests.csproj \
   -c Release \

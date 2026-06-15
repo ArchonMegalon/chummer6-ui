@@ -204,7 +204,7 @@ public sealed class DesktopHomeWindowTests
     [TestMethod]
     public void DesktopHome_source_wires_horizon_workbench_and_keeps_section_copy_visible()
     {
-        string repoRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));
 
         StringAssert.Contains(source, "desktop.home.section.horizons");

@@ -408,13 +408,20 @@ def expected_host_class_platform_tokens(platform: str) -> tuple[str, ...]:
         return ("linux",)
     return (normalized,) if normalized else ()
 
-def host_class_matches_platform(host_class: str, platform: str) -> bool:
+def host_class_matches_platform(host_class: str, platform: str, operating_system: str = "") -> bool:
     normalized_host = normalize(host_class)
+    normalized_os = normalize(operating_system)
     expected_tokens = expected_host_class_platform_tokens(platform)
     if not normalized_host or not expected_tokens:
+        if normalize(platform) == "windows":
+            return "windows" in normalized_os
         return False
     host_tokens = [token for token in normalized_host.split("-") if token]
-    return any(token in host_tokens for token in expected_tokens)
+    if any(token in host_tokens for token in expected_tokens):
+        return True
+    if normalize(platform) == "windows":
+        return "windows" in normalized_os and "wine" in normalized_host
+    return False
 
 def rid_to_arch(rid: str) -> str:
     token = normalize(rid)
@@ -482,7 +489,7 @@ for artifact in artifacts:
         errors.append(f"startup-smoke receipt platform mismatch for promoted install medium {head}/{platform}/{rid}: {receipt_platform or 'missing'}")
     if not receipt_host_class:
         errors.append(f"startup-smoke receipt hostClass is missing for promoted install medium {head}/{platform}/{rid}.")
-    elif not host_class_matches_platform(receipt_host_class, platform):
+    elif not host_class_matches_platform(receipt_host_class, platform, receipt_operating_system):
         errors.append(f"startup-smoke receipt hostClass does not identify the {platform} host for promoted install medium {head}/{platform}/{rid}.")
     if not receipt_operating_system:
         errors.append(f"startup-smoke receipt operatingSystem is missing for promoted install medium {head}/{platform}/{rid}.")

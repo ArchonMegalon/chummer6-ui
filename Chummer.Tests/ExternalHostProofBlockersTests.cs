@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Chummer.Desktop.Runtime;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests;
@@ -20,9 +21,9 @@ public sealed class ExternalHostProofBlockersTests
     private static readonly string?[] RepoRootCandidates =
     {
         Environment.GetEnvironmentVariable("CHUMMER_REPO_ROOT"),
+        DesktopRepoRootLocator.TryResolveChummerPresentationRepoRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory()),
         Directory.GetCurrentDirectory(),
         AppContext.BaseDirectory,
-        "/docker/chummercomplete/chummer-presentation",
         "/docker/chummercomplete/chummer6-ui",
     };
 

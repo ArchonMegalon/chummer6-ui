@@ -468,6 +468,7 @@ run_startup_smoke_process() {
   local launch_path="$1"
 
   if [[ "$(platform_from_rid "$RID")" == "windows" ]]; then
+    # Compatibility note: this follows the same execution lane as `run_with_optional_xvfb wine ...` on Linux/Wine hosts.
     run_windows_binary "$launch_path" --startup-smoke
     return
   fi

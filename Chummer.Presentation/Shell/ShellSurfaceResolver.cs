@@ -24,25 +24,20 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
         ArgumentNullException.ThrowIfNull(overviewState);
         ArgumentNullException.ThrowIfNull(shellState);
 
-        CharacterWorkspaceId? overviewActiveWorkspaceId = overviewState.Session.ActiveWorkspaceId ?? overviewState.WorkspaceId;
-        IReadOnlyList<OpenWorkspaceState> overviewOpenWorkspaces = overviewState.Session.OpenWorkspaces.Count > 0
-            ? overviewState.Session.OpenWorkspaces
-            : overviewState.OpenWorkspaces;
         string preferredRulesetId = ResolveRulesetId(
             shellState.PreferredRulesetId,
             shellState.OpenWorkspaces.Select(workspace => workspace.RulesetId),
             shellState.Commands.Select(command => command.RulesetId),
             shellState.NavigationTabs.Select(tab => tab.RulesetId));
         string activeRulesetId = ResolveRulesetId(
-            ResolveOverviewWorkspaceRulesetId(overviewActiveWorkspaceId, overviewOpenWorkspaces),
-            overviewOpenWorkspaces.Select(workspace => workspace.RulesetId),
+            ResolveShellWorkspaceRulesetId(shellState.ActiveWorkspaceId, shellState.OpenWorkspaces),
+            shellState.OpenWorkspaces.Select(workspace => workspace.RulesetId),
+            shellState.NavigationTabs.Select(tab => tab.RulesetId),
             [
                 shellState.ActiveRulesetId,
-                ResolveShellWorkspaceRulesetId(shellState.ActiveWorkspaceId, shellState.OpenWorkspaces),
                 preferredRulesetId
             ]);
-        CharacterWorkspaceId? activeWorkspaceId = overviewActiveWorkspaceId
-            ?? shellState.ActiveWorkspaceId;
+        CharacterWorkspaceId? activeWorkspaceId = shellState.ActiveWorkspaceId;
         string? activeTabId = shellState.ActiveTabId;
         IReadOnlyList<OpenWorkspaceState> openWorkspaces = shellState.OpenWorkspaces
             .Select(workspace => new OpenWorkspaceState(
@@ -167,21 +162,6 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             ?? secondaryCandidates.Select(RulesetDefaults.NormalizeOptional).FirstOrDefault(candidate => candidate is not null)
             ?? (tertiaryCandidates?.Select(RulesetDefaults.NormalizeOptional).FirstOrDefault(candidate => candidate is not null))
             ?? string.Empty;
-    }
-
-    private static string? ResolveOverviewWorkspaceRulesetId(
-        CharacterWorkspaceId? activeWorkspaceId,
-        IReadOnlyList<OpenWorkspaceState> openWorkspaces)
-    {
-        if (activeWorkspaceId is null)
-        {
-            return null;
-        }
-
-        string activeWorkspaceValue = activeWorkspaceId.Value.Value;
-        return openWorkspaces
-            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceValue, StringComparison.Ordinal))
-            ?.RulesetId;
     }
 
     private static string? ResolveShellWorkspaceRulesetId(

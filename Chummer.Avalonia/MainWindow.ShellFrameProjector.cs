@@ -590,15 +590,7 @@ internal static class MainWindowShellFrameProjector
 
     private static OpenWorkspaceState[] ResolveOpenWorkspaces(CharacterOverviewState overviewState, ShellSurfaceState shellSurface)
     {
-        if (shellSurface.OpenWorkspaces.Count > 0)
-        {
-            return shellSurface.OpenWorkspaces.ToArray();
-        }
-
-        IReadOnlyList<OpenWorkspaceState> overviewOpenWorkspaces = overviewState.Session.OpenWorkspaces.Count > 0
-            ? overviewState.Session.OpenWorkspaces
-            : overviewState.OpenWorkspaces;
-        return overviewOpenWorkspaces.ToArray();
+        return shellSurface.OpenWorkspaces.ToArray();
     }
 
     private static NavigatorTabItem[] ProjectNavigationTabs(

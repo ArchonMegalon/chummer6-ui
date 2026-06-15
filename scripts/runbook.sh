@@ -136,6 +136,7 @@ if [[ "$RUNBOOK_MODE" == "local-tests" ]]; then
   filter_args=()
   restore_args=()
   build_args=()
+  disable_build_servers_args=()
   if [[ -z "$TEST_NUGET_SOFT_FAIL" ]]; then
     if [[ "${CI:-}" == "true" || "${CI:-}" == "1" ]]; then
       TEST_NUGET_SOFT_FAIL=0
@@ -154,6 +155,9 @@ if [[ "$RUNBOOK_MODE" == "local-tests" ]]; then
   fi
   if [[ "$TEST_NO_BUILD" == "1" || "$TEST_NO_BUILD" == "true" || "$TEST_NO_BUILD" == "TRUE" ]]; then
     build_args=(--no-build)
+  fi
+  if [[ "$TEST_DISABLE_BUILD_SERVERS" == "1" || "$TEST_DISABLE_BUILD_SERVERS" == "true" || "$TEST_DISABLE_BUILD_SERVERS" == "TRUE" ]]; then
+    disable_build_servers_args=(--disable-build-servers)
   fi
   if [[ "$TEST_NO_RESTORE" != "1" && "$TEST_NO_RESTORE" != "true" && "$TEST_NO_RESTORE" != "TRUE" ]]; then
     if [[ "$TEST_NUGET_PREFLIGHT" == "1" || "$TEST_NUGET_PREFLIGHT" == "true" || "$TEST_NUGET_PREFLIGHT" == "TRUE" ]]; then
@@ -189,7 +193,7 @@ PY
     echo "local-tests using CHUMMER_API_BASE_URL=$CHUMMER_API_BASE_URL"
   fi
   set +e
-  dotnet test --project "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${restore_args[@]}" "${build_args[@]}" --output Normal 2>&1 | tee "$TEST_LOG_FILE"
+  dotnet test --project "$TEST_PROJECT" -c "$TEST_CONFIGURATION" "${framework_args[@]}" "${filter_args[@]}" "${restore_args[@]}" "${build_args[@]}" "${disable_build_servers_args[@]}" --output Normal 2>&1 | tee "$TEST_LOG_FILE"
   status=${PIPESTATUS[0]}
   set -e
   echo

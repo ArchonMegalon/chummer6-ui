@@ -3361,7 +3361,7 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(manifestContractsText, "string Status = \"published\"");
         StringAssert.Contains(manifestContractsText, "string Source = \"manifest\"");
-        StringAssert.Contains(downloadsViewText, "No published build is on the shelf yet");
+        StringAssert.Contains(downloadsViewText, "No published build is available yet");
         StringAssert.Contains(downloadsViewText, "See what works today");
     }
 
@@ -6054,7 +6054,8 @@ public class MigrationComplianceTests
         StringAssert.Contains(desktopRuntimeDiText, "services.AddSr4Ruleset();");
         StringAssert.Contains(desktopRuntimeDiText, "services.AddSr5Ruleset();");
         StringAssert.Contains(desktopRuntimeDiText, "services.AddSr6Ruleset();");
-        StringAssert.Contains(blazorProgramText, "builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, Directory.GetCurrentDirectory());");
+        StringAssert.Contains(blazorProgramText, "DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(");
+        StringAssert.Contains(blazorProgramText, "builder.Services.AddChummerLocalRuntimeClient(AppContext.BaseDirectory, contentRoot);");
         Assert.IsFalse(blazorProgramText.Contains("builder.Services.AddSr4Ruleset();", StringComparison.Ordinal));
         Assert.IsFalse(blazorProgramText.Contains("builder.Services.AddSr5Ruleset();", StringComparison.Ordinal));
         Assert.IsFalse(blazorProgramText.Contains("builder.Services.AddSr6Ruleset();", StringComparison.Ordinal));
@@ -7353,7 +7354,7 @@ public class MigrationComplianceTests
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeValueText", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("RuntimeInspectButton", StringComparison.Ordinal));
         Assert.IsFalse(summaryHeaderXamlText.Contains("NameValueText", StringComparison.Ordinal));
-        StringAssert.Contains(menuControlText, "Classes=\"classic-menu\"");
+        StringAssert.Contains(menuControlText, "Classes=\"classic-menu shell-menubar\"");
         StringAssert.Contains(xamlText, "MenuItem.active-menu");
     }
 
