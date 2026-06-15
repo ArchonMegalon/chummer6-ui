@@ -198,6 +198,7 @@
     <Compile Include="Presentation\DesktopJackpointWindowTests.cs" />
     <Compile Include="Presentation\DesktopTablePulseWindowTests.cs" />
     <Compile Include="Presentation\DesktopCommunityHubWindowTests.cs" />
+    <Compile Include="Presentation\DesktopMissingHorizonsWindowTests.cs" />
     <Compile Include="Presentation\DesktopQuicksilverWindowTests.cs" />
     <Compile Include="Presentation\DesktopRunnerPassportWindowTests.cs" />
     <Compile Include="Presentation\DesktopLocalCoProcessorWindowTests.cs" />
