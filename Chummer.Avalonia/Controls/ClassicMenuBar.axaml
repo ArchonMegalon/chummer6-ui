@@ -6,8 +6,10 @@
           Background="{DynamicResource ChummerShellChromeBrush}"
           Padding="0">
     <Menu x:Name="MenuBarPanel"
+          Classes="classic-menu shell-menubar"
           Background="Transparent">
       <MenuItem x:Name="FileMenuButton"
+                Classes="menu-root"
                 Tag="file"
                 Header="File"
                 Click="RootMenuItem_OnClick"
@@ -24,6 +26,7 @@
         <MenuItem Header="Exit" />
       </MenuItem>
       <MenuItem x:Name="EditMenuButton"
+                Classes="menu-root"
                 Tag="edit"
                 Header="Edit"
                 Click="RootMenuItem_OnClick"
@@ -35,6 +38,7 @@
         <MenuItem Header="Preferences" />
       </MenuItem>
       <MenuItem x:Name="SpecialMenuButton"
+                Classes="menu-root"
                 Tag="special"
                 Header="Special"
                 Click="RootMenuItem_OnClick"
@@ -44,6 +48,7 @@
         <MenuItem Header="Gear Browser" />
       </MenuItem>
       <MenuItem x:Name="ToolsMenuButton"
+                Classes="menu-root"
                 Tag="tools"
                 Header="Tools"
                 Click="RootMenuItem_OnClick"
@@ -53,6 +58,7 @@
         <MenuItem Header="Plugins" />
       </MenuItem>
       <MenuItem x:Name="WindowsMenuButton"
+                Classes="menu-root"
                 Tag="windows"
                 Header="Windows"
                 Click="RootMenuItem_OnClick"
@@ -62,6 +68,7 @@
         <MenuItem Header="Initiative" />
       </MenuItem>
       <MenuItem x:Name="HelpMenuButton"
+                Classes="menu-root"
                 Tag="help"
                 Header="Help"
                 Click="RootMenuItem_OnClick"

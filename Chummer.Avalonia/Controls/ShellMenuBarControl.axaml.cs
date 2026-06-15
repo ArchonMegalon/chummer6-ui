@@ -142,6 +142,7 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
                 Tag = command.Id,
                 IsEnabled = commandsEnabled && command.Enabled
             };
+            commandItem.Classes.Add("menu-command");
             if (command.IsPrimary)
             {
                 commandItem.Classes.Add("primary-menu-command");

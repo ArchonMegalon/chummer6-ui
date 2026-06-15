@@ -16,7 +16,7 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
     public GearClassicPort()
         : base(
             "gear",
-            "Gear Classic",
+            "Gear",
             ["Category", "Filters", "Details", "Purchase"],
             "Chummer/Forms/Selection Forms/SelectGear.Designer.cs")
     {
@@ -35,7 +35,7 @@ public partial class GearClassicPort : ClassicFormPortSurfaceControl
         _ = snapshot;
         if (_noticeText is not null)
         {
-            SetLeadNotice(_noticeText, state.Notice, "Gear selection and purchase are kept in a tabbed classic layout.");
+            SetLeadNotice(_noticeText, state.Notice, "Gear selection and purchase stay in one tabbed desktop layout.");
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Category", "Filters", "Details", "Purchase");

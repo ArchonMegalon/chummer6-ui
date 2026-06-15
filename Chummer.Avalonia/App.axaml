@@ -224,11 +224,46 @@
     </Style>
     <Style Selector="Menu.classic-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
-      <Setter Property="Padding" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Padding" Value="4,2" />
+      <Setter Property="MinHeight" Value="30" />
     </Style>
     <Style Selector="MenuItem">
-      <Setter Property="Padding" Value="5,1" />
-      <Setter Property="MinHeight" Value="20" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-root">
+      <Setter Property="Padding" Value="12,5" />
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="MenuItem.menu-root:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-root.active-menu">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-root:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-command">
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-command:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-command:selected">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-command:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="MenuItem.primary-menu-command">
       <Setter Property="FontWeight" Value="SemiBold" />

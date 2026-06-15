@@ -94,6 +94,7 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
                 Tag = command.Id,
                 IsEnabled = command.Enabled
             };
+            item.Classes.Add("menu-command");
             item.Click += MenuCommandItem_OnClick;
             rootMenuItem.Items.Add(item);
         }
