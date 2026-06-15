@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 using System;
 using System.Collections.Generic;
 
@@ -13,6 +14,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
 {
     private static readonly IReadOnlyDictionary<string, string> ButtonIconAssets = new Dictionary<string, string>(StringComparer.Ordinal)
     {
+        [nameof(ToolStripAutoAliceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
         [nameof(SaveButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/disk.png",
         [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
         [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
@@ -35,6 +37,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
     public event EventHandler? OpenForPrintingRequested;
     public event EventHandler? OpenForExportRequested;
     public event EventHandler? ImportRawRequested;
+    public event EventHandler? AutoAliceRequested;
     public event EventHandler? SaveRequested;
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
@@ -95,6 +98,7 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         string language = DesktopLocalizationCatalog.GetCurrentLanguage();
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.desktop_home", language);
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.tool.horizons", language);
+        SetButtonLabel(ToolStripAutoAliceButton, ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId));
         SetButtonLabel(SaveButton, "Save Workspace", "Save");
         SetButtonLabel(PrintButton, "Print Character", "Print");
         SetButtonLabel(CopyButton, "Copy", "Copy");
@@ -190,6 +194,11 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e)
     {
         ImportFileRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        AutoAliceRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void SaveButton_OnClick(object? sender, RoutedEventArgs e)

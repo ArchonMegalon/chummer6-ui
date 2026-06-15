@@ -8,6 +8,7 @@ public interface IToolStripSurface
     event EventHandler? OpenForPrintingRequested;
     event EventHandler? OpenForExportRequested;
     event EventHandler? ImportRawRequested;
+    event EventHandler? AutoAliceRequested;
     event EventHandler? SaveRequested;
     event EventHandler? PrintRequested;
     event EventHandler? CopyRequested;

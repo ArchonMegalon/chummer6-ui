@@ -75,6 +75,12 @@ public partial class MainWindow
             "save workspace");
     }
 
+    private async void ToolStrip_OnAutoAliceRequested(object? sender, EventArgs e)
+    {
+        await OpenDesktopCommandFromSurfaceAsync(DesktopAliceAssistant.CommandId, "open auto alice");
+        await TrackDesktopShellEventAsync("desktop_open_auto_alice", "toolstrip");
+    }
+
     private async void ToolStrip_OnPrintRequested(object? sender, EventArgs e)
     {
         await RunUiActionAsync(

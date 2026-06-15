@@ -1,7 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Chummer.Avalonia.Controls.ToolStripControl">
-  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
     <WrapPanel Orientation="Horizontal"
                Grid.Column="0"
                Classes="shell-toolstrip-band"
@@ -28,8 +28,18 @@
       <Button x:Name="ReportIssueButton" IsVisible="False" Classes="shell-action quiet" Content="Report Issue" MinHeight="24" Margin="0,0,0,2" Click="ReportIssueButton_OnClick" />
     </WrapPanel>
 
-    <Border x:Name="StatusTextBorder"
+    <Button x:Name="ToolStripAutoAliceButton"
             Grid.Column="1"
+            Classes="shell-action primary tool-icon"
+            MinWidth="102"
+            MinHeight="24"
+            Padding="6,1"
+            Margin="0,0,0,2"
+            VerticalAlignment="Center"
+            Click="AutoAliceButton_OnClick" />
+
+    <Border x:Name="StatusTextBorder"
+            Grid.Column="2"
             Classes="shell-toolstrip-state"
             Padding="3,0"
             IsHitTestVisible="False"

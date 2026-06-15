@@ -13,6 +13,9 @@
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#D4D0C8" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#EAE7DF" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E6E2DA" />
+          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#C8C2B7" />
+          <SolidColorBrush x:Key="ChummerShellMenuHoverBrush" Color="#F3EFE6" />
+          <SolidColorBrush x:Key="ChummerShellMenuRootBorderBrush" Color="#8B857C" />
           <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F3F3F3" />
           <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#ECE9D8" />
           <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#7F7F7F" />
@@ -43,6 +46,9 @@
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#172554" />
+          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#162033" />
+          <SolidColorBrush x:Key="ChummerShellMenuHoverBrush" Color="#223149" />
+          <SolidColorBrush x:Key="ChummerShellMenuRootBorderBrush" Color="#6B7B91" />
           <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#475569" />
@@ -223,11 +229,12 @@
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
     <Style Selector="Menu.classic-menu">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
-      <Setter Property="Padding" Value="4,2" />
-      <Setter Property="MinHeight" Value="30" />
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="6,3" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="FontSize" Value="14" />
+      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Menu.shell-menubar">
       <Setter Property="Margin" Value="0" />
@@ -236,19 +243,19 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-root">
-      <Setter Property="Padding" Value="12,5" />
-      <Setter Property="MinHeight" Value="28" />
-      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Padding" Value="14,5" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="FontSize" Value="14" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="CornerRadius" Value="2" />
       <Setter Property="Margin" Value="0,0,2,0" />
     </Style>
     <Style Selector="MenuItem.menu-root:pointerover">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellMenuHoverBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellMenuRootBorderBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-root.active-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBackgroundBrush}" />

@@ -110,6 +110,7 @@ public partial class MainWindow : Window
             onOpenForPrintingRequested: ToolStrip_OnOpenForPrintingRequested,
             onOpenForExportRequested: ToolStrip_OnOpenForExportRequested,
             onImportRawRequested: ToolStrip_OnImportRawRequested,
+            onAutoAliceRequested: ToolStrip_OnAutoAliceRequested,
             onSaveRequested: ToolStrip_OnSaveRequested,
             onPrintRequested: ToolStrip_OnPrintRequested,
             onCopyRequested: ToolStrip_OnCopyRequested,

@@ -17,7 +17,11 @@
     </Style>
   </Window.Styles>
   <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
-    <Border x:Name="MenuBarRegion" Grid.Row="0" Classes="shell-panel chrome" Padding="0,0,0,1">
+    <Border x:Name="MenuBarRegion"
+            Grid.Row="0"
+            Classes="shell-panel chrome"
+            Background="{DynamicResource ChummerShellMenuBarBrush}"
+            Padding="0,0,0,1">
       <Grid>
         <controls:ClassicMenuBar x:Name="ClassicMenuBarControl"
                                  IsVisible="False" />
@@ -25,7 +29,11 @@
       </Grid>
     </Border>
 
-    <Border x:Name="ToolStripRegion" Grid.Row="1" Classes="shell-panel chrome" Padding="2,1,2,1">
+    <Border x:Name="ToolStripRegion"
+            Grid.Row="1"
+            Classes="shell-panel chrome"
+            Background="{DynamicResource ChummerShellChromeSubtleBrush}"
+            Padding="2,1,2,1">
       <Grid>
         <controls:ClassicToolStrip x:Name="ClassicToolStripControl"
                                    IsVisible="False" />

@@ -26,6 +26,7 @@ internal static class MainWindowControlBinder
         EventHandler onOpenForPrintingRequested,
         EventHandler onOpenForExportRequested,
         EventHandler onImportRawRequested,
+        EventHandler onAutoAliceRequested,
         EventHandler onSaveRequested,
         EventHandler onPrintRequested,
         EventHandler onCopyRequested,
@@ -110,6 +111,7 @@ internal static class MainWindowControlBinder
             surface.OpenForPrintingRequested += onOpenForPrintingRequested;
             surface.OpenForExportRequested += onOpenForExportRequested;
             surface.ImportRawRequested += onImportRawRequested;
+            surface.AutoAliceRequested += onAutoAliceRequested;
             surface.SaveRequested += onSaveRequested;
             surface.PrintRequested += onPrintRequested;
             surface.CopyRequested += onCopyRequested;

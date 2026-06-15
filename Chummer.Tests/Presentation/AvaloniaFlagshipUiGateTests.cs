@@ -1003,6 +1003,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             (string ButtonName, string ExpectedLabel)[] expectedButtons =
             [
+                ("ClassicToolStripAutoAliceButton", "ALICE"),
                 ("ImportFileButton", "Open"),
                 ("SaveButton", "Save"),
                 ("PrintButton", "Print"),
@@ -2035,6 +2036,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             List<string> raisedEvents = [];
             control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
             control.ImportRawRequested += (_, _) => raisedEvents.Add("import_raw");
+            control.AutoAliceRequested += (_, _) => raisedEvents.Add("auto_alice");
             control.SaveRequested += (_, _) => raisedEvents.Add("save");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
@@ -2049,6 +2051,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             (string ButtonName, string EventId)[] buttonMap =
             [
+                ("ToolStripAutoAliceButton", "auto_alice"),
                 ("DesktopHomeButton", "desktop_home"),
                 ("HorizonsButton", "horizons"),
                 ("CampaignWorkspaceButton", "campaign_workspace"),

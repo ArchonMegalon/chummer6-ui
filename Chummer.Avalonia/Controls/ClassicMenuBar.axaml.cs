@@ -11,7 +11,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
     private readonly IReadOnlyList<MenuItem> _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
     private readonly Button? _autoAliceButton;
-    private bool _hasAutoAliceCommand;
 
     public ClassicMenuBar()
     {
@@ -62,13 +61,10 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
             RebuildMenuCommands(button);
         }
 
-        _hasAutoAliceCommand = _commandsByMenuId.Values
-            .SelectMany(static commands => commands)
-            .Any(command => string.Equals(command.Id, DesktopAliceAssistant.CommandId, StringComparison.Ordinal));
         if (_autoAliceButton is not null)
         {
-            _autoAliceButton.IsVisible = _hasAutoAliceCommand;
-            _autoAliceButton.IsEnabled = _hasAutoAliceCommand && !state.IsBusy;
+            _autoAliceButton.IsVisible = true;
+            _autoAliceButton.IsEnabled = !state.IsBusy;
         }
     }
 
@@ -97,11 +93,6 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 
     private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (!_hasAutoAliceCommand)
-        {
-            return;
-        }
-
         MenuCommandSelected?.Invoke(this, DesktopAliceAssistant.CommandId);
     }
 
