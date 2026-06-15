@@ -60,11 +60,6 @@ internal static class ClassicModePolicy
         }
 
         string normalized = sectionId.Trim().ToLowerInvariant();
-        if (normalized.Contains("gear", StringComparison.Ordinal))
-        {
-            return "gear";
-        }
-
         if (normalized.Contains("career", StringComparison.Ordinal)
             || normalized.Contains("karma", StringComparison.Ordinal)
             || normalized.Contains("advancement", StringComparison.Ordinal))

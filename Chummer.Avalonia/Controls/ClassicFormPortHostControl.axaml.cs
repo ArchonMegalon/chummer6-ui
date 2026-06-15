@@ -19,8 +19,7 @@ public partial class ClassicFormPortHostControl : UserControl
             ["character_career"] = new CharacterCareerClassicPort(),
             ["character_create"] = new CharacterCreateClassicPort(),
             ["settings"] = new SettingsClassicPort(),
-            ["master_index"] = new MasterIndexClassicPort(),
-            ["gear"] = new GearClassicPort()
+            ["master_index"] = new MasterIndexClassicPort()
         };
     }
 

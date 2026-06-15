@@ -64,7 +64,7 @@ public sealed class ClassicFormPortDesktopGuardTests
         StringAssert.Contains(hostText, "CharacterCreateClassicPort");
         StringAssert.Contains(hostText, "SettingsClassicPort");
         StringAssert.Contains(hostText, "MasterIndexClassicPort");
-        StringAssert.Contains(hostText, "GearClassicPort");
+        Assert.IsFalse(hostText.Contains("GearClassicPort", StringComparison.Ordinal));
         StringAssert.Contains(mainWindowText, "x:Name=\"ClassicMenuBarControl\"");
         StringAssert.Contains(mainWindowText, "x:Name=\"ClassicToolStripControl\"");
         StringAssert.Contains(mainWindowText, "x:Name=\"ClassicStatusStripControl\"");
@@ -101,12 +101,11 @@ public sealed class ClassicFormPortDesktopGuardTests
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCreateClassicPort.axaml", "CharacterCreateClassicPort.axaml.cs");
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "SettingsClassicPort.axaml", "SettingsClassicPort.axaml.cs");
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "MasterIndexClassicPort.axaml", "MasterIndexClassicPort.axaml.cs");
-        AssertRuntimePortUsesDenseClassicControls(repoRoot, "GearClassicPort.axaml", "GearClassicPort.axaml.cs");
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCareerClassicPort.axaml")));
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCreateClassicPort.axaml")));
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "SettingsClassicPort.axaml")));
         Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "MasterIndexClassicPort.axaml")));
-        Assert.IsTrue(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "GearClassicPort.axaml")));
+        Assert.IsFalse(File.Exists(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "GearClassicPort.axaml")));
     }
 
     private static void AssertPublishedJsonStatus(string publishedRoot, string fileName, string expectedStatus)

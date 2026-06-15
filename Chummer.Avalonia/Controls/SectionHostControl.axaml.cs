@@ -20,6 +20,7 @@ public partial class SectionHostControl : UserControl
     private const string ExplainDrawerOpenSourceAnchorActionId = "explain_drawer.open_source_anchor";
     private const string ExplainDrawerReviewBoundedFollowUpActionId = "explain_drawer.review_bounded_follow_up";
     internal static Func<string, bool>? ExplainDrawerSourceAnchorLauncherOverrideForTesting { get; set; }
+    private IReadOnlyList<GearWorkbenchItem> _currentGearWorkbenchItems = Array.Empty<GearWorkbenchItem>();
     private BuildLabConceptIntakeState? _buildLab;
     private bool _suppressNavigationTabSelectionChanged;
     private bool _suppressSectionActionSelectionChanged;
@@ -48,6 +49,7 @@ public partial class SectionHostControl : UserControl
         SetSectionActions(state.SectionActions, state.ActiveActionId);
         SetNotice(state.Notice);
         SetAttributeParityEditor(state.SectionId, state.PreviewJson);
+        SetGearWorkbench(state.SectionId, state.PreviewJson, state.Rows, state.QuickActions);
         SetClassicCharacterSheet(state.SectionId, state.PreviewJson, state.Rows);
         SetSectionPreview(state.SectionId, state.PreviewJson, state.Rows);
         SetBuildLab(state.BuildLab);
@@ -162,7 +164,7 @@ public partial class SectionHostControl : UserControl
         SectionReviewPanel.IsVisible = false;
         SectionRowsList.ItemsSource = null;
         SectionRowsList.ItemsSource = rowArray;
-        SectionRowsBorder.IsVisible = !showingAttributeParityEditor;
+        SectionRowsBorder.IsVisible = !showingAttributeParityEditor && !GearWorkbenchBorder.IsVisible;
     }
 
     public void SetSectionContext(
@@ -222,6 +224,45 @@ public partial class SectionHostControl : UserControl
         }
 
         ClassicCharacterSheetBorder.IsVisible = summaryFacts.Count > 0 || attributeFacts.Count > 0;
+        UpdateSectionRowsHeight();
+    }
+
+    public void SetGearWorkbench(
+        string? sectionId,
+        string previewJson,
+        IEnumerable<SectionRowDisplayItem> rows,
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        string? normalizedSectionId = NormalizeSectionId(sectionId);
+        bool shouldShow = normalizedSectionId is "gear" or "inventory";
+        if (!shouldShow)
+        {
+            _currentGearWorkbenchItems = Array.Empty<GearWorkbenchItem>();
+            GearWorkbenchBadgeStrip.Children.Clear();
+            GearWorkbenchList.ItemsSource = null;
+            GearWorkbenchDetailText.Text = string.Empty;
+            GearWorkbenchBorder.IsVisible = false;
+            UpdateSectionRowsHeight();
+            return;
+        }
+
+        JsonObject? root = TryParseRootObject(previewJson);
+        GearWorkbenchState workbench = BuildGearWorkbenchState(normalizedSectionId, root, rows.ToArray(), quickActions);
+        _currentGearWorkbenchItems = workbench.Items;
+        GearWorkbenchTitleText.Text = workbench.Title;
+        GearWorkbenchSummaryText.Text = workbench.Summary;
+        GearWorkbenchBadgeStrip.Children.Clear();
+        foreach (Border badge in workbench.Badges)
+        {
+            GearWorkbenchBadgeStrip.Children.Add(badge);
+        }
+
+        GearWorkbenchList.ItemsSource = _currentGearWorkbenchItems;
+        GearWorkbenchList.SelectedIndex = _currentGearWorkbenchItems.Count > 0 ? 0 : -1;
+        GearWorkbenchDetailText.Text = _currentGearWorkbenchItems.FirstOrDefault()?.Detail
+            ?? workbench.EmptyDetail;
+        GearWorkbenchBorder.IsVisible = true;
+        SectionRowsBorder.IsVisible = false;
         UpdateSectionRowsHeight();
     }
 
@@ -2212,6 +2253,188 @@ public partial class SectionHostControl : UserControl
         return card;
     }
 
+    private void GearWorkbenchList_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (GearWorkbenchList.SelectedItem is GearWorkbenchItem item)
+        {
+            GearWorkbenchDetailText.Text = item.Detail;
+        }
+        else if (_currentGearWorkbenchItems.Count > 0)
+        {
+            GearWorkbenchDetailText.Text = _currentGearWorkbenchItems[0].Detail;
+        }
+        else
+        {
+            GearWorkbenchDetailText.Text = "Select an inventory entry to inspect its current loadout details.";
+        }
+    }
+
+    private GearWorkbenchState BuildGearWorkbenchState(
+        string? normalizedSectionId,
+        JsonObject? root,
+        IReadOnlyList<SectionRowDisplayItem> rows,
+        IReadOnlyList<SectionQuickActionDisplayItem> quickActions)
+    {
+        string title = normalizedSectionId == "inventory" ? "Inventory" : "Gear";
+        string? primaryActionLabel = quickActions.FirstOrDefault(static action => action.IsPrimary)?.Label
+            ?? quickActions.FirstOrDefault()?.Label;
+        IReadOnlyList<GearWorkbenchItem> items = normalizedSectionId == "inventory"
+            ? BuildInventoryWorkbenchItems(root, rows)
+            : BuildGearWorkbenchItems(root, rows);
+
+        string summary = items.Count == 0
+            ? BuildEmptySectionSummary(normalizedSectionId, title, quickActions)
+            : primaryActionLabel is null
+                ? $"{items.Count} visible loadout entries. Select an entry to inspect details."
+                : $"{items.Count} visible loadout entries. Use {primaryActionLabel} to extend the current loadout.";
+
+        string emptyDetail = primaryActionLabel is null
+            ? "No inventory entries are currently visible."
+            : $"No inventory entries are currently visible. Use {primaryActionLabel}.";
+
+        List<Border> badges = [];
+        if (normalizedSectionId == "inventory")
+        {
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Gear", ReadCountLabel(root, "gearCount", rows, "gear")), emphasizeValue: false));
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Weapons", ReadCountLabel(root, "weaponCount", rows, "weapons")), emphasizeValue: false));
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Armor", ReadCountLabel(root, "armorCount", rows, "armors")), emphasizeValue: false));
+        }
+        else
+        {
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Entries", items.Count.ToString(CultureInfo.InvariantCulture)), emphasizeValue: false));
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Nuyen", root is null ? "Unknown" : ReadScalar(root, "nuyen") ?? "Unknown"), emphasizeValue: false));
+            badges.Add((Border)CreateClassicFactCard(new ClassicSheetFactDisplayItem("Action", primaryActionLabel ?? "Inspect"), emphasizeValue: false));
+        }
+
+        return new GearWorkbenchState(title, summary, items, badges, emptyDetail);
+    }
+
+    private IReadOnlyList<GearWorkbenchItem> BuildGearWorkbenchItems(JsonObject? root, IReadOnlyList<SectionRowDisplayItem> rows)
+    {
+        JsonArray? gearArray = ReadArray(root, "gear");
+        if (gearArray is not null)
+        {
+            List<GearWorkbenchItem> items = [];
+            for (int index = 0; index < gearArray.Count; index++)
+            {
+                if (gearArray[index] is not JsonObject entry)
+                {
+                    continue;
+                }
+
+                string? label = ReadScalar(entry, "name");
+                if (string.IsNullOrWhiteSpace(label))
+                {
+                    label = $"Gear {index + 1}";
+                }
+
+                string summary = BuildJoinedSummary(
+                    BuildScalarFact(ReadScalar(entry, "rating"), "Rating"),
+                    BuildScalarFact(ReadScalar(entry, "quantity"), "Qty"),
+                    ReadScalar(entry, "location") ?? string.Empty);
+                string detail = BuildJoinedLines(
+                    BuildDetailLine("Name", label),
+                    BuildDetailLine("Rating", ReadScalar(entry, "rating")),
+                    BuildDetailLine("Quantity", ReadScalar(entry, "quantity")),
+                    BuildDetailLine("Location", ReadScalar(entry, "location")),
+                    BuildDetailLine("Source", ReadScalar(entry, "source")),
+                    BuildDetailLine("Availability", ReadScalar(entry, "availability")));
+                items.Add(new GearWorkbenchItem(label, string.IsNullOrWhiteSpace(summary) ? "Runner gear entry" : summary, string.IsNullOrWhiteSpace(detail) ? label : detail));
+            }
+
+            if (items.Count > 0)
+            {
+                return items;
+            }
+        }
+
+        return rows
+            .Where(row => row.Path.Contains("gear", StringComparison.OrdinalIgnoreCase))
+            .Select(static row => new GearWorkbenchItem(row.DisplayPath, row.DisplayValue, $"{row.DisplayPath}{Environment.NewLine}{row.DisplayValue}"))
+            .ToArray();
+    }
+
+    private IReadOnlyList<GearWorkbenchItem> BuildInventoryWorkbenchItems(JsonObject? root, IReadOnlyList<SectionRowDisplayItem> rows)
+    {
+        List<GearWorkbenchItem> items = [];
+        AppendInventoryItems(items, root, "gear", "Gear", rows);
+        AppendInventoryItems(items, root, "weapons", "Weapons", rows);
+        AppendInventoryItems(items, root, "armors", "Armor", rows);
+        AppendInventoryItems(items, root, "cyberwares", "Cyberware", rows);
+        AppendInventoryItems(items, root, "vehicles", "Vehicles", rows);
+        return items;
+    }
+
+    private void AppendInventoryItems(
+        List<GearWorkbenchItem> items,
+        JsonObject? root,
+        string propertyName,
+        string title,
+        IReadOnlyList<SectionRowDisplayItem> rows)
+    {
+        JsonArray? array = ReadArray(root, propertyName);
+        if (array is not null)
+        {
+            for (int index = 0; index < array.Count; index++)
+            {
+                if (array[index] is not JsonObject entry)
+                {
+                    continue;
+                }
+
+                string? label = ReadScalar(entry, "name");
+                if (string.IsNullOrWhiteSpace(label))
+                {
+                    label = $"{title} {index + 1}";
+                }
+
+                string summary = BuildJoinedSummary(
+                    BuildScalarFact(ReadScalar(entry, "rating"), "Rating"),
+                    BuildScalarFact(ReadScalar(entry, "quantity"), "Qty"),
+                    ReadScalar(entry, "location") ?? string.Empty);
+                string detail = BuildJoinedLines(
+                    BuildDetailLine("Type", title),
+                    BuildDetailLine("Name", label),
+                    BuildDetailLine("Rating", ReadScalar(entry, "rating")),
+                    BuildDetailLine("Quantity", ReadScalar(entry, "quantity")),
+                    BuildDetailLine("Location", ReadScalar(entry, "location")));
+                items.Add(new GearWorkbenchItem(label, string.IsNullOrWhiteSpace(summary) ? title : summary, string.IsNullOrWhiteSpace(detail) ? label : detail));
+            }
+        }
+
+        foreach (SectionRowDisplayItem row in rows.Where(row => row.Path.StartsWith(propertyName, StringComparison.OrdinalIgnoreCase)))
+        {
+            items.Add(new GearWorkbenchItem(
+                row.DisplayPath,
+                row.DisplayValue,
+                $"{title}{Environment.NewLine}{row.DisplayPath}: {row.DisplayValue}"));
+        }
+    }
+
+    private static string ReadCountLabel(JsonObject? root, string propertyName, IReadOnlyList<SectionRowDisplayItem> rows, string prefix)
+    {
+        string? scalar = root is null ? null : ReadScalar(root, propertyName);
+        if (!string.IsNullOrWhiteSpace(scalar))
+        {
+            return scalar;
+        }
+
+        int count = rows.Count(row => row.Path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        return count.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private static string BuildScalarFact(string? value, string label)
+        => string.IsNullOrWhiteSpace(value) ? string.Empty : $"{label} {value}";
+
+    private static string BuildDetailLine(string label, string? value)
+        => string.IsNullOrWhiteSpace(value) ? string.Empty : $"{label}: {value}";
+
+    private static string BuildJoinedSummary(params string[] segments)
+        => string.Join(" · ", segments.Where(static segment => !string.IsNullOrWhiteSpace(segment)));
+
+    private static string BuildJoinedLines(params string[] lines)
+        => string.Join(Environment.NewLine, lines.Where(static line => !string.IsNullOrWhiteSpace(line)));
+
     private void UpdateSectionRowsHeight()
     {
         if (AttributeParityEditorBorder.IsVisible)
@@ -2222,6 +2445,7 @@ public partial class SectionHostControl : UserControl
         }
 
         bool denseChromeVisible = ClassicCharacterSheetBorder.IsVisible
+            || GearWorkbenchBorder.IsVisible
             || SectionContextBorder.IsVisible
             || SectionActionTabStripBorder.IsVisible
             || SectionQuickActionsBorder.IsVisible;
@@ -2482,3 +2706,12 @@ internal sealed record ExplainDrawerContext(
 public sealed record SectionQuickActionDisplayItem(string ControlId, string Label, bool IsPrimary);
 
 public sealed record ClassicSheetFactDisplayItem(string Label, string Value);
+
+internal sealed record GearWorkbenchItem(string Label, string Summary, string Detail);
+
+internal sealed record GearWorkbenchState(
+    string Title,
+    string Summary,
+    IReadOnlyList<GearWorkbenchItem> Items,
+    IReadOnlyList<Border> Badges,
+    string EmptyDetail);

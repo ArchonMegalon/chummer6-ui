@@ -4083,6 +4083,56 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Native_gear_surface_replaces_classic_gear_port_with_a_real_loadout_panel()
+    {
+        WithStandaloneControl<SectionHostControl>(control =>
+        {
+            control.SetState(new SectionHostState(
+                SectionId: "gear",
+                NavigationTabs: [],
+                ActiveTabId: "tab-gear",
+                SectionActions: [],
+                ActiveActionId: "tab-gear.gear",
+                Notice: "Ready.",
+                PreviewJson: """
+{
+  "section": "gear",
+  "nuyen": 12000,
+  "gear": [
+    { "name": "Medkit", "rating": 6, "location": "Backpack", "availability": "8R" },
+    { "name": "Ammo: APDS", "quantity": 40, "location": "Duffel" }
+  ]
+}
+""",
+                Rows:
+                [
+                    new SectionRowDisplayItem("gear[0]", "Medkit 6 · Backpack"),
+                    new SectionRowDisplayItem("gear[1]", "Ammo: APDS ×40 · Duffel")
+                ],
+                QuickActions:
+                [
+                    new SectionQuickActionDisplayItem("gear_add", "Add Gear", true)
+                ],
+                BuildLab: null,
+                BrowseWorkspace: null,
+                ContactGraph: null,
+                DowntimePlanner: null,
+                NpcPersonaStudio: null));
+            PumpStandaloneUi();
+
+            Border gearWorkbench = FindDescendant<Border>(control, "GearWorkbenchBorder");
+            ListBox gearList = FindDescendant<ListBox>(control, "GearWorkbenchList");
+            TextBlock detail = FindDescendant<TextBlock>(control, "GearWorkbenchDetailText");
+            Border sectionRows = FindDescendant<Border>(control, "SectionRowsBorder");
+
+            Assert.IsTrue(gearWorkbench.IsVisible, "Gear should now render in the native section host instead of the classic compatibility port.");
+            Assert.AreEqual(2, gearList.ItemCount);
+            StringAssert.Contains(detail.Text ?? string.Empty, "Medkit");
+            Assert.IsFalse(sectionRows.IsVisible, "Native gear should not duplicate the same inventory through the generic row list.");
+        });
+    }
+
+    [TestMethod]
     public void Client_label_visibility_gate_keeps_profile_rows_and_priority_labels_visible_without_collapsible_profile_chrome()
     {
         string sectionMarkup = File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));

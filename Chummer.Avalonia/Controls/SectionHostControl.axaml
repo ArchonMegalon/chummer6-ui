@@ -37,7 +37,7 @@
 
     <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
       <Border Padding="0">
-      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="1">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" RowSpacing="1">
         <Border x:Name="NoticeBorder"
                 Classes="shell-panel subtle"
                 Padding="2,1"
@@ -73,6 +73,59 @@
           </StackPanel>
         </Border>
         <Border Grid.Row="1"
+                x:Name="GearWorkbenchBorder"
+                Classes="shell-panel"
+                IsVisible="False"
+                Padding="3,2">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="4">
+            <StackPanel Spacing="1">
+              <TextBlock x:Name="GearWorkbenchTitleText"
+                         Text="Gear"
+                         Classes="shell-section-title" />
+              <TextBlock x:Name="GearWorkbenchSummaryText"
+                         Classes="shell-caption"
+                         Text="Loadout summary" />
+            </StackPanel>
+            <WrapPanel Grid.Row="1"
+                       x:Name="GearWorkbenchBadgeStrip"
+                       Orientation="Horizontal"
+                       ItemHeight="28" />
+            <Grid Grid.Row="2"
+                  ColumnDefinitions="1.2*,0.8*"
+                  ColumnSpacing="8">
+              <ListBox x:Name="GearWorkbenchList"
+                       MinHeight="168"
+                       MaxHeight="320"
+                       BorderThickness="0"
+                       Background="Transparent"
+                       SelectionChanged="GearWorkbenchList_OnSelectionChanged">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <StackPanel Spacing="0" Margin="0,1">
+                      <TextBlock Text="{Binding Label}"
+                                 FontWeight="SemiBold"
+                                 TextTrimming="CharacterEllipsis" />
+                      <TextBlock Text="{Binding Summary}"
+                                 Classes="shell-caption"
+                                 TextWrapping="Wrap"
+                                 TextTrimming="CharacterEllipsis"
+                                 MaxLines="2" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <Border Grid.Column="1"
+                      Classes="shell-panel subtle"
+                      Padding="4,3">
+                <TextBlock x:Name="GearWorkbenchDetailText"
+                           Classes="shell-caption"
+                           Text="Select an inventory entry to inspect its current loadout details."
+                           TextWrapping="Wrap" />
+              </Border>
+            </Grid>
+          </Grid>
+        </Border>
+        <Border Grid.Row="2"
                 x:Name="ClassicCharacterSheetBorder"
                 Classes="shell-panel"
                 IsVisible="False"
@@ -90,7 +143,7 @@
                        ItemHeight="28" />
           </StackPanel>
         </Border>
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 x:Name="AttributeParityEditorBorder"
                 Classes="shell-panel"
                 IsVisible="False"
@@ -115,7 +168,7 @@
             </ScrollViewer>
           </Grid>
         </Border>
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 x:Name="BuildLabBorder"
                 Classes="shell-panel subtle"
                 IsVisible="False"
@@ -129,7 +182,7 @@
                         Spacing="4" />
           </StackPanel>
         </Border>
-        <Border Grid.Row="4"
+        <Border Grid.Row="5"
                 x:Name="SectionRowsBorder"
                 Classes="shell-panel"
                 Padding="3,2">
@@ -162,7 +215,7 @@
             </ListBox>
           </StackPanel>
         </Border>
-        <Border Grid.Row="5"
+        <Border Grid.Row="6"
                 x:Name="SectionReviewPanel"
                 Classes="shell-panel subtle"
                 Padding="3,2"
@@ -174,7 +227,7 @@
                    MinHeight="80"
                    MaxHeight="220" />
         </Border>
-        <Border Grid.Row="6"
+        <Border Grid.Row="7"
                 x:Name="SectionQuickActionsBorder"
                 Classes="shell-panel"
                 Padding="1,0"
