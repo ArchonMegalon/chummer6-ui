@@ -227,6 +227,10 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="Padding" Value="4,2" />
       <Setter Property="MinHeight" Value="30" />
+      <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Menu.shell-menubar">
+      <Setter Property="Margin" Value="0" />
     </Style>
     <Style Selector="MenuItem">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -236,14 +240,20 @@
       <Setter Property="MinHeight" Value="28" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellChromeBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Margin" Value="0,0,2,0" />
     </Style>
     <Style Selector="MenuItem.menu-root:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-root.active-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-root:disabled">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
@@ -254,19 +264,27 @@
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
     </Style>
     <Style Selector="MenuItem.menu-command:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-command:selected">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-command:disabled">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="MenuItem.primary-menu-command">
       <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Separator">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellBorderBrush}" />
+      <Setter Property="Margin" Value="2,3" />
     </Style>
     <Style Selector="primitives|TabStrip.classic-tabs">
       <Setter Property="MinHeight" Value="28" />
