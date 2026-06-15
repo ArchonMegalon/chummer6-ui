@@ -433,8 +433,11 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_jackpoint", "Jackpoint", "JackpointBadgePublications");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_table_pulse", "Table Pulse", "TablePulseBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_community_hub", "Community Hub", "CommunityHubBadgeOperations");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_nexus_pan", "NEXUS-PAN", "NexusPanBadgeWorkspaces");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_quicksilver", "Quicksilver", "QuicksilverBadgeHandoffs");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_runner_passport", "Runner Passport", "RunnerPassportBadgeDossiers");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_runbook_press", "Runbook Press", "RunbookPressBadgePublications");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_creator_os", "Creator OS", "CreatorOsBadgePublications");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorBadgeRules");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireBadgeRuns");
@@ -7210,9 +7213,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             "ALICE" => DesktopAliceWindow.LastOpenedWindowForTesting,
             "Run Control" => DesktopRunControlWindow.LastOpenedWindowForTesting,
             "Black Ledger" => DesktopBlackLedgerWindow.LastOpenedWindowForTesting,
+            "NEXUS-PAN" => DesktopNexusPanWindow.LastOpenedWindowForTesting,
             "Jackpoint" => DesktopJackpointWindow.LastOpenedWindowForTesting,
+            "Runbook Press" => DesktopRunbookPressWindow.LastOpenedWindowForTesting,
             "Table Pulse" => DesktopTablePulseWindow.LastOpenedWindowForTesting,
             "Community Hub" => DesktopCommunityHubWindow.LastOpenedWindowForTesting,
+            "Creator OS" => DesktopCreatorOsWindow.LastOpenedWindowForTesting,
             "Quicksilver" => DesktopQuicksilverWindow.LastOpenedWindowForTesting,
             "Runner Passport" => DesktopRunnerPassportWindow.LastOpenedWindowForTesting,
             "Local Co-Processor" => DesktopLocalCoProcessorWindow.LastOpenedWindowForTesting,

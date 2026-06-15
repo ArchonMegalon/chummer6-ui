@@ -193,11 +193,14 @@
     <Compile Include="Presentation\DesktopHorizonsWindowTests.cs" />
     <Compile Include="Presentation\DesktopKarmaForgeWindowTests.cs" />
     <Compile Include="Presentation\DesktopAliceWindowTests.cs" />
+    <Compile Include="Presentation\DesktopNexusPanWindowTests.cs" />
     <Compile Include="Presentation\DesktopRunControlWindowTests.cs" />
     <Compile Include="Presentation\DesktopBlackLedgerWindowTests.cs" />
     <Compile Include="Presentation\DesktopJackpointWindowTests.cs" />
+    <Compile Include="Presentation\DesktopRunbookPressWindowTests.cs" />
     <Compile Include="Presentation\DesktopTablePulseWindowTests.cs" />
     <Compile Include="Presentation\DesktopCommunityHubWindowTests.cs" />
+    <Compile Include="Presentation\DesktopCreatorOsWindowTests.cs" />
     <Compile Include="Presentation\DesktopMissingHorizonsWindowTests.cs" />
     <Compile Include="Presentation\DesktopQuicksilverWindowTests.cs" />
     <Compile Include="Presentation\DesktopRunnerPassportWindowTests.cs" />
