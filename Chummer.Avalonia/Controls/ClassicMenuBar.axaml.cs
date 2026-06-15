@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -9,6 +10,8 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
 {
     private readonly IReadOnlyList<MenuItem> _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
+    private readonly Button? _autoAliceButton;
+    private bool _hasAutoAliceCommand;
 
     public ClassicMenuBar()
     {
@@ -25,6 +28,11 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
         .Where(static item => item is not null)
         .Cast<MenuItem>()
         .ToArray();
+        _autoAliceButton = this.FindControl<Button>("AutoAliceButton");
+        if (_autoAliceButton is not null)
+        {
+            _autoAliceButton.Content = ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId);
+        }
     }
 
     public event EventHandler<string>? MenuSelected;
@@ -53,6 +61,15 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
             button.Classes.Set("active-menu", string.Equals(state.OpenMenuId, menuId, StringComparison.Ordinal));
             RebuildMenuCommands(button);
         }
+
+        _hasAutoAliceCommand = _commandsByMenuId.Values
+            .SelectMany(static commands => commands)
+            .Any(command => string.Equals(command.Id, DesktopAliceAssistant.CommandId, StringComparison.Ordinal));
+        if (_autoAliceButton is not null)
+        {
+            _autoAliceButton.IsVisible = _hasAutoAliceCommand;
+            _autoAliceButton.IsEnabled = _hasAutoAliceCommand && !state.IsBusy;
+        }
     }
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e) => SelectRootMenuItem(sender);
@@ -76,6 +93,16 @@ public partial class ClassicMenuBar : UserControl, IMenuBarSurface
         {
             MenuCommandSelected?.Invoke(this, commandId);
         }
+    }
+
+    private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!_hasAutoAliceCommand)
+        {
+            return;
+        }
+
+        MenuCommandSelected?.Invoke(this, DesktopAliceAssistant.CommandId);
     }
 
     private void RebuildMenuCommands(MenuItem rootMenuItem)

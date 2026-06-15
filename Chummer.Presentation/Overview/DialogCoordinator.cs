@@ -141,6 +141,39 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, DesktopAliceAssistant.DialogId, StringComparison.Ordinal))
+        {
+            switch (actionId)
+            {
+                case DesktopAliceAssistant.PreviewActionId:
+                    context.Publish(context.State with
+                    {
+                        ActiveDialog = DesktopAliceAssistant.BuildPreviewDialog(dialog, context.State),
+                        Error = null
+                    });
+                    return;
+                case DesktopAliceAssistant.ApplyActionId:
+                    if (!DesktopAliceAssistant.TryBuildQuickAddRequest(dialog, context.State, out WorkspaceQuickAddRequest aliceRequest, out string aliceNotice))
+                    {
+                        context.Publish(context.State with { Error = "ALICE could not build an applyable proposal from the current surface." });
+                        return;
+                    }
+
+                    await ApplyQuickAddDialogAsync(context, dialog, aliceRequest, aliceNotice, ct);
+                    return;
+                case DesktopAliceAssistant.OpenHandoffActionId:
+                    string? handoffCommandId = DesktopAliceAssistant.TryGetHandoffCommandId(dialog, context.State);
+                    if (string.IsNullOrWhiteSpace(handoffCommandId) || context.ExecuteCommandAsync is null)
+                    {
+                        context.Publish(context.State with { Error = "ALICE could not find a supported handoff for the current surface." });
+                        return;
+                    }
+
+                    await context.ExecuteCommandAsync(handoffCommandId, ct);
+                    return;
+            }
+        }
+
         if (string.Equals(dialog.Id, "dialog.character_roster", StringComparison.Ordinal))
         {
             switch (actionId)

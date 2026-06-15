@@ -32,6 +32,7 @@ public static class ShellChromeBoundary
         ["close_all"] = "Close All",
         ["export_character"] = "Export...",
         ["dice_roller"] = "Dice Roller",
+        ["auto_alice"] = "Auto ALICE",
         ["global_settings"] = "Global Settings",
         ["character_settings"] = "Character Settings",
         ["switch_ruleset"] = "Switch Ruleset...",

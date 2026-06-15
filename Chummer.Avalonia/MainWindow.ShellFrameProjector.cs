@@ -33,6 +33,7 @@ internal static class MainWindowShellFrameProjector
             },
             ["tools"] = new(StringComparer.Ordinal)
             {
+                "auto_alice",
                 "dice_roller",
                 "global_settings",
                 "character_settings",

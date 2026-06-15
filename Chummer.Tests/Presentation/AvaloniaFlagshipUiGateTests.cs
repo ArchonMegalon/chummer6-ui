@@ -420,6 +420,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorBadgeRules");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireBadgeRuns");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightBadgeRuns");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampBadgeWorkspaces");
+            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricBadgeRules");
 
             hubWindow.Close();
             harness.AdvanceFrames(12);
@@ -445,6 +448,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_local_co_processor", "Local Co-Processor", "LocalCoProcessorDetailModeCombo", "LocalCoProcessorDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyDetailModeCombo", "AnarchyDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireDetailModeCombo", "GhostwireDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightDetailModeCombo", "ReadyForTonightDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampDetailModeCombo", "OnrampDetailText");
+            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricDetailModeCombo", "KnowledgeFabricDetailText");
 
             Button quicksilverLaunchButton = harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_quicksilver");
             RaiseClick(quicksilverLaunchButton);
@@ -2056,7 +2062,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 openMenuId: null,
                 knownMenuIds: menuIds,
                 openMenuCommands: [],
-                isBusy: false);
+                isBusy: false,
+                menuCommandsByMenuId: new Dictionary<string, IReadOnlyList<MenuCommandItem>>(StringComparer.Ordinal)
+                {
+                    ["tools"] =
+                    [
+                        new MenuCommandItem(DesktopAliceAssistant.CommandId, "Auto ALICE", true, true)
+                    ]
+                });
 
             foreach (string buttonName in new[]
                      {
@@ -2072,6 +2085,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
 
             CollectionAssert.AreEqual(menuIds, selectedMenus.ToArray());
+            RaiseClick(FindDescendant<Button>(control, "AutoAliceButton"));
+            CollectionAssert.Contains(selectedCommands, DesktopAliceAssistant.CommandId);
+            selectedCommands.Clear();
 
             control.SetMenuState(
                 openMenuId: "file",
@@ -7132,6 +7148,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             "Local Co-Processor" => DesktopLocalCoProcessorWindow.LastOpenedWindowForTesting,
             "Anarchy" => DesktopAnarchyWindow.LastOpenedWindowForTesting,
             "Ghostwire" => DesktopGhostwireWindow.LastOpenedWindowForTesting,
+            "Ready for Tonight" => DesktopReadyForTonightWindow.LastOpenedWindowForTesting,
+            "Onramp" => DesktopOnrampWindow.LastOpenedWindowForTesting,
+            "Knowledge Fabric" => DesktopKnowledgeFabricWindow.LastOpenedWindowForTesting,
             "Horizons" => DesktopHorizonsWindow.LastOpenedWindowForTesting,
             _ => null
         };

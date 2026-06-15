@@ -1782,6 +1782,52 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_auto_alice_on_supported_surface_builds_interview_dialog()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: new CharacterWorkspaceId("runner-1"),
+            rulesetId: RulesetDefaults.Sr5,
+            activeSectionId: "skills",
+            activeDialogId: null);
+
+        Assert.AreEqual(DesktopAliceAssistant.DialogId, dialog.Id);
+        Assert.AreEqual("Auto ALICE", dialog.Title);
+        Assert.AreEqual("skills", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceId"));
+        Assert.AreEqual("QuickAddApply", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
+        Assert.AreEqual("street_sam", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceArchetype"));
+        CollectionAssert.AreEqual(
+            new[] { DesktopAliceAssistant.PreviewActionId, "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void CreateCommandDialog_auto_alice_on_new_character_surface_builds_guided_handoff_dialog()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr6,
+            activeSectionId: "create",
+            activeDialogId: "dialog.new_character");
+
+        Assert.AreEqual("character_create", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceId"));
+        Assert.AreEqual("GuidedBuildPlan", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
+        Assert.AreEqual("new_character", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceHandoffCommandId"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "guided workflow handoff");
+    }
+
+    [TestMethod]
     public void RebuildDynamicDialog_new_character_normalizes_build_method_for_selected_ruleset()
     {
         DesktopDialogState dialog = new(

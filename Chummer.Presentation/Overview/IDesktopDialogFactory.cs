@@ -18,6 +18,8 @@ public interface IDesktopDialogFactory
         string? activeSectionJson,
         CharacterWorkspaceId? currentWorkspace,
         string? rulesetId,
+        string? activeSectionId = null,
+        string? activeDialogId = null,
         RuntimeInspectorProjection? runtimeInspector = null,
         MasterIndexResponse? masterIndex = null,
         TranslatorLanguagesResponse? translatorLanguages = null,

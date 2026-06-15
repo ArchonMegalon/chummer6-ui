@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Chummer.Presentation.Overview;
+using Chummer.Presentation.UiKit;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -9,6 +10,7 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
 {
     private readonly MenuItem[] _rootMenuItems;
     private readonly Dictionary<string, IReadOnlyList<MenuCommandItem>> _commandsByMenuId = new(StringComparer.Ordinal);
+    private bool _hasAutoAliceCommand;
     private string? _openMenuId;
     private bool _isBusy;
 
@@ -78,6 +80,12 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
             button.Classes.Set("active-menu", active);
             RebuildMenuItemCommands(button, commandsEnabled: known && hasCommands);
         }
+
+        _hasAutoAliceCommand = _commandsByMenuId.Values
+            .SelectMany(static commands => commands)
+            .Any(command => string.Equals(command.Id, DesktopAliceAssistant.CommandId, StringComparison.Ordinal));
+        AutoAliceButton.IsVisible = _hasAutoAliceCommand;
+        AutoAliceButton.IsEnabled = _hasAutoAliceCommand && !isBusy;
     }
 
     private void RootMenuItem_OnSubmenuOpened(object? sender, RoutedEventArgs e)
@@ -124,6 +132,16 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         MenuCommandSelected?.Invoke(this, commandId);
     }
 
+    private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!_hasAutoAliceCommand || _isBusy)
+        {
+            return;
+        }
+
+        MenuCommandSelected?.Invoke(this, DesktopAliceAssistant.CommandId);
+    }
+
     private void RebuildMenuItemCommands(MenuItem rootMenuItem, bool commandsEnabled)
     {
         rootMenuItem.Items.Clear();
@@ -162,6 +180,7 @@ public partial class ShellMenuBarControl : UserControl, IMenuBarSurface
         ToolsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.tools", language);
         WindowsMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.windows", language);
         HelpMenuButton.Header = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.menu.help", language);
+        AutoAliceButton.Content = ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId);
         _ = DesktopLocalizationCatalog.GetRequiredString("desktop.shell.banner", language);
     }
 

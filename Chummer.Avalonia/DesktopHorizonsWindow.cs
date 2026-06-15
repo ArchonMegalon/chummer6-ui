@@ -155,12 +155,14 @@ internal sealed class DesktopHorizonsWindow : Window
             _catalogStack.Children.Add(CreateKarmaForgeCard());
         }
 
+        AddGroupedCards(filteredEntries, "First session and participation", static entry =>
+            entry.Id is "ready_for_tonight" or "onramp" or "nexus_pan");
         AddGroupedCards(filteredEntries, "Build and rules", static entry =>
-            entry.Id is "alice" or "quicksilver" or "local_co_processor");
+            entry.Id is "alice" or "knowledge_fabric" or "quicksilver" or "local_co_processor");
         AddGroupedCards(filteredEntries, "Campaign operations", static entry =>
             entry.Id is "runsite" or "run_control" or "table_pulse" or "black_ledger" or "ghostwire" or "anarchy");
         AddGroupedCards(filteredEntries, "Community and identity", static entry =>
-            entry.Id is "nexus_pan" or "jackpoint" or "community_hub" or "runner_passport");
+            entry.Id is "jackpoint" or "community_hub" or "runner_passport");
         AddGroupedCards(filteredEntries, "Publishing and creator lanes", static entry =>
             entry.Id is "runbook_press" or "creator_os");
 
@@ -407,8 +409,11 @@ internal sealed class DesktopHorizonsWindow : Window
         string? posture = horizonId switch
         {
             "alice" => BuildCompactPosture("Build handoffs", $"Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Rules {_campaignSummary?.RulesNavigator.Count ?? 0}"),
+            "ready_for_tonight" => BuildCompactPosture("Tonight verdict", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
+            "onramp" => BuildCompactPosture("Starter lane", $"Workspaces {_campaignSummary?.Workspaces.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
             "nexus_pan" => BuildCompactPosture("Access and continuity", $"Campaigns {_campaignSummary?.Campaigns.Count ?? 0} | Workspaces {_campaignSummary?.Workspaces.Count ?? 0}"),
             "jackpoint" => BuildCompactPosture("Briefings and dossiers", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Dossiers {_campaignSummary?.Dossiers.Count ?? 0}"),
+            "knowledge_fabric" => BuildCompactPosture("Grounded explain", $"Rules {_campaignSummary?.RulesNavigator.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
             "runsite" => BuildCompactPosture("Prep and workspaces", $"Workspaces {_campaignSummary?.Workspaces.Count ?? 0} | Runs {_campaignSummary?.Runs.Count ?? 0}"),
             "run_control" => BuildCompactPosture("Runboard", $"Runs {_campaignSummary?.Runs.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),
             "runbook_press" => BuildCompactPosture("Publishing", $"Publications {_campaignSummary?.CreatorPublications.Count ?? 0} | Campaigns {_campaignSummary?.Campaigns.Count ?? 0}"),

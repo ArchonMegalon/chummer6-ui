@@ -76,6 +76,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? activeSectionJson,
         CharacterWorkspaceId? currentWorkspace,
         string? rulesetId,
+        string? activeSectionId = null,
+        string? activeDialogId = null,
         RuntimeInspectorProjection? runtimeInspector = null,
         MasterIndexResponse? masterIndex = null,
         TranslatorLanguagesResponse? translatorLanguages = null,
@@ -141,6 +143,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("apply_ruleset", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
+            DesktopAliceAssistant.CommandId => DesktopAliceAssistant.CreateDialog(
+                activeSectionId,
+                activeDialogId,
+                activeSectionJson,
+                currentWorkspace,
+                rulesetId),
             "character_settings" => new DesktopDialogState(
                 "dialog.character_settings",
                 "Character Settings",
@@ -1895,6 +1903,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return dialog.Id switch
         {
+            DesktopAliceAssistant.DialogId => dialog,
             "dialog.new_character" => RebuildNewCharacterDialog(dialog),
             NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog),
             NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog),

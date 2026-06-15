@@ -69,7 +69,8 @@ public sealed partial class CharacterOverviewPresenter
             UpdateMetadataAsync: UpdateMetadataAsync,
             GetState: () => State,
             SetPreferredRulesetAsync: SetPreferredRulesetAsync,
-            ApplyQuickAddAsync: ApplyQuickAddAsync);
+            ApplyQuickAddAsync: ApplyQuickAddAsync,
+            ExecuteCommandAsync: ExecuteCommandAsync);
 
         await _dialogCoordinator.CoordinateAsync(actionId, context, ct);
     }

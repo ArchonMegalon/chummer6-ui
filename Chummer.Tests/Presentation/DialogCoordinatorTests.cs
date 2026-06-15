@@ -238,6 +238,126 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_auto_alice_preview_builds_supported_surface_proposal()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "skills",
+            ActiveDialog = factory.CreateCommandDialog(
+                DesktopAliceAssistant.CommandId,
+                profile: null,
+                DesktopPreferenceState.Default,
+                activeSectionJson: null,
+                currentWorkspace: new CharacterWorkspaceId("runner-1"),
+                rulesetId: RulesetDefaults.Sr5,
+                activeSectionId: "skills")
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.PreviewActionId, context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "ALICE suggests");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Add |");
+        CollectionAssert.Contains(
+            published.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
+            DesktopAliceAssistant.ApplyActionId);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_auto_alice_apply_uses_real_quick_add_path()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        WorkspaceQuickAddRequest? capturedRequest = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "skills",
+            ActiveDialog = DesktopAliceAssistant.BuildPreviewDialog(
+                factory.CreateCommandDialog(
+                    DesktopAliceAssistant.CommandId,
+                    profile: null,
+                    DesktopPreferenceState.Default,
+                    activeSectionJson: null,
+                    currentWorkspace: new CharacterWorkspaceId("runner-1"),
+                    rulesetId: RulesetDefaults.Sr5,
+                    activeSectionId: "skills"),
+                CharacterOverviewState.Empty with { ActiveSectionId = "skills" })
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ApplyQuickAddAsync: (request, _) =>
+            {
+                capturedRequest = request;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.ApplyActionId, context, CancellationToken.None);
+
+        Assert.IsNotNull(capturedRequest);
+        Assert.AreEqual(WorkspaceQuickAddKinds.Skill, capturedRequest!.Kind);
+        Assert.AreEqual("Perception", capturedRequest.Name);
+        StringAssert.Contains(published.Notice ?? string.Empty, "ALICE added");
+        Assert.IsNull(published.ActiveDialog);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_auto_alice_handoff_uses_execute_command_path()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string? capturedCommandId = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveSectionId = "create",
+            ActiveDialog = DesktopAliceAssistant.BuildPreviewDialog(
+                factory.CreateCommandDialog(
+                    DesktopAliceAssistant.CommandId,
+                    profile: null,
+                    DesktopPreferenceState.Default,
+                    activeSectionJson: null,
+                    currentWorkspace: null,
+                    rulesetId: RulesetDefaults.Sr5,
+                    activeSectionId: "create",
+                    activeDialogId: "dialog.new_character"),
+                CharacterOverviewState.Empty with
+                {
+                    ActiveSectionId = "create",
+                    ActiveDialog = new DesktopDialogState("dialog.new_character", "New Character", null, [], [])
+                })
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ExecuteCommandAsync: (commandId, _) =>
+            {
+                capturedCommandId = commandId;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.OpenHandoffActionId, context, CancellationToken.None);
+
+        Assert.AreEqual("new_character", capturedCommandId);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_create_character_opens_conditional_workflow_dialog()
     {
         DialogCoordinator coordinator = new();

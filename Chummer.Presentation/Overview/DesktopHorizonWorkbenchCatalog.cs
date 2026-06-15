@@ -38,11 +38,32 @@ public static class DesktopHorizonWorkbenchCatalog
             new DesktopHorizonRouteOption("nexus_pan_public", "Open continuity", "/play/continuity", "Open the public continuity lane."),
             new DesktopHorizonRouteOption("nexus_pan_account", "Devices & access", "/account/access#desktop", "Open the signed-in devices and access rail.")),
         new(
+            "ready_for_tonight",
+            "Ready for Tonight",
+            "Open the role verdict surface, the signed-in return lane, and the no-desktop handoff without reducing the product to a fake one-screen wizard.",
+            new DesktopHorizonRouteOption("ready_public", "Open Ready", "/ready", "Open the public Ready for Tonight route."),
+            new DesktopHorizonRouteOption("ready_account", "Open return lane", "/account/runsites/open", "Open the signed-in return lane for the next safe action."),
+            new DesktopHorizonRouteOption("ready_mobile", "Open mobile rail", "/mobile", "Open the mobile and PWA participation rail.")),
+        new(
+            "onramp",
+            "Onramp",
+            "Open the guided starter lane, starter workspace handoff, and mobile participation bridge from the same desktop shelf.",
+            new DesktopHorizonRouteOption("onramp_public", "Open Onramp", "/onramp", "Open the public Onramp route."),
+            new DesktopHorizonRouteOption("onramp_account", "Open starter desk", "/account/runsites/open", "Open the signed-in starter workspace lane."),
+            new DesktopHorizonRouteOption("onramp_mobile", "Open mobile rail", "/mobile", "Open the mobile and PWA rail for no-desktop participation.")),
+        new(
             "jackpoint",
             "Jackpoint",
             "Open dossiers, publication benches, and signed-in briefing routes.",
             new DesktopHorizonRouteOption("jackpoint_public", "Open Jackpoint", "/jackpoint", "Open the public Jackpoint frontdoor."),
             new DesktopHorizonRouteOption("jackpoint_account", "Open desk", "/account/jackpoint", "Open the signed-in Jackpoint desk.")),
+        new(
+            "knowledge_fabric",
+            "Knowledge Fabric",
+            "Open grounded rules answers, receipt-backed explain posture, and source-aware follow-through from the desktop shell.",
+            new DesktopHorizonRouteOption("knowledge_public", "Open Rules", "/rules", "Open the public Knowledge Fabric rules route."),
+            new DesktopHorizonRouteOption("knowledge_receipts", "Open receipts", "/rules/receipts", "Open the rules receipt index."),
+            new DesktopHorizonRouteOption("knowledge_studio", "Open Edition Studio", "/edition-studio", "Open the edition and explain studio route.")),
         new(
             "runsite",
             "Runsite",
@@ -78,9 +99,10 @@ public static class DesktopHorizonWorkbenchCatalog
         new(
             "community_hub",
             "Community Hub",
-            "Open the open-run network and the signed-in community board.",
+            "Open the open-run network, signed-in community board, and moderated operator rail.",
             new DesktopHorizonRouteOption("community_public", "Open Community", "/community", "Open the public Community Hub route."),
-            new DesktopHorizonRouteOption("community_account", "Open board", "/account/community", "Open the signed-in community board.")),
+            new DesktopHorizonRouteOption("community_account", "Open board", "/account/community", "Open the signed-in community board."),
+            new DesktopHorizonRouteOption("community_open_runs", "Open run venue", "/community/runs/open-run/venue", "Open a public-safe open-run venue posture.")),
         new(
             "creator_os",
             "Creator OS",

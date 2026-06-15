@@ -148,6 +148,8 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             context.State.ActiveSectionJson,
             context.CurrentWorkspace,
             ResolveDialogRulesetId(context),
+            activeSectionId: context.State.ActiveSectionId,
+            activeDialogId: context.State.ActiveDialog?.Id,
             runtimeInspector: null,
             masterIndex: masterIndex,
             translatorLanguages: translatorLanguages,
@@ -198,6 +200,8 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             context.State.ActiveSectionJson,
             context.CurrentWorkspace,
             activeRuntime.RulesetId,
+            activeSectionId: context.State.ActiveSectionId,
+            activeDialogId: context.State.ActiveDialog?.Id,
             runtimeInspector,
             openWorkspaces: context.State.OpenWorkspaces);
         context.Publish(context.State with

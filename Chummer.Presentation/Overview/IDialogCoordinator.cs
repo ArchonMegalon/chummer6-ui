@@ -16,7 +16,8 @@ public sealed record DialogCoordinationContext(
     Func<CancellationToken, Task>? ExportAsync = null,
     Func<CancellationToken, Task>? PrintAsync = null,
     Func<string, CancellationToken, Task>? SetPreferredRulesetAsync = null,
-    Func<WorkspaceQuickAddRequest, CancellationToken, Task>? ApplyQuickAddAsync = null);
+    Func<WorkspaceQuickAddRequest, CancellationToken, Task>? ApplyQuickAddAsync = null,
+    Func<string, CancellationToken, Task>? ExecuteCommandAsync = null);
 
 public static class WorkspaceQuickAddKinds
 {

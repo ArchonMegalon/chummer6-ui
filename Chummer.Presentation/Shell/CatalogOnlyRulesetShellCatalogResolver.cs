@@ -1,5 +1,6 @@
 using Chummer.Contracts.Presentation;
 using Chummer.Contracts.Rulesets;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Presentation.Shell;
 
@@ -48,6 +49,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
         Command("copy", "command.copy", "edit", true),
         Command("paste", "command.paste", "edit", true),
         Command("dice_roller", "command.dice_roller", "tools", false),
+        Command(DesktopAliceAssistant.CommandId, "command.auto_alice", "tools", false),
         Command("global_settings", "command.global_settings", "tools", false),
         Command("character_settings", "command.character_settings", "tools", true),
         Command("update", "command.update", "tools", false),

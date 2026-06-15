@@ -37,6 +37,7 @@ public static class OverviewCommandPolicy
         "character_roster",
         "data_exporter",
         "export_character",
+        DesktopAliceAssistant.CommandId,
         "report_bug",
         "about",
         "hero_lab_importer",
