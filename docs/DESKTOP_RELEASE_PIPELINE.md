@@ -31,6 +31,8 @@ It does not own promoted release-channel truth.
 
 When a downloads deploy target is configured, the successful mainline `Desktop Downloads Matrix` build is responsible for replacing the live `chummer.run` shelf automatically. The public downloads shelf is latest-only: a green build must publish the newest bundle without a second manual release pass.
 
+For the public shelf, Windows `win-x64` and Linux `linux-x64` are the rolling-release scope. Mainline builds resolve to `public_stable` automatically for that scope. macOS remains buildable and publishable as a bounded artifact lane, but it does not get to hold back the public Windows/Linux shelf when the current public promotion policy is Windows/Linux-only.
+
 Desktop heads may consume that canonical registry projection directly for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` points at `RELEASE_CHANNEL.generated.json` (or a compatible `/downloads/` base URL).
 
 The local shell wrappers in `scripts/generate-releases-manifest.sh` and `scripts/verify-releases-manifest.sh` are compatibility entrypoints. The canonical materializer now lives in `chummer6-hub-registry`.

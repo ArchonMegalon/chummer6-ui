@@ -24,7 +24,7 @@ That produces `RELEASE_CANDIDATE_HANDOFF.generated.{json,md}` beside the staged 
 4. Optional unattended overrides:
 `RUNBOOK_LOG_DIR` pins runbook log files to a known writable directory and `RUNBOOK_STATE_DIR` pins writable state (for example `DOTNET_CLI_HOME`) to a known writable directory.
 5. Startup-smoke receipts copied during publish must be fresh and not future-skewed (default max age: `86400` seconds, default max future skew: `300` seconds). Override with `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_PUBLISH_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS` (or shared `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_AGE_SECONDS` / `CHUMMER_DESKTOP_STARTUP_SMOKE_MAX_FUTURE_SKEW_SECONDS`) only when the release lane explicitly approves adjusted evidence windows.
-6. Set repository variable `CHUMMER_DESKTOP_RELEASE_CHANNEL` to one of `preview`, `release_candidate`, or `public_stable`.
+6. Mainline `Desktop Downloads Matrix` runs on `main` resolve to `public_stable` automatically for the Windows/Linux public shelf. Set `CHUMMER_DESKTOP_RELEASE_CHANNEL` only when you intentionally want a non-mainline `preview` or `release_candidate` lane.
 7. Set `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` only when you are intentionally publishing an unsigned public build. Without that override, `release_candidate` and `public_stable` fail closed unless the workflow can emit signing receipts:
 `CHUMMER_WINDOWS_SIGN_PFX_BASE64` / `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD` for Windows Authenticode, plus either a preconfigured mac keychain identity/profile, a hosted-signing P12 (`CHUMMER_MAC_CERTIFICATE_P12_BASE64` / `CHUMMER_MAC_CERTIFICATE_PASSWORD` / `CHUMMER_MAC_KEYCHAIN_PASSWORD` / `CHUMMER_MAC_APPLE_ID` / `CHUMMER_MAC_APPLE_APP_PASSWORD` / `CHUMMER_MAC_TEAM_ID`), or the persistent local-keychain fallback for Mac-hosted preview lanes (`CHUMMER_MAC_KEYCHAIN_PATH`, `CHUMMER_MAC_LOCAL_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_LOCAL_CERT_COMMON_NAME`).
 
@@ -40,7 +40,7 @@ That produces `RELEASE_CANDIDATE_HANDOFF.generated.{json,md}` beside the staged 
 Repository variables:
 1. `CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR`
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
-3. `CHUMMER_DESKTOP_RELEASE_CHANNEL`
+3. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline preview or release-candidate lanes
 4. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
 
 Workflow path:
@@ -62,7 +62,7 @@ Repository variables:
 3. `CHUMMER_PORTAL_DOWNLOADS_S3_ENDPOINT_URL` (optional; required for many R2/S3-compatible endpoints)
 4. `CHUMMER_PORTAL_DOWNLOADS_S3_REGION` (optional, defaults to `us-east-1`)
 5. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
-6. `CHUMMER_DESKTOP_RELEASE_CHANNEL`
+6. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline preview or release-candidate lanes
 7. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; explicit unsigned public-release posture)
 
 Repository secrets:
@@ -88,7 +88,7 @@ Repository variables and secrets:
 1. `CHUMMER_RELEASE_UPLOAD_URL`
 2. `CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL`
 3. `CHUMMER_RELEASE_UPLOAD_TOKEN`
-4. `CHUMMER_DESKTOP_RELEASE_CHANNEL`
+4. Optional `CHUMMER_DESKTOP_RELEASE_CHANNEL` override for non-mainline preview or release-candidate lanes
 5. `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE` (optional; set to `true` only when you deliberately want an unsigned public build)
 6. Windows public release secrets: `CHUMMER_WINDOWS_SIGN_PFX_BASE64`, `CHUMMER_WINDOWS_SIGN_PFX_PASSWORD`
 7. macOS public release secrets/vars for hosted signing: `CHUMMER_MAC_CERTIFICATE_P12_BASE64`, `CHUMMER_MAC_CERTIFICATE_PASSWORD`, `CHUMMER_MAC_KEYCHAIN_PASSWORD`, `CHUMMER_MAC_APPLE_ID`, `CHUMMER_MAC_APPLE_APP_PASSWORD`, `CHUMMER_MAC_TEAM_ID`
@@ -111,12 +111,13 @@ Manual path:
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 
 RC handoff expectation:
-1. If a staged `release_candidate` bundle verifies but still lists `missingRequiredPlatforms`, do not promote it to `public_stable`.
+1. If a staged `release_candidate` bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.
 2. Materialize the RC handoff and finish the missing platform smoke/signing/upload work first.
 
 Operational rule:
 1. The public `chummer.run` shelf is latest-only. After a successful build with a configured live upload target, the new bundle must be published automatically; leaving `chummer.run` on an older build is a release-pipeline failure.
-2. Public channels are proof-backed, not best-effort. If `CHUMMER_DESKTOP_RELEASE_CHANNEL` is `release_candidate` or `public_stable`, the workflow must either:
+2. Mainline rolling release scope is Windows `win-x64` and Linux `linux-x64`. macOS may still build and publish bounded artifacts, but it must not block the public Windows/Linux shelf from advancing.
+3. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
 emit Windows signing and macOS signing/notarization receipts, or
 run with `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` so the public-promotion evidence records `unsigned_public_release` explicitly.
 

@@ -3431,7 +3431,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_LOG_DIR");
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
-        StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=preview");
+        StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=public_stable");
         StringAssert.Contains(envExampleText, "# CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR=/srv/chummer/portal-downloads");
@@ -3518,6 +3518,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-http.sh");
         StringAssert.Contains(workflowText, "scripts/publish-download-bundle-s3.sh");
         StringAssert.Contains(workflowText, "branches:\n      - main\n      - Docker");
+        StringAssert.Contains(workflowText, "CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL");
         StringAssert.Contains(workflowText, "deploy_portal_downloads");
         StringAssert.Contains(workflowText, "deploy-downloads");
         StringAssert.Contains(workflowText, "deploy-downloads-http");
@@ -3525,6 +3526,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "github.ref_name == 'main'");
         StringAssert.Contains(workflowText, "id: release-context");
         StringAssert.Contains(workflowText, "bash scripts/resolve-desktop-release-context.sh >> \"$GITHUB_OUTPUT\"");
+        StringAssert.Contains(workflowText, "CHUMMER_DESKTOP_RELEASE_CHANNEL: ${{ env.CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL }}");
         StringAssert.Contains(workflowText, "CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE: ${{ vars.CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE }}");
         StringAssert.Contains(workflowText, "name: Prepare macOS signing keychain");
         StringAssert.Contains(workflowText, "bash scripts/prepare-macos-signing-keychain.sh");
