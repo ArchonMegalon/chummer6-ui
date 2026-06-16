@@ -6240,9 +6240,19 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     private static ScreenshotProofCapture CaptureScreenshotProof(FlagshipUiHarness harness, string screenshotFileName)
-        => new(
+    {
+        if (screenshotFileName.Contains("-add-dialog-", StringComparison.Ordinal)
+            && harness.Window.PeekDialogWindowForTesting() is not { IsVisible: true })
+        {
+            throw new InvalidOperationException(
+                $"Screenshot '{screenshotFileName}' must be captured with a visible desktop dialog window. " +
+                "Inline or hidden state is not acceptable proof for add-workflow coverage.");
+        }
+
+        return new(
             harness.CaptureScreenshotBytes(),
             CaptureScreenshotControlEvidence(harness, screenshotFileName));
+    }
 
     private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, string screenshotFileName)
     {

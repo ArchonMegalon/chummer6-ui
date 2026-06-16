@@ -310,17 +310,9 @@ public static class DesktopInstallLinkingRuntime
         }
 
         string normalized = value.Trim();
-        if (normalized.Contains('@', StringComparison.Ordinal))
-        {
-            return normalized;
-        }
-
-        if (LooksOpaqueIdentityToken(normalized))
-        {
-            return null;
-        }
-
-        return normalized;
+        return normalized.Contains('@', StringComparison.Ordinal)
+            ? normalized
+            : null;
     }
 
     private static bool LooksOpaqueIdentityToken(string value)

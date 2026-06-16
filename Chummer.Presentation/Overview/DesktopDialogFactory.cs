@@ -1910,6 +1910,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
             "dialog.character_roster" => RebuildCharacterRosterDialog(dialog, fallback),
             "dialog.master_index" => RebuildMasterIndexDialog(dialog),
+            "dialog.ui.quality_add" => RebuildQualitySelectionDialog(dialog),
             "dialog.ui.cyberware_add" => RebuildCyberwareSelectionDialog(dialog),
             "dialog.ui.gear_add" => RebuildGearSelectionDialog(dialog),
             "dialog.ui.combat_add_weapon" => RebuildWeaponSelectionDialog(dialog),
@@ -3569,6 +3570,108 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("add_more", $"Add & More {selected.Name}", false));
     }
 
+    private static DesktopDialogState RebuildQualitySelectionDialog(DesktopDialogState dialog)
+    {
+        bool showNegative = DesktopDialogFieldValueParser.ParseBool(dialog, "uiQualityShowNegative", true);
+        bool metagenicOnly = DesktopDialogFieldValueParser.ParseBool(dialog, "uiQualityMetagenicOnly", false);
+        string dataFile = DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityBookFilter") ?? "Core Rulebook";
+        string requestedType = DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityType") ?? "Positive";
+        string search = (DesktopDialogFieldValueParser.GetValue(dialog, "uiQualitySearch") ?? string.Empty).Trim();
+        string requestedName = DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityName") ?? "First Impression";
+
+        var options = new[]
+        {
+            new { Name = "First Impression", Type = "Positive", Karma = 11, Book = "Core Rulebook", Source = "Core Rulebook p. 73", Branch = "Positive", Tag = "Social", Metagenic = false },
+            new { Name = "Toughness", Type = "Positive", Karma = 9, Book = "Core Rulebook", Source = "Core Rulebook p. 79", Branch = "Positive", Tag = "Physical", Metagenic = false },
+            new { Name = "Allergy (Common, Mild)", Type = "Negative", Karma = -10, Book = "Core Rulebook", Source = "Core Rulebook p. 78", Branch = "Negative", Tag = "Health", Metagenic = false },
+            new { Name = "Blandness", Type = "Negative", Karma = -8, Book = "Core Rulebook", Source = "Core Rulebook p. 80", Branch = "Negative", Tag = "Social", Metagenic = false },
+            new { Name = "Glamour", Type = "Metatype", Karma = 8, Book = "Runner's Companion", Source = "Runner's Companion p. 45", Branch = "Metatype", Tag = "Metagenic", Metagenic = true }
+        };
+
+        var filtered = options
+            .Where(option => string.IsNullOrWhiteSpace(requestedType)
+                || string.Equals(requestedType, "Show All", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Type, requestedType, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Branch, requestedType, StringComparison.OrdinalIgnoreCase))
+            .Where(option => string.IsNullOrWhiteSpace(dataFile)
+                || string.Equals(option.Book, dataFile, StringComparison.OrdinalIgnoreCase))
+            .Where(option => !metagenicOnly || option.Metagenic)
+            .Where(option => showNegative || !string.Equals(option.Type, "Negative", StringComparison.OrdinalIgnoreCase))
+            .Where(option => string.IsNullOrWhiteSpace(search)
+                || option.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
+                || option.Tag.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        if (filtered.Length == 0)
+        {
+            filtered = options
+                .Where(option => showNegative || !string.Equals(option.Type, "Negative", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+        }
+
+        if (filtered.Length == 0)
+        {
+            filtered = options;
+        }
+
+        var selected = filtered.FirstOrDefault(option => string.Equals(option.Name, requestedName, StringComparison.OrdinalIgnoreCase))
+            ?? filtered[0];
+
+        string effectiveType = requestedType;
+        if (!string.IsNullOrWhiteSpace(requestedType)
+            && !string.Equals(requestedType, "Show All", StringComparison.OrdinalIgnoreCase)
+            && !filtered.Any(option => string.Equals(option.Type, requestedType, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(option.Branch, requestedType, StringComparison.OrdinalIgnoreCase)))
+        {
+            effectiveType = "Show All";
+        }
+
+        string categoryTree = BuildSelectionGroupedBranchTree(
+            "Qualities",
+            options.Select(option => (option.Type, option.Branch)),
+            selected.Branch);
+        string candidateList = BuildSelectionList(filtered.Select(option =>
+            $"{(string.Equals(option.Name, selected.Name, StringComparison.OrdinalIgnoreCase) ? ">" : " ")} {option.Name} · {option.Type} · {option.Karma} Karma"));
+        string details = BuildGridValue(
+            ("Selected", selected.Name),
+            ("Type", selected.Type),
+            ("Karma", selected.Karma.ToString(CultureInfo.InvariantCulture)),
+            ("Source", selected.Source),
+            ("Book", selected.Book),
+            ("Tag", selected.Tag));
+        string trail = BuildGridValue(
+            ("Category Path", BuildSelectionCategoryPath("Qualities", selected.Type, selected.Branch, selected.Name)),
+            ("Selected Entry", selected.Name),
+            ("Filter Posture", metagenicOnly ? "metagenic-only" : "full catalog"),
+            ("Follow-through", "Add & More keeps the selector open"));
+        string filterSummary =
+            $"Filtered Catalog | {filtered.Length} shown / {options.Length} total{Environment.NewLine}" +
+            $"Category Path | {BuildSelectionCategoryPath("Qualities", selected.Type, selected.Branch)}{Environment.NewLine}" +
+            $"Negative Posture | {(showNegative ? "included" : "hidden")}";
+        string resultCommands = BuildSelectionList(
+        [
+            $"Karma, tag, and source for {selected.Name}",
+            "Use Add once or Add & More to keep browsing",
+            "Keep type and metagenic posture visible while confirming"
+        ]);
+
+        return ReplaceDialogActions(
+            ReplaceDialogFields(
+                dialog,
+                ("uiQualityType", effectiveType, effectiveType),
+                ("uiQualityBookFilter", selected.Book, selected.Book),
+                ("uiQualityName", selected.Name, selected.Name),
+                ("uiQualityCandidateList", candidateList, candidateList),
+                ("uiQualityKarma", selected.Karma.ToString(CultureInfo.InvariantCulture), selected.Karma.ToString(CultureInfo.InvariantCulture)),
+                ("uiQualitySelectionDetails", details, details),
+                ("uiQualitySelectionTrail", trail, trail),
+                ("uiQualityFilterSummary", filterSummary, filterSummary),
+                ("uiQualityResultCommands", resultCommands, resultCommands),
+                ("uiQualityCategoryTree", categoryTree, categoryTree)),
+            ("add", $"Add {selected.Name}", true),
+            ("add_more", $"Add & More {selected.Name}", false));
+    }
+
     private static DesktopDialogState RebuildCyberwareEditDialog(DesktopDialogState dialog)
     {
         string grade = DesktopDialogFieldValueParser.GetValue(dialog, "uiCyberwareEditGrade") ?? "Standard";
@@ -4817,6 +4920,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static IReadOnlyList<DesktopDialogField> BuildQualitySelectionFields()
     {
+        IReadOnlyList<DesktopDialogFieldOption> typeOptions = BuildSelectionCategoryOptions(
+            "Show All",
+            "Positive",
+            "Negative",
+            "Metatype");
+        IReadOnlyList<DesktopDialogFieldOption> dataFileOptions = BuildSelectionDataFileOptions(
+            "Core Rulebook",
+            "Runner's Companion");
         string categoryTree =
             "[Qualities]" + Environment.NewLine +
             "├─ Positive" + Environment.NewLine +
@@ -4839,14 +4950,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             BuildSelectionSectionsField("uiQualitySections"),
             BuildSelectionTreeField("uiQualityCategoryTree", "Navigation", categoryTree),
             new DesktopDialogField("uiQualitySearch", "Search", string.Empty, "Search qualities"),
-            new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive"),
-            new DesktopDialogField("uiQualityBookFilter", "Data File", "Core Rulebook", "Core Rulebook"),
+            new DesktopDialogField("uiQualityType", "Type", "Positive", "Positive", InputType: "select", Options: typeOptions),
+            new DesktopDialogField("uiQualityBookFilter", "Data File", "Core Rulebook", "Core Rulebook", InputType: "select", Options: dataFileOptions),
             new DesktopDialogField("uiQualityName", "Quality", "First Impression", "First Impression"),
             new DesktopDialogField("uiQualityCandidateList", "Available Qualities", candidateList, candidateList, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.List, LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             BuildFilterToggleField("uiQualityMetagenicOnly", "Metagenic Only", false),
             BuildFilterToggleField("uiQualityShowNegative", "Show Negative", true),
             new DesktopDialogField("uiQualityKarma", "Karma", "11", "11", IsReadOnly: true),
             new DesktopDialogField("uiQualitySelectionDetails", "Selection Details", details, details, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+            BuildSelectionTrailField("uiQualitySelectionTrail", BuildSelectionCategoryPath("Qualities", "Positive", "Positive", "First Impression"), "First Impression", "Add & More keeps the selector open"),
+            new DesktopDialogField("uiQualityFilterSummary", "Filter Summary", "Filtered Catalog | 3 shown / 5 total" + Environment.NewLine + "Category Path | Qualities > Positive > Positive" + Environment.NewLine + "Negative Posture | included", "Filtered Catalog | 3 shown / 5 total", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            BuildSelectionCommandsField("uiQualityResultCommands", "Result Commands",
+                "Karma, tag, and source stay visible on the right",
+                "Use Add for one entry or Add & More to keep browsing",
+                "Keep type and metagenic posture visible while confirming"),
             new DesktopDialogField("uiQualityNotes", "Notes", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", "Quality type, karma cost, source, and metagenic filters remain visible before confirmation.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
@@ -5122,7 +5239,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Drug",
                 "Browse drugs, inspect speed and crash posture, then confirm the selected dose.",
                 BuildDrugSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "drug_delete" => new DesktopDialogState(
                 "dialog.ui.drug_delete",
                 "Remove Jazz",
@@ -5137,7 +5254,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell/Power",
                 "Choose the magical entry, keep category and drain visible, then confirm the selection.",
                 BuildMagicSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "magic_delete" => new DesktopDialogState(
                 "dialog.ui.magic_delete",
                 "Remove Stunbolt",
@@ -5173,49 +5290,49 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Spell",
                 "Search the spell list, inspect source and drain, then confirm the learned spell.",
                 BuildSpellSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "adept_power_add" => new DesktopDialogState(
                 "dialog.ui.adept_power_add",
                 "Add Adept Power",
                 "Search available adept powers, inspect PP cost and source, then confirm the selected power.",
                 BuildAdeptPowerSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "complex_form_add" => new DesktopDialogState(
                 "dialog.ui.complex_form_add",
                 "Add Complex Form",
                 "Browse complex forms, inspect target and source, then confirm the selected form.",
                 BuildComplexFormSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "initiation_add" => new DesktopDialogState(
                 "dialog.ui.initiation_add",
                 "Add Initiation / Submersion",
                 "Choose the reward, keep grade and track visible, then confirm the initiation or submersion step.",
                 BuildInitiationSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "spirit_add" => new DesktopDialogState(
                 "dialog.ui.spirit_add",
                 "Add Spirit / Ally / Familiar",
                 "Browse spirits and allies, inspect force and type, then confirm the selected entry.",
                 BuildSpiritSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "critter_power_add" => new DesktopDialogState(
                 "dialog.ui.critter_power_add",
                 "Add Critter Power",
                 "Browse critter powers, inspect type and source, then confirm the selected power.",
                 BuildCritterPowerSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "matrix_program_add" => new DesktopDialogState(
                 "dialog.ui.matrix_program_add",
                 "Add Program / Cyberdeck Item",
                 "Browse matrix programs and cyberdeck items, inspect slot and source, then confirm the selected entry.",
                 BuildMatrixProgramSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "skill_add" => new DesktopDialogState(
                 "dialog.ui.skill_add",
                 "Add Skill",
                 "Browse skills, inspect category and linked attribute, then confirm the selected skill.",
                 BuildSkillSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "skill_specialize" => new DesktopDialogState(
                 "dialog.ui.skill_specialize",
                 "Specialize Skill",
@@ -5325,7 +5442,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Add Vehicle Mod",
                 "Browse modifications, inspect slot, availability, and source, then confirm the selected mod.",
                 BuildVehicleModSelectionFields(),
-                BuildAddAndMoreActions()),
+                BuildLegacySelectionActions()),
             "contact_add" => new DesktopDialogState(
                 "dialog.ui.contact_add",
                 "Add Contact",
@@ -5359,12 +5476,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     new DesktopDialogAction("apply", "Apply", true),
                     new DesktopDialogAction("cancel", "Cancel")
                 ]),
-            "quality_add" => new DesktopDialogState(
-                "dialog.ui.quality_add",
-                "Add Quality",
-                "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
-                BuildQualitySelectionFields(),
-                BuildAddAndMoreActions()),
+            "quality_add" => RebuildQualitySelectionDialog(
+                new DesktopDialogState(
+                    "dialog.ui.quality_add",
+                    "Add Quality",
+                    "Browse qualities, inspect karma cost and source, then confirm the selected quality.",
+                    BuildQualitySelectionFields(),
+                    BuildLegacySelectionActions())),
             "quality_delete" => new DesktopDialogState(
                 "dialog.ui.quality_delete",
                 "Remove First Impression",

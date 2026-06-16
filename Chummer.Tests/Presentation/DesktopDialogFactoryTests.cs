@@ -1052,8 +1052,38 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "uiQualityCandidateList"), "Toughness");
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Grid, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualitySelectionDetails", StringComparison.Ordinal)).VisualKind);
         Assert.AreEqual(DesktopDialogFieldVisualKinds.Snippet, dialog.Fields.Single(field => string.Equals(field.Id, "uiQualityNotes", StringComparison.Ordinal)).VisualKind);
-        Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
-        Assert.AreEqual("Add & More", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add First Impression", dialog.Actions.Single(action => string.Equals(action.Id, "add", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Add & More First Impression", dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label);
+    }
+
+    [TestMethod]
+    public void Selection_add_dialogs_keep_legacy_browse_actions()
+    {
+        DesktopDialogFactory factory = new();
+        string[] selectionDialogIds =
+        [
+            "drug_add",
+            "magic_add",
+            "spell_add",
+            "adept_power_add",
+            "complex_form_add",
+            "initiation_add",
+            "spirit_add",
+            "critter_power_add",
+            "matrix_program_add",
+            "skill_add",
+            "vehicle_mod_add",
+            "quality_add"
+        ];
+
+        foreach (string dialogId in selectionDialogIds)
+        {
+            DesktopDialogState dialog = factory.CreateUiControlDialog(dialogId, DesktopPreferenceState.Default);
+
+            StringAssert.StartsWith(dialog.Actions.Single(action => string.Equals(action.Id, "add_more", StringComparison.Ordinal)).Label, "Add & More", dialogId);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(dialog.Actions.Single(action => string.Equals(action.Id, "focus_category", StringComparison.Ordinal)).Label), dialogId);
+            Assert.AreEqual("Search All Categories", dialog.Actions.Single(action => string.Equals(action.Id, "toggle_search_scope", StringComparison.Ordinal)).Label, dialogId);
+        }
     }
 
     [TestMethod]

@@ -97,11 +97,7 @@ public partial class DesktopDialogWindow : Window
         string trustReceiptText = DesktopTrustReceiptText.BuildDialogReceipt(dialog);
         _dialogTrustReceiptPanel.Content = DesktopTrustPanelFactory.CreateDialogPanel(dialog, trustReceiptText);
         _dialogTrustReceiptPanel.IsVisible = false;
-        string dialogContext = string.Join(
-            Environment.NewLine + Environment.NewLine,
-            new[] { dialog.Title, visibleMessage, trustReceiptText }
-                .Where(static segment => !string.IsNullOrWhiteSpace(segment)));
-        ToolTip.SetTip(_dialogFieldsPanel, string.IsNullOrWhiteSpace(dialogContext) ? null : dialogContext);
+        ToolTip.SetTip(_dialogFieldsPanel, null);
 
         BuildFields(dialog.Fields);
         BuildActions(dialog.Actions);
@@ -176,6 +172,18 @@ public partial class DesktopDialogWindow : Window
             return true;
         }
 
+        if (string.Equals(BoundDialogId, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
+        {
+            _dialogFieldsPanel.Children.Add(CreateLegacyKarmaWorkflowPane(fields));
+            return true;
+        }
+
+        if (TryBuildLegacySelectionAddDialog(fields, out Control? selectionAddPane))
+        {
+            _dialogFieldsPanel.Children.Add(selectionAddPane!);
+            return true;
+        }
+
         if (string.Equals(BoundDialogId, "dialog.character_settings", StringComparison.Ordinal))
         {
             _dialogFieldsPanel.Children.Add(CreateLegacyCharacterSettingsPane(fields));
@@ -208,6 +216,367 @@ public partial class DesktopDialogWindow : Window
 
         return false;
     }
+
+    private bool TryBuildLegacySelectionAddDialog(IReadOnlyList<DesktopDialogField> fields, out Control? pane)
+    {
+        pane = null;
+        if (string.IsNullOrWhiteSpace(BoundDialogId)
+            || !BoundDialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
+            || !BoundDialogId.EndsWith("_add", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        DesktopDialogField[] visibleFields = fields
+            .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+            .Where(ShouldRenderField)
+            .ToArray();
+        if (visibleFields.Length == 0)
+        {
+            return false;
+        }
+
+        pane = CreateLegacySelectionAddPane(visibleFields);
+        return true;
+    }
+
+    private Control CreateLegacySelectionAddPane(IReadOnlyList<DesktopDialogField> fields)
+    {
+        DesktopDialogField? navigationField = fields.FirstOrDefault(static field =>
+            string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal));
+        DesktopDialogField? candidateField = fields.FirstOrDefault(static field =>
+            field.Id.Contains("CandidateList", StringComparison.Ordinal)
+            && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal));
+        DesktopDialogField? browseGridField = fields.FirstOrDefault(static field =>
+            field.Id.Contains("BrowseGrid", StringComparison.Ordinal)
+            && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal));
+
+        HashSet<string> reservedIds = fields
+            .Where(static field =>
+                string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
+                || field.Id.Contains("CandidateList", StringComparison.Ordinal)
+                || field.Id.Contains("BrowseGrid", StringComparison.Ordinal))
+            .Select(static field => field.Id)
+            .ToHashSet(StringComparer.Ordinal);
+
+        DesktopDialogField[] topFields = fields
+            .Where(field => !reservedIds.Contains(field.Id))
+            .Where(field => !field.IsReadOnly
+                || string.Equals(field.InputType, "select", StringComparison.Ordinal)
+                || string.Equals(field.InputType, "number", StringComparison.Ordinal)
+                || string.Equals(field.InputType, "checkbox", StringComparison.Ordinal)
+                || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal))
+            .Where(field => !IsSupportSummaryField(field))
+            .ToArray();
+
+        DesktopDialogField[] rightDetails = fields
+            .Where(field => !reservedIds.Contains(field.Id))
+            .Where(field => string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal)
+                || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal)
+                || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal))
+            .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
+            .ToArray();
+
+        DesktopDialogField[] lowerSummary = fields
+            .Where(field => !reservedIds.Contains(field.Id))
+            .Where(field => string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal)
+                || (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal) && field.IsReadOnly)
+                || field.Id.Contains("Commands", StringComparison.Ordinal)
+                || field.Id.Contains("Summary", StringComparison.Ordinal)
+                || field.Id.Contains("Trail", StringComparison.Ordinal))
+            .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
+            .Where(field => !rightDetails.Any(detail => string.Equals(detail.Id, field.Id, StringComparison.Ordinal)))
+            .ToArray();
+
+        StackPanel shell = new()
+        {
+            Spacing = 14
+        };
+
+        if (topFields.Length > 0)
+        {
+            shell.Children.Add(CreateLegacyFieldGroup(
+                "Selection",
+                BuildSelectionTopFieldRows(topFields).ToArray()));
+        }
+
+        Grid body = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("1.05*,0.95*"),
+            ColumnSpacing = 14
+        };
+
+        StackPanel leftColumn = new()
+        {
+            Spacing = 10
+        };
+        if (navigationField is not null)
+        {
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(navigationField), minHeight: 148));
+        }
+
+        if (candidateField is not null)
+        {
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
+        }
+
+        if (leftColumn.Children.Count > 0)
+        {
+            Grid.SetColumn(leftColumn, 0);
+            body.Children.Add(leftColumn);
+        }
+
+        StackPanel rightColumn = new()
+        {
+            Spacing = 10
+        };
+
+        if (browseGridField is not null)
+        {
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(browseGridField), minHeight: 188));
+        }
+
+        foreach (DesktopDialogField detailField in rightDetails)
+        {
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(detailField), minHeight: ResolveSelectionPanelMinHeight(detailField)));
+        }
+
+        if (rightColumn.Children.Count > 0)
+        {
+            Grid.SetColumn(rightColumn, 1);
+            body.Children.Add(rightColumn);
+        }
+
+        if (body.Children.Count > 0)
+        {
+            shell.Children.Add(body);
+        }
+
+        if (lowerSummary.Length > 0)
+        {
+            shell.Children.Add(CreateLegacyFieldGroup(
+                "Review",
+                lowerSummary.Select(field => CreateSelectionSurfaceCard(CreateFieldPane(field), minHeight: ResolveSelectionPanelMinHeight(field))).ToArray()));
+        }
+
+        return shell;
+    }
+
+    private IEnumerable<Control> BuildSelectionTopFieldRows(IReadOnlyList<DesktopDialogField> fields)
+    {
+        for (int index = 0; index < fields.Count; index++)
+        {
+            DesktopDialogField current = fields[index];
+            if (index + 1 < fields.Count && CanPairSelectionTopField(current, fields[index + 1]))
+            {
+                yield return CreateSplitFieldRow(current, fields[index + 1]);
+                index++;
+                continue;
+            }
+
+            yield return CreateStandaloneFieldRow(current);
+        }
+    }
+
+    private static bool CanPairSelectionTopField(DesktopDialogField left, DesktopDialogField right)
+    {
+        return !left.IsMultiline
+            && !right.IsMultiline
+            && !string.Equals(left.InputType, "checkbox", StringComparison.Ordinal)
+            && !string.Equals(right.InputType, "checkbox", StringComparison.Ordinal);
+    }
+
+    private Control CreateLegacySelectionCandidatePanel(
+        DesktopDialogField candidateField,
+        IReadOnlyList<DesktopDialogField> allFields)
+    {
+        IReadOnlyList<SelectionCandidateItem> items = ParseSelectionCandidateItems(candidateField.Value);
+        string? primaryFieldId = ResolveSelectionPrimaryFieldId(candidateField, allFields);
+        string? selectedName = primaryFieldId is null
+            ? items.FirstOrDefault(static item => item.IsSelected)?.Value
+            : allFields.FirstOrDefault(field => string.Equals(field.Id, primaryFieldId, StringComparison.Ordinal))?.Value;
+
+        ListBox listBox = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldInputName(candidateField.Id),
+            ItemsSource = items,
+            MinHeight = 320
+        };
+        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) =>
+            new Border
+            {
+                Padding = new Thickness(10, 8),
+                Margin = new Thickness(0, 0, 0, 6),
+                Background = item?.IsSelected == true
+                    ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
+                    : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
+                BorderBrush = item?.IsSelected == true
+                    ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
+                    : ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Child = new TextBlock
+                {
+                    Text = item?.DisplayText ?? string.Empty,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            });
+        listBox.SelectionChanged += (_, _) =>
+        {
+            if (primaryFieldId is null || listBox.SelectedItem is not SelectionCandidateItem selectedItem)
+            {
+                return;
+            }
+
+            QueueDialogFieldUpdate(primaryFieldId, selectedItem.Value);
+        };
+
+        SelectionCandidateItem? selectedItem = items.FirstOrDefault(item =>
+            string.Equals(item.Value, selectedName, StringComparison.OrdinalIgnoreCase))
+            ?? items.FirstOrDefault(static item => item.IsSelected)
+            ?? items.FirstOrDefault();
+        if (selectedItem is not null)
+        {
+            listBox.SelectedItem = selectedItem;
+        }
+
+        ApplyAccessibility(listBox, candidateField.AccessibleName, candidateField.ToolTip, candidateField.HelpText);
+
+        StackPanel shell = new()
+        {
+            Spacing = 8
+        };
+        shell.Children.Add(new TextBlock
+        {
+            Text = candidateField.Label,
+            FontWeight = FontWeight.SemiBold
+        });
+        shell.Children.Add(listBox);
+        return shell;
+    }
+
+    private static Border CreateSelectionSurfaceCard(Control content, double minHeight)
+    {
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10),
+            MinHeight = minHeight,
+            Child = content
+        };
+    }
+
+    private static bool IsSupportSummaryField(DesktopDialogField field)
+    {
+        return string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal)
+            || field.Id.Contains("SelectionDetails", StringComparison.Ordinal)
+            || field.Id.Contains("SelectionTrail", StringComparison.Ordinal)
+            || field.Id.Contains("FilterSummary", StringComparison.Ordinal)
+            || field.Id.Contains("ResultCommands", StringComparison.Ordinal)
+            || field.Id.Contains("CategoryCommands", StringComparison.Ordinal)
+            || field.Id.Contains("LiveRecalc", StringComparison.Ordinal)
+            || field.Id.Contains("BrowseGrid", StringComparison.Ordinal);
+    }
+
+    private static IReadOnlyList<SelectionCandidateItem> ParseSelectionCandidateItems(string rawValue)
+    {
+        List<SelectionCandidateItem> items = [];
+        foreach (string line in rawValue.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            bool isSelected = line.StartsWith(">", StringComparison.Ordinal);
+            string normalized = line.TrimStart('>', '*', '-', ' ').Trim();
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                continue;
+            }
+
+            items.Add(new SelectionCandidateItem(
+                Value: ExtractSelectionCandidateName(normalized),
+                DisplayText: normalized,
+                IsSelected: isSelected));
+        }
+
+        return items;
+    }
+
+    private static string ExtractSelectionCandidateName(string displayText)
+    {
+        int separatorIndex = displayText.IndexOf(" · ", StringComparison.Ordinal);
+        return separatorIndex > 0
+            ? displayText[..separatorIndex].Trim()
+            : displayText.Trim();
+    }
+
+    private static string? ResolveSelectionPrimaryFieldId(
+        DesktopDialogField candidateField,
+        IReadOnlyList<DesktopDialogField> allFields)
+    {
+        string prefix = candidateField.Id.EndsWith("CandidateList", StringComparison.Ordinal)
+            ? candidateField.Id[..^"CandidateList".Length]
+            : candidateField.Id;
+        string[] preferredSuffixes =
+        [
+            "Name",
+            "Reward",
+            "Power",
+            "Program",
+            "Skill",
+            "Spell",
+            "Form",
+            "Vehicle",
+            "Weapon",
+            "Armor",
+            "Quality"
+        ];
+
+        foreach (string suffix in preferredSuffixes)
+        {
+            string preferredId = prefix + suffix;
+            if (allFields.Any(field => string.Equals(field.Id, preferredId, StringComparison.Ordinal)))
+            {
+                return preferredId;
+            }
+        }
+
+        return allFields
+            .FirstOrDefault(field =>
+                field.Id.StartsWith(prefix, StringComparison.Ordinal)
+                && !field.IsReadOnly
+                && !field.Id.Contains("Search", StringComparison.Ordinal)
+                && !field.Id.Contains("Category", StringComparison.Ordinal)
+                && !field.Id.Contains("BookFilter", StringComparison.Ordinal)
+                && !field.Id.Contains("Sections", StringComparison.Ordinal)
+                && !field.Id.Contains("Show", StringComparison.Ordinal)
+                && !field.Id.Contains("Hide", StringComparison.Ordinal))?.Id;
+    }
+
+    private static double ResolveSelectionPanelMinHeight(DesktopDialogField field)
+    {
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
+        {
+            return 156d;
+        }
+
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
+        {
+            return 92d;
+        }
+
+        if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
+        {
+            return 132d;
+        }
+
+        return field.IsMultiline ? 124d : 72d;
+    }
+
+    private sealed record SelectionCandidateItem(
+        string Value,
+        string DisplayText,
+        bool IsSelected);
 
     private static bool SuppressDialogBanner(string? dialogId)
     {
@@ -1057,6 +1426,89 @@ public partial class DesktopDialogWindow : Window
         return shell;
     }
 
+    private Control CreateLegacyKarmaWorkflowPane(IReadOnlyList<DesktopDialogField> fields)
+    {
+        DesktopDialogField categoryField = FindRequiredField(fields, "newCharacterMetatypeCategory");
+        DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterMetatype");
+        DesktopDialogField summaryField = FindRequiredField(fields, "newCharacterKarmaWorkflowSummary");
+
+        static TextBlock CreateRowLabel(string text, string? name = null) => new()
+        {
+            Name = name,
+            Text = text,
+            FontWeight = FontWeight.SemiBold,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
+        };
+
+        ComboBox categoryCombo = BuildSelectComboBox(categoryField, 180);
+        categoryCombo.Name = DesktopDialogAccessibility.BuildFieldInputName(categoryField.Id);
+        ApplyAccessibility(categoryCombo, categoryField.AccessibleName, categoryField.ToolTip, categoryField.HelpText);
+
+        ComboBox metatypeCombo = BuildSelectComboBox(metatypeField, 180);
+        metatypeCombo.Name = DesktopDialogAccessibility.BuildFieldInputName(metatypeField.Id);
+        ApplyAccessibility(metatypeCombo, metatypeField.AccessibleName, metatypeField.ToolTip, metatypeField.HelpText);
+
+        Grid selectorGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,180,Auto,180"),
+            ColumnSpacing = 12,
+            RowSpacing = 8
+        };
+        selectorGrid.Children.Add(CreateRowLabel("Metatype Category:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
+        Grid.SetColumn(categoryCombo, 1);
+        selectorGrid.Children.Add(categoryCombo);
+
+        TextBlock metatypeLabel = CreateRowLabel("Metatype:", DesktopDialogAccessibility.BuildFieldLabelName(metatypeField.Id));
+        Grid.SetColumn(metatypeLabel, 2);
+        selectorGrid.Children.Add(metatypeLabel);
+        Grid.SetColumn(metatypeCombo, 3);
+        selectorGrid.Children.Add(metatypeCombo);
+
+        Border selectorBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = selectorGrid
+        };
+
+        TextBlock summaryLabel = new()
+        {
+            Text = "Workflow Summary",
+            FontWeight = FontWeight.SemiBold
+        };
+        TextBlock summaryText = new()
+        {
+            Name = "newCharacterKarmaWorkflowSummaryText",
+            Text = summaryField.Value,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        Border summaryBorder = new()
+        {
+            Classes = { "shell-panel" },
+            Padding = new Thickness(8),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    summaryLabel,
+                    summaryText
+                }
+            }
+        };
+
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                selectorBorder,
+                summaryBorder
+            }
+        };
+    }
+
     private Control CreateLegacyCharacterSettingsPane(IReadOnlyList<DesktopDialogField> fields)
     {
         DesktopDialogField priorityField = FindRequiredField(fields, "characterPriority");
@@ -1670,9 +2122,9 @@ public partial class DesktopDialogWindow : Window
         {
             Name = DesktopDialogAccessibility.BuildFieldContainerName(field.Id),
             ColumnDefinitions = new ColumnDefinitions("*"),
-            RowDefinitions = new RowDefinitions("Auto"),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
             ColumnSpacing = 0,
-            RowSpacing = 0
+            RowSpacing = 6
         };
 
         TextBlock label = new()
@@ -1689,7 +2141,7 @@ public partial class DesktopDialogWindow : Window
         fieldControl.Name = DesktopDialogAccessibility.BuildFieldInputName(field.Id);
         ApplyAccessibility(fieldControl, field.AccessibleName, field.ToolTip, field.HelpText);
         Grid.SetColumn(fieldControl, 0);
-        Grid.SetRow(fieldControl, 0);
+        Grid.SetRow(fieldControl, 1);
 
         row.Children.Add(fieldControl);
         return row;
@@ -2591,9 +3043,15 @@ public partial class DesktopDialogWindow : Window
     {
         (double width, double height, double minWidth, double minHeight) size = dialogId switch
         {
+            "dialog.new_character" => (860d, 320d, 700d, 260d),
+            "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
+            "dialog.new_character.karma_workflow" => (860d, 320d, 700d, 260d),
             "dialog.master_index" => (980d, 640d, 760d, 440d),
             "dialog.character_roster" => (900d, 620d, 700d, 420d),
             "dialog.global_settings" => (920d, 600d, 700d, 420d),
+            _ when !string.IsNullOrWhiteSpace(dialogId)
+                && dialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
+                && dialogId.EndsWith("_add", StringComparison.Ordinal) => (1080d, 760d, 900d, 620d),
             _ => (860d, 560d, 640d, 360d)
         };
 

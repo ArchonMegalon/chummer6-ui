@@ -197,7 +197,10 @@ internal static class DesktopMouseFirstJourneyRunner
                                DesktopDialogAccessibility.BuildActionName("complete_new_character_workflow")) is not null;
                 });
             inputTraceCollector.ObserveDialogWindow(ResolveVisibleDialogWindow());
-            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02-priority-workflow");
+            string continuationScreenshotStem = string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase)
+                ? "02-priority-workflow"
+                : "02-karma-workflow";
+            await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, continuationScreenshotStem);
 
             if (string.Equals(plan.BuildMethod, "Priority", StringComparison.OrdinalIgnoreCase))
             {
@@ -266,6 +269,36 @@ internal static class DesktopMouseFirstJourneyRunner
                 }
 
                 await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-priority-configured");
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(plan.MetatypeCategory))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterMetatypeCategory",
+                        plan.MetatypeCategory,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                if (!string.IsNullOrWhiteSpace(plan.Metatype))
+                {
+                    await SetDialogSelectFieldAsync(
+                        window,
+                        "newCharacterMetatype",
+                        plan.Metatype,
+                        steps,
+                        journeyTimeout.Token,
+                        recordPointerAction,
+                        markForcedComboDropdownOpen,
+                        markSelectionFallback);
+                }
+
+                await CaptureEvidenceScreenshotAsync(window, context, screenshotPaths, "02b-karma-configured");
             }
 
             await ClickDialogActionUntilAsync(

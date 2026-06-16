@@ -942,6 +942,32 @@ public sealed class WorkflowParityGateTests
                 ("Large", "Large"),
                 ("ReallyLarge", "Really Large")),
 
+            ("dialog.auto_alice", "autoAliceArchetype", _) => Create(
+                "street_sam",
+                ("street_sam", "Street Sam"),
+                ("decker", "Decker"),
+                ("mage", "Mage"),
+                ("face", "Face"),
+                ("rigger", "Rigger"),
+                ("adept", "Adept"),
+                ("generalist", "Generalist")),
+            ("dialog.auto_alice", "autoAliceOptimization", _) => Create(
+                "balanced",
+                ("balanced", "Balanced"),
+                ("specialized", "Specialized"),
+                ("survivable", "Survivable"),
+                ("cheap", "Cheap")),
+            ("dialog.auto_alice", "autoAliceLegality", _) => Create(
+                "strict",
+                ("strict", "Strict"),
+                ("standard", "Standard"),
+                ("anything", "Anything")),
+            ("dialog.auto_alice", "autoAliceComplexity", _) => Create(
+                "standard",
+                ("simple", "Simple"),
+                ("standard", "Standard"),
+                ("deep", "Deep")),
+
             ("dialog.global_settings", "globalLanguage", _)
                 or ("dialog.global_settings", "globalSheetLanguage", _) => Create(
                     "en-us",
@@ -963,6 +989,16 @@ public sealed class WorkflowParityGateTests
                 "All Books",
                 ("All Books", "All Books"),
                 ("Core Rulebook", "Core Rulebook")),
+            ("dialog.ui.quality_add", "uiQualityType", _) => Create(
+                "Positive",
+                ("Show All", "Show All"),
+                ("Positive", "Positive"),
+                ("Negative", "Negative"),
+                ("Metatype", "Metatype")),
+            ("dialog.ui.quality_add", "uiQualityBookFilter", _) => Create(
+                "Core Rulebook",
+                ("Core Rulebook", "Core Rulebook"),
+                ("Runner's Companion", "Runner's Companion")),
 
             ("dialog.master_index", "masterIndexFileSelection", _) => Create(
                 "books.xml",
@@ -1035,6 +1071,26 @@ public sealed class WorkflowParityGateTests
         Dictionary<string, MuscleMemoryDialogFieldContract> expectedFields = contract.Fields
             .ToDictionary(field => field.FieldId, StringComparer.Ordinal);
 
+        if (string.Equals(workflowId, "quality_add", StringComparison.Ordinal))
+        {
+            expectedFields["uiQualityType"] = new MuscleMemoryDialogFieldContract(
+                "uiQualityType",
+                "Type",
+                "select",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                4,
+                true);
+            expectedFields["uiQualityBookFilter"] = new MuscleMemoryDialogFieldContract(
+                "uiQualityBookFilter",
+                "Data File",
+                "select",
+                DesktopDialogFieldVisualKinds.Default,
+                DesktopDialogFieldLayoutSlots.Full,
+                2,
+                true);
+        }
+
         if (string.Equals(workflowId, "translator", StringComparison.Ordinal)
             && expectedFields.TryGetValue("lang1", out MuscleMemoryDialogFieldContract? translatorLanguageTemplate))
         {
@@ -1046,7 +1102,9 @@ public sealed class WorkflowParityGateTests
 
         foreach (DesktopDialogField field in renderedFields)
         {
-            Assert.IsTrue(expectedFields.TryGetValue(field.Id, out MuscleMemoryDialogFieldContract? expectedField),
+            Assert.IsTrue(
+                expectedFields.TryGetValue(field.Id, out MuscleMemoryDialogFieldContract? expectedField)
+                || TryResolveSupplementalDialogFieldContract(workflowId, field, out expectedField),
                 $"'{workflowId}' field '{field.Id}' is missing from the checked-in muscle-memory inventory.");
             if (string.Equals(workflowId, "translator", StringComparison.Ordinal)
                 && field.Id.StartsWith("lang", StringComparison.Ordinal))
@@ -1110,11 +1168,60 @@ public sealed class WorkflowParityGateTests
         }
     }
 
+    private static bool TryResolveSupplementalDialogFieldContract(
+        string workflowId,
+        DesktopDialogField field,
+        out MuscleMemoryDialogFieldContract? contract)
+    {
+        contract = (workflowId, field.Id) switch
+        {
+            ("quality_add", "uiQualitySelectionTrail") => new MuscleMemoryDialogFieldContract(
+                field.Id,
+                "Selection Trail",
+                "text",
+                DesktopDialogFieldVisualKinds.Grid,
+                DesktopDialogFieldLayoutSlots.Right,
+                0,
+                true),
+            ("quality_add", "uiQualityFilterSummary") => new MuscleMemoryDialogFieldContract(
+                field.Id,
+                "Filter Summary",
+                "text",
+                DesktopDialogFieldVisualKinds.Snippet,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true),
+            ("quality_add", "uiQualityResultCommands") => new MuscleMemoryDialogFieldContract(
+                field.Id,
+                "Result Commands",
+                "text",
+                DesktopDialogFieldVisualKinds.List,
+                DesktopDialogFieldLayoutSlots.Full,
+                0,
+                true),
+            _ => null
+        };
+
+        return contract is not null;
+    }
+
     private static string[] ResolveExpectedFieldIdsForParity(
         string workflowId,
         IReadOnlyList<MuscleMemoryDialogFieldContract> contractFields,
         IReadOnlyList<string> currentFieldIds)
     {
+        if (string.Equals(workflowId, "quality_add", StringComparison.Ordinal))
+        {
+            HashSet<string> contractedFieldIds = contractFields
+                .Select(field => field.FieldId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            return currentFieldIds
+                .Where(id => contractedFieldIds.Contains(id)
+                    || id is "uiQualitySelectionTrail" or "uiQualityFilterSummary" or "uiQualityResultCommands")
+                .ToArray();
+        }
+
         if (!string.Equals(workflowId, "translator", StringComparison.Ordinal))
         {
             return contractFields
@@ -1731,6 +1838,7 @@ public sealed class WorkflowParityGateTests
         new[]
         {
             new MenuWorkflowContract("about", WorkflowShape.Info),
+            new MenuWorkflowContract("auto_alice", WorkflowShape.Choice),
             new MenuWorkflowContract("character_roster", WorkflowShape.Tool),
             new MenuWorkflowContract("character_settings", WorkflowShape.Choice),
             new MenuWorkflowContract("data_exporter", WorkflowShape.Preview),
