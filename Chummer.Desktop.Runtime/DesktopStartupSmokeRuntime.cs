@@ -110,7 +110,7 @@ public static class DesktopStartupSmokeRuntime
 
     private static DesktopStartupSmokeContext BuildContext(string headId, DateTimeOffset startedAtUtc)
     {
-        Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+        Assembly assembly = ResolveDesktopAssembly();
         string processPath = Environment.ProcessPath ?? AppContext.BaseDirectory;
         (string? artifactDigest, string artifactDigestSource) = ResolveArtifactDigest(processPath);
         string resolvedVersion = ResolveStartupSmokeVersion(assembly);
@@ -216,10 +216,10 @@ public static class DesktopStartupSmokeRuntime
             return overrideVersion.Trim();
         }
 
-        return ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
+        string? resolved = ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseVersion")
             ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            ?? assembly.GetName().Version?.ToString()
-            ?? string.Empty;
+            ?? assembly.GetName().Version?.ToString();
+        return string.IsNullOrWhiteSpace(resolved) ? "local-build" : resolved;
     }
 
     private static string ResolveReleaseVersion(Assembly assembly, string fallbackVersion)
@@ -236,12 +236,7 @@ public static class DesktopStartupSmokeRuntime
             return metadataVersion;
         }
 
-        if (!string.IsNullOrWhiteSpace(fallbackVersion))
-        {
-            return fallbackVersion;
-        }
-
-        return string.Empty;
+        return string.IsNullOrWhiteSpace(fallbackVersion) ? "local-build" : fallbackVersion;
     }
 
     private static string ResolveStartupSmokeRid()
@@ -252,7 +247,29 @@ public static class DesktopStartupSmokeRuntime
             return overrideRid.Trim().ToLowerInvariant();
         }
 
-        return string.Empty;
+        string runtimeRid = RuntimeInformation.RuntimeIdentifier?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(runtimeRid))
+        {
+            return runtimeRid;
+        }
+
+        return $"{DetectPlatform()}-{DetectArchitecture()}";
+    }
+
+    private static Assembly ResolveDesktopAssembly()
+    {
+        Assembly? entryAssembly = Assembly.GetEntryAssembly();
+        if (entryAssembly is not null && !string.IsNullOrWhiteSpace(ReadAssemblyMetadata(entryAssembly, "ChummerDesktopHeadId")))
+        {
+            return entryAssembly;
+        }
+
+        return AppDomain.CurrentDomain.GetAssemblies()
+                   .FirstOrDefault(static assembly => !string.IsNullOrWhiteSpace(
+                       assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+                           .FirstOrDefault(attribute => string.Equals(attribute.Key, "ChummerDesktopHeadId", StringComparison.Ordinal))?
+                           .Value))
+               ?? Assembly.GetExecutingAssembly();
     }
 
     private static void WriteReceipt(string receiptPath, DesktopStartupSmokeReceipt receipt)

@@ -194,8 +194,8 @@ public sealed class AvaloniaFlagshipUiGateTests
             appText.Contains("if (installLinkingContext is not null)", StringComparison.Ordinal),
             "Startup modal prompts should still be gated on active install-linking context.");
         Assert.IsTrue(
-            appText.Contains("if (!DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))", StringComparison.Ordinal),
-            "Unclaimed installs must hard-stop startup continuation until a link is established.");
+            appText.Contains("if (installLinkingContext.ShouldPrompt && !DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))", StringComparison.Ordinal),
+            "Only real public linking prompts should hard-stop startup continuation; local channels must stay usable.");
         Assert.IsTrue(
             appText.Contains("MarkPromptDismissed(currentInstallState.HeadId)", StringComparison.Ordinal),
             "Unclaimed installs must record the dismissed-state turn and avoid looping prompts.");
@@ -1803,8 +1803,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.WaitUntil(() => calendarRows.ItemCount > 0);
                 captured["37-workflow-calendar-section-light.png"] = CaptureScreenshotProof(harness, "37-workflow-calendar-section-light.png");
 
-                harness.Click("FileMenuButton");
-                harness.WaitUntil(() => IsCommandVisibleInCommandList(harness, "open_character"));
+                OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
                 harness.ClickMenuCommand("open_character");
                 AssertDialogContainsAll(
                     harness,

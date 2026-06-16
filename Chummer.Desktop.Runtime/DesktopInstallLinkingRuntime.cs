@@ -57,6 +57,7 @@ public sealed record DesktopInstallLinkingState(
 
 public static class DesktopInstallLinkingRuntime
 {
+    private const string ReleaseChannelEnvironmentVariable = "CHUMMER_DESKTOP_RELEASE_CHANNEL";
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
@@ -138,7 +139,7 @@ public static class DesktopInstallLinkingRuntime
             }
         }
 
-        bool shouldPrompt = !IsClaimed(state);
+        bool shouldPrompt = ShouldPromptForStartup(state);
         if (claimResult?.Succeeded == true)
         {
             shouldPrompt = false;
@@ -150,7 +151,9 @@ public static class DesktopInstallLinkingRuntime
             ? claimResult?.Succeeded == true ? "claim_applied" : "claim_code_present"
             : shouldPrompt
                 ? "claim_required"
-                : "none";
+                : IsClaimed(state)
+                    ? "none"
+                    : "local_channel_no_claim_required";
 
         return new DesktopInstallLinkingStartupContext(
             State: state,
@@ -224,6 +227,12 @@ public static class DesktopInstallLinkingRuntime
     public static bool TryOpenAccountPortal()
     {
         return TryOpenPublicPortal("/account#desktop");
+    }
+
+    public static bool ShouldPromptForStartup(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return !IsClaimed(state) && RequiresInstallLinkPrompt(state.ChannelId);
     }
 
     public static bool TryOpenAccountPortalForInstall(DesktopInstallLinkingState state)
@@ -2163,7 +2172,7 @@ public static class DesktopInstallLinkingRuntime
                     ?? assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                     ?? assembly.GetName().Version?.ToString()
                     ?? string.Empty,
-                ChannelId: ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local");
+                ChannelId: ResolveReleaseChannel(assembly));
         }
 
         private static string? ReadAssemblyMetadata(Assembly assembly, string key)
@@ -2173,6 +2182,33 @@ public static class DesktopInstallLinkingRuntime
                 .FirstOrDefault(attribute => string.Equals(attribute.Key, key, StringComparison.Ordinal))?
                 .Value;
         }
+
+        private static string ResolveReleaseChannel(Assembly assembly)
+        {
+            string? overrideChannel = Environment.GetEnvironmentVariable(ReleaseChannelEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(overrideChannel))
+            {
+                return overrideChannel.Trim();
+            }
+
+            return ReadAssemblyMetadata(assembly, "ChummerDesktopReleaseChannel") ?? "local";
+        }
+    }
+
+    private static bool RequiresInstallLinkPrompt(string? channelId)
+    {
+        string normalized = channelId?.Trim().ToLowerInvariant() ?? "local";
+        return normalized switch
+        {
+            "" => false,
+            "local" => false,
+            "docker" => false,
+            "debug" => false,
+            "development" => false,
+            "dev" => false,
+            "test" => false,
+            _ => true
+        };
     }
 
     private sealed record DesktopRuntimePlatformIdentity(

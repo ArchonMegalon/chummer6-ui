@@ -192,7 +192,7 @@ public partial class App : global::Avalonia.Application
 
             DesktopInstallLinkingState currentInstallState = DesktopInstallLinkingRuntime.LoadOrCreateState(installLinkingContext.State.HeadId);
             owner.ApplyInstallLinkingChrome(currentInstallState);
-            if (!DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))
+            if (installLinkingContext.ShouldPrompt && !DesktopInstallLinkingRuntime.IsClaimed(currentInstallState))
             {
                 DesktopInstallLinkingRuntime.MarkPromptDismissed(currentInstallState.HeadId);
                 owner.Close();

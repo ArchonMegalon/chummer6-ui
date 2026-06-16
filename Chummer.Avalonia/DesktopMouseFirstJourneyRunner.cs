@@ -139,14 +139,27 @@ internal static class DesktopMouseFirstJourneyRunner
             try
             {
                 DesktopInstallLinkingState installState = DesktopInstallLinkingRuntime.LoadOrCreateState("avalonia");
-                string relativeClaimPath = DesktopInstallLinkingRuntime.BuildClaimPortalRelativePathForInstall(installState);
-                authenticationPortalState.Uri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(relativeClaimPath);
-                authenticationPortalState.Opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(installState);
-                if (authenticationPortalState.Opened)
+                if (DesktopInstallLinkingRuntime.ShouldPromptForStartup(installState))
                 {
-                    await Task.Delay(300, journeyTimeout.Token);
+                    string relativeClaimPath = DesktopInstallLinkingRuntime.BuildClaimPortalRelativePathForInstall(installState);
+                    authenticationPortalState.Uri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri(relativeClaimPath);
+                    authenticationPortalState.Opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(installState);
+                    if (authenticationPortalState.Opened)
+                    {
+                        await Task.Delay(300, journeyTimeout.Token);
+                    }
                 }
-                RecordStep(steps, $"open authentication portal ({(authenticationPortalState.Opened ? "success" : "failed")})");
+                else
+                {
+                    authenticationPortalState.Uri = null;
+                    authenticationPortalState.Opened = false;
+                }
+                string portalStep = authenticationPortalState.Opened
+                    ? "open authentication portal (success)"
+                    : authenticationPortalState.Uri is null
+                        ? "skip authentication portal (not required for current release channel)"
+                        : "open authentication portal (failed)";
+                RecordStep(steps, portalStep);
             }
             catch (Exception ex)
             {

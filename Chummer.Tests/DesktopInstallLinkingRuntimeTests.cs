@@ -601,12 +601,14 @@ public sealed class DesktopInstallLinkingRuntimeTests
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
         string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
         string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        string? previousReleaseChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
         string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-startup-tests", Guid.NewGuid().ToString("N"));
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "preview");
 
             DesktopInstallLinkingStartupContext context = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
                 "avalonia",
@@ -623,6 +625,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", previousReleaseChannel);
             if (Directory.Exists(tempRoot))
             {
                 Directory.Delete(tempRoot, recursive: true);
@@ -636,12 +639,14 @@ public sealed class DesktopInstallLinkingRuntimeTests
         string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
         string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
         string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        string? previousReleaseChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
         string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-startup-tests", Guid.NewGuid().ToString("N"));
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "preview");
 
             DesktopInstallLinkingStartupContext context = DesktopInstallLinkingRuntime.InitializeForStartup(
                 "avalonia",
@@ -658,6 +663,45 @@ public sealed class DesktopInstallLinkingRuntimeTests
             Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
             Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", previousReleaseChannel);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task InitializeForStartupAsync_without_explicit_handoff_skips_install_link_gate_on_local_channel()
+    {
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousClaimCode = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE");
+        string? previousCallbackUri = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI");
+        string? previousReleaseChannel = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL");
+        string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-local-startup-tests", Guid.NewGuid().ToString("N"));
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", null);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", null);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", "local");
+
+            DesktopInstallLinkingStartupContext context = await DesktopInstallLinkingRuntime.InitializeForStartupAsync(
+                "avalonia",
+                Array.Empty<string>(),
+                CancellationToken.None);
+
+            Assert.IsFalse(context.ShouldPrompt, "Local/debug startup must not detour into the install-link gate.");
+            Assert.AreEqual("local_channel_no_claim_required", context.PromptReason);
+            Assert.IsNull(context.ClaimResult);
+            Assert.AreEqual(1, context.State.LaunchCount);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_CLAIM_CODE", previousClaimCode);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_CALLBACK_URI", previousCallbackUri);
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_RELEASE_CHANNEL", previousReleaseChannel);
             if (Directory.Exists(tempRoot))
             {
                 Directory.Delete(tempRoot, recursive: true);
