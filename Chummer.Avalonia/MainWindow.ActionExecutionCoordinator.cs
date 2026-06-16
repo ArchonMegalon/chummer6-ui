@@ -23,8 +23,16 @@ internal sealed class MainWindowActionExecutionCoordinator
     {
         try
         {
+            CharacterWorkspaceId? shellWorkspaceIdBefore = _shellPresenter.State.ActiveWorkspaceId;
+            CharacterWorkspaceId? presenterWorkspaceIdBefore = ResolveActiveWorkspaceId();
             await operation();
-            await SyncShellWorkspaceContextAsync(ct);
+            CharacterWorkspaceId? presenterWorkspaceIdAfter = ResolveActiveWorkspaceId();
+            if (!Nullable.Equals(shellWorkspaceIdBefore, presenterWorkspaceIdAfter)
+                || !Nullable.Equals(presenterWorkspaceIdBefore, presenterWorkspaceIdAfter)
+                || !Nullable.Equals(_shellPresenter.State.ActiveWorkspaceId, presenterWorkspaceIdAfter))
+            {
+                await SyncShellWorkspaceContextAsync(ct);
+            }
         }
         catch (OperationCanceledException)
         {
@@ -38,7 +46,10 @@ internal sealed class MainWindowActionExecutionCoordinator
 
     private Task SyncShellWorkspaceContextAsync(CancellationToken ct)
     {
-        CharacterWorkspaceId? activeWorkspaceId = _adapter.State.Session.ActiveWorkspaceId ?? _adapter.State.WorkspaceId;
+        CharacterWorkspaceId? activeWorkspaceId = ResolveActiveWorkspaceId();
         return _shellPresenter.SyncWorkspaceContextAsync(activeWorkspaceId, ct);
     }
+
+    private CharacterWorkspaceId? ResolveActiveWorkspaceId()
+        => _adapter.State.Session.ActiveWorkspaceId ?? _adapter.State.WorkspaceId;
 }

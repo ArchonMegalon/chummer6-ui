@@ -31,6 +31,7 @@ public partial class DesktopDialogWindow : Window
     private string? _preferredFocusControlName;
     private int? _preferredFocusSelectionStart;
     private bool _suppressCloseNotification;
+    private bool _suppressDialogUpdates;
 
     public DesktopDialogWindow()
     {
@@ -126,9 +127,11 @@ public partial class DesktopDialogWindow : Window
 
     private void BuildFields(IReadOnlyList<DesktopDialogField> fields)
     {
+        _suppressDialogUpdates = true;
         _dialogFieldsPanel.Children.Clear();
         if (TryBuildLegacyParityDialog(fields))
         {
+            _suppressDialogUpdates = false;
             return;
         }
 
@@ -150,6 +153,8 @@ public partial class DesktopDialogWindow : Window
 
             _dialogFieldsPanel.Children.Add(CreateStandaloneFieldRow(field));
         }
+
+        _suppressDialogUpdates = false;
     }
 
     private bool TryBuildLegacyParityDialog(IReadOnlyList<DesktopDialogField> fields)
@@ -423,6 +428,11 @@ public partial class DesktopDialogWindow : Window
             });
         listBox.SelectionChanged += (_, _) =>
         {
+            if (_suppressDialogUpdates)
+            {
+                return;
+            }
+
             if (primaryFieldId is null || listBox.SelectedItem is not SelectionCandidateItem selectedItem)
             {
                 return;
@@ -3206,7 +3216,7 @@ public partial class DesktopDialogWindow : Window
 
     private async void QueueDialogFieldUpdate(string fieldId, string value)
     {
-        if (_adapter is null)
+        if (_adapter is null || _suppressDialogUpdates)
             return;
 
         CapturePreferredFocusState();

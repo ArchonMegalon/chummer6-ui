@@ -4294,6 +4294,12 @@ public sealed class AvaloniaFlagshipUiGateTests
                     StringComparison.Ordinal));
             string[] actionIds = harness.DialogActionIds();
             Assert.IsTrue(actionIds.Length > 0, "Cyberware familiarity proof must keep a visible dialog posture with actionable controls.");
+            harness.InvokeDialogAction("cancel");
+            harness.WaitUntil(() =>
+                !string.Equals(
+                    harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                    "Add Cyberware",
+                    StringComparison.Ordinal));
         });
     }
 
@@ -7499,7 +7505,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
             {
                 Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                string? priorLastCommandId = State.LastCommandId;
+                string? priorDialogId = State.ActiveDialog?.Id;
                 menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                if (!string.Equals(State.LastCommandId, priorLastCommandId, StringComparison.Ordinal)
+                    || !string.Equals(State.ActiveDialog?.Id, priorDialogId, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
                 Pump();
                 return;
             }
@@ -7863,19 +7879,6 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void Dispose()
         {
-            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
-            {
-                dialogWindow.Close();
-            }
-
-            foreach (Window ownedWindow in Window.OwnedWindows.ToArray())
-            {
-                ownedWindow.Close();
-            }
-
-            Pump();
-            Window.Close();
-            Pump();
             _adapter.Dispose();
         }
     }
@@ -8025,7 +8028,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             if (FindMenuCommandItem(commandId) is MenuItem menuCommandItem)
             {
                 Assert.IsTrue(menuCommandItem.IsEnabled, $"Menu command '{commandId}' must be enabled.");
+                string? priorLastCommandId = State.LastCommandId;
+                string? priorDialogId = State.ActiveDialog?.Id;
                 menuCommandItem.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Pump();
+                if (!string.Equals(State.LastCommandId, priorLastCommandId, StringComparison.Ordinal)
+                    || !string.Equals(State.ActiveDialog?.Id, priorDialogId, StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                Presenter.ExecuteCommandAsync(commandId, CancellationToken.None).GetAwaiter().GetResult();
                 Pump();
                 return;
             }
