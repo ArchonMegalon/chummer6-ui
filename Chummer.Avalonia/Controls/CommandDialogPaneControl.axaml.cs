@@ -206,7 +206,7 @@ public partial class CommandDialogPaneControl : UserControl
 
         if (topFields.Length > 0)
         {
-            shell.Children.Add(CreateSelectionGroup(BuildSelectionTopRows(topFields).ToArray()));
+            shell.Children.Add(CreateClassicSelectionToolbar(BuildSelectionTopRows(topFields).ToArray()));
         }
 
         Grid body = new()
@@ -223,7 +223,7 @@ public partial class CommandDialogPaneControl : UserControl
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(null, CreateSelectionCandidatePanel(candidateField, fields), 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateSelectionCandidatePanel(candidateField, fields), 320));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -256,7 +256,7 @@ public partial class CommandDialogPaneControl : UserControl
 
         if (lowerSummary.Length > 0)
         {
-            shell.Children.Add(CreateSelectionGroup(
+            shell.Children.Add(CreateClassicSelectionFooterGroup(
                 lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
@@ -439,7 +439,7 @@ public partial class CommandDialogPaneControl : UserControl
             && !string.Equals(right.InputType, "checkbox", StringComparison.Ordinal);
     }
 
-    private static Border CreateSelectionGroup(params Control[] children)
+    private static Border CreateClassicSelectionToolbar(params Control[] children)
     {
         StackPanel body = new()
         {
@@ -453,10 +453,32 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
+            Child = body
+        };
+    }
+
+    private static Border CreateClassicSelectionFooterGroup(params Control[] children)
+    {
+        StackPanel body = new()
+        {
+            Spacing = 8
+        };
+        foreach (Control child in children)
+        {
+            body.Children.Add(child);
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F5F8FC"),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
             Child = body
         };
     }
@@ -469,22 +491,33 @@ public partial class CommandDialogPaneControl : UserControl
         };
         if (!string.IsNullOrWhiteSpace(title))
         {
-            shell.Children.Add(new TextBlock
-            {
-                Text = title,
-                FontWeight = FontWeight.SemiBold
-            });
+            shell.Children.Add(CreateClassicSelectionTitle(title));
         }
         shell.Children.Add(content);
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
             MinHeight = minHeight,
             Child = shell
+        };
+    }
+
+    private static Control CreateClassicSelectionTitle(string title)
+    {
+        return new Border
+        {
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(0, 0, 0, 6),
+            Child = new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeight.SemiBold
+            }
         };
     }
 
@@ -516,25 +549,7 @@ public partial class CommandDialogPaneControl : UserControl
             ItemsSource = items,
             MinHeight = 320
         };
-        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) =>
-            new Border
-            {
-                Padding = new Thickness(10, 8),
-                Margin = new Thickness(0, 0, 0, 6),
-                Background = item?.IsSelected == true
-                    ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
-                    : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
-                BorderBrush = item?.IsSelected == true
-                    ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
-                    : ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Child = new TextBlock
-                {
-                    Text = item?.DisplayText ?? string.Empty,
-                    TextWrapping = TextWrapping.Wrap
-                }
-            });
+        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
         {
             if (_suppressDialogUpdates || primaryFieldId is null || listBox.SelectedItem is not SelectionCandidateItem selectedItem)
@@ -558,13 +573,96 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Spacing = 8
         };
-        shell.Children.Add(new TextBlock
-        {
-            Text = candidateField.Label,
-            FontWeight = FontWeight.SemiBold
-        });
+        shell.Children.Add(CreateClassicSelectionSectionHeader(candidateField.Label, items.Count));
         shell.Children.Add(listBox);
         return shell;
+    }
+
+    private static Control CreateClassicSelectionSectionHeader(string label, int count)
+    {
+        Grid header = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8
+        };
+
+        TextBlock title = new()
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold
+        };
+        Border badge = new()
+        {
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#EEF3F8"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(6, 1),
+            Child = new TextBlock
+            {
+                Text = count.ToString(),
+                FontSize = 11,
+                FontWeight = FontWeight.SemiBold
+            }
+        };
+
+        Grid.SetColumn(title, 0);
+        Grid.SetColumn(badge, 1);
+        header.Children.Add(title);
+        header.Children.Add(badge);
+
+        return new Border
+        {
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(0, 0, 0, 6),
+            Child = header
+        };
+    }
+
+    private static Control BuildClassicSelectionCandidateRow(SelectionCandidateItem? item)
+    {
+        SplitSelectionCandidateDisplayText(item?.DisplayText ?? string.Empty, out string title, out string meta);
+
+        StackPanel body = new()
+        {
+            Spacing = string.IsNullOrWhiteSpace(meta) ? 0 : 2,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = title,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(meta))
+        {
+            body.Children.Add(new TextBlock
+            {
+                Text = meta,
+                FontSize = 11,
+                Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        return new Border
+        {
+            Padding = new Thickness(8, 6),
+            Margin = new Thickness(0, 0, 0, 4),
+            Background = item?.IsSelected == true
+                ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
+                : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
+            BorderBrush = item?.IsSelected == true
+                ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
+                : ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(item?.IsSelected == true ? 2 : 1, 1, 1, 1),
+            CornerRadius = new CornerRadius(2),
+            Child = body
+        };
     }
 
     private static IReadOnlyList<SelectionCandidateItem> ParseSelectionCandidateItems(string rawValue)
@@ -594,6 +692,16 @@ public partial class CommandDialogPaneControl : UserControl
         return separatorIndex > 0
             ? displayText[..separatorIndex].Trim()
             : displayText.Trim();
+    }
+
+    private static void SplitSelectionCandidateDisplayText(string displayText, out string title, out string meta)
+    {
+        string[] segments = displayText
+            .Split(" · ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        title = segments.FirstOrDefault() ?? string.Empty;
+        meta = segments.Length > 1
+            ? string.Join("  |  ", segments.Skip(1))
+            : string.Empty;
     }
 
     private static string? ResolveSelectionPrimaryFieldId(

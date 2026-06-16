@@ -300,8 +300,7 @@ public partial class DesktopDialogWindow : Window
 
         if (topFields.Length > 0)
         {
-            shell.Children.Add(CreateLegacyFieldGroup(
-                "Selection",
+            shell.Children.Add(CreateClassicSelectionToolbar(
                 BuildSelectionTopFieldRows(topFields).ToArray()));
         }
 
@@ -322,7 +321,7 @@ public partial class DesktopDialogWindow : Window
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(null, CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -359,8 +358,7 @@ public partial class DesktopDialogWindow : Window
 
         if (lowerSummary.Length > 0)
         {
-            shell.Children.Add(CreateLegacyFieldGroup(
-                "Review",
+            shell.Children.Add(CreateClassicSelectionFooterGroup(
                 lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), minHeight: ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
@@ -407,25 +405,7 @@ public partial class DesktopDialogWindow : Window
             ItemsSource = items,
             MinHeight = 320
         };
-        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) =>
-            new Border
-            {
-                Padding = new Thickness(10, 8),
-                Margin = new Thickness(0, 0, 0, 6),
-                Background = item?.IsSelected == true
-                    ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
-                    : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
-                BorderBrush = item?.IsSelected == true
-                    ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
-                    : ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(6),
-                Child = new TextBlock
-                {
-                    Text = item?.DisplayText ?? string.Empty,
-                    TextWrapping = TextWrapping.Wrap
-                }
-            });
+        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
         {
             if (_suppressDialogUpdates)
@@ -456,13 +436,53 @@ public partial class DesktopDialogWindow : Window
         {
             Spacing = 8
         };
-        shell.Children.Add(new TextBlock
-        {
-            Text = candidateField.Label,
-            FontWeight = FontWeight.SemiBold
-        });
+        shell.Children.Add(CreateClassicSelectionSectionHeader(candidateField.Label, items.Count));
         shell.Children.Add(listBox);
         return shell;
+    }
+
+    private static Border CreateClassicSelectionToolbar(params Control[] children)
+    {
+        StackPanel body = new()
+        {
+            Spacing = 8
+        };
+        foreach (Control child in children)
+        {
+            body.Children.Add(child);
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
+            Child = body
+        };
+    }
+
+    private static Border CreateClassicSelectionFooterGroup(params Control[] children)
+    {
+        StackPanel body = new()
+        {
+            Spacing = 8
+        };
+        foreach (Control child in children)
+        {
+            body.Children.Add(child);
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F5F8FC"),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
+            Child = body
+        };
     }
 
     private static Border CreateSelectionSurfaceCard(string? title, Control content, double minHeight)
@@ -473,23 +493,131 @@ public partial class DesktopDialogWindow : Window
         };
         if (!string.IsNullOrWhiteSpace(title))
         {
-            shell.Children.Add(new TextBlock
-            {
-                Text = title,
-                FontWeight = FontWeight.SemiBold
-            });
+            shell.Children.Add(CreateClassicSelectionTitle(title));
         }
         shell.Children.Add(content);
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(10),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(8),
             MinHeight = minHeight,
             Child = shell
         };
+    }
+
+    private static Control CreateClassicSelectionTitle(string title)
+    {
+        return new Border
+        {
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(0, 0, 0, 6),
+            Child = new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeight.SemiBold
+            }
+        };
+    }
+
+    private static Control CreateClassicSelectionSectionHeader(string label, int count)
+    {
+        Grid header = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            ColumnSpacing = 8
+        };
+
+        TextBlock title = new()
+        {
+            Text = label,
+            FontWeight = FontWeight.SemiBold
+        };
+        Border badge = new()
+        {
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#EEF3F8"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(6, 1),
+            Child = new TextBlock
+            {
+                Text = count.ToString(),
+                FontSize = 11,
+                FontWeight = FontWeight.SemiBold
+            }
+        };
+
+        Grid.SetColumn(title, 0);
+        Grid.SetColumn(badge, 1);
+        header.Children.Add(title);
+        header.Children.Add(badge);
+
+        return new Border
+        {
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Padding = new Thickness(0, 0, 0, 6),
+            Child = header
+        };
+    }
+
+    private static Control BuildClassicSelectionCandidateRow(SelectionCandidateItem? item)
+    {
+        SplitSelectionCandidateDisplayText(item?.DisplayText ?? string.Empty, out string title, out string meta);
+
+        StackPanel body = new()
+        {
+            Spacing = string.IsNullOrWhiteSpace(meta) ? 0 : 2,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = title,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(meta))
+        {
+            body.Children.Add(new TextBlock
+            {
+                Text = meta,
+                FontSize = 11,
+                Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
+                TextWrapping = TextWrapping.Wrap
+            });
+        }
+
+        return new Border
+        {
+            Padding = new Thickness(8, 6),
+            Margin = new Thickness(0, 0, 0, 4),
+            Background = item?.IsSelected == true
+                ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
+                : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
+            BorderBrush = item?.IsSelected == true
+                ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
+                : ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderThickness = new Thickness(item?.IsSelected == true ? 2 : 1, 1, 1, 1),
+            CornerRadius = new CornerRadius(2),
+            Child = body
+        };
+    }
+
+    private static void SplitSelectionCandidateDisplayText(string displayText, out string title, out string meta)
+    {
+        string[] segments = displayText
+            .Split(" · ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        title = segments.FirstOrDefault() ?? string.Empty;
+        meta = segments.Length > 1
+            ? string.Join("  |  ", segments.Skip(1))
+            : string.Empty;
     }
 
     private static bool IsSupportSummaryField(DesktopDialogField field)
