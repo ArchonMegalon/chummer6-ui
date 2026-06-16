@@ -121,6 +121,40 @@ internal sealed class DesktopRunsiteWindow : Window
     private Control CreateWorkspaceCard()
     {
         IReadOnlyList<RunsiteWorkspaceEntry> entries = BuildWorkspaceEntries();
+        if (entries.Count == 0)
+        {
+            StackPanel emptyBody = new()
+            {
+                Spacing = 8,
+                Children =
+                {
+                    DesktopHorizonWindowScaffold.CreateBadgeStrip(
+                        DesktopHorizonWindowScaffold.CreateMetricBadge("RunsiteBadgeListedWorkspaces", "Listed workspaces", "0")),
+                    DesktopHorizonWindowScaffold.CreateDetailText("No signed-in runsite workspaces or digests are currently available."),
+                    new TextBlock
+                    {
+                        Name = "RunsiteSelectedWorkspaceDetailText",
+                        Text = "No governed runsite workspace is currently available.",
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Name = "RunsiteSelectedWorkspaceFollowUpText",
+                        Text = "Open or create a workspace to populate the native runsite desk.",
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                }
+            };
+
+            return DesktopHorizonWindowScaffold.CreateCard(
+                "Workspace desk",
+                "Return after the next governed runsite sync to inspect workspace digests natively.",
+                emptyBody,
+                DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in bench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: false),
+                DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
+                DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runsites")));
+        }
+
         IReadOnlyList<string> detailModes = ["Summary", "Orientation", "Memory"];
 
         ComboBox detailModeCombo = new()
@@ -247,23 +281,11 @@ internal sealed class DesktopRunsiteWindow : Window
             }
         };
 
-        if (entries.Count == 0)
-        {
-            body.Children.Insert(1, DesktopHorizonWindowScaffold.CreateDetailText("No signed-in runsite workspaces or digests are currently available."));
-            body.Children.Remove(detailModeCombo);
-            body.Children.Remove(workspaceList);
-            body.Children.RemoveAt(body.Children.Count - 1);
-            body.Children.Add(selectedWorkspaceDetailText);
-            body.Children.Add(selectedWorkspaceFollowUpText);
-        }
-
         return DesktopHorizonWindowScaffold.CreateCard(
             "Workspace desk",
-            entries.Count == 0
-                ? "Return after the next governed runsite sync to inspect workspace digests natively."
-                : $"{entries.Count} governed runsite workspace entry or digest(s) are available on native rails.",
+            $"{entries.Count} governed runsite workspace entry or digest(s) are available on native rails.",
             body,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in bench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: entries.Count > 0),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in bench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites"), isPrimary: true),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open starter lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/runsites")));
     }

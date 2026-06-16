@@ -13,6 +13,8 @@ internal sealed class DesktopBlackLedgerWindow : Window
 {
     internal static DesktopBlackLedgerWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasCampaignContext => (_campaignSummary?.Campaigns.Count ?? 0) > 0;
+    private bool HasWorkspaceContext => (_campaignSummary?.Workspaces.Count ?? 0) > 0;
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
         => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
@@ -130,7 +132,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
             "The desktop can see the current governed campaign lane and use it to jump into the map, validation, and public Ledger surfaces.",
             details,
             "BlackLedgerStatusCard",
-            CreateButton("Open public Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger"), isPrimary: true, name: "BlackLedgerOpenPublicLedgerButton"),
+            CreateButton("Open public Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger"), isPrimary: HasCampaignContext, name: "BlackLedgerOpenPublicLedgerButton"),
             CreateButton("Open map", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/map#ledger-map"), name: "BlackLedgerOpenMapButton"),
             CreateButton("Open validation", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationButton"));
     }
@@ -252,10 +254,13 @@ internal sealed class DesktopBlackLedgerWindow : Window
         if (workspaces.Count == 0)
         {
             body.Children.Add(CreateDetailText("No campaign workspace context is available yet."));
+            body.Children.Add(selectedWorkspaceDetailText);
+            body.Children.Add(selectedWorkspaceSceneText);
         }
-
-        body.Children.Add(detailModeCombo);
-        body.Children.Add(workspaceList);
+        else
+        {
+            body.Children.Add(detailModeCombo);
+            body.Children.Add(workspaceList);
             body.Children.Add(
                 new Border
                 {
@@ -275,6 +280,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                         }
                     }
                 });
+        }
 
         return CreateCard(
             "Workspace return rails",
@@ -283,7 +289,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                 : $"{workspaces.Count} campaign workspace(s) are available on the account rail.",
             body,
             "BlackLedgerWorkspacesCard",
-            CreateButton("Open map", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/map#ledger-map"), isPrimary: true, name: "BlackLedgerOpenMapFromWorkspacesButton"),
+            CreateButton("Open map", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/map#ledger-map"), isPrimary: HasWorkspaceContext || HasCampaignContext, name: "BlackLedgerOpenMapFromWorkspacesButton"),
             CreateButton("Open validation", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/worldtick/validation"), name: "BlackLedgerOpenValidationFromWorkspacesButton"));
     }
 

@@ -13,6 +13,7 @@ internal sealed class DesktopRunControlWindow : Window
 {
     internal static DesktopRunControlWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasRunContext => (_campaignSummary?.Runs.Count ?? 0) > 0;
 
     private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
         => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
@@ -130,7 +131,7 @@ internal sealed class DesktopRunControlWindow : Window
             "The desktop can see the current governed run lane and use it to jump into the signed-in desk or public control route.",
             details,
             "RunControlStatusCard",
-            CreateButton("Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control"), isPrimary: true, name: "RunControlOpenAccountDeskButton"),
+            CreateButton("Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control"), isPrimary: HasRunContext, name: "RunControlOpenAccountDeskButton"),
             CreateButton("Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/run-control"), name: "RunControlOpenPublicRouteButton"));
     }
 

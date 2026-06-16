@@ -15,6 +15,9 @@ internal sealed class DesktopCreatorOsWindow : Window
     internal static DesktopCreatorOsWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasPublicationContext => (_campaignSummary?.CreatorPublications.Count ?? 0) > 0;
+    private bool HasCampaignContext => (_campaignSummary?.Campaigns.Count ?? 0) > 0;
+    private bool HasCreatorContext => HasPublicationContext || (_campaignSummary?.Dossiers.Count ?? 0) > 0;
 
     private DesktopCreatorOsWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
@@ -96,7 +99,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             "Creator desk",
             "Use Creator OS when you need the full creator-facing operating surface, not just the campaign-book assembly lane.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
@@ -124,7 +127,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             "Publishing stack",
             "Creator OS owns the broader publishing stack around Runbook Press, public briefings, and community-facing distribution.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runbook Press", () => DesktopRunbookPressWindow.ShowAsync(this, _headId), isPrimary: HasCampaignContext || HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community Hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)));
     }
@@ -217,36 +220,44 @@ internal sealed class DesktopCreatorOsWindow : Window
         entryList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6
+        };
+
+        if (entries.Count > 0)
+        {
+            details.Children.Add(detailModeCombo);
+            details.Children.Add(entryList);
+            details.Children.Add(new Border
+            {
+                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10),
+                Child = new StackPanel
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        selectedEntryTitleText,
+                        detailText,
+                        selectedEntryFollowUpText
+                    }
+                }
+            });
+        }
+        else
+        {
+            details.Children.Add(detailText);
+            details.Children.Add(selectedEntryFollowUpText);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
             "Creator OS should separate the creator desk, publishing stack, and network-facing posture instead of flattening them into one paragraph.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    entryList,
-                    new Border
-                    {
-                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(4),
-                        Padding = new Thickness(10),
-                        Child = new StackPanel
-                        {
-                            Spacing = 4,
-                            Children =
-                            {
-                                selectedEntryTitleText,
-                                detailText,
-                                selectedEntryFollowUpText
-                            }
-                        }
-                    }
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasCreatorContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }

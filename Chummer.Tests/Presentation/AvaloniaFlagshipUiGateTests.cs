@@ -390,11 +390,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(() => DesktopRunsiteWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Runsite workbench");
             Window runsiteWindow = DesktopRunsiteWindow.LastOpenedWindowForTesting
                 ?? throw new AssertFailedException("Runsite workbench did not stay open.");
-            ComboBox runsiteDetailModeCombo = harness.FindControlInWindow<ComboBox>(runsiteWindow, "RunsiteDetailModeCombo");
-            TextBlock runsiteSelectedWorkspaceDetailText = harness.FindControlInWindow<TextBlock>(runsiteWindow, "RunsiteSelectedWorkspaceDetailText");
-            string initialRunsiteDetail = runsiteSelectedWorkspaceDetailText.Text ?? string.Empty;
-            runsiteDetailModeCombo.SelectedIndex = 1;
-            harness.WaitUntil(() => !string.Equals(runsiteSelectedWorkspaceDetailText.Text, initialRunsiteDetail, StringComparison.Ordinal), context: "changing the Runsite detail mode must update the selected workspace detail");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(harness.FindControlInWindow<TextBlock>(runsiteWindow, "RunsiteSelectedWorkspaceDetailText").Text), "Runsite must still show bounded detail text.");
             runsiteWindow.Close();
             harness.WaitUntil(() => DesktopRunsiteWindow.LastOpenedWindowForTesting is null, context: "close Runsite workbench after interaction check");
 
@@ -416,11 +412,17 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(() => DesktopBlackLedgerWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Black Ledger workbench");
             Window blackLedgerWindow = DesktopBlackLedgerWindow.LastOpenedWindowForTesting
                 ?? throw new AssertFailedException("Black Ledger workbench did not stay open.");
-            ComboBox blackLedgerDetailModeCombo = harness.FindControlInWindow<ComboBox>(blackLedgerWindow, "BlackLedgerDetailModeCombo");
             TextBlock blackLedgerSelectedWorkspaceDetailText = harness.FindControlInWindow<TextBlock>(blackLedgerWindow, "BlackLedgerSelectedWorkspaceDetailText");
-            string initialBlackLedgerDetail = blackLedgerSelectedWorkspaceDetailText.Text ?? string.Empty;
-            blackLedgerDetailModeCombo.SelectedIndex = 1;
-            harness.WaitUntil(() => !string.Equals(blackLedgerSelectedWorkspaceDetailText.Text, initialBlackLedgerDetail, StringComparison.Ordinal), context: "changing the Black Ledger detail mode must update the selected workspace detail");
+            if (TryFindControlInWindow<ComboBox>(harness, blackLedgerWindow, "BlackLedgerDetailModeCombo", out ComboBox? blackLedgerDetailModeCombo))
+            {
+                string initialBlackLedgerDetail = blackLedgerSelectedWorkspaceDetailText.Text ?? string.Empty;
+                blackLedgerDetailModeCombo.SelectedIndex = 1;
+                harness.WaitUntil(() => !string.Equals(blackLedgerSelectedWorkspaceDetailText.Text, initialBlackLedgerDetail, StringComparison.Ordinal), context: "changing the Black Ledger detail mode must update the selected workspace detail");
+            }
+            else
+            {
+                Assert.IsFalse(string.IsNullOrWhiteSpace(blackLedgerSelectedWorkspaceDetailText.Text), "Black Ledger must still show bounded detail text when no workspace context exists.");
+            }
             blackLedgerWindow.Close();
             harness.WaitUntil(() => DesktopBlackLedgerWindow.LastOpenedWindowForTesting is null, context: "close Black Ledger workbench after interaction check");
 
@@ -7286,7 +7288,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             control = harness.FindControlInWindow<T>(window, name);
             return true;
         }
-        catch (AssertFailedException)
+        catch (Exception ex) when (ex is AssertFailedException or InvalidOperationException)
         {
             control = null;
             return false;

@@ -12,6 +12,7 @@ internal sealed class DesktopReadyForTonightWindow : Window
 {
     internal static DesktopReadyForTonightWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasTonightContext => (_campaignSummary?.Runs.Count ?? 0) > 0 || (_campaignSummary?.Workspaces.Count ?? 0) > 0;
 
     private DesktopReadyForTonightWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -89,7 +90,7 @@ internal sealed class DesktopReadyForTonightWindow : Window
             "Tonight verdict",
             "Keep the current run posture, workspace return lane, and next safe action visible before you widen into browser-only follow-through.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in return lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in return lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: HasTonightContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready")));
     }
@@ -127,19 +128,25 @@ internal sealed class DesktopReadyForTonightWindow : Window
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6,
+            Children =
+            {
+                detailText
+            }
+        };
+
+        if (HasTonightContext)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Role kits and handoff",
             "Ready for Tonight is strongest when player, GM, organizer, and mobile handoff answers stay one move away instead of scattered across help text.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    detailText
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public packet", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready"), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public packet", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready"), isPrimary: HasTonightContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
     }

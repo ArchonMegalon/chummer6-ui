@@ -11,6 +11,7 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
 {
     internal static DesktopKnowledgeFabricWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasRulesContext => (_campaignSummary?.RulesNavigator.Count ?? 0) > 0;
 
     private DesktopKnowledgeFabricWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -84,7 +85,7 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
             "Grounded rules answers",
             "Keep the current rules answer and provenance label visible on native rails before widening into public explain routes.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Rules", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Rules", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open receipts", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules/receipts")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Edition Studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/edition-studio")));
     }
@@ -124,19 +125,25 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6,
+            Children =
+            {
+                detailText
+            }
+        };
+
+        if (HasRulesContext)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Explain and source posture",
             "The explain lane should show answer, evidence, and studio posture without collapsing all of that into one assistant sentence.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    detailText
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open rules route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open rules route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Quicksilver", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Local Co-Processor", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor")));
     }

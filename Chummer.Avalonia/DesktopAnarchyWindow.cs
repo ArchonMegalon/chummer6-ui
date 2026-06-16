@@ -12,6 +12,7 @@ internal sealed class DesktopAnarchyWindow : Window
 {
     internal static DesktopAnarchyWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasRunContext => (_campaignSummary?.Runs.Count ?? 0) > 0;
 
     private DesktopAnarchyWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +88,7 @@ internal sealed class DesktopAnarchyWindow : Window
             "Play shell",
             "Move from the current account run posture into the rules-light play shell without losing orientation.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open play shell", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/anarchy"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open play shell", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/anarchy"), isPrimary: HasRunContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/anarchy")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")));
     }
@@ -121,21 +122,17 @@ internal sealed class DesktopAnarchyWindow : Window
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
-        StackPanel details = new()
+        StackPanel details = new() { Spacing = 6, Children = { detailText } };
+        if (HasRunContext)
         {
-            Spacing = 6,
-            Children =
-            {
-                detailModeCombo,
-                detailText
-            }
-        };
+            details.Children.Insert(0, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "World lane",
             "Keep the world-facing Anarchy lane one move away from the play shell instead of severing it into a separate browser detour.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ledger lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/anarchy"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ledger lane", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger/anarchy"), isPrimary: HasRunContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/anarchy")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Black Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger")));
     }
