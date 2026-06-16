@@ -6,6 +6,15 @@ Registry note:
 `/downloads/releases.json` is now a compatibility projection.
 The canonical promoted release record is `RELEASE_CHANNEL.generated.json`, materialized by `chummer6-hub-registry`.
 
+Release-candidate note:
+When a local RC bundle exists but is not yet promotable on every required desktop platform, materialize a bounded handoff first:
+
+```bash
+python3 scripts/materialize_release_candidate_handoff.py <stageDir>
+```
+
+That produces `RELEASE_CANDIDATE_HANDOFF.generated.{json,md}` beside the staged bundle and makes the remaining promotion blockers explicit.
+
 ## Prerequisites
 
 1. Desktop bundle exists (`desktop-download-bundle` layout):
@@ -100,6 +109,10 @@ Workflow path:
 Manual path:
 1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+
+RC handoff expectation:
+1. If a staged `release_candidate` bundle verifies but still lists `missingRequiredPlatforms`, do not promote it to `public_stable`.
+2. Materialize the RC handoff and finish the missing platform smoke/signing/upload work first.
 
 Operational rule:
 1. The public `chummer.run` shelf is latest-only. After a successful build with a configured live upload target, the new bundle must be published automatically; leaving `chummer.run` on an older build is a release-pipeline failure.
