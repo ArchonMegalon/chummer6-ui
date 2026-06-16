@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Fonts.Inter;
 using Avalonia.Headless;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Chummer.Contracts.AI;
@@ -88,8 +90,18 @@ public sealed class AvaloniaHeadlessSmokeTests
             if (_headlessInitialized)
                 return;
 
-            AppBuilder.Configure<global::Avalonia.Application>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+            AppBuilder.Configure<App>()
+                .UseSkia()
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions
+                {
+                    UseHeadlessDrawing = false
+                })
+                .ConfigureFonts(static fontManager => fontManager.AddFontCollection(new InterFontCollection()))
+                .With(new FontManagerOptions
+                {
+                    DefaultFamilyName = "fonts:Inter#Inter"
+                })
+                .WithInterFont()
                 .SetupWithoutStarting();
             _headlessInitialized = true;
         }
