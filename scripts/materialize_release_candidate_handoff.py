@@ -70,7 +70,7 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
     next_actions.append("Publish the verified bundle with CHUMMER_RELEASE_UPLOAD_TOKEN once all required platform tuples are promotable.")
 
     return {
-        "contract_name": "chummer.release_candidate_handoff",
+        "contract_name": "chummer.release_build_handoff",
         "generated_at": now_iso(),
         "stage_dir": str(stage_dir),
         "channel": normalize(manifest.get("channelId")),
@@ -90,7 +90,7 @@ def build_payload(stage_dir: Path) -> dict[str, Any]:
 def render_markdown(payload: dict[str, Any]) -> str:
     blocker_lines = [f"- {item}" for item in payload["blockers"]] if payload["blockers"] else ["- none"]
     lines = [
-        "# Release Candidate Handoff",
+        "# Release Build Handoff",
         "",
         f"Generated: {payload['generated_at']}",
         "",
@@ -134,8 +134,8 @@ def main() -> int:
     args = parser.parse_args()
 
     payload = build_payload(args.stage_dir)
-    json_output = args.json_output or (args.stage_dir / "RELEASE_CANDIDATE_HANDOFF.generated.json")
-    md_output = args.md_output or (args.stage_dir / "RELEASE_CANDIDATE_HANDOFF.generated.md")
+    json_output = args.json_output or (args.stage_dir / "RELEASE_BUILD_HANDOFF.generated.json")
+    md_output = args.md_output or (args.stage_dir / "RELEASE_BUILD_HANDOFF.generated.md")
     json_output.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     md_output.write_text(render_markdown(payload), encoding="utf-8")
     return 0

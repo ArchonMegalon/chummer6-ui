@@ -3431,7 +3431,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(runbookText, "RUNBOOK_LOG_DIR");
         StringAssert.Contains(runbookText, "RUNBOOK_STATE_DIR");
 
-        StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=public_stable");
+        StringAssert.Contains(envExampleText, "CHUMMER_DESKTOP_RELEASE_CHANNEL=preview");
         StringAssert.Contains(envExampleText, "# CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_ENABLED=true");
         StringAssert.Contains(envExampleText, "CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR=/srv/chummer/portal-downloads");

@@ -1,7 +1,7 @@
 name: Desktop Downloads Matrix
 
 env:
-  CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL: ${{ github.ref_name == 'main' && 'public_stable' || vars.CHUMMER_DESKTOP_RELEASE_CHANNEL }}
+  CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL != '' && vars.CHUMMER_DESKTOP_RELEASE_CHANNEL || 'preview' }}
 
 on:
   workflow_dispatch:

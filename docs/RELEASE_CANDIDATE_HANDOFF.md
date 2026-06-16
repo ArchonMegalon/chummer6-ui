@@ -1,6 +1,6 @@
-# Release Candidate Handoff
+# Release Build Handoff
 
-Purpose: turn a locally verified `release_candidate` bundle into a short, operator-facing handoff instead of relying on shell scrollback.
+Purpose: turn a locally verified release bundle into a short, operator-facing handoff instead of relying on shell scrollback.
 
 ## When to use it
 
@@ -9,7 +9,7 @@ Use this when:
 1. new desktop bytes have been built
 2. at least one startup-smoke lane has been rerun against those exact bytes
 3. the bundle verifies locally
-4. `public_stable` still cannot be promoted because one or more required platform tuples remain unproven
+4. the build still cannot be promoted to `public_stable` because one or more required platform tuples remain unproven
 
 Typical examples:
 
@@ -25,8 +25,8 @@ python3 scripts/materialize_release_candidate_handoff.py <stageDir>
 
 Default outputs:
 
-1. `<stageDir>/RELEASE_CANDIDATE_HANDOFF.generated.json`
-2. `<stageDir>/RELEASE_CANDIDATE_HANDOFF.generated.md`
+1. `<stageDir>/RELEASE_BUILD_HANDOFF.generated.json`
+2. `<stageDir>/RELEASE_BUILD_HANDOFF.generated.md`
 
 ## What it captures
 
@@ -47,4 +47,4 @@ Do not promote the bundle to `public_stable` if the handoff still shows:
 2. `promotion_ready: false`
 3. startup-smoke receipts that are only `skipped` for a required installer tuple
 
-In that state, the bundle is a valid RC handoff, not a stable release candidate for promotion.
+In that state, the bundle is a valid release-build handoff, not a promotable stable release.
