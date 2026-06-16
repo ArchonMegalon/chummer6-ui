@@ -1638,11 +1638,6 @@ public partial class DesktopDialogWindow : Window
                 selectorGrid)
         };
 
-        TextBlock summaryLabel = new()
-        {
-            Text = "Workflow Summary",
-            FontWeight = FontWeight.SemiBold
-        };
         TextBlock summaryText = new()
         {
             Name = "newCharacterKarmaWorkflowSummaryText",
@@ -1660,7 +1655,6 @@ public partial class DesktopDialogWindow : Window
                     Spacing = 8,
                     Children =
                     {
-                        summaryLabel,
                         summaryText
                     }
                 })

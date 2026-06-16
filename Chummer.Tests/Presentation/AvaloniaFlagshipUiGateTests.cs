@@ -121,7 +121,27 @@ public sealed class AvaloniaFlagshipUiGateTests
         "37-workflow-calendar-section-light.png",
         "38-translator-dialog-light.png",
         "39-xml-editor-dialog-light.png",
-        "40-hero-lab-importer-dialog-light.png"
+        "40-hero-lab-importer-dialog-light.png",
+        "41-horizons-hub-light.png",
+        "42-horizon-karma-forge-light.png",
+        "43-horizon-alice-light.png",
+        "44-horizon-black-ledger-light.png",
+        "45-horizon-run-control-light.png",
+        "46-horizon-runsite-light.png",
+        "47-horizon-jackpoint-light.png",
+        "48-horizon-table-pulse-light.png",
+        "49-horizon-community-hub-light.png",
+        "50-horizon-nexus-pan-light.png",
+        "51-horizon-quicksilver-light.png",
+        "52-horizon-runner-passport-light.png",
+        "53-horizon-runbook-press-light.png",
+        "54-horizon-creator-os-light.png",
+        "55-horizon-local-co-processor-light.png",
+        "56-horizon-anarchy-light.png",
+        "57-horizon-ghostwire-light.png",
+        "58-horizon-ready-for-tonight-light.png",
+        "59-horizon-onramp-light.png",
+        "60-horizon-knowledge-fabric-light.png"
     ];
     private static readonly string[] RequiredVeteranCertificationScreenshots =
     [
@@ -158,7 +178,30 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("magic-adept-resonance-sprites-spells-rituals-spirits-powers-metamagics-echoes-complex-forms", "Chummer4/Chummer5a magic, adept, resonance, initiation, and matrix form lineage.", ["12-magic-dialog-light.png", "13-matrix-dialog-light.png", "14-advancement-dialog-light.png", "31-workflow-powers-section-light.png", "32-workflow-adept-power-dialog-light.png", "33-workflow-complex-form-dialog-light.png"]),
         new("improvements-explain-result-parity", "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.", ["14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"]),
         new("recovery-reload-migration-roundtrips", "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.", ["04-loaded-runner-light.png", "18-import-dialog-light.png", "19-workflow-file-menu-loaded-light.png"]),
-        new("dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare", "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.", ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png"])
+        new("dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare", "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.", ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png"]),
+        new("native-horizons-surface-catalog", "Every first-class native horizon/workbench surface must stay screenshot-backed on the promoted desktop head.", ["41-horizons-hub-light.png", "42-horizon-karma-forge-light.png", "43-horizon-alice-light.png", "44-horizon-black-ledger-light.png", "45-horizon-run-control-light.png", "46-horizon-runsite-light.png", "47-horizon-jackpoint-light.png", "48-horizon-table-pulse-light.png", "49-horizon-community-hub-light.png", "50-horizon-nexus-pan-light.png", "51-horizon-quicksilver-light.png", "52-horizon-runner-passport-light.png", "53-horizon-runbook-press-light.png", "54-horizon-creator-os-light.png", "55-horizon-local-co-processor-light.png", "56-horizon-anarchy-light.png", "57-horizon-ghostwire-light.png", "58-horizon-ready-for-tonight-light.png", "59-horizon-onramp-light.png", "60-horizon-knowledge-fabric-light.png"])
+    ];
+    private static readonly HorizonScreenshotSurface[] NativeHorizonScreenshotSurfaces =
+    [
+        new("karma_forge", "42-horizon-karma-forge-light.png", "Karma Forge", "KarmaForgeStatusCard"),
+        new("alice", "43-horizon-alice-light.png", "ALICE", "AliceLeadHandoffCard"),
+        new("black_ledger", "44-horizon-black-ledger-light.png", "Black Ledger", "BlackLedgerStatusCard"),
+        new("run_control", "45-horizon-run-control-light.png", "Run Control", "RunControlStatusCard"),
+        new("runsite", "46-horizon-runsite-light.png", "Runsite", "RunsiteBadgeWorkspaces"),
+        new("jackpoint", "47-horizon-jackpoint-light.png", "Jackpoint", "JackpointBadgePublications"),
+        new("table_pulse", "48-horizon-table-pulse-light.png", "Table Pulse", "TablePulseBadgeRuns"),
+        new("community_hub", "49-horizon-community-hub-light.png", "Community Hub", "CommunityHubBadgeOperations"),
+        new("nexus_pan", "50-horizon-nexus-pan-light.png", "NEXUS-PAN", "NexusPanBadgeWorkspaces"),
+        new("quicksilver", "51-horizon-quicksilver-light.png", "Quicksilver", "QuicksilverBadgeHandoffs"),
+        new("runner_passport", "52-horizon-runner-passport-light.png", "Runner Passport", "RunnerPassportBadgeDossiers"),
+        new("runbook_press", "53-horizon-runbook-press-light.png", "Runbook Press", "RunbookPressBadgePublications"),
+        new("creator_os", "54-horizon-creator-os-light.png", "Creator OS", "CreatorOsBadgePublications"),
+        new("local_co_processor", "55-horizon-local-co-processor-light.png", "Local Co-Processor", "LocalCoProcessorBadgeRules"),
+        new("anarchy", "56-horizon-anarchy-light.png", "Anarchy", "AnarchyBadgeRuns"),
+        new("ghostwire", "57-horizon-ghostwire-light.png", "Ghostwire", "GhostwireBadgeRuns"),
+        new("ready_for_tonight", "58-horizon-ready-for-tonight-light.png", "Ready for Tonight", "ReadyForTonightBadgeRuns"),
+        new("onramp", "59-horizon-onramp-light.png", "Onramp", "OnrampBadgeWorkspaces"),
+        new("knowledge_fabric", "60-horizon-knowledge-fabric-light.png", "Knowledge Fabric", "KnowledgeFabricBadgeRules")
     ];
     private static HeadlessUnitTestSession? _headlessSession;
 
@@ -1135,6 +1178,31 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             Assert.IsFalse(string.IsNullOrWhiteSpace(step.PromotedHeadGesture), $"{step.Surface} must name the promoted-head gesture that creates its screenshot.");
             StringAssert.Contains(step.Chummer5aBaseline, "Chummer5a");
+        }
+    }
+
+    [TestMethod]
+    public void Native_horizon_screenshot_pack_covers_every_catalog_entry_with_a_dedicated_surface_capture()
+    {
+        string[] expectedEntryIds = DesktopHorizonWorkbenchCatalog.ListEntries()
+            .Select(entry => entry.Id)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ToArray();
+        string[] coveredEntryIds = NativeHorizonScreenshotSurfaces
+            .Select(surface => surface.EntryId)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ToArray();
+
+        CollectionAssert.AreEqual(
+            expectedEntryIds,
+            coveredEntryIds,
+            "Every native horizon/workbench entry must publish a dedicated screenshot-backed exit-gate surface.");
+
+        foreach (HorizonScreenshotSurface surface in NativeHorizonScreenshotSurfaces)
+        {
+            CollectionAssert.Contains(VeteranCertificationScreenshotFiles, surface.ScreenshotFileName);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(surface.WindowTitle), $"{surface.EntryId} must bind to a concrete native window title.");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(surface.RequiredControlName), $"{surface.EntryId} must bind to a concrete native control anchor.");
         }
     }
 
@@ -4958,6 +5026,39 @@ public sealed class AvaloniaFlagshipUiGateTests
                         "Hero Lab Importer",
                         StringComparison.Ordinal));
 
+                harness.Click("HorizonsButton");
+                harness.WaitUntil(
+                    () => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true },
+                    timeoutMs: 8000);
+                Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                    ?? throw new AssertFailedException("Horizons hub window was not opened for screenshot publication.");
+                Assert.IsNotNull(harness.FindControlInWindowOrDefault<TextBlock>(hubWindow, "HorizonsPostureText"));
+                captured["41-horizons-hub-light.png"] = CaptureScreenshotProof(harness, hubWindow, "41-horizons-hub-light.png");
+
+                foreach (HorizonScreenshotSurface surface in NativeHorizonScreenshotSurfaces)
+                {
+                    Button launchButton = harness.FindControlInWindow<Button>(hubWindow, $"HorizonsOpenWorkbench_{surface.EntryId}");
+                    RaiseClick(launchButton);
+                    harness.WaitUntil(
+                        () => FindNativeWorkbenchWindow(surface.EntryId) is { IsVisible: true },
+                        timeoutMs: 8000);
+                    Window workbenchWindow = FindNativeWorkbenchWindow(surface.EntryId)
+                        ?? throw new AssertFailedException($"Workbench '{surface.WindowTitle}' was not opened for screenshot publication.");
+                    Assert.IsNotNull(
+                        harness.FindControlInWindowOrDefault<Control>(workbenchWindow, surface.RequiredControlName),
+                        $"Workbench '{surface.WindowTitle}' must expose proof control '{surface.RequiredControlName}' before screenshot capture.");
+                    captured[surface.ScreenshotFileName] = CaptureScreenshotProof(harness, workbenchWindow, surface.ScreenshotFileName);
+                    workbenchWindow.Close();
+                    harness.WaitUntil(
+                        () => FindNativeWorkbenchWindow(surface.EntryId) is null,
+                        timeoutMs: 4000);
+                }
+
+                hubWindow.Close();
+                harness.WaitUntil(
+                    () => DesktopHorizonsWindow.LastOpenedWindowForTesting is null,
+                    timeoutMs: 4000);
+
                 return captured;
             });
 
@@ -5066,11 +5167,44 @@ public sealed class AvaloniaFlagshipUiGateTests
         string LegacyBehaviorLineage,
         string[] ScreenshotFiles);
 
+    private sealed record HorizonScreenshotSurface(
+        string EntryId,
+        string ScreenshotFileName,
+        string WindowTitle,
+        string RequiredControlName);
+
     private static VeteranCertificationReviewStep GetVeteranCertificationReviewStep(string surface)
         => VeteranCertificationReviewSteps.Single(step => string.Equals(step.Surface, surface, StringComparison.Ordinal));
 
     private static VeteranCertificationReviewStep GetImportRouteReviewStep(string surface)
         => ImportRouteReviewSteps.Single(step => string.Equals(step.Surface, surface, StringComparison.Ordinal));
+
+    private static Window? FindNativeWorkbenchWindow(string entryId)
+    {
+        return entryId switch
+        {
+            "karma_forge" => DesktopKarmaForgeWindow.LastOpenedWindowForTesting,
+            "alice" => DesktopAliceWindow.LastOpenedWindowForTesting,
+            "black_ledger" => DesktopBlackLedgerWindow.LastOpenedWindowForTesting,
+            "run_control" => DesktopRunControlWindow.LastOpenedWindowForTesting,
+            "runsite" => DesktopRunsiteWindow.LastOpenedWindowForTesting,
+            "jackpoint" => DesktopJackpointWindow.LastOpenedWindowForTesting,
+            "table_pulse" => DesktopTablePulseWindow.LastOpenedWindowForTesting,
+            "community_hub" => DesktopCommunityHubWindow.LastOpenedWindowForTesting,
+            "nexus_pan" => DesktopNexusPanWindow.LastOpenedWindowForTesting,
+            "quicksilver" => DesktopQuicksilverWindow.LastOpenedWindowForTesting,
+            "runner_passport" => DesktopRunnerPassportWindow.LastOpenedWindowForTesting,
+            "runbook_press" => DesktopRunbookPressWindow.LastOpenedWindowForTesting,
+            "creator_os" => DesktopCreatorOsWindow.LastOpenedWindowForTesting,
+            "local_co_processor" => DesktopLocalCoProcessorWindow.LastOpenedWindowForTesting,
+            "anarchy" => DesktopAnarchyWindow.LastOpenedWindowForTesting,
+            "ghostwire" => DesktopGhostwireWindow.LastOpenedWindowForTesting,
+            "ready_for_tonight" => DesktopReadyForTonightWindow.LastOpenedWindowForTesting,
+            "onramp" => DesktopOnrampWindow.LastOpenedWindowForTesting,
+            "knowledge_fabric" => DesktopKnowledgeFabricWindow.LastOpenedWindowForTesting,
+            _ => null
+        };
+    }
 
     private static void OpenMenuUntilCommandVisible(FlagshipUiHarness harness, string menuButtonName, string commandId)
     {
@@ -6270,6 +6404,13 @@ public sealed class AvaloniaFlagshipUiGateTests
             CaptureScreenshotControlEvidence(harness, screenshotFileName));
     }
 
+    private static ScreenshotProofCapture CaptureScreenshotProof(FlagshipUiHarness harness, TopLevel root, string screenshotFileName)
+    {
+        return new(
+            harness.CaptureScreenshotBytes(root),
+            CaptureScreenshotControlEvidence(harness, root, screenshotFileName));
+    }
+
     private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, string screenshotFileName)
     {
         TopLevel root = harness.Window;
@@ -6416,6 +6557,104 @@ public sealed class AvaloniaFlagshipUiGateTests
             RightShellWidth: rightShellWidth,
             InlineCommandSurfaceVisible: inlineCommandSurfaceVisible,
             DialogWindowVisible: dialogWindowVisible);
+    }
+
+    private static ScreenshotControlEvidenceEntry CaptureScreenshotControlEvidence(FlagshipUiHarness harness, TopLevel root, string screenshotFileName)
+    {
+        Control[] visibleNamedControls = root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(control => IsEffectivelyVisibleForScreenshotEvidence(control, root) && !string.IsNullOrWhiteSpace(control.Name))
+            .OrderBy(control => control.Name, StringComparer.Ordinal)
+            .ToArray();
+
+        string dialogTitle = root is Window window
+            ? window.Title ?? string.Empty
+            : FindDescendantOrDefault<TextBlock>(root, "DialogTitleText")?.Text ?? string.Empty;
+        string dialogMessage = FindDescendantOrDefault<TextBlock>(root, "DialogMessageText")?.Text ?? string.Empty;
+        string previewText = FindDescendantOrDefault<TextBox>(root, "SectionPreviewBox")?.Text ?? string.Empty;
+        string[] dialogFieldLabels = visibleNamedControls
+            .OfType<TextBlock>()
+            .Where(control => control.Name?.StartsWith("DialogFieldLabel_", StringComparison.Ordinal) == true)
+            .Select(control => control.Text ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] dialogFieldIds = visibleNamedControls
+            .Select(control => TryGetControlSuffix(control.Name, "DialogField_"))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+        string[] dialogFieldControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name =>
+                name.StartsWith("DialogFieldLabel_", StringComparison.Ordinal)
+                || name.StartsWith("DialogFieldInput_", StringComparison.Ordinal)
+                || name.StartsWith("DialogField_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] dialogActionIds = visibleNamedControls
+            .Select(control => TryGetControlSuffix(control.Name, "DialogAction_"))
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray()!;
+        string[] dialogActionControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name => name.StartsWith("DialogAction_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleNamedControlIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] visibleTextSamples = root.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(control => IsEffectivelyVisibleForScreenshotEvidence(control, root))
+            .Select(control => control.Text ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .Take(96)
+            .ToArray();
+        string[] visibleTabLabels = Array.Empty<string>();
+        string[] visibleSectionQuickActionIds = visibleNamedControls
+            .Select(control => control.Name ?? string.Empty)
+            .Where(static name => name.StartsWith("SectionQuickAction_", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string[] selectedListRowTexts = root.GetVisualDescendants()
+            .OfType<ListBox>()
+            .Where(listBox => IsEffectivelyVisibleForScreenshotEvidence(listBox, root) && listBox.SelectedItem is not null)
+            .Select(listBox => listBox.SelectedItem?.ToString() ?? string.Empty)
+            .Where(static value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        ScreenshotVisibleNamedControlEntry[] visibleNamedControlEntries = visibleNamedControls
+            .Select(control => BuildVisibleNamedControlEntry(control, root))
+            .ToArray();
+        string theme = (root.ActualThemeVariant ?? root.RequestedThemeVariant ?? ThemeVariant.Default).ToString();
+
+        return new ScreenshotControlEvidenceEntry(
+            Screenshot: screenshotFileName,
+            Theme: theme,
+            DialogTitle: dialogTitle,
+            DialogMessage: dialogMessage,
+            DialogFieldLabels: dialogFieldLabels,
+            DialogFieldIds: dialogFieldIds,
+            DialogFieldControlIds: dialogFieldControlIds,
+            DialogFieldInputValues: Array.Empty<string>(),
+            DialogActionIds: dialogActionIds,
+            DialogActionControlIds: dialogActionControlIds,
+            VisibleNamedControlIds: visibleNamedControlIds,
+            VisibleNamedControls: visibleNamedControlEntries,
+            VisibleTextSamples: visibleTextSamples,
+            VisibleMenuCommandIds: Array.Empty<string>(),
+            VisibleTabLabels: visibleTabLabels,
+            VisibleSectionQuickActionIds: visibleSectionQuickActionIds,
+            SelectedListRowTexts: selectedListRowTexts,
+            PreviewText: previewText,
+            RightShellVisible: false,
+            RightShellWidth: 0d,
+            InlineCommandSurfaceVisible: false,
+            DialogWindowVisible: root is DesktopDialogWindow);
     }
 
     private static bool IsEffectivelyVisibleForScreenshotEvidence(Control control, TopLevel root)
@@ -7744,6 +7983,47 @@ public sealed class AvaloniaFlagshipUiGateTests
             return pngBytes;
         }
 
+        public byte[] CaptureScreenshotBytes(TopLevel root)
+        {
+            PixelSize pixelSize = new(
+                Math.Max(1, (int)Math.Ceiling(root.Bounds.Width)),
+                Math.Max(1, (int)Math.Ceiling(root.Bounds.Height)));
+
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+                root.InvalidateMeasure();
+                root.InvalidateArrange();
+                root.InvalidateVisual();
+                root.Measure(new Size(pixelSize.Width, pixelSize.Height));
+                root.Arrange(new Rect(0d, 0d, pixelSize.Width, pixelSize.Height));
+                Pump();
+            }
+
+            using RenderTargetBitmap bitmap = new(pixelSize, new Vector(96d, 96d));
+            bitmap.Render(root);
+            using MemoryStream output = new();
+            bitmap.Save(output);
+            byte[] pngBytes = output.ToArray();
+            Assert.IsTrue(pngBytes.Length > 0, "No rendered frame was available for top-level screenshot capture.");
+            return pngBytes;
+        }
+
+        public Window? FindOpenWindowByTitle(string title)
+        {
+            if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                return null;
+            }
+
+            return desktop.Windows
+                .Where(window => !ReferenceEquals(window, Window))
+                .Where(window => window.IsVisible)
+                .OrderByDescending(window => window.IsActive)
+                .ThenByDescending(window => window.IsVisible)
+                .FirstOrDefault(window => string.Equals(window.Title, title, StringComparison.Ordinal));
+        }
+
         public T FindControl<T>(string name)
             where T : Control
         {
@@ -7783,6 +8063,21 @@ public sealed class AvaloniaFlagshipUiGateTests
                     return translated?.Y ?? double.MaxValue;
                 })
                 .FirstOrDefault();
+        }
+
+        public T FindControlInWindow<T>(Window window, string name)
+            where T : Control
+        {
+            return FindControlInWindowOrDefault<T>(window, name)
+                ?? throw new AssertFailedException($"Control '{name}' of type {typeof(T).Name} was not found in window '{window.Title}'.");
+        }
+
+        public T? FindControlInWindowOrDefault<T>(Window window, string name)
+            where T : Control
+        {
+            return window.GetVisualDescendants()
+                .OfType<T>()
+                .FirstOrDefault(control => string.Equals(control.Name, name, StringComparison.Ordinal));
         }
 
         public void WaitUntil(Func<bool> predicate, int timeoutMs = 2000)
