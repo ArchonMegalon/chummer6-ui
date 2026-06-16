@@ -13,7 +13,7 @@ PRESENTATION_MIRROR_ROOT="${PRESENTATION_MIRROR_ROOT:-/docker/chummercomplete/ch
 STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smoke}"
 SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
-PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-false}"
+PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
 RELEASE_VERSION="${RELEASE_VERSION:-unpublished}"
 RELEASE_CHANNEL="${RELEASE_CHANNEL:-docker}"
 RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
@@ -41,6 +41,14 @@ to_bool() {
   value="$(echo "${1:-}" | tr '[:upper:]' '[:lower:]')"
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
+
+if [[ -z "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" ]]; then
+  if [[ "${RELEASE_CHANNEL,,}" == "preview" ]]; then
+    PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true"
+  else
+    PUBLIC_SKIP_STARTUP_SMOKE_FILTER="false"
+  fi
+fi
 
 verify_registry_boundary_consistency() {
   local docker_releases_path="$1"
@@ -962,10 +970,7 @@ for artifact in payload.get("artifacts") or []:
         str(artifact.get(key) or "").strip().lower()
         for key in ("platform", "platformId", "rid", "artifactId", "fileName")
     )
-    windows_preview_portable = kind == "portable" and any(
-        token in platform_tokens for token in ("windows", "win-", ".exe")
-    )
-    if kind not in {"installer", "dmg", "pkg", "msix"} and not windows_preview_portable:
+    if kind not in {"installer", "dmg", "pkg", "msix"}:
         continue
 
     current_access_class = str(artifact.get("installAccessClass") or "").strip().lower()
