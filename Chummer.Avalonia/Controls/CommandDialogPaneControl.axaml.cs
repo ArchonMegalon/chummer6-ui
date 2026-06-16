@@ -218,12 +218,12 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel leftColumn = new() { Spacing = 10 };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(navigationField), 148));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), 148));
         }
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateSelectionCandidatePanel(candidateField, fields), 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(null, CreateSelectionCandidatePanel(candidateField, fields), 320));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -235,12 +235,12 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel rightColumn = new() { Spacing = 10 };
         if (browseGridField is not null)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(browseGridField), 188));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), 188));
         }
 
         foreach (DialogFieldDisplayItem detailField in rightDetails)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(detailField), ResolveSelectionPanelMinHeight(detailField)));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(detailField.Label, CreateFieldControl(detailField), ResolveSelectionPanelMinHeight(detailField)));
         }
 
         if (rightColumn.Children.Count > 0)
@@ -257,7 +257,7 @@ public partial class CommandDialogPaneControl : UserControl
         if (lowerSummary.Length > 0)
         {
             shell.Children.Add(CreateSelectionGroup(
-                lowerSummary.Select(field => CreateSelectionSurfaceCard(CreateFieldPane(field), ResolveSelectionPanelMinHeight(field))).ToArray()));
+                lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
         return shell;
@@ -461,8 +461,21 @@ public partial class CommandDialogPaneControl : UserControl
         };
     }
 
-    private static Border CreateSelectionSurfaceCard(Control content, double minHeight)
+    private static Border CreateSelectionSurfaceCard(string? title, Control content, double minHeight)
     {
+        StackPanel shell = new()
+        {
+            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 8
+        };
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            shell.Children.Add(new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeight.SemiBold
+            });
+        }
+        shell.Children.Add(content);
         return new Border
         {
             BorderThickness = new Thickness(1),
@@ -471,7 +484,7 @@ public partial class CommandDialogPaneControl : UserControl
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
             MinHeight = minHeight,
-            Child = content
+            Child = shell
         };
     }
 

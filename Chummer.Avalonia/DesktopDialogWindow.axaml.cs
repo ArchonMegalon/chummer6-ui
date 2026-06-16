@@ -312,12 +312,12 @@ public partial class DesktopDialogWindow : Window
         };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(navigationField), minHeight: 148));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), minHeight: 148));
         }
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(null, CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -333,12 +333,12 @@ public partial class DesktopDialogWindow : Window
 
         if (browseGridField is not null)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(browseGridField), minHeight: 188));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), minHeight: 188));
         }
 
         foreach (DesktopDialogField detailField in rightDetails)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(CreateFieldPane(detailField), minHeight: ResolveSelectionPanelMinHeight(detailField)));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(detailField.Label, CreateFieldControl(detailField), minHeight: ResolveSelectionPanelMinHeight(detailField)));
         }
 
         if (rightColumn.Children.Count > 0)
@@ -356,7 +356,7 @@ public partial class DesktopDialogWindow : Window
         {
             shell.Children.Add(CreateLegacyFieldGroup(
                 "Review",
-                lowerSummary.Select(field => CreateSelectionSurfaceCard(CreateFieldPane(field), minHeight: ResolveSelectionPanelMinHeight(field))).ToArray()));
+                lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), minHeight: ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
         return shell;
@@ -455,8 +455,21 @@ public partial class DesktopDialogWindow : Window
         return shell;
     }
 
-    private static Border CreateSelectionSurfaceCard(Control content, double minHeight)
+    private static Border CreateSelectionSurfaceCard(string? title, Control content, double minHeight)
     {
+        StackPanel shell = new()
+        {
+            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 8
+        };
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            shell.Children.Add(new TextBlock
+            {
+                Text = title,
+                FontWeight = FontWeight.SemiBold
+            });
+        }
+        shell.Children.Add(content);
         return new Border
         {
             BorderThickness = new Thickness(1),
@@ -465,7 +478,7 @@ public partial class DesktopDialogWindow : Window
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
             MinHeight = minHeight,
-            Child = content
+            Child = shell
         };
     }
 
