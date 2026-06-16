@@ -81,17 +81,12 @@ public class DesktopDialogFactoryTests
     public void Global_settings_source_includes_horizon_workbench_and_karma_forge_package_actions()
     {
         string presentationRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
-        string workspaceRoot = Directory.GetParent(presentationRoot)?.FullName
-            ?? throw new DirectoryNotFoundException("Unable to resolve workspace root from presentation repo.");
         string windowPath = Path.GetFullPath(Path.Combine(
             presentationRoot,
             "Chummer.Avalonia/DesktopDialogWindow.axaml.cs"));
-        string catalogPath = Path.GetFullPath(Path.Combine(
-            workspaceRoot,
-            "chummer-core-engine/Chummer.Contracts/Product/ProductSpineCatalog.cs"));
 
         string windowSource = File.ReadAllText(windowPath);
-        string catalogSource = File.ReadAllText(catalogPath);
+        IReadOnlyList<DesktopHorizonRouteOption> karmaForgeTargets = ProductSpineCatalog.ListKarmaForgeTargets();
 
         StringAssert.Contains(windowSource, "CreateLegacyHorizonWorkbenchPane()");
         StringAssert.Contains(windowSource, "CreateKarmaForgeWorkbenchRow()");
@@ -99,10 +94,9 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(windowSource, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, \"avalonia\", entry)");
         StringAssert.Contains(windowSource, "Open my packages");
         StringAssert.Contains(windowSource, "Create new package");
-        StringAssert.Contains(catalogSource, "ListKarmaForgeTargets()");
-        StringAssert.Contains(catalogSource, "\"/packages\"");
-        StringAssert.Contains(catalogSource, "\"/account/packages\"");
-        StringAssert.Contains(catalogSource, "\"/participate/karma-forge#karma-forge-intake\"");
+        CollectionAssert.AreEqual(
+            new[] { "/packages", "/account/packages", "/participate/karma-forge#karma-forge-intake" },
+            karmaForgeTargets.Select(target => target.RelativeHref).ToArray());
     }
 
     [TestMethod]
