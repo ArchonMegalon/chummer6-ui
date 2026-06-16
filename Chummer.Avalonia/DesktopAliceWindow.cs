@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Chummer.Contracts.AI;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Content;
 using Chummer.Desktop.Runtime;
@@ -18,17 +19,27 @@ internal sealed class DesktopAliceWindow : Window
     private readonly AccountCampaignSummary? _campaignSummary;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private readonly IReadOnlyList<DesktopBuildPathCandidate> _buildPathCandidates;
+    private readonly IAvaloniaCoachSidecarClient? _coachSidecarClient;
+    private readonly string? _rulesetId;
+    private readonly string? _workspaceId;
+    private readonly string _coachConversationId = $"alice-coach-{Guid.NewGuid():N}";
+    private readonly string _buildConversationId = $"alice-build-{Guid.NewGuid():N}";
     private bool HasHandoffContext => (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
     private bool HasBuildPathContext => _buildPathCandidates.Count > 0;
 
     private DesktopAliceWindow(
         AccountCampaignSummary? campaignSummary,
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
-        IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates)
+        IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates,
+        IAvaloniaCoachSidecarClient? coachSidecarClient,
+        string? rulesetId)
     {
         _campaignSummary = campaignSummary;
         _recentWorkspaces = recentWorkspaces;
         _buildPathCandidates = buildPathCandidates;
+        _coachSidecarClient = coachSidecarClient;
+        _rulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
+        _workspaceId = recentWorkspaces.FirstOrDefault()?.Id.Value;
 
         Title = "ALICE";
         Width = 940;
@@ -59,6 +70,7 @@ internal sealed class DesktopAliceWindow : Window
                             Text = "ALICE keeps build compare, rule diffs, tradeoffs, and apply-safe follow-through on first-party rails. This desktop bench surfaces the current handoff lane instead of forcing blind browser jumps.",
                             TextWrapping = TextWrapping.Wrap
                         },
+                        CreateAssistantCard(),
                         CreateLeadHandoffCard(),
                         CreateHandoffListCard(),
                         CreateBuildPathCard(),
@@ -100,13 +112,15 @@ internal sealed class DesktopAliceWindow : Window
         AccountCampaignSummary? summary = null;
         IReadOnlyList<WorkspaceListItem> workspaces = Array.Empty<WorkspaceListItem>();
         IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates = Array.Empty<DesktopBuildPathCandidate>();
+        IAvaloniaCoachSidecarClient? coachSidecarClient = App.Services?.GetService(typeof(IAvaloniaCoachSidecarClient)) as IAvaloniaCoachSidecarClient;
+        string? effectiveRulesetId = null;
         try
         {
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
                 ?? throw new InvalidOperationException("Desktop ALICE requires an IChummerClient instance."));
             summary = await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(true);
             workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
-            string? effectiveRulesetId = ResolveRulesetId(workspaces);
+            effectiveRulesetId = ResolveRulesetId(workspaces);
             IReadOnlyList<DesktopBuildPathSuggestion> suggestions = await client.GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None).ConfigureAwait(true);
             buildPathCandidates = await ReadBuildPathCandidatesAsync(client, effectiveRulesetId, workspaces, suggestions).ConfigureAwait(true);
         }
@@ -117,7 +131,139 @@ internal sealed class DesktopAliceWindow : Window
             buildPathCandidates = Array.Empty<DesktopBuildPathCandidate>();
         }
 
-        return new DesktopAliceWindow(summary, workspaces, buildPathCandidates);
+        return new DesktopAliceWindow(summary, workspaces, buildPathCandidates, coachSidecarClient, effectiveRulesetId);
+    }
+
+    private Control CreateAssistantCard()
+    {
+        IReadOnlyList<string> modes = ["Build help", "Rules coach"];
+        ComboBox modeCombo = new()
+        {
+            Name = "AliceConversationModeCombo",
+            MinWidth = 220,
+            ItemsSource = modes,
+            SelectedIndex = HasBuildPathContext ? 0 : 1
+        };
+
+        TextBox promptBox = new()
+        {
+            Name = "AliceQuestionTextBox",
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 78,
+            Watermark = "Ask ALICE about the current build, rules tradeoffs, or what to add next."
+        };
+
+        TextBlock statusText = new()
+        {
+            Name = "AliceAssistantStatusText",
+            Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString()),
+            Foreground = Brushes.DarkSlateGray,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock answerText = new()
+        {
+            Name = "AliceAssistantAnswerText",
+            Text = BuildIdleAssistantAnswer(modeCombo.SelectedItem?.ToString()),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        ListBox evidenceList = new()
+        {
+            Name = "AliceAssistantEvidenceList",
+            MinHeight = 120
+        };
+
+        WrapPanel actionRow = new()
+        {
+            Name = "AliceAssistantActionRow",
+            Orientation = Orientation.Horizontal,
+            ItemHeight = double.NaN,
+            ItemWidth = double.NaN
+        };
+
+        void ApplyIdleState()
+        {
+            statusText.Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString());
+            answerText.Text = BuildIdleAssistantAnswer(modeCombo.SelectedItem?.ToString());
+            evidenceList.ItemsSource = BuildIdleEvidence(modeCombo.SelectedItem?.ToString());
+            actionRow.Children.Clear();
+            actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+            actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
+        }
+
+        async Task AskAsync()
+        {
+            string message = promptBox.Text?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                ApplyIdleState();
+                statusText.Text = "Type a grounded question before asking ALICE.";
+                return;
+            }
+
+            string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
+            statusText.Text = $"ALICE is checking the {mode.ToLowerInvariant()} lane.";
+            answerText.Text = "Waiting for grounded assistant output...";
+            evidenceList.ItemsSource = Array.Empty<string>();
+            actionRow.Children.Clear();
+
+            AiConversationTurnResponse? response = await TryAskAssistantAsync(mode, message).ConfigureAwait(true);
+            if (response is null)
+            {
+                statusText.Text = "ALICE stayed local because no grounded coach route was reachable from this desktop head.";
+                answerText.Text = BuildLocalFallbackAnswer(mode, message);
+                evidenceList.ItemsSource = BuildLocalFallbackEvidence(mode);
+                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
+                actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantFallbackPublicButton"));
+                return;
+            }
+
+            statusText.Text = BuildStatusLine(response);
+            answerText.Text = response.Answer;
+            evidenceList.ItemsSource = BuildEvidenceLines(response);
+            actionRow.Children.Clear();
+            foreach (Button action in CreateSuggestedActionButtons(response))
+            {
+                actionRow.Children.Add(action);
+            }
+        }
+
+        modeCombo.SelectionChanged += (_, _) => ApplyIdleState();
+        ApplyIdleState();
+
+        StackPanel body = new()
+        {
+            Spacing = 8,
+            Children =
+            {
+                DesktopHorizonWindowScaffold.CreateBadgeStrip(
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantRulesetBadge", "Ruleset", _rulesetId ?? "none"),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContextBadge", "Context", !string.IsNullOrWhiteSpace(_workspaceId) ? "workspace" : "global")),
+                modeCombo,
+                promptBox,
+                statusText,
+                new Border
+                {
+                    Name = "AliceAssistantAnswerCard",
+                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10),
+                    Child = answerText
+                },
+                evidenceList,
+                actionRow
+            }
+        };
+
+        return CreateCard(
+            "Assistant rail",
+            "ALICE now answers grounded rules and build questions directly from the desktop instead of only handing off to a browser lane.",
+            body,
+            "AliceAssistantCard",
+            CreateButton("Ask ALICE", AskAsync, isPrimary: true, name: "AliceAskButton"));
     }
 
     private Control CreateLeadHandoffCard()
@@ -668,5 +814,167 @@ internal sealed class DesktopAliceWindow : Window
         };
 
         return button;
+    }
+
+    private async Task<AiConversationTurnResponse?> TryAskAssistantAsync(string mode, string message)
+    {
+        if (_coachSidecarClient is null)
+        {
+            return null;
+        }
+
+        string routeType = string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+            ? AiRouteTypes.Coach
+            : AiRouteTypes.Build;
+        string conversationId = routeType == AiRouteTypes.Coach ? _coachConversationId : _buildConversationId;
+        AiConversationTurnRequest request = new(
+            Message: message,
+            ConversationId: conversationId,
+            CharacterId: _workspaceId,
+            WorkspaceId: _workspaceId);
+
+        AvaloniaCoachSidecarCallResult<AiConversationTurnResponse> result = routeType == AiRouteTypes.Coach
+            ? await _coachSidecarClient.SendCoachTurnAsync(request, CancellationToken.None).ConfigureAwait(true)
+            : await _coachSidecarClient.SendBuildTurnAsync(request, CancellationToken.None).ConfigureAwait(true);
+        return result.IsSuccess ? result.Payload : null;
+    }
+
+    private string BuildIdleAssistantStatus(string? mode)
+        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+            ? $"Ask a rules question for {_rulesetId ?? "the active ruleset"}."
+            : HasBuildPathContext
+                ? "Ask for the next grounded build move, and ALICE will stay on preview-safe rails."
+                : "Ask about the next build move; ALICE will answer from the current desktop context.";
+
+    private string BuildIdleAssistantAnswer(string? mode)
+        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+            ? "Try: “Explain the safe next step for an SR4 troll decker after metatype and core priorities.”"
+            : "Try: “What should I add next for this build, and why?”";
+
+    private string[] BuildIdleEvidence(string? mode)
+    {
+        List<string> lines =
+        [
+            !string.IsNullOrWhiteSpace(_rulesetId) ? $"Ruleset: {_rulesetId}" : "Ruleset context is not pinned yet.",
+            !string.IsNullOrWhiteSpace(_workspaceId) ? $"Workspace: {_workspaceId}" : "No workspace-backed context is attached yet."
+        ];
+
+        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        {
+            lines.Add(HasHandoffContext
+                ? "Account build handoffs are available for grounded follow-through."
+                : "No account handoff is available; ALICE will stay on bounded local guidance.");
+        }
+        else
+        {
+            lines.Add(HasBuildPathContext
+                ? $"Build paths: {_buildPathCandidates.Count}"
+                : "No preview-backed build path is available yet.");
+        }
+
+        return lines.ToArray();
+    }
+
+    private string BuildLocalFallbackAnswer(string mode, string message)
+    {
+        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        {
+            return !string.IsNullOrWhiteSpace(_rulesetId)
+                ? $"ALICE could not reach the grounded coach route, so it stayed local. This head is on {_rulesetId}. Use the current ruleset and workspace surface to verify '{message}', then reopen ALICE after the AI coach route is available."
+                : $"ALICE could not reach the grounded coach route, and no ruleset is pinned yet. Open or create a workspace first, then ask '{message}' again.";
+        }
+
+        if (_buildPathCandidates.Count > 0)
+        {
+            DesktopBuildPathCandidate lead = _buildPathCandidates[0];
+            return $"ALICE could not reach the grounded build route, so it stayed local. The strongest visible candidate is '{lead.Suggestion.Title}'. {lead.Preview?.CampaignReturnSummary ?? lead.Preview?.RuntimeCompatibilitySummary ?? "Open the proposal studio card below for the current bounded preview."}";
+        }
+
+        return "ALICE could not reach the grounded build route, and there is no preview-backed build candidate yet. Open a workspace or reconnect account context first.";
+    }
+
+    private string[] BuildLocalFallbackEvidence(string mode)
+    {
+        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        {
+            return BuildIdleEvidence(mode);
+        }
+
+        return _buildPathCandidates.Count > 0
+            ? _buildPathCandidates
+                .Take(3)
+                .Select(candidate => $"{candidate.Suggestion.Title} · {candidate.Preview?.RuntimeCompatibilitySummary ?? candidate.Suggestion.TrustTier}")
+                .ToArray()
+            : BuildIdleEvidence(mode);
+    }
+
+    private static string BuildStatusLine(AiConversationTurnResponse response)
+    {
+        string confidence = response.StructuredAnswer?.Confidence ?? AiConfidenceLevels.Scaffolded;
+        string provider = response.RouteDecision.ProviderId;
+        string routeReason = response.RouteDecision.Reason;
+        return $"{provider} · {confidence} · {routeReason}";
+    }
+
+    private static string[] BuildEvidenceLines(AiConversationTurnResponse response)
+    {
+        List<string> lines = [];
+
+        if (!string.IsNullOrWhiteSpace(response.FlavorLine))
+        {
+            lines.Add(response.FlavorLine);
+        }
+
+        if (response.StructuredAnswer is { } structuredAnswer)
+        {
+            foreach (AiRecommendation recommendation in structuredAnswer.Recommendations.Take(3))
+            {
+                lines.Add($"Recommend: {recommendation.Title} · {recommendation.Reason}");
+            }
+
+            foreach (AiEvidenceEntry evidence in structuredAnswer.Evidence.Take(3))
+            {
+                lines.Add($"Evidence: {evidence.Title} · {evidence.Summary}");
+            }
+
+            foreach (AiRiskEntry risk in structuredAnswer.Risks.Take(2))
+            {
+                lines.Add($"Risk: {risk.Title} · {risk.Summary}");
+            }
+        }
+
+        foreach (AiCitation citation in response.Citations.Take(3))
+        {
+            lines.Add($"Source: {citation.Title} · {citation.ReferenceId}{(string.IsNullOrWhiteSpace(citation.Source) ? string.Empty : $" · {citation.Source}")}");
+        }
+
+        foreach (AiToolInvocation tool in response.ToolInvocations.Take(2))
+        {
+            lines.Add($"Tool: {tool.ToolId} · {tool.Status} · {tool.Summary}");
+        }
+
+        return lines.Count == 0
+            ? ["ALICE returned an answer without extra grounded detail lines."]
+            : lines.ToArray();
+    }
+
+    private Button[] CreateSuggestedActionButtons(AiConversationTurnResponse response)
+    {
+        List<Button> buttons = [];
+
+        foreach (AiSuggestedAction action in response.SuggestedActions.Take(3))
+        {
+            bool primary = buttons.Count == 0;
+            string label = action.Title;
+            buttons.Add(CreateButton(label, static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: primary, name: $"AliceSuggestedAction_{action.ActionId}"));
+        }
+
+        if (buttons.Count == 0)
+        {
+            buttons.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceSuggestedActionFallbackAccount"));
+            buttons.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceSuggestedActionFallbackPublic"));
+        }
+
+        return buttons.ToArray();
     }
 }

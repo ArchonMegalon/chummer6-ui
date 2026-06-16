@@ -13,4 +13,12 @@ public interface IAvaloniaCoachSidecarClient
         string? runtimeFingerprint = null,
         int maxCount = 3,
         CancellationToken ct = default);
+
+    Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default);
+
+    Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default);
 }

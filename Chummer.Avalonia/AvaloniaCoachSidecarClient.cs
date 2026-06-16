@@ -45,6 +45,16 @@ public sealed class HttpAvaloniaCoachSidecarClient : IAvaloniaCoachSidecarClient
             payload: null,
             ct);
 
+    public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default)
+        => SendAsync<AiConversationTurnResponse>(HttpMethod.Post, "/api/ai/coach", request, ct);
+
+    public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default)
+        => SendAsync<AiConversationTurnResponse>(HttpMethod.Post, "/api/ai/build-lab/query", request, ct);
+
     private async Task<AvaloniaCoachSidecarCallResult<T>> SendAsync<T>(
         HttpMethod method,
         string path,
@@ -221,6 +231,22 @@ public sealed class InProcessAvaloniaCoachSidecarClient : IAvaloniaCoachSidecarC
                 RouteType: routeType,
                 RuntimeFingerprint: runtimeFingerprint,
                 MaxCount: maxCount))));
+    }
+
+    public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ConvertResult(_aiGatewayService.SendCoachTurn(_ownerContextAccessor.Current, request)));
+    }
+
+    public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+        AiConversationTurnRequest request,
+        CancellationToken ct = default)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(ConvertResult(_aiGatewayService.SendBuildTurn(_ownerContextAccessor.Current, request)));
     }
 
     private static AvaloniaCoachSidecarCallResult<T> ConvertResult<T>(AiApiResult<T> result)

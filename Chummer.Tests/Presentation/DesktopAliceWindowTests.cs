@@ -24,6 +24,10 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/alice\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}\")");
+        StringAssert.Contains(source, "CreateAssistantCard()");
+        StringAssert.Contains(source, "AliceConversationModeCombo");
+        StringAssert.Contains(source, "AliceQuestionTextBox");
+        StringAssert.Contains(source, "AliceAskButton");
     }
 
     [TestMethod]
@@ -38,5 +42,19 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "GetBuildPathPreviewAsync(");
         StringAssert.Contains(source, "Build path compare stays native");
         StringAssert.Contains(source, "No preview-backed build path suggestions are currently available");
+    }
+
+    [TestMethod]
+    public void DesktopAliceWindow_source_routes_rules_and_build_questions_through_coach_sidecar()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+
+        StringAssert.Contains(source, "IAvaloniaCoachSidecarClient");
+        StringAssert.Contains(source, "AiConversationTurnRequest");
+        StringAssert.Contains(source, "SendCoachTurnAsync");
+        StringAssert.Contains(source, "SendBuildTurnAsync");
+        StringAssert.Contains(source, "AiRouteTypes.Coach");
+        StringAssert.Contains(source, "AiRouteTypes.Build");
     }
 }

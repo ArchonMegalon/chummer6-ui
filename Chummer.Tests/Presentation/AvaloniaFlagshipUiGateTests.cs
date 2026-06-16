@@ -9139,6 +9139,16 @@ public sealed class AvaloniaFlagshipUiGateTests
             int maxCount = 3,
             CancellationToken ct = default)
             => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationAuditCatalogPage>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendCoachTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Failure(0, "disabled"));
+
+        public Task<AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>> SendBuildTurnAsync(
+            AiConversationTurnRequest request,
+            CancellationToken ct = default)
+            => Task.FromResult(AvaloniaCoachSidecarCallResult<AiConversationTurnResponse>.Failure(0, "disabled"));
     }
 
     private static ShellState CreateShellState()
