@@ -232,6 +232,27 @@ public sealed class DesktopCrashRuntimeTests
         Assert.IsFalse(File.Exists(scope.PendingMarkerPath));
     }
 
+    [TestMethod]
+    public void IgnorableBackgroundException_treats_missing_linux_appmenu_registrar_as_non_crash_noise()
+    {
+        Type monitorType = typeof(DesktopCrashRuntime).Assembly.GetType("Chummer.Desktop.Runtime.DesktopCrashMonitor", throwOnError: true)
+            ?? throw new InvalidOperationException("DesktopCrashMonitor type was not found.");
+        MethodInfo method = monitorType.GetMethod("IsIgnorableBackgroundException", BindingFlags.NonPublic | BindingFlags.Static)
+            ?? throw new InvalidOperationException("IsIgnorableBackgroundException method was not found.");
+
+        Exception exception = new AggregateException(
+            new InvalidOperationException(
+                "org.freedesktop.DBus.Error.ServiceUnknown: The name com.canonical.AppMenu.Registrar was not provided by any .service files"));
+        typeof(InvalidOperationException).GetField("_className", BindingFlags.Instance | BindingFlags.NonPublic)?.SetValue(
+            exception.InnerException,
+            "Tmds.DBus.Protocol.DBusException");
+
+        bool ignored = (bool)(method.Invoke(null, [exception])
+            ?? throw new InvalidOperationException("IsIgnorableBackgroundException returned null."));
+
+        Assert.IsTrue(ignored);
+    }
+
     private static object BuildEnvelope(DesktopCrashReport report, string summary, DesktopCrashClaimSnapshot? snapshot)
     {
         MethodInfo method = typeof(DesktopCrashRuntime).GetMethod("BuildEnvelope", BindingFlags.NonPublic | BindingFlags.Static)

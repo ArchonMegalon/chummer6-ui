@@ -1087,8 +1087,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 ActiveDialog = null,
                 Error = null,
                 Notice = houseRulesEnabled
-                    ? $"Started '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()}) with house rules enabled."
-                    : $"Started '{name}' ({buildMethod}, {rulesetId.ToUpperInvariant()})."
+                    ? $"Opened {name} · {buildMethod} · {rulesetId.ToUpperInvariant()} · house rules"
+                    : $"Opened {name} · {buildMethod} · {rulesetId.ToUpperInvariant()}"
             });
         }
     }

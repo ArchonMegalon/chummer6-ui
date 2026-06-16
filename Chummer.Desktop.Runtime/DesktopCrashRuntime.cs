@@ -881,8 +881,24 @@ public sealed class DesktopCrashMonitor : IDisposable
 
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs args)
     {
-        CaptureOnce(args.Exception, isTerminating: false);
+        if (!IsIgnorableBackgroundException(args.Exception))
+        {
+            CaptureOnce(args.Exception, isTerminating: false);
+        }
+
         args.SetObserved();
+    }
+
+    private static bool IsIgnorableBackgroundException(Exception exception)
+    {
+        if (exception is AggregateException aggregateException)
+        {
+            return aggregateException.Flatten().InnerExceptions.All(IsIgnorableBackgroundException);
+        }
+
+        string message = exception.ToString();
+        return message.Contains("com.canonical.AppMenu.Registrar", StringComparison.Ordinal)
+            && message.Contains("org.freedesktop.DBus.Error.ServiceUnknown", StringComparison.Ordinal);
     }
 
     private void CaptureOnce(Exception exception, bool isTerminating)

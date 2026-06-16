@@ -1805,10 +1805,21 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 OpenMenuUntilCommandVisible(harness, "FileMenuButton", "open_character");
                 harness.ClickMenuCommand("open_character");
+                harness.WaitUntil(() =>
+                    string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Open Character",
+                        StringComparison.Ordinal));
                 AssertDialogContainsAll(
                     harness,
                     "Open Character",
                     GetVeteranCertificationReviewStep("import").RequiredDialogMarkers);
+                harness.InvokeDialogAction("cancel");
+                harness.WaitUntil(() =>
+                    !string.Equals(
+                        harness.FindControlOrDefault<TextBlock>("DialogTitleText")?.Text,
+                        "Open Character",
+                        StringComparison.Ordinal));
             });
         }
         finally
@@ -7852,7 +7863,19 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void Dispose()
         {
+            if (Window.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                dialogWindow.Close();
+            }
+
+            foreach (Window ownedWindow in Window.OwnedWindows.ToArray())
+            {
+                ownedWindow.Close();
+            }
+
+            Pump();
             Window.Close();
+            Pump();
             _adapter.Dispose();
         }
     }
@@ -8184,7 +8207,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         public void Dispose()
         {
+            CloseTransientWindows(Window);
             Window.Close();
+            Pump();
             _adapter.Dispose();
             typeof(App).GetProperty("Services", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
                 .SetValue(null, null);
@@ -8195,6 +8220,21 @@ public sealed class AvaloniaFlagshipUiGateTests
         {
             Dispatcher.UIThread.RunJobs();
             Thread.Sleep(10);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        private static void CloseTransientWindows(MainWindow rootWindow)
+        {
+            if (rootWindow.PeekDialogWindowForTesting() is { } dialogWindow)
+            {
+                dialogWindow.Close();
+            }
+
+            foreach (Window ownedWindow in rootWindow.OwnedWindows.ToArray())
+            {
+                ownedWindow.Close();
+            }
+
             Dispatcher.UIThread.RunJobs();
         }
 

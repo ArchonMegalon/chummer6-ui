@@ -7,20 +7,20 @@
     <ResourceDictionary>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E7ECF3" />
+          <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E3EAF3" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#475364" />
-          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E9EEF5" />
-          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#F4F7FB" />
-          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#E1E9F5" />
-          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#E2E8F0" />
+          <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E7EDF5" />
+          <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#F5F8FC" />
+          <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#DEE8F6" />
+          <SolidColorBrush x:Key="ChummerShellMenuBarBrush" Color="#DEE7F1" />
           <SolidColorBrush x:Key="ChummerShellMenuHoverBrush" Color="#F7F9FC" />
           <SolidColorBrush x:Key="ChummerShellMenuRootBorderBrush" Color="#A8B4C4" />
           <SolidColorBrush x:Key="ChummerShellPanelOverlayBrush" Color="#F7F9FC" />
           <SolidColorBrush x:Key="ChummerShellPanelMutedBrush" Color="#EEF3F8" />
-          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#93A0B2" />
-          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#B7C1CF" />
-          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#AAB5C4" />
+          <SolidColorBrush x:Key="ChummerShellBorderStrongBrush" Color="#8E9CAE" />
+          <SolidColorBrush x:Key="ChummerShellBorderBrush" Color="#B5C0CF" />
+          <SolidColorBrush x:Key="ChummerShellCardBorderBrush" Color="#A5B2C3" />
           <SolidColorBrush x:Key="ChummerShellSurfaceBrush" Color="#FBFCFE" />
           <SolidColorBrush x:Key="ChummerShellSurfaceAltBrush" Color="#F2F5FA" />
           <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#173A6C" />
@@ -140,8 +140,9 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="6" />
-      <Setter Property="Padding" Value="3" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="4" />
+      <Setter Property="BoxShadow" Value="0 1 2 0 #120F172A" />
     </Style>
     <Style Selector="Border.shell-panel.chrome">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -158,8 +159,9 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="4" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="BoxShadow" Value="0 10 24 0 #120F172A" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelMutedBrush}" />
@@ -179,8 +181,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="8,2" />
-      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="Padding" Value="10,3" />
+      <Setter Property="MinHeight" Value="30" />
       <Setter Property="CornerRadius" Value="6" />
     </Style>
     <Style Selector="Button:pointerover">

@@ -360,12 +360,12 @@ internal static class MainWindowShellFrameProjector
             DesktopLocalizationCatalog.GetRequiredString(
                 state.IsBusy ? "desktop.shell.state.value.busy" : "desktop.shell.state.value.ready",
                 language),
-            workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language),
+            DescribeWorkspaceForChrome(state, workspaceContext, language),
             workspaceContext.OpenWorkspaceCount,
             state.HasSavedWorkspace
                 ? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.saved", language)
                 : DesktopLocalizationCatalog.GetRequiredString("desktop.shell.state.value.unsaved", language),
-            shellSurface.LastCommandId ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language));
+            FormatCommandLabel(shellSurface.LastCommandId, language));
     }
 
     private static string BuildWorkspaceStripText(ActiveWorkspaceContext workspaceContext, string language)
@@ -395,6 +395,35 @@ internal static class MainWindowShellFrameProjector
                     ? "desktop.shell.state.value.online"
                     : "desktop.shell.state.value.error",
                 language));
+
+    private static string DescribeWorkspaceForChrome(
+        CharacterOverviewState state,
+        ActiveWorkspaceContext workspaceContext,
+        string language)
+    {
+        if (!string.IsNullOrWhiteSpace(state.Profile?.Name))
+        {
+            return state.Profile!.Name!;
+        }
+
+        return workspaceContext.ActiveWorkspaceId?.Value is { Length: > 8 } workspaceId
+            ? workspaceId[..8]
+            : workspaceContext.ActiveWorkspaceId?.Value ?? DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language);
+    }
+
+    private static string FormatCommandLabel(string? commandId, string language)
+    {
+        if (string.IsNullOrWhiteSpace(commandId))
+        {
+            return DesktopLocalizationCatalog.GetRequiredString("desktop.shell.value.none", language);
+        }
+
+        return string.Join(
+            ' ',
+            commandId
+                .Split(['_', '-'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(segment => char.ToUpperInvariant(segment[0]) + segment[1..]));
+    }
 
     private static ActiveWorkspaceContext ResolveActiveWorkspaceContext(
         CharacterOverviewState overviewState,

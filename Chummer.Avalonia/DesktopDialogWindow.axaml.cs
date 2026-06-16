@@ -1036,13 +1036,22 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
-            Spacing = 12
+            Spacing = 14
         };
+
+        Border overviewCard = CreateLegacySummaryCard(
+            "New Runner",
+            "Choose the ruleset, set the build method, and name the runner before the workspace opens.",
+            CreateSummaryMetricStrip(
+                CreateSummaryMetric("Ruleset", rulesetField.Options?.FirstOrDefault(option => string.Equals(option.Value, rulesetField.Value, StringComparison.Ordinal))?.Label ?? rulesetField.Value.ToUpperInvariant()),
+                CreateSummaryMetric("Build", buildMethodField.Options?.FirstOrDefault(option => string.Equals(option.Value, buildMethodField.Value, StringComparison.Ordinal))?.Label ?? buildMethodField.Value),
+                CreateSummaryMetric("Identity", "Name and alias")));
+        shell.Children.Add(overviewCard);
 
         Grid settingRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
-            ColumnSpacing = 8
+            ColumnDefinitions = new ColumnDefinitions("146,*,Auto"),
+            ColumnSpacing = 10
         };
         TextBlock settingLabel = new()
         {
@@ -1080,8 +1089,8 @@ public partial class DesktopDialogWindow : Window
 
         Grid rulesetRow = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("156,*"),
-            ColumnSpacing = 8
+            ColumnDefinitions = new ColumnDefinitions("146,*"),
+            ColumnSpacing = 10
         };
         TextBlock rulesetLabel = new()
         {
@@ -1100,7 +1109,7 @@ public partial class DesktopDialogWindow : Window
         Grid summaryRow = new()
         {
             ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
-            ColumnSpacing = 8
+            ColumnSpacing = 12
         };
         summaryRow.Children.Add(new TextBlock
         {
@@ -1139,10 +1148,12 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Runner Identity",
+            CreateLegacyGroupLead("Use a stable runner name now. Alias can stay provisional."),
             CreateSplitFieldRow(nameField, aliasField)));
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Select Build Method",
+            CreateLegacyGroupLead("Ruleset and build choice define the next workflow and starting constraints."),
             settingRow,
             rulesetRow,
             summaryRow));
@@ -1254,9 +1265,10 @@ public partial class DesktopDialogWindow : Window
 
         Border topMatrixBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = topMatrix
+            Child = CreateLegacySummaryCard(
+                "Priority Allocation",
+                "Assign the five priority lanes, then confirm the metatype and choice-dependent follow-through.",
+                topMatrix)
         };
 
         ComboBox categoryCombo = BuildRuntimeCombo(categoryField, 180);
@@ -1290,9 +1302,10 @@ public partial class DesktopDialogWindow : Window
 
         Border browseLaneBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = browseLane
+            Child = CreateLegacySummaryCard(
+                "Browse Metatypes",
+                "Use category first, then choose the concrete metatype from the list.",
+                browseLane)
         };
 
         Grid rightFactsGrid = new()
@@ -1374,9 +1387,10 @@ public partial class DesktopDialogWindow : Window
 
         Border inspectLaneBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = inspectLane
+            Child = CreateLegacySummaryCard(
+                "Selection Detail",
+                "Review karma cost, special attributes, source, and inherited qualities before committing.",
+                inspectLane)
         };
 
         Grid centerGrid = new()
@@ -1415,15 +1429,16 @@ public partial class DesktopDialogWindow : Window
 
         Border skillChoiceBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = skillChoiceLane,
+            Child = CreateLegacySummaryCard(
+                "Choice Follow-Through",
+                "Complete the remaining skill choice decisions unlocked by the selected priorities.",
+                skillChoiceLane),
             IsVisible = skillChoiceLane.Children.Count > 0
         };
 
         StackPanel shell = new()
         {
-            Spacing = 12,
+            Spacing = 14,
             Children =
             {
                 topMatrixBorder,
@@ -1463,9 +1478,9 @@ public partial class DesktopDialogWindow : Window
 
         Grid selectorGrid = new()
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,180,Auto,180"),
-            ColumnSpacing = 12,
-            RowSpacing = 8
+            ColumnDefinitions = new ColumnDefinitions("Auto,200,Auto,200"),
+            ColumnSpacing = 14,
+            RowSpacing = 10
         };
         selectorGrid.Children.Add(CreateRowLabel("Metatype Category:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
         Grid.SetColumn(categoryCombo, 1);
@@ -1479,9 +1494,10 @@ public partial class DesktopDialogWindow : Window
 
         Border selectorBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = selectorGrid
+            Child = CreateLegacySummaryCard(
+                "Metatype Selection",
+                "Choose the metatype category first, then confirm the exact metatype for the BP workflow.",
+                selectorGrid)
         };
 
         TextBlock summaryLabel = new()
@@ -1498,22 +1514,23 @@ public partial class DesktopDialogWindow : Window
 
         Border summaryBorder = new()
         {
-            Classes = { "shell-panel" },
-            Padding = new Thickness(8),
-            Child = new StackPanel
-            {
-                Spacing = 8,
-                Children =
+            Child = CreateLegacySummaryCard(
+                "Workflow Summary",
+                "The current BP path should read like a bounded next step, not a generic utility prompt.",
+                new StackPanel
                 {
-                    summaryLabel,
-                    summaryText
-                }
-            }
+                    Spacing = 8,
+                    Children =
+                    {
+                        summaryLabel,
+                        summaryText
+                    }
+                })
         };
 
         return new StackPanel
         {
-            Spacing = 10,
+            Spacing = 14,
             Children =
             {
                 selectorBorder,
@@ -1700,21 +1717,103 @@ public partial class DesktopDialogWindow : Window
         {
             Spacing = 8
         };
+        body.Children.Add(new TextBlock
+        {
+            Text = title,
+            Classes = { "shell-section-title" }
+        });
         foreach (Control child in children)
         {
             body.Children.Add(child);
         }
 
-        Border border = new()
+        return new Border
         {
-            BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
-            Background = Brushes.Transparent,
-            Padding = new Thickness(8),
+            Classes = { "shell-panel", "subtle" },
+            Padding = new Thickness(12),
             Child = body
         };
-        ToolTip.SetTip(border, title);
-        return border;
+    }
+
+    private static Control CreateLegacyGroupLead(string text)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            Classes = { "shell-caption" }
+        };
+    }
+
+    private static Border CreateLegacySummaryCard(string title, string summary, Control content)
+    {
+        return new Border
+        {
+            Classes = { "shell-panel", "accent" },
+            Padding = new Thickness(12),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = title,
+                        Classes = { "shell-section-title" }
+                    },
+                    new TextBlock
+                    {
+                        Text = summary,
+                        Classes = { "shell-caption" }
+                    },
+                    content
+                }
+            }
+        };
+    }
+
+    private static Control CreateSummaryMetricStrip(params Control[] metrics)
+    {
+        WrapPanel panel = new()
+        {
+            Orientation = Orientation.Horizontal
+        };
+
+        foreach (Control metric in metrics)
+        {
+            panel.Children.Add(metric);
+        }
+
+        return panel;
+    }
+
+    private static Control CreateSummaryMetric(string label, string value)
+    {
+        return new Border
+        {
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderStrongBrush", "#93A0B2"),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10, 8),
+            Margin = new Thickness(0, 0, 8, 8),
+            Child = new StackPanel
+            {
+                Spacing = 2,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = label,
+                        Classes = { "shell-caption" }
+                    },
+                    new TextBlock
+                    {
+                        Text = string.IsNullOrWhiteSpace(value) ? "(none)" : value,
+                        Classes = { "shell-metric-value" }
+                    }
+                }
+            }
+        };
     }
 
     private Control CreateLegacyMasterIndexPane(IReadOnlyList<DesktopDialogField> fields)

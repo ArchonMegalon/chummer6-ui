@@ -44,7 +44,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.state.value.error"] = "error",
         ["desktop.shell.value.none"] = "none",
         ["desktop.shell.value.na"] = "n/a",
-        ["desktop.shell.state.snapshot"] = "State: {0}, workspace={1}, open={2}, saved={3}, last-command={4}",
+        ["desktop.shell.state.snapshot"] = "{0} · {1} · {2} open · {3} · {4}",
         ["desktop.shell.state.error"] = "State: error - {0}",
         ["desktop.shell.workspace_strip.heading"] = "Current Runner",
         ["desktop.shell.workspace_strip.summary"] = "Workspace: {0} (open: {1}, {2})",
