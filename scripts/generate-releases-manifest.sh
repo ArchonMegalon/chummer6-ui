@@ -958,7 +958,14 @@ for artifact in payload.get("artifacts") or []:
         continue
 
     kind = str(artifact.get("kind") or "").strip().lower()
-    if kind not in {"installer", "dmg", "pkg", "msix"}:
+    platform_tokens = " ".join(
+        str(artifact.get(key) or "").strip().lower()
+        for key in ("platform", "platformId", "rid", "artifactId", "fileName")
+    )
+    windows_preview_portable = kind == "portable" and any(
+        token in platform_tokens for token in ("windows", "win-", ".exe")
+    )
+    if kind not in {"installer", "dmg", "pkg", "msix"} and not windows_preview_portable:
         continue
 
     current_access_class = str(artifact.get("installAccessClass") or "").strip().lower()

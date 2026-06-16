@@ -83,6 +83,7 @@ resolve_upload_token() {
 
 write_auth_curl_config() {
   local config_path="$1"
+  : > "$config_path"
   chmod 600 "$config_path"
   printf '%s' "$TOKEN" | python3 -c 'from pathlib import Path; import sys; config_path = Path(sys.argv[1]); token = sys.stdin.read(); escaped = token.replace("\\\\", "\\\\\\\\").replace("\"", "\\\\\""); config_path.write_text(f"header = \"Authorization: Bearer {escaped}\"\n", encoding="utf-8")' "$config_path"
   TOKEN=""
@@ -117,6 +118,16 @@ import sys
 from urllib.parse import urljoin
 
 print(urljoin(sys.argv[1], sys.argv[2]))
+PY
+}
+
+file_size_bytes() {
+  local file_path="$1"
+  python3 - "$file_path" <<'PY'
+from pathlib import Path
+import sys
+
+print(Path(sys.argv[1]).stat().st_size)
 PY
 }
 
@@ -307,7 +318,7 @@ else
 
   for file_path in "${upload_files[@]}"; do
     relative_path="${file_path#$BUNDLE_DIR/}"
-    file_size="$(stat -f '%z' "$file_path" 2>/dev/null || stat -c '%s' "$file_path" 2>/dev/null || echo 0)"
+    file_size="$(file_size_bytes "$file_path")"
     if (( file_size <= DIRECT_LIMIT_BYTES )); then
       upload_file_direct "$file_path" "$relative_path" "$files_url" "${request_common[@]}"
     else
