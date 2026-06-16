@@ -13,47 +13,47 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </UserControl.Styles>
-  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="4">
+  <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
     <WrapPanel Orientation="Horizontal"
                Grid.Column="0"
                Classes="shell-toolstrip-band"
                VerticalAlignment="Center">
-      <Button x:Name="SaveButton" Classes="shell-action tool-icon" MinWidth="54" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="SaveButton_OnClick" />
-      <Button x:Name="PrintButton" Classes="shell-action tool-icon" MinWidth="54" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="PrintButton_OnClick" />
-      <Button x:Name="CopyButton" Classes="shell-action tool-icon" MinWidth="52" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="CopyButton_OnClick" />
-      <Button x:Name="DesktopHomeButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="54" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="DesktopHomeButton_OnClick" />
-      <Button x:Name="HorizonsButton" Classes="shell-action tool-icon" MinWidth="72" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="HorizonsButton_OnClick" />
-      <Button x:Name="ImportFileButton" Classes="shell-action tool-icon" MinWidth="54" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="ImportFileButton_OnClick" />
-      <Button x:Name="CloseWorkspaceButton" Classes="shell-action tool-icon" MinWidth="54" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="CloseWorkspaceButton_OnClick" />
-      <Button x:Name="OpenForPrintingButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="76" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="OpenForPrintingButton_OnClick" />
-      <Button x:Name="OpenForExportButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="76" MinHeight="24" Padding="5,1" Margin="0,0,2,2" Click="OpenForExportButton_OnClick" />
-      <Button x:Name="GmPrepButton" IsVisible="False" Classes="shell-action quiet" Content="GM Prep" MinWidth="72" MinHeight="24" Margin="0,0,2,2" Click="GmPrepButton_OnClick" />
-      <Button x:Name="RosterMovementButton" IsVisible="False" Classes="shell-action quiet" Content="Roster Movement" MinWidth="122" MinHeight="24" Margin="0,0,2,2" Click="RosterMovementButton_OnClick" />
-      <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Classes="shell-action quiet" Content="Rule Studio" MinWidth="94" MinHeight="24" Margin="0,0,2,2" Click="RuleEnvironmentStudioButton_OnClick" />
-      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Open Sample" MinWidth="96" MinHeight="24" Margin="0,0,2,2" Click="LoadDemoRunnerButton_OnClick" />
-      <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="Raw XML" MinWidth="78" MinHeight="24" Margin="0,0,2,2" Click="ImportRawButton_OnClick" />
-      <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Settings" MinWidth="62" MinHeight="24" Margin="0,0,2,2" Click="SettingsButton_OnClick" />
-      <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Classes="shell-action quiet" Content="Campaign Review" MinHeight="24" Margin="0,0,2,2" Click="CampaignWorkspaceButton_OnClick" />
-      <Button x:Name="UpdateStatusButton" IsVisible="False" Classes="shell-action quiet" Content="Updates" MinHeight="24" Margin="0,0,2,2" Click="UpdateStatusButton_OnClick" />
-      <Button x:Name="InstallLinkingButton" IsVisible="False" Classes="shell-action quiet" Content="Install Link" MinHeight="24" Margin="0,0,2,2" Click="InstallLinkingButton_OnClick" />
-      <Button x:Name="SupportButton" IsVisible="False" Classes="shell-action quiet" Content="Support" MinHeight="24" Margin="0,0,2,2" Click="SupportButton_OnClick" />
-      <Button x:Name="ReportIssueButton" IsVisible="False" Classes="shell-action quiet" Content="Report Issue" MinHeight="24" Margin="0,0,0,2" Click="ReportIssueButton_OnClick" />
+      <Button x:Name="SaveButton" Classes="shell-action tool-icon" MinWidth="56" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="SaveButton_OnClick" />
+      <Button x:Name="PrintButton" Classes="shell-action tool-icon" MinWidth="56" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="PrintButton_OnClick" />
+      <Button x:Name="CopyButton" Classes="shell-action tool-icon" MinWidth="54" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="CopyButton_OnClick" />
+      <Button x:Name="DesktopHomeButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="56" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="DesktopHomeButton_OnClick" />
+      <Button x:Name="HorizonsButton" Classes="shell-action tool-icon" MinWidth="74" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="HorizonsButton_OnClick" />
+      <Button x:Name="ImportFileButton" Classes="shell-action tool-icon" MinWidth="56" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="ImportFileButton_OnClick" />
+      <Button x:Name="CloseWorkspaceButton" Classes="shell-action tool-icon" MinWidth="58" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="CloseWorkspaceButton_OnClick" />
+      <Button x:Name="OpenForPrintingButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="80" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="OpenForPrintingButton_OnClick" />
+      <Button x:Name="OpenForExportButton" IsVisible="False" Classes="shell-action tool-icon" MinWidth="80" MinHeight="26" Padding="7,2" Margin="0,0,4,4" Click="OpenForExportButton_OnClick" />
+      <Button x:Name="GmPrepButton" IsVisible="False" Classes="shell-action quiet" Content="GM Prep" MinWidth="74" MinHeight="26" Margin="0,0,4,4" Click="GmPrepButton_OnClick" />
+      <Button x:Name="RosterMovementButton" IsVisible="False" Classes="shell-action quiet" Content="Roster Movement" MinWidth="124" MinHeight="26" Margin="0,0,4,4" Click="RosterMovementButton_OnClick" />
+      <Button x:Name="RuleEnvironmentStudioButton" IsVisible="False" Classes="shell-action quiet" Content="Rule Studio" MinWidth="96" MinHeight="26" Margin="0,0,4,4" Click="RuleEnvironmentStudioButton_OnClick" />
+      <Button x:Name="LoadDemoRunnerButton" Classes="shell-action quiet" Content="Open Sample" MinWidth="98" MinHeight="26" Margin="0,0,4,4" Click="LoadDemoRunnerButton_OnClick" />
+      <Button x:Name="ImportRawButton" IsVisible="False" Classes="shell-action quiet" Content="Raw XML" MinWidth="80" MinHeight="26" Margin="0,0,4,4" Click="ImportRawButton_OnClick" />
+      <Button x:Name="SettingsButton" Classes="shell-action quiet" Content="Settings" MinWidth="66" MinHeight="26" Margin="0,0,4,4" Click="SettingsButton_OnClick" />
+      <Button x:Name="CampaignWorkspaceButton" IsVisible="False" Classes="shell-action quiet" Content="Campaign Review" MinHeight="26" Margin="0,0,4,4" Click="CampaignWorkspaceButton_OnClick" />
+      <Button x:Name="UpdateStatusButton" IsVisible="False" Classes="shell-action quiet" Content="Updates" MinHeight="26" Margin="0,0,4,4" Click="UpdateStatusButton_OnClick" />
+      <Button x:Name="InstallLinkingButton" IsVisible="False" Classes="shell-action quiet" Content="Install Link" MinHeight="26" Margin="0,0,4,4" Click="InstallLinkingButton_OnClick" />
+      <Button x:Name="SupportButton" IsVisible="False" Classes="shell-action quiet" Content="Support" MinHeight="26" Margin="0,0,4,4" Click="SupportButton_OnClick" />
+      <Button x:Name="ReportIssueButton" IsVisible="False" Classes="shell-action quiet" Content="Report Issue" MinHeight="26" Margin="0,0,0,4" Click="ReportIssueButton_OnClick" />
     </WrapPanel>
 
     <Button x:Name="ToolStripAutoAliceButton"
             Grid.Column="1"
             Classes="shell-action primary tool-icon"
-            MinWidth="102"
-            MinHeight="24"
-            Padding="6,1"
-            Margin="0,0,0,2"
+            MinWidth="114"
+            MinHeight="28"
+            Padding="10,3"
+            Margin="0,0,0,4"
             VerticalAlignment="Center"
             Click="AutoAliceButton_OnClick" />
 
     <Border x:Name="StatusTextBorder"
             Grid.Column="2"
             Classes="shell-toolstrip-state"
-            Padding="3,0"
+            Padding="6,2"
             IsHitTestVisible="False"
             IsVisible="False">
       <TextBlock x:Name="StatusText"

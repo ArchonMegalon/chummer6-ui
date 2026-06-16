@@ -16,12 +16,13 @@
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
   </Window.Styles>
-  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="0">
+  <Grid Margin="0" RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="4">
     <Border x:Name="MenuBarRegion"
             Grid.Row="0"
             Classes="shell-panel chrome"
             Background="{DynamicResource ChummerShellMenuBarBrush}"
-            Padding="0,0,0,1">
+            Padding="4,4,4,2"
+            Margin="6,6,6,0">
       <Grid>
         <controls:ClassicMenuBar x:Name="ClassicMenuBarControl"
                                  IsVisible="False" />
@@ -33,7 +34,8 @@
             Grid.Row="1"
             Classes="shell-panel chrome"
             Background="{DynamicResource ChummerShellChromeSubtleBrush}"
-            Padding="2,1,2,1">
+            Padding="4,3"
+            Margin="6,0,6,0">
       <Grid>
         <controls:ClassicToolStrip x:Name="ClassicToolStripControl"
                                    IsVisible="False" />
@@ -41,15 +43,15 @@
       </Grid>
     </Border>
 
-    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0">
+    <Border x:Name="SummaryHeaderRegion" Grid.Row="2" Classes="shell-panel chrome" Padding="0" Margin="6,0,6,0">
       <controls:SummaryHeaderControl x:Name="SummaryHeaderControl" />
     </Border>
 
-    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="0" Margin="1,1,1,0">
+    <Grid x:Name="ContentRegion" Grid.Row="3" ColumnDefinitions="0,*,0" ColumnSpacing="6" Margin="6,2,6,0">
       <!-- Character Roster Pane (left) - Chummer5a treCharacterList equivalent -->
       <Border x:Name="RosterPaneRegion"
               Grid.Column="0"
-              Classes="shell-panel"
+              Classes="shell-card subtle"
               Width="264"
               MinWidth="240"
               MaxWidth="320">
@@ -58,14 +60,14 @@
 
       <Border x:Name="LeftNavigatorRegion"
               Grid.Column="0"
-              Classes="shell-panel"
+              Classes="shell-card subtle"
               IsVisible="False"
               IsHitTestVisible="False">
         <controls:NavigatorPaneControl x:Name="NavigatorPaneControl" />
       </Border>
 
       <Grid x:Name="CenterShellRegion" Grid.Column="1">
-        <Border x:Name="SectionRegion" Classes="shell-panel" Padding="0">
+        <Border x:Name="SectionRegion" Classes="shell-card" Padding="0">
           <Grid>
             <controls:ClassicFormPortHostControl x:Name="ClassicFormPortHostControl"
                                                  IsVisible="False" />
@@ -76,7 +78,7 @@
 
       <Border x:Name="RightShellRegion"
               Grid.Column="2"
-              Classes="shell-panel"
+              Classes="shell-card subtle"
               Width="0"
               MinWidth="0"
               MaxWidth="0"
@@ -84,7 +86,7 @@
               IsVisible="False"
               IsHitTestVisible="False"
               ClipToBounds="True">
-        <Grid RowDefinitions="2*,*" RowSpacing="4">
+        <Grid RowDefinitions="2*,*" RowSpacing="6">
           <Border Grid.Row="0" Classes="shell-card">
             <controls:CommandDialogPaneControl x:Name="CommandDialogPaneControl" />
           </Border>
@@ -95,7 +97,7 @@
       </Border>
     </Grid>
 
-    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="4,2">
+    <Border x:Name="StatusStripRegion" Grid.Row="4" Classes="shell-panel chrome" Padding="6,3" Margin="6,0,6,6">
       <Grid>
         <controls:ClassicStatusStrip x:Name="ClassicStatusStripControl"
                                      IsVisible="False" />

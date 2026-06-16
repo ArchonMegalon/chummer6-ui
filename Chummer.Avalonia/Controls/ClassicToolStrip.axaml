@@ -4,14 +4,14 @@
   <Border BorderBrush="{DynamicResource ChummerShellBorderStrongBrush}"
           BorderThickness="0,0,0,1"
           Background="{DynamicResource ChummerShellChromeSubtleBrush}"
-          Padding="6,4">
+          Padding="8,6">
     <Grid RowDefinitions="Auto,Auto"
           ColumnDefinitions="*,Auto"
           RowSpacing="4">
       <WrapPanel x:Name="ClassicActionStrip"
                  Grid.Column="0"
                  Orientation="Horizontal"
-                 ItemHeight="28">
+                 ItemHeight="30">
         <Button x:Name="ImportFileButton"
                 MinWidth="76"
                 Padding="10,4"
@@ -146,9 +146,9 @@
 
       <Button x:Name="ClassicToolStripAutoAliceButton"
               Grid.Column="1"
-              MinWidth="102"
-              Padding="10,4"
-              Margin="8,0,0,0"
+              MinWidth="116"
+              Padding="12,4"
+              Margin="10,0,0,0"
               VerticalAlignment="Top"
               Content="Auto ALICE"
               ToolTip.Tip="Auto ALICE"
@@ -161,9 +161,9 @@
               IsVisible="False"
               BorderBrush="{DynamicResource ChummerShellBorderBrush}"
               BorderThickness="1"
-              CornerRadius="3"
+              CornerRadius="6"
               Background="{DynamicResource ChummerShellSurfaceAltBrush}"
-              Padding="8,3"
+              Padding="10,4"
               HorizontalAlignment="Left"
               VerticalAlignment="Center">
         <TextBlock x:Name="StatusText"

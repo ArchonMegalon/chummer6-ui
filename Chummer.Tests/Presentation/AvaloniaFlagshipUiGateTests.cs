@@ -598,7 +598,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(visualGateText, ".codex-studio/out/chummer5a-parity-tester/live/screenshots/actual");
         StringAssert.Contains(visualGateText, ".codex-studio/out/ui-flagship-release-gate-screenshots-debug");
         StringAssert.Contains(layoutGateText, "defaultSingleRunnerKeepsWorkspaceChromeCollapsed");
-        StringAssert.Contains(appAxamlText, "FontFamily\" Value=\"Trebuchet MS,Verdana,Geneva,Arial\"");
+        StringAssert.Contains(appAxamlText, "FontFamily\" Value=\"Segoe UI,Verdana,Arial\"");
         StringAssert.Contains(toolStripText, "x:Name=\"DesktopHomeButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"ImportFileButton\"");
         StringAssert.Contains(toolStripText, "x:Name=\"SaveButton\"");
@@ -3875,8 +3875,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         Dictionary<string, Color> light = themeBrushes["Light"];
         Dictionary<string, Color> dark = themeBrushes["Dark"];
 
-        Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
-        Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellAccentButtonBrush"]));
+        Assert.AreEqual("#123F7A", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
+        Assert.AreEqual("#123F7A", ToHex(light["ChummerShellAccentButtonBrush"]));
         Assert.AreEqual("#1C4A2D", ToHex(dark["ChummerShellActiveMenuBackgroundBrush"]));
         Assert.AreEqual("#90C39A", ToHex(dark["ChummerShellActiveMenuBorderBrush"]));
 
