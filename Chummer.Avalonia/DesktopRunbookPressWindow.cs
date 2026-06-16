@@ -15,6 +15,8 @@ internal sealed class DesktopRunbookPressWindow : Window
     internal static DesktopRunbookPressWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasPublicationContext => (_campaignSummary?.CreatorPublications.Count ?? 0) > 0;
+    private bool HasCampaignContext => (_campaignSummary?.Campaigns.Count ?? 0) > 0;
 
     private DesktopRunbookPressWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
@@ -93,7 +95,7 @@ internal sealed class DesktopRunbookPressWindow : Window
             "Publication assembly",
             "Runbook Press owns campaign-book assembly, publication posture, and the jump back into the signed-in creator desk.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }
@@ -123,7 +125,7 @@ internal sealed class DesktopRunbookPressWindow : Window
             "Campaign books and modules",
             "Keep the current campaign, dossier lane, and module follow-through visible without collapsing Runbook Press into generic creator chrome.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasCampaignContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", () => DesktopCreatorOsWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open community hub", () => DesktopCommunityHubWindow.ShowAsync(this, _headId)));
     }
@@ -216,36 +218,44 @@ internal sealed class DesktopRunbookPressWindow : Window
         entryList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6
+        };
+
+        if (entries.Count > 0)
+        {
+            details.Children.Add(detailModeCombo);
+            details.Children.Add(entryList);
+            details.Children.Add(new Border
+            {
+                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10),
+                Child = new StackPanel
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        selectedEntryTitleText,
+                        detailText,
+                        selectedEntryFollowUpText
+                    }
+                }
+            });
+        }
+        else
+        {
+            details.Children.Add(detailText);
+            details.Children.Add(selectedEntryFollowUpText);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
             "Runbook Press should separate publication assembly, campaign context, and distribution posture instead of collapsing them into one summary.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    entryList,
-                    new Border
-                    {
-                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(4),
-                        Padding = new Thickness(10),
-                        Child = new StackPanel
-                        {
-                            Spacing = 4,
-                            Children =
-                            {
-                                selectedEntryTitleText,
-                                detailText,
-                                selectedEntryFollowUpText
-                            }
-                        }
-                    }
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open publication desk", () => DesktopCreatorPublicationWindow.ShowAsync(this, _headId), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", () => DesktopJackpointWindow.ShowAsync(this, _headId)));
     }

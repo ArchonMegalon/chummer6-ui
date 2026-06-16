@@ -12,6 +12,8 @@ internal sealed class DesktopJackpointWindow : Window
 {
     internal static DesktopJackpointWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasPublicationContext => (_campaignSummary?.CreatorPublications.Count ?? 0) > 0;
+    private bool HasDossierContext => (_campaignSummary?.Dossiers.Count ?? 0) > 0;
 
     private DesktopJackpointWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +89,7 @@ internal sealed class DesktopJackpointWindow : Window
             "Publication desk",
             "Use the signed-in Jackpoint desk for the current publication lane, then widen into the public route only when you need the public-facing network posture.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: HasPublicationContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/jackpoint")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open creator desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/creator")));
     }
@@ -137,16 +139,20 @@ internal sealed class DesktopJackpointWindow : Window
                 DesktopHorizonWindowScaffold.CreateDetailText(leadDossier is null
                     ? "No runner dossier is currently leading the Jackpoint lane."
                     : $"{leadDossier.RunnerHandle} is the current lead dossier with status {leadDossier.Status}."),
-                detailModeCombo,
                 detailText
             }
         };
+
+        if (HasDossierContext)
+        {
+            details.Children.Insert(details.Children.Count - 1, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Dossiers and briefings",
             "Keep the signed-in briefings and dossier posture visible without hunting through multiple browser routes.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: HasDossierContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Jackpoint", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/jackpoint")));
     }

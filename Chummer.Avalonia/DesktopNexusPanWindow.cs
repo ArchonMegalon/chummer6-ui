@@ -13,6 +13,8 @@ internal sealed class DesktopNexusPanWindow : Window
     internal static DesktopNexusPanWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasContinuityContext => (_campaignSummary?.Workspaces.Count ?? 0) > 0;
+    private bool HasAccessContext => _campaignSummary is not null && (((_campaignSummary?.Workspaces.Count ?? 0) > 0) || ((_campaignSummary?.Runs.Count ?? 0) > 0) || ((_campaignSummary?.Campaigns.Count ?? 0) > 0));
 
     private DesktopNexusPanWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
@@ -90,7 +92,7 @@ internal sealed class DesktopNexusPanWindow : Window
             "Continuity posture",
             "Keep the current continuity and return-safe state visible before widening into account devices or browser-only recovery flows.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)));
     }
@@ -114,7 +116,7 @@ internal sealed class DesktopNexusPanWindow : Window
             "Devices and access",
             "NEXUS-PAN keeps the devices-and-access rail attached to continuity instead of treating it like a separate support shelf.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: HasAccessContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open support", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/support")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public continuity", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/continuity")));
     }
@@ -213,36 +215,44 @@ internal sealed class DesktopNexusPanWindow : Window
         workspaceList.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6
+        };
+
+        if (workspaces.Count > 0)
+        {
+            details.Children.Add(detailModeCombo);
+            details.Children.Add(workspaceList);
+            details.Children.Add(new Border
+            {
+                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(10),
+                Child = new StackPanel
+                {
+                    Spacing = 4,
+                    Children =
+                    {
+                        selectedWorkspaceTitleText,
+                        detailText,
+                        selectedWorkspaceFollowUpText
+                    }
+                }
+            });
+        }
+        else
+        {
+            details.Children.Add(detailText);
+            details.Children.Add(selectedWorkspaceFollowUpText);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
             "NEXUS-PAN should show continuity, access, and recovery posture without forcing the user to infer which lane matters.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    workspaceList,
-                    new Border
-                    {
-                        BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(4),
-                        Padding = new Thickness(10),
-                        Child = new StackPanel
-                        {
-                            Spacing = 4,
-                            Children =
-                            {
-                                selectedWorkspaceTitleText,
-                                detailText,
-                                selectedWorkspaceFollowUpText
-                            }
-                        }
-                    }
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)));
     }

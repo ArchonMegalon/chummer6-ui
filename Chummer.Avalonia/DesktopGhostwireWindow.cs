@@ -12,6 +12,8 @@ internal sealed class DesktopGhostwireWindow : Window
 {
     internal static DesktopGhostwireWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasReplayContext => (_campaignSummary?.Runs.Count ?? 0) > 0;
+    private bool HasAfterActionContext => (_campaignSummary?.Runs.Count ?? 0) > 0 || (_campaignSummary?.Workspaces.Count ?? 0) > 0;
 
     private DesktopGhostwireWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +89,7 @@ internal sealed class DesktopGhostwireWindow : Window
             "Replay timeline",
             "Keep the replay posture attached to the current governed run instead of treating it as a dead document link.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open replay timeline", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire/after-action/replay_timeline.md"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open replay timeline", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire/after-action/replay_timeline.md"), isPrimary: HasReplayContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")));
     }
@@ -126,16 +128,20 @@ internal sealed class DesktopGhostwireWindow : Window
             Spacing = 6,
             Children =
             {
-                detailModeCombo,
                 detailText
             }
         };
+
+        if (HasAfterActionContext)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "After-action chain",
             "The consequence chain and after-action report stay one move away from replay instead of being scattered into separate browser-only artifacts.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open after-action report", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire/after-action/after_action_report.md"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open after-action report", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire/after-action/after_action_report.md"), isPrimary: HasAfterActionContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open consequence chain", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire/after-action/consequence_chain.md")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ghostwire")));
     }

@@ -11,6 +11,7 @@ internal sealed class DesktopOnrampWindow : Window
 {
     internal static DesktopOnrampWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasStarterContext => (_campaignSummary?.Workspaces.Count ?? 0) > 0 || (_campaignSummary?.Runs.Count ?? 0) > 0;
 
     private DesktopOnrampWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -82,7 +83,7 @@ internal sealed class DesktopOnrampWindow : Window
             "Starter lane",
             "Keep the starter workspace, first-session posture, and next safe action visible before escalating into the full desktop shell.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in starter desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open signed-in starter desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites/open"), isPrimary: HasStarterContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
     }
@@ -119,19 +120,25 @@ internal sealed class DesktopOnrampWindow : Window
         detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         RefreshDetail();
 
+        StackPanel details = new()
+        {
+            Spacing = 6,
+            Children =
+            {
+                detailText
+            }
+        };
+
+        if (HasStarterContext)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Recovery and participation",
             "Onramp should bridge starter, recovery, and no-desktop participation instead of acting like a one-shot onboarding page.",
-            new StackPanel
-            {
-                Spacing = 6,
-                Children =
-                {
-                    detailModeCombo,
-                    detailText
-                }
-            },
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp"), isPrimary: true),
+            details,
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Onramp", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/onramp"), isPrimary: HasStarterContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Ready for Tonight", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ready")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open mobile and PWA", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/mobile")));
     }

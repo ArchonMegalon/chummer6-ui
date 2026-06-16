@@ -12,6 +12,7 @@ internal sealed class DesktopCommunityHubWindow : Window
 {
     internal static DesktopCommunityHubWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasOperationsContext => (_campaignSummary?.CommunityOperations.Count ?? 0) > 0;
 
     private DesktopCommunityHubWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +88,7 @@ internal sealed class DesktopCommunityHubWindow : Window
             "Open-run network",
             "Use the signed-in board for operator groups and network posture, then widen into the public Community lane only when needed.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account board", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account board", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community"), isPrimary: HasOperationsContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/community")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open organizer operations", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/community/open")));
     }
@@ -149,14 +150,17 @@ internal sealed class DesktopCommunityHubWindow : Window
             }
         }
 
-        details.Children.Add(detailModeCombo);
+        if (campaignNames.Count > 0 || HasOperationsContext)
+        {
+            details.Children.Add(detailModeCombo);
+        }
         details.Children.Add(detailText);
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Campaign groups",
             "Keep the campaign-group layer visible before deciding whether to jump into Runsite, Run Control, or Black Ledger.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/community"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Community", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/community"), isPrimary: campaignNames.Count > 0 || HasOperationsContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Runsite", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Black Ledger", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/ledger")));
     }

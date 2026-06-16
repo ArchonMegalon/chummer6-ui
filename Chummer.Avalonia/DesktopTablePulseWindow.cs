@@ -12,6 +12,8 @@ internal sealed class DesktopTablePulseWindow : Window
 {
     internal static DesktopTablePulseWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasRunContext => (_campaignSummary?.Runs.Count ?? 0) > 0;
+    private bool HasAftermathContext => (_campaignSummary?.Workspaces.Count ?? 0) > 0;
 
     private DesktopTablePulseWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +89,7 @@ internal sealed class DesktopTablePulseWindow : Window
             "Live heat",
             "Keep the live notification lane and active run pressure reachable from a single native surface.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open live heat", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/notifications"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open live heat", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/ledger/notifications"), isPrimary: HasRunContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Run Control", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/run-control")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/table-pulse")));
     }
@@ -135,16 +137,20 @@ internal sealed class DesktopTablePulseWindow : Window
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace is null
                     ? "No workspace is currently pinned for aftermath follow-through."
                     : $"{leadWorkspace.CampaignName} is the current lead workspace."),
-                detailModeCombo,
                 detailText
             }
         };
+
+        if (HasAftermathContext)
+        {
+            details.Children.Insert(details.Children.Count - 1, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Aftermath packages",
             "Move from live pressure into aftermath closure without losing the signed-in work rail.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open aftermath", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/work#aftermath-packages"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open aftermath", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/work#aftermath-packages"), isPrimary: HasAftermathContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/table-pulse")));
     }
