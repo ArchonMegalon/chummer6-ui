@@ -442,6 +442,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
     private IReadOnlyList<Button> CreateOperationsActions()
     {
+        bool canOpenPublicProofShelf = DesktopInstallLinkingRuntime.IsClaimed(_installState) && HasPublishedCreatorPublication();
         List<Button> actions =
         [
             CreateButton("Review Organizer Roles", OpenRolesSurfaceAsync, isPrimary: true),
@@ -451,7 +452,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
             CreateButton("Open Roster Movement", OpenRosterMovementAsync)
         ];
 
-        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        if (canOpenPublicProofShelf)
         {
             actions.Add(CreateButton("Open Public Proof Shelf", () => Task.FromResult(OpenArtifactShelfView("public"))));
         }
@@ -476,13 +477,17 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
         [
             CreateButton("Open Organizer Operations", OpenOrganizerOperationsSurfaceAsync, isPrimary: true, closeWindow: true),
             CreateButton("Open Creator Publication", OpenCreatorPublicationAsync),
-            CreateButton("Review Moderation Flow", OpenCreatorModerationAsync),
             CreateButton("Open Rule Environment Studio", OpenRuleEnvironmentStudioAsync),
             CreateButton(S("desktop.home.button.open_campaign_primer"), OpenCampaignPrimerArtifact),
             CreateButton(S("desktop.home.button.open_mission_briefing"), OpenMissionBriefingArtifact)
         ];
 
-        if (DesktopInstallLinkingRuntime.IsClaimed(_installState))
+        if (HasModerationContext())
+        {
+            actions.Insert(2, CreateButton("Review Moderation Flow", OpenCreatorModerationAsync));
+        }
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(_installState) && HasPublishedCreatorPublication())
         {
             actions.Add(CreateButton("Open Creator Artifact Shelf", () => Task.FromResult(OpenArtifactShelfView("creator"))));
         }
@@ -653,6 +658,17 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
 
     private bool HasPortableExchangePreview()
         => _portableExchangePreview is not null;
+
+    private bool HasPublishedCreatorPublication()
+        => _leadPublication is not null
+           && (string.Equals(_leadPublication.PublicationStatus, "published", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(_leadPublication.PublicationStatus, "ready", StringComparison.OrdinalIgnoreCase));
+
+    private bool HasModerationContext()
+        => _leadPublication is not null
+           && (!string.IsNullOrWhiteSpace(_leadPublication.ModerationSummary)
+               || !string.IsNullOrWhiteSpace(_leadPublication.TrustSummary)
+               || !string.IsNullOrWhiteSpace(_leadPublication.TrustBand));
 
     private string ResolveOrganizerLaneSummary()
         => FirstNonBlank(

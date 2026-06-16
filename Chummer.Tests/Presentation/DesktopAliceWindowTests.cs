@@ -16,6 +16,8 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "GetBuildPathSuggestionsAsync");
         StringAssert.Contains(source, "GetBuildPathPreviewAsync");
         StringAssert.Contains(source, "BuildLabHandoffs");
+        StringAssert.Contains(source, "HasHandoffContext");
+        StringAssert.Contains(source, "HasBuildPathContext");
         StringAssert.Contains(source, "AliceBuildPathCombo");
         StringAssert.Contains(source, "AliceProposalModeCombo");
         StringAssert.Contains(source, "OrderByDescending(item => item.UpdatedAtUtc)");
@@ -35,5 +37,6 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None)");
         StringAssert.Contains(source, "GetBuildPathPreviewAsync(");
         StringAssert.Contains(source, "Build path compare stays native");
+        StringAssert.Contains(source, "No preview-backed build path suggestions are currently available");
     }
 }

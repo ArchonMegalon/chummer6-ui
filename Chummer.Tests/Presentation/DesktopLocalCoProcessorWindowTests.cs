@@ -13,6 +13,7 @@ public sealed class DesktopLocalCoProcessorWindowTests
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopLocalCoProcessorWindow.cs"));
 
         StringAssert.Contains(source, "TryReadAccountCampaignSummaryAsync");
+        StringAssert.Contains(source, "HasCapabilityContext");
         StringAssert.Contains(source, "RulesNavigator");
         StringAssert.Contains(source, "BuildLabHandoffs");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/local-co-processor\")");

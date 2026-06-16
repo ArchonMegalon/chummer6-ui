@@ -12,6 +12,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
 {
     internal static DesktopRunnerPassportWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasIdentityContext => (_campaignSummary?.Dossiers.Count ?? 0) > 0 || (_campaignSummary?.Crews.Count ?? 0) > 0;
 
     private DesktopRunnerPassportWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -87,7 +88,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
             "Identity network",
             "Keep runner identity, ownership, and account-bound follow-through in one native surface.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/passport"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/passport"), isPrimary: HasIdentityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/passport")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Jackpoint", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint")));
     }
@@ -96,46 +97,49 @@ internal sealed class DesktopRunnerPassportWindow : Window
     {
         IReadOnlyList<string> detailModes = ["Access", "Identity"];
 
-        ComboBox detailModeCombo = new()
-        {
-            Name = "RunnerPassportDetailModeCombo",
-            MinWidth = 220,
-            ItemsSource = detailModes,
-            SelectedIndex = 0
-        };
-
         TextBlock detailText = new()
         {
             Name = "RunnerPassportDetailText",
             TextWrapping = TextWrapping.Wrap
         };
 
+        ComboBox? detailModeCombo = null;
         void RefreshDetail()
         {
-            string mode = detailModeCombo.SelectedItem?.ToString() ?? "Access";
+            string mode = detailModeCombo?.SelectedItem?.ToString() ?? "Access";
             detailText.Text = mode == "Identity"
                 ? $"Identity-linked dossiers: {_campaignSummary?.Dossiers.Count ?? 0}. Crews: {_campaignSummary?.Crews.Count ?? 0}."
                 : "Device/access follow-through stays one move away from the account-bound passport desk.";
         }
 
-        detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        if (HasIdentityContext)
+        {
+            detailModeCombo = new ComboBox
+            {
+                Name = "RunnerPassportDetailModeCombo",
+                MinWidth = 220,
+                ItemsSource = detailModes,
+                SelectedIndex = 0
+            };
+            detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        }
         RefreshDetail();
 
         StackPanel details = new()
         {
             Spacing = 6,
-            Children =
-            {
-                detailModeCombo,
-                detailText
-            }
+            Children = { detailText }
         };
+        if (detailModeCombo is not null)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Device and access follow-through",
             "Runner Passport is stronger when the device/access lane is one move away instead of hidden behind browser chrome.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/access#desktop"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/access#desktop"), isPrimary: HasIdentityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open passport desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/passport")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/passport")));
     }

@@ -12,6 +12,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
 {
     internal static DesktopLocalCoProcessorWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
+    private bool HasCapabilityContext => (_campaignSummary?.RulesNavigator.Count ?? 0) > 0 || (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
 
     private DesktopLocalCoProcessorWindow(AccountCampaignSummary? campaignSummary)
     {
@@ -81,7 +82,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
             "Capability matrix",
             "The native desk keeps capability visibility tied to real account context instead of vague local acceleration promises.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: HasCapabilityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/local-co-processor")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Quicksilver", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver")));
     }
@@ -90,46 +91,49 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
     {
         IReadOnlyList<string> detailModes = ["Policy", "Capability"];
 
-        ComboBox detailModeCombo = new()
-        {
-            Name = "LocalCoProcessorDetailModeCombo",
-            MinWidth = 220,
-            ItemsSource = detailModes,
-            SelectedIndex = 0
-        };
-
         TextBlock detailText = new()
         {
             Name = "LocalCoProcessorDetailText",
             TextWrapping = TextWrapping.Wrap
         };
 
+        ComboBox? detailModeCombo = null;
         void RefreshDetail()
         {
-            string mode = detailModeCombo.SelectedItem?.ToString() ?? "Policy";
+            string mode = detailModeCombo?.SelectedItem?.ToString() ?? "Policy";
             detailText.Text = mode == "Capability"
                 ? $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Build handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}."
                 : "No hidden authority leap from local acceleration into rules, payment, or account truth.";
         }
 
-        detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        if (HasCapabilityContext)
+        {
+            detailModeCombo = new ComboBox
+            {
+                Name = "LocalCoProcessorDetailModeCombo",
+                MinWidth = 220,
+                ItemsSource = detailModes,
+                SelectedIndex = 0
+            };
+            detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
+        }
         RefreshDetail();
 
         StackPanel details = new()
         {
             Spacing = 6,
-            Children =
-            {
-                detailModeCombo,
-                detailText
-            }
+            Children = { detailText }
         };
+        if (detailModeCombo is not null)
+        {
+            details.Children.Insert(0, detailModeCombo);
+        }
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Policy boundary",
             "Keep the policy boundary explicit: no hidden authority leap from local acceleration into rules or payment truth.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open policy desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open policy desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor"), isPrimary: HasCapabilityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public boundary", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/local-co-processor")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice")));
     }

@@ -18,6 +18,8 @@ internal sealed class DesktopAliceWindow : Window
     private readonly AccountCampaignSummary? _campaignSummary;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
     private readonly IReadOnlyList<DesktopBuildPathCandidate> _buildPathCandidates;
+    private bool HasHandoffContext => (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
+    private bool HasBuildPathContext => _buildPathCandidates.Count > 0;
 
     private DesktopAliceWindow(
         AccountCampaignSummary? campaignSummary,
@@ -131,7 +133,7 @@ internal sealed class DesktopAliceWindow : Window
                 "No governed build handoff is currently available in the signed-in account context.",
                 null,
                 "AliceLeadHandoffCard",
-                CreateButton("Open ALICE account rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceOpenAccountRailButton"),
+                CreateButton("Open ALICE account rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountRailButton"),
                 CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicButton"));
         }
 
@@ -285,8 +287,10 @@ internal sealed class DesktopAliceWindow : Window
             body.Children.Add(CreateDetailText("No account-scoped build handoffs are available yet."));
         }
 
-        body.Children.Add(detailModeCombo);
-        body.Children.Add(handoffList);
+        if (HasHandoffContext)
+        {
+            body.Children.Add(detailModeCombo);
+            body.Children.Add(handoffList);
             body.Children.Add(
                 new Border
                 {
@@ -306,6 +310,7 @@ internal sealed class DesktopAliceWindow : Window
                         }
                     }
                 });
+        }
 
         return CreateCard(
             "Account handoffs",
@@ -314,7 +319,7 @@ internal sealed class DesktopAliceWindow : Window
                 : $"{handoffs.Count} governed build handoff(s) are available on the ALICE rail.",
             body,
             "AliceAccountHandoffsCard",
-            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceOpenAccountFromListButton"));
+            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasHandoffContext, name: "AliceOpenAccountFromListButton"));
     }
 
     private Control CreateBuildPathCard()
@@ -439,27 +444,30 @@ internal sealed class DesktopAliceWindow : Window
             body.Children.Add(CreateDetailText("No preview-backed build path suggestions are currently available for the active desktop context."));
         }
 
-        body.Children.Add(proposalModeCombo);
-        body.Children.Add(buildPathCombo);
-        body.Children.Add(
-            new Border
-            {
-                Name = "AliceSelectedBuildPathCard",
-                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(10),
-                Child = new StackPanel
+        if (HasBuildPathContext)
+        {
+            body.Children.Add(proposalModeCombo);
+            body.Children.Add(buildPathCombo);
+            body.Children.Add(
+                new Border
                 {
-                    Spacing = 4,
-                    Children =
+                    Name = "AliceSelectedBuildPathCard",
+                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10),
+                    Child = new StackPanel
                     {
-                        selectedBuildPathTitleText,
-                        selectedBuildPathDetailText,
-                        selectedBuildPathWarningsText
+                        Spacing = 4,
+                        Children =
+                        {
+                            selectedBuildPathTitleText,
+                            selectedBuildPathDetailText,
+                            selectedBuildPathWarningsText
+                        }
                     }
-                }
-            });
+                });
+        }
 
         return CreateCard(
             "Proposal studio",
@@ -468,7 +476,7 @@ internal sealed class DesktopAliceWindow : Window
                 : $"{_buildPathCandidates.Count} preview-backed build path candidate(s) are available on native ALICE rails.",
             body,
             "AliceBuildPathCard",
-            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceOpenAccountFromBuildPathsButton"),
+            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasBuildPathContext, name: "AliceOpenAccountFromBuildPathsButton"),
             CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicFromBuildPathsButton"));
     }
 
