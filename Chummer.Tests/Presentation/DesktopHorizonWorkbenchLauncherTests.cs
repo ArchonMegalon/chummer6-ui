@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Chummer.Avalonia;
+using Chummer.Contracts.Product;
 using Chummer.Presentation.Overview;
 
 namespace Chummer.Tests.Presentation;
@@ -42,10 +42,11 @@ public sealed class DesktopHorizonWorkbenchLauncherTests
     [TestMethod]
     public void Desktop_horizon_workbench_catalog_delegates_to_shared_product_spine()
     {
-        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
-        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopHorizonWorkbenchCatalog.cs"));
-
-        StringAssert.Contains(source, "ProductSpineCatalog.ListDesktopHorizons()");
-        StringAssert.Contains(source, "ProductSpineCatalog.ListKarmaForgeTargets()");
+        CollectionAssert.AreEqual(
+            ProductSpineCatalog.ListDesktopHorizons().Select(static entry => entry.Id).ToArray(),
+            DesktopHorizonWorkbenchCatalog.ListEntries().Select(static entry => entry.Id).ToArray());
+        CollectionAssert.AreEqual(
+            ProductSpineCatalog.ListKarmaForgeTargets().Select(static target => target.RelativeHref).ToArray(),
+            DesktopHorizonWorkbenchCatalog.ListKarmaForgeTargets().Select(static target => target.RelativeHref).ToArray());
     }
 }

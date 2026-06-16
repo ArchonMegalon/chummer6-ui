@@ -1,4 +1,6 @@
 using System.IO;
+using System.Linq;
+using Chummer.Contracts.Product;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -13,8 +15,6 @@ public sealed class DesktopHorizonsWindowTests
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonsWindow.cs"));
 
         StringAssert.Contains(source, "DesktopHorizonsWindow");
-        StringAssert.Contains(source, "DesktopHorizonWorkbenchCatalog.ListEntries()");
-        StringAssert.Contains(source, "DesktopHorizonWorkbenchCatalog.ListKarmaForgeTargets()");
         StringAssert.Contains(source, "CreateKarmaForgeCard()");
         StringAssert.Contains(source, "CreateHorizonCard(");
         StringAssert.Contains(source, "CreateAliceCard(");
@@ -38,5 +38,9 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/participate/karma-forge#karma-forge-intake\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/packages\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/horizons\")");
+        Assert.IsTrue(ProductSpineCatalog.ListDesktopHorizons().Any(entry => string.Equals(entry.Id, "alice", StringComparison.Ordinal)));
+        CollectionAssert.AreEqual(
+            new[] { "/packages", "/account/packages", "/participate/karma-forge#karma-forge-intake" },
+            ProductSpineCatalog.ListKarmaForgeTargets().Select(static target => target.RelativeHref).ToArray());
     }
 }
