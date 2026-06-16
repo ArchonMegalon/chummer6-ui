@@ -17,3 +17,4 @@ global using BuildLabVariantProjection = Chummer.Contracts.Presentation.BuildLab
 global using BuildLabVariantWarning = Chummer.Contracts.Presentation.BuildLabVariantWarning;
 global using BuildLabWarningKinds = Chummer.Contracts.Presentation.BuildLabWarningKinds;
 global using IEngineEvaluator = Chummer.Contracts.Rulesets.IRulesetCapabilityHost;
+global using Chummer.Contracts.Product;

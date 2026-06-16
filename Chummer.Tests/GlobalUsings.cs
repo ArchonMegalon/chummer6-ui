@@ -4,6 +4,7 @@ global using System.Linq;
 global using AngleSharp.Dom;
 global using Chummer;
 global using Chummer.Contracts.Content;
+global using Chummer.Contracts.Product;
 global using Chummer.Contracts.Presentation;
 global using Chummer.Rulesets.Hosting;
 global using Chummer.Rulesets.Hosting.Presentation;

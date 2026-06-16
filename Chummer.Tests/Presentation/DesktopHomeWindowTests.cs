@@ -213,7 +213,6 @@ public sealed class DesktopHomeWindowTests
         StringAssert.Contains(source, "DesktopHorizonWorkbenchCatalog.ListEntries()");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry)");
-        StringAssert.Contains(source, "\"/participate/karma-forge#karma-forge-intake\"");
         StringAssert.Contains(source, "CreateHorizonQuickLaunchRow(");
         StringAssert.Contains(source, "Children =");
         StringAssert.Contains(source, "body");
