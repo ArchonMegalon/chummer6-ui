@@ -15,9 +15,13 @@ public sealed class DesktopKarmaForgeWindowTests
         StringAssert.Contains(source, "IChummerClient");
         StringAssert.Contains(source, "GetAccountCampaignSummaryAsync");
         StringAssert.Contains(source, "BuildLabHandoffs.Count");
-        StringAssert.Contains(source, "DesktopHorizonWorkbenchCatalog.ListKarmaForgeTargets()");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/packages\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/participate/karma-forge#karma-forge-intake\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
+
+        IReadOnlyList<DesktopHorizonRouteOption> targets = ProductSpineCatalog.ListKarmaForgeTargets();
+        CollectionAssert.AreEqual(
+            new[] { "/packages", "/account/packages", "/participate/karma-forge#karma-forge-intake" },
+            targets.Select(static target => target.RelativeHref).ToArray());
     }
 }
