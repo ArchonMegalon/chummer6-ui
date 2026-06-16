@@ -8235,6 +8235,17 @@ public sealed class AvaloniaFlagshipUiGateTests
                 ownedWindow.Close();
             }
 
+            if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                foreach (Window window in desktop.Windows.ToArray())
+                {
+                    if (!ReferenceEquals(window, rootWindow))
+                    {
+                        window.Close();
+                    }
+                }
+            }
+
             Dispatcher.UIThread.RunJobs();
         }
 
