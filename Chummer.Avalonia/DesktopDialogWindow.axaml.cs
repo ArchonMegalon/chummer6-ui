@@ -280,23 +280,16 @@ public partial class DesktopDialogWindow : Window
             .Where(field => string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal)
                 || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal)
                 || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal))
+            .Where(field => !field.Id.Contains("SelectionTrail", StringComparison.Ordinal)
+                && !field.Id.Contains("FilterSummary", StringComparison.Ordinal)
+                && !field.Id.Contains("ResultCommands", StringComparison.Ordinal)
+                && !field.Id.Contains("CategoryCommands", StringComparison.Ordinal))
             .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
-            .ToArray();
-
-        DesktopDialogField[] lowerSummary = fields
-            .Where(field => !reservedIds.Contains(field.Id))
-            .Where(field => string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal)
-                || (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal) && field.IsReadOnly)
-                || field.Id.Contains("Commands", StringComparison.Ordinal)
-                || field.Id.Contains("Summary", StringComparison.Ordinal)
-                || field.Id.Contains("Trail", StringComparison.Ordinal))
-            .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
-            .Where(field => !rightDetails.Any(detail => string.Equals(detail.Id, field.Id, StringComparison.Ordinal)))
             .ToArray();
 
         StackPanel shell = new()
         {
-            Spacing = 14
+            Spacing = 10
         };
 
         if (topFields.Length > 0)
@@ -317,12 +310,12 @@ public partial class DesktopDialogWindow : Window
         };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), minHeight: 148));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), minHeight: 112));
         }
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateLegacySelectionCandidatePanel(candidateField, fields), minHeight: 248));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -338,7 +331,7 @@ public partial class DesktopDialogWindow : Window
 
         if (browseGridField is not null)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), minHeight: 188));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), minHeight: 132));
         }
 
         foreach (DesktopDialogField detailField in rightDetails)
@@ -355,12 +348,6 @@ public partial class DesktopDialogWindow : Window
         if (body.Children.Count > 0)
         {
             shell.Children.Add(body);
-        }
-
-        if (lowerSummary.Length > 0)
-        {
-            shell.Children.Add(CreateClassicSelectionFooterGroup(
-                lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), minHeight: ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
         return shell;
@@ -404,7 +391,7 @@ public partial class DesktopDialogWindow : Window
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(candidateField.Id),
             ItemsSource = items,
-            MinHeight = 320
+            MinHeight = 248
         };
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
@@ -459,29 +446,7 @@ public partial class DesktopDialogWindow : Window
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
             CornerRadius = default,
-            Padding = new Thickness(6),
-            Child = body
-        };
-    }
-
-    private static Border CreateClassicSelectionFooterGroup(params Control[] children)
-    {
-        StackPanel body = new()
-        {
-            Spacing = 6
-        };
-        foreach (Control child in children)
-        {
-            body.Children.Add(child);
-        }
-
-        return new Border
-        {
-            BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            CornerRadius = default,
-            Padding = new Thickness(6),
+            Padding = new Thickness(4),
             Child = body
         };
     }
@@ -490,7 +455,7 @@ public partial class DesktopDialogWindow : Window
     {
         StackPanel shell = new()
         {
-            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 8
+            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 5
         };
         if (!string.IsNullOrWhiteSpace(title))
         {
@@ -503,7 +468,7 @@ public partial class DesktopDialogWindow : Window
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
             CornerRadius = default,
-            Padding = new Thickness(6),
+            Padding = new Thickness(4),
             MinHeight = minHeight,
             Child = shell
         };
@@ -515,11 +480,12 @@ public partial class DesktopDialogWindow : Window
         {
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 0, 0, 4),
+            Padding = new Thickness(0, 0, 0, 3),
             Child = new TextBlock
             {
                 Text = title,
-                FontWeight = FontWeight.SemiBold
+                FontWeight = FontWeight.SemiBold,
+                FontSize = 12
             }
         };
     }
@@ -540,7 +506,7 @@ public partial class DesktopDialogWindow : Window
         TextBlock badge = new()
         {
             Text = count.ToString(CultureInfo.InvariantCulture),
-            FontSize = 11,
+            FontSize = 12,
             Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
@@ -572,6 +538,7 @@ public partial class DesktopDialogWindow : Window
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
+                    FontSize = 13,
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -582,7 +549,7 @@ public partial class DesktopDialogWindow : Window
             body.Children.Add(new TextBlock
             {
                 Text = meta,
-                FontSize = 11,
+                FontSize = 12,
                 Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -697,20 +664,20 @@ public partial class DesktopDialogWindow : Window
     {
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
         {
-            return 156d;
+            return 120d;
         }
 
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
         {
-            return 92d;
+            return 68d;
         }
 
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
-            return 132d;
+            return 92d;
         }
 
-        return field.IsMultiline ? 124d : 72d;
+        return field.IsMultiline ? 96d : 60d;
     }
 
     private sealed record SelectionCandidateItem(
@@ -1163,17 +1130,8 @@ public partial class DesktopDialogWindow : Window
 
         StackPanel shell = new()
         {
-            Spacing = 14
+            Spacing = 10
         };
-
-        Border overviewCard = CreateLegacySummaryCard(
-            "New Runner",
-            "Choose the ruleset, set the build method, and name the runner before the workspace opens.",
-            CreateSummaryMetricStrip(
-                CreateSummaryMetric("Ruleset", rulesetField.Options?.FirstOrDefault(option => string.Equals(option.Value, rulesetField.Value, StringComparison.Ordinal))?.Label ?? rulesetField.Value.ToUpperInvariant()),
-                CreateSummaryMetric("Build", buildMethodField.Options?.FirstOrDefault(option => string.Equals(option.Value, buildMethodField.Value, StringComparison.Ordinal))?.Label ?? buildMethodField.Value),
-                CreateSummaryMetric("Identity", "Name and alias")));
-        shell.Children.Add(overviewCard);
 
         Grid settingRow = new()
         {
@@ -1233,57 +1191,12 @@ public partial class DesktopDialogWindow : Window
         Grid.SetColumn(rulesetCombo, 1);
         rulesetRow.Children.Add(rulesetCombo);
 
-        Grid summaryRow = new()
-        {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,*"),
-            ColumnSpacing = 12
-        };
-        summaryRow.Children.Add(new TextBlock
-        {
-            Text = "Build Method",
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-        });
-        TextBlock buildMethodSummary = new()
-        {
-            Text = buildMethodCombo.SelectedItem is DesktopDialogFieldOption buildOption
-                ? buildOption.Label
-                : buildMethodField.Value,
-            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-        };
-        Grid.SetColumn(buildMethodSummary, 1);
-        summaryRow.Children.Add(buildMethodSummary);
-
-        TextBlock rulesetSummaryLabel = new()
-        {
-            Text = "Ruleset",
-            FontWeight = FontWeight.SemiBold,
-            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-        };
-        Grid.SetColumn(rulesetSummaryLabel, 2);
-        summaryRow.Children.Add(rulesetSummaryLabel);
-
-        TextBlock rulesetSummary = new()
-        {
-            Text = rulesetCombo.SelectedItem is DesktopDialogFieldOption rulesetOption
-                ? rulesetOption.Label
-                : rulesetField.Value.ToUpperInvariant(),
-            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
-        };
-        Grid.SetColumn(rulesetSummary, 3);
-        summaryRow.Children.Add(rulesetSummary);
-
         shell.Children.Add(CreateLegacyFieldGroup(
-            "Runner Identity",
-            CreateLegacyGroupLead("Use a stable runner name now. Alias can stay provisional."),
-            CreateSplitFieldRow(nameField, aliasField)));
-
-        shell.Children.Add(CreateLegacyFieldGroup(
-            "Select Build Method",
-            CreateLegacyGroupLead("Ruleset and build choice define the next workflow and starting constraints."),
+            "New Runner",
+            CreateLegacyGroupLead("Choose the ruleset, set the build method, and name the runner before the workspace opens."),
             settingRow,
             rulesetRow,
-            summaryRow));
+            CreateSplitFieldRow(nameField, aliasField)));
 
         return shell;
     }
@@ -1634,28 +1547,21 @@ public partial class DesktopDialogWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
-        Border summaryBorder = new()
-        {
-            Child = CreateLegacySummaryCard(
-                "Workflow Summary",
-                "The current BP path should read like a bounded next step, not a generic utility prompt.",
-                new StackPanel
-                {
-                    Spacing = 8,
-                    Children =
-                    {
-                        summaryText
-                    }
-                })
-        };
-
         return new StackPanel
         {
-            Spacing = 14,
+            Spacing = 10,
             Children =
             {
                 selectorBorder,
-                summaryBorder
+                new Border
+                {
+                    BorderThickness = new Thickness(1),
+                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+                    Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+                    CornerRadius = default,
+                    Padding = new Thickness(8, 6),
+                    Child = summaryText
+                }
             }
         };
     }
@@ -3276,15 +3182,15 @@ public partial class DesktopDialogWindow : Window
     {
         (double width, double height, double minWidth, double minHeight) size = dialogId switch
         {
-            "dialog.new_character" => (860d, 320d, 700d, 260d),
+            "dialog.new_character" => (820d, 250d, 680d, 220d),
             "dialog.new_character.priority_workflow" => (980d, 720d, 820d, 560d),
-            "dialog.new_character.karma_workflow" => (860d, 320d, 700d, 260d),
+            "dialog.new_character.karma_workflow" => (820d, 250d, 680d, 220d),
             "dialog.master_index" => (980d, 640d, 760d, 440d),
             "dialog.character_roster" => (900d, 620d, 700d, 420d),
             "dialog.global_settings" => (920d, 600d, 700d, 420d),
             _ when !string.IsNullOrWhiteSpace(dialogId)
                 && dialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
-                && dialogId.EndsWith("_add", StringComparison.Ordinal) => (1080d, 760d, 900d, 620d),
+                && dialogId.EndsWith("_add", StringComparison.Ordinal) => (1040d, 670d, 880d, 560d),
             _ => (860d, 560d, 640d, 360d)
         };
 

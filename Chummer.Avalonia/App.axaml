@@ -9,7 +9,7 @@
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#E3EAF3" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#111827" />
-          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#475364" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#334155" />
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#E7EDF5" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#F5F8FC" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#DEE8F6" />
@@ -42,7 +42,7 @@
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#050B16" />
           <SolidColorBrush x:Key="ChummerShellForegroundBrush" Color="#E5E7EB" />
-          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#CBD5E1" />
+          <SolidColorBrush x:Key="ChummerShellMutedForegroundBrush" Color="#D8E1EC" />
           <SolidColorBrush x:Key="ChummerShellChromeBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellChromeSubtleBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellChromeAccentBrush" Color="#172554" />
@@ -81,7 +81,7 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellWindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="FontFamily" Value="Segoe UI,Verdana,Arial" />
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="UserControl">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -91,7 +91,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="TextBlock.shell-kicker">
-      <Setter Property="FontSize" Value="10" />
+      <Setter Property="FontSize" Value="11" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
@@ -101,17 +101,17 @@
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-subtitle">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-section-title">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.shell-caption">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -120,7 +120,7 @@
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
     <Style Selector="TextBlock.shell-tab-label">
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="TextWrapping" Value="NoWrap" />
@@ -181,8 +181,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="10,3" />
-      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="MinHeight" Value="32" />
       <Setter Property="CornerRadius" Value="6" />
     </Style>
     <Style Selector="Button:pointerover">
@@ -226,7 +226,7 @@
       <Setter Property="Height" Value="16" />
     </Style>
     <Style Selector="TextBlock.tool-button-label">
-      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontSize" Value="12" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>

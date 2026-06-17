@@ -1568,6 +1568,7 @@ internal static class Program
 
     private sealed class InstallSplashForm : Form
     {
+        private const int ProgressTrackWidth = 624;
         private readonly Label _statusLabel;
         private readonly Label _elapsedLabel;
         private readonly Panel _progressFill;
@@ -1576,7 +1577,7 @@ internal static class Program
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(596, 244);
+            ClientSize = new Size(744, 336);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -1584,20 +1585,34 @@ internal static class Program
             ShowIcon = false;
             StartPosition = FormStartPosition.CenterScreen;
             Text = $"{displayName} Installer";
-            BackColor = Color.FromArgb(14, 19, 28);
+            BackColor = Color.FromArgb(9, 13, 20);
             ForeColor = Color.White;
 
             Panel accentBar = new()
             {
                 Dock = DockStyle.Top,
-                Height = 4,
+                Height = 3,
                 BackColor = Color.FromArgb(57, 196, 156)
+            };
+
+            Panel surface = new()
+            {
+                Dock = DockStyle.Fill,
+                Padding = new Padding(28, 28, 28, 24),
+                BackColor = Color.FromArgb(14, 19, 28)
+            };
+
+            Panel glyphTile = new()
+            {
+                Size = new Size(84, 84),
+                Location = new Point(0, 0),
+                BackColor = Color.FromArgb(22, 28, 40)
             };
 
             PictureBox appGlyph = new()
             {
-                Size = new Size(56, 56),
-                Location = new Point(0, 0),
+                Size = new Size(60, 60),
+                Location = new Point(12, 12),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.Transparent
             };
@@ -1609,11 +1624,12 @@ internal static class Program
             {
                 appGlyph.Visible = false;
             }
+            glyphTile.Controls.Add(appGlyph);
 
             Label eyebrowLabel = new()
             {
                 AutoSize = false,
-                Text = "CHUMMER",
+                Text = "WINDOWS INSTALLER",
                 Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(116, 223, 193),
                 Dock = DockStyle.Top,
@@ -1626,10 +1642,10 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = displayName,
-                Font = new Font("Segoe UI Semibold", 20F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 42,
+                Height = 48,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 4)
             };
@@ -1637,20 +1653,20 @@ internal static class Program
             Label copyLabel = new()
             {
                 AutoSize = false,
-                Text = "Installing files, wiring shortcuts, and preparing launch.",
-                Font = new Font("Segoe UI", 10.5F, FontStyle.Regular, GraphicsUnit.Point),
+                Text = "Unpacking the desktop, wiring shortcuts, and preparing first launch.",
+                Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 28,
+                Height = 42,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 0, 0, 14)
+                Margin = new Padding(0, 0, 0, 16)
             };
 
             _statusLabel = new Label
             {
                 AutoSize = false,
                 Text = "Preparing installer",
-                Font = new Font("Segoe UI", 11F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
                 Height = 28,
@@ -1661,9 +1677,10 @@ internal static class Program
             Panel progressTrack = new()
             {
                 Dock = DockStyle.Top,
-                Height = 16,
+                Height = 12,
                 BackColor = Color.FromArgb(33, 42, 58),
-                Margin = new Padding(0, 0, 0, 12)
+                Margin = new Padding(0, 0, 0, 14),
+                Width = ProgressTrackWidth
             };
 
             _progressFill = new Panel
@@ -1674,15 +1691,10 @@ internal static class Program
             };
             progressTrack.Controls.Add(_progressFill);
 
-            _progressValueLabel = new Label
+            Panel progressMetaRow = new()
             {
-                AutoSize = false,
-                Text = "Preparing…",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
-                ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Top,
                 Height = 22,
-                TextAlign = ContentAlignment.MiddleRight,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -1692,15 +1704,31 @@ internal static class Program
                 Text = "Elapsed: 0s",
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
-                Dock = DockStyle.Top,
+                Dock = DockStyle.Left,
+                Width = 160,
                 Height = 22,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
+            _progressValueLabel = new Label
+            {
+                AutoSize = false,
+                Text = "Preparing…",
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                ForeColor = Color.FromArgb(178, 190, 208),
+                Dock = DockStyle.Right,
+                Width = 120,
+                Height = 22,
+                TextAlign = ContentAlignment.MiddleRight
+            };
+
+            progressMetaRow.Controls.Add(_progressValueLabel);
+            progressMetaRow.Controls.Add(_elapsedLabel);
+
             Label hintLabel = new()
             {
                 AutoSize = false,
-                Text = "This can take a minute while the packaged desktop is unpacked and installed.",
+                Text = "This usually takes less than a minute.",
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
@@ -1711,7 +1739,7 @@ internal static class Program
             Panel textColumn = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(18, 0, 0, 0)
+                Padding = new Padding(22, 4, 0, 0)
             };
             textColumn.Controls.Add(copyLabel);
             textColumn.Controls.Add(titleLabel);
@@ -1720,24 +1748,24 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 74
+                Height = 92
             };
             heroRow.Controls.Add(textColumn);
-            heroRow.Controls.Add(appGlyph);
+            heroRow.Controls.Add(glyphTile);
 
             Panel body = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(24, 22, 24, 22)
+                Padding = new Padding(0)
             };
 
-            body.Controls.Add(_elapsedLabel);
             body.Controls.Add(hintLabel);
             body.Controls.Add(progressTrack);
-            body.Controls.Add(_progressValueLabel);
+            body.Controls.Add(progressMetaRow);
             body.Controls.Add(_statusLabel);
             body.Controls.Add(heroRow);
-            Controls.Add(body);
+            surface.Controls.Add(body);
+            Controls.Add(surface);
             Controls.Add(accentBar);
         }
 
@@ -1766,7 +1794,7 @@ internal static class Program
                 int boundedTotal = Math.Max(1, total.Value);
                 int boundedCompleted = Math.Max(0, Math.Min(completed ?? 0, boundedTotal));
                 int percent = (int)Math.Round((double)boundedCompleted / boundedTotal * 100d, MidpointRounding.AwayFromZero);
-                _progressFill.Width = Math.Max(8, (int)Math.Round(524d * percent / 100d, MidpointRounding.AwayFromZero));
+                _progressFill.Width = Math.Max(10, (int)Math.Round(ProgressTrackWidth * percent / 100d, MidpointRounding.AwayFromZero));
                 _progressValueLabel.Text = $"{percent}%";
                 return;
             }

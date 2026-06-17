@@ -186,23 +186,16 @@ public partial class CommandDialogPaneControl : UserControl
             .Where(field => string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Right, StringComparison.Ordinal)
                 || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal)
                 || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal))
+            .Where(field => !field.Id.Contains("SelectionTrail", StringComparison.Ordinal)
+                && !field.Id.Contains("FilterSummary", StringComparison.Ordinal)
+                && !field.Id.Contains("ResultCommands", StringComparison.Ordinal)
+                && !field.Id.Contains("CategoryCommands", StringComparison.Ordinal))
             .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
-            .ToArray();
-
-        DialogFieldDisplayItem[] lowerSummary = fields
-            .Where(field => !reservedIds.Contains(field.Id))
-            .Where(field => string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal)
-                || (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal) && field.IsReadOnly)
-                || field.Id.Contains("Commands", StringComparison.Ordinal)
-                || field.Id.Contains("Summary", StringComparison.Ordinal)
-                || field.Id.Contains("Trail", StringComparison.Ordinal))
-            .Where(field => !topFields.Any(top => string.Equals(top.Id, field.Id, StringComparison.Ordinal)))
-            .Where(field => !rightDetails.Any(detail => string.Equals(detail.Id, field.Id, StringComparison.Ordinal)))
             .ToArray();
 
         StackPanel shell = new()
         {
-            Spacing = 14
+            Spacing = 10
         };
 
         if (topFields.Length > 0)
@@ -219,12 +212,12 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel leftColumn = new() { Spacing = 10 };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), 148));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), 112));
         }
 
         if (candidateField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateSelectionCandidatePanel(candidateField, fields), 320));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard("Available", CreateSelectionCandidatePanel(candidateField, fields), 248));
         }
 
         if (leftColumn.Children.Count > 0)
@@ -236,7 +229,7 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel rightColumn = new() { Spacing = 10 };
         if (browseGridField is not null)
         {
-            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), 188));
+            rightColumn.Children.Add(CreateSelectionSurfaceCard(browseGridField.Label, CreateFieldControl(browseGridField), 132));
         }
 
         foreach (DialogFieldDisplayItem detailField in rightDetails)
@@ -253,12 +246,6 @@ public partial class CommandDialogPaneControl : UserControl
         if (body.Children.Count > 0)
         {
             shell.Children.Add(body);
-        }
-
-        if (lowerSummary.Length > 0)
-        {
-            shell.Children.Add(CreateClassicSelectionFooterGroup(
-                lowerSummary.Select(field => CreateSelectionSurfaceCard(field.Label, CreateFieldControl(field), ResolveSelectionPanelMinHeight(field))).ToArray()));
         }
 
         return shell;
@@ -457,29 +444,7 @@ public partial class CommandDialogPaneControl : UserControl
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
             CornerRadius = default,
-            Padding = new Thickness(6),
-            Child = body
-        };
-    }
-
-    private static Border CreateClassicSelectionFooterGroup(params Control[] children)
-    {
-        StackPanel body = new()
-        {
-            Spacing = 6
-        };
-        foreach (Control child in children)
-        {
-            body.Children.Add(child);
-        }
-
-        return new Border
-        {
-            BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            CornerRadius = default,
-            Padding = new Thickness(6),
+            Padding = new Thickness(4),
             Child = body
         };
     }
@@ -488,7 +453,7 @@ public partial class CommandDialogPaneControl : UserControl
     {
         StackPanel shell = new()
         {
-            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 8
+            Spacing = string.IsNullOrWhiteSpace(title) ? 0 : 5
         };
         if (!string.IsNullOrWhiteSpace(title))
         {
@@ -501,7 +466,7 @@ public partial class CommandDialogPaneControl : UserControl
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
             CornerRadius = default,
-            Padding = new Thickness(6),
+            Padding = new Thickness(4),
             MinHeight = minHeight,
             Child = shell
         };
@@ -513,11 +478,12 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 0, 0, 4),
+            Padding = new Thickness(0, 0, 0, 3),
             Child = new TextBlock
             {
                 Text = title,
-                FontWeight = FontWeight.SemiBold
+                FontWeight = FontWeight.SemiBold,
+                FontSize = 12
             }
         };
     }
@@ -548,7 +514,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Name = DesktopDialogAccessibility.BuildFieldInputName(candidateField.Id),
             ItemsSource = items,
-            MinHeight = 320
+            MinHeight = 248
         };
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
@@ -595,7 +561,7 @@ public partial class CommandDialogPaneControl : UserControl
         TextBlock badge = new()
         {
             Text = count.ToString(CultureInfo.InvariantCulture),
-            FontSize = 11,
+            FontSize = 12,
             Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
@@ -627,6 +593,7 @@ public partial class CommandDialogPaneControl : UserControl
                 {
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
+                    FontSize = 13,
                     TextWrapping = TextWrapping.Wrap
                 }
             }
@@ -637,7 +604,7 @@ public partial class CommandDialogPaneControl : UserControl
             body.Children.Add(new TextBlock
             {
                 Text = meta,
-                FontSize = 11,
+                FontSize = 12,
                 Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
                 TextWrapping = TextWrapping.Wrap
             });
@@ -740,20 +707,20 @@ public partial class CommandDialogPaneControl : UserControl
     {
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
         {
-            return 156d;
+            return 120d;
         }
 
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Snippet, StringComparison.Ordinal))
         {
-            return 92d;
+            return 68d;
         }
 
         if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal))
         {
-            return 132d;
+            return 92d;
         }
 
-        return field.IsMultiline ? 124d : 72d;
+        return field.IsMultiline ? 96d : 60d;
     }
 
     private Control CreateFieldPane(DialogFieldDisplayItem field)
