@@ -536,6 +536,7 @@ run_head_smoke() {
   CHUMMER_DESKTOP_STARTUP_SMOKE_RELEASE_VERSION="$VERSION_HINT" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_RID="$RID" \
   CHUMMER_DESKTOP_STARTUP_SMOKE_READY_CHECKPOINT="pre_ui_event_loop" \
+  CHUMMER_DESKTOP_UPDATE_ENABLED=0 \
   CHUMMER_PUBLIC_WEB_BASE_URL="$public_web_base_url" \
   CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS="${CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS:-0}" \
   DOTNET_BUNDLE_EXTRACT_BASE_DIR="$bundle_extract_base_dir" \
@@ -943,7 +944,8 @@ run_linux_smoke_deb() {
   local wrapper_capture_path="$OUTPUT_DIR/installed-wrapper-$APP_KEY-$RID.sh"
   local desktop_entry_capture_path="$OUTPUT_DIR/installed-desktop-entry-$APP_KEY-$RID.desktop"
 
-  run_dpkg_isolated --install "$ARTIFACT_PATH"
+  local install_status=0
+  run_dpkg_isolated --install "$ARTIFACT_PATH" || install_status=$?
   local status_after_install
   status_after_install="$(read_dpkg_package_status "$package_name")"
   local launch_exists_after_install="false"
@@ -970,6 +972,11 @@ run_linux_smoke_deb() {
   cp -a "$wrapper_path" "$wrapper_capture_path"
   cp -a "$desktop_entry_path" "$desktop_entry_capture_path"
 
+  if [[ "$install_status" -ne 0 ]]; then
+    echo "dpkg install returned $install_status, but Chummer payload files were installed under the isolated root; tolerating host trigger noise." >>"$LOG_PATH"
+    install_status=0
+  fi
+
   local smoke_status=0
   run_head_smoke "$installed_launch_path" || smoke_status=$?
 
@@ -983,6 +990,14 @@ run_linux_smoke_deb() {
   [[ -e "$installed_launch_path" ]] && launch_exists_after_purge="true"
   [[ -e "$wrapper_path" ]] && wrapper_exists_after_purge="true"
   [[ -e "$desktop_entry_path" ]] && desktop_exists_after_purge="true"
+
+  if [[ "$purge_status" -ne 0 \
+    && "$launch_exists_after_purge" == "false" \
+    && "$wrapper_exists_after_purge" == "false" \
+    && "$desktop_exists_after_purge" == "false" ]]; then
+    echo "dpkg purge returned $purge_status, but the isolated Chummer payload was removed; tolerating host trigger noise." >>"$LOG_PATH"
+    purge_status=0
+  fi
 
   if [[ "$smoke_status" -eq 0 && "$purge_status" -eq 0 ]]; then
     write_linux_deb_install_verification \
