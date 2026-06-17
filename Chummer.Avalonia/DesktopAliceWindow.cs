@@ -158,7 +158,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceAssistantStatusText",
             Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString()),
-            Foreground = Brushes.DarkSlateGray,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
             TextWrapping = TextWrapping.Wrap
         };
 

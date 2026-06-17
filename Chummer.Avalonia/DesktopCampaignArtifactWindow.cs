@@ -67,7 +67,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         {
             Text = BuildStatus(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brushes.DarkSlateGray,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
             IsVisible = false
         };
 
@@ -773,15 +773,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
             content.Children.Add(actionContent);
         }
 
-        return new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(8),
-            Child = content
-        };
+        return DesktopShellTheme.CreateUtilityPanel(content, padding: 8, cornerRadius: 4);
     }
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
@@ -811,6 +803,7 @@ internal sealed class DesktopCampaignArtifactWindow : Window
         if (isPrimary)
         {
             button.FontWeight = FontWeight.SemiBold;
+            DesktopShellTheme.ApplyPrimaryButton(button);
         }
 
         button.Click += async (_, _) =>

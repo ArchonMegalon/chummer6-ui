@@ -52,7 +52,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _statusText = new TextBlock
         {
             IsVisible = false,
-            Foreground = Brushes.DarkSlateGray,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -119,11 +119,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
         };
 
-        Content = new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#EEF2F6")),
-            Padding = new Thickness(16),
-            Child = new StackPanel
+        Content = DesktopShellTheme.CreateWindowSurface(
+            new StackPanel
             {
                 Spacing = 10,
                 Children =
@@ -136,41 +133,41 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         TextWrapping = TextWrapping.Wrap
                     },
                     _statusText,
-                    new StackPanel
-                    {
-                        Orientation = Orientation.Vertical,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
-                        Spacing = 8,
-                        Children =
+                    DesktopShellTheme.CreateUtilityPanel(
+                        new StackPanel
                         {
-                            new TextBlock
+                            Orientation = Orientation.Vertical,
+                            HorizontalAlignment = HorizontalAlignment.Stretch,
+                            Spacing = 8,
+                            Children =
                             {
-                                Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.next_step", _language),
-                                FontWeight = FontWeight.SemiBold,
-                                TextWrapping = TextWrapping.Wrap
-                            },
-                            _claimCodeHintText,
-                            _claimCodeLabelText,
-                            _claimCodeEntryRow,
-                            new StackPanel
-                            {
-                                Orientation = Orientation.Horizontal,
-                                HorizontalAlignment = HorizontalAlignment.Left,
-                                Spacing = 6,
-                                Children =
+                                new TextBlock
                                 {
-                                    _followThroughButton,
-                                    _accountButton,
-                                    _exitButton
-                                }
-                            },
-                            _moreToolsHeading,
-                            _moreToolsPanel
-                        }
-                    }
+                                    Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.next_step", _language),
+                                    FontWeight = FontWeight.SemiBold,
+                                    TextWrapping = TextWrapping.Wrap
+                                },
+                                _claimCodeHintText,
+                                _claimCodeLabelText,
+                                _claimCodeEntryRow,
+                                new StackPanel
+                                {
+                                    Orientation = Orientation.Horizontal,
+                                    HorizontalAlignment = HorizontalAlignment.Left,
+                                    Spacing = 6,
+                                    Children =
+                                    {
+                                        _followThroughButton,
+                                        _accountButton,
+                                        _exitButton
+                                    }
+                                },
+                                _moreToolsHeading,
+                                _moreToolsPanel
+                            }
+                        })
                 }
-            }
-        };
+            });
 
         Closing += OnClosing;
         Opened += (_, _) =>
@@ -229,6 +226,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         if (isDefault)
         {
             button.FontWeight = FontWeight.SemiBold;
+            DesktopShellTheme.ApplyPrimaryButton(button);
         }
 
         button.Click += async (_, _) => await action();

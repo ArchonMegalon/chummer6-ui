@@ -18,21 +18,15 @@ internal sealed class DesktopVersionHistoryWindow : Window
 
         string historyText = LoadHistoryText();
 
-        Content = new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#EEF2F6")),
-            Padding = new Thickness(12),
-            Child = new TextBox
+        Content = DesktopShellTheme.CreateWindowSurface(
+            new TextBox
             {
                 Text = historyText,
                 IsReadOnly = true,
                 AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                Background = Brushes.White,
-                BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
-                BorderThickness = new Thickness(1)
-            }
-        };
+                TextWrapping = TextWrapping.Wrap
+            },
+            padding: 12);
     }
 
     public static async Task ShowAsync(Window owner)

@@ -21,11 +21,8 @@ internal sealed class DesktopAboutWindow : Window
 
         AboutAssemblyProjection projection = BuildProjection();
 
-        Content = new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#EEF2F6")),
-            Padding = new Thickness(12),
-            Child = new Grid
+        Content = DesktopShellTheme.CreateWindowSurface(
+            new Grid
             {
                 ColumnDefinitions = new ColumnDefinitions("0.35*,0.65*"),
                 RowDefinitions = new RowDefinitions("Auto,Auto,Auto,Auto,*,*"),
@@ -42,8 +39,8 @@ internal sealed class DesktopAboutWindow : Window
                     BuildReadOnlyBox(projection.Disclaimer).At(5, 1),
                     BuildReadOnlyBox(projection.Contributors).At(5, 0)
                 }
-            }
-        };
+            },
+            padding: 12);
     }
 
     public static async Task ShowAsync(Window owner)
@@ -78,15 +75,7 @@ internal sealed class DesktopAboutWindow : Window
             content = BuildTextBlock("Chummer6", fontSize: 26, fontWeight: FontWeight.Bold, horizontalAlignment: HorizontalAlignment.Center);
         }
 
-        Border border = new()
-        {
-            Background = Brushes.White,
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(12),
-            Child = content
-        };
+        Border border = DesktopShellTheme.CreateUtilityPanel(content, padding: 12, cornerRadius: 6);
 
         Grid.SetColumn(border, 0);
         Grid.SetRow(border, 0);
@@ -116,9 +105,6 @@ internal sealed class DesktopAboutWindow : Window
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
-            Background = Brushes.White,
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
-            BorderThickness = new Thickness(1),
             MinHeight = 160
         };
 

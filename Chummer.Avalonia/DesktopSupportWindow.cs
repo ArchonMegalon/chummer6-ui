@@ -54,7 +54,7 @@ internal sealed class DesktopSupportWindow : Window
             Text = S("desktop.support.status.current"),
             IsVisible = false,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = Brushes.DarkSlateGray
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
 
         _caseText = new TextBlock
@@ -412,15 +412,7 @@ internal sealed class DesktopSupportWindow : Window
             content.Children.Add(actionContent);
         }
 
-        return new Border
-        {
-            Background = new SolidColorBrush(Color.Parse("#F4F6FA")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D4DCE7")),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(4),
-            Padding = new Thickness(10),
-            Child = content
-        };
+        return DesktopShellTheme.CreateUtilityPanel(content, padding: 10, cornerRadius: 4);
     }
 
     private static WrapPanel CreateActionRow(IReadOnlyList<Button> actions)
@@ -472,6 +464,7 @@ internal sealed class DesktopSupportWindow : Window
         if (isPrimary)
         {
             button.FontWeight = FontWeight.SemiBold;
+            DesktopShellTheme.ApplyPrimaryButton(button);
         }
 
         button.Click += async (_, _) =>

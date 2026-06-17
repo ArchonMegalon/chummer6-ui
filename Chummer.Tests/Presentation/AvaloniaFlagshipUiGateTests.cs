@@ -4001,6 +4001,38 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Utility_windows_use_shell_theme_tokens_instead_of_legacy_light_hex_fallbacks()
+    {
+        string[] files =
+        [
+            ResolveSourceFile("Chummer.Avalonia", "DesktopAboutWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopVersionHistoryWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopSupportWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopSupportCaseWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopReportIssueWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopUpdateWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopCrashRecoveryWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopCampaignArtifactWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopCampaignWorkspaceWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopCreatorPublicationWindow.cs"),
+            ResolveSourceFile("Chummer.Avalonia", "DesktopOrganizerOperationsWindow.cs")
+        ];
+
+        foreach (string file in files)
+        {
+            string text = File.ReadAllText(file);
+            StringAssert.Contains(text, "DesktopShellTheme");
+            Assert.IsFalse(text.Contains("Brushes.DarkSlateGray", StringComparison.Ordinal), $"{Path.GetFileName(file)} still uses Brushes.DarkSlateGray.");
+            Assert.IsFalse(text.Contains("#F4F6FA", StringComparison.Ordinal), $"{Path.GetFileName(file)} still uses #F4F6FA.");
+            Assert.IsFalse(text.Contains("#D4DCE7", StringComparison.Ordinal), $"{Path.GetFileName(file)} still uses #D4DCE7.");
+            Assert.IsFalse(text.Contains("#EEF2F6", StringComparison.Ordinal), $"{Path.GetFileName(file)} still uses #EEF2F6.");
+            Assert.IsFalse(text.Contains("#BBC7D4", StringComparison.Ordinal), $"{Path.GetFileName(file)} still uses #BBC7D4.");
+        }
+    }
+
+    [TestMethod]
     public void Loaded_runner_preserves_visible_character_tab_posture()
     {
         WithLoadedRunnerHarness(harness =>
