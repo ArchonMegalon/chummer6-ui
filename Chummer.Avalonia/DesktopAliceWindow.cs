@@ -10,6 +10,7 @@ using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -17,6 +18,9 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopAliceWindow : Window
 {
+    private const string OriginNarrationRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH";
+    private const string MediaFactoryRepoRoot = "/docker/fleet/repos/chummer-media-factory";
+    private const string MediaFactoryNarrationCliProject = "/docker/fleet/repos/chummer-media-factory/tools/OriginDossierNarrationRequestCli/Chummer.Media.Factory.OriginDossierNarrationRequestCli.csproj";
     internal static DesktopAliceWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
@@ -301,6 +305,11 @@ internal sealed class DesktopAliceWindow : Window
                     actionRow.Children.Add(CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
                     actionRow.Children.Add(CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
                     actionRow.Children.Add(CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
+                    if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationReceiptPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
+                    }
                 }
                 else if (_originDraft is not null)
                 {
@@ -455,9 +464,34 @@ internal sealed class DesktopAliceWindow : Window
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
                 CreateButton("Open media-factory runbook", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
+                CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"),
                 CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
                 CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
             return Task.CompletedTask;
+        }
+
+        async Task RenderOriginAudiobookNowAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before rendering the audiobook.";
+                return;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginMediaFactoryNarrationRequest(EnsureOriginDossierBundle());
+            string receiptPath = await ExecuteOriginMediaFactoryNarrationAsync(bundle).ConfigureAwait(true);
+            OriginDossierBundle updatedBundle = bundle with
+            {
+                MediaFactoryNarrationReceiptPath = receiptPath
+            };
+            _originBundle = updatedBundle;
+            ShowOriginBundleState(
+                "ALICE rendered the origin dossier audiobook request through the local media-factory lane.",
+                $"Audiobook execution receipt ready. Receipt: {Path.GetFileName(receiptPath)}. Default and alternate provider lanes were executed under bounded candidate-only policy.",
+                BuildOriginBundleEvidence(updatedBundle),
+                CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
+                CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
         }
 
         async Task AskAsync()
@@ -1536,6 +1570,7 @@ internal sealed class DesktopAliceWindow : Window
             UnmixrScriptPath: null,
             MediaFactoryNarrationRequestPath: null,
             MediaFactoryNarrationRunbookPath: null,
+            MediaFactoryNarrationReceiptPath: null,
             RuntimeFingerprint: _originDraft.RuntimeFingerprint);
         return _originBundle;
     }
@@ -1756,7 +1791,8 @@ internal sealed class DesktopAliceWindow : Window
         OriginDossierBundle updated = bundle with
         {
             MediaFactoryNarrationRequestPath = requestPath,
-            MediaFactoryNarrationRunbookPath = runbookPath
+            MediaFactoryNarrationRunbookPath = runbookPath,
+            MediaFactoryNarrationReceiptPath = null
         };
         _originBundle = updated;
         return updated;
@@ -1814,7 +1850,65 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"Media-factory runbook: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationReceiptPath))
+        {
+            lines.Add($"Media-factory receipt: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
+        }
+
         return lines;
+    }
+
+    private static async Task<string> ExecuteOriginMediaFactoryNarrationAsync(OriginDossierBundle bundle)
+    {
+        if (string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath))
+        {
+            throw new InvalidOperationException("Origin dossier bundle is missing the media-factory narration request.");
+        }
+
+        if (!File.Exists(MediaFactoryNarrationCliProject))
+        {
+            throw new FileNotFoundException("Origin dossier narration CLI project was not found.", MediaFactoryNarrationCliProject);
+        }
+
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = "dotnet",
+            WorkingDirectory = MediaFactoryRepoRoot,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add("run");
+        startInfo.ArgumentList.Add("--project");
+        startInfo.ArgumentList.Add(MediaFactoryNarrationCliProject);
+        startInfo.ArgumentList.Add("--configuration");
+        startInfo.ArgumentList.Add("Release");
+        startInfo.ArgumentList.Add("--nologo");
+        startInfo.ArgumentList.Add("--verbosity");
+        startInfo.ArgumentList.Add("quiet");
+        startInfo.Environment[OriginNarrationRequestPathEnv] = bundle.MediaFactoryNarrationRequestPath;
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start the origin dossier narration render CLI.");
+        string standardOutput = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+        string standardError = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
+        await process.WaitForExitAsync().ConfigureAwait(false);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"Origin dossier narration render failed with exit code {process.ExitCode}: {standardError.Trim()}");
+        }
+
+        string receiptPath = standardOutput
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .LastOrDefault()
+            ?? string.Empty;
+        if (receiptPath.Length == 0 || !File.Exists(receiptPath))
+        {
+            throw new InvalidOperationException("Origin dossier narration render did not return a valid receipt path.");
+        }
+
+        return receiptPath;
     }
 
     private static string BuildOriginCanonMarkdown(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
@@ -2267,5 +2361,6 @@ internal sealed class DesktopAliceWindow : Window
         string? UnmixrScriptPath,
         string? MediaFactoryNarrationRequestPath,
         string? MediaFactoryNarrationRunbookPath,
+        string? MediaFactoryNarrationReceiptPath,
         string? RuntimeFingerprint = null);
 }

@@ -51,6 +51,13 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "ownerRepo = \"chummer6-media-factory\"");
         StringAssert.Contains(source, "AliceOriginGenerateAlternateAudiobookPacketButton");
         StringAssert.Contains(source, "AliceOriginGenerateMediaFactoryNarrationRequestButton");
+        StringAssert.Contains(source, "RenderOriginAudiobookNowAsync");
+        StringAssert.Contains(source, "AliceOriginRenderAudiobookNowButton");
+        StringAssert.Contains(source, "AliceOriginOpenMediaFactoryNarrationReceiptButton");
+        StringAssert.Contains(source, "ExecuteOriginMediaFactoryNarrationAsync(");
+        StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH");
+        StringAssert.Contains(source, "MediaFactoryNarrationCliProject");
+        StringAssert.Contains(source, "MediaFactoryNarrationReceiptPath");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
     }
 
