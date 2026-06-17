@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Chummer.Contracts.AI;
 using Chummer.Campaign.Contracts;
 using Chummer.Contracts.Content;
@@ -13,6 +14,8 @@ using Chummer.Contracts.Workspaces;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using Ellipse = Avalonia.Controls.Shapes.Ellipse;
+using Rectangle = Avalonia.Controls.Shapes.Rectangle;
 
 namespace Chummer.Avalonia;
 
@@ -302,10 +305,29 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
+                    actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                    actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
                     actionRow.Children.Add(CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
                     actionRow.Children.Add(CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
                     actionRow.Children.Add(CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
                     actionRow.Children.Add(CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
+                    actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                    if (_originBundle.PortraitCandidatePaths.Count > 0)
+                    {
+                        actionRow.Children.Add(CreateButton("Open selected portrait", () => !string.IsNullOrWhiteSpace(_originBundle.SelectedPortraitPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SelectedPortraitPath), name: "AliceOriginOpenSelectedPortraitButton"));
+                    }
+                    if (_originBundle.SceneCandidatePaths.Count > 0)
+                    {
+                        actionRow.Children.Add(CreateButton("Open selected scene", () => !string.IsNullOrWhiteSpace(_originBundle.SelectedScenePath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SelectedScenePath), name: "AliceOriginOpenSelectedSceneButton"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_originBundle.VideoPosterPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open video poster", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.VideoPosterPath), name: "AliceOriginOpenVideoPosterButton"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_originBundle.VidBoardPacketPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open vidBoard packet", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
+                    }
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationReceiptPath))
                     {
                         actionRow.Children.Add(CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
@@ -315,9 +337,12 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                     actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
+                    actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                    actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
                     actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
                     actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
                     actionRow.Children.Add(CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                 }
                 else
                 {
@@ -378,9 +403,12 @@ internal sealed class DesktopAliceWindow : Window
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"),
                 CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
+                CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
+                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
                 CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
                 CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
-                CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+                CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
             return Task.CompletedTask;
         }
 
@@ -400,7 +428,53 @@ internal sealed class DesktopAliceWindow : Window
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
                 CreateButton("Open MarkupGo packet", () => !string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MarkupGoPacketPath), name: "AliceOriginOpenMarkupGoPacketButton"),
+                CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
+                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
+                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
+            return Task.CompletedTask;
+        }
+
+        Task RenderOriginPortraitSetAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before rendering portrait candidates.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginPortraitSet(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE rendered four local portrait candidates and marked one canonical portrait until you select another.",
+                $"Portrait candidates ready. Selected portrait: {Path.GetFileName(bundle.SelectedPortraitPath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open portrait contact sheet", () => !string.IsNullOrWhiteSpace(bundle.PortraitContactSheetPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.PortraitContactSheetPath), isPrimary: true, name: "AliceOriginOpenPortraitSheetButton"),
+                CreateButton("Select portrait 1", () => SelectOriginPortraitAndRefresh(0), name: "AliceOriginSelectPortrait1Button"),
+                CreateButton("Select portrait 2", () => SelectOriginPortraitAndRefresh(1), name: "AliceOriginSelectPortrait2Button"),
+                CreateButton("Select portrait 3", () => SelectOriginPortraitAndRefresh(2), name: "AliceOriginSelectPortrait3Button"),
+                CreateButton("Select portrait 4", () => SelectOriginPortraitAndRefresh(3), name: "AliceOriginSelectPortrait4Button"));
+            return Task.CompletedTask;
+        }
+
+        Task RenderOriginSceneSetAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before rendering scene candidates.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginSceneSet(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE rendered scene candidates from the approved origin canon and the currently selected portrait.",
+                $"Scene candidates ready. Selected scene: {Path.GetFileName(bundle.SelectedScenePath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open scene brief", () => !string.IsNullOrWhiteSpace(bundle.SceneBriefMarkdownPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SceneBriefMarkdownPath), isPrimary: true, name: "AliceOriginOpenSceneBriefButton"),
+                CreateButton("Select scene 1", () => SelectOriginSceneAndRefresh(0), name: "AliceOriginSelectScene1Button"),
+                CreateButton("Select scene 2", () => SelectOriginSceneAndRefresh(1), name: "AliceOriginSelectScene2Button"),
+                CreateButton("Select scene 3", () => SelectOriginSceneAndRefresh(2), name: "AliceOriginSelectScene3Button"));
             return Task.CompletedTask;
         }
 
@@ -470,6 +544,51 @@ internal sealed class DesktopAliceWindow : Window
             return Task.CompletedTask;
         }
 
+        Task RenderOriginDossierVideoAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before preparing the dossier video lane.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginDossierVideoPacket(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE prepared the dossier video storyboard, poster, and vidBoard packet from the approved canon, selected portrait, and selected scene.",
+                $"Dossier video ready. Poster: {Path.GetFileName(bundle.VideoPosterPath)}. Packet: {Path.GetFileName(bundle.VidBoardPacketPath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open video poster", () => !string.IsNullOrWhiteSpace(bundle.VideoPosterPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoPosterPath), isPrimary: true, name: "AliceOriginOpenVideoPosterButton"),
+                CreateButton("Open storyboard", () => !string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoStoryboardPath), name: "AliceOriginOpenVideoStoryboardButton"),
+                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
+            return Task.CompletedTask;
+        }
+
+        bool SelectOriginPortraitAndRefresh(int index)
+        {
+            OriginDossierBundle bundle = SelectOriginPortrait(EnsureOriginDossierBundle(), index);
+            ShowOriginBundleState(
+                "ALICE updated the canonical portrait for the origin dossier bundle.",
+                $"Portrait {index + 1} is now canonical for future scene and video renders.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open selected portrait", () => !string.IsNullOrWhiteSpace(bundle.SelectedPortraitPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SelectedPortraitPath), isPrimary: true, name: "AliceOriginOpenSelectedPortraitButton"),
+                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
+                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+            return true;
+        }
+
+        bool SelectOriginSceneAndRefresh(int index)
+        {
+            OriginDossierBundle bundle = SelectOriginScene(EnsureOriginDossierBundle(), index);
+            ShowOriginBundleState(
+                "ALICE updated the canonical scene for the origin dossier bundle.",
+                $"Scene {index + 1} is now canonical for the dossier video lane.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open selected scene", () => !string.IsNullOrWhiteSpace(bundle.SelectedScenePath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SelectedScenePath), isPrimary: true, name: "AliceOriginOpenSelectedSceneButton"),
+                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+            return true;
+        }
+
         async Task RenderOriginAudiobookNowAsync()
         {
             if (_originDraft is null || _originPacket is null)
@@ -527,9 +646,12 @@ internal sealed class DesktopAliceWindow : Window
                 [
                     "Approve canon",
                     "Render dossier PDF",
+                    "Generate portraits",
+                    "Generate scenes",
                     "Generate default voice packet",
                     "Generate alternate voice packet",
-                    "Prepare media-factory request"
+                    "Prepare media-factory request",
+                    "Generate dossier video"
                 ];
                 ActiveHistory().Add(BuildAssistantTurn(
                     mode,
@@ -540,9 +662,12 @@ internal sealed class DesktopAliceWindow : Window
                 RefreshConversationFeed();
                 actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                 actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
+                actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
                 actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
                 actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
                 actionRow.Children.Add(CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+                actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                 actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
                 return;
@@ -1549,8 +1674,11 @@ internal sealed class DesktopAliceWindow : Window
                 providerLanes = new
                 {
                     document = "MarkupGo",
+                    portraits = "First-party render",
+                    scenes = "First-party render",
                     narrationDefault = "Soundmadeseen",
-                    narrationAlternate = "Unmixr AI"
+                    narrationAlternate = "Unmixr AI",
+                    dossierVideo = "vidBoard"
                 }
             },
             new JsonSerializerOptions { WriteIndented = true }));
@@ -1564,6 +1692,14 @@ internal sealed class DesktopAliceWindow : Window
             CanonMarkdownPath: canonMarkdownPath,
             DossierPdfPath: null,
             MarkupGoPacketPath: null,
+            PortraitSetJsonPath: null,
+            PortraitContactSheetPath: null,
+            PortraitCandidatePaths: [],
+            SelectedPortraitPath: null,
+            SceneBriefMarkdownPath: null,
+            SceneSetJsonPath: null,
+            SceneCandidatePaths: [],
+            SelectedScenePath: null,
             SoundmadeseenPacketPath: null,
             SoundmadeseenScriptPath: null,
             UnmixrPacketPath: null,
@@ -1571,6 +1707,9 @@ internal sealed class DesktopAliceWindow : Window
             MediaFactoryNarrationRequestPath: null,
             MediaFactoryNarrationRunbookPath: null,
             MediaFactoryNarrationReceiptPath: null,
+            VidBoardPacketPath: null,
+            VideoStoryboardPath: null,
+            VideoPosterPath: null,
             RuntimeFingerprint: _originDraft.RuntimeFingerprint);
         return _originBundle;
     }
@@ -1623,6 +1762,256 @@ internal sealed class DesktopAliceWindow : Window
         {
             DossierPdfPath = pdfPath,
             MarkupGoPacketPath = markupGoPacketPath
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle EnsureOriginPortraitSet(OriginDossierBundle bundle)
+    {
+        bool existingPortraitsReady = !string.IsNullOrWhiteSpace(bundle.PortraitSetJsonPath)
+            && !string.IsNullOrWhiteSpace(bundle.PortraitContactSheetPath)
+            && File.Exists(bundle.PortraitSetJsonPath)
+            && File.Exists(bundle.PortraitContactSheetPath)
+            && bundle.PortraitCandidatePaths.Count == 4
+            && bundle.PortraitCandidatePaths.All(File.Exists);
+        if (existingPortraitsReady)
+        {
+            return bundle;
+        }
+
+        string portraitsDirectory = Path.Combine(bundle.BundleDirectory, "portraits");
+        Directory.CreateDirectory(portraitsDirectory);
+
+        OriginPortraitCandidate[] candidates =
+        [
+            new("portrait-candidate-01", "Noir Ink", "Grounded dossier portrait with low-noise contrast.", "#0F172A", "#1D4ED8", "#E2E8F0", "#93C5FD"),
+            new("portrait-candidate-02", "Chrome Editorial", "Sharper editorial framing with brighter chrome accents.", "#111827", "#0F766E", "#F8FAFC", "#67E8F9"),
+            new("portrait-candidate-03", "Neon Street", "Street-lit version with stronger nightlife saturation.", "#1F1630", "#7C3AED", "#F5F3FF", "#C084FC"),
+            new("portrait-candidate-04", "Quiet Clinic", "Cold medical lane with controlled sterile highlights.", "#17202A", "#475569", "#F8FAFC", "#CBD5E1")
+        ];
+
+        List<string> portraitPaths = [];
+        foreach (OriginPortraitCandidate candidate in candidates)
+        {
+            string portraitPath = Path.Combine(portraitsDirectory, $"{candidate.CandidateId}.png");
+            RenderControlToPng(BuildOriginPortraitCard(bundle, candidate), 720, 960, portraitPath);
+            portraitPaths.Add(portraitPath);
+        }
+
+        string contactSheetPath = Path.Combine(bundle.BundleDirectory, "origin-portrait-contact-sheet.md");
+        File.WriteAllText(contactSheetPath, BuildOriginPortraitContactSheet(bundle, candidates, portraitPaths));
+
+        string portraitSetJsonPath = Path.Combine(bundle.BundleDirectory, "origin-portrait-set.json");
+        File.WriteAllText(portraitSetJsonPath, JsonSerializer.Serialize(
+            new
+            {
+                artifactKind = "origin_dossier_portrait_set",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                selectedPortrait = portraitPaths[0],
+                candidates = candidates.Select((candidate, index) => new
+                {
+                    candidate.CandidateId,
+                    candidate.StyleLabel,
+                    candidate.Summary,
+                    file = portraitPaths[index]
+                })
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            PortraitSetJsonPath = portraitSetJsonPath,
+            PortraitContactSheetPath = contactSheetPath,
+            PortraitCandidatePaths = portraitPaths,
+            SelectedPortraitPath = portraitPaths[0]
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle SelectOriginPortrait(OriginDossierBundle bundle, int index)
+    {
+        bundle = EnsureOriginPortraitSet(bundle);
+        if (index < 0 || index >= bundle.PortraitCandidatePaths.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        OriginDossierBundle updated = bundle with
+        {
+            SelectedPortraitPath = bundle.PortraitCandidatePaths[index],
+            SceneBriefMarkdownPath = null,
+            SceneSetJsonPath = null,
+            SceneCandidatePaths = [],
+            SelectedScenePath = null,
+            VidBoardPacketPath = null,
+            VideoStoryboardPath = null,
+            VideoPosterPath = null
+        };
+
+        if (!string.IsNullOrWhiteSpace(updated.PortraitSetJsonPath))
+        {
+            File.WriteAllText(updated.PortraitSetJsonPath, JsonSerializer.Serialize(
+                new
+                {
+                    artifactKind = "origin_dossier_portrait_set",
+                    approvedAtUtc = updated.ApprovedAtUtc,
+                    selectedPortrait = updated.SelectedPortraitPath,
+                    candidates = updated.PortraitCandidatePaths
+                },
+                new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle EnsureOriginSceneSet(OriginDossierBundle bundle)
+    {
+        bundle = EnsureOriginPortraitSet(bundle);
+        bool existingScenesReady = !string.IsNullOrWhiteSpace(bundle.SceneSetJsonPath)
+            && !string.IsNullOrWhiteSpace(bundle.SceneBriefMarkdownPath)
+            && File.Exists(bundle.SceneSetJsonPath)
+            && File.Exists(bundle.SceneBriefMarkdownPath)
+            && bundle.SceneCandidatePaths.Count == 3
+            && bundle.SceneCandidatePaths.All(File.Exists);
+        if (existingScenesReady)
+        {
+            return bundle;
+        }
+
+        string scenesDirectory = Path.Combine(bundle.BundleDirectory, "scenes");
+        Directory.CreateDirectory(scenesDirectory);
+        string portraitPath = bundle.SelectedPortraitPath ?? bundle.PortraitCandidatePaths.First();
+        OriginSceneCandidate[] candidates =
+        [
+            new("scene-candidate-01", "Turning Point", "The moment the runner learned the current loadout was not optional anymore.", "#09131F", "#1D4ED8"),
+            new("scene-candidate-02", "Clinic Memory", "A sterile upgrade lane that explains the cost of implants and quality drift.", "#111827", "#0F766E"),
+            new("scene-candidate-03", "Before the Run", "A quiet preparation frame just before stepping onto the current role path.", "#1E1B4B", "#7C3AED")
+        ];
+
+        List<string> scenePaths = [];
+        foreach (OriginSceneCandidate candidate in candidates)
+        {
+            string scenePath = Path.Combine(scenesDirectory, $"{candidate.SceneId}.png");
+            RenderControlToPng(BuildOriginSceneCard(bundle, candidate, portraitPath), 1280, 720, scenePath);
+            scenePaths.Add(scenePath);
+        }
+
+        string sceneBriefMarkdownPath = Path.Combine(bundle.BundleDirectory, "origin-scene-brief.md");
+        File.WriteAllText(sceneBriefMarkdownPath, BuildOriginSceneBrief(bundle, candidates));
+
+        string sceneSetJsonPath = Path.Combine(bundle.BundleDirectory, "origin-scene-set.json");
+        File.WriteAllText(sceneSetJsonPath, JsonSerializer.Serialize(
+            new
+            {
+                artifactKind = "origin_dossier_scene_set",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                portraitPath,
+                selectedScene = scenePaths[0],
+                candidates = candidates.Select((candidate, index) => new
+                {
+                    candidate.SceneId,
+                    candidate.Title,
+                    candidate.Summary,
+                    file = scenePaths[index]
+                })
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            SceneBriefMarkdownPath = sceneBriefMarkdownPath,
+            SceneSetJsonPath = sceneSetJsonPath,
+            SceneCandidatePaths = scenePaths,
+            SelectedScenePath = scenePaths[0]
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle SelectOriginScene(OriginDossierBundle bundle, int index)
+    {
+        bundle = EnsureOriginSceneSet(bundle);
+        if (index < 0 || index >= bundle.SceneCandidatePaths.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        OriginDossierBundle updated = bundle with
+        {
+            SelectedScenePath = bundle.SceneCandidatePaths[index],
+            VidBoardPacketPath = null,
+            VideoStoryboardPath = null,
+            VideoPosterPath = null
+        };
+
+        if (!string.IsNullOrWhiteSpace(updated.SceneSetJsonPath))
+        {
+            File.WriteAllText(updated.SceneSetJsonPath, JsonSerializer.Serialize(
+                new
+                {
+                    artifactKind = "origin_dossier_scene_set",
+                    approvedAtUtc = updated.ApprovedAtUtc,
+                    portraitPath = updated.SelectedPortraitPath,
+                    selectedScene = updated.SelectedScenePath,
+                    candidates = updated.SceneCandidatePaths
+                },
+                new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle EnsureOriginDossierVideoPacket(OriginDossierBundle bundle)
+    {
+        bundle = EnsureOriginDossierPdf(EnsureOriginSceneSet(bundle));
+        if (!string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath)
+            && !string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath)
+            && !string.IsNullOrWhiteSpace(bundle.VideoPosterPath)
+            && File.Exists(bundle.VidBoardPacketPath)
+            && File.Exists(bundle.VideoStoryboardPath)
+            && File.Exists(bundle.VideoPosterPath))
+        {
+            return bundle;
+        }
+
+        string storyboardPath = Path.Combine(bundle.BundleDirectory, "origin-dossier-video.storyboard.md");
+        string packetPath = Path.Combine(bundle.BundleDirectory, "vidboard-origin-dossier.packet.json");
+        string posterPath = Path.Combine(bundle.BundleDirectory, "origin-dossier-video-poster.png");
+
+        File.WriteAllText(storyboardPath, BuildOriginVideoStoryboard(bundle));
+        RenderControlToPng(BuildOriginVideoPoster(bundle), 1280, 720, posterPath);
+        File.WriteAllText(packetPath, JsonSerializer.Serialize(
+            new
+            {
+                tool = "vidBoard",
+                artifactKind = "origin_dossier_video",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                source = "first_party_origin_canon",
+                title = $"{bundle.Packet.Alias} Origin Dossier",
+                durationTargetSeconds = 60,
+                posterPath,
+                storyboardPath,
+                selectedPortraitPath = bundle.SelectedPortraitPath,
+                selectedScenePath = bundle.SelectedScenePath,
+                sourceCanon = new
+                {
+                    bundle.CanonMarkdownPath,
+                    bundle.CanonJsonPath,
+                    bundle.DossierPdfPath,
+                    bundle.MediaFactoryNarrationReceiptPath
+                }
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            VidBoardPacketPath = packetPath,
+            VideoStoryboardPath = storyboardPath,
+            VideoPosterPath = posterPath
         };
         _originBundle = updated;
         return updated;
@@ -1820,6 +2209,36 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"MarkupGo packet: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(bundle.PortraitSetJsonPath))
+        {
+            lines.Add($"Portrait set: {Path.GetFileName(bundle.PortraitSetJsonPath)}");
+        }
+
+        if (bundle.PortraitCandidatePaths.Count > 0)
+        {
+            lines.Add($"Portrait candidates: {bundle.PortraitCandidatePaths.Count}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.SelectedPortraitPath))
+        {
+            lines.Add($"Selected portrait: {Path.GetFileName(bundle.SelectedPortraitPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.SceneBriefMarkdownPath))
+        {
+            lines.Add($"Scene brief: {Path.GetFileName(bundle.SceneBriefMarkdownPath)}");
+        }
+
+        if (bundle.SceneCandidatePaths.Count > 0)
+        {
+            lines.Add($"Scene candidates: {bundle.SceneCandidatePaths.Count}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.SelectedScenePath))
+        {
+            lines.Add($"Selected scene: {Path.GetFileName(bundle.SelectedScenePath)}");
+        }
+
         if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath))
         {
             lines.Add($"Default voice script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}");
@@ -1853,6 +2272,21 @@ internal sealed class DesktopAliceWindow : Window
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationReceiptPath))
         {
             lines.Add($"Media-factory receipt: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath))
+        {
+            lines.Add($"Video storyboard: {Path.GetFileName(bundle.VideoStoryboardPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath))
+        {
+            lines.Add($"vidBoard packet: {Path.GetFileName(bundle.VidBoardPacketPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.VideoPosterPath))
+        {
+            lines.Add($"Video poster: {Path.GetFileName(bundle.VideoPosterPath)}");
         }
 
         return lines;
@@ -1909,6 +2343,381 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return receiptPath;
+    }
+
+    private static void RenderControlToPng(Control control, int width, int height, string outputPath)
+    {
+        control.Measure(new Size(width, height));
+        control.Arrange(new Rect(0d, 0d, width, height));
+        control.InvalidateMeasure();
+        control.InvalidateArrange();
+        control.InvalidateVisual();
+        using RenderTargetBitmap bitmap = new(new PixelSize(width, height), new Vector(96d, 96d));
+        bitmap.Render(control);
+        using FileStream stream = File.Create(outputPath);
+        bitmap.Save(stream);
+    }
+
+    private static Control BuildOriginPortraitCard(OriginDossierBundle bundle, OriginPortraitCandidate candidate)
+    {
+        Border accentPanel = new()
+        {
+            Background = new SolidColorBrush(Color.Parse(candidate.AccentHex)),
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(18),
+            Child = new StackPanel
+            {
+                Spacing = 10,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = candidate.StyleLabel,
+                        FontSize = 28,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                    },
+                    new TextBlock
+                    {
+                        Text = bundle.Packet.Alias,
+                        FontSize = 44,
+                        FontWeight = FontWeight.Bold,
+                        Foreground = new SolidColorBrush(Color.Parse(candidate.HighlightHex))
+                    },
+                    new TextBlock
+                    {
+                        Text = candidate.Summary,
+                        FontSize = 18,
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                    }
+                }
+            }
+        };
+
+        Canvas silhouette = new()
+        {
+            Width = 260,
+            Height = 360,
+            Children =
+            {
+                new Ellipse
+                {
+                    Width = 132,
+                    Height = 132,
+                    Fill = new SolidColorBrush(Color.Parse(candidate.HighlightHex)),
+                    [Canvas.LeftProperty] = 64d,
+                    [Canvas.TopProperty] = 28d
+                },
+                new Ellipse
+                {
+                    Width = 88,
+                    Height = 88,
+                    Fill = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+                    [Canvas.LeftProperty] = 86d,
+                    [Canvas.TopProperty] = 48d
+                },
+                new Border
+                {
+                    Width = 180,
+                    Height = 172,
+                    Background = new SolidColorBrush(Color.Parse(candidate.HighlightHex)),
+                    CornerRadius = new CornerRadius(28, 28, 12, 12),
+                    [Canvas.LeftProperty] = 40d,
+                    [Canvas.TopProperty] = 156d
+                },
+                new Rectangle
+                {
+                    Width = 128,
+                    Height = 8,
+                    Fill = new SolidColorBrush(Color.Parse(candidate.ForegroundHex)),
+                    RadiusX = 4,
+                    RadiusY = 4,
+                    [Canvas.LeftProperty] = 66d,
+                    [Canvas.TopProperty] = 212d
+                },
+                new Rectangle
+                {
+                    Width = 104,
+                    Height = 8,
+                    Fill = new SolidColorBrush(Color.Parse(candidate.ForegroundHex)),
+                    RadiusX = 4,
+                    RadiusY = 4,
+                    [Canvas.LeftProperty] = 78d,
+                    [Canvas.TopProperty] = 232d
+                }
+            }
+        };
+
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+            Padding = new Thickness(28),
+            Child = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("1.2*,0.9*"),
+                Children =
+                {
+                    accentPanel,
+                    new Border
+                    {
+                        Padding = new Thickness(24, 18, 0, 18),
+                        Child = new StackPanel
+                        {
+                            Spacing = 12,
+                            VerticalAlignment = VerticalAlignment.Stretch,
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = $"{bundle.Packet.Metatype} · {bundle.Packet.BuildMethod}",
+                                    FontSize = 18,
+                                    Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                                },
+                                silhouette,
+                                new TextBlock
+                                {
+                                    Text = bundle.Canon.Summary,
+                                    TextWrapping = TextWrapping.Wrap,
+                                    FontSize = 16,
+                                    Foreground = new SolidColorBrush(Color.Parse(candidate.ForegroundHex))
+                                }
+                            }
+                        },
+                        [Grid.ColumnProperty] = 1
+                    }
+                }
+            }
+        };
+    }
+
+    private static Control BuildOriginSceneCard(OriginDossierBundle bundle, OriginSceneCandidate candidate, string portraitPath)
+    {
+        Bitmap portraitBitmap = new(portraitPath);
+        return new Border
+        {
+            Background = new SolidColorBrush(Color.Parse(candidate.BackgroundHex)),
+            Padding = new Thickness(28),
+            Child = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("1.4*,0.85*"),
+                RowDefinitions = new RowDefinitions("Auto,*"),
+                Children =
+                {
+                    new StackPanel
+                    {
+                        Spacing = 10,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = candidate.Title,
+                                FontSize = 34,
+                                FontWeight = FontWeight.Bold,
+                                Foreground = Brushes.White
+                            },
+                            new TextBlock
+                            {
+                                Text = candidate.Summary,
+                                FontSize = 18,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = new SolidColorBrush(Color.Parse("#D8E3F0"))
+                            }
+                        }
+                    },
+                    new Border
+                    {
+                        [Grid.RowProperty] = 1,
+                        Background = new LinearGradientBrush
+                        {
+                            StartPoint = new RelativePoint(0d, 0d, RelativeUnit.Relative),
+                            EndPoint = new RelativePoint(1d, 1d, RelativeUnit.Relative),
+                            GradientStops =
+                            [
+                                new GradientStop(Color.Parse(candidate.AccentHex), 0d),
+                                new GradientStop(Color.Parse(candidate.BackgroundHex), 1d)
+                            ]
+                        },
+                        CornerRadius = new CornerRadius(18),
+                        Padding = new Thickness(22),
+                        Child = new StackPanel
+                        {
+                            Spacing = 12,
+                            Children =
+                            {
+                                new TextBlock
+                                {
+                                    Text = bundle.Canon.Prose,
+                                    TextWrapping = TextWrapping.Wrap,
+                                    FontSize = 20,
+                                    Foreground = Brushes.White
+                                },
+                                new TextBlock
+                                {
+                                    Text = $"GM hook: {bundle.Canon.GmHooks.FirstOrDefault() ?? "Keep the character consequence-first."}",
+                                    TextWrapping = TextWrapping.Wrap,
+                                    FontSize = 16,
+                                    Foreground = new SolidColorBrush(Color.Parse("#DBEAFE"))
+                                }
+                            }
+                        }
+                    },
+                    new Border
+                    {
+                        [Grid.ColumnProperty] = 1,
+                        [Grid.RowSpanProperty] = 2,
+                        Margin = new Thickness(22, 0, 0, 0),
+                        Background = new SolidColorBrush(Color.Parse("#0B1220")),
+                        CornerRadius = new CornerRadius(16),
+                        Padding = new Thickness(18),
+                        Child = new StackPanel
+                        {
+                            Spacing = 12,
+                            Children =
+                            {
+                                new Image
+                                {
+                                    Source = portraitBitmap,
+                                    Stretch = Stretch.UniformToFill,
+                                    Width = 300,
+                                    Height = 420
+                                },
+                                new TextBlock
+                                {
+                                    Text = $"{bundle.Packet.Alias} · {bundle.Packet.ArchetypeHint}",
+                                    FontSize = 18,
+                                    Foreground = Brushes.White,
+                                    TextWrapping = TextWrapping.Wrap
+                                },
+                                new TextBlock
+                                {
+                                    Text = $"{bundle.Packet.RulesetId} · {bundle.Packet.Metatype}",
+                                    FontSize = 15,
+                                    Foreground = new SolidColorBrush(Color.Parse("#94A3B8"))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private static Control BuildOriginVideoPoster(OriginDossierBundle bundle)
+    {
+        string scenePath = bundle.SelectedScenePath ?? bundle.SceneCandidatePaths.First();
+        Bitmap sceneBitmap = new(scenePath);
+        return new Border
+        {
+            Background = Brushes.Black,
+            Child = new Grid
+            {
+                Children =
+                {
+                    new Image
+                    {
+                        Source = sceneBitmap,
+                        Stretch = Stretch.UniformToFill
+                    },
+                    new Border
+                    {
+                        Background = new LinearGradientBrush
+                        {
+                            StartPoint = new RelativePoint(0d, 1d, RelativeUnit.Relative),
+                            EndPoint = new RelativePoint(0d, 0d, RelativeUnit.Relative),
+                            GradientStops =
+                            [
+                                new GradientStop(Color.Parse("#DD020617"), 0d),
+                                new GradientStop(Color.Parse("#00020617"), 1d)
+                            ]
+                        }
+                    },
+                    new StackPanel
+                    {
+                        VerticalAlignment = VerticalAlignment.Bottom,
+                        Margin = new Thickness(42),
+                        Spacing = 12,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = "Origin Dossier",
+                                FontSize = 22,
+                                Foreground = new SolidColorBrush(Color.Parse("#93C5FD"))
+                            },
+                            new TextBlock
+                            {
+                                Text = bundle.Packet.Alias,
+                                FontSize = 42,
+                                FontWeight = FontWeight.Bold,
+                                Foreground = Brushes.White
+                            },
+                            new TextBlock
+                            {
+                                Text = bundle.Canon.Summary,
+                                FontSize = 18,
+                                TextWrapping = TextWrapping.Wrap,
+                                Foreground = new SolidColorBrush(Color.Parse("#E2E8F0"))
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    private static string BuildOriginPortraitContactSheet(
+        OriginDossierBundle bundle,
+        IReadOnlyList<OriginPortraitCandidate> candidates,
+        IReadOnlyList<string> portraitPaths)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"# Origin Portrait Contact Sheet · {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine("Select one portrait as canonical before scene or video renders are regenerated.");
+        builder.AppendLine();
+        for (int index = 0; index < candidates.Count; index++)
+        {
+            builder.AppendLine($"- {candidates[index].StyleLabel}: {portraitPaths[index]}");
+            builder.AppendLine($"  - {candidates[index].Summary}");
+        }
+        return builder.ToString().TrimEnd();
+    }
+
+    private static string BuildOriginSceneBrief(OriginDossierBundle bundle, IReadOnlyList<OriginSceneCandidate> candidates)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"# Origin Scene Brief · {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine("The selected portrait is treated as canonical identity. Scene candidates frame one consequential moment from that approved origin.");
+        builder.AppendLine();
+        foreach (OriginSceneCandidate candidate in candidates)
+        {
+            builder.AppendLine($"## {candidate.Title}");
+            builder.AppendLine(candidate.Summary);
+            builder.AppendLine();
+        }
+        return builder.ToString().TrimEnd();
+    }
+
+    private static string BuildOriginVideoStoryboard(OriginDossierBundle bundle)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"# Origin Dossier Video Storyboard · {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine("1. Title card");
+        builder.AppendLine($"   - {bundle.Packet.Alias} · {bundle.Packet.Metatype} · {bundle.Packet.BuildMethod}");
+        builder.AppendLine("2. Canon portrait reveal");
+        builder.AppendLine("3. Selected scene hold");
+        builder.AppendLine("4. Narrated origin summary");
+        builder.AppendLine("5. Build implication card");
+        builder.AppendLine("6. Close card");
+        builder.AppendLine();
+        builder.AppendLine("Narration lanes");
+        builder.AppendLine("- Default: Soundmadeseen");
+        builder.AppendLine("- Alternate: Unmixr AI");
+        builder.AppendLine("- Visual packet: vidBoard");
+        return builder.ToString().TrimEnd();
     }
 
     private static string BuildOriginCanonMarkdown(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
@@ -2346,6 +3155,22 @@ internal sealed class DesktopAliceWindow : Window
         IReadOnlyList<string> GmHooks,
         string? RuntimeFingerprint = null);
 
+    private sealed record OriginPortraitCandidate(
+        string CandidateId,
+        string StyleLabel,
+        string Summary,
+        string BackgroundHex,
+        string AccentHex,
+        string ForegroundHex,
+        string HighlightHex);
+
+    private sealed record OriginSceneCandidate(
+        string SceneId,
+        string Title,
+        string Summary,
+        string BackgroundHex,
+        string AccentHex);
+
     private sealed record OriginDossierBundle(
         CharacterNarrativePacket Packet,
         CharacterNarrativeDraft Canon,
@@ -2355,6 +3180,14 @@ internal sealed class DesktopAliceWindow : Window
         string CanonMarkdownPath,
         string? DossierPdfPath,
         string? MarkupGoPacketPath,
+        string? PortraitSetJsonPath,
+        string? PortraitContactSheetPath,
+        IReadOnlyList<string> PortraitCandidatePaths,
+        string? SelectedPortraitPath,
+        string? SceneBriefMarkdownPath,
+        string? SceneSetJsonPath,
+        IReadOnlyList<string> SceneCandidatePaths,
+        string? SelectedScenePath,
         string? SoundmadeseenPacketPath,
         string? SoundmadeseenScriptPath,
         string? UnmixrPacketPath,
@@ -2362,5 +3195,8 @@ internal sealed class DesktopAliceWindow : Window
         string? MediaFactoryNarrationRequestPath,
         string? MediaFactoryNarrationRunbookPath,
         string? MediaFactoryNarrationReceiptPath,
+        string? VidBoardPacketPath,
+        string? VideoStoryboardPath,
+        string? VideoPosterPath,
         string? RuntimeFingerprint = null);
 }
