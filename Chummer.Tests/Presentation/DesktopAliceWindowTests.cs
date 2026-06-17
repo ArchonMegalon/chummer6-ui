@@ -40,11 +40,17 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "Render dossier PDF");
         StringAssert.Contains(source, "Generate default voice packet");
         StringAssert.Contains(source, "Generate alternate voice packet");
+        StringAssert.Contains(source, "Prepare media-factory request");
         StringAssert.Contains(source, "MarkupGo");
         StringAssert.Contains(source, "Soundmadeseen");
         StringAssert.Contains(source, "Unmixr AI");
         StringAssert.Contains(source, "EnsureUnmixrNarrationPacket(");
+        StringAssert.Contains(source, "EnsureOriginMediaFactoryNarrationRequest(");
+        StringAssert.Contains(source, "media-factory-origin-audiobook.request.json");
+        StringAssert.Contains(source, "BuildOriginMediaFactoryNarrationRunbook(");
+        StringAssert.Contains(source, "ownerRepo = \"chummer6-media-factory\"");
         StringAssert.Contains(source, "AliceOriginGenerateAlternateAudiobookPacketButton");
+        StringAssert.Contains(source, "AliceOriginGenerateMediaFactoryNarrationRequestButton");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
     }
 
