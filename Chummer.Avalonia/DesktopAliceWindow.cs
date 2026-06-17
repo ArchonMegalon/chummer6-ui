@@ -22,8 +22,10 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopAliceWindow : Window
 {
     private const string OriginNarrationRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH";
+    private const string OriginVideoRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_REQUEST_PATH";
     private const string MediaFactoryRepoRoot = "/docker/fleet/repos/chummer-media-factory";
     private const string MediaFactoryNarrationCliProject = "/docker/fleet/repos/chummer-media-factory/tools/OriginDossierNarrationRequestCli/Chummer.Media.Factory.OriginDossierNarrationRequestCli.csproj";
+    private const string MediaFactoryVideoCliProject = "/docker/fleet/repos/chummer-media-factory/tools/OriginDossierVideoRequestCli/Chummer.Media.Factory.OriginDossierVideoRequestCli.csproj";
     internal static DesktopAliceWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
@@ -312,6 +314,7 @@ internal sealed class DesktopAliceWindow : Window
                     actionRow.Children.Add(CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
                     actionRow.Children.Add(CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
                     actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                    actionRow.Children.Add(CreateButton("Render dossier video now", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
                     if (_originBundle.PortraitCandidatePaths.Count > 0)
                     {
                         actionRow.Children.Add(CreateButton("Open selected portrait", () => !string.IsNullOrWhiteSpace(_originBundle.SelectedPortraitPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SelectedPortraitPath), name: "AliceOriginOpenSelectedPortraitButton"));
@@ -331,6 +334,14 @@ internal sealed class DesktopAliceWindow : Window
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationReceiptPath))
                     {
                         actionRow.Children.Add(CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryVideoReceiptPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open video receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryVideoReceiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_originBundle.RenderedVideoPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open rendered video", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.RenderedVideoPath), name: "AliceOriginOpenRenderedVideoButton"));
                     }
                 }
                 else if (_originDraft is not null)
@@ -560,7 +571,8 @@ internal sealed class DesktopAliceWindow : Window
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open video poster", () => !string.IsNullOrWhiteSpace(bundle.VideoPosterPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoPosterPath), isPrimary: true, name: "AliceOriginOpenVideoPosterButton"),
                 CreateButton("Open storyboard", () => !string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoStoryboardPath), name: "AliceOriginOpenVideoStoryboardButton"),
-                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
+                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"),
+                CreateButton("Render dossier video now", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
             return Task.CompletedTask;
         }
 
@@ -611,6 +623,31 @@ internal sealed class DesktopAliceWindow : Window
                 CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
                 CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
+        }
+
+        async Task RenderOriginDossierVideoNowAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before rendering the dossier video.";
+                return;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginDossierVideoPacket(EnsureOriginDossierBundle());
+            (string receiptPath, string renderedVideoPath) = await ExecuteOriginDossierVideoAsync(bundle).ConfigureAwait(true);
+            OriginDossierBundle updatedBundle = bundle with
+            {
+                MediaFactoryVideoReceiptPath = receiptPath,
+                RenderedVideoPath = renderedVideoPath
+            };
+            _originBundle = updatedBundle;
+            ShowOriginBundleState(
+                "ALICE rendered the dossier video through the local vidBoard candidate lane.",
+                $"Dossier video ready. Receipt: {Path.GetFileName(receiptPath)}. Video: {Path.GetFileName(renderedVideoPath)}.",
+                BuildOriginBundleEvidence(updatedBundle),
+                CreateButton("Open rendered video", () => DesktopCrashRuntime.TryOpenPathInShell(renderedVideoPath), isPrimary: true, name: "AliceOriginOpenRenderedVideoButton"),
+                CreateButton("Open video receipt", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
+                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(updatedBundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
         }
 
         async Task AskAsync()
@@ -1710,6 +1747,8 @@ internal sealed class DesktopAliceWindow : Window
             VidBoardPacketPath: null,
             VideoStoryboardPath: null,
             VideoPosterPath: null,
+            MediaFactoryVideoReceiptPath: null,
+            RenderedVideoPath: null,
             RuntimeFingerprint: _originDraft.RuntimeFingerprint);
         return _originBundle;
     }
@@ -1847,7 +1886,9 @@ internal sealed class DesktopAliceWindow : Window
             SelectedScenePath = null,
             VidBoardPacketPath = null,
             VideoStoryboardPath = null,
-            VideoPosterPath = null
+            VideoPosterPath = null,
+            MediaFactoryVideoReceiptPath = null,
+            RenderedVideoPath = null
         };
 
         if (!string.IsNullOrWhiteSpace(updated.PortraitSetJsonPath))
@@ -1944,7 +1985,9 @@ internal sealed class DesktopAliceWindow : Window
             SelectedScenePath = bundle.SceneCandidatePaths[index],
             VidBoardPacketPath = null,
             VideoStoryboardPath = null,
-            VideoPosterPath = null
+            VideoPosterPath = null,
+            MediaFactoryVideoReceiptPath = null,
+            RenderedVideoPath = null
         };
 
         if (!string.IsNullOrWhiteSpace(updated.SceneSetJsonPath))
@@ -2011,7 +2054,9 @@ internal sealed class DesktopAliceWindow : Window
         {
             VidBoardPacketPath = packetPath,
             VideoStoryboardPath = storyboardPath,
-            VideoPosterPath = posterPath
+            VideoPosterPath = posterPath,
+            MediaFactoryVideoReceiptPath = null,
+            RenderedVideoPath = null
         };
         _originBundle = updated;
         return updated;
@@ -2289,6 +2334,16 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"Video poster: {Path.GetFileName(bundle.VideoPosterPath)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryVideoReceiptPath))
+        {
+            lines.Add($"Video receipt: {Path.GetFileName(bundle.MediaFactoryVideoReceiptPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.RenderedVideoPath))
+        {
+            lines.Add($"Rendered video: {Path.GetFileName(bundle.RenderedVideoPath)}");
+        }
+
         return lines;
     }
 
@@ -2343,6 +2398,72 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return receiptPath;
+    }
+
+    private static async Task<(string ReceiptPath, string RenderedVideoPath)> ExecuteOriginDossierVideoAsync(OriginDossierBundle bundle)
+    {
+        if (string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath))
+        {
+            throw new InvalidOperationException("Origin dossier bundle is missing the vidBoard packet.");
+        }
+
+        if (!File.Exists(MediaFactoryVideoCliProject))
+        {
+            throw new FileNotFoundException("Origin dossier video CLI project was not found.", MediaFactoryVideoCliProject);
+        }
+
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = "dotnet",
+            WorkingDirectory = MediaFactoryRepoRoot,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        startInfo.ArgumentList.Add("run");
+        startInfo.ArgumentList.Add("--project");
+        startInfo.ArgumentList.Add(MediaFactoryVideoCliProject);
+        startInfo.ArgumentList.Add("--configuration");
+        startInfo.ArgumentList.Add("Release");
+        startInfo.ArgumentList.Add("--nologo");
+        startInfo.ArgumentList.Add("--verbosity");
+        startInfo.ArgumentList.Add("quiet");
+        startInfo.Environment[OriginVideoRequestPathEnv] = bundle.VidBoardPacketPath;
+
+        using Process process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Failed to start the origin dossier video render CLI.");
+        string standardOutput = await process.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
+        string standardError = await process.StandardError.ReadToEndAsync().ConfigureAwait(false);
+        await process.WaitForExitAsync().ConfigureAwait(false);
+        if (process.ExitCode != 0)
+        {
+            throw new InvalidOperationException(
+                $"Origin dossier video render failed with exit code {process.ExitCode}: {standardError.Trim()}");
+        }
+
+        string receiptPath = standardOutput
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .LastOrDefault()
+            ?? string.Empty;
+        if (receiptPath.Length == 0 || !File.Exists(receiptPath))
+        {
+            throw new InvalidOperationException("Origin dossier video render did not return a valid receipt path.");
+        }
+
+        using JsonDocument document = JsonDocument.Parse(await File.ReadAllTextAsync(receiptPath).ConfigureAwait(false));
+        if (!document.RootElement.TryGetProperty("renderedVideoPath", out JsonElement renderedVideoPathElement)
+            || renderedVideoPathElement.ValueKind is not JsonValueKind.String)
+        {
+            throw new InvalidOperationException("Origin dossier video receipt is missing renderedVideoPath.");
+        }
+
+        string renderedVideoPath = renderedVideoPathElement.GetString()?.Trim() ?? string.Empty;
+        if (renderedVideoPath.Length == 0 || !File.Exists(renderedVideoPath))
+        {
+            throw new InvalidOperationException("Origin dossier video receipt did not return a valid rendered video path.");
+        }
+
+        return (receiptPath, renderedVideoPath);
     }
 
     private static void RenderControlToPng(Control control, int width, int height, string outputPath)
@@ -3198,5 +3319,7 @@ internal sealed class DesktopAliceWindow : Window
         string? VidBoardPacketPath,
         string? VideoStoryboardPath,
         string? VideoPosterPath,
+        string? MediaFactoryVideoReceiptPath,
+        string? RenderedVideoPath,
         string? RuntimeFingerprint = null);
 }

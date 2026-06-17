@@ -77,12 +77,21 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "AliceOriginGenerateAlternateAudiobookPacketButton");
         StringAssert.Contains(source, "AliceOriginGenerateMediaFactoryNarrationRequestButton");
         StringAssert.Contains(source, "RenderOriginAudiobookNowAsync");
+        StringAssert.Contains(source, "RenderOriginDossierVideoNowAsync");
         StringAssert.Contains(source, "AliceOriginRenderAudiobookNowButton");
+        StringAssert.Contains(source, "AliceOriginRenderDossierVideoNowButton");
         StringAssert.Contains(source, "AliceOriginOpenMediaFactoryNarrationReceiptButton");
+        StringAssert.Contains(source, "AliceOriginOpenMediaFactoryVideoReceiptButton");
+        StringAssert.Contains(source, "AliceOriginOpenRenderedVideoButton");
         StringAssert.Contains(source, "ExecuteOriginMediaFactoryNarrationAsync(");
+        StringAssert.Contains(source, "ExecuteOriginDossierVideoAsync(");
         StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH");
+        StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_REQUEST_PATH");
         StringAssert.Contains(source, "MediaFactoryNarrationCliProject");
+        StringAssert.Contains(source, "MediaFactoryVideoCliProject");
         StringAssert.Contains(source, "MediaFactoryNarrationReceiptPath");
+        StringAssert.Contains(source, "MediaFactoryVideoReceiptPath");
+        StringAssert.Contains(source, "RenderedVideoPath");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
     }
 
