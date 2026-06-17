@@ -351,6 +351,12 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <Style Selector="ListBoxItem TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="30" />
       <Setter Property="Padding" Value="8,4" />
@@ -383,6 +389,15 @@
     <Style Selector="ComboBoxItem:selected">
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="TextBox">
       <Setter Property="MinHeight" Value="30" />

@@ -3970,7 +3970,9 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
 
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellAccentButtonBrush"]));
