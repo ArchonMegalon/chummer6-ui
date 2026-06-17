@@ -768,73 +768,13 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
         };
 
     private static Border CreateSection(string heading, Control body, Control? actionContent = null)
-    {
-        ToolTip.SetTip(body, heading);
-        StackPanel content = new()
-        {
-            Spacing = 0,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = heading,
-                    IsVisible = false,
-                    FontWeight = FontWeight.SemiBold,
-                    FontSize = 15
-                },
-                body
-            }
-        };
-
-        if (actionContent is not null)
-        {
-            content.Children.Add(actionContent);
-        }
-
-        return DesktopShellTheme.CreateUtilityPanel(content, padding: 8, cornerRadius: 4);
-    }
+        => DesktopShellTheme.CreateSection(heading, body, actionContent, padding: 8, cornerRadius: 4, includeHeading: false, spacing: 0);
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
-    {
-        StackPanel actionRow = new()
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6
-        };
-
-        foreach (Button action in actions)
-        {
-            actionRow.Children.Add(action);
-        }
-
-        return actionRow;
-    }
+        => DesktopShellTheme.CreateStackActionRow(actions, spacing: 6);
 
     private static Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
-    {
-        Button button = new()
-        {
-            Content = label,
-            MinWidth = 104
-        };
-
-        if (isPrimary)
-        {
-            button.FontWeight = FontWeight.SemiBold;
-            DesktopShellTheme.ApplyPrimaryButton(button);
-        }
-
-        button.Click += async (_, _) =>
-        {
-            await action().ConfigureAwait(true);
-            if (closeWindow && TopLevel.GetTopLevel(button) is Window window)
-            {
-                window.Close();
-            }
-        };
-
-        return button;
-    }
+        => DesktopShellTheme.CreateButton(label, action, closeWindow, isPrimary);
 
     private string S(string key)
         => DesktopLocalizationCatalog.GetRequiredString(key, _preferences.Language);

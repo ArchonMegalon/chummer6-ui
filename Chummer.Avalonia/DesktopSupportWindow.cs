@@ -395,88 +395,19 @@ internal sealed class DesktopSupportWindow : Window
     }
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
-    {
-        ToolTip.SetTip(body, title);
-        StackPanel content = new() { Spacing = 8 };
-
-        content.Children.Add(new TextBlock
-        {
-            Text = title,
-            FontWeight = FontWeight.SemiBold,
-            TextWrapping = TextWrapping.Wrap
-        });
-        content.Children.Add(body);
-
-        if (actionContent is not null)
-        {
-            content.Children.Add(actionContent);
-        }
-
-        return DesktopShellTheme.CreateUtilityPanel(content, padding: 10, cornerRadius: 4);
-    }
+        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4);
 
     private static WrapPanel CreateActionRow(IReadOnlyList<Button> actions)
-    {
-        WrapPanel actionRow = new()
-        {
-            Orientation = Orientation.Horizontal,
-            ItemHeight = 32,
-            ItemWidth = double.NaN
-        };
-
-        foreach (Button action in actions)
-        {
-            action.Margin = new Thickness(0, 0, 6, 6);
-            actionRow.Children.Add(action);
-        }
-
-        return actionRow;
-    }
+        => DesktopShellTheme.CreateWrapActionRow(actions, new Thickness(0, 0, 6, 6));
 
     private static void ResetActionRow(WrapPanel actionRow, IReadOnlyList<Button> actions)
-    {
-        actionRow.Children.Clear();
-        foreach (Button action in actions)
-        {
-            action.Margin = new Thickness(0, 0, 6, 6);
-            actionRow.Children.Add(action);
-        }
-    }
+        => DesktopShellTheme.ResetActionRow(actionRow, actions, new Thickness(0, 0, 6, 6));
 
     private static Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false)
-        => CreateButton(
-            label,
-            () =>
-            {
-                action();
-                return Task.CompletedTask;
-            },
-            closeWindow,
-            isPrimary);
+        => DesktopShellTheme.CreateButton(label, action, closeWindow, isPrimary);
 
     private static Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
-    {
-        Button button = new()
-        {
-            Content = label,
-            MinWidth = 104
-        };
-        if (isPrimary)
-        {
-            button.FontWeight = FontWeight.SemiBold;
-            DesktopShellTheme.ApplyPrimaryButton(button);
-        }
-
-        button.Click += async (_, _) =>
-        {
-            await action().ConfigureAwait(true);
-            if (closeWindow && TopLevel.GetTopLevel(button) is Window window)
-            {
-                window.Close();
-            }
-        };
-        return button;
-    }
+        => DesktopShellTheme.CreateButton(label, action, closeWindow, isPrimary);
 
     private string S(string key)
         => DesktopLocalizationCatalog.GetRequiredString(key, _preferences.Language);
