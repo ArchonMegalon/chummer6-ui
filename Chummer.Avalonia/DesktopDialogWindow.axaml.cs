@@ -227,8 +227,7 @@ public partial class DesktopDialogWindow : Window
     {
         pane = null;
         if (string.IsNullOrWhiteSpace(BoundDialogId)
-            || !BoundDialogId.StartsWith("dialog.ui.", StringComparison.Ordinal)
-            || !BoundDialogId.EndsWith("_add", StringComparison.Ordinal))
+            || !BoundDialogId.StartsWith("dialog.ui.", StringComparison.Ordinal))
         {
             return false;
         }
