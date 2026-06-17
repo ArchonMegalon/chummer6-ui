@@ -3968,17 +3968,25 @@ public sealed class AvaloniaFlagshipUiGateTests
 
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellAccentButtonBrush"]));
+        Assert.AreEqual("#EEF2F6", ToHex(light["ChummerShellSelectionToolbarBrush"]));
+        Assert.AreEqual("#F8FAFC", ToHex(light["ChummerShellSelectionPanelBrush"]));
+        Assert.AreEqual("#475569", ToHex(light["ChummerShellTextMutedBrush"]));
         Assert.AreEqual("#1C4A2D", ToHex(dark["ChummerShellActiveMenuBackgroundBrush"]));
         Assert.AreEqual("#90C39A", ToHex(dark["ChummerShellActiveMenuBorderBrush"]));
+        Assert.AreEqual("#0B1220", ToHex(dark["ChummerShellSelectionToolbarBrush"]));
+        Assert.AreEqual("#111827", ToHex(dark["ChummerShellSelectionPanelBrush"]));
+        Assert.AreEqual("#94A3B8", ToHex(dark["ChummerShellTextMutedBrush"]));
 
         AssertContrastAtLeast(light["ChummerShellForegroundBrush"], light["ChummerShellSurfaceBrush"], 12d, "light shell foreground on surface");
         AssertContrastAtLeast(light["ChummerShellMutedForegroundBrush"], light["ChummerShellSurfaceBrush"], 7d, "light shell muted foreground on surface");
+        AssertContrastAtLeast(light["ChummerShellTextMutedBrush"], light["ChummerShellSelectionPanelBrush"], 7d, "light selection muted text on panel");
         AssertContrastAtLeast(light["ChummerShellAccentButtonForegroundBrush"], light["ChummerShellAccentButtonBrush"], 7d, "light accent button text");
         AssertContrastAtLeast(light["ChummerShellWarningBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light warning tone on surface");
         AssertContrastAtLeast(light["ChummerShellDangerBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light danger tone on surface");
 
         AssertContrastAtLeast(dark["ChummerShellForegroundBrush"], dark["ChummerShellSurfaceBrush"], 12d, "dark shell foreground on surface");
         AssertContrastAtLeast(dark["ChummerShellMutedForegroundBrush"], dark["ChummerShellSurfaceBrush"], 7d, "dark shell muted foreground on surface");
+        AssertContrastAtLeast(dark["ChummerShellTextMutedBrush"], dark["ChummerShellSelectionPanelBrush"], 5d, "dark selection muted text on panel");
         AssertContrastAtLeast(dark["ChummerShellAccentButtonForegroundBrush"], dark["ChummerShellAccentButtonBrush"], 7d, "dark accent button text");
         AssertContrastAtLeast(dark["ChummerShellWarningBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark warning tone on surface");
         AssertContrastAtLeast(dark["ChummerShellDangerBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark danger tone on surface");

@@ -444,9 +444,9 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            Background = ResolveThemeBrush("ChummerShellSelectionToolbarBrush", "#EEF2F6"),
             CornerRadius = default,
-            Padding = new Thickness(4),
+            Padding = new Thickness(6, 5),
             Child = body
         };
     }
@@ -466,9 +466,9 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            Background = ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#F8FAFC"),
             CornerRadius = default,
-            Padding = new Thickness(4),
+            Padding = new Thickness(6, 5),
             MinHeight = minHeight,
             Child = shell
         };
@@ -478,9 +478,9 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 0, 0, 3),
+            Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
             {
                 Text = title,
@@ -518,7 +518,7 @@ public partial class DesktopDialogWindow : Window
 
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
+            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header
@@ -557,11 +557,11 @@ public partial class DesktopDialogWindow : Window
 
         return new Border
         {
-            Padding = new Thickness(4, 3),
+            Padding = new Thickness(5, 4),
             Margin = new Thickness(0),
-            Background = Brushes.Transparent,
-            BorderBrush = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
+            Background = ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
+            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
+            BorderThickness = new Thickness(0, 0, 0, 1),
             Child = body
         };
     }
