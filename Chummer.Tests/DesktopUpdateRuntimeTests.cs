@@ -241,6 +241,30 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void TryCompareReleaseVersions_orders_run_timestamps_and_blocks_downgrades()
+    {
+        System.Reflection.MethodInfo? method = typeof(DesktopUpdateRuntime).GetMethod(
+            "TryCompareReleaseVersions",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        Assert.IsNotNull(method, "Expected DesktopUpdateRuntime.TryCompareReleaseVersions to remain available for coverage.");
+
+        object?[] newerInstalledArgs = ["run-20260617-064329", "run-20260617-061500", 0];
+        bool comparable = (bool)method.Invoke(null, newerInstalledArgs)!;
+        Assert.IsTrue(comparable);
+        Assert.IsTrue((int)newerInstalledArgs[2]! > 0);
+
+        object?[] equalArgs = ["run-20260617-064329", "run-20260617-064329", 0];
+        comparable = (bool)method.Invoke(null, equalArgs)!;
+        Assert.IsTrue(comparable);
+        Assert.AreEqual(0, (int)equalArgs[2]!);
+
+        object?[] olderInstalledArgs = ["run-20260617-061500", "run-20260617-064329", 0];
+        comparable = (bool)method.Invoke(null, olderInstalledArgs)!;
+        Assert.IsTrue(comparable);
+        Assert.IsTrue((int)olderInstalledArgs[2]! < 0);
+    }
+
+    [TestMethod]
     public async Task CheckAndScheduleStartupUpdateAsync_rejects_artifact_that_fails_checksum_validation()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
@@ -666,6 +690,29 @@ public sealed class DesktopUpdateRuntimeTests
                 Directory.Delete(manifestDirectory, recursive: true);
             }
         }
+    }
+
+    [TestMethod]
+    public void Resolve_artifact_uri_keeps_root_relative_web_downloads_on_manifest_host()
+    {
+        Uri manifestUri = new("https://chummer.run/downloads/RELEASE_CHANNEL.generated.json");
+        DesktopUpdateArtifact artifact = new(
+            "installer",
+            "avalonia",
+            "linux",
+            "x64",
+            "installer",
+            "chummer-avalonia-linux-x64-installer.deb",
+            "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+            null,
+            null,
+            null);
+
+        Uri artifactUri = InvokePrivateStatic<Uri>("ResolveArtifactUri", manifestUri, artifact);
+
+        Assert.AreEqual("https", artifactUri.Scheme);
+        Assert.AreEqual("chummer.run", artifactUri.Host);
+        Assert.AreEqual("/downloads/files/chummer-avalonia-linux-x64-installer.deb", artifactUri.AbsolutePath);
     }
 
     [TestMethod]

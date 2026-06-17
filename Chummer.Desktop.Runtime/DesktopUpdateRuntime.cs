@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Chummer.Desktop.Runtime;
 
@@ -72,6 +73,9 @@ public static class DesktopUpdateRuntime
     private const int StartupDownloadBackoffMinutes = 5;
     private const int StartupApplyBackoffMinutes = 10;
     private const int RollbackWindowDays = 1;
+    private static readonly Regex RunVersionPattern = new(
+        "^run-(?<date>\\d{8})-(?<time>\\d{6})$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     public static bool ShouldPromptForStartupUpdate(string headId)
     {
@@ -549,7 +553,7 @@ public static class DesktopUpdateRuntime
                 return DesktopUpdateStartupResult.Continue("seeded_from_manifest");
             }
 
-            if (string.Equals(installedVersion, manifest.Version, StringComparison.OrdinalIgnoreCase))
+            if (TryCompareReleaseVersions(installedVersion, manifest.Version, out int releaseComparison) && releaseComparison >= 0)
             {
                 updatedState = updatedState with
                 {
@@ -560,7 +564,7 @@ public static class DesktopUpdateRuntime
                     NextRetryAtUtc = null
                 };
                 DesktopUpdateStateStore.Save(paths.StateFilePath, updatedState);
-                return DesktopUpdateStartupResult.Continue("already_current");
+                return DesktopUpdateStartupResult.Continue(releaseComparison == 0 ? "already_current" : "installed_ahead_of_manifest");
             }
 
             if (!configuration.AutoApply)
@@ -1022,18 +1026,50 @@ public static class DesktopUpdateRuntime
         return new Uri(expandedPath);
     }
 
+    private static bool TryCompareReleaseVersions(string installedVersion, string manifestVersion, out int comparison)
+    {
+        comparison = 0;
+
+        if (string.Equals(installedVersion, manifestVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string installed = installedVersion.Trim();
+        string manifest = manifestVersion.Trim();
+        if (installed.Length == 0 || manifest.Length == 0)
+        {
+            return false;
+        }
+
+        Match installedRunVersion = RunVersionPattern.Match(installed);
+        Match manifestRunVersion = RunVersionPattern.Match(manifest);
+        if (installedRunVersion.Success && manifestRunVersion.Success)
+        {
+            string installedStamp = installedRunVersion.Groups["date"].Value + installedRunVersion.Groups["time"].Value;
+            string manifestStamp = manifestRunVersion.Groups["date"].Value + manifestRunVersion.Groups["time"].Value;
+            comparison = string.CompareOrdinal(installedStamp, manifestStamp);
+            return true;
+        }
+
+        return false;
+    }
+
     private static Uri ResolveArtifactUri(Uri manifestUri, DesktopUpdateArtifact artifact)
     {
         string rawUrl = !string.IsNullOrWhiteSpace(artifact.DownloadUrl)
             ? artifact.DownloadUrl
             : artifact.UpdateFeedUrl ?? string.Empty;
-        if (Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? absoluteUri)
-            && (!manifestUri.IsFile
-                || absoluteUri.IsFile
-                || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        if (Uri.TryCreate(rawUrl, UriKind.Absolute, out Uri? absoluteUri))
         {
-            return absoluteUri;
+            bool isHttpUri = string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(absoluteUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase);
+            bool isExplicitFileUri = string.Equals(absoluteUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase)
+                && (rawUrl.StartsWith("file:", StringComparison.OrdinalIgnoreCase) || manifestUri.IsFile);
+            if (isHttpUri || isExplicitFileUri)
+            {
+                return absoluteUri;
+            }
         }
 
         if (manifestUri.IsFile)
