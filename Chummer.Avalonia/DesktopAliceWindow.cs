@@ -298,13 +298,15 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
-                    actionRow.Children.Add(CreateButton("Open narration packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
                 }
                 else if (_originDraft is not null)
                 {
                     actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                     actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                    actionRow.Children.Add(CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                    actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                    actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
                 }
                 else
                 {
@@ -360,12 +362,13 @@ internal sealed class DesktopAliceWindow : Window
             OriginDossierBundle bundle = EnsureOriginDossierBundle();
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE approved the origin canon and created a first-party bundle root for MarkupGo and Soundmadeseen outputs.",
+                "ALICE approved the origin canon and created a first-party bundle root for MarkupGo plus default and alternate voice outputs.",
                 $"{bundle.Canon.Summary} The canonical origin is now frozen for later ALICE build and rules continuity until you regenerate the draft.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"),
                 CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
-                CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
+                CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
             return Task.CompletedTask;
         }
 
@@ -393,18 +396,40 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before preparing the Soundmadeseen audiobook packet.";
+                statusText.Text = "Generate an origin draft before preparing the default voice audiobook packet.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureSoundmadeseenNarrationPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE prepared a Soundmadeseen narration packet from the approved origin canon.",
-                $"Soundmadeseen packet ready. Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
+                "ALICE prepared the default Soundmadeseen narration packet from the approved origin canon.",
+                $"Default voice packet ready. Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open narration packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
-                CreateButton("Open narration script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
+                CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
+                CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
+                CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
+            return Task.CompletedTask;
+        }
+
+        Task RenderOriginAlternateAudiobookPacketAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before preparing the alternate voice audiobook packet.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureUnmixrNarrationPacket(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE prepared the alternate Unmixr AI narration packet from the approved origin canon.",
+                $"Alternate voice packet ready. Narration script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Packet: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
+                CreateButton("Open alternate voice script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
+                CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -442,7 +467,8 @@ internal sealed class DesktopAliceWindow : Window
                 [
                     "Approve canon",
                     "Render dossier PDF",
-                    "Generate Soundmadeseen packet"
+                    "Generate default voice packet",
+                    "Generate alternate voice packet"
                 ];
                 ActiveHistory().Add(BuildAssistantTurn(
                     mode,
@@ -453,7 +479,8 @@ internal sealed class DesktopAliceWindow : Window
                 RefreshConversationFeed();
                 actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                 actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                actionRow.Children.Add(CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
                 actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
                 return;
@@ -1460,7 +1487,8 @@ internal sealed class DesktopAliceWindow : Window
                 providerLanes = new
                 {
                     document = "MarkupGo",
-                    narration = "Soundmadeseen"
+                    narrationDefault = "Soundmadeseen",
+                    narrationAlternate = "Unmixr AI"
                 }
             },
             new JsonSerializerOptions { WriteIndented = true }));
@@ -1476,6 +1504,8 @@ internal sealed class DesktopAliceWindow : Window
             MarkupGoPacketPath: null,
             SoundmadeseenPacketPath: null,
             SoundmadeseenScriptPath: null,
+            UnmixrPacketPath: null,
+            UnmixrScriptPath: null,
             RuntimeFingerprint: _originDraft.RuntimeFingerprint);
         return _originBundle;
     }
@@ -1575,6 +1605,48 @@ internal sealed class DesktopAliceWindow : Window
         return updated;
     }
 
+    private OriginDossierBundle EnsureUnmixrNarrationPacket(OriginDossierBundle bundle)
+    {
+        if (!string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath)
+            && !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath)
+            && File.Exists(bundle.UnmixrPacketPath)
+            && File.Exists(bundle.UnmixrScriptPath))
+        {
+            return bundle;
+        }
+
+        string scriptPath = Path.Combine(bundle.BundleDirectory, "unmixr-origin-reading.txt");
+        string packetPath = Path.Combine(bundle.BundleDirectory, "unmixr-origin-reading.packet.json");
+        string script = BuildUnmixrNarrationScript(bundle);
+        File.WriteAllText(scriptPath, script);
+        File.WriteAllText(packetPath, JsonSerializer.Serialize(
+            new
+            {
+                tool = "Unmixr AI",
+                artifactKind = "origin_audiobook_alternate_voice",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                source = "first_party_origin_canon",
+                title = $"{bundle.Packet.Alias} Origin Reading",
+                narrationMode = "alternate_voice_reading",
+                scriptPath,
+                durationTargetSeconds = 75,
+                sourceCanon = new
+                {
+                    bundle.CanonMarkdownPath,
+                    bundle.CanonJsonPath
+                }
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            UnmixrPacketPath = packetPath,
+            UnmixrScriptPath = scriptPath
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
     private static IReadOnlyList<string> BuildOriginBundleEvidence(OriginDossierBundle bundle)
     {
         List<string> lines =
@@ -1583,7 +1655,8 @@ internal sealed class DesktopAliceWindow : Window
             $"Canon: {Path.GetFileName(bundle.CanonMarkdownPath)}",
             $"Canon packet: {Path.GetFileName(bundle.CanonJsonPath)}",
             "Document lane: MarkupGo",
-            "Narration lane: Soundmadeseen"
+            "Default voice lane: Soundmadeseen",
+            "Alternate voice lane: Unmixr AI"
         ];
 
         if (!string.IsNullOrWhiteSpace(bundle.DossierPdfPath))
@@ -1598,12 +1671,22 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath))
         {
-            lines.Add($"Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}");
+            lines.Add($"Default voice script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath))
         {
             lines.Add($"Soundmadeseen packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath))
+        {
+            lines.Add($"Alternate voice script: {Path.GetFileName(bundle.UnmixrScriptPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath))
+        {
+            lines.Add($"Unmixr AI packet: {Path.GetFileName(bundle.UnmixrPacketPath)}");
         }
 
         return lines;
@@ -1652,6 +1735,26 @@ internal sealed class DesktopAliceWindow : Window
     {
         StringBuilder builder = new();
         builder.AppendLine($"Soundmadeseen audiobook brief for {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine(bundle.Canon.Summary);
+        builder.AppendLine();
+        builder.AppendLine(bundle.Canon.Prose);
+        builder.AppendLine();
+        builder.AppendLine("GM hooks:");
+        foreach (string hook in bundle.Canon.GmHooks)
+        {
+            builder.AppendLine($"- {hook}");
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    private static string BuildUnmixrNarrationScript(OriginDossierBundle bundle)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"Unmixr AI alternate voice brief for {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine("Voice direction: intimate dossier reading with slightly more expressive cadence than the default operator voice.");
         builder.AppendLine();
         builder.AppendLine(bundle.Canon.Summary);
         builder.AppendLine();
@@ -2004,5 +2107,7 @@ internal sealed class DesktopAliceWindow : Window
         string? MarkupGoPacketPath,
         string? SoundmadeseenPacketPath,
         string? SoundmadeseenScriptPath,
+        string? UnmixrPacketPath,
+        string? UnmixrScriptPath,
         string? RuntimeFingerprint = null);
 }

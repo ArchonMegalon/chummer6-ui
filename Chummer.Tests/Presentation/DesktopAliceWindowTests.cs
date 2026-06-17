@@ -38,9 +38,13 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "OriginDossierBundle");
         StringAssert.Contains(source, "Approve canon");
         StringAssert.Contains(source, "Render dossier PDF");
-        StringAssert.Contains(source, "Generate Soundmadeseen packet");
+        StringAssert.Contains(source, "Generate default voice packet");
+        StringAssert.Contains(source, "Generate alternate voice packet");
         StringAssert.Contains(source, "MarkupGo");
         StringAssert.Contains(source, "Soundmadeseen");
+        StringAssert.Contains(source, "Unmixr AI");
+        StringAssert.Contains(source, "EnsureUnmixrNarrationPacket(");
+        StringAssert.Contains(source, "AliceOriginGenerateAlternateAudiobookPacketButton");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
     }
 
