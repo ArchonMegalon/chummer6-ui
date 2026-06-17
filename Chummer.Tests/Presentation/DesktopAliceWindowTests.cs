@@ -32,6 +32,9 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "AliceAskButton");
         StringAssert.Contains(source, "BuildConversationTurnView(");
         StringAssert.Contains(source, "BuildStarterPrompts(");
+        StringAssert.Contains(source, "\"Origin draft\"");
+        StringAssert.Contains(source, "BuildNarrativePacket(");
+        StringAssert.Contains(source, "BuildSeededAssistantMessage(");
     }
 
     [TestMethod]

@@ -24,6 +24,10 @@ internal sealed class DesktopAliceWindow : Window
     private readonly string? _workspaceId;
     private readonly string _coachConversationId = $"alice-coach-{Guid.NewGuid():N}";
     private readonly string _buildConversationId = $"alice-build-{Guid.NewGuid():N}";
+    private BuildLabHandoffProjection? _selectedHandoff;
+    private DesktopBuildPathCandidate? _selectedBuildPath;
+    private Action? _refreshAssistantContext;
+    private CharacterNarrativeDraft? _originDraft;
     private bool HasHandoffContext => (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
     private bool HasBuildPathContext => _buildPathCandidates.Count > 0;
 
@@ -40,6 +44,8 @@ internal sealed class DesktopAliceWindow : Window
         _coachSidecarClient = coachSidecarClient;
         _rulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
         _workspaceId = recentWorkspaces.FirstOrDefault()?.Id.Value;
+        _selectedHandoff = campaignSummary?.BuildLabHandoffs.OrderByDescending(item => item.UpdatedAtUtc).FirstOrDefault();
+        _selectedBuildPath = buildPathCandidates.FirstOrDefault();
 
         Title = "ALICE";
         Width = 940;
@@ -136,9 +142,10 @@ internal sealed class DesktopAliceWindow : Window
 
     private Control CreateAssistantCard()
     {
-        IReadOnlyList<string> modes = ["Build help", "Rules coach"];
+        IReadOnlyList<string> modes = ["Build help", "Rules coach", "Origin draft"];
         List<AliceConversationTurnEntry> buildHistory = [];
         List<AliceConversationTurnEntry> rulesHistory = [];
+        List<AliceConversationTurnEntry> originHistory = [];
         ComboBox modeCombo = new()
         {
             Name = "AliceConversationModeCombo",
@@ -201,10 +208,36 @@ internal sealed class DesktopAliceWindow : Window
             ItemWidth = double.NaN
         };
 
+        TextBlock contextHeadingText = new()
+        {
+            Name = "AliceAssistantContextHeadingText",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock contextSummaryText = new()
+        {
+            Name = "AliceAssistantContextSummaryText",
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock contextDetailText = new()
+        {
+            Name = "AliceAssistantContextDetailText",
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
         List<AliceConversationTurnEntry> ActiveHistory()
-            => string.Equals(modeCombo.SelectedItem?.ToString(), "Rules coach", StringComparison.Ordinal)
-                ? rulesHistory
-                : buildHistory;
+        {
+            string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
+            return mode switch
+            {
+                "Rules coach" => rulesHistory,
+                "Origin draft" => originHistory,
+                _ => buildHistory
+            };
+        }
 
         void RefreshConversationFeed()
         {
@@ -241,14 +274,31 @@ internal sealed class DesktopAliceWindow : Window
             }
         }
 
+        void RefreshAssistantContextSummary()
+        {
+            AliceAssistantContextProjection projection = BuildAssistantContextProjection(modeCombo.SelectedItem?.ToString());
+            contextHeadingText.Text = projection.Title;
+            contextSummaryText.Text = projection.Summary;
+            contextDetailText.Text = projection.Detail;
+        }
+
         void ApplyIdleState()
         {
             statusText.Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString());
             answerText.Text = BuildIdleAssistantAnswer(modeCombo.SelectedItem?.ToString());
             evidenceList.ItemsSource = BuildIdleEvidence(modeCombo.SelectedItem?.ToString());
             actionRow.Children.Clear();
-            actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
-            actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
+            if (string.Equals(modeCombo.SelectedItem?.ToString(), "Origin draft", StringComparison.Ordinal))
+            {
+                actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenProposalStudioButton"));
+                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+            }
+            else
+            {
+                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+                actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
+            }
+            RefreshAssistantContextSummary();
             RefreshStarterPrompts();
             RefreshConversationFeed();
         }
@@ -270,6 +320,34 @@ internal sealed class DesktopAliceWindow : Window
             answerText.Text = "Waiting for grounded assistant output...";
             evidenceList.ItemsSource = Array.Empty<string>();
             actionRow.Children.Clear();
+
+            if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+            {
+                CharacterNarrativePacket packet = BuildNarrativePacket(message);
+                CharacterNarrativeDraft originDraft = BuildOriginDraft(packet);
+                _originDraft = originDraft;
+                statusText.Text = "ALICE generated a grounded origin draft from the current desktop build context.";
+                answerText.Text = originDraft.Prose;
+                string[] originEvidence = BuildOriginEvidence(packet, originDraft);
+                evidenceList.ItemsSource = originEvidence;
+                string[] originActionTitles =
+                [
+                    "Regenerate with same facts",
+                    "Focus on qualities",
+                    "Focus on implants"
+                ];
+                ActiveHistory().Add(BuildAssistantTurn(
+                    mode,
+                    statusText.Text,
+                    answerText.Text,
+                    originEvidence,
+                    originActionTitles));
+                RefreshConversationFeed();
+                actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, isPrimary: true, name: "AliceOriginRegenerateButton"));
+                actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOriginOpenProposalStudioButton"));
+                promptBox.Text = string.Empty;
+                return;
+            }
 
             AiConversationTurnResponse? response = await TryAskAssistantAsync(mode, message).ConfigureAwait(true);
             if (response is null)
@@ -310,6 +388,7 @@ internal sealed class DesktopAliceWindow : Window
             promptBox.Text = string.Empty;
         }
 
+        _refreshAssistantContext = ApplyIdleState;
         modeCombo.SelectionChanged += (_, _) => ApplyIdleState();
         ApplyIdleState();
 
@@ -320,8 +399,28 @@ internal sealed class DesktopAliceWindow : Window
             {
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantRulesetBadge", "Ruleset", _rulesetId ?? "none"),
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContextBadge", "Context", !string.IsNullOrWhiteSpace(_workspaceId) ? "workspace" : "global")),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContextBadge", "Context", !string.IsNullOrWhiteSpace(_workspaceId) ? "workspace" : "global"),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContinuityBadge", "Continuity", HasBuildPathContext || HasHandoffContext ? "attached" : "local")),
                 modeCombo,
+                new Border
+                {
+                    Name = "AliceAssistantContextCard",
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderThickness = new Thickness(1),
+                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10),
+                    Child = new StackPanel
+                    {
+                        Spacing = 4,
+                        Children =
+                        {
+                            contextHeadingText,
+                            contextSummaryText,
+                            contextDetailText
+                        }
+                    }
+                },
                 conversationList,
                 starterPromptRow,
                 promptBox,
@@ -453,6 +552,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (handoffList.SelectedItem is BuildLabHandoffProjection selected)
             {
+                _selectedHandoff = selected;
                 selectedTitleText.Text = $"{selected.Title} [{selected.ProgressionLabel}]";
                 string mode = detailModeCombo.SelectedItem?.ToString() ?? "Summary";
                 switch (mode)
@@ -486,6 +586,7 @@ internal sealed class DesktopAliceWindow : Window
             }
             else
             {
+                _selectedHandoff = null;
                 string mode = detailModeCombo.SelectedItem?.ToString() ?? "Summary";
                 selectedTitleText.Text = "No selected handoff";
                 switch (mode)
@@ -504,6 +605,8 @@ internal sealed class DesktopAliceWindow : Window
                         break;
                 }
             }
+
+            _refreshAssistantContext?.Invoke();
         }
 
         handoffList.SelectionChanged += (_, _) => RefreshSelectedHandoff();
@@ -611,6 +714,7 @@ internal sealed class DesktopAliceWindow : Window
             string mode = proposalModeCombo.SelectedItem?.ToString() ?? "Summary";
             if (buildPathCombo.SelectedItem is DesktopBuildPathCandidate selected)
             {
+                _selectedBuildPath = selected;
                 selectedBuildPathTitleText.Text = $"{selected.Suggestion.Title} [{selected.Suggestion.Visibility}]";
                 DesktopBuildPathPreview? preview = selected.Preview;
                 switch (mode)
@@ -644,6 +748,7 @@ internal sealed class DesktopAliceWindow : Window
             }
             else
             {
+                _selectedBuildPath = null;
                 selectedBuildPathTitleText.Text = "No selected build path";
                 switch (mode)
                 {
@@ -661,6 +766,8 @@ internal sealed class DesktopAliceWindow : Window
                         break;
                 }
             }
+
+            _refreshAssistantContext?.Invoke();
         }
 
         buildPathCombo.SelectionChanged += (_, _) => RefreshSelectedBuildPath();
@@ -907,9 +1014,11 @@ internal sealed class DesktopAliceWindow : Window
             ? AiRouteTypes.Coach
             : AiRouteTypes.Build;
         string conversationId = routeType == AiRouteTypes.Coach ? _coachConversationId : _buildConversationId;
+        string effectiveMessage = BuildSeededAssistantMessage(mode, message);
         AiConversationTurnRequest request = new(
-            Message: message,
+            Message: effectiveMessage,
             ConversationId: conversationId,
+            RuntimeFingerprint: ResolveAssistantRuntimeFingerprint(),
             CharacterId: _workspaceId,
             WorkspaceId: _workspaceId);
 
@@ -920,16 +1029,22 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     private string BuildIdleAssistantStatus(string? mode)
-        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
-            ? $"Ask a rules question for {_rulesetId ?? "the active ruleset"}."
-            : HasBuildPathContext
+        => mode switch
+        {
+            "Rules coach" => $"Ask a rules question for {_rulesetId ?? "the active ruleset"}.",
+            "Origin draft" => "Generate an optional origin story draft grounded on the current build, handoff, and workspace context.",
+            _ => HasBuildPathContext
                 ? "Ask for the next grounded build move, and ALICE will stay on preview-safe rails."
-                : "Ask about the next build move; ALICE will answer from the current desktop context.";
+                : "Ask about the next build move; ALICE will answer from the current desktop context."
+        };
 
     private string BuildIdleAssistantAnswer(string? mode)
-        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
-            ? "Try: “Explain the safe next step for an SR4 troll decker after metatype and core priorities.”"
-            : "Try: “What should I add next for this build, and why?”";
+        => mode switch
+        {
+            "Rules coach" => "Try: “Explain the safe next step for an SR4 troll decker after metatype and core priorities.”",
+            "Origin draft" => "Try: “Give this runner a grounded origin that explains the current metatype, build path, and tradeoffs.”",
+            _ => "Try: “What should I add next for this build, and why?”"
+        };
 
     private string[] BuildIdleEvidence(string? mode)
     {
@@ -939,7 +1054,13 @@ internal sealed class DesktopAliceWindow : Window
             !string.IsNullOrWhiteSpace(_workspaceId) ? $"Workspace: {_workspaceId}" : "No workspace-backed context is attached yet."
         ];
 
-        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        {
+            lines.Add(_originDraft is null
+                ? "No origin draft has been generated yet."
+                : "A prior origin draft is available and can seed later ALICE suggestions.");
+        }
+        else if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
         {
             lines.Add(HasHandoffContext
                 ? "Account build handoffs are available for grounded follow-through."
@@ -957,6 +1078,12 @@ internal sealed class DesktopAliceWindow : Window
 
     private string BuildLocalFallbackAnswer(string mode, string message)
     {
+        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        {
+            CharacterNarrativePacket packet = BuildNarrativePacket(message);
+            return BuildOriginDraft(packet).Prose;
+        }
+
         if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
         {
             return !string.IsNullOrWhiteSpace(_rulesetId)
@@ -975,6 +1102,12 @@ internal sealed class DesktopAliceWindow : Window
 
     private string[] BuildLocalFallbackEvidence(string mode)
     {
+        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        {
+            CharacterNarrativePacket packet = BuildNarrativePacket("fallback");
+            return BuildOriginEvidence(packet, BuildOriginDraft(packet));
+        }
+
         if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
         {
             return BuildIdleEvidence(mode);
@@ -987,6 +1120,181 @@ internal sealed class DesktopAliceWindow : Window
                 .ToArray()
             : BuildIdleEvidence(mode);
     }
+
+    private AliceAssistantContextProjection BuildAssistantContextProjection(string? mode)
+    {
+        WorkspaceListItem? workspace = _recentWorkspaces.FirstOrDefault();
+        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        {
+            string? alias = workspace?.Summary.Alias;
+            string? metatype = workspace?.Summary.Metatype;
+            string? buildMethod = workspace?.Summary.BuildMethod;
+            string title = !string.IsNullOrWhiteSpace(alias) ? $"{alias} origin context" : "Origin context";
+            string summary = !string.IsNullOrWhiteSpace(metatype)
+                ? $"{metatype} · {buildMethod ?? "build"}"
+                : "No explicit runner identity is available yet.";
+            string detail = _selectedBuildPath?.Suggestion.Title is { Length: > 0 } buildTitle
+                ? $"Lead build path: {buildTitle}. {_selectedHandoff?.NextSafeAction ?? _selectedHandoff?.Summary ?? "No account handoff summary is attached yet."}"
+                : _selectedHandoff?.Summary ?? "The draft stays bounded to the current ruleset, workspace shell, and any visible ALICE handoff.";
+            return new AliceAssistantContextProjection(title, summary, detail);
+        }
+
+        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        {
+            return new AliceAssistantContextProjection(
+                "Rules coach context",
+                !string.IsNullOrWhiteSpace(_rulesetId) ? $"Pinned to {_rulesetId}" : "No explicit ruleset pin is available yet.",
+                _originDraft is null
+                    ? "ALICE answers from ruleset, workspace, and handoff context only."
+                    : "A generated origin draft is available and can inform later ALICE guidance without changing build truth.");
+        }
+
+        return new AliceAssistantContextProjection(
+            "Build continuity",
+            _selectedBuildPath?.Suggestion.Title ?? "No selected build path",
+            _selectedHandoff?.Summary
+                ?? _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary
+                ?? "ALICE stays bounded to the current workspace and preview-safe build path lane.");
+    }
+
+    private CharacterNarrativePacket BuildNarrativePacket(string prompt)
+    {
+        WorkspaceListItem? workspace = _recentWorkspaces.FirstOrDefault();
+        string alias = FirstNonEmpty(workspace?.Summary.Alias, workspace?.Summary.Name, "Unnamed runner");
+        string metatype = FirstNonEmpty(workspace?.Summary.Metatype, "Unknown metatype");
+        string buildMethod = FirstNonEmpty(workspace?.Summary.BuildMethod, "Unspecified build");
+        string archetypeHint = _selectedBuildPath?.Suggestion.Title
+            ?? _selectedHandoff?.Title
+            ?? "Unclassified shadow asset";
+        string[] causalityHints = new string?[]
+        {
+            _selectedHandoff?.Summary,
+            _selectedHandoff?.NextSafeAction,
+            _selectedBuildPath?.Preview?.CampaignReturnSummary,
+            _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary
+        }
+        .Where(static line => !string.IsNullOrWhiteSpace(line))
+        .Take(4)
+        .Cast<string>()
+        .ToArray();
+
+        string[] standoutSignals = new string?[]
+        {
+            $"Ruleset {_rulesetId ?? workspace?.RulesetId ?? "unknown"}",
+            !string.IsNullOrWhiteSpace(workspace?.Summary.Karma.ToString()) ? $"Karma {workspace!.Summary.Karma:0}" : null,
+            !string.IsNullOrWhiteSpace(workspace?.Summary.Nuyen.ToString()) ? $"Nuyen {workspace!.Summary.Nuyen:0}" : null,
+            _selectedBuildPath?.Suggestion.TrustTier,
+            _selectedBuildPath?.Suggestion.Visibility
+        }
+        .Where(static line => !string.IsNullOrWhiteSpace(line))
+        .Take(5)
+        .Cast<string>()
+        .ToArray();
+
+        string[] contradictionFlags = new string?[]
+        {
+            _selectedBuildPath?.Preview?.RequiresConfirmation == true ? "This path still requires explicit confirmation before apply." : null,
+            _selectedBuildPath?.Preview?.DiagnosticMessages.Count > 0 ? string.Join(" | ", _selectedBuildPath.Preview.DiagnosticMessages.Take(2)) : null,
+            _selectedHandoff?.Watchouts?.Count > 0 ? string.Join(" | ", _selectedHandoff.Watchouts.Take(2)) : null
+        }
+        .Where(static line => !string.IsNullOrWhiteSpace(line))
+        .Take(3)
+        .Cast<string>()
+        .ToArray();
+
+        return new CharacterNarrativePacket(
+            Alias: alias,
+            Metatype: metatype,
+            BuildMethod: buildMethod,
+            RulesetId: _rulesetId ?? workspace?.RulesetId ?? "unknown",
+            ArchetypeHint: archetypeHint,
+            Prompt: prompt,
+            WorkspaceName: workspace?.Summary.Name,
+            LeadBuildPathTitle: _selectedBuildPath?.Suggestion.Title,
+            LeadHandoffTitle: _selectedHandoff?.Title,
+            CausalityHints: causalityHints,
+            StandoutSignals: standoutSignals,
+            ContradictionFlags: contradictionFlags);
+    }
+
+    private static CharacterNarrativeDraft BuildOriginDraft(CharacterNarrativePacket packet)
+    {
+        string sentenceOne = $"{packet.Alias} reads like a {packet.Metatype.ToLowerInvariant()} operator shaped by {packet.BuildMethod.ToLowerInvariant()} pressure rather than a clean, academic career path.";
+        string sentenceTwo = !string.IsNullOrWhiteSpace(packet.LeadBuildPathTitle)
+            ? $"The strongest visible throughline is '{packet.LeadBuildPathTitle}', which suggests a runner who kept adapting around a specific survival plan instead of collecting random upgrades."
+            : $"The current build signals a runner assembled around practical survival choices rather than ornamental flavor.";
+        string sentenceThree = packet.CausalityHints.Count > 0
+            ? $"That history fits the current build because {packet.CausalityHints[0].TrimEnd('.')}. Any later upgrades or qualities should feel like consequences of that same path, not disconnected add-ons."
+            : $"The safest origin draft is a bounded one: each quality, augmentation, or build choice should read like the consequence of one hard life track, not unrelated cool ideas.";
+
+        string summary = $"{packet.Alias} exists at the intersection of {packet.RulesetId}, {packet.Metatype}, and a build path that rewards focused tradeoffs.";
+        string[] gmHooks = new string?[]
+        {
+            !string.IsNullOrWhiteSpace(packet.LeadHandoffTitle) ? $"Use '{packet.LeadHandoffTitle}' as the event that pushed the runner into the current loadout." : null,
+            packet.CausalityHints.Count > 1 ? $"Follow-up hook: {packet.CausalityHints[1]}" : null,
+            packet.ContradictionFlags.Count > 0 ? $"Tension: {packet.ContradictionFlags[0]}" : null
+        }
+        .Where(static line => !string.IsNullOrWhiteSpace(line))
+        .Take(3)
+        .Cast<string>()
+        .ToArray();
+
+        return new CharacterNarrativeDraft(
+            Summary: summary,
+            Prose: string.Join(" ", [sentenceOne, sentenceTwo, sentenceThree]),
+            GmHooks: gmHooks);
+    }
+
+    private static string[] BuildOriginEvidence(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
+    {
+        List<string> lines =
+        [
+            $"Runner: {packet.Alias} · {packet.Metatype}",
+            $"Ruleset: {packet.RulesetId} · Build: {packet.BuildMethod}",
+            $"Archetype hint: {packet.ArchetypeHint}"
+        ];
+
+        foreach (string signal in packet.StandoutSignals.Take(3))
+        {
+            lines.Add($"Signal: {signal}");
+        }
+
+        foreach (string hint in packet.CausalityHints.Take(2))
+        {
+            lines.Add($"Cause: {hint}");
+        }
+
+        foreach (string hook in draft.GmHooks.Take(2))
+        {
+            lines.Add($"Hook: {hook}");
+        }
+
+        foreach (string contradiction in packet.ContradictionFlags.Take(2))
+        {
+            lines.Add($"Tension: {contradiction}");
+        }
+
+        return lines.ToArray();
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
+
+    private string BuildSeededAssistantMessage(string mode, string message)
+    {
+        if (_originDraft is null || string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        {
+            return message;
+        }
+
+        return $"Origin seed summary: {_originDraft.Summary}{Environment.NewLine}Origin seed prose: {_originDraft.Prose}{Environment.NewLine}User request: {message}";
+    }
+
+    private string? ResolveAssistantRuntimeFingerprint()
+        => _selectedBuildPath?.Preview?.RuntimeFingerprint
+            ?? _originDraft?.RuntimeFingerprint
+            ?? _selectedHandoff?.RuleEnvironmentDiff?.AfterFingerprint
+            ?? _selectedHandoff?.RuleEnvironmentDiff?.BeforeFingerprint;
 
     private static string BuildStatusLine(AiConversationTurnResponse response)
     {
@@ -1122,21 +1430,30 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     private static AliceConversationTurnEntry BuildWelcomeEntry(string? mode)
-        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
-            ? new AliceConversationTurnEntry(
+        => mode switch
+        {
+            "Rules coach" => new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
                 "ALICE",
                 "Rules coach ready",
                 "Ask for a rule explanation, tradeoff, or safe next build step tied to the active ruleset.",
                 [],
-                BuildStarterPrompts(mode))
-            : new AliceConversationTurnEntry(
+                BuildStarterPrompts(mode)),
+            "Origin draft" => new AliceConversationTurnEntry(
+                AliceConversationTurnKind.Assistant,
+                "ALICE",
+                "Origin studio ready",
+                "Generate an optional origin that explains why this build exists without changing any build truth.",
+                [],
+                BuildStarterPrompts(mode)),
+            _ => new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
                 "ALICE",
                 "Build copilot ready",
                 "Ask for the next grounded move, a comparison, or a bounded build recommendation from the current desktop context.",
                 [],
-                BuildStarterPrompts(mode));
+                BuildStarterPrompts(mode))
+        };
 
     private static AliceConversationTurnEntry BuildUserTurn(string message)
         => new(
@@ -1156,25 +1473,38 @@ internal sealed class DesktopAliceWindow : Window
         => new(
             AliceConversationTurnKind.Assistant,
             "ALICE",
-            string.Equals(mode, "Rules coach", StringComparison.Ordinal) ? "Rules coach" : "Build help",
+            mode switch
+            {
+                "Rules coach" => "Rules coach",
+                "Origin draft" => "Origin draft",
+                _ => "Build help"
+            },
             body,
             [status, .. evidenceLines.Take(5)],
             suggestedActionTitles.Take(3).ToArray());
 
     private static string[] BuildStarterPrompts(string? mode)
-        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
-            ?
+        => mode switch
+        {
+            "Rules coach" =>
             [
                 "Explain the next safe SR4 build step.",
                 "Why would I take this quality?",
                 "What rule am I most likely to miss here?"
-            ]
-            :
+            ],
+            "Origin draft" =>
+            [
+                "Generate a grounded origin for this runner.",
+                "Explain how this build could have happened.",
+                "Focus on why the qualities and upgrades fit together."
+            ],
+            _ =>
             [
                 "Build me an SR4 troll decker.",
                 "What should I add next, and why?",
                 "Compare two good next-step options."
-            ];
+            ]
+        };
 
     private static string SanitizeNameToken(string value)
     {
@@ -1201,4 +1531,29 @@ internal sealed class DesktopAliceWindow : Window
         string Body,
         IReadOnlyList<string> EvidenceLines,
         IReadOnlyList<string> SuggestedActionTitles);
+
+    private sealed record AliceAssistantContextProjection(
+        string Title,
+        string Summary,
+        string Detail);
+
+    private sealed record CharacterNarrativePacket(
+        string Alias,
+        string Metatype,
+        string BuildMethod,
+        string RulesetId,
+        string ArchetypeHint,
+        string Prompt,
+        string? WorkspaceName,
+        string? LeadBuildPathTitle,
+        string? LeadHandoffTitle,
+        IReadOnlyList<string> CausalityHints,
+        IReadOnlyList<string> StandoutSignals,
+        IReadOnlyList<string> ContradictionFlags);
+
+    private sealed record CharacterNarrativeDraft(
+        string Summary,
+        string Prose,
+        IReadOnlyList<string> GmHooks,
+        string? RuntimeFingerprint = null);
 }
