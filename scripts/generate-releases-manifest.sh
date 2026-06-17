@@ -14,6 +14,7 @@ STARTUP_SMOKE_DIR="${STARTUP_SMOKE_DIR:-$(dirname "$DOWNLOADS_DIR")/startup-smok
 SIGNING_RECEIPTS_DIR="${SIGNING_RECEIPTS_DIR:-$(dirname "$DOWNLOADS_DIR")/signing}"
 STARTUP_SMOKE_MAX_AGE_SECONDS="${CHUMMER_PUBLIC_STARTUP_SMOKE_MAX_AGE_SECONDS:-}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
+SKIP_STARTUP_SMOKE_HYDRATION="${CHUMMER_SKIP_STARTUP_SMOKE_HYDRATION:-0}"
 RELEASE_VERSION="${RELEASE_VERSION:-unpublished}"
 RELEASE_CHANNEL="${RELEASE_CHANNEL:-docker}"
 RELEASE_PUBLISHED_AT="${RELEASE_PUBLISHED_AT:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
@@ -266,6 +267,9 @@ def filtered_channel_rows(rows: list[dict], expected_version: str) -> list[dict]
     selected = rows_with_version(rows, expected_version)
     if selected:
         return selected
+    expected = normalized(expected_version)
+    if expected:
+        return []
     return [row for row in rows if isinstance(row, dict)]
 
 
@@ -276,6 +280,14 @@ def write_payload_if_changed(path_text: str, payload: dict, current_payload: dic
     return True
 
 
+def payload_matches_expected_version(payload: dict, expected_version: str) -> bool:
+    expected = normalized(expected_version)
+    if not expected:
+        return True
+    payload_version = version_from_payload(payload)
+    return bool(payload_version) and payload_version == expected
+
+
 def restore_missing_artifacts(local_payload: dict, registry_payload: dict, expected_version: str) -> bool:
     local_artifacts = local_payload.get("artifacts")
     registry_artifacts = registry_payload.get("artifacts")
@@ -283,9 +295,9 @@ def restore_missing_artifacts(local_payload: dict, registry_payload: dict, expec
     registry_has_artifacts = isinstance(registry_artifacts, list) and len(registry_artifacts) > 0
     if local_has_artifacts or not registry_has_artifacts:
         return False
+    if not payload_matches_expected_version(registry_payload, expected_version):
+        return False
     filtered_artifacts = filtered_channel_rows([row for row in registry_artifacts if isinstance(row, dict)], expected_version)
-    if not filtered_artifacts and isinstance(registry_artifacts, list):
-        filtered_artifacts = [row for row in registry_artifacts if isinstance(row, dict)]
     if filtered_artifacts:
         local_payload["artifacts"] = filtered_artifacts
         return True
@@ -299,9 +311,9 @@ def restore_missing_downloads(local_payload: dict, registry_payload: dict, expec
     registry_has_downloads = isinstance(registry_downloads, list) and len(registry_downloads) > 0
     if local_has_downloads or not registry_has_downloads:
         return False
+    if not payload_matches_expected_version(registry_payload, expected_version):
+        return False
     filtered_downloads = rows_with_version(registry_downloads, expected_version)
-    if not filtered_downloads:
-        filtered_downloads = [row for row in registry_downloads if isinstance(row, dict)]
     if filtered_downloads:
         local_payload["downloads"] = filtered_downloads
         return True
@@ -747,7 +759,8 @@ sanitize_source_manifest_for_channel_override() {
   local source_path="${1:-}"
   local output_path="${2:-}"
   local release_channel="${3:-}"
-  python3 - "$source_path" "$output_path" "$release_channel" <<'PY'
+  local release_version="${4:-}"
+  python3 - "$source_path" "$output_path" "$release_channel" "$release_version" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -755,6 +768,7 @@ from pathlib import Path
 source_path = Path(sys.argv[1])
 output_path = Path(sys.argv[2])
 release_channel = str(sys.argv[3] or "").strip().lower()
+release_version = str(sys.argv[4] or "").strip()
 
 payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
@@ -785,6 +799,29 @@ for key in (
 
 payload["channelId"] = release_channel
 payload["channel"] = release_channel
+
+source_version = str(payload.get("version") or payload.get("releaseVersion") or "").strip()
+source_version_mismatch = bool(release_version and source_version and source_version != release_version)
+
+if source_version_mismatch:
+    for key in (
+        "artifacts",
+        "downloads",
+        "installAwareArtifactRegistry",
+        "desktopSurfaceRefs",
+        "artifactIdentityRegistry",
+        "artifactPublicationBindings",
+        "registryBoundaryCoverage",
+        "publicTrustMetrics",
+    ):
+        payload.pop(key, None)
+    coverage = payload.get("desktopTupleCoverage")
+    if isinstance(coverage, dict):
+        payload["desktopTupleCoverage"] = {
+            key: coverage.get(key)
+            for key in ("requiredDesktopPlatforms", "requiredDesktopHeads")
+            if key in coverage
+        }
 
 for collection_name in ("artifacts", "downloads", "desktopRouteTruth", "installAwareArtifactRegistry"):
     rows = payload.get(collection_name)
@@ -1284,12 +1321,16 @@ if [[ -n "$UI_LOCALIZATION_RELEASE_GATE_PATH" && -f "$UI_LOCALIZATION_RELEASE_GA
 fi
 if [[ -d "$STARTUP_SMOKE_DIR" ]] && find "$STARTUP_SMOKE_DIR" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
   hydrated_startup_smoke_dir="$(mktemp -d)"
-  hydrate_startup_smoke_dir \
-    "$STARTUP_SMOKE_DIR" \
-    "$hydrated_startup_smoke_dir" \
-    "$REGISTRY_ROOT" \
-    "$REPO_ROOT" \
-    "$DOWNLOADS_DIR"
+  if to_bool "$SKIP_STARTUP_SMOKE_HYDRATION"; then
+    cp "$STARTUP_SMOKE_DIR"/startup-smoke-*.receipt.json "$hydrated_startup_smoke_dir"/
+  else
+    hydrate_startup_smoke_dir \
+      "$STARTUP_SMOKE_DIR" \
+      "$hydrated_startup_smoke_dir" \
+      "$REGISTRY_ROOT" \
+      "$REPO_ROOT" \
+      "$DOWNLOADS_DIR"
+  fi
   SANITIZED_STARTUP_SMOKE_DIR="$(mktemp -d)"
   sanitize_startup_smoke_dir \
     "$hydrated_startup_smoke_dir" \
@@ -1305,7 +1346,8 @@ if [[ -n "$SOURCE_MANIFEST_PATH" && -f "$SOURCE_MANIFEST_PATH" ]]; then
   sanitize_source_manifest_for_channel_override \
     "$SOURCE_MANIFEST_PATH" \
     "$SANITIZED_SOURCE_MANIFEST_PATH" \
-    "$RELEASE_CHANNEL"
+    "$RELEASE_CHANNEL" \
+    "$RELEASE_VERSION"
   SOURCE_MANIFEST_PATH="$SANITIZED_SOURCE_MANIFEST_PATH"
 fi
 
