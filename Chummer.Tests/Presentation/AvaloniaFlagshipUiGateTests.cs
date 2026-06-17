@@ -3962,9 +3962,15 @@ public sealed class AvaloniaFlagshipUiGateTests
     [TestMethod]
     public void Theme_tokens_preserve_chummer5a_palette_and_readability()
     {
-        Dictionary<string, Dictionary<string, Color>> themeBrushes = LoadThemeBrushes(ResolveSourceFile("Chummer.Avalonia", "App.axaml"));
+        string appAxamlPath = ResolveSourceFile("Chummer.Avalonia", "App.axaml");
+        string appAxamlText = File.ReadAllText(appAxamlPath);
+        Dictionary<string, Dictionary<string, Color>> themeBrushes = LoadThemeBrushes(appAxamlPath);
         Dictionary<string, Color> light = themeBrushes["Light"];
         Dictionary<string, Color> dark = themeBrushes["Dark"];
+
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
 
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
         Assert.AreEqual("#123F7A", ToHex(light["ChummerShellAccentButtonBrush"]));
