@@ -43,6 +43,7 @@ Current honesty clause:
 - release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
 - desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
 - every packaged desktop head now has a startup-smoke gate and emits a bounded release-regression packet before promotion if the smoke start fails
+- scheduled nightly publication and `main`-push publication now use the same `Desktop Downloads Matrix` workflow so the downloads shelf advances through one canonical path
 - explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
 - legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
 - after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`, workbench-side coach sidecars, and portal/proxy expectations for external `/session` and `/coach` hosts

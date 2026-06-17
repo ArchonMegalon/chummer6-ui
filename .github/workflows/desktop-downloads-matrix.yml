@@ -4,6 +4,8 @@ env:
   CHUMMER_EFFECTIVE_DESKTOP_RELEASE_CHANNEL: ${{ vars.CHUMMER_DESKTOP_RELEASE_CHANNEL != '' && vars.CHUMMER_DESKTOP_RELEASE_CHANNEL || 'preview' }}
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       deploy_portal_downloads:

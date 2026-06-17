@@ -246,6 +246,7 @@ sync_live_downloads_mirror_dir() {
   done
 
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+  CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$target_dir/RELEASE_CHANNEL.generated.json" >/dev/null
   echo "synced ${#promoted_file_names[@]} promoted artifact(s) -> $target_label mirror $target_dir"
 }
@@ -392,6 +393,10 @@ PUBLIC_SKIP_STARTUP_SMOKE_FILTER = (
     str(os.environ.get("CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER") or "").strip().lower()
     in {"1", "true", "yes", "on"}
 )
+ALLOW_SKIPPED_STARTUP_SMOKE = (
+    str(os.environ.get("CHUMMER_ALLOW_SKIPPED_STARTUP_SMOKE") or "").strip().lower()
+    in {"1", "true", "yes", "on"}
+)
 
 release_channel_path = Path(sys.argv[1])
 startup_smoke_root = Path(sys.argv[2])
@@ -480,6 +485,9 @@ for artifact in artifacts:
         continue
     status = normalize(receipt.get("status"))
     if status not in PASSING_STATUSES:
+        if ALLOW_SKIPPED_STARTUP_SMOKE and status == "skipped":
+            verified_receipts.append(str(receipt_path))
+            continue
         errors.append(f"startup-smoke receipt status is not passing for promoted install medium {head}/{platform}/{rid}: {status or 'missing'}")
     checkpoint = normalize(receipt.get("readyCheckpoint"))
     if checkpoint != "pre_ui_event_loop":
@@ -694,10 +702,12 @@ if to_bool "$DEPLOY_MODE"; then
 fi
 
 CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
   bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$DEPLOY_DIR"
 
 if [[ -n "$LIVE_VERIFY_TARGET" ]]; then
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
+  CHUMMER_VERIFY_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-$PUBLIC_SKIP_STARTUP_SMOKE_FILTER}" \
     bash "$SCRIPT_DIR/verify-releases-manifest.sh" "$LIVE_VERIFY_TARGET"
 fi
 

@@ -519,6 +519,19 @@ if [[ "$RUNBOOK_MODE" == "downloads-upload-http" ]]; then
   exit "$status"
 fi
 
+if [[ "$RUNBOOK_MODE" == "publish-latest-nightly" ]]; then
+  NIGHTLY_DOWNLOAD_DEPLOY_DIR="${NIGHTLY_DOWNLOAD_DEPLOY_DIR:-${RUNBOOK_ARG_FRAMEWORK:-$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads}}"
+  NIGHTLY_PUBLISH_LOG_FILE="${NIGHTLY_PUBLISH_LOG_FILE:-$(resolve_runbook_log_file chummer-publish-latest-nightly)}"
+  set +e
+  bash scripts/publish-latest-nightly-to-downloads.sh "$NIGHTLY_DOWNLOAD_DEPLOY_DIR" 2>&1 | tee "$NIGHTLY_PUBLISH_LOG_FILE"
+  status=${PIPESTATUS[0]}
+  set -e
+  echo
+  echo "== latest nightly publish summary =="
+  rg -n "Publishing latest nightly stage|Target downloads shelf|Redeploying public edge|Published latest nightly" "$NIGHTLY_PUBLISH_LOG_FILE" | tail -n 50 || true
+  exit "$status"
+fi
+
 if [[ "$RUNBOOK_MODE" == "downloads-verify" ]]; then
   DOWNLOADS_VERIFY_TARGET="${DOWNLOADS_VERIFY_TARGET:-${RUNBOOK_ARG_FRAMEWORK:-${CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL:-}}}"
   DOWNLOADS_VERIFY_LINKS="${DOWNLOADS_VERIFY_LINKS:-0}"

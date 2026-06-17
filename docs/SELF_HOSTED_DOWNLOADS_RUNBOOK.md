@@ -102,13 +102,16 @@ Local-preview note:
 
 Workflow path:
 1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
-2. If `CHUMMER_RELEASE_UPLOAD_URL` is configured, deploy job `deploy-downloads-http` runs automatically after bundle generation.
-3. Job uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
-4. Job verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
+2. The same workflow now also owns the scheduled nightly publication path; there is no separate authoritative nightly deploy workflow anymore.
+3. If `CHUMMER_RELEASE_UPLOAD_URL` is configured, deploy job `deploy-downloads-http` runs automatically after bundle generation.
+4. Job uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
+5. Job verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
 
 Manual path:
 1. `RUNBOOK_MODE=downloads-upload-http DOWNLOAD_BUNDLE_DIR=<bundleDir> CHUMMER_RELEASE_UPLOAD_URL=<uploadUrl> CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL=<portalManifestUrl> CHUMMER_RELEASE_UPLOAD_TOKEN=<token> bash scripts/runbook.sh`
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
+3. Local host shortcut for the newest staged nightly:
+`RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`
 
 Release-build handoff expectation:
 1. If a staged latest-build bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.

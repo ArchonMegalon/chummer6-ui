@@ -264,6 +264,15 @@ def find_matching_receipt(artifact: dict, receipts: list[dict], now_utc: datetim
     return candidate, ""
 
 
+def materialized_receipt_path(receipt: dict | None, startup_smoke_dir: Path) -> str:
+    if not receipt:
+        return ""
+    source_path = str((receipt or {}).get("__sourcePath") or "").strip()
+    if not source_path:
+        return ""
+    return str(startup_smoke_dir / Path(source_path).name)
+
+
 def find_matching_signing_receipt(artifact: dict, receipts: list[dict]) -> tuple[dict | None, dict | None]:
     expected_file_name = resolve_file_name(artifact).lower()
     expected_platform = normalize_platform(artifact.get("platform"))
@@ -447,7 +456,7 @@ def main() -> int:
                 "promotionStatus": compute_promotion_status(platform, channel, startup_smoke_status, signing_status, notarization_status),
                 "startupSmokeStatus": startup_smoke_status,
                 "startupSmokeReason": startup_smoke_reason,
-                "startupSmokeReceiptPath": str((receipt or {}).get("__sourcePath") or ""),
+                "startupSmokeReceiptPath": materialized_receipt_path(receipt, startup_smoke_dir),
                 "signingReceiptPath": signing_receipt_path,
                 "signingStatus": signing_status,
                 "notarizationStatus": notarization_status,
