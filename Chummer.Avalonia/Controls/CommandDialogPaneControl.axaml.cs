@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Chummer.Presentation.Overview;
+using System.Globalization;
 using System.IO;
 
 namespace Chummer.Avalonia.Controls;
@@ -443,7 +444,7 @@ public partial class CommandDialogPaneControl : UserControl
     {
         StackPanel body = new()
         {
-            Spacing = 8
+            Spacing = 6
         };
         foreach (Control child in children)
         {
@@ -455,8 +456,8 @@ public partial class CommandDialogPaneControl : UserControl
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(8),
+            CornerRadius = default,
+            Padding = new Thickness(6),
             Child = body
         };
     }
@@ -465,7 +466,7 @@ public partial class CommandDialogPaneControl : UserControl
     {
         StackPanel body = new()
         {
-            Spacing = 8
+            Spacing = 6
         };
         foreach (Control child in children)
         {
@@ -476,9 +477,9 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F5F8FC"),
-            CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(8),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
+            CornerRadius = default,
+            Padding = new Thickness(6),
             Child = body
         };
     }
@@ -499,8 +500,8 @@ public partial class CommandDialogPaneControl : UserControl
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B7C4D5"),
             Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(8),
+            CornerRadius = default,
+            Padding = new Thickness(6),
             MinHeight = minHeight,
             Child = shell
         };
@@ -512,7 +513,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 0, 0, 6),
+            Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
             {
                 Text = title,
@@ -591,19 +592,12 @@ public partial class CommandDialogPaneControl : UserControl
             Text = label,
             FontWeight = FontWeight.SemiBold
         };
-        Border badge = new()
+        TextBlock badge = new()
         {
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#EEF3F8"),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(2),
-            Padding = new Thickness(6, 1),
-            Child = new TextBlock
-            {
-                Text = count.ToString(),
-                FontSize = 11,
-                FontWeight = FontWeight.SemiBold
-            }
+            Text = count.ToString(CultureInfo.InvariantCulture),
+            FontSize = 11,
+            Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
 
         Grid.SetColumn(title, 0);
@@ -615,7 +609,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
             BorderThickness = new Thickness(0, 0, 0, 1),
-            Padding = new Thickness(0, 0, 0, 6),
+            Padding = new Thickness(0, 0, 0, 4),
             Child = header
         };
     }
@@ -651,16 +645,11 @@ public partial class CommandDialogPaneControl : UserControl
 
         return new Border
         {
-            Padding = new Thickness(8, 6),
-            Margin = new Thickness(0, 0, 0, 4),
-            Background = item?.IsSelected == true
-                ? ResolveThemeBrush("ChummerAccentSubtleBrush", "#E5F1FF")
-                : ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
-            BorderBrush = item?.IsSelected == true
-                ? ResolveThemeBrush("ChummerAccentBrush", "#0F7AE5")
-                : ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE8"),
-            BorderThickness = new Thickness(item?.IsSelected == true ? 2 : 1, 1, 1, 1),
-            CornerRadius = new CornerRadius(2),
+            Padding = new Thickness(4, 3),
+            Margin = new Thickness(0),
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
             Child = body
         };
     }
