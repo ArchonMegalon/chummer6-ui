@@ -35,6 +35,13 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "\"Origin draft\"");
         StringAssert.Contains(source, "BuildNarrativePacket(");
         StringAssert.Contains(source, "BuildSeededAssistantMessage(");
+        StringAssert.Contains(source, "OriginDossierBundle");
+        StringAssert.Contains(source, "Approve canon");
+        StringAssert.Contains(source, "Render dossier PDF");
+        StringAssert.Contains(source, "Generate Soundmadeseen packet");
+        StringAssert.Contains(source, "MarkupGo");
+        StringAssert.Contains(source, "Soundmadeseen");
+        StringAssert.Contains(source, "BuildSimplePdfDocument(");
     }
 
     [TestMethod]

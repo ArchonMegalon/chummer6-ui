@@ -10,6 +10,8 @@ using Chummer.Desktop.Runtime;
 using Chummer.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
+using System.Text;
+using System.Text.Json;
 
 namespace Chummer.Avalonia;
 
@@ -27,7 +29,9 @@ internal sealed class DesktopAliceWindow : Window
     private BuildLabHandoffProjection? _selectedHandoff;
     private DesktopBuildPathCandidate? _selectedBuildPath;
     private Action? _refreshAssistantContext;
+    private CharacterNarrativePacket? _originPacket;
     private CharacterNarrativeDraft? _originDraft;
+    private OriginDossierBundle? _originBundle;
     private bool HasHandoffContext => (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
     private bool HasBuildPathContext => _buildPathCandidates.Count > 0;
 
@@ -290,8 +294,23 @@ internal sealed class DesktopAliceWindow : Window
             actionRow.Children.Clear();
             if (string.Equals(modeCombo.SelectedItem?.ToString(), "Origin draft", StringComparison.Ordinal))
             {
-                actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenProposalStudioButton"));
-                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                if (_originBundle is not null)
+                {
+                    actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"));
+                    actionRow.Children.Add(CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
+                    actionRow.Children.Add(CreateButton("Open narration packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                }
+                else if (_originDraft is not null)
+                {
+                    actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
+                    actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
+                    actionRow.Children.Add(CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                }
+                else
+                {
+                    actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenProposalStudioButton"));
+                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                }
             }
             else
             {
@@ -301,6 +320,93 @@ internal sealed class DesktopAliceWindow : Window
             RefreshAssistantContextSummary();
             RefreshStarterPrompts();
             RefreshConversationFeed();
+        }
+
+        void ShowOriginBundleState(
+            string statusLine,
+            string answer,
+            IReadOnlyList<string> evidenceLines,
+            params Button[] actions)
+        {
+            statusText.Text = statusLine;
+            answerText.Text = answer;
+            evidenceList.ItemsSource = evidenceLines;
+            actionRow.Children.Clear();
+            foreach (Button action in actions)
+            {
+                actionRow.Children.Add(action);
+            }
+
+            ActiveHistory().Add(BuildAssistantTurn(
+                "Origin draft",
+                statusLine,
+                answer,
+                evidenceLines,
+                actions.Select(action => action.Content?.ToString() ?? string.Empty)
+                    .Where(static item => !string.IsNullOrWhiteSpace(item))
+                    .Take(4)
+                    .ToArray()));
+            RefreshConversationFeed();
+        }
+
+        Task ApproveOriginCanonAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before approving canon.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginDossierBundle();
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE approved the origin canon and created a first-party bundle root for MarkupGo and Soundmadeseen outputs.",
+                $"{bundle.Canon.Summary} The canonical origin is now frozen for later ALICE build and rules continuity until you regenerate the draft.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"),
+                CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
+                CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+            return Task.CompletedTask;
+        }
+
+        Task RenderOriginDossierPdfAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before rendering the dossier PDF.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureOriginDossierPdf(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE rendered a local dossier PDF and a MarkupGo packet from the approved origin canon.",
+                $"Origin dossier bundle ready. PDF: {Path.GetFileName(bundle.DossierPdfPath)}. MarkupGo packet: {Path.GetFileName(bundle.MarkupGoPacketPath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
+                CreateButton("Open MarkupGo packet", () => !string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MarkupGoPacketPath), name: "AliceOriginOpenMarkupGoPacketButton"),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
+            return Task.CompletedTask;
+        }
+
+        Task RenderOriginAudiobookPacketAsync()
+        {
+            if (_originDraft is null || _originPacket is null)
+            {
+                statusText.Text = "Generate an origin draft before preparing the Soundmadeseen audiobook packet.";
+                return Task.CompletedTask;
+            }
+
+            OriginDossierBundle bundle = EnsureSoundmadeseenNarrationPacket(EnsureOriginDossierBundle());
+            _originBundle = bundle;
+            ShowOriginBundleState(
+                "ALICE prepared a Soundmadeseen narration packet from the approved origin canon.",
+                $"Soundmadeseen packet ready. Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
+                BuildOriginBundleEvidence(bundle),
+                CreateButton("Open narration packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
+                CreateButton("Open narration script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
+            return Task.CompletedTask;
         }
 
         async Task AskAsync()
@@ -325,16 +431,18 @@ internal sealed class DesktopAliceWindow : Window
             {
                 CharacterNarrativePacket packet = BuildNarrativePacket(message);
                 CharacterNarrativeDraft originDraft = BuildOriginDraft(packet);
+                _originPacket = packet;
                 _originDraft = originDraft;
+                _originBundle = null;
                 statusText.Text = "ALICE generated a grounded origin draft from the current desktop build context.";
                 answerText.Text = originDraft.Prose;
                 string[] originEvidence = BuildOriginEvidence(packet, originDraft);
                 evidenceList.ItemsSource = originEvidence;
                 string[] originActionTitles =
                 [
-                    "Regenerate with same facts",
-                    "Focus on qualities",
-                    "Focus on implants"
+                    "Approve canon",
+                    "Render dossier PDF",
+                    "Generate Soundmadeseen packet"
                 ];
                 ActiveHistory().Add(BuildAssistantTurn(
                     mode,
@@ -343,8 +451,10 @@ internal sealed class DesktopAliceWindow : Window
                     originEvidence,
                     originActionTitles));
                 RefreshConversationFeed();
-                actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, isPrimary: true, name: "AliceOriginRegenerateButton"));
-                actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOriginOpenProposalStudioButton"));
+                actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
+                actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
+                actionRow.Children.Add(CreateButton("Generate Soundmadeseen packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
                 return;
             }
@@ -1058,7 +1168,9 @@ internal sealed class DesktopAliceWindow : Window
         {
             lines.Add(_originDraft is null
                 ? "No origin draft has been generated yet."
-                : "A prior origin draft is available and can seed later ALICE suggestions.");
+                : _originBundle is null
+                    ? "A prior origin draft is available and can seed later ALICE suggestions."
+                    : "An approved origin dossier bundle is available and seeds later ALICE suggestions.");
         }
         else if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
         {
@@ -1136,6 +1248,10 @@ internal sealed class DesktopAliceWindow : Window
             string detail = _selectedBuildPath?.Suggestion.Title is { Length: > 0 } buildTitle
                 ? $"Lead build path: {buildTitle}. {_selectedHandoff?.NextSafeAction ?? _selectedHandoff?.Summary ?? "No account handoff summary is attached yet."}"
                 : _selectedHandoff?.Summary ?? "The draft stays bounded to the current ruleset, workspace shell, and any visible ALICE handoff.";
+            if (_originBundle is not null)
+            {
+                detail = $"{detail} Approved canon bundle: {Path.GetFileName(_originBundle.BundleDirectory)}.";
+            }
             return new AliceAssistantContextProjection(title, summary, detail);
         }
 
@@ -1146,7 +1262,9 @@ internal sealed class DesktopAliceWindow : Window
                 !string.IsNullOrWhiteSpace(_rulesetId) ? $"Pinned to {_rulesetId}" : "No explicit ruleset pin is available yet.",
                 _originDraft is null
                     ? "ALICE answers from ruleset, workspace, and handoff context only."
-                    : "A generated origin draft is available and can inform later ALICE guidance without changing build truth.");
+                    : _originBundle is null
+                        ? "A generated origin draft is available and can inform later ALICE guidance without changing build truth."
+                        : "An approved origin dossier bundle is available and seeds later ALICE guidance without mutating build truth.");
         }
 
         return new AliceAssistantContextProjection(
@@ -1214,7 +1332,10 @@ internal sealed class DesktopAliceWindow : Window
             LeadHandoffTitle: _selectedHandoff?.Title,
             CausalityHints: causalityHints,
             StandoutSignals: standoutSignals,
-            ContradictionFlags: contradictionFlags);
+            ContradictionFlags: contradictionFlags,
+            RuntimeFingerprint: _selectedBuildPath?.Preview?.RuntimeFingerprint
+                ?? _selectedHandoff?.RuleEnvironmentDiff?.AfterFingerprint
+                ?? _selectedHandoff?.RuleEnvironmentDiff?.BeforeFingerprint);
     }
 
     private static CharacterNarrativeDraft BuildOriginDraft(CharacterNarrativePacket packet)
@@ -1242,7 +1363,8 @@ internal sealed class DesktopAliceWindow : Window
         return new CharacterNarrativeDraft(
             Summary: summary,
             Prose: string.Join(" ", [sentenceOne, sentenceTwo, sentenceThree]),
-            GmHooks: gmHooks);
+            GmHooks: gmHooks,
+            RuntimeFingerprint: packet.RuntimeFingerprint);
     }
 
     private static string[] BuildOriginEvidence(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
@@ -1282,19 +1404,332 @@ internal sealed class DesktopAliceWindow : Window
 
     private string BuildSeededAssistantMessage(string mode, string message)
     {
-        if (_originDraft is null || string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
         {
             return message;
         }
 
-        return $"Origin seed summary: {_originDraft.Summary}{Environment.NewLine}Origin seed prose: {_originDraft.Prose}{Environment.NewLine}User request: {message}";
+        if (_originBundle is not null)
+        {
+            return $"Approved origin canon summary: {_originBundle.Canon.Summary}{Environment.NewLine}Approved origin canon prose: {_originBundle.Canon.Prose}{Environment.NewLine}User request: {message}";
+        }
+
+        if (_originDraft is not null)
+        {
+            return $"Origin seed summary: {_originDraft.Summary}{Environment.NewLine}Origin seed prose: {_originDraft.Prose}{Environment.NewLine}User request: {message}";
+        }
+
+        return message;
     }
 
     private string? ResolveAssistantRuntimeFingerprint()
         => _selectedBuildPath?.Preview?.RuntimeFingerprint
+            ?? _originBundle?.RuntimeFingerprint
             ?? _originDraft?.RuntimeFingerprint
             ?? _selectedHandoff?.RuleEnvironmentDiff?.AfterFingerprint
             ?? _selectedHandoff?.RuleEnvironmentDiff?.BeforeFingerprint;
+
+    private OriginDossierBundle EnsureOriginDossierBundle()
+    {
+        if (_originBundle is not null)
+        {
+            return _originBundle;
+        }
+
+        if (_originPacket is null || _originDraft is null)
+        {
+            throw new InvalidOperationException("Origin canon cannot be approved without a current origin packet and draft.");
+        }
+
+        string aliasToken = string.IsNullOrWhiteSpace(_originPacket.Alias) ? "runner" : SanitizeNameToken(_originPacket.Alias).ToLowerInvariant();
+        string timestampToken = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+        string bundleDirectory = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles", $"{timestampToken}-{aliasToken}");
+        Directory.CreateDirectory(bundleDirectory);
+
+        string canonMarkdownPath = Path.Combine(bundleDirectory, "origin-canon.md");
+        string canonJsonPath = Path.Combine(bundleDirectory, "origin-canon.json");
+        File.WriteAllText(canonMarkdownPath, BuildOriginCanonMarkdown(_originPacket, _originDraft));
+        File.WriteAllText(canonJsonPath, JsonSerializer.Serialize(
+            new
+            {
+                artifactKind = "origin_canon",
+                originDossierBundle = true,
+                approvedAtUtc = DateTimeOffset.UtcNow,
+                packet = _originPacket,
+                canon = _originDraft,
+                providerLanes = new
+                {
+                    document = "MarkupGo",
+                    narration = "Soundmadeseen"
+                }
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        _originBundle = new OriginDossierBundle(
+            Packet: _originPacket,
+            Canon: _originDraft,
+            ApprovedAtUtc: DateTimeOffset.UtcNow,
+            BundleDirectory: bundleDirectory,
+            CanonJsonPath: canonJsonPath,
+            CanonMarkdownPath: canonMarkdownPath,
+            DossierPdfPath: null,
+            MarkupGoPacketPath: null,
+            SoundmadeseenPacketPath: null,
+            SoundmadeseenScriptPath: null,
+            RuntimeFingerprint: _originDraft.RuntimeFingerprint);
+        return _originBundle;
+    }
+
+    private OriginDossierBundle EnsureOriginDossierPdf(OriginDossierBundle bundle)
+    {
+        if (!string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && File.Exists(bundle.DossierPdfPath))
+        {
+            return bundle;
+        }
+
+        string pdfPath = Path.Combine(bundle.BundleDirectory, "origin-dossier.pdf");
+        string markupGoPacketPath = Path.Combine(bundle.BundleDirectory, "markupgo-origin-dossier.packet.json");
+        string[] dossierLines =
+        [
+            $"Origin summary: {bundle.Canon.Summary}",
+            string.Empty,
+            bundle.Canon.Prose,
+            string.Empty,
+            $"Archetype hint: {bundle.Packet.ArchetypeHint}",
+            $"Ruleset: {bundle.Packet.RulesetId}",
+            $"Build method: {bundle.Packet.BuildMethod}",
+            $"Metatype: {bundle.Packet.Metatype}",
+            string.Empty,
+            "GM hooks:",
+            .. bundle.Canon.GmHooks.Select(static hook => $"- {hook}"),
+            string.Empty,
+            "Contradictions / tensions:",
+            .. bundle.Packet.ContradictionFlags.DefaultIfEmpty("None surfaced from the current bounded desktop context.").Select(static line => $"- {line}")
+        ];
+        File.WriteAllBytes(pdfPath, BuildSimplePdfDocument($"Origin Dossier · {bundle.Packet.Alias}", dossierLines));
+        File.WriteAllText(markupGoPacketPath, JsonSerializer.Serialize(
+            new
+            {
+                tool = "MarkupGo",
+                artifactKind = "origin_dossier_pdf",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                source = "first_party_origin_canon",
+                title = $"{bundle.Packet.Alias} Origin Dossier",
+                sections = dossierLines,
+                sourceCanon = new
+                {
+                    bundle.CanonMarkdownPath,
+                    bundle.CanonJsonPath
+                }
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            DossierPdfPath = pdfPath,
+            MarkupGoPacketPath = markupGoPacketPath
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
+    private OriginDossierBundle EnsureSoundmadeseenNarrationPacket(OriginDossierBundle bundle)
+    {
+        if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath)
+            && !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath)
+            && File.Exists(bundle.SoundmadeseenPacketPath)
+            && File.Exists(bundle.SoundmadeseenScriptPath))
+        {
+            return bundle;
+        }
+
+        string scriptPath = Path.Combine(bundle.BundleDirectory, "soundmadeseen-origin-reading.txt");
+        string packetPath = Path.Combine(bundle.BundleDirectory, "soundmadeseen-origin-reading.packet.json");
+        string script = BuildSoundmadeseenNarrationScript(bundle);
+        File.WriteAllText(scriptPath, script);
+        File.WriteAllText(packetPath, JsonSerializer.Serialize(
+            new
+            {
+                tool = "Soundmadeseen",
+                artifactKind = "origin_audiobook_brief",
+                approvedAtUtc = bundle.ApprovedAtUtc,
+                source = "first_party_origin_canon",
+                title = $"{bundle.Packet.Alias} Origin Reading",
+                narrationMode = "operator_reading",
+                scriptPath,
+                durationTargetSeconds = 75,
+                sourceCanon = new
+                {
+                    bundle.CanonMarkdownPath,
+                    bundle.CanonJsonPath
+                }
+            },
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        OriginDossierBundle updated = bundle with
+        {
+            SoundmadeseenPacketPath = packetPath,
+            SoundmadeseenScriptPath = scriptPath
+        };
+        _originBundle = updated;
+        return updated;
+    }
+
+    private static IReadOnlyList<string> BuildOriginBundleEvidence(OriginDossierBundle bundle)
+    {
+        List<string> lines =
+        [
+            $"Bundle root: {bundle.BundleDirectory}",
+            $"Canon: {Path.GetFileName(bundle.CanonMarkdownPath)}",
+            $"Canon packet: {Path.GetFileName(bundle.CanonJsonPath)}",
+            "Document lane: MarkupGo",
+            "Narration lane: Soundmadeseen"
+        ];
+
+        if (!string.IsNullOrWhiteSpace(bundle.DossierPdfPath))
+        {
+            lines.Add($"PDF: {Path.GetFileName(bundle.DossierPdfPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath))
+        {
+            lines.Add($"MarkupGo packet: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath))
+        {
+            lines.Add($"Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath))
+        {
+            lines.Add($"Soundmadeseen packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
+        }
+
+        return lines;
+    }
+
+    private static string BuildOriginCanonMarkdown(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"# {packet.Alias} Origin Canon");
+        builder.AppendLine();
+        builder.AppendLine($"- Ruleset: {packet.RulesetId}");
+        builder.AppendLine($"- Metatype: {packet.Metatype}");
+        builder.AppendLine($"- Build method: {packet.BuildMethod}");
+        builder.AppendLine($"- Archetype hint: {packet.ArchetypeHint}");
+        builder.AppendLine();
+        builder.AppendLine("## Summary");
+        builder.AppendLine(draft.Summary);
+        builder.AppendLine();
+        builder.AppendLine("## Origin");
+        builder.AppendLine(draft.Prose);
+        builder.AppendLine();
+        builder.AppendLine("## GM Hooks");
+        foreach (string hook in draft.GmHooks)
+        {
+            builder.AppendLine($"- {hook}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("## Contradictions");
+        foreach (string contradiction in packet.ContradictionFlags.DefaultIfEmpty("None surfaced from the current bounded desktop context."))
+        {
+            builder.AppendLine($"- {contradiction}");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("## Build Signals");
+        foreach (string signal in packet.StandoutSignals)
+        {
+            builder.AppendLine($"- {signal}");
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    private static string BuildSoundmadeseenNarrationScript(OriginDossierBundle bundle)
+    {
+        StringBuilder builder = new();
+        builder.AppendLine($"Soundmadeseen audiobook brief for {bundle.Packet.Alias}");
+        builder.AppendLine();
+        builder.AppendLine(bundle.Canon.Summary);
+        builder.AppendLine();
+        builder.AppendLine(bundle.Canon.Prose);
+        builder.AppendLine();
+        builder.AppendLine("GM hooks:");
+        foreach (string hook in bundle.Canon.GmHooks)
+        {
+            builder.AppendLine($"- {hook}");
+        }
+
+        return builder.ToString().TrimEnd();
+    }
+
+    private static byte[] BuildSimplePdfDocument(string title, IReadOnlyList<string> lines)
+    {
+        List<string> pdfLines =
+        [
+            title,
+            string.Empty,
+            .. lines.Take(40)
+        ];
+
+        StringBuilder content = new();
+        content.AppendLine("BT");
+        content.AppendLine("/F1 18 Tf");
+        content.AppendLine("50 790 Td");
+        content.AppendLine($"({EscapePdfText(title)}) Tj");
+        content.AppendLine("0 -24 Td");
+        content.AppendLine("/F1 11 Tf");
+        foreach (string line in pdfLines.Skip(1))
+        {
+            content.AppendLine($"({EscapePdfText(line)}) Tj");
+            content.AppendLine("0 -14 Td");
+        }
+        content.AppendLine("ET");
+
+        List<string> objects =
+        [
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+            $"5 0 obj\n<< /Length {Encoding.ASCII.GetByteCount(content.ToString())} >>\nstream\n{content}endstream\nendobj\n"
+        ];
+
+        StringBuilder document = new();
+        document.Append("%PDF-1.4\n");
+        List<int> offsets = [];
+        foreach (string obj in objects)
+        {
+            offsets.Add(Encoding.ASCII.GetByteCount(document.ToString()));
+            document.Append(obj);
+        }
+
+        int crossReferenceOffset = Encoding.ASCII.GetByteCount(document.ToString());
+        document.Append("xref\n");
+        document.Append($"0 {objects.Count + 1}\n");
+        document.Append("0000000000 65535 f \n");
+        foreach (int offset in offsets)
+        {
+            document.Append(offset.ToString("D10"));
+            document.Append(" 00000 n \n");
+        }
+
+        document.Append("trailer\n");
+        document.Append($"<< /Size {objects.Count + 1} /Root 1 0 R >>\n");
+        document.Append("startxref\n");
+        document.Append(crossReferenceOffset);
+        document.Append("\n%%EOF");
+        return Encoding.ASCII.GetBytes(document.ToString());
+    }
+
+    private static string EscapePdfText(string value)
+        => value
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("(", "\\(", StringComparison.Ordinal)
+            .Replace(")", "\\)", StringComparison.Ordinal);
 
     private static string BuildStatusLine(AiConversationTurnResponse response)
     {
@@ -1549,11 +1984,25 @@ internal sealed class DesktopAliceWindow : Window
         string? LeadHandoffTitle,
         IReadOnlyList<string> CausalityHints,
         IReadOnlyList<string> StandoutSignals,
-        IReadOnlyList<string> ContradictionFlags);
+        IReadOnlyList<string> ContradictionFlags,
+        string? RuntimeFingerprint = null);
 
     private sealed record CharacterNarrativeDraft(
         string Summary,
         string Prose,
         IReadOnlyList<string> GmHooks,
+        string? RuntimeFingerprint = null);
+
+    private sealed record OriginDossierBundle(
+        CharacterNarrativePacket Packet,
+        CharacterNarrativeDraft Canon,
+        DateTimeOffset ApprovedAtUtc,
+        string BundleDirectory,
+        string CanonJsonPath,
+        string CanonMarkdownPath,
+        string? DossierPdfPath,
+        string? MarkupGoPacketPath,
+        string? SoundmadeseenPacketPath,
+        string? SoundmadeseenScriptPath,
         string? RuntimeFingerprint = null);
 }
