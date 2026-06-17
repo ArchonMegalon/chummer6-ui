@@ -16,11 +16,6 @@ internal sealed class DesktopBlackLedgerWindow : Window
     private bool HasCampaignContext => (_campaignSummary?.Campaigns.Count ?? 0) > 0;
     private bool HasWorkspaceContext => (_campaignSummary?.Workspaces.Count ?? 0) > 0;
 
-    private static IBrush ResolveThemeBrush(string resourceKey, string fallbackHex)
-        => App.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is IBrush brush
-            ? brush
-            : new SolidColorBrush(Color.Parse(fallbackHex));
-
     private DesktopBlackLedgerWindow(AccountCampaignSummary? campaignSummary)
     {
         _campaignSummary = campaignSummary;
@@ -265,7 +260,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                 new Border
                 {
                     Name = "BlackLedgerSelectedWorkspaceCard",
-                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -328,9 +323,9 @@ internal sealed class DesktopBlackLedgerWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#A3A3A3"),
             BorderThickness = new Thickness(1),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7F4EC"),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7F4EC"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -339,23 +334,18 @@ internal sealed class DesktopBlackLedgerWindow : Window
 
     private static Button CreateStaticButton(string label, Func<bool> action, bool isPrimary = false, string? name = null)
     {
-        Button button = new()
-        {
-            Name = name,
-            Content = label,
-            MinWidth = 132,
-            Padding = new Thickness(10, 6),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Margin = new Thickness(0, 0, 8, 8)
-        };
-
-        if (isPrimary)
-        {
-            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
-            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
-        }
-
-        button.Click += (_, _) => action();
+        Button button = DesktopShellTheme.CreateButton(
+            label,
+            () =>
+            {
+                action();
+                return Task.CompletedTask;
+            },
+            closeWindow: false,
+            isPrimary: isPrimary,
+            minWidth: 132);
+        button.Name = name;
+        button.Margin = new Thickness(0, 0, 8, 8);
         return button;
     }
 
@@ -364,30 +354,8 @@ internal sealed class DesktopBlackLedgerWindow : Window
 
     private Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false, string? name = null)
     {
-        Button button = new()
-        {
-            Name = name,
-            Content = label,
-            MinWidth = 132,
-            Padding = new Thickness(10, 6),
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-
-        if (isPrimary)
-        {
-            button.Background = ResolveThemeBrush("ChummerShellAccentButtonBrush", "#1C4A2D");
-            button.Foreground = ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#FFFFFF");
-        }
-
-        button.Click += async (_, _) =>
-        {
-            await action().ConfigureAwait(true);
-            if (closeWindow)
-            {
-                Close();
-            }
-        };
-
+        Button button = DesktopShellTheme.CreateButton(label, action, closeWindow, isPrimary, minWidth: 132);
+        button.Name = name;
         return button;
     }
 }
