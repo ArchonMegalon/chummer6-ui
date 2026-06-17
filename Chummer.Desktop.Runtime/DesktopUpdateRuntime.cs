@@ -73,6 +73,57 @@ public static class DesktopUpdateRuntime
     private const int StartupApplyBackoffMinutes = 10;
     private const int RollbackWindowDays = 1;
 
+    public static bool ShouldPromptForStartupUpdate(string headId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdatePaths paths = DesktopUpdatePaths.Create(headId, identity);
+        DesktopUpdateState? state = DesktopUpdateStateStore.Load(paths.StateFilePath);
+        if (state is null)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(state.LastManifestVersion))
+        {
+            return false;
+        }
+
+        string installedVersion = string.IsNullOrWhiteSpace(state.InstalledVersion)
+            ? DesktopReleaseMetadata.Load(headId).Version
+            : state.InstalledVersion;
+        if (string.IsNullOrWhiteSpace(installedVersion)
+            || string.Equals(installedVersion, state.LastManifestVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return !string.Equals(
+            state.LastStartupPromptedManifestVersion,
+            state.LastManifestVersion,
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static void MarkStartupUpdatePromptShown(string headId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+        DesktopUpdatePaths paths = DesktopUpdatePaths.Create(headId, identity);
+        DesktopUpdateState? state = DesktopUpdateStateStore.Load(paths.StateFilePath);
+        if (state is null || string.IsNullOrWhiteSpace(state.LastManifestVersion))
+        {
+            return;
+        }
+
+        DesktopUpdateStateStore.Save(paths.StateFilePath, state with
+        {
+            LastStartupPromptedManifestVersion = state.LastManifestVersion,
+            LastStartupPromptedAtUtc = DateTimeOffset.UtcNow
+        });
+    }
+
     public static DesktopUpdateClientStatus GetCurrentStatus(string headId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
@@ -1581,7 +1632,9 @@ public static class DesktopUpdateRuntime
         DateTimeOffset? PendingUpdatePreparedAtUtc = null,
         DateTimeOffset? LastUpdateLaunchAttemptAtUtc = null,
         DateTimeOffset? RollbackWindowStartedAtUtc = null,
-        DateTimeOffset? RollbackWindowExpiresAtUtc = null);
+        DateTimeOffset? RollbackWindowExpiresAtUtc = null,
+        string? LastStartupPromptedManifestVersion = null,
+        DateTimeOffset? LastStartupPromptedAtUtc = null);
 
     private static class DesktopUpdateStateStore
     {

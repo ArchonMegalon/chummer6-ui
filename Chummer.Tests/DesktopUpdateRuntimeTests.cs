@@ -530,6 +530,74 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void ShouldPromptForStartupUpdate_returns_true_for_unseen_update_and_false_after_marking_prompt_shown()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260616-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "run-20260617-055252",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastError": null
+            }
+            """);
+
+        Assert.IsTrue(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+
+        DesktopUpdateRuntime.MarkStartupUpdatePromptShown("avalonia");
+
+        Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
+    public void ShouldPromptForStartupUpdate_returns_false_when_status_is_not_update_available()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260617-055252",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-17T05:00:00Z",
+              "LastManifestVersion": "run-20260617-055252",
+              "LastManifestPublishedAt": "2026-06-17T05:52:52Z",
+              "LastError": null
+            }
+            """);
+
+        Assert.IsFalse(DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"));
+    }
+
+    [TestMethod]
     public void SelectCompatibleArtifacts_prefers_in_place_apply_and_filters_head_platform_matches()
     {
         DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();

@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-13T18:49:56Z",
-  "generated_at": "2026-06-13T18:49:56Z",
+  "generatedAt": "2026-06-17T05:13:20Z",
+  "generated_at": "2026-06-17T05:13:20Z",
   "contract_name": "chummer6-ui.proof_backed_quarantine_installer_promotion",
-  "downloadsDir": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/files",
-  "startupSmokeDir": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/startup-smoke",
-  "releaseChannel": "public_stable",
-  "releaseVersion": "run-20260612-121055",
+  "downloadsDir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
+  "startupSmokeDir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
+  "releaseChannel": "preview",
+  "releaseVersion": "run-20260617-061500",
   "quarantineDirs": [
     "/docker/chummercomplete/chummer-presentation/.codex-studio/quarantine",
     "/docker/chummercomplete/chummer-presentation/Docker/Downloads/quarantine"

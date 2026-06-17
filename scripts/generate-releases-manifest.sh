@@ -978,7 +978,7 @@ normalize_preview_install_access_classes() {
   : "$release_channel"
 
   if [[ -z "$PREVIEW_INSTALL_ACCESS_CLASS" ]]; then
-    PREVIEW_INSTALL_ACCESS_CLASS="account_required"
+    PREVIEW_INSTALL_ACCESS_CLASS="open_public"
   fi
 
   python3 - "$manifest_path" "$PREVIEW_INSTALL_ACCESS_CLASS" <<'PY'
@@ -1011,7 +1011,7 @@ for artifact in payload.get("artifacts") or []:
         continue
 
     current_access_class = str(artifact.get("installAccessClass") or "").strip().lower()
-    if current_access_class:
+    if current_access_class == access_class:
         continue
 
     artifact["installAccessClass"] = access_class

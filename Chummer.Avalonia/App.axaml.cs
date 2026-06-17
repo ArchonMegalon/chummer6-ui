@@ -200,6 +200,19 @@ public partial class App : global::Avalonia.Application
             }
         }
 
+        if (DesktopUpdateRuntime.ShouldPromptForStartupUpdate("avalonia"))
+        {
+            try
+            {
+                await DesktopUpdateWindow.ShowAsync(owner, "avalonia");
+                DesktopUpdateRuntime.MarkStartupUpdatePromptShown("avalonia");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to display the desktop startup update window: {ex}");
+            }
+        }
+
         string? startupSurface = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STARTUP_SURFACE");
         if (!IsStartupSurfaceAllowedInCurrentMode(startupSurface))
         {
