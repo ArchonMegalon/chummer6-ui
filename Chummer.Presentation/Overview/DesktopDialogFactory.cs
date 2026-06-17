@@ -14,6 +14,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 {
     private const string NewCharacterPriorityWorkflowDialogId = "dialog.new_character.priority_workflow";
     private const string NewCharacterKarmaWorkflowDialogId = "dialog.new_character.karma_workflow";
+    private const string NewCharacterOriginWizardDialogId = "dialog.new_character.origin_wizard";
+    private const string NewCharacterOriginBuildDialogId = "dialog.new_character.origin_build";
     private const string NewCharacterPriorityWorkflowStateFieldId = "newCharacterPriorityWorkflowState";
     private const string NewCharacterPriorityLastChangedFieldId = "newCharacterPriorityLastChangedFieldId";
     private const string NewCharacterMetavariantFieldId = "newCharacterMetavariant";
@@ -586,7 +588,243 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
             [
+                new DesktopDialogAction("start_from_origin", "Start from Origin"),
                 new DesktopDialogAction("create_character", "OK", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    internal static DesktopDialogState BuildNewCharacterOriginWizardDialog(
+        string? rulesetId,
+        string? name,
+        string? alias)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
+            normalizedRulesetId,
+            "street",
+            "betrayal",
+            "self_taught",
+            "medical_debt",
+            "matrix",
+            "survival",
+            "grounded");
+
+        return new DesktopDialogState(
+            NewCharacterOriginWizardDialogId,
+            "Start from Origin",
+            "Shape the runner first. ALICE will turn it into an Origin Dossier Bundle, then translate that bundle into a grounded build lane before normal character creation opens.",
+            [
+                new DesktopDialogField(
+                    "newCharacterName",
+                    "Character Name",
+                    string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim(),
+                    "New Character",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+                new DesktopDialogField(
+                    "newCharacterAlias",
+                    "Alias",
+                    string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim(),
+                    "Runner",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
+                new DesktopDialogField(
+                    "newCharacterOriginBackground",
+                    "Background",
+                    "street",
+                    "street",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options:
+                    [
+                        new("street", "Street"),
+                        new("corporate", "Corporate"),
+                        new("academic", "Academic"),
+                        new("magical", "Magical"),
+                        new("military", "Military"),
+                        new("criminal", "Criminal")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginTurningPoint",
+                    "Turning Point",
+                    "betrayal",
+                    "betrayal",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options:
+                    [
+                        new("betrayal", "Betrayal"),
+                        new("debt", "Debt"),
+                        new("clinic_event", "Clinic Event"),
+                        new("awakening", "Awakening"),
+                        new("prison", "Prison"),
+                        new("family_collapse", "Family Collapse")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginTrainingPath",
+                    "Training Path",
+                    "self_taught",
+                    "self_taught",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options:
+                    [
+                        new("self_taught", "Self-Taught"),
+                        new("corporate_program", "Corporate Program"),
+                        new("gang_survival", "Gang Survival"),
+                        new("military_discipline", "Military Discipline"),
+                        new("mentor_driven", "Mentor-Driven"),
+                        new("underground_scene", "Underground Scene")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginPressureCost",
+                    "Pressure / Cost",
+                    "medical_debt",
+                    "medical_debt",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options:
+                    [
+                        new("addiction", "Addiction"),
+                        new("enemy", "Enemy"),
+                        new("obligation", "Obligation"),
+                        new("medical_debt", "Medical Debt"),
+                        new("dependent", "Dependent"),
+                        new("notoriety", "Notoriety")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginUpgradeExposure",
+                    "Upgrade Exposure",
+                    "matrix",
+                    "matrix",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options:
+                    [
+                        new("heavy_augment", "Heavy Augment Path"),
+                        new("light_augment", "Light Augment Path"),
+                        new("magic", "Magic Path"),
+                        new("matrix", "Matrix Path"),
+                        new("mundane", "Mundane Specialist"),
+                        new("undecided", "Still Undecided")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginMotivation",
+                    "Present Motivation",
+                    "survival",
+                    "survival",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options:
+                    [
+                        new("revenge", "Revenge"),
+                        new("survival", "Survival"),
+                        new("money", "Money"),
+                        new("redemption", "Redemption"),
+                        new("curiosity", "Curiosity"),
+                        new("loyalty", "Loyalty")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginTone",
+                    "Tone",
+                    "grounded",
+                    "grounded",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options:
+                    [
+                        new("grounded", "Grounded"),
+                        new("noir", "Noir"),
+                        new("tragic", "Tragic"),
+                        new("professional", "Professional"),
+                        new("chaotic", "Chaotic")
+                    ]),
+                new DesktopDialogField(
+                    "newCharacterOriginSummary",
+                    "Origin Dossier Draft",
+                    recommendation.OriginSummary,
+                    recommendation.OriginSummary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.Archetype),
+                BuildNewCharacterContextField("newCharacterOriginBuildMethod", "Origin Build Method", recommendation.BuildMethod),
+                BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Category", recommendation.MetatypeCategory),
+                BuildNewCharacterContextField("newCharacterOriginMetatype", "Origin Metatype", recommendation.Metatype),
+                BuildNewCharacterContextField("newCharacterOriginQualityFocus", "Origin Quality Focus", recommendation.QualityFocus),
+                BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
+            ],
+            [
+                new DesktopDialogAction("generate_fitting_build", "Generate fitting build", true),
+                new DesktopDialogAction("cancel", "Cancel")
+            ]);
+    }
+
+    internal static DesktopDialogState BuildNewCharacterOriginBuildDialog(DesktopDialogState originDialog)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterRulesetId")) ?? RulesetDefaults.Sr5;
+        OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
+            rulesetId,
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginBackground"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTurningPoint"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTrainingPath"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginPressureCost"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginUpgradeExposure"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginMotivation"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTone"));
+        string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New Character";
+        string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
+        string buildLogic = BuildGridValue(
+            ("Build Method", recommendation.BuildMethod),
+            ("Likely Archetype", recommendation.ArchetypeLabel),
+            ("Likely Metatype", $"{recommendation.Metatype} ({recommendation.MetatypeCategory})"),
+            ("Quality Focus", recommendation.QualityFocus),
+            ("Path", recommendation.PathSummary));
+        string aliceNotes =
+            $"Origin | {recommendation.OriginSummary}{Environment.NewLine}" +
+            $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
+            "ALICE Posture | guided recommendation only; no stats, gear, or qualities were applied";
+
+        return new DesktopDialogState(
+            NewCharacterOriginBuildDialogId,
+            "ALICE Origin Dossier Bundle",
+            "ALICE translated the Origin Dossier Bundle into a grounded build recommendation. Review it, then open guided character creation on the recommended lane.",
+            [
+                BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
+                BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
+                BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
+                BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
+                BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
+                new DesktopDialogField(
+                    "newCharacterOriginStory",
+                    "Origin Dossier",
+                    recommendation.OriginSummary,
+                    recommendation.OriginSummary,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+                new DesktopDialogField(
+                    "newCharacterOriginBuildLogic",
+                    "Build Logic",
+                    buildLogic,
+                    buildLogic,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Grid,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
+                    "newCharacterOriginImplications",
+                    "ALICE Notes",
+                    aliceNotes,
+                    aliceNotes,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.List,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
+            ],
+            [
+                new DesktopDialogAction("open_origin_guided_chargen", "Open guided chargen", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
@@ -869,6 +1107,94 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
+
+    private static OriginBuildRecommendation ResolveOriginBuildRecommendation(
+        string? rulesetId,
+        string? background,
+        string? turningPoint,
+        string? trainingPath,
+        string? pressureCost,
+        string? upgradeExposure,
+        string? motivation,
+        string? tone)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string normalizedBackground = NormalizeOriginToken(background, "street");
+        string normalizedTurningPoint = NormalizeOriginToken(turningPoint, "betrayal");
+        string normalizedTrainingPath = NormalizeOriginToken(trainingPath, "self_taught");
+        string normalizedPressureCost = NormalizeOriginToken(pressureCost, "medical_debt");
+        string normalizedUpgradeExposure = NormalizeOriginToken(upgradeExposure, "matrix");
+        string normalizedMotivation = NormalizeOriginToken(motivation, "survival");
+        string normalizedTone = NormalizeOriginToken(tone, "grounded");
+
+        string archetype = normalizedUpgradeExposure switch
+        {
+            "magic" => "mage",
+            "matrix" => "decker",
+            "heavy_augment" => "street_sam",
+            "light_augment" when string.Equals(normalizedBackground, "corporate", StringComparison.Ordinal) => "face",
+            "mundane" when string.Equals(normalizedTrainingPath, "military_discipline", StringComparison.Ordinal) => "street_sam",
+            _ when string.Equals(normalizedBackground, "corporate", StringComparison.Ordinal) => "face",
+            _ when string.Equals(normalizedBackground, "military", StringComparison.Ordinal) => "street_sam",
+            _ when string.Equals(normalizedBackground, "magical", StringComparison.Ordinal) => "mage",
+            _ => "decker"
+        };
+        string buildMethod = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? string.Equals(archetype, "street_sam", StringComparison.Ordinal) ? "BP" : "Karma"
+            : string.Equals(archetype, "decker", StringComparison.Ordinal) || string.Equals(archetype, "face", StringComparison.Ordinal)
+                ? "Karma"
+                : "Priority";
+        string metatypeCategory = string.Equals(normalizedBackground, "corporate", StringComparison.Ordinal) ? "Standard" : "Metahuman";
+        string metatype = archetype switch
+        {
+            "street_sam" when string.Equals(normalizedTone, "chaotic", StringComparison.Ordinal) => "Ork",
+            "street_sam" => "Troll",
+            "mage" => "Elf",
+            "face" => "Elf",
+            _ => "Human"
+        };
+        string qualityFocus = normalizedPressureCost switch
+        {
+            "addiction" => "Addiction / recovery pressure",
+            "enemy" => "Enemies and vigilance",
+            "obligation" => "Dependents and obligations",
+            "medical_debt" => "Debt, restricted gear, and implant provenance",
+            "dependent" => "Dependents and social pressure",
+            "notoriety" => "Notoriety and first-impression tradeoffs",
+            _ => "survivability and table-safe hooks"
+        };
+        string pathSummary = normalizedUpgradeExposure switch
+        {
+            "magic" => "magic-forward lane",
+            "matrix" => "matrix-first lane",
+            "heavy_augment" => "heavy augmentation lane",
+            "light_augment" => "light augmentation lane",
+            "mundane" => "mundane specialist lane",
+            _ => "open specialist lane"
+        };
+        string originSummary =
+            $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
+            $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active.";
+        string buildSummary =
+            $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.";
+
+        return new OriginBuildRecommendation(
+            archetype,
+            FormatChoiceLabel(archetype),
+            buildMethod,
+            metatypeCategory,
+            metatype,
+            qualityFocus,
+            pathSummary,
+            originSummary,
+            buildSummary);
+    }
+
+    private static string NormalizeOriginToken(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim().ToLowerInvariant();
+
+    private static string FormatChoiceLabel(string value)
+        => value.Replace('_', ' ');
 
     private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
         => new(
@@ -1905,6 +2231,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         {
             DesktopAliceAssistant.DialogId => dialog,
             "dialog.new_character" => RebuildNewCharacterDialog(dialog),
+            NewCharacterOriginWizardDialogId => RebuildNewCharacterOriginWizardDialog(dialog),
             NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog),
             NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog),
             "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
@@ -1960,6 +2287,72 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             Message = BuildNewCharacterMessage(rulesetId, resolvedBuildMethod, houseRulesEnabled),
             Fields = updatedFields
         };
+    }
+
+    private static DesktopDialogState RebuildNewCharacterOriginWizardDialog(DesktopDialogState dialog)
+    {
+        string rulesetId = RulesetDefaults.NormalizeOptional(
+                DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
+            ?? RulesetDefaults.Sr5;
+        OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
+            rulesetId,
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBackground"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTurningPoint"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTrainingPath"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginPressureCost"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginUpgradeExposure"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMotivation"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTone"));
+
+        DesktopDialogField[] updatedFields = dialog.Fields
+            .Select(field => field.Id switch
+            {
+                "newCharacterRulesetId" => field with
+                {
+                    Value = rulesetId,
+                    Placeholder = rulesetId,
+                    Options = BuildRulesetOptions()
+                },
+                "newCharacterOriginSummary" => field with
+                {
+                    Value = recommendation.OriginSummary,
+                    Placeholder = recommendation.OriginSummary
+                },
+                "newCharacterOriginArchetype" => field with
+                {
+                    Value = recommendation.Archetype,
+                    Placeholder = recommendation.Archetype
+                },
+                "newCharacterOriginBuildMethod" => field with
+                {
+                    Value = recommendation.BuildMethod,
+                    Placeholder = recommendation.BuildMethod
+                },
+                "newCharacterOriginMetatypeCategory" => field with
+                {
+                    Value = recommendation.MetatypeCategory,
+                    Placeholder = recommendation.MetatypeCategory
+                },
+                "newCharacterOriginMetatype" => field with
+                {
+                    Value = recommendation.Metatype,
+                    Placeholder = recommendation.Metatype
+                },
+                "newCharacterOriginQualityFocus" => field with
+                {
+                    Value = recommendation.QualityFocus,
+                    Placeholder = recommendation.QualityFocus
+                },
+                "newCharacterOriginPathSummary" => field with
+                {
+                    Value = recommendation.PathSummary,
+                    Placeholder = recommendation.PathSummary
+                },
+                _ => field
+            })
+            .ToArray();
+
+        return dialog with { Fields = updatedFields };
     }
 
     private static DesktopDialogState RebuildNewCharacterPriorityWorkflowDialog(DesktopDialogState dialog)
@@ -6308,4 +6701,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         DateTimeOffset LastOpenedUtc,
         string RulesetId,
         bool HasSavedWorkspace);
+
+    private sealed record OriginBuildRecommendation(
+        string Archetype,
+        string ArchetypeLabel,
+        string BuildMethod,
+        string MetatypeCategory,
+        string Metatype,
+        string QualityFocus,
+        string PathSummary,
+        string OriginSummary,
+        string BuildSummary);
 }

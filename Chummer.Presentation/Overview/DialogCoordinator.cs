@@ -89,6 +89,48 @@ public sealed class DialogCoordinator : IDialogCoordinator
             return;
         }
 
+        if (string.Equals(dialog.Id, "dialog.new_character", StringComparison.Ordinal)
+            && string.Equals(actionId, "start_from_origin", StringComparison.Ordinal))
+        {
+            string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId") ?? RulesetDefaults.Sr5;
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName") ?? "New Character";
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias") ?? "Runner";
+            context.Publish(context.State with
+            {
+                ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(rulesetId, name, alias),
+                Error = null
+            });
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.new_character.origin_wizard", StringComparison.Ordinal)
+            && string.Equals(actionId, "generate_fitting_build", StringComparison.Ordinal))
+        {
+            context.Publish(context.State with
+            {
+                ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(dialog),
+                Error = null
+            });
+            return;
+        }
+
+        if (string.Equals(dialog.Id, "dialog.new_character.origin_build", StringComparison.Ordinal)
+            && string.Equals(actionId, "open_origin_guided_chargen", StringComparison.Ordinal))
+        {
+            string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId")) ?? RulesetDefaults.Sr5;
+            string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? string.Empty;
+            string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName") ?? "New Character";
+            string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias") ?? "Runner";
+            bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
+            context.Publish(context.State with
+            {
+                ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(rulesetId, buildMethod, houseRulesEnabled, name, alias),
+                Error = null,
+                Notice = "ALICE translated the origin into a guided build lane."
+            });
+            return;
+        }
+
         if ((string.Equals(dialog.Id, "dialog.new_character.priority_workflow", StringComparison.Ordinal)
                 || string.Equals(dialog.Id, "dialog.new_character.karma_workflow", StringComparison.Ordinal))
             && string.Equals(actionId, "complete_new_character_workflow", StringComparison.Ordinal))

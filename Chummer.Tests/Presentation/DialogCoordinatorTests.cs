@@ -444,6 +444,79 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_start_from_origin_opens_origin_wizard_dialog()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterName", "Name", "Nova", "New Character"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Runner"),
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr4", "sr5")
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("start_from_origin", "Start from Origin", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("start_from_origin", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_wizard", published.ActiveDialog?.Id);
+        Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterName"));
+        Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterAlias"));
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_origin_wizard_generates_alice_build_translation_and_handoff()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr5, "Nova", "Cipher")
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("generate_fitting_build", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginBuildLogic"), "Likely Archetype");
+
+        context = new DialogCoordinationContext(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("open_origin_guided_chargen", context, CancellationToken.None);
+
+        Assert.IsTrue(
+            string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
+            || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
+        Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
+        StringAssert.Contains(published.Notice ?? string.Empty, "ALICE translated the origin");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_complete_new_character_workflow_imports_workspace_and_closes_dialog_on_success()
     {
         DialogCoordinator coordinator = new();
@@ -486,7 +559,7 @@ public class DialogCoordinatorTests
         StringAssert.Contains(imported.Content, "<prioritytalent>Mundane</prioritytalent>");
         StringAssert.Contains(imported.Content, "House rules enabled.");
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Started 'Nova' (Priority, SR6) with house rules enabled.");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Opened Nova · Priority · SR6 · house rules");
     }
 
     [TestMethod]

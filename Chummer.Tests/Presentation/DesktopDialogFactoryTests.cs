@@ -1756,6 +1756,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
+        Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)));
     }
 
     [TestMethod]
@@ -1805,7 +1806,35 @@ public class DesktopDialogFactoryTests
                 .Select(option => option.Value)
                 .ToArray());
         CollectionAssert.AreEqual(
-            new[] { "create_character", "cancel" },
+            new[] { "start_from_origin", "create_character", "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterOriginWizardDialog_materializes_origin_seed_and_recommendation_fields()
+    {
+        DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+
+        Assert.AreEqual("dialog.new_character.origin_wizard", dialog.Id);
+        Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
+        Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
+        Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterOriginBuildDialog_translates_origin_into_alice_guided_build_summary()
+    {
+        DesktopDialogState wizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr5, "Nova", "Cipher");
+        DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
+
+        Assert.AreEqual("dialog.new_character.origin_build", dialog.Id);
+        Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
+        Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Build Method");
+        CollectionAssert.AreEqual(
+            new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
     }
 
