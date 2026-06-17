@@ -26,8 +26,12 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}\")");
         StringAssert.Contains(source, "CreateAssistantCard()");
         StringAssert.Contains(source, "AliceConversationModeCombo");
+        StringAssert.Contains(source, "AliceConversationList");
+        StringAssert.Contains(source, "AliceStarterPromptRow");
         StringAssert.Contains(source, "AliceQuestionTextBox");
         StringAssert.Contains(source, "AliceAskButton");
+        StringAssert.Contains(source, "BuildConversationTurnView(");
+        StringAssert.Contains(source, "BuildStarterPrompts(");
     }
 
     [TestMethod]

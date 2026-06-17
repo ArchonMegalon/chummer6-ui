@@ -137,12 +137,22 @@ internal sealed class DesktopAliceWindow : Window
     private Control CreateAssistantCard()
     {
         IReadOnlyList<string> modes = ["Build help", "Rules coach"];
+        List<AliceConversationTurnEntry> buildHistory = [];
+        List<AliceConversationTurnEntry> rulesHistory = [];
         ComboBox modeCombo = new()
         {
             Name = "AliceConversationModeCombo",
             MinWidth = 220,
             ItemsSource = modes,
             SelectedIndex = HasBuildPathContext ? 0 : 1
+        };
+
+        ListBox conversationList = new()
+        {
+            Name = "AliceConversationList",
+            MinHeight = 220,
+            MaxHeight = 320,
+            ItemTemplate = new FuncDataTemplate<AliceConversationTurnEntry>((entry, _) => BuildConversationTurnView(entry))
         };
 
         TextBox promptBox = new()
@@ -183,6 +193,54 @@ internal sealed class DesktopAliceWindow : Window
             ItemWidth = double.NaN
         };
 
+        WrapPanel starterPromptRow = new()
+        {
+            Name = "AliceStarterPromptRow",
+            Orientation = Orientation.Horizontal,
+            ItemHeight = double.NaN,
+            ItemWidth = double.NaN
+        };
+
+        List<AliceConversationTurnEntry> ActiveHistory()
+            => string.Equals(modeCombo.SelectedItem?.ToString(), "Rules coach", StringComparison.Ordinal)
+                ? rulesHistory
+                : buildHistory;
+
+        void RefreshConversationFeed()
+        {
+            List<AliceConversationTurnEntry> history = ActiveHistory();
+            conversationList.ItemsSource = history.Count == 0
+                ? [BuildWelcomeEntry(modeCombo.SelectedItem?.ToString())]
+                : history.ToArray();
+            if (conversationList.ItemCount > 0)
+            {
+                conversationList.SelectedIndex = conversationList.ItemCount - 1;
+                if (conversationList.SelectedItem is { } selectedItem)
+                {
+                    conversationList.ScrollIntoView(selectedItem);
+                }
+            }
+        }
+
+        void RefreshStarterPrompts()
+        {
+            starterPromptRow.Children.Clear();
+            foreach (string prompt in BuildStarterPrompts(modeCombo.SelectedItem?.ToString()))
+            {
+                Button button = CreateButton(
+                    prompt,
+                    () =>
+                    {
+                        promptBox.Text = prompt;
+                        return Task.CompletedTask;
+                    },
+                    name: $"AliceStarterPrompt_{SanitizeNameToken(prompt)}");
+                button.MinWidth = 0;
+                button.Margin = new Thickness(0, 0, 8, 8);
+                starterPromptRow.Children.Add(button);
+            }
+        }
+
         void ApplyIdleState()
         {
             statusText.Text = BuildIdleAssistantStatus(modeCombo.SelectedItem?.ToString());
@@ -191,6 +249,8 @@ internal sealed class DesktopAliceWindow : Window
             actionRow.Children.Clear();
             actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
             actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
+            RefreshStarterPrompts();
+            RefreshConversationFeed();
         }
 
         async Task AskAsync()
@@ -204,6 +264,8 @@ internal sealed class DesktopAliceWindow : Window
             }
 
             string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
+            ActiveHistory().Add(BuildUserTurn(message));
+            RefreshConversationFeed();
             statusText.Text = $"ALICE is checking the {mode.ToLowerInvariant()} lane.";
             answerText.Text = "Waiting for grounded assistant output...";
             evidenceList.ItemsSource = Array.Empty<string>();
@@ -214,7 +276,15 @@ internal sealed class DesktopAliceWindow : Window
             {
                 statusText.Text = "ALICE stayed local because no grounded coach route was reachable from this desktop head.";
                 answerText.Text = BuildLocalFallbackAnswer(mode, message);
-                evidenceList.ItemsSource = BuildLocalFallbackEvidence(mode);
+                string[] fallbackEvidence = BuildLocalFallbackEvidence(mode);
+                evidenceList.ItemsSource = fallbackEvidence;
+                ActiveHistory().Add(BuildAssistantTurn(
+                    mode,
+                    statusText.Text,
+                    answerText.Text,
+                    fallbackEvidence,
+                    ["Open account ALICE", "Open public ALICE"]));
+                RefreshConversationFeed();
                 actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
                 actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantFallbackPublicButton"));
                 return;
@@ -222,12 +292,22 @@ internal sealed class DesktopAliceWindow : Window
 
             statusText.Text = BuildStatusLine(response);
             answerText.Text = response.Answer;
-            evidenceList.ItemsSource = BuildEvidenceLines(response);
+            string[] evidenceLines = BuildEvidenceLines(response);
+            evidenceList.ItemsSource = evidenceLines;
+            string[] suggestedActionTitles = response.SuggestedActions.Take(3).Select(static action => action.Title).ToArray();
+            ActiveHistory().Add(BuildAssistantTurn(
+                mode,
+                statusText.Text,
+                answerText.Text,
+                evidenceLines,
+                suggestedActionTitles));
+            RefreshConversationFeed();
             actionRow.Children.Clear();
             foreach (Button action in CreateSuggestedActionButtons(response))
             {
                 actionRow.Children.Add(action);
             }
+            promptBox.Text = string.Empty;
         }
 
         modeCombo.SelectionChanged += (_, _) => ApplyIdleState();
@@ -242,6 +322,8 @@ internal sealed class DesktopAliceWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantRulesetBadge", "Ruleset", _rulesetId ?? "none"),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContextBadge", "Context", !string.IsNullOrWhiteSpace(_workspaceId) ? "workspace" : "global")),
                 modeCombo,
+                conversationList,
+                starterPromptRow,
                 promptBox,
                 statusText,
                 new Border
@@ -975,4 +1057,148 @@ internal sealed class DesktopAliceWindow : Window
 
         return buttons.ToArray();
     }
+
+    private static Control BuildConversationTurnView(AliceConversationTurnEntry? entry)
+    {
+        if (entry is null)
+        {
+            return new TextBlock { Text = string.Empty };
+        }
+
+        StackPanel stack = new()
+        {
+            Spacing = 6
+        };
+
+        stack.Children.Add(
+            new TextBlock
+            {
+                Text = $"{entry.RoleLabel} · {entry.Title}",
+                FontWeight = FontWeight.SemiBold,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+        stack.Children.Add(
+            new TextBlock
+            {
+                Text = entry.Body,
+                TextWrapping = TextWrapping.Wrap
+            });
+
+        if (entry.EvidenceLines.Count > 0)
+        {
+            stack.Children.Add(
+                new TextBlock
+                {
+                    Text = string.Join(Environment.NewLine, entry.EvidenceLines.Select(static line => $"• {line}")),
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellTextMutedBrush", "#475569"),
+                    TextWrapping = TextWrapping.Wrap
+                });
+        }
+
+        if (entry.SuggestedActionTitles.Count > 0)
+        {
+            stack.Children.Add(
+                new TextBlock
+                {
+                    Text = "Next: " + string.Join(" · ", entry.SuggestedActionTitles),
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+                    TextWrapping = TextWrapping.Wrap
+                });
+        }
+
+        return new Border
+        {
+            Name = $"AliceConversationTurn_{entry.Kind}",
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderThickness = new Thickness(1),
+            Background = DesktopShellTheme.ResolveThemeBrush(
+                entry.Kind == AliceConversationTurnKind.User ? "ChummerShellSelectionInsetBrush" : "ChummerShellSurfaceAltBrush",
+                entry.Kind == AliceConversationTurnKind.User ? "#F1F5F9" : "#F2F5FA"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10),
+            Child = stack
+        };
+    }
+
+    private static AliceConversationTurnEntry BuildWelcomeEntry(string? mode)
+        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+            ? new AliceConversationTurnEntry(
+                AliceConversationTurnKind.Assistant,
+                "ALICE",
+                "Rules coach ready",
+                "Ask for a rule explanation, tradeoff, or safe next build step tied to the active ruleset.",
+                [],
+                BuildStarterPrompts(mode))
+            : new AliceConversationTurnEntry(
+                AliceConversationTurnKind.Assistant,
+                "ALICE",
+                "Build copilot ready",
+                "Ask for the next grounded move, a comparison, or a bounded build recommendation from the current desktop context.",
+                [],
+                BuildStarterPrompts(mode));
+
+    private static AliceConversationTurnEntry BuildUserTurn(string message)
+        => new(
+            AliceConversationTurnKind.User,
+            "You",
+            "Question",
+            message,
+            [],
+            []);
+
+    private static AliceConversationTurnEntry BuildAssistantTurn(
+        string mode,
+        string status,
+        string body,
+        IReadOnlyList<string> evidenceLines,
+        IReadOnlyList<string> suggestedActionTitles)
+        => new(
+            AliceConversationTurnKind.Assistant,
+            "ALICE",
+            string.Equals(mode, "Rules coach", StringComparison.Ordinal) ? "Rules coach" : "Build help",
+            body,
+            [status, .. evidenceLines.Take(5)],
+            suggestedActionTitles.Take(3).ToArray());
+
+    private static string[] BuildStarterPrompts(string? mode)
+        => string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+            ?
+            [
+                "Explain the next safe SR4 build step.",
+                "Why would I take this quality?",
+                "What rule am I most likely to miss here?"
+            ]
+            :
+            [
+                "Build me an SR4 troll decker.",
+                "What should I add next, and why?",
+                "Compare two good next-step options."
+            ];
+
+    private static string SanitizeNameToken(string value)
+    {
+        Span<char> buffer = stackalloc char[value.Length];
+        int written = 0;
+        foreach (char ch in value)
+        {
+            buffer[written++] = char.IsLetterOrDigit(ch) ? ch : '_';
+        }
+
+        return new string(buffer[..written]);
+    }
+
+    private enum AliceConversationTurnKind
+    {
+        User,
+        Assistant
+    }
+
+    private sealed record AliceConversationTurnEntry(
+        AliceConversationTurnKind Kind,
+        string RoleLabel,
+        string Title,
+        string Body,
+        IReadOnlyList<string> EvidenceLines,
+        IReadOnlyList<string> SuggestedActionTitles);
 }
