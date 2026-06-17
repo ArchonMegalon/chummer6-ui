@@ -217,14 +217,14 @@ internal sealed class DesktopHorizonsWindow : Window
         Border badge = new()
         {
             Name = $"HorizonsSectionBadge_{SanitizeToken(text)}",
-            Background = new SolidColorBrush(Color.Parse("#E4EDF5")),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6"),
             CornerRadius = new CornerRadius(999),
             Padding = new Thickness(8, 2),
             HorizontalAlignment = HorizontalAlignment.Right,
             Child = new TextBlock
             {
                 Text = count.ToString(CultureInfo.InvariantCulture),
-                Foreground = new SolidColorBrush(Color.Parse("#24527A")),
+                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
                 FontWeight = FontWeight.SemiBold
             }
         };
@@ -551,9 +551,9 @@ internal sealed class DesktopHorizonsWindow : Window
 
         return new Border
         {
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.Parse("#F7FAFD")),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -585,8 +585,7 @@ internal sealed class DesktopHorizonsWindow : Window
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            DesktopShellTheme.ApplyPrimaryButton(button);
         }
 
         button.Click += async (_, _) =>

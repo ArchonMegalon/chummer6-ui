@@ -278,9 +278,9 @@ internal sealed class DesktopKarmaForgeWindow : Window
         return new Border
         {
             Name = name,
-            BorderBrush = new SolidColorBrush(Color.Parse("#BBC7D4")),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.Parse("#F7FAFD")),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(12),
             Child = stack
@@ -312,8 +312,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
 
         if (isPrimary)
         {
-            button.Background = new SolidColorBrush(Color.Parse("#24527A"));
-            button.Foreground = Brushes.White;
+            DesktopShellTheme.ApplyPrimaryButton(button);
         }
 
         button.Click += async (_, _) =>

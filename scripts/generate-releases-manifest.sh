@@ -2254,6 +2254,9 @@ verify_registry_boundary_consistency \
   "$PORTAL_MANIFEST_PATH" \
   "$PORTAL_CANONICAL_MANIFEST_PATH"
 
+if to_bool "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER"; then
+  verify_args+=(--skip-startup-smoke-filter)
+fi
 if [[ "$REQUIRE_COMPLETE_DESKTOP_COVERAGE" != "0" ]]; then
   verify_args+=(--require-complete-desktop-coverage)
 fi
