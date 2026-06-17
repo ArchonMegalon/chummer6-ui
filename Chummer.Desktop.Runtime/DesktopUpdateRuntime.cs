@@ -701,7 +701,9 @@ public static class DesktopUpdateRuntime
                             InstallerPath: downloadedArtifactPath,
                             StateFilePath: paths.StateFilePath,
                             Version: manifest.Version,
-                            ChannelId: manifest.ChannelId);
+                            ChannelId: manifest.ChannelId,
+                            HeadId: headId,
+                            RelaunchArgs: relaunchArgs);
                         string requestPath = Path.Combine(stageRoot, "installer-request.json");
                         WriteInstallerLaunchRequest(requestPath, request);
                         LaunchInstallerHelper(helperPath, requestPath);
@@ -819,7 +821,9 @@ public static class DesktopUpdateRuntime
             InstallerPath: dto.InstallerPath,
             StateFilePath: dto.StateFilePath,
             Version: dto.Version ?? string.Empty,
-            ChannelId: dto.ChannelId ?? string.Empty);
+            ChannelId: dto.ChannelId ?? string.Empty,
+            HeadId: dto.HeadId ?? string.Empty,
+            RelaunchArgs: dto.RelaunchArgs ?? []);
     }
 
     private static async Task<int> ApplyStagedUpdateAsync(DesktopUpdateApplyRequest request, CancellationToken ct)
@@ -878,7 +882,7 @@ public static class DesktopUpdateRuntime
         try
         {
             await WaitForProcessExitAsync(request.ParentProcessId, ct).ConfigureAwait(false);
-            LaunchInstaller(request.InstallerPath);
+            LaunchInstaller(request.InstallerPath, request.HeadId, request.RelaunchArgs);
 
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
             if (priorState is not null)
@@ -1270,7 +1274,9 @@ public static class DesktopUpdateRuntime
             request.InstallerPath,
             request.StateFilePath,
             request.Version,
-            request.ChannelId);
+            request.ChannelId,
+            request.HeadId,
+            request.RelaunchArgs.ToArray());
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, JsonSerializer.Serialize(dto, new JsonSerializerOptions
         {
@@ -1324,7 +1330,7 @@ public static class DesktopUpdateRuntime
         CopyDirectory(sourceDirectory, installDirectory);
     }
 
-    private static void LaunchInstaller(string installerPath)
+    private static void LaunchInstaller(string installerPath, string headId, IReadOnlyList<string> relaunchArgs)
     {
         if (!File.Exists(installerPath))
         {
@@ -1333,7 +1339,20 @@ public static class DesktopUpdateRuntime
 
         if (OperatingSystem.IsWindows())
         {
-            StartDetachedProcess(installerPath);
+            List<string> args = ["--auto-update"];
+            if (!string.IsNullOrWhiteSpace(headId))
+            {
+                args.Add("--launch-head");
+                args.Add(headId);
+            }
+
+            foreach (string arg in relaunchArgs)
+            {
+                args.Add("--relaunch-arg");
+                args.Add(arg);
+            }
+
+            StartDetachedProcess(installerPath, args);
             return;
         }
 
@@ -1363,14 +1382,23 @@ public static class DesktopUpdateRuntime
         throw new InvalidOperationException($"Desktop installer launch is not supported on this platform for '{installerPath}'.");
     }
 
-    private static void StartDetachedProcess(string path)
+    private static void StartDetachedProcess(string path, IReadOnlyList<string>? args = null)
     {
-        Process? process = Process.Start(new ProcessStartInfo
+        ProcessStartInfo startInfo = new()
         {
             FileName = path,
             WorkingDirectory = Path.GetDirectoryName(path) ?? Environment.CurrentDirectory,
             UseShellExecute = true
-        });
+        };
+        if (args is not null)
+        {
+            foreach (string arg in args)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+        }
+
+        Process? process = Process.Start(startInfo);
         if (process is null)
         {
             throw new InvalidOperationException($"Failed to launch process '{path}'.");
@@ -1724,7 +1752,9 @@ public static class DesktopUpdateRuntime
         string InstallerPath,
         string StateFilePath,
         string Version,
-        string ChannelId);
+        string ChannelId,
+        string HeadId,
+        IReadOnlyList<string> RelaunchArgs);
 
     private sealed record ApplyRequestDto(
         int ParentProcessId,
@@ -1743,5 +1773,7 @@ public static class DesktopUpdateRuntime
         string InstallerPath,
         string StateFilePath,
         string? Version,
-        string? ChannelId);
+        string? ChannelId,
+        string? HeadId,
+        string[]? RelaunchArgs);
 }

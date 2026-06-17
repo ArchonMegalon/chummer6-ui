@@ -18,6 +18,9 @@ internal static class Program
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string ClaimCodeSwitch = "--install-claim-code";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
+    private const string AutoUpdateSwitch = "--auto-update";
+    private const string LaunchHeadSwitch = "--launch-head";
+    private const string RelaunchArgSwitch = "--relaunch-arg";
     private const string ExplicitStateRootEnvironmentVariable = "CHUMMER_DESKTOP_STATE_ROOT";
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string ChummerIconFileName = "chummer.ico";
@@ -56,6 +59,9 @@ internal static class Program
             InstallerMetadata metadata = InstallerMetadata.Load();
             string? payloadPathOverride = ResolvePayloadPathOverride(args);
             string? claimCode = ResolveClaimCode(args);
+            bool autoUpdate = args.Any(arg => string.Equals(arg, AutoUpdateSwitch, StringComparison.OrdinalIgnoreCase));
+            string? requestedLaunchHeadId = ResolveLaunchHeadId(args);
+            string[] relaunchArgs = ResolveRelaunchArgs(args);
 
             if (args.Length > 0 && string.Equals(args[0], "--uninstall", StringComparison.OrdinalIgnoreCase))
             {
@@ -67,7 +73,7 @@ internal static class Program
                 return SmokeInstall(metadata, args[1], payloadPathOverride);
             }
 
-            return Install(metadata, payloadPathOverride, claimCode);
+            return Install(metadata, payloadPathOverride, claimCode, autoUpdate, requestedLaunchHeadId, relaunchArgs);
         }
         catch (Exception ex)
         {
@@ -87,7 +93,13 @@ internal static class Program
         }
     }
 
-    private static int Install(InstallerMetadata metadata, string? payloadPathOverride, string? claimCode)
+    private static int Install(
+        InstallerMetadata metadata,
+        string? payloadPathOverride,
+        string? claimCode,
+        bool autoUpdate,
+        string? requestedLaunchHeadId,
+        IReadOnlyList<string> relaunchArgs)
     {
         using InstallSplashForm splash = new(metadata.DisplayName);
         splash.Show();
@@ -123,10 +135,20 @@ internal static class Program
 
         string targetDir = installTask.GetAwaiter().GetResult();
 
+        if (autoUpdate)
+        {
+            splash.Show();
+            splash.ApplyProgress(new InstallProgressUpdate("Starting updated Chummer"));
+            Application.DoEvents();
+            LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId, relaunchArgs, null);
+            PumpLaunchSplash(splash, TimeSpan.FromSeconds(2));
+            return 0;
+        }
+
         DialogResult launch = PromptForInstalledHeadLaunch(metadata, targetDir);
         if (launch is DialogResult.Yes or DialogResult.No)
         {
-            LaunchInstalledApp(metadata, claimCode, launch);
+            LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId: null, relaunchArgs: Array.Empty<string>(), launchChoice: launch);
         }
 
         return 0;
@@ -585,6 +607,41 @@ internal static class Program
         }
 
         return null;
+    }
+
+    private static string? ResolveLaunchHeadId(string[] args)
+    {
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (string.Equals(args[i], LaunchHeadSwitch, StringComparison.OrdinalIgnoreCase))
+            {
+                string candidate = args[i + 1]?.Trim() ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string[] ResolveRelaunchArgs(string[] args)
+    {
+        List<string> values = [];
+        for (int i = 0; i < args.Length - 1; i++)
+        {
+            if (string.Equals(args[i], RelaunchArgSwitch, StringComparison.OrdinalIgnoreCase))
+            {
+                string candidate = args[i + 1] ?? string.Empty;
+                if (!string.IsNullOrWhiteSpace(candidate))
+                {
+                    values.Add(candidate);
+                }
+            }
+        }
+
+        return values.ToArray();
     }
 
     private static bool TryReadValueAfterSwitch(string[] args, int index, out string? claimCode)
@@ -1093,11 +1150,14 @@ internal static class Program
             MessageBoxIcon.Information);
     }
 
-    private static void LaunchInstalledApp(InstallerMetadata metadata, string? claimCode, DialogResult launchChoice)
+    private static void LaunchInstalledApp(
+        InstallerMetadata metadata,
+        string? claimCode,
+        string? requestedLaunchHeadId,
+        IReadOnlyList<string> relaunchArgs,
+        DialogResult? launchChoice)
     {
-        InstalledHeadMetadata head = launchChoice == DialogResult.No && metadata.InstalledHeads.Count > 1
-            ? metadata.InstalledHeads[1]
-            : metadata.PrimaryHead;
+        InstalledHeadMetadata head = ResolveLaunchHead(metadata, requestedLaunchHeadId, launchChoice);
         string target = head.ResolveLaunchPath(metadata.InstallDirectory);
         ProcessStartInfo startInfo = new()
         {
@@ -1109,7 +1169,16 @@ internal static class Program
         string? normalizedClaimCode = NormalizeClaimCode(claimCode);
         if (!string.IsNullOrWhiteSpace(normalizedClaimCode))
         {
-            startInfo.Arguments = $"{ClaimCodeSwitch} {QuoteArgument(normalizedClaimCode)}";
+            startInfo.ArgumentList.Add(ClaimCodeSwitch);
+            startInfo.ArgumentList.Add(normalizedClaimCode);
+        }
+
+        foreach (string arg in relaunchArgs)
+        {
+            if (!string.IsNullOrWhiteSpace(arg))
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
         }
 
         using InstallSplashForm launchSplash = new(metadata.DisplayName);
@@ -1148,6 +1217,26 @@ internal static class Program
 
         launchSplash.ApplyProgress(new InstallProgressUpdate("Chummer is starting"));
         PumpLaunchSplash(launchSplash, TimeSpan.FromSeconds(2));
+    }
+
+    private static InstalledHeadMetadata ResolveLaunchHead(
+        InstallerMetadata metadata,
+        string? requestedLaunchHeadId,
+        DialogResult? launchChoice)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedLaunchHeadId))
+        {
+            InstalledHeadMetadata? requested = metadata.InstalledHeads
+                .FirstOrDefault(head => string.Equals(head.HeadId, requestedLaunchHeadId, StringComparison.OrdinalIgnoreCase));
+            if (requested is not null)
+            {
+                return requested;
+            }
+        }
+
+        return launchChoice == DialogResult.No && metadata.InstalledHeads.Count > 1
+            ? metadata.InstalledHeads[1]
+            : metadata.PrimaryHead;
     }
 
     private static void PumpLaunchSplash(Form form, TimeSpan duration)

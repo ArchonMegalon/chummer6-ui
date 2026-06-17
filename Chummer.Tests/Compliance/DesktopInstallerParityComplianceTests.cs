@@ -37,6 +37,11 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Software\\Classes\\{ChummerProtocolScheme}");
         StringAssert.Contains(installerProgramText, "\"URL: Chummer Protocol\"");
         StringAssert.Contains(installerProgramText, "commandKey.SetValue(string.Empty, $\"\\\"{launchPath}\\\" {InstallLinkCallbackSwitch} \\\"%1\\\"\")");
+        StringAssert.Contains(installerProgramText, "AutoUpdateSwitch = \"--auto-update\"");
+        StringAssert.Contains(installerProgramText, "LaunchHeadSwitch = \"--launch-head\"");
+        StringAssert.Contains(installerProgramText, "RelaunchArgSwitch = \"--relaunch-arg\"");
+        StringAssert.Contains(installerProgramText, "if (autoUpdate)");
+        StringAssert.Contains(installerProgramText, "LaunchInstalledApp(metadata, claimCode, requestedLaunchHeadId, relaunchArgs, null);");
         StringAssert.Contains(installerProjectText, "<ChummerInstallerIncludeSidecarPayload Condition=\"'$(ChummerInstallerIncludeSidecarPayload)' == ''\">false</ChummerInstallerIncludeSidecarPayload>");
         StringAssert.Contains(installerScriptText, "-p:ChummerInstallerIncludeSidecarPayload=false");
         StringAssert.Contains(selectionHandlersText, "DesktopReportIssueWindow.ShowAsync(this, DesktopHeadId)");
