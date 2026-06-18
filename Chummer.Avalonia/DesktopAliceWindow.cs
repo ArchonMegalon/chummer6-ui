@@ -97,7 +97,7 @@ internal sealed class DesktopAliceWindow : Window
                         },
                         new TextBlock
                         {
-                            Text = "Alice helps with rules, build choices, and optional origin dossiers inside the desktop client. Browser handoff stays available, but the first path is local.",
+                            Text = "Alice helps with rules, build choices, and origin dossiers inside the desktop client.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateAssistantCard(),
@@ -111,7 +111,7 @@ internal sealed class DesktopAliceWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice")),
+                                CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice")),
                                 CreateButton("Close", static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
@@ -153,7 +153,7 @@ internal sealed class DesktopAliceWindow : Window
         try
         {
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
-                ?? throw new InvalidOperationException("Desktop ALICE requires an IChummerClient instance."));
+                ?? throw new InvalidOperationException("Desktop Alice requires an IChummerClient instance."));
             summary = await client.GetAccountCampaignSummaryAsync(CancellationToken.None).ConfigureAwait(true);
             workspaces = await ReadWorkspacesAsync(client).ConfigureAwait(true);
             effectiveRulesetId = ResolveRulesetId(workspaces);
@@ -249,14 +249,14 @@ internal sealed class DesktopAliceWindow : Window
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 78,
-            Watermark = "Ask ALICE about the current build, rules tradeoffs, or what to add next."
+            Watermark = "Ask Alice about the current build, rules tradeoffs, or what to add next."
         };
         DesktopShellTheme.ApplyShellTextInputTheme(promptBox);
 
         TextBlock gmAllowanceGuideText = new()
         {
             Name = "AliceGmAllowanceGuideText",
-            Text = "GM allowances and requirements are advisory constraints, not silent sheet edits. Add hard table requirements such as must be addicted to an illegal drug, must be magically active, minimum Logic/Intuition 2, extra ware, availability, money, gear, qualities, or house exceptions. ALICE will explain and seed them, but will not auto-apply them.",
+            Text = "GM notes can require addiction, magic, attribute floors, extra ware, availability, money, gear, qualities, or table exceptions. Alice will use them as guidance, not silent sheet edits.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
@@ -527,13 +527,13 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
-                    actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
-                    actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                    actionRow.Children.Add(CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                    actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
+                    actionRow.Children.Add(CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open alternate voice script", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
                     actionRow.Children.Add(CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
-                    actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                    actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                     actionRow.Children.Add(CreateButton("Render dossier video now", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
                     if (_originBundle.PortraitCandidatePaths.Count > 0)
                     {
@@ -549,15 +549,15 @@ internal sealed class DesktopAliceWindow : Window
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.VidBoardPacketPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open vidBoard packet", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
+                        actionRow.Children.Add(CreateButton("Open video plan", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationReceiptPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
+                        actionRow.Children.Add(CreateButton("Open audiobook log", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationReceiptPath), name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"));
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.MediaFactoryVideoReceiptPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open video receipt", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryVideoReceiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"));
+                        actionRow.Children.Add(CreateButton("Open video log", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryVideoReceiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"));
                     }
                     if (!string.IsNullOrWhiteSpace(_originBundle.RenderedVideoPath))
                     {
@@ -566,14 +566,14 @@ internal sealed class DesktopAliceWindow : Window
                 }
                 else if (_originDraft is not null)
                 {
-                    actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
+                    actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                     actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                    actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
-                    actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                    actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
-                    actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
-                    actionRow.Children.Add(CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
-                    actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                    actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                    actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
+                    actionRow.Children.Add(CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                    actionRow.Children.Add(CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
+                    actionRow.Children.Add(CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                 }
                 else
                 {
@@ -590,18 +590,18 @@ internal sealed class DesktopAliceWindow : Window
                         promptBox.Text = "Build a complete SR4 BP troll decker from scratch. Explain legality, qualities, ware, gear, and first purchases.";
                         return AskAsync();
                     }, isPrimary: true, name: "AliceDraftFromScratchButton"));
-                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
                 }
                 else
                 {
-                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
                 }
 
-                actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
+                actionRow.Children.Add(CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
             }
             if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
             {
-                actionRow.Children.Add(CreateButton("Clear GM allowances", () =>
+                actionRow.Children.Add(CreateButton("Clear GM notes", () =>
                 {
                     gmAllowanceBox.Text = string.Empty;
                     _gmAllowanceNotes = string.Empty;
@@ -622,9 +622,12 @@ internal sealed class DesktopAliceWindow : Window
             IReadOnlyList<string> evidenceLines,
             params Button[] actions)
         {
-            statusText.Text = statusLine;
-            answerText.Text = answer;
-            evidenceList.ItemsSource = evidenceLines;
+            string cleanStatusLine = HumanCopy(statusLine);
+            string cleanAnswer = HumanCopy(answer);
+            string[] cleanEvidenceLines = HumanLines(evidenceLines);
+            statusText.Text = cleanStatusLine;
+            answerText.Text = cleanAnswer;
+            evidenceList.ItemsSource = cleanEvidenceLines;
             actionRow.Children.Clear();
             foreach (Button action in actions)
             {
@@ -633,9 +636,9 @@ internal sealed class DesktopAliceWindow : Window
 
             ActiveHistory().Add(BuildAssistantTurn(
                 OriginDossierMode,
-                statusLine,
-                answer,
-                evidenceLines,
+                cleanStatusLine,
+                cleanAnswer,
+                cleanEvidenceLines,
                 actions.Select(action => action.Content?.ToString() ?? string.Empty)
                     .Where(static item => !string.IsNullOrWhiteSpace(item))
                     .Take(4)
@@ -647,24 +650,24 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before approving canon.";
+                statusText.Text = "Create an origin draft before approving the story.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginDossierBundle();
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE approved the origin canon and created a first-party bundle root for MarkupGo plus default and alternate voice outputs.",
-                $"{bundle.Canon.Summary} The canonical origin is now frozen for later ALICE build and rules continuity until you regenerate the draft.",
+                "Origin story approved.",
+                $"{bundle.Canon.Summary} The story is ready for dossier assets and later build guidance.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"),
                 CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
-                CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
-                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
-                CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
-                CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
-                CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
-                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
+                CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
+                CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
+                CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
+                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
             return Task.CompletedTask;
         }
 
@@ -672,21 +675,21 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before rendering the dossier PDF.";
+                statusText.Text = "Create an origin draft before rendering the dossier PDF.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginDossierPdf(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE rendered a local dossier PDF and a MarkupGo packet from the approved origin canon.",
-                $"Origin dossier bundle ready. PDF: {Path.GetFileName(bundle.DossierPdfPath)}. MarkupGo packet: {Path.GetFileName(bundle.MarkupGoPacketPath)}.",
+                "Dossier PDF ready.",
+                $"PDF: {Path.GetFileName(bundle.DossierPdfPath)}. MarkupGo file: {Path.GetFileName(bundle.MarkupGoPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
                 CreateButton("Open MarkupGo packet", () => !string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MarkupGoPacketPath), name: "AliceOriginOpenMarkupGoPacketButton"),
-                CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
-                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
-                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"),
+                CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
+                CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
+                CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -695,14 +698,14 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before rendering portrait candidates.";
+                statusText.Text = "Create an origin draft before creating portraits.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginPortraitSet(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE rendered four local portrait candidates and marked one canonical portrait until you select another.",
+                "Portrait set ready.",
                 $"Portrait candidates ready. Selected portrait: {Path.GetFileName(bundle.SelectedPortraitPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open portrait contact sheet", () => !string.IsNullOrWhiteSpace(bundle.PortraitContactSheetPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.PortraitContactSheetPath), isPrimary: true, name: "AliceOriginOpenPortraitSheetButton"),
@@ -717,14 +720,14 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before rendering scene candidates.";
+                statusText.Text = "Create an origin draft before creating scenes.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginSceneSet(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE rendered scene candidates from the approved origin canon and the currently selected portrait.",
+                "Scene set ready.",
                 $"Scene candidates ready. Selected scene: {Path.GetFileName(bundle.SelectedScenePath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open scene brief", () => !string.IsNullOrWhiteSpace(bundle.SceneBriefMarkdownPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SceneBriefMarkdownPath), isPrimary: true, name: "AliceOriginOpenSceneBriefButton"),
@@ -738,20 +741,20 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before preparing the default voice audiobook packet.";
+                statusText.Text = "Create an origin draft before preparing the default voice script.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureSoundmadeseenNarrationPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE prepared the default Soundmadeseen narration packet from the approved origin canon.",
-                $"Default voice packet ready. Narration script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
+                "Default voice script ready.",
+                $"Script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Soundmadeseen file: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
                 CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
-                CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
-                CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
+                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -760,20 +763,20 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before preparing the alternate voice audiobook packet.";
+                statusText.Text = "Create an origin draft before preparing the alternate voice script.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureUnmixrNarrationPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE prepared the alternate Unmixr AI narration packet from the approved origin canon.",
-                $"Alternate voice packet ready. Narration script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Packet: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
+                "Alternate voice script ready.",
+                $"Script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Unmixr file: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
                 CreateButton("Open alternate voice script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
-                CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
-                CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
+                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -782,18 +785,18 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before preparing the media-factory narration request.";
+                statusText.Text = "Create an origin draft before preparing the audiobook render request.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginMediaFactoryNarrationRequest(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE prepared a first-party media-factory narration request from the approved origin canon.",
-                $"Media-factory request ready. Request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}. Runbook: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}.",
+                "Audiobook render request ready.",
+                $"Request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}. Notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
-                CreateButton("Open media-factory runbook", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
+                CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open render notes", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
                 CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"),
                 CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
                 CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
@@ -804,14 +807,14 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before preparing the dossier video lane.";
+                statusText.Text = "Create an origin draft before preparing the dossier video.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginDossierVideoPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "ALICE prepared the dossier video storyboard, poster, and vidBoard packet from the approved canon, selected portrait, and selected scene.",
+                "Dossier video plan ready.",
                 $"Dossier video ready. Poster: {Path.GetFileName(bundle.VideoPosterPath)}. Packet: {Path.GetFileName(bundle.VidBoardPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open video poster", () => !string.IsNullOrWhiteSpace(bundle.VideoPosterPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoPosterPath), isPrimary: true, name: "AliceOriginOpenVideoPosterButton"),
@@ -825,12 +828,12 @@ internal sealed class DesktopAliceWindow : Window
         {
             OriginDossierBundle bundle = SelectOriginPortrait(EnsureOriginDossierBundle(), index);
             ShowOriginBundleState(
-                "ALICE updated the canonical portrait for the origin dossier bundle.",
-                $"Portrait {index + 1} is now canonical for future scene and video renders.",
+                "Portrait selected.",
+                $"Portrait {index + 1} will be used for future scenes and video.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open selected portrait", () => !string.IsNullOrWhiteSpace(bundle.SelectedPortraitPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SelectedPortraitPath), isPrimary: true, name: "AliceOriginOpenSelectedPortraitButton"),
-                CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
-                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
+                CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
             return true;
         }
 
@@ -838,11 +841,11 @@ internal sealed class DesktopAliceWindow : Window
         {
             OriginDossierBundle bundle = SelectOriginScene(EnsureOriginDossierBundle(), index);
             ShowOriginBundleState(
-                "ALICE updated the canonical scene for the origin dossier bundle.",
-                $"Scene {index + 1} is now canonical for the dossier video lane.",
+                "Scene selected.",
+                $"Scene {index + 1} will be used for the dossier video.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open selected scene", () => !string.IsNullOrWhiteSpace(bundle.SelectedScenePath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SelectedScenePath), isPrimary: true, name: "AliceOriginOpenSelectedSceneButton"),
-                CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
             return true;
         }
 
@@ -850,7 +853,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before rendering the audiobook.";
+                statusText.Text = "Create an origin draft before rendering the audiobook.";
                 return;
             }
 
@@ -862,11 +865,11 @@ internal sealed class DesktopAliceWindow : Window
             };
             _originBundle = updatedBundle;
             ShowOriginBundleState(
-                "ALICE rendered the origin dossier audiobook request through the local media-factory lane.",
-                $"Audiobook execution receipt ready. Receipt: {Path.GetFileName(receiptPath)}. Default and alternate provider lanes were executed under bounded candidate-only policy.",
+                "Audiobook render finished.",
+                $"Audio log: {Path.GetFileName(receiptPath)}. Default and alternate voice paths were prepared for review.",
                 BuildOriginBundleEvidence(updatedBundle),
-                CreateButton("Open audiobook receipt", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
-                CreateButton("Open media-factory request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open audiobook log", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
+                CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
         }
 
@@ -874,7 +877,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Generate an origin draft before rendering the dossier video.";
+                statusText.Text = "Create an origin draft before rendering the dossier video.";
                 return;
             }
 
@@ -887,11 +890,11 @@ internal sealed class DesktopAliceWindow : Window
             };
             _originBundle = updatedBundle;
             ShowOriginBundleState(
-                "ALICE rendered the dossier video through the local vidBoard candidate lane.",
-                $"Dossier video ready. Receipt: {Path.GetFileName(receiptPath)}. Video: {Path.GetFileName(renderedVideoPath)}.",
+                "Dossier video finished.",
+                $"Video: {Path.GetFileName(renderedVideoPath)}. Log: {Path.GetFileName(receiptPath)}.",
                 BuildOriginBundleEvidence(updatedBundle),
                 CreateButton("Open rendered video", () => DesktopCrashRuntime.TryOpenPathInShell(renderedVideoPath), isPrimary: true, name: "AliceOriginOpenRenderedVideoButton"),
-                CreateButton("Open video receipt", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
+                CreateButton("Open video log", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
                 CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(updatedBundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
         }
 
@@ -901,15 +904,15 @@ internal sealed class DesktopAliceWindow : Window
             if (string.IsNullOrWhiteSpace(message))
             {
                 ApplyIdleState();
-                statusText.Text = "Type a grounded question before asking ALICE.";
+                statusText.Text = "Type a question before asking Alice.";
                 return;
             }
 
             string mode = NormalizeConversationMode(modeCombo.SelectedItem?.ToString());
             ActiveHistory().Add(BuildUserTurn(message));
             RefreshConversationFeed();
-            statusText.Text = $"ALICE is checking the {mode.ToLowerInvariant()} lane.";
-            answerText.Text = "Waiting for grounded assistant output...";
+            statusText.Text = $"Alice is checking {mode.ToLowerInvariant()}.";
+            answerText.Text = "Waiting for the answer...";
             evidenceList.ItemsSource = Array.Empty<string>();
             actionRow.Children.Clear();
 
@@ -920,20 +923,20 @@ internal sealed class DesktopAliceWindow : Window
                 _originPacket = packet;
                 _originDraft = originDraft;
                 _originBundle = null;
-                statusText.Text = "ALICE generated a grounded origin dossier draft from the current desktop build context.";
-                answerText.Text = originDraft.Prose;
+                statusText.Text = "Origin draft ready.";
+                answerText.Text = HumanCopy(originDraft.Prose);
                 string[] originEvidence = BuildOriginEvidence(packet, originDraft);
                 evidenceList.ItemsSource = originEvidence;
                 string[] originActionTitles =
                 [
-                    "Approve canon",
+                    "Approve story",
                     "Render dossier PDF",
-                    "Generate portraits",
-                    "Generate scenes",
-                    "Generate default voice packet",
-                    "Generate alternate voice packet",
-                    "Prepare media-factory request",
-                    "Generate dossier video"
+                    "Create portraits",
+                    "Create scenes",
+                    "Create default voice script",
+                    "Create alternate voice script",
+                    "Prepare render request",
+                    "Create dossier video"
                 ];
                 ActiveHistory().Add(BuildAssistantTurn(
                     mode,
@@ -942,15 +945,15 @@ internal sealed class DesktopAliceWindow : Window
                     originEvidence,
                     originActionTitles));
                 RefreshConversationFeed();
-                actionRow.Children.Add(CreateButton("Approve canon", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
+                actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
                 actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                actionRow.Children.Add(CreateButton("Generate portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
-                actionRow.Children.Add(CreateButton("Generate scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                actionRow.Children.Add(CreateButton("Generate default voice packet", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
-                actionRow.Children.Add(CreateButton("Generate alternate voice packet", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
-                actionRow.Children.Add(CreateButton("Prepare media-factory request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
-                actionRow.Children.Add(CreateButton("Generate dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
-                actionRow.Children.Add(CreateButton("Regenerate origin", AskAsync, name: "AliceOriginRegenerateButton"));
+                actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
+                actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
+                actionRow.Children.Add(CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
+                actionRow.Children.Add(CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
+                actionRow.Children.Add(CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
+                actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                actionRow.Children.Add(CreateButton("Rewrite origin", AskAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
                 return;
             }
@@ -958,7 +961,7 @@ internal sealed class DesktopAliceWindow : Window
             AiConversationTurnResponse? response = await TryAskAssistantAsync(mode, message).ConfigureAwait(true);
             if (response is null)
             {
-                statusText.Text = "ALICE stayed local because no grounded coach route was reachable from this desktop head.";
+                statusText.Text = "Alice answered locally.";
                 answerText.Text = BuildLocalFallbackAnswer(mode, message);
                 string[] fallbackEvidence = BuildLocalFallbackEvidence(mode);
                 evidenceList.ItemsSource = fallbackEvidence;
@@ -967,10 +970,10 @@ internal sealed class DesktopAliceWindow : Window
                     statusText.Text,
                     answerText.Text,
                     fallbackEvidence,
-                    ["Open account ALICE", "Open public ALICE"]));
+                    ["Open account Alice", "Open web Alice"]));
                 RefreshConversationFeed();
-                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
-                actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantFallbackPublicButton"));
+                actionRow.Children.Add(CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantFallbackAccountButton"));
+                actionRow.Children.Add(CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantFallbackPublicButton"));
                 return;
             }
 
@@ -1098,11 +1101,11 @@ internal sealed class DesktopAliceWindow : Window
         };
 
         return CreateCard(
-            "Assistant rail",
-            "ALICE now answers grounded rules and build questions directly from the desktop instead of only handing off to a browser lane.",
+            "Alice",
+            "Ask rules questions, compare build choices, or start an origin dossier.",
             body,
             "AliceAssistantCard",
-            CreateButton("Ask ALICE", AskAsync, isPrimary: true, name: "AliceAskButton"));
+            CreateButton("Ask Alice", AskAsync, isPrimary: true, name: "AliceAskButton"));
     }
 
     private Control CreateLeadHandoffCard()
@@ -1114,12 +1117,12 @@ internal sealed class DesktopAliceWindow : Window
         if (lead is null)
         {
             return CreateCard(
-                "Lead build handoff",
-                "No governed build handoff is currently available in the signed-in account context.",
+                "Current build link",
+                "No account build link is available yet.",
                 null,
                 "AliceLeadHandoffCard",
-                CreateButton("Open ALICE account rail", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountRailButton"),
-                CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicButton"));
+                CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountRailButton"),
+                CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicButton"));
         }
 
         StackPanel leadDetails = new()
@@ -1133,7 +1136,7 @@ internal sealed class DesktopAliceWindow : Window
                 CreateDetailText($"Variant: {lead.VariantLabel}"),
                 CreateDetailText($"Progression: {lead.ProgressionLabel}"),
                 CreateDetailText(lead.NextSafeAction ?? "Reviewed variants stay bounded until you deliberately continue."),
-                CreateDetailText(lead.RuntimeCompatibilitySummary ?? "Runtime compatibility remains attached to the governed build handoff.")
+                CreateDetailText(lead.RuntimeCompatibilitySummary ?? "Runtime compatibility stays attached to this build link.")
             }
         };
 
@@ -1142,8 +1145,8 @@ internal sealed class DesktopAliceWindow : Window
             lead.Summary,
             leadDetails,
             "AliceLeadHandoffCard",
-            CreateButton("Open lead handoff", () => DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}"), isPrimary: true, name: "AliceOpenLeadHandoffButton"),
-            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountLaneButton"));
+            CreateButton("Open build link", () => DesktopInstallLinkingRuntime.TryOpenRelativePortal($"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}"), isPrimary: true, name: "AliceOpenLeadHandoffButton"),
+            CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceOpenAccountLaneButton"));
     }
 
     private Control CreateHandoffListCard()
@@ -1220,7 +1223,7 @@ internal sealed class DesktopAliceWindow : Window
                     case "Follow-through":
                         selectedDetailText.Text = selected.NextSafeAction
                             ?? selected.RuntimeCompatibilitySummary
-                            ?? "Governed compare detail remains attached to the selected handoff.";
+                            ?? "Compare details stay attached to the selected build link.";
                         selectedFollowUpText.Text = selected.ExchangeParitySummary
                             ?? selected.CrewFitSummary
                             ?? selected.Summary;
@@ -1231,7 +1234,7 @@ internal sealed class DesktopAliceWindow : Window
                             ?? selected.Summary;
                         selectedFollowUpText.Text = selected.ConditionalStateSummary
                             ?? selected.SourceHintSummary
-                            ?? "Campaign and source posture remain attached to the selected handoff.";
+                            ?? "Campaign context stays attached to the selected build link.";
                         break;
                     default:
                         selectedDetailText.Text = selected.PlannerCoverageSummary
@@ -1240,7 +1243,7 @@ internal sealed class DesktopAliceWindow : Window
                             ?? selected.Summary;
                         selectedFollowUpText.Text = selected.NextSafeAction
                             ?? selected.RuntimeCompatibilitySummary
-                            ?? "Governed compare detail remains attached to the selected handoff.";
+                            ?? "Compare details stay attached to the selected build link.";
                         break;
                 }
             }
@@ -1248,20 +1251,20 @@ internal sealed class DesktopAliceWindow : Window
             {
                 _selectedHandoff = null;
                 string mode = detailModeCombo.SelectedItem?.ToString() ?? "Summary";
-                selectedTitleText.Text = "No selected handoff";
+                selectedTitleText.Text = "No selected build link";
                 switch (mode)
                 {
                     case "Follow-through":
-                        selectedDetailText.Text = "No governed follow-through lane is currently available.";
-                        selectedFollowUpText.Text = "Create or reopen a handoff to inspect bounded next actions.";
+                        selectedDetailText.Text = "No follow-up is available yet.";
+                        selectedFollowUpText.Text = "Create or reopen a build link to inspect next actions.";
                         break;
                     case "Context":
-                        selectedDetailText.Text = "No campaign-bound ALICE context is currently available.";
-                        selectedFollowUpText.Text = "Reconnect account context to inspect source and campaign posture.";
+                        selectedDetailText.Text = "No campaign context is available yet.";
+                        selectedFollowUpText.Text = "Reconnect the account to inspect campaign context.";
                         break;
                     default:
-                        selectedDetailText.Text = "No governed handoff detail is currently available.";
-                        selectedFollowUpText.Text = "Choose a handoff to inspect its bounded follow-through.";
+                        selectedDetailText.Text = "No build-link detail is available yet.";
+                        selectedFollowUpText.Text = "Choose a build link to inspect follow-up.";
                         break;
                 }
             }
@@ -1275,7 +1278,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (handoffs.Count == 0)
         {
-            body.Children.Add(CreateDetailText("No account-scoped build handoffs are available yet."));
+            body.Children.Add(CreateDetailText("No account build links are available yet."));
         }
 
         if (HasHandoffContext)
@@ -1304,13 +1307,13 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return CreateCard(
-            "Account handoffs",
+            "Account builds",
             handoffs.Count == 0
-                ? "Return here after the next governed build compare run."
-                : $"{handoffs.Count} governed build handoff(s) are available on the ALICE rail.",
+                ? "Return here after the next build compare."
+                : $"{handoffs.Count} account build link(s) are available.",
             body,
             "AliceAccountHandoffsCard",
-            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasHandoffContext, name: "AliceOpenAccountFromListButton"));
+            CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasHandoffContext, name: "AliceOpenAccountFromListButton"));
     }
 
     private Control CreateBuildPathCard()
@@ -1376,7 +1379,7 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceBuildPathGuideText",
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
-            Text = "Summary compares the visible starter route. Runtime focuses on workspace and return compatibility. Warnings surfaces watchouts and proposed changes before any apply-safe step."
+            Text = "Summary compares the visible starter route. Runtime focuses on workspace compatibility. Warnings show watchouts before changes are applied."
         };
 
         void RefreshSelectedBuildPath()
@@ -1424,15 +1427,15 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     case "Runtime":
                         selectedBuildPathDetailText.Text = "No runtime-backed build path preview is currently available.";
-                        selectedBuildPathWarningsText.Text = "Open or create a workspace to attach ALICE proposals to a governed preview lane.";
+                        selectedBuildPathWarningsText.Text = "Open or create a workspace to attach Alice proposals.";
                         break;
                     case "Warnings":
-                        selectedBuildPathDetailText.Text = "No diagnostic lane is currently attached.";
+                        selectedBuildPathDetailText.Text = "No diagnostics are attached.";
                         selectedBuildPathWarningsText.Text = "Reconnect a workspace-backed preview to inspect build path watchouts.";
                         break;
                     default:
-                        selectedBuildPathDetailText.Text = "No governed build path suggestion is currently available.";
-                        selectedBuildPathWarningsText.Text = "ALICE will surface proposal previews here once a compatible workspace and ruleset are available.";
+                        selectedBuildPathDetailText.Text = "No build suggestion is available yet.";
+                        selectedBuildPathWarningsText.Text = "Alice will show proposal previews here once a compatible workspace and ruleset are available.";
                         break;
                 }
             }
@@ -1446,7 +1449,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (_buildPathCandidates.Count == 0)
         {
-            body.Children.Add(CreateDetailText("No preview-backed build path suggestions are currently available for the active desktop context."));
+            body.Children.Add(CreateDetailText("No build suggestions are available for the current desktop context."));
         }
 
         if (HasBuildPathContext)
@@ -1478,12 +1481,12 @@ internal sealed class DesktopAliceWindow : Window
         return CreateCard(
             "Proposal studio",
             _buildPathCandidates.Count == 0
-                ? "Build path compare stays native, but the current desktop context has no preview-backed starter proposals yet."
-                : $"{_buildPathCandidates.Count} preview-backed build path candidate(s) are available on native ALICE rails.",
+                ? "No starter proposals are available yet."
+                : $"{_buildPathCandidates.Count} build path candidate(s) are available.",
             body,
             "AliceBuildPathCard",
-            CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasBuildPathContext, name: "AliceOpenAccountFromBuildPathsButton"),
-            CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicFromBuildPathsButton"));
+            CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: HasBuildPathContext, name: "AliceOpenAccountFromBuildPathsButton"),
+            CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceOpenPublicFromBuildPathsButton"));
     }
 
     private static async Task<IReadOnlyList<WorkspaceListItem>> ReadWorkspacesAsync(IChummerClient client)
@@ -1640,6 +1643,12 @@ internal sealed class DesktopAliceWindow : Window
                "Explain how the qualities, ware, attributes, first gear, and first contacts came from the backstory. " +
                "Keep it useful for Alice follow-up suggestions.";
     }
+
+    private static string HumanCopy(string? value)
+        => PlayerFacingCopyHumanizer.Clean(value);
+
+    private static string[] HumanLines(IEnumerable<string> values)
+        => PlayerFacingCopyHumanizer.CleanLines(values);
 
     private static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
         => CreateCard(title, summary, leadControl, null, actions);
@@ -1800,12 +1809,12 @@ internal sealed class DesktopAliceWindow : Window
 
         if (IsOriginDossierMode(normalizedMode))
         {
-            return "Generate an optional origin dossier grounded on the current build, handoff, GM constraints, and workspace context.";
+            return "Create an optional origin dossier from the current build, GM notes, and workspace context.";
         }
 
         return HasBuildPathContext
-            ? "Ask for the next grounded build move, and ALICE will stay on preview-safe rails."
-            : "Ask about the next build move; ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open.";
+            ? "Ask for the next build move, and Alice will keep the suggestion reviewable."
+            : "Ask about the next build move; Alice can draft a complete runner from the current settings even when no workspace is open.";
     }
 
     private static string BuildModeGuide(string? mode)
@@ -1813,15 +1822,15 @@ internal sealed class DesktopAliceWindow : Window
         string normalizedMode = NormalizeConversationMode(mode);
         if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            return "Rules coach explains edition-specific constraints and tradeoffs. Ask directly about legality, qualities, ware, magic, availability, or sequencing and ALICE will answer rules-wise.";
+            return "Rules coach explains edition-specific constraints and tradeoffs. Ask about legality, qualities, ware, magic, availability, or sequencing.";
         }
 
         if (IsOriginDossierMode(normalizedMode))
         {
-            return "Origin Dossier builds the optional dossier bundle: story seed, canon approval, portraits, scenes, audiobook, and video. Use this before a build, during creation, or on a finished character. Narrative output does not force later build changes unless you explicitly choose to act on it.";
+            return "Origin Dossier creates a story, portraits, scenes, audiobook, and video. Use it before creation or for a finished character.";
         }
 
-        return "Build Help stays on build progression and proposal-safe next steps. Legality: Strict stays conservative on restricted/banned picks, Standard allows common table-legal restricted choices, Anything ignores legality posture and requires manual review. Complexity: Simple favors obvious picks, Standard balances depth, Deep explores higher-friction optimizations. Ware posture is always explained rules-wise before apply.";
+        return "Build Help focuses on next steps. Strict avoids restricted picks, Standard allows common legal restricted choices, and Anything needs manual review. Simple stays obvious, Standard balances depth, and Deep explores tighter optimizations.";
     }
 
     private static string BuildModeSettingsGuide(string? mode)
@@ -1829,15 +1838,15 @@ internal sealed class DesktopAliceWindow : Window
         string normalizedMode = NormalizeConversationMode(mode);
         if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            return "Use Rules coach when you need the rules explained, not just a suggestion. Ask what legality strict vs standard changes, when ware becomes a problem, whether qualities stack the way you think, or what sequence is safest under the current edition.";
+            return "Use Rules coach when you need the rules explained. Ask what Strict vs Standard changes, when ware becomes a problem, whether qualities stack, or what sequence is safest.";
         }
 
         if (IsOriginDossierMode(normalizedMode))
         {
-            return "Use Origin Dossier to create narrative output from the current build or from a blank/new character state. Pick an archetype or describe the runner, add GM requirements, generate the story first, approve canon, then render dossier assets. On finished characters this stays additive: it creates story/media output without silently changing the sheet.";
+            return "Pick an archetype or describe the runner, add GM notes, create the story, then choose portraits, scenes, audio, or video. Finished characters are not changed.";
         }
 
-        return "Build Help uses three main settings. Legality: Strict avoids restricted or table-sensitive picks, Standard permits common legal restricted options, Anything ignores legality posture and needs manual review. Complexity: Simple keeps the plan obvious, Standard balances depth, Deep explores tighter optimizations. Ware posture is explained rules-wise before ALICE proposes or compares implants.";
+        return "Legality controls how conservative the advice is: Strict avoids restricted picks, Standard allows common legal restricted choices, and Anything needs manual review. Complexity controls depth: Simple stays obvious, Standard balances depth, and Deep explores tighter optimizations. Ware suggestions include the rules tradeoff before anything is applied.";
     }
 
     private static IReadOnlyList<(string Label, string Mode)> BuildModeShortcuts()
@@ -1875,22 +1884,22 @@ internal sealed class DesktopAliceWindow : Window
         if (IsOriginDossierMode(mode))
         {
             lines.Add(_originDraft is null
-                ? "No origin dossier has been generated yet."
+                ? "No origin dossier exists yet."
                 : _originBundle is null
-                    ? "A prior origin dossier draft is available and can seed later ALICE suggestions."
-                    : "An approved origin dossier bundle is available and seeds later ALICE suggestions.");
+                    ? "An origin draft is available."
+                    : "An approved origin dossier is available.");
         }
         else if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             lines.Add(HasHandoffContext
-                ? "Account build handoffs are available for grounded follow-through."
-                : "No account handoff is available; ALICE will stay on bounded local guidance.");
+                ? "Account build links are available for follow-up."
+                : "No account link is available; Alice will answer locally.");
         }
         else
         {
             lines.Add(HasBuildPathContext
                 ? $"Build paths: {_buildPathCandidates.Count}"
-                : "No preview-backed build path is available yet.");
+                : "No build path is available yet.");
         }
 
         if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
@@ -1898,7 +1907,7 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"GM allowances: {_gmAllowanceNotes}");
         }
 
-        return lines.ToArray();
+        return HumanLines(lines);
     }
 
     private string BuildLocalFallbackAnswer(string mode, string message)
@@ -1912,8 +1921,8 @@ internal sealed class DesktopAliceWindow : Window
         if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             return !string.IsNullOrWhiteSpace(_rulesetId)
-                ? $"ALICE could not reach the grounded coach route, so it stayed local. This head is on {_rulesetId}. Use the current ruleset and workspace surface to verify '{message}', then reopen ALICE after the AI coach route is available."
-                : $"ALICE could not reach the grounded coach route, and no ruleset is pinned yet. Open or create a workspace first, then ask '{message}' again.";
+                ? $"Alice answered locally. This workspace is on {_rulesetId}. Use the current ruleset and workspace surface to verify '{message}', then ask again after account services are available."
+                : $"Alice answered locally. Open or create a workspace first, then ask '{message}' again.";
         }
 
         if (_buildPathCandidates.Count > 0)
@@ -1924,23 +1933,23 @@ internal sealed class DesktopAliceWindow : Window
                 ?? "Open the proposal studio card below for the current bounded preview.";
             if (_originBundle is not null)
             {
-                return $"ALICE could not reach the grounded build route, so it stayed local. Approved origin canon: {_originBundle.Canon.Summary}. " +
+                return HumanCopy($"Alice answered locally. Approved origin story: {_originBundle.Canon.Summary}. " +
                        $"The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary} " +
                        $"Next additions should reinforce the approved origin instead of breaking causality. " +
-                       $"{AppendGmAllowanceDetail("Any GM allowances remain advisory and still require manual mechanical review")}";
+                       $"{AppendGmAllowanceDetail("Any GM notes remain advisory and still require manual mechanical review")}");
             }
 
             if (_originDraft is not null)
             {
-                return $"ALICE could not reach the grounded build route, so it stayed local. Current origin seed: {_originDraft.Summary}. " +
+                return HumanCopy($"Alice answered locally. Current origin draft: {_originDraft.Summary}. " +
                        $"The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary} " +
-                       $"Treat the draft as narrative guidance until canon is approved.";
+                       $"Treat the draft as story guidance until it is approved.");
             }
 
-            return $"ALICE could not reach the grounded build route, so it stayed local. The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary}";
+            return HumanCopy($"Alice answered locally. The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary}");
         }
 
-        return BuildScratchCharacterAnswer(message);
+        return HumanCopy(BuildScratchCharacterAnswer(message));
     }
 
     private string[] BuildLocalFallbackEvidence(string mode)
@@ -1964,7 +1973,7 @@ internal sealed class DesktopAliceWindow : Window
                 .ToList();
             if (_originBundle is not null)
             {
-                lines.Insert(0, $"Approved origin canon: {_originBundle.Canon.Summary}");
+                lines.Insert(0, $"Approved origin story: {_originBundle.Canon.Summary}");
             }
             else if (_originDraft is not null)
             {
@@ -1976,10 +1985,10 @@ internal sealed class DesktopAliceWindow : Window
                 lines.Add($"GM allowances: {_gmAllowanceNotes}");
             }
 
-            return lines.ToArray();
+            return HumanLines(lines);
         }
 
-        return BuildScratchCharacterEvidence();
+        return HumanLines(BuildScratchCharacterEvidence());
     }
 
     private AliceAssistantContextProjection BuildAssistantContextProjection(string? mode)
@@ -1995,13 +2004,13 @@ internal sealed class DesktopAliceWindow : Window
                 ? $"{metatype} · {buildMethod ?? "build"}"
                 : "No explicit runner identity is available yet.";
             string detail = _selectedBuildPath?.Suggestion.Title is { Length: > 0 } buildTitle
-                ? $"Lead build path: {buildTitle}. {_selectedHandoff?.NextSafeAction ?? _selectedHandoff?.Summary ?? "No account handoff summary is attached yet."}"
-                : _selectedHandoff?.Summary ?? "The dossier stays bounded to the current ruleset, workspace shell, GM requirements, and any visible ALICE handoff.";
+                ? $"Lead build path: {buildTitle}. {_selectedHandoff?.NextSafeAction ?? _selectedHandoff?.Summary ?? "No account build summary is attached yet."}"
+                : _selectedHandoff?.Summary ?? "The dossier uses the current ruleset, workspace shell, GM notes, and any visible Alice context.";
             if (_originBundle is not null)
             {
-                detail = $"{detail} Approved canon bundle: {Path.GetFileName(_originBundle.BundleDirectory)}.";
+                detail = $"{detail} Approved origin dossier: {Path.GetFileName(_originBundle.BundleDirectory)}.";
             }
-            return new AliceAssistantContextProjection(title, summary, AppendGmAllowanceDetail(detail));
+            return new AliceAssistantContextProjection(title, summary, HumanCopy(AppendGmAllowanceDetail(detail)));
         }
 
         if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
@@ -2009,19 +2018,19 @@ internal sealed class DesktopAliceWindow : Window
             return new AliceAssistantContextProjection(
                 "Rules coach context",
                 !string.IsNullOrWhiteSpace(_rulesetId) ? $"Pinned to {_rulesetId}" : "No explicit ruleset pin is available yet.",
-                AppendGmAllowanceDetail(_originDraft is null
-                    ? "ALICE answers from ruleset, workspace, and handoff context only."
+                HumanCopy(AppendGmAllowanceDetail(_originDraft is null
+                    ? "Alice answers from ruleset, workspace, and account context only."
                     : _originBundle is null
-                        ? "A generated origin draft is available and can inform later ALICE guidance without changing build truth."
-                        : "An approved origin dossier bundle is available and seeds later ALICE guidance without mutating build truth."));
+                        ? "An origin draft is available and can inform later guidance without changing the sheet."
+                        : "An approved origin dossier is available and can inform later guidance without changing the sheet.")));
         }
 
         return new AliceAssistantContextProjection(
             "Build continuity",
             _selectedBuildPath?.Suggestion.Title ?? "Blank-state build start",
-            AppendGmAllowanceDetail(_selectedHandoff?.Summary
+            HumanCopy(AppendGmAllowanceDetail(_selectedHandoff?.Summary
                 ?? _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary
-                ?? "ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open."));
+                ?? "Alice can draft a complete runner from the current settings even when no workspace is open.")));
     }
 
     private CharacterNarrativePacket BuildNarrativePacket(string prompt)
@@ -2107,7 +2116,7 @@ internal sealed class DesktopAliceWindow : Window
 
     private static CharacterNarrativeDraft BuildOriginDraft(CharacterNarrativePacket packet)
     {
-        string sentenceOne = $"{packet.Alias} reads like a {packet.Metatype.ToLowerInvariant()} operator shaped by {packet.BuildMethod.ToLowerInvariant()} pressure rather than a clean, academic career path.";
+        string sentenceOne = $"{packet.Alias} reads like a {packet.Metatype.ToLowerInvariant()} runner shaped by {packet.BuildMethod.ToLowerInvariant()} pressure rather than a clean, academic career path.";
         string sentenceTwo = !string.IsNullOrWhiteSpace(packet.LeadBuildPathTitle)
             ? $"The strongest visible throughline is '{packet.LeadBuildPathTitle}', which suggests a runner who kept adapting around a specific survival plan instead of collecting random upgrades."
             : $"The current build signals a runner assembled around practical survival choices rather than ornamental flavor.";
@@ -2128,9 +2137,9 @@ internal sealed class DesktopAliceWindow : Window
         .ToArray();
 
         return new CharacterNarrativeDraft(
-            Summary: summary,
-            Prose: string.Join(" ", [sentenceOne, sentenceTwo, sentenceThree]),
-            GmHooks: gmHooks,
+            Summary: HumanCopy(summary),
+            Prose: HumanCopy(string.Join(" ", [sentenceOne, sentenceTwo, sentenceThree])),
+            GmHooks: HumanLines(gmHooks),
             RuntimeFingerprint: packet.RuntimeFingerprint);
     }
 
@@ -2163,7 +2172,7 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"Tension: {contradiction}");
         }
 
-        return lines.ToArray();
+        return HumanLines(lines);
     }
 
     private static string FirstNonEmpty(params string?[] values)
@@ -2184,7 +2193,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (_originBundle is not null)
         {
-            return $"{allowancePrefix}Approved origin canon summary: {_originBundle.Canon.Summary}{Environment.NewLine}Approved origin canon prose: {_originBundle.Canon.Prose}{Environment.NewLine}User request: {message}";
+            return $"{allowancePrefix}Approved origin story summary: {_originBundle.Canon.Summary}{Environment.NewLine}Approved origin story prose: {_originBundle.Canon.Prose}{Environment.NewLine}User request: {message}";
         }
 
         if (_originDraft is not null)
@@ -2215,7 +2224,7 @@ internal sealed class DesktopAliceWindow : Window
                $"Core skills: {skills}. " +
                $"Early qualities or edge picks: {qualities}. " +
                $"Early gear and ware posture: {gear}. " +
-               $"ALICE treats this as a full from-scratch draft, so you can continue from these settings even before any character file exists.";
+               $"Use this as a complete first draft; no open character file is required.";
     }
 
     private string[] BuildScratchCharacterEvidence()
@@ -2312,9 +2321,9 @@ internal sealed class DesktopAliceWindow : Window
             "face" => "CHA, INT, WIL, then enough REA/BOD to stay standing.",
             "mage" => "MAG path first, then WIL, LOG, INT, with enough CHA or AGI to match tradition and table role.",
             "adept" => "AGI or STR first depending on offense, then REA and WIL.",
-            "street samurai" => "AGI, REA, BOD, then STR or WIL depending on the combat lane.",
+            "street samurai" => "AGI, REA, BOD, then STR or WIL depending on the combat plan.",
             "shaman" => "CHA, WIL, INT, then enough REA/BOD for table survival.",
-            _ => "BOD, REA, WIL, then the primary mental or social stat for the chosen lane."
+            _ => "BOD, REA, WIL, then the primary mental or social stat for the chosen role."
         };
 
     private static string InferScratchSkills(string role)
@@ -2322,12 +2331,12 @@ internal sealed class DesktopAliceWindow : Window
         {
             "decker" => "Hacking, Electronic Warfare, Computer, Cybercombat, plus Perception and one social fallback.",
             "rigger" => "Pilot, Gunnery, Electronic Warfare, Mechanic coverage, plus Perception.",
-            "face" => "Con, Etiquette, Negotiation, a read-the-room skill, and one reliable backup offense lane.",
-            "mage" => "Spellcasting, Counterspelling, Assensing, Summoning or Binding, plus one mundane survival lane.",
+            "face" => "Con, Etiquette, Negotiation, a read-the-room skill, and one reliable backup offense option.",
+            "mage" => "Spellcasting, Counterspelling, Assensing, Summoning or Binding, plus one mundane survival option.",
             "adept" => "Primary attack skill, Perception, Sneaking or Athletics, then role-specific support.",
-            "street samurai" => "Primary weapon skill, Perception, Sneaking, Athletics, and a clean backup weapon lane.",
-            "shaman" => "Spellcasting, Summoning, Assensing, Counterspelling, and one social or stealth support lane.",
-            _ => "Perception, one attack lane, one infiltration or movement lane, one social fallback, and one role-defining specialty."
+            "street samurai" => "Primary weapon skill, Perception, Sneaking, Athletics, and a clean backup weapon option.",
+            "shaman" => "Spellcasting, Summoning, Assensing, Counterspelling, and one social or stealth support option.",
+            _ => "Perception, one attack option, one infiltration or movement option, one social fallback, and one role-defining specialty."
         };
 
     private static string InferScratchQualities(string role)
@@ -2348,7 +2357,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             "decker" => "buy the matrix core first, then initiative protection, then basic runner survival gear; ware stays conservative unless the table explicitly wants heavier augmentation.",
             "rigger" => "fund the command platform, one dependable vehicle or drone package, and repair coverage before luxuries.",
-            "face" => "prioritize identity, armor that can pass socially, communication gear, and one clean escape or defense lane.",
+            "face" => "prioritize identity, armor that can pass socially, communication gear, and one clean escape or defense option.",
             "mage" => "stabilize magical tooling and survival basics first; ware needs strict justification because it can fight the core role.",
             "adept" => "gear should reinforce movement, concealment, and the primary offense plan before side toys.",
             "street samurai" => "weapon, armor, initiative, and medical survival first; ware should follow the chosen combat identity instead of fragmenting it.",
@@ -2403,7 +2412,7 @@ internal sealed class DesktopAliceWindow : Window
                     portraits = "First-party render",
                     scenes = "First-party render",
                     narrationDefault = "Soundmadeseen",
-                    narrationAlternate = "Unmixr AI",
+                    narrationAlternate = "Unmixr",
                     dossierVideo = "vidBoard"
                 }
             },
@@ -2454,23 +2463,23 @@ internal sealed class DesktopAliceWindow : Window
         string markupGoPacketPath = Path.Combine(bundle.BundleDirectory, "markupgo-origin-dossier.packet.json");
         string[] dossierLines =
         [
-            $"Origin summary: {bundle.Canon.Summary}",
+            $"Origin summary: {HumanCopy(bundle.Canon.Summary)}",
             string.Empty,
-            bundle.Canon.Prose,
+            HumanCopy(bundle.Canon.Prose),
             string.Empty,
             $"Archetype hint: {bundle.Packet.ArchetypeHint}",
             $"Ruleset: {bundle.Packet.RulesetId}",
             $"Build method: {bundle.Packet.BuildMethod}",
             $"Metatype: {bundle.Packet.Metatype}",
             .. (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes)
-                ? new[] { $"GM allowances: {bundle.GmAllowanceNotes}" }
+                ? new[] { $"GM notes: {HumanCopy(bundle.GmAllowanceNotes)}" }
                 : Array.Empty<string>()),
             string.Empty,
             "GM hooks:",
-            .. bundle.Canon.GmHooks.Select(static hook => $"- {hook}"),
+            .. bundle.Canon.GmHooks.Select(static hook => $"- {PlayerFacingCopyHumanizer.Clean(hook)}"),
             string.Empty,
-            "Contradictions / tensions:",
-            .. bundle.Packet.ContradictionFlags.DefaultIfEmpty("None surfaced from the current bounded desktop context.").Select(static line => $"- {line}")
+            "Open questions:",
+            .. bundle.Packet.ContradictionFlags.DefaultIfEmpty("None found in the current character context.").Select(static line => $"- {PlayerFacingCopyHumanizer.Clean(line)}")
         ];
         File.WriteAllBytes(pdfPath, BuildSimplePdfDocument($"Origin Dossier · {bundle.Packet.Alias}", dossierLines));
         File.WriteAllText(markupGoPacketPath, JsonSerializer.Serialize(
@@ -2814,7 +2823,7 @@ internal sealed class DesktopAliceWindow : Window
         File.WriteAllText(packetPath, JsonSerializer.Serialize(
             new
             {
-                tool = "Unmixr AI",
+                tool = "Unmixr",
                 artifactKind = "origin_audiobook_alternate_voice",
                 approvedAtUtc = bundle.ApprovedAtUtc,
                 source = "first_party_origin_canon",
@@ -2879,7 +2888,7 @@ internal sealed class DesktopAliceWindow : Window
                 providerLanes = new
                 {
                     @default = "Soundmadeseen",
-                    alternate = "Unmixr AI"
+                    alternate = "Unmixr"
                 },
                 narrationArtifacts = new object[]
                 {
@@ -2899,7 +2908,7 @@ internal sealed class DesktopAliceWindow : Window
                     new
                     {
                         role = "audio",
-                        provider = "Unmixr AI",
+                        provider = "Unmixr",
                         providerState = "candidate",
                         outputFormat = "mp3",
                         variant = "alternate_voice",
@@ -2929,12 +2938,12 @@ internal sealed class DesktopAliceWindow : Window
     {
         List<string> lines =
         [
-            $"Bundle root: {bundle.BundleDirectory}",
-            $"Canon: {Path.GetFileName(bundle.CanonMarkdownPath)}",
-            $"Canon packet: {Path.GetFileName(bundle.CanonJsonPath)}",
-            "Document lane: MarkupGo",
-            "Default voice lane: Soundmadeseen",
-            "Alternate voice lane: Unmixr AI"
+            $"Dossier folder: {bundle.BundleDirectory}",
+            $"Story: {Path.GetFileName(bundle.CanonMarkdownPath)}",
+            $"Story data: {Path.GetFileName(bundle.CanonJsonPath)}",
+            "Document: MarkupGo",
+            "Default voice: Soundmadeseen",
+            "Alternate voice: Unmixr"
         ];
 
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
@@ -2949,7 +2958,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath))
         {
-            lines.Add($"MarkupGo packet: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
+            lines.Add($"MarkupGo file: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.PortraitSetJsonPath))
@@ -2989,7 +2998,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath))
         {
-            lines.Add($"Soundmadeseen packet: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
+            lines.Add($"Soundmadeseen file: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath))
@@ -2999,22 +3008,22 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath))
         {
-            lines.Add($"Unmixr AI packet: {Path.GetFileName(bundle.UnmixrPacketPath)}");
+            lines.Add($"Unmixr file: {Path.GetFileName(bundle.UnmixrPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath))
         {
-            lines.Add($"Media-factory request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}");
+            lines.Add($"Render request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath))
         {
-            lines.Add($"Media-factory runbook: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
+            lines.Add($"Render notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationReceiptPath))
         {
-            lines.Add($"Media-factory receipt: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
+            lines.Add($"Audio log: {Path.GetFileName(bundle.MediaFactoryNarrationReceiptPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath))
@@ -3024,7 +3033,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath))
         {
-            lines.Add($"vidBoard packet: {Path.GetFileName(bundle.VidBoardPacketPath)}");
+            lines.Add($"vidBoard file: {Path.GetFileName(bundle.VidBoardPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.VideoPosterPath))
@@ -3034,7 +3043,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryVideoReceiptPath))
         {
-            lines.Add($"Video receipt: {Path.GetFileName(bundle.MediaFactoryVideoReceiptPath)}");
+            lines.Add($"Video log: {Path.GetFileName(bundle.MediaFactoryVideoReceiptPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.RenderedVideoPath))
@@ -3042,7 +3051,7 @@ internal sealed class DesktopAliceWindow : Window
             lines.Add($"Rendered video: {Path.GetFileName(bundle.RenderedVideoPath)}");
         }
 
-        return lines;
+        return HumanLines(lines);
     }
 
     private static async Task<string> ExecuteOriginMediaFactoryNarrationAsync(OriginDossierBundle bundle)
@@ -3493,12 +3502,12 @@ internal sealed class DesktopAliceWindow : Window
         StringBuilder builder = new();
         builder.AppendLine($"# Origin Portrait Contact Sheet · {bundle.Packet.Alias}");
         builder.AppendLine();
-        builder.AppendLine("Select one portrait as canonical before scene or video renders are regenerated.");
+        builder.AppendLine("Choose one portrait before creating scenes or video.");
         builder.AppendLine();
         for (int index = 0; index < candidates.Count; index++)
         {
             builder.AppendLine($"- {candidates[index].StyleLabel}: {portraitPaths[index]}");
-            builder.AppendLine($"  - {candidates[index].Summary}");
+            builder.AppendLine($"  - {HumanCopy(candidates[index].Summary)}");
         }
         return builder.ToString().TrimEnd();
     }
@@ -3508,12 +3517,12 @@ internal sealed class DesktopAliceWindow : Window
         StringBuilder builder = new();
         builder.AppendLine($"# Origin Scene Brief · {bundle.Packet.Alias}");
         builder.AppendLine();
-        builder.AppendLine("The selected portrait is treated as canonical identity. Scene candidates frame one consequential moment from that approved origin.");
+        builder.AppendLine("Scenes frame one consequential moment from the approved origin story.");
         builder.AppendLine();
         foreach (OriginSceneCandidate candidate in candidates)
         {
             builder.AppendLine($"## {candidate.Title}");
-            builder.AppendLine(candidate.Summary);
+            builder.AppendLine(HumanCopy(candidate.Summary));
             builder.AppendLine();
         }
         return builder.ToString().TrimEnd();
@@ -3526,15 +3535,15 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine();
         builder.AppendLine("1. Title card");
         builder.AppendLine($"   - {bundle.Packet.Alias} · {bundle.Packet.Metatype} · {bundle.Packet.BuildMethod}");
-        builder.AppendLine("2. Canon portrait reveal");
+        builder.AppendLine("2. Portrait reveal");
         builder.AppendLine("3. Selected scene hold");
         builder.AppendLine("4. Narrated origin summary");
         builder.AppendLine("5. Build implication card");
         builder.AppendLine("6. Close card");
         builder.AppendLine();
-        builder.AppendLine("Narration lanes");
+        builder.AppendLine("Narration");
         builder.AppendLine("- Default: Soundmadeseen");
-        builder.AppendLine("- Alternate: Unmixr AI");
+        builder.AppendLine("- Alternate: Unmixr");
         builder.AppendLine("- Visual packet: vidBoard");
         return builder.ToString().TrimEnd();
     }
@@ -3542,7 +3551,7 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildOriginCanonMarkdown(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"# {packet.Alias} Origin Canon");
+        builder.AppendLine($"# {packet.Alias} Origin Story");
         builder.AppendLine();
         builder.AppendLine($"- Ruleset: {packet.RulesetId}");
         builder.AppendLine($"- Metatype: {packet.Metatype}");
@@ -3551,34 +3560,34 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine();
         if (!string.IsNullOrWhiteSpace(packet.GmAllowanceNotes))
         {
-            builder.AppendLine("## GM Allowances");
-            builder.AppendLine(packet.GmAllowanceNotes);
+            builder.AppendLine("## GM Notes");
+            builder.AppendLine(HumanCopy(packet.GmAllowanceNotes));
             builder.AppendLine();
         }
         builder.AppendLine("## Summary");
-        builder.AppendLine(draft.Summary);
+        builder.AppendLine(HumanCopy(draft.Summary));
         builder.AppendLine();
         builder.AppendLine("## Origin");
-        builder.AppendLine(draft.Prose);
+        builder.AppendLine(HumanCopy(draft.Prose));
         builder.AppendLine();
         builder.AppendLine("## GM Hooks");
         foreach (string hook in draft.GmHooks)
         {
-            builder.AppendLine($"- {hook}");
+            builder.AppendLine($"- {HumanCopy(hook)}");
         }
 
         builder.AppendLine();
-        builder.AppendLine("## Contradictions");
-        foreach (string contradiction in packet.ContradictionFlags.DefaultIfEmpty("None surfaced from the current bounded desktop context."))
+        builder.AppendLine("## Open Questions");
+        foreach (string contradiction in packet.ContradictionFlags.DefaultIfEmpty("None found in the current character context."))
         {
-            builder.AppendLine($"- {contradiction}");
+            builder.AppendLine($"- {HumanCopy(contradiction)}");
         }
 
         builder.AppendLine();
         builder.AppendLine("## Build Signals");
         foreach (string signal in packet.StandoutSignals)
         {
-            builder.AppendLine($"- {signal}");
+            builder.AppendLine($"- {HumanCopy(signal)}");
         }
 
         return builder.ToString().TrimEnd();
@@ -3591,17 +3600,17 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine();
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
         {
-            builder.AppendLine($"GM allowances: {bundle.GmAllowanceNotes}");
+            builder.AppendLine($"GM notes: {HumanCopy(bundle.GmAllowanceNotes)}");
             builder.AppendLine();
         }
-        builder.AppendLine(bundle.Canon.Summary);
+        builder.AppendLine(HumanCopy(bundle.Canon.Summary));
         builder.AppendLine();
-        builder.AppendLine(bundle.Canon.Prose);
+        builder.AppendLine(HumanCopy(bundle.Canon.Prose));
         builder.AppendLine();
         builder.AppendLine("GM hooks:");
         foreach (string hook in bundle.Canon.GmHooks)
         {
-            builder.AppendLine($"- {hook}");
+            builder.AppendLine($"- {HumanCopy(hook)}");
         }
 
         return builder.ToString().TrimEnd();
@@ -3610,23 +3619,23 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildUnmixrNarrationScript(OriginDossierBundle bundle)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"Unmixr AI alternate voice brief for {bundle.Packet.Alias}");
+        builder.AppendLine($"Unmixr alternate voice brief for {bundle.Packet.Alias}");
         builder.AppendLine();
-        builder.AppendLine("Voice direction: intimate dossier reading with slightly more expressive cadence than the default operator voice.");
+        builder.AppendLine("Voice direction: intimate dossier reading with slightly more expressive cadence than the default voice.");
         builder.AppendLine();
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
         {
-            builder.AppendLine($"GM allowances: {bundle.GmAllowanceNotes}");
+            builder.AppendLine($"GM notes: {HumanCopy(bundle.GmAllowanceNotes)}");
             builder.AppendLine();
         }
-        builder.AppendLine(bundle.Canon.Summary);
+        builder.AppendLine(HumanCopy(bundle.Canon.Summary));
         builder.AppendLine();
-        builder.AppendLine(bundle.Canon.Prose);
+        builder.AppendLine(HumanCopy(bundle.Canon.Prose));
         builder.AppendLine();
         builder.AppendLine("GM hooks:");
         foreach (string hook in bundle.Canon.GmHooks)
         {
-            builder.AppendLine($"- {hook}");
+            builder.AppendLine($"- {HumanCopy(hook)}");
         }
 
         return builder.ToString().TrimEnd();
@@ -3635,34 +3644,33 @@ internal sealed class DesktopAliceWindow : Window
     private static string BuildOriginMediaFactoryNarrationRunbook(OriginDossierBundle bundle, string requestPath)
     {
         StringBuilder builder = new();
-        builder.AppendLine($"# Origin Dossier Audiobook Runbook · {bundle.Packet.Alias}");
+        builder.AppendLine($"# Origin Dossier Audiobook Notes · {bundle.Packet.Alias}");
         builder.AppendLine();
-        builder.AppendLine("This request is first-party canon input for chummer6-media-factory. Presentation owns the source packet; media-factory owns render execution.");
+        builder.AppendLine("This request uses the approved origin story and the selected voice scripts.");
         builder.AppendLine();
         builder.AppendLine("## Inputs");
-        builder.AppendLine($"- Canon markdown: {bundle.CanonMarkdownPath}");
-        builder.AppendLine($"- Canon packet: {bundle.CanonJsonPath}");
+        builder.AppendLine($"- Story markdown: {bundle.CanonMarkdownPath}");
+        builder.AppendLine($"- Story data: {bundle.CanonJsonPath}");
         builder.AppendLine($"- Default voice script: {bundle.SoundmadeseenScriptPath}");
         builder.AppendLine($"- Alternate voice script: {bundle.UnmixrScriptPath}");
-        builder.AppendLine($"- Media-factory request: {requestPath}");
+        builder.AppendLine($"- Render request: {requestPath}");
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
         {
-            builder.AppendLine($"- GM allowances: {bundle.GmAllowanceNotes}");
+            builder.AppendLine($"- GM notes: {HumanCopy(bundle.GmAllowanceNotes)}");
         }
         builder.AppendLine();
-        builder.AppendLine("## Voice lanes");
+        builder.AppendLine("## Voices");
         builder.AppendLine("- Default: Soundmadeseen");
-        builder.AppendLine("- Alternate: Unmixr AI");
+        builder.AppendLine("- Alternate: Unmixr");
         builder.AppendLine();
         builder.AppendLine("## Boundary");
-        builder.AppendLine("- Media providers are downstream renderers only.");
-        builder.AppendLine("- They may not mutate rules truth, build truth, or the approved origin canon.");
-        builder.AppendLine("- If the candidate Unmixr lane fails closed, keep the Soundmadeseen lane canonical.");
+        builder.AppendLine("- Audio output does not change rules or the character sheet.");
+        builder.AppendLine("- If the alternate voice fails, keep the default voice.");
         builder.AppendLine();
         builder.AppendLine("## Expected outputs");
         builder.AppendLine("- one default audiobook artifact");
         builder.AppendLine("- one alternate audiobook artifact");
-        builder.AppendLine("- provider receipts");
+        builder.AppendLine("- render logs");
         builder.AppendLine("- preview/audio companion refs for later dossier/video phases");
         return builder.ToString().TrimEnd();
     }
@@ -3778,8 +3786,8 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return lines.Count == 0
-            ? ["ALICE returned an answer without extra grounded detail lines."]
-            : lines.ToArray();
+            ? ["Alice returned an answer without extra detail lines."]
+            : HumanLines(lines);
     }
 
     private Button[] CreateSuggestedActionButtons(AiConversationTurnResponse response)
@@ -3795,8 +3803,8 @@ internal sealed class DesktopAliceWindow : Window
 
         if (buttons.Count == 0)
         {
-            buttons.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceSuggestedActionFallbackAccount"));
-            buttons.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceSuggestedActionFallbackPublic"));
+            buttons.Add(CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceSuggestedActionFallbackAccount"));
+            buttons.Add(CreateButton("Open web Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceSuggestedActionFallbackPublic"));
         }
 
         return buttons.ToArray();
@@ -3872,7 +3880,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             return new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
-                "ALICE",
+                "Alice",
                 "Rules coach ready",
                 "Ask for a rule explanation, tradeoff, or safe next build step tied to the active ruleset.",
                 [],
@@ -3883,18 +3891,18 @@ internal sealed class DesktopAliceWindow : Window
         {
             return new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
-                "ALICE",
+                "Alice",
                 "Origin Dossier ready",
-                "Generate an optional origin dossier that explains why this build exists without changing any build truth.",
+                "Create an optional origin dossier that explains why this build exists without changing the sheet.",
                 [],
                 BuildStarterPrompts(normalizedMode));
         }
 
         return new AliceConversationTurnEntry(
             AliceConversationTurnKind.Assistant,
-            "ALICE",
+            "Alice",
             "Build copilot ready",
-            "Ask for the next grounded move, a comparison, or a complete scratch build from the current desktop settings.",
+            "Ask for the next move, a comparison, or a complete scratch build from the current desktop settings.",
             [],
             BuildStarterPrompts(normalizedMode));
     }
@@ -3924,7 +3932,7 @@ internal sealed class DesktopAliceWindow : Window
 
         return new AliceConversationTurnEntry(
             AliceConversationTurnKind.Assistant,
-            "ALICE",
+            "Alice",
             title,
             body,
             [status, .. evidenceLines.Take(5)],

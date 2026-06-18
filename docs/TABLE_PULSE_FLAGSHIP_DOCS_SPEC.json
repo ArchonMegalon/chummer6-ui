@@ -1,6 +1,24 @@
 {
   "site_title": "Chummer6 Flagship Table Pulse",
   "site_summary": "Governed live-play and living-world systems for Chummer6, with dramatic but receipt-backed follow-through.",
+  "editorial_posture": {
+    "opening": "This is the product guide for Chummer6's live-table and living-world layer. It explains the shape of the experience, the player and GM surfaces that make it legible, and the guardrails that keep dramatic follow-through from becoming fake authority.",
+    "source_note": "This page is maintained from the Chummer6 design canon, the public-guide source set, and the current rendered horizon videos. Keep the language human-facing: describe what a player or GM can understand, then name the boundary that keeps the system trustworthy."
+  },
+  "public_videos": [
+    {
+      "title": "TABLE PULSE 90-second deep dive",
+      "url": "https://chummer.run/media/horizons/table-pulse-90s-deepdive.mp4",
+      "caption_url": "https://chummer.run/media/horizons/table-pulse-90s-deepdive.vtt",
+      "note": "MP4 with AAC audio."
+    },
+    {
+      "title": "ALICE 90-second deep dive",
+      "url": "https://chummer.run/media/horizons/alice-90s-deepdive.mp4",
+      "caption_url": "https://chummer.run/media/horizons/alice-90s-deepdive.vtt",
+      "note": "MP4 with AAC audio."
+    }
+  ],
   "overview": {
     "title": "Table Pulse Flagship Showcase",
     "purpose": "Regenerate the Jammer5-style documentation surface for the new Chummer6 live-play and living-world stack in a way that feels flagship, not provisional.",

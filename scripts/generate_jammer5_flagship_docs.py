@@ -30,6 +30,24 @@ def image_markdown(image_output: str, alt: str) -> str:
     return f"![{alt}]({image_output})"
 
 
+def video_lines(items: list[dict[str, Any]]) -> list[str]:
+    rendered: list[str] = []
+    for item in items:
+        title = str(item.get("title") or "").strip()
+        url = str(item.get("url") or "").strip()
+        note = str(item.get("note") or "MP4 with AAC audio.").strip()
+        caption_url = str(item.get("caption_url") or "").strip()
+        if not title or not url:
+            continue
+        line = f"- [{title}]({url})"
+        if note:
+            line += f" - {note}"
+        if caption_url:
+            line += f" [Captions]({caption_url})."
+        rendered.append(line)
+    return rendered
+
+
 def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
     synced: list[dict[str, str]] = []
     for item in list(spec.get("visual_gallery") or []):
@@ -54,27 +72,27 @@ def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
 
 def render_showcase(spec: dict[str, Any]) -> str:
     overview = spec["overview"]
+    editorial = dict(spec.get("editorial_posture") or {})
     user_first = dict(spec.get("user_first_story") or {})
     origin = dict(spec.get("origin_dossier_spotlight") or {})
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
     related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
     visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
+    videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     lines: list[str] = [
         f"# {overview['title']}",
         "",
-        "<!-- GENERATED FILE: edit TABLE_PULSE_FLAGSHIP_DOCS_SPEC.json and rerun scripts/generate_jammer5_flagship_docs.py -->",
+        str(editorial.get("opening") or overview["purpose"]).strip(),
         "",
-        f"Purpose: {overview['purpose']}",
-        "",
-        "## Delivery Posture",
-        "",
-        overview["delivery_posture"],
-        "",
-        "## One-Line Pitch",
+        "## In One Sentence",
         "",
         overview["one_line_pitch"],
         "",
-        "## What this system is",
+        "## Where It Fits",
+        "",
+        overview["delivery_posture"],
+        "",
+        "## What It Is",
         "",
         "Table Pulse is the live pressure-and-response system for Chummer6.",
         "",
@@ -84,18 +102,16 @@ def render_showcase(spec: dict[str, Any]) -> str:
         "",
         *bullet_lines(overview["system_truths"]),
         "",
-        "## Why it feels flagship",
+        "## Why It Feels Different",
         "",
-        "This is not a generic notification center.",
-        "",
-        "The flagship posture is a five-layer play loop:",
+        "The best version reads as one connected play loop, not as separate modules:",
         "",
     ]
     for index, layer in enumerate(overview["layers"], start=1):
-        lines.append(f"{index}. `{layer['name']}`")
-        lines.extend([f"   - {item}" for item in layer["items"]])
+        joined = ", ".join(layer["items"])
+        lines.append(f"{index}. **{layer['name']}**: {joined}.")
     if visual_gallery:
-        lines.extend(["", "## Visual Anchors", ""])
+        lines.extend(["", "## Visual Notes", ""])
         for item in visual_gallery:
             lines.extend(
                 [
@@ -107,6 +123,9 @@ def render_showcase(spec: dict[str, Any]) -> str:
                     "",
                 ]
             )
+    rendered_videos = video_lines(videos)
+    if rendered_videos:
+        lines.extend(["", "## Watch", "", *rendered_videos, ""])
     if user_first:
         lines.extend(
             [
@@ -117,7 +136,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 *numbered_lines(list(user_first.get("beats") or [])),
                 "",
-                "The user-first lane must stay honest about:",
+                "Keep this lane honest:",
                 "",
                 *bullet_lines(list(user_first.get("truths") or [])),
                 "",
@@ -130,15 +149,15 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(origin.get("summary") or "").strip(),
                 "",
-                "It must show:",
+                "What belongs here:",
                 "",
                 *bullet_lines(list(origin.get("must_show") or [])),
                 "",
-                "The ALICE connection is explicit:",
+                "How ALICE connects:",
                 "",
                 *bullet_lines(list(origin.get("alice_connection") or [])),
                 "",
-                "It must not imply:",
+                "Guardrails:",
                 "",
                 *bullet_lines(list(origin.get("must_not_imply") or [])),
                 "",
@@ -151,11 +170,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(gm_cockpit.get("summary") or "").strip(),
                 "",
-                "It must show:",
+                "What belongs here:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_show") or [])),
                 "",
-                "Origin and GM gimmick flow:",
+                "Origin and GM steering flow:",
                 "",
                 *numbered_lines(list(gm_cockpit.get("origin_gimmick_flow") or [])),
                 "",
@@ -163,7 +182,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 *bullet_lines(list(gm_cockpit.get("visual_language") or [])),
                 "",
-                "It must not imply:",
+                "Guardrails:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_not_imply") or [])),
                 "",
@@ -178,17 +197,17 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 f"{surface['name']} is {descriptor}.",
                 "",
-                "It should feel:",
+                "Design feel:",
                 "",
                 *bullet_lines(surface["feels"]),
                 "",
-                "It must show:",
+                "What it should make clear:",
                 "",
                 *bullet_lines(surface["must_show"]),
             ]
         )
         if surface.get("must_never_imply"):
-            lines.extend(["", "It must never imply:", "", *bullet_lines(surface["must_never_imply"])])
+            lines.extend(["", "Guardrails:", "", *bullet_lines(surface["must_never_imply"])])
         lines.append("")
     lines.extend(["## Core Play Loop", ""])
     for index, beat in enumerate(overview["play_loop"], start=1):
@@ -198,16 +217,15 @@ def render_showcase(spec: dict[str, Any]) -> str:
         lines.append("")
     lines.extend(
         [
-            "## Wow-Effect Requirements",
+            "## The Moment It Should Create",
             "",
-            "To feel flagship, the documentation and the product should present the system as an",
-            "action board, not as an admin form.",
+            "The page should make the reader picture an action board, not an admin form.",
             "",
-            "The wow effect should come from:",
+            "The effect comes from:",
             "",
             *bullet_lines(overview["wow_effect"]["comes_from"]),
             "",
-            "The wow effect must not come from:",
+            "It should not come from:",
             "",
             *bullet_lines(overview["wow_effect"]["must_not_come_from"]),
             "",
@@ -217,13 +235,13 @@ def render_showcase(spec: dict[str, Any]) -> str:
             "",
             *numbered_lines(overview["hero_moment"]),
             "",
-            "## Hard Product Truths",
+            "## Ground Rules",
             "",
             *bullet_lines(overview["hard_truths"]),
             "",
-            "## Flagship Acceptance",
+            "## Readiness Bar",
             "",
-            "Call this flagship only when all of the following are true:",
+            "Use stronger launch language only when all of the following are true:",
             "",
             *numbered_lines(overview["flagship_bar"]),
             "",
@@ -246,10 +264,9 @@ def render_showcase(spec: dict[str, Any]) -> str:
         )
     lines.extend(
         [
-            "## Design Source Anchors",
+            "## Source Notes",
             "",
-            "These docs are generated from the published Chummer6 design canon and dramatic briefing,",
-            "then rewritten into Jammer5-style docs language for the public docs repo.",
+            str(editorial.get("source_note") or "This page is maintained from the Chummer6 design canon and public-guide source set.").strip(),
             "",
             *bullet_lines(spec["published_design_sources"]),
         ]
@@ -262,15 +279,13 @@ def render_minigames(spec: dict[str, Any]) -> str:
     lines: list[str] = [
         f"# {mg['title']}",
         "",
-        "<!-- GENERATED FILE: edit TABLE_PULSE_FLAGSHIP_DOCS_SPEC.json and rerun scripts/generate_jammer5_flagship_docs.py -->",
+        mg["purpose"],
         "",
-        f"Purpose: {mg['purpose']}",
-        "",
-        "## Product Goal",
+        "## Goal",
         "",
         mg["goal"],
         "",
-        "## What these are",
+        "## What They Are",
         "",
         "Remote reaction mini-games are short governed follow-up encounters that occur after a",
         "Table Pulse packet is emitted.",
@@ -329,7 +344,7 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["feel"]),
             "",
-            "The user must see:",
+            "The player should see:",
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["must_show"]),
             "",
@@ -345,15 +360,15 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             *bullet_lines(mg["surface_requirements"]["gm_cockpit"]),
             "",
-            "## Wow-Effect Pattern",
+            "## Best-Case Pattern",
             "",
             "The best version of this feature looks like:",
             "",
             *numbered_lines(mg["wow_pattern"]),
             "",
-            "That is the wow loop.",
+            "That is the loop worth building toward.",
             "",
-            "Not this:",
+            "Avoid:",
             "",
             *bullet_lines(mg["anti_pattern"]),
             "",
@@ -361,9 +376,9 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             mg["example_loop"],
             "",
-            "## Flagship Bar",
+            "## Readiness Bar",
             "",
-            "Call the mini-game lane flagship only when:",
+            "Use stronger launch language only when:",
             "",
             *numbered_lines(mg["flagship_bar"]),
         ]
@@ -375,9 +390,10 @@ def render_index_section(spec: dict[str, Any]) -> str:
     visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
     related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
+    videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     gallery_lines: list[str] = []
     if visual_gallery:
-        gallery_lines.extend(["<div>", "  <p><strong>Visual anchors</strong></p>"])
+        gallery_lines.extend(["<div>", "  <p><strong>Visual notes</strong></p>"])
         for item in visual_gallery:
             gallery_lines.extend(
                 [
@@ -388,6 +404,13 @@ def render_index_section(spec: dict[str, Any]) -> str:
                 ]
             )
         gallery_lines.append("</div>")
+    video_items = video_lines(videos)
+    video_html: list[str] = []
+    if video_items:
+        video_html.extend(["<p><strong>Watch</strong></p>", "<ul>"])
+        for item in video_items:
+            video_html.append(f"  <li>{item[2:]}</li>")
+        video_html.append("</ul>")
     horizon_lines: list[str] = []
     if related_horizons:
         horizon_lines.extend(["<ul>"])
@@ -407,8 +430,9 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "  <li><a href=\"TABLE_PULSE_REMOTE_REACTION_MINIGAMES.md\">Remote Reaction Minigames</a></li>",
             "</ul>",
             "",
-            "<p>These generated docs cover Signal Deck, Runner Passport, the GM cockpit, living newsroom projection, consent and privacy gates, the user-first origin-dossier lane, and the new reaction mini-games in a wow-forward but fail-closed product language.</p>",
+            "<p>These notes cover Signal Deck, Runner Passport, the GM cockpit, living newsroom projection, consent and privacy gates, the user-first origin-dossier lane, and the new reaction mini-games in a polished but fail-closed product language.</p>",
             *gallery_lines,
+            *video_html,
             "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
             f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on an authority surface instead of an internal maintenance list.</p>",
             *horizon_lines,

@@ -1,14 +1,12 @@
 # Table Pulse Remote Reaction Minigames
 
-<!-- GENERATED FILE: edit TABLE_PULSE_FLAGSHIP_DOCS_SPEC.json and rerun scripts/generate_jammer5_flagship_docs.py -->
+Define the new remote reaction mini-games in concrete product language so they read like a flagship feature rather than a vague engagement promise.
 
-Purpose: Define the new remote reaction mini-games in concrete product language so they read like a flagship feature rather than a vague engagement promise.
-
-## Product Goal
+## Goal
 
 Give players a dramatic city-is-still-moving moment without breaking consent, authority, or campaign privacy.
 
-## What these are
+## What They Are
 
 Remote reaction mini-games are short governed follow-up encounters that occur after a
 Table Pulse packet is emitted.
@@ -112,7 +110,7 @@ The prompt should feel:
 - sharp
 - readable in under a minute
 
-The user must see:
+The player should see:
 
 - why this arrived
 - what is at stake
@@ -137,7 +135,7 @@ The GM should see:
 - proposed consequence
 - proof chain
 
-## Wow-Effect Pattern
+## Best-Case Pattern
 
 The best version of this feature looks like:
 
@@ -146,9 +144,9 @@ The best version of this feature looks like:
 3. the result lands in Passport or faction pressure
 4. the city later reflects that move through rumor or newsroom fallout
 
-That is the wow loop.
+That is the loop worth building toward.
 
-Not this:
+Avoid:
 
 - giant wall of text
 - a generic push notification
@@ -158,9 +156,9 @@ Not this:
 
 After a high-heat extraction, a player receives a Scramble mini-game through Signal Deck. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.
 
-## Flagship Bar
+## Readiness Bar
 
-Call the mini-game lane flagship only when:
+Use stronger launch language only when:
 
 1. the prompt is dramatic in under one screen
 2. the choice is meaningful but bounded

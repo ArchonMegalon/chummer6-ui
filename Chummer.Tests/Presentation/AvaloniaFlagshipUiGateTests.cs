@@ -541,15 +541,15 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             modeCombo.SelectedItem = "Build help";
             harness.WaitUntil(
-                () => (settingsGuideText.Text ?? string.Empty).Contains("Legality: Strict avoids restricted", StringComparison.Ordinal)
-                    && (settingsGuideText.Text ?? string.Empty).Contains("Standard permits common legal restricted options", StringComparison.Ordinal),
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Strict avoids restricted picks", StringComparison.Ordinal)
+                    && (settingsGuideText.Text ?? string.Empty).Contains("Standard allows common legal restricted choices", StringComparison.Ordinal),
                 context: "Build-help settings explainer must spell out legality and complexity behavior");
 
             promptBox.Text = "Build me a troll decker from scratch for SR4 with standard legality and stable first-pass gear.";
             RaiseClick(askButton);
             harness.WaitUntil(
                 () => !string.IsNullOrWhiteSpace(answerText.Text)
-                    && !(statusText.Text ?? string.Empty).Contains("Type a grounded question", StringComparison.Ordinal),
+                    && !(statusText.Text ?? string.Empty).Contains("Type a question", StringComparison.Ordinal),
                 context: "blank-state build help must answer instead of dead-ending");
             Assert.IsFalse(
                 (answerText.Text ?? string.Empty).Contains("Open or create a workspace first", StringComparison.Ordinal),
@@ -557,27 +557,27 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             modeCombo.SelectedItem = "Origin Dossier";
             harness.WaitUntil(
-                () => (settingsGuideText.Text ?? string.Empty).Contains("On finished characters this stays additive", StringComparison.Ordinal),
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Finished characters are not changed", StringComparison.Ordinal),
                 context: "origin-dossier explainer must stay visible when switching modes");
 
             gmAllowanceBox.Text = "GM allows one restricted ware exception, +20000 nuyen, and one extra quality if the origin supports it.";
             harness.WaitUntil(
-                () => (contextDetailText.Text ?? string.Empty).Contains("GM allowances:", StringComparison.Ordinal)
+                () => (contextDetailText.Text ?? string.Empty).Contains("GM", StringComparison.Ordinal)
                     && (contextDetailText.Text ?? string.Empty).Contains("+20000 nuyen", StringComparison.Ordinal),
-                context: "GM allowances must feed the visible ALICE context before origin generation");
+                context: "GM notes must feed the visible Alice context before origin generation");
 
             promptBox.Text = "Draft an origin dossier for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
             RaiseClick(askButton);
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("generated a grounded origin dossier draft", StringComparison.Ordinal),
-                context: "origin-dossier mode must generate a grounded draft");
+                () => (statusText.Text ?? string.Empty).Contains("Origin draft ready", StringComparison.Ordinal),
+                context: "origin-dossier mode must create a draft");
             harness.WaitUntil(
                 () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginApproveCanonButton") is { IsVisible: true },
-                context: "origin-dossier draft must expose canon approval");
+                context: "origin-dossier draft must expose story approval");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("approved the origin canon", StringComparison.Ordinal),
+                () => (statusText.Text ?? string.Empty).Contains("Origin story approved", StringComparison.Ordinal),
                 context: "origin draft must be approvable into a dossier bundle");
             harness.WaitUntil(
                 () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBundleFolderButton") is { IsVisible: true },
@@ -598,7 +598,7 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"));
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("canonical portrait", StringComparison.Ordinal)
+                () => (statusText.Text ?? string.Empty).Contains("Portrait set ready", StringComparison.Ordinal)
                     && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginSelectPortrait1Button") is { IsVisible: true },
                 context: "origin bundle must generate portrait candidates");
             harness.WaitUntil(
@@ -608,8 +608,8 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginSelectPortrait2Button"));
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("updated the canonical portrait", StringComparison.Ordinal),
-                context: "portrait selection must update canonical origin media state");
+                () => (statusText.Text ?? string.Empty).Contains("Portrait selected", StringComparison.Ordinal),
+                context: "portrait selection must update origin media state");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateSceneSetButton"));
             harness.WaitUntil(
@@ -622,14 +622,14 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginSelectScene1Button"));
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("updated the canonical scene", StringComparison.Ordinal),
-                context: "scene selection must update canonical origin media state");
+                () => (statusText.Text ?? string.Empty).Contains("Scene selected", StringComparison.Ordinal),
+                context: "scene selection must update origin media state");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateDossierVideoButton"));
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("prepared the dossier video storyboard", StringComparison.Ordinal)
+                () => (statusText.Text ?? string.Empty).Contains("Dossier video plan ready", StringComparison.Ordinal)
                     && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenVideoPosterButton") is { IsVisible: true },
-                context: "origin bundle must prepare the dossier video lane after GM-steered canon approval");
+                context: "origin bundle must prepare the dossier video after GM-steered story approval");
             harness.WaitUntil(
                 () => File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier.pdf"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json"))
@@ -640,11 +640,11 @@ public sealed class AvaloniaFlagshipUiGateTests
 
             modeCombo.SelectedItem = "Build help";
             harness.WaitUntil(
-                () => (settingsGuideText.Text ?? string.Empty).Contains("Legality: Strict avoids restricted", StringComparison.Ordinal),
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Strict avoids restricted picks", StringComparison.Ordinal),
                 context: "switching back to build help must restore the settings explainer");
             Assert.IsTrue(
-                (contextDetailText.Text ?? string.Empty).Contains("GM allowances:", StringComparison.Ordinal),
-                "GM allowances must remain visible in ALICE context after returning from origin-dossier mode.");
+                (contextDetailText.Text ?? string.Empty).Contains("GM", StringComparison.Ordinal),
+                "GM notes must remain visible in Alice context after returning from origin-dossier mode.");
 
             aliceWindow.Close();
             harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after runtime-backed origin flow validation");

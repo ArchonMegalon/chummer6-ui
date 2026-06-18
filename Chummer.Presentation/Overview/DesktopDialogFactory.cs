@@ -674,7 +674,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginWizardDialogId,
             "Start from Origin",
-            "Shape the runner first. ALICE will turn it into an Origin Dossier Bundle, then translate that bundle into a grounded build lane before normal character creation opens.",
+            "Shape the runner first. The dossier can guide the first build path when you choose to continue.",
             [
                 new DesktopDialogField(
                     "newCharacterName",
@@ -841,7 +841,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterOriginSummary",
-                    "Origin Dossier Draft",
+                    "Origin Preview",
                     recommendation.OriginSummary,
                     recommendation.OriginSummary,
                     IsReadOnly: true,
@@ -856,7 +856,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
             ],
             [
-                new DesktopDialogAction("generate_fitting_build", "Generate fitting build", true),
+                new DesktopDialogAction("generate_fitting_build", "Continue to build", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
@@ -887,16 +887,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Quality Focus", recommendation.QualityFocus),
             ("GM Requirements", recommendation.GmRequirementSummary),
             ("Path", recommendation.PathSummary));
-        string aliceNotes =
+        string storyNotes =
             $"Origin | {recommendation.OriginSummary}{Environment.NewLine}" +
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
             $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
-            "ALICE Posture | guided recommendation only; no stats, gear, or qualities were applied";
+            "Sheet Changes | none yet; review the path before applying mechanics";
 
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
-            "ALICE Origin Dossier Bundle",
-            "ALICE translated the Origin Dossier Bundle into a grounded build recommendation. Review it, then open guided character creation on the recommended lane.",
+            "Origin Dossier",
+            "Review the story and build direction, then open character creation.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
@@ -914,7 +914,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 new DesktopDialogField(
                     "newCharacterOriginBuildLogic",
-                    "Build Logic",
+                    "Build Direction",
                     buildLogic,
                     buildLogic,
                     IsReadOnly: true,
@@ -923,9 +923,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterOriginImplications",
-                    "ALICE Notes",
-                    aliceNotes,
-                    aliceNotes,
+                    "Next Steps",
+                    storyNotes,
+                    storyNotes,
                     IsReadOnly: true,
                     IsMultiline: true,
                     VisualKind: DesktopDialogFieldVisualKinds.List,
@@ -1335,12 +1335,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string gmRequirementSummary = ResolveOriginGmRequirementSummary(
             normalizedGmRequirementPreset,
             normalizedGmRequirements);
-        string originSummary =
+        string originSummary = PlayerFacingCopyHumanizer.Clean(
             $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
             $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active. " +
-            $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.";
-        string buildSummary =
-            $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.";
+            $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.");
+        string buildSummary = PlayerFacingCopyHumanizer.Clean(
+            $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.");
 
         return new OriginBuildRecommendation(
             archetype,
@@ -1350,7 +1350,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             metatype,
             qualityFocus,
             pathSummary,
-            gmRequirementSummary,
+            PlayerFacingCopyHumanizer.Clean(gmRequirementSummary),
             originSummary,
             buildSummary);
     }
@@ -1378,7 +1378,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string presetSummary = preset switch
         {
             "illegal_addiction" => "Must carry an Addiction quality tied to an illegal drug.",
-            "magically_active" => "Must be magically active; ALICE should bias the story and build lane toward magic-capable choices.",
+            "magically_active" => "Must be magically active; the story and build path should support magic-capable choices.",
             "intelligence_2_plus" => "Must have Intelligence 2 or higher.",
             "restricted_ware_exception" => "GM grants one restricted ware or availability exception if the origin justifies it.",
             "bonus_nuyen_20000" => "GM grants +20,000 nuyen if the origin explains the resource source.",
@@ -1394,15 +1394,15 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         if (string.IsNullOrWhiteSpace(presetSummary))
         {
-            return customRequirements.Trim();
+            return PlayerFacingCopyHumanizer.Clean(customRequirements);
         }
 
         if (string.IsNullOrWhiteSpace(customRequirements))
         {
-            return presetSummary;
+            return PlayerFacingCopyHumanizer.Clean(presetSummary);
         }
 
-        return $"{presetSummary} {customRequirements.Trim()}";
+        return PlayerFacingCopyHumanizer.Clean($"{presetSummary} {customRequirements.Trim()}");
     }
 
     private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)

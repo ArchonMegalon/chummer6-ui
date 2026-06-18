@@ -52,17 +52,17 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "Matrix identity theft");
         StringAssert.Contains(source, "Must be addicted to an illegal drug");
         StringAssert.Contains(source, "Must have Logic or Intuition 2+");
-        StringAssert.Contains(source, "Approve canon");
+        StringAssert.Contains(source, "Approve story");
         StringAssert.Contains(source, "Render dossier PDF");
-        StringAssert.Contains(source, "Generate portraits");
-        StringAssert.Contains(source, "Generate scenes");
-        StringAssert.Contains(source, "Generate default voice packet");
-        StringAssert.Contains(source, "Generate alternate voice packet");
-        StringAssert.Contains(source, "Prepare media-factory request");
-        StringAssert.Contains(source, "Generate dossier video");
+        StringAssert.Contains(source, "Create portraits");
+        StringAssert.Contains(source, "Create scenes");
+        StringAssert.Contains(source, "Create default voice script");
+        StringAssert.Contains(source, "Create alternate voice script");
+        StringAssert.Contains(source, "Prepare render request");
+        StringAssert.Contains(source, "Create dossier video");
         StringAssert.Contains(source, "MarkupGo");
         StringAssert.Contains(source, "Soundmadeseen");
-        StringAssert.Contains(source, "Unmixr AI");
+        StringAssert.Contains(source, "Unmixr");
         StringAssert.Contains(source, "vidBoard");
         StringAssert.Contains(source, "EnsureOriginPortraitSet(");
         StringAssert.Contains(source, "EnsureOriginSceneSet(");
@@ -109,17 +109,17 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "MediaFactoryVideoReceiptPath");
         StringAssert.Contains(source, "RenderedVideoPath");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
-        StringAssert.Contains(source, "Strict stays conservative on restricted/banned picks");
-        StringAssert.Contains(source, "Complexity: Simple favors obvious picks");
-        StringAssert.Contains(source, "Ware posture is always explained rules-wise before apply.");
-        StringAssert.Contains(source, "Use this before a build, during creation, or on a finished character.");
-        StringAssert.Contains(source, "GM allowances and requirements are advisory constraints");
-        StringAssert.Contains(source, "must be addicted to an illegal drug");
-        StringAssert.Contains(source, "must be magically active");
-        StringAssert.Contains(source, "minimum Logic/Intuition 2");
-        StringAssert.Contains(source, "Clear GM allowances");
-        StringAssert.Contains(source, "GM allowances:");
-        StringAssert.Contains(source, "## GM Allowances");
+        StringAssert.Contains(source, "Strict avoids restricted picks");
+        StringAssert.Contains(source, "Simple stays obvious");
+        StringAssert.Contains(source, "Ware suggestions include the rules tradeoff");
+        StringAssert.Contains(source, "Finished characters are not changed.");
+        StringAssert.Contains(source, "GM notes can require addiction");
+        StringAssert.Contains(source, "Must be addicted to an illegal drug");
+        StringAssert.Contains(source, "Must be magically active");
+        StringAssert.Contains(source, "attribute floors");
+        StringAssert.Contains(source, "Clear GM notes");
+        StringAssert.Contains(source, "GM notes:");
+        StringAssert.Contains(source, "## GM Notes");
         StringAssert.Contains(source, "gmAllowanceNotes");
     }
 
@@ -133,8 +133,8 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "RulesetDefaults.NormalizeOptional(workspaces.FirstOrDefault()?.RulesetId)");
         StringAssert.Contains(source, "GetBuildPathSuggestionsAsync(effectiveRulesetId, CancellationToken.None)");
         StringAssert.Contains(source, "GetBuildPathPreviewAsync(");
-        StringAssert.Contains(source, "Build path compare stays native");
-        StringAssert.Contains(source, "No preview-backed build path suggestions are currently available");
+        StringAssert.Contains(source, "Proposal studio");
+        StringAssert.Contains(source, "No build suggestions are available");
     }
 
     [TestMethod]
@@ -165,7 +165,22 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "return \"Karma\";");
         StringAssert.Contains(source, "Blank-state start is supported.");
         StringAssert.Contains(source, "No open workspace is required to draft a first full build proposal.");
-        StringAssert.Contains(source, "ALICE treats this as a full from-scratch draft");
-        StringAssert.Contains(source, "ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open.");
+        StringAssert.Contains(source, "Use this as a complete first draft");
+        StringAssert.Contains(source, "Alice can draft a complete runner from the current settings even when no workspace is open.");
+    }
+
+    [TestMethod]
+    public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
+    {
+        string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
+            "ALICE generated an Unmixr AI narration receipt from the approved origin canon through a media-factory lane.");
+
+        StringAssert.Contains(cleaned, "Alice");
+        StringAssert.Contains(cleaned, "Unmixr");
+        StringAssert.Contains(cleaned, "record");
+        StringAssert.Contains(cleaned, "approved origin story");
+        Assert.IsFalse(cleaned.Contains("Unmixr AI", StringComparison.Ordinal));
+        Assert.IsFalse(cleaned.Contains("generated", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("media-factory", StringComparison.OrdinalIgnoreCase));
     }
 }
