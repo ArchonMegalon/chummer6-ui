@@ -157,6 +157,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         ListBox workspaceList = new()
         {
@@ -171,6 +172,7 @@ internal sealed class DesktopBlackLedgerWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(workspaceList);
 
         TextBlock selectedWorkspaceTitleText = new()
         {

@@ -91,10 +91,10 @@ public partial class MainWindow
         await RunUiActionAsync(
             async () =>
             {
-                await DesktopAliceWindow.ShowOriginDraftAsync(this, DesktopHeadId);
-                await TrackDesktopShellEventAsync("desktop_open_origin_draft", "workspace_strip");
+                await _interactionCoordinator.ExecuteCommandAsync("new_character_origin", CancellationToken.None);
+                await TrackDesktopShellEventAsync("desktop_open_origin_dossier", "workspace_strip");
             },
-            "open alice origin draft");
+            "open origin dossier wizard");
     }
 
     private async void ToolStrip_OnPrintRequested(object? sender, EventArgs e)

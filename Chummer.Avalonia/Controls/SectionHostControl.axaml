@@ -97,7 +97,7 @@
                        MinHeight="168"
                        MaxHeight="320"
                        BorderThickness="0"
-                       Background="Transparent"
+                       Background="{DynamicResource ChummerShellSurfaceBrush}"
                        SelectionChanged="GearWorkbenchList_OnSelectionChanged">
                 <ListBox.ItemTemplate>
                   <DataTemplate>
@@ -191,7 +191,7 @@
                      MinHeight="132"
                      MaxHeight="360"
                      BorderThickness="0"
-                     Background="Transparent">
+                     Background="{DynamicResource ChummerShellSurfaceBrush}">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Grid ColumnDefinitions="132,*" ColumnSpacing="8" Margin="0,0">

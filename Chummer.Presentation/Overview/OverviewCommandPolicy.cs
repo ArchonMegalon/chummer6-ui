@@ -20,6 +20,7 @@ public static class OverviewCommandPolicy
     {
         RuntimeInspectorCommandId,
         "new_character",
+        "new_character_origin",
         "new_window",
         "wiki",
         "discord",

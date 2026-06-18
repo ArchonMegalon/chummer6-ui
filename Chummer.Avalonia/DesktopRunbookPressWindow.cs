@@ -142,6 +142,7 @@ internal sealed class DesktopRunbookPressWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         TextBlock detailText = new()
         {
@@ -175,6 +176,7 @@ internal sealed class DesktopRunbookPressWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(entryList);
 
         void RefreshDetail()
         {

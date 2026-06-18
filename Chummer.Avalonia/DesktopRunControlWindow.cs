@@ -155,6 +155,7 @@ internal sealed class DesktopRunControlWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         ListBox runList = new()
         {
@@ -169,6 +170,7 @@ internal sealed class DesktopRunControlWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(runList);
 
         TextBlock selectedRunTitleText = new()
         {

@@ -392,6 +392,7 @@ public partial class DesktopDialogWindow : Window
             ItemsSource = items,
             MinHeight = 248
         };
+        ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
         {
@@ -1397,6 +1398,7 @@ public partial class DesktopDialogWindow : Window
             ItemsSource = runtimeState.Qualities.Count == 0 ? new[] { "No innate qualities" } : runtimeState.Qualities,
             MinHeight = 96
         };
+        ApplyShellListBoxTheme(qualitiesList);
         qualitiesList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
             new TextBlock
             {
@@ -1652,6 +1654,7 @@ public partial class DesktopDialogWindow : Window
             ItemsSource = SplitLines(resultsListField.Value),
             MinHeight = 360
         };
+        ApplyShellListBoxTheme(resultsList);
         resultsList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
             new TextBlock
             {
@@ -1700,7 +1703,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -2384,7 +2387,7 @@ public partial class DesktopDialogWindow : Window
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = Brushes.Transparent,
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
@@ -2437,7 +2440,7 @@ public partial class DesktopDialogWindow : Window
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = Brushes.Transparent,
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
                 Child = new TextBlock { Text = line }
@@ -2487,7 +2490,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             MinHeight = 136,
             Child = previewControl
         });
@@ -2535,7 +2538,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             MinHeight = 136,
             Child = previewControl
         };
@@ -2597,7 +2600,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             Child = rows
         };
@@ -2643,7 +2646,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -2659,7 +2662,7 @@ public partial class DesktopDialogWindow : Window
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
             Child = new TextBlock
@@ -2987,17 +2990,19 @@ public partial class DesktopDialogWindow : Window
 
     private static void ApplyShellComboBoxTheme(ComboBox comboBox)
     {
-        comboBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        comboBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
+    }
+
+    private static void ApplyShellListBoxTheme(ListBox listBox)
+    {
+        DesktopShellTheme.ApplyShellListBoxTheme(listBox);
     }
 
     private static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
         => new()
         {
             Text = text,
-            TextWrapping = wrapping,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827")
+            TextWrapping = wrapping
         };
 
     private ListBox BuildSelectListBox(DesktopDialogField field)
@@ -3011,6 +3016,7 @@ public partial class DesktopDialogWindow : Window
             SelectedItem = options.FirstOrDefault(option => string.Equals(option.Value, field.Value, StringComparison.Ordinal)),
             MinHeight = 320
         };
+        ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
             new TextBlock
             {

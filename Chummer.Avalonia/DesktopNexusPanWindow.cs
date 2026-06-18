@@ -136,6 +136,7 @@ internal sealed class DesktopNexusPanWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         TextBlock detailText = new()
         {
@@ -169,6 +170,7 @@ internal sealed class DesktopNexusPanWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(workspaceList);
 
         void RefreshDetail()
         {

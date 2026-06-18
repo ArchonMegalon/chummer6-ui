@@ -111,6 +111,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "Paste Chummer XML to stage export workflows.",
                 rulesetId),
             "new_character" => BuildNewCharacterDialog(preferences, rulesetId),
+            "new_character_origin" => BuildNewCharacterOriginWizardDialog(
+                rulesetId,
+                profile?.Name ?? "New Character",
+                string.IsNullOrWhiteSpace(profile?.Alias) ? "Runner" : profile!.Alias),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
                 "Print Setup",
@@ -544,6 +548,39 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("sr6", "SR6")
         };
 
+    private static DesktopDialogFieldOption[] BuildOriginArchetypeOptions()
+        =>
+        [
+            new("decker", "Decker"),
+            new("street_sam", "Street Samurai"),
+            new("mage", "Mage"),
+            new("adept", "Adept"),
+            new("face", "Face"),
+            new("rigger", "Rigger"),
+            new("technomancer", "Technomancer"),
+            new("auto", "Let ALICE infer")
+        ];
+
+    private static DesktopDialogFieldOption[] BuildOriginMetatypeOptions()
+        =>
+        [
+            new("auto", "Fit the story"),
+            new("human", "Human"),
+            new("elf", "Elf"),
+            new("dwarf", "Dwarf"),
+            new("ork", "Ork"),
+            new("troll", "Troll")
+        ];
+
+    private static DesktopDialogFieldOption[] BuildOriginBuildPreferenceOptions(string? rulesetId)
+    {
+        List<DesktopDialogFieldOption> options = [new("auto", "Fit the archetype")];
+        options.AddRange(BuildBuildMethodOptions(rulesetId));
+        return options
+            .DistinctBy(option => option.Value, StringComparer.Ordinal)
+            .ToArray();
+    }
+
     private static DesktopDialogState BuildNewCharacterDialog(
         DesktopPreferenceState preferences,
         string? rulesetId)
@@ -602,13 +639,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
             normalizedRulesetId,
+            "decker",
+            "auto",
+            "auto",
             "street",
             "betrayal",
             "self_taught",
             "medical_debt",
             "matrix",
             "survival",
-            "grounded");
+            "grounded",
+            string.Empty);
 
         return new DesktopDialogState(
             NewCharacterOriginWizardDialogId,
@@ -628,6 +669,30 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "Runner",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 CreateRulesetField("newCharacterRulesetId", normalizedRulesetId),
+                new DesktopDialogField(
+                    "newCharacterOriginArchetypeIntent",
+                    "Archetype",
+                    "decker",
+                    "decker",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildOriginArchetypeOptions()),
+                new DesktopDialogField(
+                    "newCharacterOriginBuildPreference",
+                    "Build Method",
+                    "auto",
+                    "auto",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
+                    Options: BuildOriginBuildPreferenceOptions(normalizedRulesetId)),
+                new DesktopDialogField(
+                    "newCharacterOriginMetatypePreference",
+                    "Metatype",
+                    "auto",
+                    "auto",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildOriginMetatypeOptions()),
                 new DesktopDialogField(
                     "newCharacterOriginBackground",
                     "Background",
@@ -740,6 +805,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                         new("chaotic", "Chaotic")
                     ]),
                 new DesktopDialogField(
+                    "newCharacterOriginGmRequirements",
+                    "GM Requirements / Grants",
+                    string.Empty,
+                    "Optional constraints or grants: required qualities, addiction, magical activity, attribute floors, bonus nuyen, availability, gear, ware, or banned choices.",
+                    IsMultiline: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
+                new DesktopDialogField(
                     "newCharacterOriginSummary",
                     "Origin Dossier Draft",
                     recommendation.OriginSummary,
@@ -747,11 +819,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true,
                     IsMultiline: true,
                     VisualKind: DesktopDialogFieldVisualKinds.Snippet),
-                BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.Archetype),
+                BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.ArchetypeLabel),
                 BuildNewCharacterContextField("newCharacterOriginBuildMethod", "Origin Build Method", recommendation.BuildMethod),
                 BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Category", recommendation.MetatypeCategory),
                 BuildNewCharacterContextField("newCharacterOriginMetatype", "Origin Metatype", recommendation.Metatype),
                 BuildNewCharacterContextField("newCharacterOriginQualityFocus", "Origin Quality Focus", recommendation.QualityFocus),
+                BuildNewCharacterContextField("newCharacterOriginGmRequirementSummary", "GM Requirement Summary", recommendation.GmRequirementSummary),
                 BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
             ],
             [
@@ -765,13 +838,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterRulesetId")) ?? RulesetDefaults.Sr5;
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
             rulesetId,
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginArchetypeIntent"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginBuildPreference"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginMetatypePreference"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginBackground"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTurningPoint"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTrainingPath"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginPressureCost"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginUpgradeExposure"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginMotivation"),
-            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTone"));
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTone"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmRequirements"));
         string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New Character";
         string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
         string buildLogic = BuildGridValue(
@@ -779,10 +856,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ("Likely Archetype", recommendation.ArchetypeLabel),
             ("Likely Metatype", $"{recommendation.Metatype} ({recommendation.MetatypeCategory})"),
             ("Quality Focus", recommendation.QualityFocus),
+            ("GM Requirements", recommendation.GmRequirementSummary),
             ("Path", recommendation.PathSummary));
         string aliceNotes =
             $"Origin | {recommendation.OriginSummary}{Environment.NewLine}" +
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
+            $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
             "ALICE Posture | guided recommendation only; no stats, gear, or qualities were applied";
 
         return new DesktopDialogState(
@@ -1110,15 +1189,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static OriginBuildRecommendation ResolveOriginBuildRecommendation(
         string? rulesetId,
+        string? archetypeIntent,
+        string? buildPreference,
+        string? metatypePreference,
         string? background,
         string? turningPoint,
         string? trainingPath,
         string? pressureCost,
         string? upgradeExposure,
         string? motivation,
-        string? tone)
+        string? tone,
+        string? gmRequirements)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string normalizedArchetypeIntent = NormalizeOriginToken(archetypeIntent, "auto");
+        string normalizedBuildPreference = NormalizeOriginBuildPreference(buildPreference);
+        string normalizedMetatypePreference = NormalizeOriginToken(metatypePreference, "auto");
         string normalizedBackground = NormalizeOriginToken(background, "street");
         string normalizedTurningPoint = NormalizeOriginToken(turningPoint, "betrayal");
         string normalizedTrainingPath = NormalizeOriginToken(trainingPath, "self_taught");
@@ -1126,8 +1212,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedUpgradeExposure = NormalizeOriginToken(upgradeExposure, "matrix");
         string normalizedMotivation = NormalizeOriginToken(motivation, "survival");
         string normalizedTone = NormalizeOriginToken(tone, "grounded");
+        string normalizedGmRequirements = string.IsNullOrWhiteSpace(gmRequirements) ? string.Empty : gmRequirements.Trim();
 
-        string archetype = normalizedUpgradeExposure switch
+        string inferredArchetype = normalizedUpgradeExposure switch
         {
             "magic" => "mage",
             "matrix" => "decker",
@@ -1139,20 +1226,37 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             _ when string.Equals(normalizedBackground, "magical", StringComparison.Ordinal) => "mage",
             _ => "decker"
         };
-        string buildMethod = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
-            ? string.Equals(archetype, "street_sam", StringComparison.Ordinal) ? "BP" : "Karma"
-            : string.Equals(archetype, "decker", StringComparison.Ordinal) || string.Equals(archetype, "face", StringComparison.Ordinal)
-                ? "Karma"
-                : "Priority";
-        string metatypeCategory = string.Equals(normalizedBackground, "corporate", StringComparison.Ordinal) ? "Standard" : "Metahuman";
-        string metatype = archetype switch
+        string archetype = string.Equals(normalizedArchetypeIntent, "auto", StringComparison.Ordinal)
+            ? inferredArchetype
+            : normalizedArchetypeIntent;
+        string inferredBuildMethod = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? string.Equals(archetype, "street_sam", StringComparison.Ordinal) || string.Equals(archetype, "rigger", StringComparison.Ordinal) ? "BP" : "Karma"
+            : string.Equals(archetype, "decker", StringComparison.Ordinal)
+                || string.Equals(archetype, "face", StringComparison.Ordinal)
+                || string.Equals(archetype, "technomancer", StringComparison.Ordinal)
+                    ? "Karma"
+                    : "Priority";
+        string buildMethod = string.Equals(normalizedBuildPreference, "auto", StringComparison.Ordinal)
+            ? inferredBuildMethod
+            : normalizedBuildPreference;
+        string inferredMetatype = archetype switch
         {
             "street_sam" when string.Equals(normalizedTone, "chaotic", StringComparison.Ordinal) => "Ork",
             "street_sam" => "Troll",
+            "adept" => "Ork",
             "mage" => "Elf",
             "face" => "Elf",
+            "rigger" => "Dwarf",
+            "technomancer" => "Human",
             _ => "Human"
         };
+        string metatype = string.Equals(normalizedMetatypePreference, "auto", StringComparison.Ordinal)
+            ? inferredMetatype
+            : FormatChoiceLabel(normalizedMetatypePreference);
+        string metatypeCategory = string.Equals(normalizedBackground, "corporate", StringComparison.Ordinal)
+            || string.Equals(normalizedMetatypePreference, "human", StringComparison.Ordinal)
+                ? "Standard"
+                : "Metahuman";
         string qualityFocus = normalizedPressureCost switch
         {
             "addiction" => "Addiction / recovery pressure",
@@ -1163,7 +1267,26 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "notoriety" => "Notoriety and first-impression tradeoffs",
             _ => "survivability and table-safe hooks"
         };
-        string pathSummary = normalizedUpgradeExposure switch
+        string pathSummary = archetype switch
+        {
+            "decker" => "matrix-first lane",
+            "technomancer" => "resonance and matrix lane",
+            "rigger" => "vehicle/drone control lane",
+            "adept" => "physical adept lane",
+            "mage" => "magic-forward lane",
+            "street_sam" => "heavy combat augmentation lane",
+            "face" => "social leverage lane",
+            _ => normalizedUpgradeExposure switch
+            {
+                "magic" => "magic-forward lane",
+                "matrix" => "matrix-first lane",
+                "heavy_augment" => "heavy augmentation lane",
+                "light_augment" => "light augmentation lane",
+                "mundane" => "mundane specialist lane",
+                _ => "open specialist lane"
+            }
+        };
+        string exposureSummary = normalizedUpgradeExposure switch
         {
             "magic" => "magic-forward lane",
             "matrix" => "matrix-first lane",
@@ -1172,9 +1295,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "mundane" => "mundane specialist lane",
             _ => "open specialist lane"
         };
+        string gmRequirementSummary = string.IsNullOrWhiteSpace(normalizedGmRequirements)
+            ? "None declared"
+            : normalizedGmRequirements;
         string originSummary =
             $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
-            $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active.";
+            $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active. " +
+            $"The dossier keeps {exposureSummary} visible as the story reason for the build choices.";
         string buildSummary =
             $"{FormatChoiceLabel(archetype)} posture, {buildMethod} build, {metatype} lean, {qualityFocus.ToLowerInvariant()}, {pathSummary}.";
 
@@ -1186,6 +1313,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             metatype,
             qualityFocus,
             pathSummary,
+            gmRequirementSummary,
             originSummary,
             buildSummary);
     }
@@ -1193,8 +1321,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string NormalizeOriginToken(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim().ToLowerInvariant();
 
+    private static string NormalizeOriginBuildPreference(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "auto";
+
+        string normalized = value.Trim();
+        return normalized.Equals("bp", StringComparison.OrdinalIgnoreCase) ? "BP" :
+            normalized.Equals("karma", StringComparison.OrdinalIgnoreCase) ? "Karma" :
+            normalized.Equals("priority", StringComparison.OrdinalIgnoreCase) ? "Priority" :
+            "auto";
+    }
+
     private static string FormatChoiceLabel(string value)
-        => value.Replace('_', ' ');
+        => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' '));
 
     private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
         => new(
@@ -2296,13 +2436,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             ?? RulesetDefaults.Sr5;
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
             rulesetId,
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginArchetypeIntent"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildPreference"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMetatypePreference"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBackground"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTurningPoint"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTrainingPath"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginPressureCost"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginUpgradeExposure"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMotivation"),
-            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTone"));
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTone"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginGmRequirements"));
 
         DesktopDialogField[] updatedFields = dialog.Fields
             .Select(field => field.Id switch
@@ -2313,6 +2457,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     Placeholder = rulesetId,
                     Options = BuildRulesetOptions()
                 },
+                "newCharacterOriginBuildPreference" => field with
+                {
+                    Options = BuildOriginBuildPreferenceOptions(rulesetId)
+                },
                 "newCharacterOriginSummary" => field with
                 {
                     Value = recommendation.OriginSummary,
@@ -2320,8 +2468,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 },
                 "newCharacterOriginArchetype" => field with
                 {
-                    Value = recommendation.Archetype,
-                    Placeholder = recommendation.Archetype
+                    Value = recommendation.ArchetypeLabel,
+                    Placeholder = recommendation.ArchetypeLabel
                 },
                 "newCharacterOriginBuildMethod" => field with
                 {
@@ -2342,6 +2490,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 {
                     Value = recommendation.QualityFocus,
                     Placeholder = recommendation.QualityFocus
+                },
+                "newCharacterOriginGmRequirementSummary" => field with
+                {
+                    Value = recommendation.GmRequirementSummary,
+                    Placeholder = recommendation.GmRequirementSummary
                 },
                 "newCharacterOriginPathSummary" => field with
                 {
@@ -6710,6 +6863,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string Metatype,
         string QualityFocus,
         string PathSummary,
+        string GmRequirementSummary,
         string OriginSummary,
         string BuildSummary);
 }

@@ -1819,6 +1819,9 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
+        Assert.AreEqual("decker", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginArchetypeIntent"));
+        Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildPreference"));
+        Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMetatypePreference"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
     }
@@ -1826,13 +1829,30 @@ public class DesktopDialogFactoryTests
     [TestMethod]
     public void BuildNewCharacterOriginBuildDialog_translates_origin_into_alice_guided_build_summary()
     {
-        DesktopDialogState wizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr5, "Nova", "Cipher");
+        DesktopDialogState wizard = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
+        wizard = wizard with
+        {
+            Fields = wizard.Fields
+                .Select(field => field.Id switch
+                {
+                    "newCharacterOriginArchetypeIntent" => field with { Value = "mage" },
+                    "newCharacterOriginBuildPreference" => field with { Value = "BP" },
+                    "newCharacterOriginMetatypePreference" => field with { Value = "troll" },
+                    "newCharacterOriginGmRequirements" => field with { Value = "Must be magically active; must have Intelligence 2+; must be addicted to an illegal drug." },
+                    _ => field
+                })
+                .ToArray()
+        };
         DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginBuildDialog(wizard);
 
         Assert.AreEqual("dialog.new_character.origin_build", dialog.Id);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowAlias"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Build Method");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "BP");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Mage");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());

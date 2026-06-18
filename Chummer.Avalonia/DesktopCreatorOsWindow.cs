@@ -144,6 +144,7 @@ internal sealed class DesktopCreatorOsWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         TextBlock detailText = new()
         {
@@ -177,6 +178,7 @@ internal sealed class DesktopCreatorOsWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(entryList);
 
         void RefreshDetail()
         {

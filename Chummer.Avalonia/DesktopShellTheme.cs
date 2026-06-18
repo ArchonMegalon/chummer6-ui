@@ -55,12 +55,27 @@ internal static class DesktopShellTheme
         comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
     }
 
+    public static void ApplyShellListBoxTheme(ListBox listBox)
+    {
+        ArgumentNullException.ThrowIfNull(listBox);
+        listBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        listBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        listBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        listBox.BorderThickness = new Thickness(1);
+    }
+
+    public static void ApplyShellReadOnlyPanelTheme(Border panel)
+    {
+        ArgumentNullException.ThrowIfNull(panel);
+        panel.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        panel.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+    }
+
     public static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
         => new()
         {
             Text = text,
-            TextWrapping = wrapping,
-            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827")
+            TextWrapping = wrapping
         };
 
     public static Border CreateSection(

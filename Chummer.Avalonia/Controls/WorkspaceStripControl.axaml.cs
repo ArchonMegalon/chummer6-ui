@@ -50,7 +50,7 @@ public partial class WorkspaceStripControl : UserControl
         LoadDemoRunnerQuickActionButton.Content = "Sample";
         ToolTip.SetTip(LoadDemoRunnerQuickActionButton, fullLabel);
         StartOriginQuickActionButton.Content = "Origin Dossier";
-        ToolTip.SetTip(StartOriginQuickActionButton, "Open ALICE directly in Origin draft mode.");
+        ToolTip.SetTip(StartOriginQuickActionButton, "Start the player-facing Origin Dossier wizard.");
     }
 
     private void LoadDemoRunnerQuickActionButton_OnClick(object? sender, RoutedEventArgs e)

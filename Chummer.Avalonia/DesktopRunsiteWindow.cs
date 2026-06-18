@@ -164,6 +164,7 @@ internal sealed class DesktopRunsiteWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         ListBox workspaceList = new()
         {
@@ -178,6 +179,7 @@ internal sealed class DesktopRunsiteWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(workspaceList);
 
         TextBlock selectedWorkspaceTitleText = new()
         {

@@ -217,6 +217,7 @@ internal sealed class DesktopAliceWindow : Window
             MaxHeight = 320,
             ItemTemplate = new FuncDataTemplate<AliceConversationTurnEntry>((entry, _) => BuildConversationTurnView(entry))
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(conversationList);
 
         TextBox promptBox = new()
         {
@@ -266,6 +267,7 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceAssistantEvidenceList",
             MinHeight = 120
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(evidenceList);
 
         WrapPanel actionRow = new()
         {
@@ -929,6 +931,7 @@ internal sealed class DesktopAliceWindow : Window
                     Name = "AliceAssistantAnswerCard",
                     BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                     BorderThickness = new Thickness(1),
+                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
                     Child = answerText
@@ -1028,6 +1031,7 @@ internal sealed class DesktopAliceWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(handoffList);
 
         TextBlock selectedTitleText = new()
         {

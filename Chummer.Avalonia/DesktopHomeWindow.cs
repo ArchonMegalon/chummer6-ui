@@ -1083,7 +1083,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
-        actions.Add(CreateButton("Start Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)));
+        actions.Add(CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync));
         actions.Add(CreateButton("Explain", OpenRuleEnvironmentStudioAsync));
         return actions;
     }
@@ -1119,7 +1119,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             return
             [
-                CreateButton("Start Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId), isPrimary: true),
+                CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync, isPrimary: true),
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
@@ -1136,7 +1136,7 @@ internal sealed class DesktopHomeWindow : Window
         return
         [
             CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
-            CreateButton("Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)),
+            CreateButton("Origin Dossier", OpenOriginDossierWizardAsync),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
     }
@@ -1411,6 +1411,18 @@ internal sealed class DesktopHomeWindow : Window
 
     private Task OpenRuleEnvironmentStudioAsync()
         => DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId);
+
+    private async Task OpenOriginDossierWizardAsync()
+    {
+        if (Owner is MainWindow mainWindow)
+        {
+            Close();
+            await mainWindow.OpenDesktopCommandFromSurfaceAsync("new_character_origin", "open origin dossier wizard").ConfigureAwait(true);
+            return;
+        }
+
+        await DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId).ConfigureAwait(true);
+    }
 
     private async Task OpenSettingsAsync()
     {

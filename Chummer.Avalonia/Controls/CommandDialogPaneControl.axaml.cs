@@ -20,6 +20,7 @@ public partial class CommandDialogPaneControl : UserControl
     public CommandDialogPaneControl()
     {
         InitializeComponent();
+        DesktopShellTheme.ApplyShellListBoxTheme(CommandsList);
         CommandsList.SelectionChanged += CommandsList_OnSelectionChanged;
     }
 
@@ -516,6 +517,7 @@ public partial class CommandDialogPaneControl : UserControl
             ItemsSource = items,
             MinHeight = 248
         };
+        DesktopShellTheme.ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
         listBox.SelectionChanged += (_, _) =>
         {
@@ -804,6 +806,7 @@ public partial class CommandDialogPaneControl : UserControl
                 IsEnabled = !field.IsReadOnly,
                 MinHeight = 160
             };
+            DesktopShellTheme.ApplyShellListBoxTheme(listBox);
             listBox.ItemTemplate = new FuncDataTemplate<DialogFieldOptionDisplayItem>((option, _) =>
                 new TextBlock
                 {
@@ -935,7 +938,7 @@ public partial class CommandDialogPaneControl : UserControl
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = Brushes.Transparent,
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
                     || string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal)
@@ -1013,7 +1016,7 @@ public partial class CommandDialogPaneControl : UserControl
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-                Background = Brushes.Transparent,
+                Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
                 Child = new TextBlock { Text = line }
@@ -1063,7 +1066,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             MinHeight = 136,
             Child = previewControl
         });
@@ -1132,7 +1135,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             Child = rows
         };
@@ -1144,7 +1147,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             Child = new TextBlock
             {
@@ -1160,7 +1163,7 @@ public partial class CommandDialogPaneControl : UserControl
         {
             BorderThickness = new Thickness(1),
             BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            Background = Brushes.Transparent,
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
             Child = new TextBlock
