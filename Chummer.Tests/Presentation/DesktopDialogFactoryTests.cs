@@ -1822,6 +1822,14 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("decker", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginArchetypeIntent"));
         Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildPreference"));
         Assert.AreEqual("auto", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMetatypePreference"));
+        Assert.AreEqual("none", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginGmConstraintPreset"));
+        CollectionAssert.Contains(
+            dialog.Fields
+                .Single(field => string.Equals(field.Id, "newCharacterOriginGmConstraintPreset", StringComparison.Ordinal))
+                .Options!
+                .Select(option => option.Value)
+                .ToArray(),
+            "illegal_addiction");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
     }
@@ -1838,6 +1846,7 @@ public class DesktopDialogFactoryTests
                     "newCharacterOriginArchetypeIntent" => field with { Value = "mage" },
                     "newCharacterOriginBuildPreference" => field with { Value = "BP" },
                     "newCharacterOriginMetatypePreference" => field with { Value = "troll" },
+                    "newCharacterOriginGmConstraintPreset" => field with { Value = "illegal_addiction" },
                     "newCharacterOriginGmRequirements" => field with { Value = "Must be magically active; must have Intelligence 2+; must be addicted to an illegal drug." },
                     _ => field
                 })
@@ -1852,6 +1861,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "BP");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Mage");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },

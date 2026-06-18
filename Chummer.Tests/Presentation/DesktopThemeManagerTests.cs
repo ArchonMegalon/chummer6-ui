@@ -203,4 +203,32 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(aboutSource, "DesktopShellTheme.CreateUtilityPanel(content, padding: 12, cornerRadius: 6)");
         StringAssert.Contains(aboutSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
     }
+
+    [TestMethod]
+    public void Origin_dossier_dialogs_use_specialized_shell_surfaces_instead_of_generic_field_sheet()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+
+        StringAssert.Contains(desktopDialogSource, "CreateLegacyOriginWizardPane(fields)");
+        StringAssert.Contains(desktopDialogSource, "CreateLegacyOriginBuildPane(fields)");
+        StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
+        StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
+        Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Dialog_textboxes_keep_accessibility_but_do_not_show_duplicate_hover_text()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
+
+        StringAssert.Contains(desktopDialogSource, "ApplyTextBoxAccessibility(textBox");
+        StringAssert.Contains(commandDialogSource, "ApplyTextBoxAccessibility(textBox");
+        StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
+        StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
+        StringAssert.Contains(desktopDialogSource, "ToolTip.SetTip(textBox, null);");
+        StringAssert.Contains(commandDialogSource, "ToolTip.SetTip(textBox, null);");
+    }
 }

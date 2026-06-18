@@ -960,6 +960,7 @@ public partial class CommandDialogPaneControl : UserControl
                 ? string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Detail, StringComparison.Ordinal) ? 140 : 120
                 : 32
         };
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -981,7 +982,6 @@ public partial class CommandDialogPaneControl : UserControl
             };
         }
 
-        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         return textBox;
     }
 
@@ -990,6 +990,13 @@ public partial class CommandDialogPaneControl : UserControl
         AutomationProperties.SetName(control, accessibleName);
         AutomationProperties.SetHelpText(control, helpText);
         ToolTip.SetTip(control, toolTip);
+    }
+
+    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText)
+    {
+        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        ApplyAccessibility(textBox, accessibleName, toolTip, helpText);
+        ToolTip.SetTip(textBox, null);
     }
 
     private static DialogFieldDisplayItem FindRequiredField(IReadOnlyList<DialogFieldDisplayItem> fields, string fieldId)

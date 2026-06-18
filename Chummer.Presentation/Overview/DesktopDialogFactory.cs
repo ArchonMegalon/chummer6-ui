@@ -587,6 +587,19 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             .ToArray();
     }
 
+    private static DesktopDialogFieldOption[] BuildOriginGmRequirementPresetOptions()
+        =>
+        [
+            new("none", "No GM constraint"),
+            new("illegal_addiction", "Must be addicted to an illegal drug"),
+            new("magically_active", "Must be magically active"),
+            new("intelligence_2_plus", "Must have Intelligence 2+"),
+            new("restricted_ware_exception", "Grant one restricted ware exception"),
+            new("bonus_nuyen_20000", "Grant +20,000 nuyen"),
+            new("extra_quality", "Grant one extra quality"),
+            new("custom", "Use custom GM text")
+        ];
+
     private static DesktopDialogState BuildNewCharacterDialog(
         DesktopPreferenceState preferences,
         string? rulesetId)
@@ -655,6 +668,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "matrix",
             "survival",
             "grounded",
+            "none",
             string.Empty);
 
         return new DesktopDialogState(
@@ -764,6 +778,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                         new("notoriety", "Notoriety")
                     ]),
                 new DesktopDialogField(
+                    "newCharacterOriginGmConstraintPreset",
+                    "GM Constraint",
+                    "none",
+                    "none",
+                    InputType: "select",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                    Options: BuildOriginGmRequirementPresetOptions()),
+                new DesktopDialogField(
                     "newCharacterOriginUpgradeExposure",
                     "Upgrade Exposure",
                     "matrix",
@@ -854,6 +876,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginUpgradeExposure"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginMotivation"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginTone"),
+            DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmConstraintPreset"),
             DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterOriginGmRequirements"));
         string name = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterName") ?? "New Character";
         string alias = DesktopDialogFieldValueParser.GetValue(originDialog, "newCharacterAlias") ?? "Runner";
@@ -1205,6 +1228,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? upgradeExposure,
         string? motivation,
         string? tone,
+        string? gmRequirementPreset,
         string? gmRequirements)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
@@ -1218,10 +1242,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string normalizedUpgradeExposure = NormalizeOriginToken(upgradeExposure, "matrix");
         string normalizedMotivation = NormalizeOriginToken(motivation, "survival");
         string normalizedTone = NormalizeOriginToken(tone, "grounded");
+        string normalizedGmRequirementPreset = NormalizeOriginToken(gmRequirementPreset, "none");
         string normalizedGmRequirements = string.IsNullOrWhiteSpace(gmRequirements) ? string.Empty : gmRequirements.Trim();
+        bool requiresMagicalActivity = string.Equals(normalizedGmRequirementPreset, "magically_active", StringComparison.Ordinal)
+            || normalizedGmRequirements.Contains("magically active", StringComparison.OrdinalIgnoreCase);
+        bool requiresIllegalAddiction = string.Equals(normalizedGmRequirementPreset, "illegal_addiction", StringComparison.Ordinal)
+            || normalizedGmRequirements.Contains("illegal drug", StringComparison.OrdinalIgnoreCase);
 
         string inferredArchetype = normalizedUpgradeExposure switch
         {
+            _ when requiresMagicalActivity => "mage",
             "magic" => "mage",
             "matrix" => "decker",
             "heavy_augment" => "street_sam",
@@ -1265,6 +1295,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 : "Metahuman";
         string qualityFocus = normalizedPressureCost switch
         {
+            _ when requiresIllegalAddiction => "Addiction / illegal-drug pressure",
             "addiction" => "Addiction / recovery pressure",
             "enemy" => "Enemies and vigilance",
             "obligation" => "Dependents and obligations",
@@ -1301,9 +1332,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "mundane" => "mundane specialist lane",
             _ => "open specialist lane"
         };
-        string gmRequirementSummary = string.IsNullOrWhiteSpace(normalizedGmRequirements)
-            ? "None declared"
-            : normalizedGmRequirements;
+        string gmRequirementSummary = ResolveOriginGmRequirementSummary(
+            normalizedGmRequirementPreset,
+            normalizedGmRequirements);
         string originSummary =
             $"{FormatChoiceLabel(normalizedBackground)} upbringing, {FormatChoiceLabel(normalizedTurningPoint)} turning point, and a {FormatChoiceLabel(normalizedTrainingPath)} training path pushed this runner toward {FormatChoiceLabel(archetype)} work. " +
             $"{FormatChoiceLabel(normalizedPressureCost)} still shapes their decisions, while {FormatChoiceLabel(normalizedMotivation)} keeps the current run lane active. " +
@@ -1341,6 +1372,38 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static string FormatChoiceLabel(string value)
         => CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' '));
+
+    private static string ResolveOriginGmRequirementSummary(string preset, string customRequirements)
+    {
+        string presetSummary = preset switch
+        {
+            "illegal_addiction" => "Must carry an Addiction quality tied to an illegal drug.",
+            "magically_active" => "Must be magically active; ALICE should bias the story and build lane toward magic-capable choices.",
+            "intelligence_2_plus" => "Must have Intelligence 2 or higher.",
+            "restricted_ware_exception" => "GM grants one restricted ware or availability exception if the origin justifies it.",
+            "bonus_nuyen_20000" => "GM grants +20,000 nuyen if the origin explains the resource source.",
+            "extra_quality" => "GM grants one extra quality if the origin makes it table-safe.",
+            "custom" => "Use the custom GM requirements exactly as written.",
+            _ => string.Empty
+        };
+
+        if (string.IsNullOrWhiteSpace(presetSummary) && string.IsNullOrWhiteSpace(customRequirements))
+        {
+            return "None declared";
+        }
+
+        if (string.IsNullOrWhiteSpace(presetSummary))
+        {
+            return customRequirements.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(customRequirements))
+        {
+            return presetSummary;
+        }
+
+        return $"{presetSummary} {customRequirements.Trim()}";
+    }
 
     private static DesktopDialogField BuildNewCharacterContextField(string id, string label, string value)
         => new(
@@ -2452,6 +2515,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginUpgradeExposure"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMotivation"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginTone"),
+            DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginGmConstraintPreset"),
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginGmRequirements"));
 
         DesktopDialogField[] updatedFields = dialog.Fields
@@ -2466,6 +2530,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "newCharacterOriginBuildPreference" => field with
                 {
                     Options = BuildOriginBuildPreferenceOptions(rulesetId)
+                },
+                "newCharacterOriginGmConstraintPreset" => field with
+                {
+                    Options = BuildOriginGmRequirementPresetOptions()
                 },
                 "newCharacterOriginSummary" => field with
                 {

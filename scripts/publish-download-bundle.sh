@@ -169,7 +169,7 @@ PY
 }
 
 if [[ -z "$PORTAL_MANIFEST_PATH" ]]; then
-  if [[ "$(realpath "$DEPLOY_DIR")" == "$(realpath "$REPO_ROOT/Docker/Downloads")" ]]; then
+  if [[ "$(realpath -m "$DEPLOY_DIR")" == "$(realpath -m "$REPO_ROOT/Docker/Downloads")" ]]; then
     PORTAL_MANIFEST_PATH="$REPO_ROOT/Chummer.Portal/downloads/releases.json"
   else
     PORTAL_MANIFEST_PATH="$DEPLOY_DIR/releases.json"
@@ -234,6 +234,7 @@ append_unique_downloads_mirror_dir() {
   [[ -n "$candidate" ]] || return 0
   resolved_candidate="$(realpath -m "$candidate")"
   for existing in "${live_downloads_mirror_dirs[@]:-}"; do
+    [[ -n "$existing" ]] || continue
     if [[ "$(realpath -m "$existing")" == "$resolved_candidate" ]]; then
       return 0
     fi

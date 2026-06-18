@@ -172,6 +172,18 @@ public partial class DesktopDialogWindow : Window
             return true;
         }
 
+        if (string.Equals(BoundDialogId, "dialog.new_character.origin_wizard", StringComparison.Ordinal))
+        {
+            _dialogFieldsPanel.Children.Add(CreateLegacyOriginWizardPane(fields));
+            return true;
+        }
+
+        if (string.Equals(BoundDialogId, "dialog.new_character.origin_build", StringComparison.Ordinal))
+        {
+            _dialogFieldsPanel.Children.Add(CreateLegacyOriginBuildPane(fields));
+            return true;
+        }
+
         if (string.Equals(BoundDialogId, "dialog.new_character.priority_workflow", StringComparison.Ordinal))
         {
             _dialogFieldsPanel.Children.Add(CreateLegacyPriorityWorkflowPane(fields));
@@ -931,7 +943,7 @@ public partial class DesktopDialogWindow : Window
             IsReadOnly = uiScaleField.IsReadOnly,
             MinHeight = 24
         };
-        ApplyAccessibility(uiScaleTextBox, uiScaleField.AccessibleName, uiScaleField.ToolTip, uiScaleField.HelpText);
+        ApplyTextBoxAccessibility(uiScaleTextBox, uiScaleField.AccessibleName, uiScaleField.ToolTip, uiScaleField.HelpText);
         if (!uiScaleField.IsReadOnly)
         {
             uiScaleTextBox.TextChanged += (_, _) =>
@@ -1034,7 +1046,7 @@ public partial class DesktopDialogWindow : Window
             Text = field.Value,
             IsReadOnly = field.IsReadOnly
         };
-        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -1196,6 +1208,190 @@ public partial class DesktopDialogWindow : Window
             CreateSplitFieldRow(nameField, aliasField)));
 
         return shell;
+    }
+
+    private Control CreateLegacyOriginWizardPane(IReadOnlyList<DesktopDialogField> fields)
+    {
+        DesktopDialogField nameField = FindRequiredField(fields, "newCharacterName");
+        DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterAlias");
+        DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterRulesetId");
+        DesktopDialogField archetypeField = FindRequiredField(fields, "newCharacterOriginArchetypeIntent");
+        DesktopDialogField buildPreferenceField = FindRequiredField(fields, "newCharacterOriginBuildPreference");
+        DesktopDialogField metatypePreferenceField = FindRequiredField(fields, "newCharacterOriginMetatypePreference");
+        DesktopDialogField backgroundField = FindRequiredField(fields, "newCharacterOriginBackground");
+        DesktopDialogField turningPointField = FindRequiredField(fields, "newCharacterOriginTurningPoint");
+        DesktopDialogField trainingPathField = FindRequiredField(fields, "newCharacterOriginTrainingPath");
+        DesktopDialogField pressureCostField = FindRequiredField(fields, "newCharacterOriginPressureCost");
+        DesktopDialogField upgradeExposureField = FindRequiredField(fields, "newCharacterOriginUpgradeExposure");
+        DesktopDialogField motivationField = FindRequiredField(fields, "newCharacterOriginMotivation");
+        DesktopDialogField toneField = FindRequiredField(fields, "newCharacterOriginTone");
+        DesktopDialogField gmPresetField = FindRequiredField(fields, "newCharacterOriginGmConstraintPreset");
+        DesktopDialogField gmRequirementsField = FindRequiredField(fields, "newCharacterOriginGmRequirements");
+        DesktopDialogField summaryField = FindRequiredField(fields, "newCharacterOriginSummary");
+        DesktopDialogField buildMethodField = FindRequiredField(fields, "newCharacterOriginBuildMethod");
+        DesktopDialogField metatypeField = FindRequiredField(fields, "newCharacterOriginMetatype");
+        DesktopDialogField qualityFocusField = FindRequiredField(fields, "newCharacterOriginQualityFocus");
+        DesktopDialogField pathSummaryField = FindRequiredField(fields, "newCharacterOriginPathSummary");
+        DesktopDialogField gmSummaryField = FindRequiredField(fields, "newCharacterOriginGmRequirementSummary");
+
+        StackPanel shell = new()
+        {
+            Spacing = 12
+        };
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "Runner",
+            CreateLegacyGroupLead("Name the runner and pick the rules context before ALICE turns the origin into a build lane."),
+            CreateSplitFieldRow(nameField, aliasField),
+            CreateSplitFieldRow(rulesetField, buildPreferenceField)));
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "Build Target",
+            CreateLegacyGroupLead("Pick an archetype when you know it, or let ALICE infer one from the life path and GM constraints."),
+            CreateSplitFieldRow(archetypeField, metatypePreferenceField),
+            CreateOriginSummaryStrip(
+                ("Method", buildMethodField.Value),
+                ("Metatype", metatypeField.Value),
+                ("Lane", pathSummaryField.Value),
+                ("Pressure", qualityFocusField.Value))));
+
+        Grid lifePathGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*"),
+            ColumnSpacing = 12
+        };
+        StackPanel leftPath = new()
+        {
+            Spacing = 8,
+            Children =
+            {
+                CreateStandaloneFieldRow(backgroundField),
+                CreateStandaloneFieldRow(trainingPathField),
+                CreateStandaloneFieldRow(pressureCostField)
+            }
+        };
+        StackPanel rightPath = new()
+        {
+            Spacing = 8,
+            Children =
+            {
+                CreateStandaloneFieldRow(turningPointField),
+                CreateStandaloneFieldRow(upgradeExposureField),
+                CreateStandaloneFieldRow(motivationField),
+                CreateStandaloneFieldRow(toneField)
+            }
+        };
+        lifePathGrid.Children.Add(leftPath);
+        Grid.SetColumn(rightPath, 1);
+        lifePathGrid.Children.Add(rightPath);
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "Life Path",
+            CreateLegacyGroupLead("This works like a light life-module pass: choose where the runner came from, what broke, how they trained, and what still costs them."),
+            lifePathGrid));
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "GM Steering",
+            CreateLegacyGroupLead("Optional table permissions or requirements. ALICE treats these as constraints, not automatic sheet edits."),
+            CreateSplitFieldRow(gmPresetField, gmRequirementsField),
+            CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value))));
+
+        shell.Children.Add(CreateLegacySummaryCard(
+            "Origin Dossier Preview",
+            "Review the story seed before generating the ALICE build handoff.",
+            CreateFieldControl(summaryField)));
+
+        return shell;
+    }
+
+    private Control CreateLegacyOriginBuildPane(IReadOnlyList<DesktopDialogField> fields)
+    {
+        DesktopDialogField storyField = FindRequiredField(fields, "newCharacterOriginStory");
+        DesktopDialogField buildLogicField = FindRequiredField(fields, "newCharacterOriginBuildLogic");
+        DesktopDialogField implicationsField = FindRequiredField(fields, "newCharacterOriginImplications");
+        DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterWorkflowRulesetId");
+        DesktopDialogField methodField = FindRequiredField(fields, "newCharacterWorkflowBuildMethod");
+        DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterWorkflowAlias");
+
+        StackPanel shell = new()
+        {
+            Spacing = 12
+        };
+
+        shell.Children.Add(CreateLegacyFieldGroup(
+            "ALICE Handoff",
+            CreateOriginSummaryStrip(
+                ("Runner", aliasField.Value),
+                ("Ruleset", rulesetField.Value.ToUpperInvariant()),
+                ("Method", methodField.Value))));
+
+        Grid reviewGrid = new()
+        {
+            ColumnDefinitions = new ColumnDefinitions("1.05*,0.95*"),
+            ColumnSpacing = 12
+        };
+        reviewGrid.Children.Add(CreateLegacySummaryCard(
+            "Origin Canon",
+            "This narrative can seed later ALICE suggestions without mutating a finished sheet.",
+            CreateFieldControl(storyField)));
+
+        StackPanel right = new()
+        {
+            Spacing = 10,
+            Children =
+            {
+                CreateLegacySummaryCard(
+                    "Build Translation",
+                    "ALICE translates the story into a normal guided character-creation lane.",
+                    CreateFieldControl(buildLogicField)),
+                CreateLegacySummaryCard(
+                    "Constraints",
+                    "GM grants and requirements stay visible before opening chargen.",
+                    CreateFieldControl(implicationsField))
+            }
+        };
+        Grid.SetColumn(right, 1);
+        reviewGrid.Children.Add(right);
+        shell.Children.Add(reviewGrid);
+        return shell;
+    }
+
+    private static Control CreateOriginSummaryStrip(params (string Label, string Value)[] metrics)
+    {
+        WrapPanel panel = new()
+        {
+            Orientation = Orientation.Horizontal
+        };
+
+        foreach ((string label, string value) in metrics)
+        {
+            panel.Children.Add(new Border
+            {
+                Classes = { "shell-panel" },
+                Padding = new Thickness(8, 5),
+                Margin = new Thickness(0, 0, 8, 8),
+                Child = new StackPanel
+                {
+                    Spacing = 2,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = label,
+                            Classes = { "shell-kicker" }
+                        },
+                        new TextBlock
+                        {
+                            Text = string.IsNullOrWhiteSpace(value) ? "Pending" : value,
+                            FontWeight = FontWeight.SemiBold,
+                            TextWrapping = TextWrapping.Wrap
+                        }
+                    }
+                }
+            });
+        }
+
+        return panel;
     }
 
     private Control CreateLegacyPriorityWorkflowPane(IReadOnlyList<DesktopDialogField> fields)
@@ -1921,7 +2117,7 @@ public partial class DesktopDialogWindow : Window
             Text = searchField.Value,
             Focusable = true
         };
-        ApplyAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
+        ApplyTextBoxAccessibility(searchBox, searchField.AccessibleName, searchField.ToolTip, searchField.HelpText);
         if (string.IsNullOrWhiteSpace(_preferredFocusControlName))
         {
             _preferredFocusControlName = searchBox.Name;
@@ -2029,6 +2225,7 @@ public partial class DesktopDialogWindow : Window
             MinHeight = 280,
             IsVisible = notesAvailable
         };
+        ApplyTextBoxAccessibility(notesBox, notesField.AccessibleName, notesField.ToolTip, notesField.HelpText);
         Grid.SetRow(notesBox, 3);
         right.Children.Add(notesBox);
 
@@ -2423,7 +2620,7 @@ public partial class DesktopDialogWindow : Window
             };
         }
 
-        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         return textBox;
     }
 
@@ -2790,7 +2987,7 @@ public partial class DesktopDialogWindow : Window
             IsReadOnly = field.IsReadOnly,
             Width = width
         };
-        ApplyAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
+        ApplyTextBoxAccessibility(textBox, field.AccessibleName, field.ToolTip, field.HelpText);
         if (!field.IsReadOnly)
         {
             textBox.TextChanged += (_, _) =>
@@ -2876,6 +3073,13 @@ public partial class DesktopDialogWindow : Window
         AutomationProperties.SetName(control, accessibleName);
         AutomationProperties.SetHelpText(control, helpText);
         ToolTip.SetTip(control, toolTip);
+    }
+
+    private static void ApplyTextBoxAccessibility(TextBox textBox, string accessibleName, string toolTip, string helpText)
+    {
+        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        ApplyAccessibility(textBox, accessibleName, toolTip, helpText);
+        ToolTip.SetTip(textBox, null);
     }
 
     private void BuildActions(IReadOnlyList<DesktopDialogAction> actions)
@@ -3127,13 +3331,16 @@ public partial class DesktopDialogWindow : Window
 
     private static Control CreateLegacyReadOnlyTextBox(string value)
     {
-        return new TextBox
+        TextBox textBox = new()
         {
             Text = value,
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        ToolTip.SetTip(textBox, null);
+        return textBox;
     }
 
     private static string ReadRosterValue(string rawValue, string prefix, string fallback)
