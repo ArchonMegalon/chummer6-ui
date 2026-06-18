@@ -555,7 +555,7 @@ public sealed class AvaloniaFlagshipUiGateTests
                 (answerText.Text ?? string.Empty).Contains("Open or create a workspace first", StringComparison.Ordinal),
                 "Blank-state build help must not require an already-open character or workspace.");
 
-            modeCombo.SelectedItem = "Origin draft";
+            modeCombo.SelectedItem = "Origin Dossier";
             harness.WaitUntil(
                 () => (settingsGuideText.Text ?? string.Empty).Contains("On finished characters this stays additive", StringComparison.Ordinal),
                 context: "origin-dossier explainer must stay visible when switching modes");
@@ -569,7 +569,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             promptBox.Text = "Draft an origin dossier for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
             RaiseClick(askButton);
             harness.WaitUntil(
-                () => (statusText.Text ?? string.Empty).Contains("generated a grounded origin draft", StringComparison.Ordinal),
+                () => (statusText.Text ?? string.Empty).Contains("generated a grounded origin dossier draft", StringComparison.Ordinal),
                 context: "origin-dossier mode must generate a grounded draft");
             harness.WaitUntil(
                 () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginApproveCanonButton") is { IsVisible: true },

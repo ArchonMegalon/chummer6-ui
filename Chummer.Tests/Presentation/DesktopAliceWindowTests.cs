@@ -36,7 +36,7 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "AliceAskButton");
         StringAssert.Contains(source, "BuildConversationTurnView(");
         StringAssert.Contains(source, "BuildStarterPrompts(");
-        StringAssert.Contains(source, "\"Origin draft\"");
+        StringAssert.Contains(source, "OriginDossierMode");
         StringAssert.Contains(source, "BuildNarrativePacket(");
         StringAssert.Contains(source, "BuildSeededAssistantMessage(");
         StringAssert.Contains(source, "OriginDossierBundle");
@@ -101,7 +101,10 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "Complexity: Simple favors obvious picks");
         StringAssert.Contains(source, "Ware posture is always explained rules-wise before apply.");
         StringAssert.Contains(source, "Use this before a build, during creation, or on a finished character.");
-        StringAssert.Contains(source, "GM allowances are advisory only.");
+        StringAssert.Contains(source, "GM allowances and requirements are advisory constraints");
+        StringAssert.Contains(source, "must be addicted to an illegal drug");
+        StringAssert.Contains(source, "must be magically active");
+        StringAssert.Contains(source, "minimum Logic/Intuition 2");
         StringAssert.Contains(source, "Clear GM allowances");
         StringAssert.Contains(source, "GM allowances:");
         StringAssert.Contains(source, "## GM Allowances");
@@ -144,6 +147,10 @@ public sealed class DesktopAliceWindowTests
 
         StringAssert.Contains(source, "BuildScratchCharacterAnswer(");
         StringAssert.Contains(source, "BuildScratchCharacterEvidence(");
+        StringAssert.Contains(source, "AliceDraftFromScratchButton");
+        StringAssert.Contains(source, "Build a complete SR4 BP troll decker from scratch.");
+        StringAssert.Contains(source, "InferScratchRuleset(");
+        StringAssert.Contains(source, "return \"Karma\";");
         StringAssert.Contains(source, "Blank-state start is supported.");
         StringAssert.Contains(source, "No open workspace is required to draft a first full build proposal.");
         StringAssert.Contains(source, "ALICE treats this as a full from-scratch draft");

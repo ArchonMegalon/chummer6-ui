@@ -21,6 +21,10 @@ namespace Chummer.Avalonia;
 
 internal sealed class DesktopAliceWindow : Window
 {
+    private const string BuildHelpMode = "Build help";
+    private const string RulesCoachMode = "Rules coach";
+    private const string OriginDossierMode = "Origin Dossier";
+    private const string LegacyOriginDraftMode = "Origin draft";
     private const string OriginNarrationRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH";
     private const string OriginVideoRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_REQUEST_PATH";
     private const string MediaFactoryRepoRoot = "/docker/fleet/repos/chummer-media-factory";
@@ -118,7 +122,7 @@ internal sealed class DesktopAliceWindow : Window
         => await ShowAsync(owner, headId, preferredConversationMode: null).ConfigureAwait(true);
 
     public static async Task ShowOriginDraftAsync(Window owner, string headId)
-        => await ShowAsync(owner, headId, "Origin draft").ConfigureAwait(true);
+        => await ShowAsync(owner, headId, OriginDossierMode).ConfigureAwait(true);
 
     private static async Task ShowAsync(Window owner, string headId, string? preferredConversationMode)
     {
@@ -163,9 +167,28 @@ internal sealed class DesktopAliceWindow : Window
         return new DesktopAliceWindow(summary, workspaces, buildPathCandidates, coachSidecarClient, effectiveRulesetId, preferredConversationMode);
     }
 
+    private static string NormalizeConversationMode(string? mode)
+    {
+        if (string.Equals(mode, RulesCoachMode, StringComparison.Ordinal))
+        {
+            return RulesCoachMode;
+        }
+
+        if (IsOriginDossierMode(mode))
+        {
+            return OriginDossierMode;
+        }
+
+        return BuildHelpMode;
+    }
+
+    private static bool IsOriginDossierMode(string? mode)
+        => string.Equals(mode, OriginDossierMode, StringComparison.Ordinal)
+            || string.Equals(mode, LegacyOriginDraftMode, StringComparison.Ordinal);
+
     private Control CreateAssistantCard()
     {
-        IReadOnlyList<string> modes = ["Build help", "Rules coach", "Origin draft"];
+        IReadOnlyList<string> modes = [BuildHelpMode, RulesCoachMode, OriginDossierMode];
         List<AliceConversationTurnEntry> buildHistory = [];
         List<AliceConversationTurnEntry> rulesHistory = [];
         List<AliceConversationTurnEntry> originHistory = [];
@@ -174,9 +197,7 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceConversationModeCombo",
             MinWidth = 220,
             ItemsSource = modes,
-            SelectedItem = modes.Contains(_preferredConversationMode ?? string.Empty, StringComparer.Ordinal)
-                ? _preferredConversationMode
-                : (HasBuildPathContext ? "Build help" : "Rules coach")
+            SelectedItem = NormalizeConversationMode(_preferredConversationMode)
         };
         DesktopShellTheme.ApplyShellComboBoxTheme(modeCombo);
 
@@ -232,7 +253,7 @@ internal sealed class DesktopAliceWindow : Window
         TextBlock gmAllowanceGuideText = new()
         {
             Name = "AliceGmAllowanceGuideText",
-            Text = "GM allowances are advisory only. Add extra ware, availability, money, gear, qualities, or house exceptions here. ALICE will use them in explanations and dossier output, but will not auto-apply them.",
+            Text = "GM allowances and requirements are advisory constraints, not silent sheet edits. Add hard table requirements such as must be addicted to an illegal drug, must be magically active, minimum Logic/Intuition 2, extra ware, availability, money, gear, qualities, or house exceptions. ALICE will explain and seed them, but will not auto-apply them.",
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
@@ -317,13 +338,15 @@ internal sealed class DesktopAliceWindow : Window
 
         List<AliceConversationTurnEntry> ActiveHistory()
         {
-            string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
-            return mode switch
+            string mode = modeCombo.SelectedItem?.ToString() ?? BuildHelpMode;
+            if (IsOriginDossierMode(mode))
             {
-                "Rules coach" => rulesHistory,
-                "Origin draft" => originHistory,
-                _ => buildHistory
-            };
+                return originHistory;
+            }
+
+            return string.Equals(mode, RulesCoachMode, StringComparison.Ordinal)
+                ? rulesHistory
+                : buildHistory;
         }
 
         void RefreshConversationFeed()
@@ -402,7 +425,8 @@ internal sealed class DesktopAliceWindow : Window
             answerText.Text = BuildIdleAssistantAnswer(modeCombo.SelectedItem?.ToString());
             evidenceList.ItemsSource = BuildIdleEvidence(modeCombo.SelectedItem?.ToString());
             actionRow.Children.Clear();
-            if (string.Equals(modeCombo.SelectedItem?.ToString(), "Origin draft", StringComparison.Ordinal))
+            string? selectedMode = modeCombo.SelectedItem?.ToString();
+            if (IsOriginDossierMode(selectedMode))
             {
                 if (_originBundle is not null)
                 {
@@ -464,7 +488,20 @@ internal sealed class DesktopAliceWindow : Window
             }
             else
             {
-                actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+                if (string.Equals(selectedMode, BuildHelpMode, StringComparison.Ordinal))
+                {
+                    actionRow.Children.Add(CreateButton("Draft from scratch", () =>
+                    {
+                        promptBox.Text = "Build a complete SR4 BP troll decker from scratch. Explain legality, qualities, ware, gear, and first purchases.";
+                        return AskAsync();
+                    }, isPrimary: true, name: "AliceDraftFromScratchButton"));
+                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                }
+                else
+                {
+                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
+                }
+
                 actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
             }
             if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
@@ -500,7 +537,7 @@ internal sealed class DesktopAliceWindow : Window
             }
 
             ActiveHistory().Add(BuildAssistantTurn(
-                "Origin draft",
+                OriginDossierMode,
                 statusLine,
                 answer,
                 evidenceLines,
@@ -773,7 +810,7 @@ internal sealed class DesktopAliceWindow : Window
                 return;
             }
 
-            string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
+            string mode = NormalizeConversationMode(modeCombo.SelectedItem?.ToString());
             ActiveHistory().Add(BuildUserTurn(message));
             RefreshConversationFeed();
             statusText.Text = $"ALICE is checking the {mode.ToLowerInvariant()} lane.";
@@ -781,14 +818,14 @@ internal sealed class DesktopAliceWindow : Window
             evidenceList.ItemsSource = Array.Empty<string>();
             actionRow.Children.Clear();
 
-            if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+            if (IsOriginDossierMode(mode))
             {
                 CharacterNarrativePacket packet = BuildNarrativePacket(message);
                 CharacterNarrativeDraft originDraft = BuildOriginDraft(packet);
                 _originPacket = packet;
                 _originDraft = originDraft;
                 _originBundle = null;
-                statusText.Text = "ALICE generated a grounded origin draft from the current desktop build context.";
+                statusText.Text = "ALICE generated a grounded origin dossier draft from the current desktop build context.";
                 answerText.Text = originDraft.Prose;
                 string[] originEvidence = BuildOriginEvidence(packet, originDraft);
                 evidenceList.ItemsSource = originEvidence;
@@ -1525,7 +1562,7 @@ internal sealed class DesktopAliceWindow : Window
             return null;
         }
 
-        string routeType = string.Equals(mode, "Rules coach", StringComparison.Ordinal)
+        string routeType = string.Equals(mode, RulesCoachMode, StringComparison.Ordinal)
             ? AiRouteTypes.Coach
             : AiRouteTypes.Build;
         string conversationId = routeType == AiRouteTypes.Coach ? _coachConversationId : _buildConversationId;
@@ -1544,46 +1581,78 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     private string BuildIdleAssistantStatus(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" => $"Ask a rules question for {_rulesetId ?? "the active ruleset"}.",
-            "Origin draft" => "Generate an optional origin story draft grounded on the current build, handoff, and workspace context.",
-            _ => HasBuildPathContext
-                ? "Ask for the next grounded build move, and ALICE will stay on preview-safe rails."
-                : "Ask about the next build move; ALICE will answer from the current desktop context."
-        };
+            return $"Ask a rules question for {_rulesetId ?? "the active ruleset"}.";
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return "Generate an optional origin dossier grounded on the current build, handoff, GM constraints, and workspace context.";
+        }
+
+        return HasBuildPathContext
+            ? "Ask for the next grounded build move, and ALICE will stay on preview-safe rails."
+            : "Ask about the next build move; ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open.";
+    }
 
     private static string BuildModeGuide(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" => "Rules coach explains edition-specific constraints and tradeoffs. Ask directly about legality, qualities, ware, magic, or sequencing and ALICE will answer rules-wise.",
-            "Origin draft" => "Origin dossier builds the optional dossier bundle: story seed, canon approval, portraits, scenes, audiobook, and video. Use this before a build, during creation, or on a finished character. Narrative output does not force later build changes unless you explicitly choose to act on it.",
-            _ => "Build help stays on build progression and proposal-safe next steps. Legality: Strict stays conservative on restricted/banned picks, Standard allows common table-legal restricted choices, Anything ignores legality posture and requires manual review. Complexity: Simple favors obvious picks, Standard balances depth, Deep explores higher-friction optimizations. Ware posture is always explained rules-wise before apply."
-        };
+            return "Rules coach explains edition-specific constraints and tradeoffs. Ask directly about legality, qualities, ware, magic, availability, or sequencing and ALICE will answer rules-wise.";
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return "Origin Dossier builds the optional dossier bundle: story seed, canon approval, portraits, scenes, audiobook, and video. Use this before a build, during creation, or on a finished character. Narrative output does not force later build changes unless you explicitly choose to act on it.";
+        }
+
+        return "Build Help stays on build progression and proposal-safe next steps. Legality: Strict stays conservative on restricted/banned picks, Standard allows common table-legal restricted choices, Anything ignores legality posture and requires manual review. Complexity: Simple favors obvious picks, Standard balances depth, Deep explores higher-friction optimizations. Ware posture is always explained rules-wise before apply.";
+    }
 
     private static string BuildModeSettingsGuide(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" => "Use Rules coach when you need the rules explained, not just a suggestion. Ask what legality strict vs standard changes, when ware becomes a problem, whether qualities stack the way you think, or what sequence is safest under the current edition.",
-            "Origin draft" => "Use Origin Dossier to create narrative output from the current build or from a blank/new character state. Generate the story first, then approve canon, then render the dossier assets. On finished characters this stays additive: it creates story/media output without silently changing the sheet.",
-            _ => "Build Help uses three main settings. Legality: Strict avoids restricted or table-sensitive picks, Standard permits common legal restricted options, Anything ignores legality posture and needs manual review. Complexity: Simple keeps the plan obvious, Standard balances depth, Deep explores tighter optimizations. Ware posture is explained rules-wise before ALICE proposes or compares implants."
-        };
+            return "Use Rules coach when you need the rules explained, not just a suggestion. Ask what legality strict vs standard changes, when ware becomes a problem, whether qualities stack the way you think, or what sequence is safest under the current edition.";
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return "Use Origin Dossier to create narrative output from the current build or from a blank/new character state. Pick an archetype or describe the runner, add GM requirements, generate the story first, approve canon, then render dossier assets. On finished characters this stays additive: it creates story/media output without silently changing the sheet.";
+        }
+
+        return "Build Help uses three main settings. Legality: Strict avoids restricted or table-sensitive picks, Standard permits common legal restricted options, Anything ignores legality posture and needs manual review. Complexity: Simple keeps the plan obvious, Standard balances depth, Deep explores tighter optimizations. Ware posture is explained rules-wise before ALICE proposes or compares implants.";
+    }
 
     private static IReadOnlyList<(string Label, string Mode)> BuildModeShortcuts()
         =>
         [
-            ("Build Help", "Build help"),
-            ("Rules Coach", "Rules coach"),
-            ("Origin Dossier", "Origin draft")
+            ("Build Help", BuildHelpMode),
+            ("Rules Coach", RulesCoachMode),
+            ("Origin Dossier", OriginDossierMode)
         ];
 
     private string BuildIdleAssistantAnswer(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" => "Try: “Explain the safe next step for an SR4 troll decker after metatype and core priorities.”",
-            "Origin draft" => "Try: “Give this runner a grounded origin that explains the current metatype, build path, and tradeoffs.”",
-            _ => "Try: “What should I add next for this build, and why?”"
-        };
+            return "Try: “Explain legality Strict vs Standard rules-wise.”";
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return "Try: “Create a troll decker origin dossier with one illegal-addiction GM constraint.”";
+        }
+
+        return "Try: “Build a complete SR4 BP troll decker from scratch.”";
+    }
 
     private string[] BuildIdleEvidence(string? mode)
     {
@@ -1593,15 +1662,15 @@ internal sealed class DesktopAliceWindow : Window
             !string.IsNullOrWhiteSpace(_workspaceId) ? $"Workspace: {_workspaceId}" : "No workspace-backed context is attached yet."
         ];
 
-        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (IsOriginDossierMode(mode))
         {
             lines.Add(_originDraft is null
-                ? "No origin draft has been generated yet."
+                ? "No origin dossier has been generated yet."
                 : _originBundle is null
-                    ? "A prior origin draft is available and can seed later ALICE suggestions."
+                    ? "A prior origin dossier draft is available and can seed later ALICE suggestions."
                     : "An approved origin dossier bundle is available and seeds later ALICE suggestions.");
         }
-        else if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        else if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             lines.Add(HasHandoffContext
                 ? "Account build handoffs are available for grounded follow-through."
@@ -1624,13 +1693,13 @@ internal sealed class DesktopAliceWindow : Window
 
     private string BuildLocalFallbackAnswer(string mode, string message)
     {
-        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (IsOriginDossierMode(mode))
         {
             CharacterNarrativePacket packet = BuildNarrativePacket(message);
             return BuildOriginDraft(packet).Prose;
         }
 
-        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             return !string.IsNullOrWhiteSpace(_rulesetId)
                 ? $"ALICE could not reach the grounded coach route, so it stayed local. This head is on {_rulesetId}. Use the current ruleset and workspace surface to verify '{message}', then reopen ALICE after the AI coach route is available."
@@ -1666,13 +1735,13 @@ internal sealed class DesktopAliceWindow : Window
 
     private string[] BuildLocalFallbackEvidence(string mode)
     {
-        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (IsOriginDossierMode(mode))
         {
             CharacterNarrativePacket packet = BuildNarrativePacket("fallback");
             return BuildOriginEvidence(packet, BuildOriginDraft(packet));
         }
 
-        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             return BuildIdleEvidence(mode);
         }
@@ -1706,7 +1775,7 @@ internal sealed class DesktopAliceWindow : Window
     private AliceAssistantContextProjection BuildAssistantContextProjection(string? mode)
     {
         WorkspaceListItem? workspace = _recentWorkspaces.FirstOrDefault();
-        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (IsOriginDossierMode(mode))
         {
             string? alias = workspace?.Summary.Alias;
             string? metatype = workspace?.Summary.Metatype;
@@ -1717,7 +1786,7 @@ internal sealed class DesktopAliceWindow : Window
                 : "No explicit runner identity is available yet.";
             string detail = _selectedBuildPath?.Suggestion.Title is { Length: > 0 } buildTitle
                 ? $"Lead build path: {buildTitle}. {_selectedHandoff?.NextSafeAction ?? _selectedHandoff?.Summary ?? "No account handoff summary is attached yet."}"
-                : _selectedHandoff?.Summary ?? "The draft stays bounded to the current ruleset, workspace shell, and any visible ALICE handoff.";
+                : _selectedHandoff?.Summary ?? "The dossier stays bounded to the current ruleset, workspace shell, GM requirements, and any visible ALICE handoff.";
             if (_originBundle is not null)
             {
                 detail = $"{detail} Approved canon bundle: {Path.GetFileName(_originBundle.BundleDirectory)}.";
@@ -1725,7 +1794,7 @@ internal sealed class DesktopAliceWindow : Window
             return new AliceAssistantContextProjection(title, summary, AppendGmAllowanceDetail(detail));
         }
 
-        if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
+        if (string.Equals(NormalizeConversationMode(mode), RulesCoachMode, StringComparison.Ordinal))
         {
             return new AliceAssistantContextProjection(
                 "Rules coach context",
@@ -1880,7 +1949,7 @@ internal sealed class DesktopAliceWindow : Window
             ? string.Empty
             : $"GM allowances: {_gmAllowanceNotes}{Environment.NewLine}";
 
-        if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
+        if (IsOriginDossierMode(mode))
         {
             return string.IsNullOrWhiteSpace(allowancePrefix)
                 ? message
@@ -1904,7 +1973,7 @@ internal sealed class DesktopAliceWindow : Window
 
     private string BuildScratchCharacterAnswer(string message)
     {
-        string ruleset = _rulesetId ?? "the active ruleset";
+        string ruleset = InferScratchRuleset(message);
         string buildTitle = _selectedBuildPath?.Suggestion.Title ?? "Custom scratch build";
         string buildMethod = InferScratchBuildMethod(message);
         string metatype = InferScratchMetatype(message);
@@ -1943,17 +2012,43 @@ internal sealed class DesktopAliceWindow : Window
         return lines.ToArray();
     }
 
+    private string InferScratchRuleset(string message)
+    {
+        string normalized = message.ToLowerInvariant();
+        if (normalized.Contains("sr4", StringComparison.Ordinal) || normalized.Contains("shadowrun 4", StringComparison.Ordinal))
+        {
+            return RulesetDefaults.Sr4;
+        }
+
+        if (normalized.Contains("sr5", StringComparison.Ordinal) || normalized.Contains("shadowrun 5", StringComparison.Ordinal))
+        {
+            return RulesetDefaults.Sr5;
+        }
+
+        if (normalized.Contains("sr6", StringComparison.Ordinal) || normalized.Contains("shadowrun 6", StringComparison.Ordinal))
+        {
+            return RulesetDefaults.Sr6;
+        }
+
+        return _rulesetId ?? "the active ruleset";
+    }
+
     private static string InferScratchBuildMethod(string message)
     {
         string normalized = message.ToLowerInvariant();
-        if (normalized.Contains("karma") || normalized.Contains("bp") || normalized.Contains("build point"))
+        if (normalized.Contains("karma", StringComparison.Ordinal))
         {
-            return "Build Points";
+            return "Karma";
         }
 
-        if (normalized.Contains("sum-to-ten") || normalized.Contains("sum to ten"))
+        if (normalized.Contains("sum-to-ten", StringComparison.Ordinal) || normalized.Contains("sum to ten", StringComparison.Ordinal))
         {
             return "Sum-to-Ten";
+        }
+
+        if (normalized.Contains("bp", StringComparison.Ordinal) || normalized.Contains("build point", StringComparison.Ordinal))
+        {
+            return "Build Points";
         }
 
         return "Priority";
@@ -3545,30 +3640,38 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     private static AliceConversationTurnEntry BuildWelcomeEntry(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" => new AliceConversationTurnEntry(
+            return new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
                 "ALICE",
                 "Rules coach ready",
                 "Ask for a rule explanation, tradeoff, or safe next build step tied to the active ruleset.",
                 [],
-                BuildStarterPrompts(mode)),
-            "Origin draft" => new AliceConversationTurnEntry(
+                BuildStarterPrompts(normalizedMode));
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return new AliceConversationTurnEntry(
                 AliceConversationTurnKind.Assistant,
                 "ALICE",
-                "Origin studio ready",
-                "Generate an optional origin that explains why this build exists without changing any build truth.",
+                "Origin Dossier ready",
+                "Generate an optional origin dossier that explains why this build exists without changing any build truth.",
                 [],
-                BuildStarterPrompts(mode)),
-            _ => new AliceConversationTurnEntry(
-                AliceConversationTurnKind.Assistant,
-                "ALICE",
-                "Build copilot ready",
-                "Ask for the next grounded move, a comparison, or a bounded build recommendation from the current desktop context.",
-                [],
-                BuildStarterPrompts(mode))
-        };
+                BuildStarterPrompts(normalizedMode));
+        }
+
+        return new AliceConversationTurnEntry(
+            AliceConversationTurnKind.Assistant,
+            "ALICE",
+            "Build copilot ready",
+            "Ask for the next grounded move, a comparison, or a complete scratch build from the current desktop settings.",
+            [],
+            BuildStarterPrompts(normalizedMode));
+    }
 
     private static AliceConversationTurnEntry BuildUserTurn(string message)
         => new(
@@ -3585,41 +3688,53 @@ internal sealed class DesktopAliceWindow : Window
         string body,
         IReadOnlyList<string> evidenceLines,
         IReadOnlyList<string> suggestedActionTitles)
-        => new(
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        string title = string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal)
+            ? "Rules coach"
+            : IsOriginDossierMode(normalizedMode)
+                ? "Origin dossier"
+                : "Build help";
+
+        return new AliceConversationTurnEntry(
             AliceConversationTurnKind.Assistant,
             "ALICE",
-            mode switch
-            {
-                "Rules coach" => "Rules coach",
-                "Origin draft" => "Origin dossier",
-                _ => "Build help"
-            },
+            title,
             body,
             [status, .. evidenceLines.Take(5)],
             suggestedActionTitles.Take(3).ToArray());
+    }
 
     private static string[] BuildStarterPrompts(string? mode)
-        => mode switch
+    {
+        string normalizedMode = NormalizeConversationMode(mode);
+        if (string.Equals(normalizedMode, RulesCoachMode, StringComparison.Ordinal))
         {
-            "Rules coach" =>
+            return
             [
-                "Explain the next safe SR4 build step.",
-                "Why would I take this quality?",
+                "Explain legality Strict vs Standard rules-wise.",
+                "When does ware become a rules problem?",
                 "What rule am I most likely to miss here?"
-            ],
-            "Origin draft" =>
+            ];
+        }
+
+        if (IsOriginDossierMode(normalizedMode))
+        {
+            return
             [
-                "Generate a grounded origin for this runner.",
-                "Explain how this build could have happened.",
-                "Focus on why the qualities and upgrades fit together."
-            ],
-            _ =>
+                "Create a troll decker origin dossier with one illegal-addiction GM constraint.",
+                "Create an origin dossier for a magically active survivor.",
+                "Explain how the qualities, ware, and first gear fit the backstory."
+            ];
+        }
+
+        return
             [
-                "Build me an SR4 troll decker.",
-                "What should I add next, and why?",
-                "Compare two good next-step options."
-            ]
-        };
+                "Build a complete SR4 BP troll decker from scratch.",
+                "Build a street samurai from scratch with standard legality.",
+                "Explain legality, qualities, ware, and first purchases."
+            ];
+    }
 
     private static string SanitizeNameToken(string value)
     {
