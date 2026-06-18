@@ -92,7 +92,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
         "",
         overview["delivery_posture"],
         "",
-        "## What It Is",
+        "## Why You Would Open This",
         "",
         "Table Pulse is the live pressure-and-response system for Chummer6.",
         "",
@@ -102,7 +102,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
         "",
         *bullet_lines(overview["system_truths"]),
         "",
-        "## Why It Feels Different",
+        "## How It Changes The Table",
         "",
         "The best version reads as one connected play loop, not as separate modules:",
         "",
@@ -111,7 +111,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
         joined = ", ".join(layer["items"])
         lines.append(f"{index}. **{layer['name']}**: {joined}.")
     if visual_gallery:
-        lines.extend(["", "## Visual Notes", ""])
+        lines.extend(["", "## Product Scenes", ""])
         for item in visual_gallery:
             lines.extend(
                 [
@@ -125,7 +125,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
             )
     rendered_videos = video_lines(videos)
     if rendered_videos:
-        lines.extend(["", "## Watch", "", *rendered_videos, ""])
+        lines.extend(["", "## Watch The Scenes", "", *rendered_videos, ""])
     if user_first:
         lines.extend(
             [
@@ -136,7 +136,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 *numbered_lines(list(user_first.get("beats") or [])),
                 "",
-                "Keep this lane honest:",
+                "What stays trustworthy:",
                 "",
                 *bullet_lines(list(user_first.get("truths") or [])),
                 "",
@@ -149,15 +149,15 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(origin.get("summary") or "").strip(),
                 "",
-                "What belongs here:",
+                "What the player gets:",
                 "",
                 *bullet_lines(list(origin.get("must_show") or [])),
                 "",
-                "How ALICE connects:",
+                "Where ALICE helps:",
                 "",
                 *bullet_lines(list(origin.get("alice_connection") or [])),
                 "",
-                "Guardrails:",
+                "It does not mean:",
                 "",
                 *bullet_lines(list(origin.get("must_not_imply") or [])),
                 "",
@@ -170,19 +170,19 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 str(gm_cockpit.get("summary") or "").strip(),
                 "",
-                "What belongs here:",
+                "What the GM can trust:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_show") or [])),
                 "",
-                "Origin and GM steering flow:",
+                "From origin story to table call:",
                 "",
                 *numbered_lines(list(gm_cockpit.get("origin_gimmick_flow") or [])),
                 "",
-                "Visual language:",
+                "What it should feel like:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("visual_language") or [])),
                 "",
-                "Guardrails:",
+                "It does not mean:",
                 "",
                 *bullet_lines(list(gm_cockpit.get("must_not_imply") or [])),
                 "",
@@ -197,17 +197,17 @@ def render_showcase(spec: dict[str, Any]) -> str:
                 "",
                 f"{surface['name']} is {descriptor}.",
                 "",
-                "Design feel:",
+                "How it should feel:",
                 "",
                 *bullet_lines(surface["feels"]),
                 "",
-                "What it should make clear:",
+                "What the reader should understand:",
                 "",
                 *bullet_lines(surface["must_show"]),
             ]
         )
         if surface.get("must_never_imply"):
-            lines.extend(["", "Guardrails:", "", *bullet_lines(surface["must_never_imply"])])
+            lines.extend(["", "It does not mean:", "", *bullet_lines(surface["must_never_imply"])])
         lines.append("")
     lines.extend(["## Core Play Loop", ""])
     for index, beat in enumerate(overview["play_loop"], start=1):
@@ -219,13 +219,13 @@ def render_showcase(spec: dict[str, Any]) -> str:
         [
             "## The Moment It Should Create",
             "",
-            "The page should make the reader picture an action board, not an admin form.",
+            "A visitor should be able to picture an action board, not an admin form.",
             "",
             "The effect comes from:",
             "",
             *bullet_lines(overview["wow_effect"]["comes_from"]),
             "",
-            "It should not come from:",
+            "What would make it feel cheap:",
             "",
             *bullet_lines(overview["wow_effect"]["must_not_come_from"]),
             "",
@@ -235,13 +235,13 @@ def render_showcase(spec: dict[str, Any]) -> str:
             "",
             *numbered_lines(overview["hero_moment"]),
             "",
-            "## Ground Rules",
+            "## Promises We Should Not Break",
             "",
             *bullet_lines(overview["hard_truths"]),
             "",
-            "## Readiness Bar",
+            "## What Good Looks Like",
             "",
-            "Use stronger launch language only when all of the following are true:",
+            "Call the stack ready only when all of the following are true:",
             "",
             *numbered_lines(overview["flagship_bar"]),
             "",
@@ -264,7 +264,7 @@ def render_showcase(spec: dict[str, Any]) -> str:
         )
     lines.extend(
         [
-            "## Source Notes",
+            "## Where This Comes From",
             "",
             str(editorial.get("source_note") or "This page is maintained from the Chummer6 design canon and public-guide source set.").strip(),
             "",
@@ -281,7 +281,7 @@ def render_minigames(spec: dict[str, Any]) -> str:
         "",
         mg["purpose"],
         "",
-        "## Goal",
+        "## Why It Exists",
         "",
         mg["goal"],
         "",
@@ -322,29 +322,29 @@ def render_minigames(spec: dict[str, Any]) -> str:
         )
     lines.extend(
         [
-            "## GM And Policy Rules",
+            "## Table Rules",
             "",
-            "Every mini-game must inherit:",
+            "Every mini-game follows:",
             "",
             *bullet_lines(mg["policy_rules"]["inherit"]),
             "",
-            "Mini-games may:",
+            "They can:",
             "",
             *bullet_lines(mg["policy_rules"]["may"]),
             "",
-            "Mini-games may not:",
+            "They cannot:",
             "",
             *bullet_lines(mg["policy_rules"]["may_not"]),
             "",
-            "## Surface Requirements",
+            "## Where It Shows Up",
             "",
             "### On Mobile / PWA",
             "",
-            "The prompt should feel:",
+            "A phone prompt should feel:",
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["feel"]),
             "",
-            "The player should see:",
+            "A player should see:",
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["must_show"]),
             "",
@@ -362,13 +362,13 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             "## Best-Case Pattern",
             "",
-            "The best version of this feature looks like:",
+            "A good one feels like this:",
             "",
             *numbered_lines(mg["wow_pattern"]),
             "",
             "That is the loop worth building toward.",
             "",
-            "Avoid:",
+            "What to avoid:",
             "",
             *bullet_lines(mg["anti_pattern"]),
             "",
@@ -376,9 +376,9 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             mg["example_loop"],
             "",
-            "## Readiness Bar",
+            "## What Good Looks Like",
             "",
-            "Use stronger launch language only when:",
+            "Call it ready only when:",
             "",
             *numbered_lines(mg["flagship_bar"]),
         ]
@@ -407,7 +407,7 @@ def render_index_section(spec: dict[str, Any]) -> str:
     video_items = video_lines(videos)
     video_html: list[str] = []
     if video_items:
-        video_html.extend(["<p><strong>Watch</strong></p>", "<ul>"])
+        video_html.extend(["<p><strong>Videos</strong></p>", "<ul>"])
         for item in video_items:
             video_html.append(f"  <li>{item[2:]}</li>")
         video_html.append("</ul>")
@@ -430,7 +430,7 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "  <li><a href=\"TABLE_PULSE_REMOTE_REACTION_MINIGAMES.md\">Remote Reaction Minigames</a></li>",
             "</ul>",
             "",
-            "<p>These notes cover Signal Deck, Runner Passport, the GM cockpit, living newsroom projection, consent and privacy gates, the user-first origin-dossier lane, and the new reaction mini-games in a polished but fail-closed product language.</p>",
+            "<p>Use these notes when you want the larger table picture: player action cards, runner identity, GM steering, public-safe fallout, Origin Dossier, ALICE, and short reaction moments that keep the city moving without taking authority away from the GM.</p>",
             *gallery_lines,
             *video_html,
             "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",

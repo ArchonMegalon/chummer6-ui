@@ -2,8 +2,8 @@
   "site_title": "Chummer6 Flagship Table Pulse",
   "site_summary": "Governed live-play and living-world systems for Chummer6, with dramatic but receipt-backed follow-through.",
   "editorial_posture": {
-    "opening": "This is the product guide for Chummer6's live-table and living-world layer. It explains the shape of the experience, the player and GM surfaces that make it legible, and the guardrails that keep dramatic follow-through from becoming fake authority.",
-    "source_note": "This page is maintained from the Chummer6 design canon, the public-guide source set, and the current rendered horizon videos. Keep the language human-facing: describe what a player or GM can understand, then name the boundary that keeps the system trustworthy."
+    "opening": "Chummer6 should feel useful before it feels large. This guide explains the live-table and living-world layer from the player and GM point of view: what you can open, what changes at the table, and what still stays under human authority.",
+    "source_note": "This guide follows the Chummer6 design canon, the public-guide source set, and the verified horizon videos. Treat it as a product guide, not as a rules engine or an unbounded release promise."
   },
   "public_videos": [
     {
@@ -21,14 +21,14 @@
   ],
   "overview": {
     "title": "Table Pulse Flagship Showcase",
-    "purpose": "Regenerate the Jammer5-style documentation surface for the new Chummer6 live-play and living-world stack in a way that feels flagship, not provisional.",
+    "purpose": "Explain the Chummer6 live-play and living-world stack in plain product language for players, GMs, and curious visitors.",
     "one_line_pitch": "Chummer6 turns live table pressure, between-session faction motion, and public-safe world fallout into one governed play loop where the GM stays in charge and every meaningful action leaves a receipt.",
-    "delivery_posture": "This documentation describes the flagship target stack and the actively running implementation program. It must not imply that every named surface is already universally shipped on every public head at the moment a reader opens the docs.",
+    "delivery_posture": "Some of this is live, and some is the target shape. The guide names the experience without pretending every surface is available on every public build today.",
     "system_truths": [
       "the GM remains final authority",
       "all external reactions are receipt-backed",
       "all public fallout is public-safe and approval-gated",
-      "media and AI may dramatize or suggest, but they do not become truth on their own"
+      "media tools may dramatize or suggest, but they do not become truth on their own"
     ],
     "layers": [
       {
@@ -53,7 +53,7 @@
         "name": "Remote Reaction And Opt-Out Safety",
         "items": [
           "quiet hours",
-          "suppression proof",
+          "suppression record",
           "consent defaults",
           "remote mini-games"
         ]
@@ -64,11 +64,11 @@
           "GM cockpit",
           "pressure economy",
           "after-action projection",
-          "AI steward suggestions"
+          "review suggestions"
         ]
       },
       {
-        "name": "Big Redesign Surface",
+        "name": "Player-Facing Action Surface",
         "items": [
           "Signal Deck",
           "stronger Passport framing",
@@ -146,7 +146,7 @@
         ],
         "must_never_imply": [
           "private table truth leaked automatically",
-          "AI invented the event",
+          "the event was invented after the fact",
           "media became truth by itself"
         ]
       }
@@ -175,7 +175,7 @@
           "change a role path",
           "change faction heat",
           "nudge opposition clocks",
-          "create after-action proof"
+          "create after-action record"
         ]
       },
       {
@@ -197,7 +197,7 @@
       ],
       "must_not_come_from": [
         "surveillance framing",
-        "fake autonomous AI control",
+        "fake autonomous control",
         "public shaming scores",
         "empty engagement-platform language"
       ]
@@ -218,7 +218,7 @@
     ],
     "flagship_bar": [
       "Signal Deck, Passport, and GM cockpit all exist as coherent product surfaces.",
-      "Remote reaction mini-games are real, not placeholder prose.",
+      "Remote reaction mini-games are real moments a player can understand and answer.",
       "Inbox, rumor, order, and fallout lanes are receipt-backed.",
       "Public-safe projection stays bounded by GM authority.",
       "The system still feels fast, legible, and exciting for players."
@@ -226,7 +226,7 @@
   },
   "minigames": {
     "title": "Table Pulse Remote Reaction Minigames",
-    "purpose": "Define the new remote reaction mini-games in concrete product language so they read like a flagship feature rather than a vague engagement promise.",
+    "purpose": "Remote reaction mini-games give players a short, dramatic way to answer the city between sessions without turning side moments into unapproved campaign truth.",
     "goal": "Give players a dramatic city-is-still-moving moment without breaking consent, authority, or campaign privacy.",
     "families": [
       {

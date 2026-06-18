@@ -1,8 +1,8 @@
 # Table Pulse Remote Reaction Minigames
 
-Define the new remote reaction mini-games in concrete product language so they read like a flagship feature rather than a vague engagement promise.
+Remote reaction mini-games give players a short, dramatic way to answer the city between sessions without turning side moments into unapproved campaign truth.
 
-## Goal
+## Why It Exists
 
 Give players a dramatic city-is-still-moving moment without breaking consent, authority, or campaign privacy.
 
@@ -77,9 +77,9 @@ Payoff:
 - Passport identity flavor
 - follow-on rumor or order hook
 
-## GM And Policy Rules
+## Table Rules
 
-Every mini-game must inherit:
+Every mini-game follows:
 
 - campaign privacy posture
 - recipient allowlist
@@ -87,30 +87,30 @@ Every mini-game must inherit:
 - GM override authority
 - bounded consequence rules
 
-Mini-games may:
+They can:
 
 - draft consequences
 - move pressure
 - create receipts
 - recommend fallout
 
-Mini-games may not:
+They cannot:
 
 - create public truth on their own
 - reveal private session content by default
 - alter campaign canon without approval
 
-## Surface Requirements
+## Where It Shows Up
 
 ### On Mobile / PWA
 
-The prompt should feel:
+A phone prompt should feel:
 
 - immediate
 - sharp
 - readable in under a minute
 
-The player should see:
+A player should see:
 
 - why this arrived
 - what is at stake
@@ -137,7 +137,7 @@ The GM should see:
 
 ## Best-Case Pattern
 
-The best version of this feature looks like:
+A good one feels like this:
 
 1. a player gets a tight dramatic prompt
 2. the choice feels sharp and immediate
@@ -146,7 +146,7 @@ The best version of this feature looks like:
 
 That is the loop worth building toward.
 
-Avoid:
+What to avoid:
 
 - giant wall of text
 - a generic push notification
@@ -156,9 +156,9 @@ Avoid:
 
 After a high-heat extraction, a player receives a Scramble mini-game through Signal Deck. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.
 
-## Readiness Bar
+## What Good Looks Like
 
-Use stronger launch language only when:
+Call it ready only when:
 
 1. the prompt is dramatic in under one screen
 2. the choice is meaningful but bounded
