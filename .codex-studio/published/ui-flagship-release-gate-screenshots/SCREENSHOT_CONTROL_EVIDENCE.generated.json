@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T20:03:34.0060643Z",
+  "generatedAt": "2026-06-18T21:17:01.7887356Z",
   "authority": {
     "visualBaseline": "Chummer5a",
     "releaseAuthorityPlatform": "windows",
@@ -192,7 +192,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -847,7 +847,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -900,10 +900,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:26Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:54Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -967,7 +967,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-18 20:03:26Z",
+        "Time: 2026-06-18 21:16:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1076,7 +1076,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -1749,7 +1749,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -1802,10 +1802,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:26Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:54Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -1870,7 +1870,7 @@
         "Menu 'file' opened.",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-18 20:03:26Z",
+        "Time: 2026-06-18 21:16:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -2010,7 +2010,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -2890,7 +2890,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -2979,10 +2979,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:26Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:54Z",
+          "X": 469,
           "Y": 766,
-          "Width": 152,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -3064,7 +3064,7 @@
         "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-18 20:03:26Z",
+        "Time: 2026-06-18 21:16:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3191,7 +3191,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -4521,7 +4521,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -4574,10 +4574,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:54Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -4701,7 +4701,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4831,7 +4831,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -6080,7 +6080,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -6133,10 +6133,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -6236,7 +6236,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6368,7 +6368,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -7608,7 +7608,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -7661,10 +7661,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -7763,7 +7763,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7893,7 +7893,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -9133,7 +9133,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -9186,10 +9186,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -9288,7 +9288,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -9418,7 +9418,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -10658,7 +10658,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -10711,10 +10711,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -10813,7 +10813,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10943,7 +10943,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -12183,7 +12183,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -12236,10 +12236,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -12338,7 +12338,7 @@
         "Add Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12470,7 +12470,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -13710,7 +13710,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13763,10 +13763,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -13864,7 +13864,7 @@
         "Add Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13996,7 +13996,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -15236,7 +15236,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15289,10 +15289,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -15391,7 +15391,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15521,7 +15521,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -16761,7 +16761,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -16814,10 +16814,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -16915,7 +16915,7 @@
         "Add Spell",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17045,7 +17045,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -18285,7 +18285,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -18338,10 +18338,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -18440,7 +18440,7 @@
         "Add Program",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18570,7 +18570,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -19810,7 +19810,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -19863,10 +19863,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -19965,7 +19965,7 @@
         "Add Initiation",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -20205,7 +20205,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -22066,7 +22066,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -22119,10 +22119,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:30Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:58Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -22214,7 +22214,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:30Z",
+        "Time: 2026-06-18 21:16:58Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -22452,7 +22452,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -24313,7 +24313,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -24366,10 +24366,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:31Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:59Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -24461,7 +24461,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:31Z",
+        "Time: 2026-06-18 21:16:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -24699,7 +24699,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -26560,7 +26560,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -26613,10 +26613,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:31Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:59Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -26708,7 +26708,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:31Z",
+        "Time: 2026-06-18 21:16:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -26948,7 +26948,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -28827,7 +28827,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -28880,10 +28880,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:31Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:59Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -28976,7 +28976,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:31Z",
+        "Time: 2026-06-18 21:16:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -29117,7 +29117,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -30465,7 +30465,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -30518,10 +30518,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -30646,7 +30646,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -30786,7 +30786,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -32035,7 +32035,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -32088,10 +32088,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -32191,7 +32191,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -32323,7 +32323,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -33572,7 +33572,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -33625,10 +33625,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -33728,7 +33728,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -33858,7 +33858,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -35107,7 +35107,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -35160,10 +35160,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -35263,7 +35263,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -35393,7 +35393,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -36642,7 +36642,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -36695,10 +36695,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -36798,7 +36798,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -36935,7 +36935,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -38274,7 +38274,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -38327,10 +38327,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -38438,7 +38438,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -38580,7 +38580,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -39919,7 +39919,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -39972,10 +39972,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -40083,7 +40083,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -40218,7 +40218,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -41458,7 +41458,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -41511,10 +41511,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -41613,7 +41613,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -41743,7 +41743,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -42983,7 +42983,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -43036,10 +43036,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -43138,7 +43138,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -43268,7 +43268,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -44508,7 +44508,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -44561,10 +44561,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -44663,7 +44663,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -44793,7 +44793,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -46033,7 +46033,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -46086,10 +46086,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -46188,7 +46188,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -46318,7 +46318,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -47558,7 +47558,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47611,10 +47611,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -47713,7 +47713,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -47843,7 +47843,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -49083,7 +49083,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -49136,10 +49136,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:28Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -49237,7 +49237,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:28Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -49367,7 +49367,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -50607,7 +50607,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -50660,10 +50660,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:56Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -50761,7 +50761,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -50891,7 +50891,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -52140,7 +52140,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -52193,10 +52193,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -52296,7 +52296,7 @@
         "Add Complex Form",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -52423,7 +52423,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -53627,7 +53627,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -53680,10 +53680,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -53781,7 +53781,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -53906,7 +53906,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -55110,7 +55110,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -55163,10 +55163,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -55264,7 +55264,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -55393,7 +55393,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -56723,7 +56723,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -56776,10 +56776,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:27Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:55Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -56903,7 +56903,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:27Z",
+        "Time: 2026-06-18 21:16:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -57033,7 +57033,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -58273,7 +58273,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -58326,10 +58326,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:29Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:57Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -58428,7 +58428,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:29Z",
+        "Time: 2026-06-18 21:16:57Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -58670,7 +58670,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -60549,7 +60549,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -60602,10 +60602,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:31Z",
-          "X": 467,
+          "Text": "Time: 2026-06-18 21:16:59Z",
+          "X": 470,
           "Y": 766,
-          "Width": 151,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -60698,7 +60698,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:31Z",
+        "Time: 2026-06-18 21:16:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -60948,7 +60948,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -62827,7 +62827,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -62880,10 +62880,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:32Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:16:59Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -62976,7 +62976,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:32Z",
+        "Time: 2026-06-18 21:16:59Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -63226,7 +63226,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 313,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -65105,7 +65105,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 359,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -65158,10 +65158,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-18 20:03:32Z",
-          "X": 466,
+          "Text": "Time: 2026-06-18 21:17:00Z",
+          "X": 470,
           "Y": 766,
-          "Width": 152,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -65254,7 +65254,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-18 20:03:32Z",
+        "Time: 2026-06-18 21:17:00Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
