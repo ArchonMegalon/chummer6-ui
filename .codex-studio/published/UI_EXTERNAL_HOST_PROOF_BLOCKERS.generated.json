@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.external_host_proof_blockers",
-  "generated_at": "2026-06-18T14:31:41Z",
+  "generated_at": "2026-06-18T15:25:03Z",
   "manifest_path": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/RELEASE_CHANNEL.generated.json",
   "downloads_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/files",
   "startup_smoke_dir": "/docker/chummercomplete/chummer.run-services/Chummer.Portal/downloads/startup-smoke",
