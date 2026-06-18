@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-06-18T02:48:10Z",
-  "generatedAt": "2026-06-18T02:48:10Z",
+  "generated_at": "2026-06-18T06:22:22Z",
+  "generatedAt": "2026-06-18T06:22:22Z",
   "contract_name": "Chummer.Hub.Registry.Contracts",
   "contractName": "Chummer.Hub.Registry.Contracts",
-  "version": "run-20260618-024810",
+  "version": "run-20260618-061908",
   "channel": "stable",
-  "publishedAt": "2026-06-18T02:48:10Z",
+  "publishedAt": "2026-06-18T06:22:22Z",
   "downloads": [
     {
       "id": "avalonia-linux-x64-installer",
       "platform": "Avalonia Desktop Linux X64 Installer",
       "url": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
-      "sha256": "a467ba4062bfcbac0dad709040388200532d2c0e79b61c23015203ef144c2e44",
-      "sizeBytes": 35426144,
+      "sha256": "312cbf9fea1fa88a30cc19391d84a51be8fc7c4aff5f12a62fa0064ec4a79dc4",
+      "sizeBytes": 36863084,
       "format": "deb",
       "flavor": "installer",
       "kind": "installer",
@@ -22,8 +22,8 @@
       "fileName": "chummer-avalonia-linux-x64-installer.deb",
       "channelId": "stable",
       "channel": "stable",
-      "version": "run-20260618-024810",
-      "releaseVersion": "run-20260618-024810",
+      "version": "run-20260618-061908",
+      "releaseVersion": "run-20260618-061908",
       "compatibilityState": "compatible",
       "compatibilityReason": null,
       "installAccessClass": "open_public"
@@ -40,7 +40,7 @@
   "fixAvailabilitySummary": "Only send fixed notices after the affected install can receive the published channel artifact now on the shelf.",
   "releaseProof": {
     "status": "passed",
-    "generatedAt": "2026-06-18T03:33:15Z",
+    "generatedAt": "2026-06-18T08:40:58Z",
     "baseUrl": "https://chummer.run",
     "journeysPassed": [
       "install_claim_restore_continue",
@@ -63,7 +63,7 @@
     ],
     "uiLocalizationReleaseGate": {
       "status": "pass",
-      "generatedAt": "2026-06-18T03:33:15Z",
+      "generatedAt": "2026-06-18T08:40:58Z",
       "defaultKeyCount": 398,
       "explicitFallbackRuntime": "pass",
       "signoffSmokeRunnerStatus": "pass",
@@ -293,38 +293,38 @@
   },
   "installAwareArtifactRegistry": [
     {
-      "registryId": "concierge:stable:run-20260618-024810:avalonia-linux-x64-installer",
+      "registryId": "concierge:stable:run-20260618-061908:avalonia-linux-x64-installer",
       "artifactId": "avalonia-linux-x64-installer",
       "channelId": "stable",
-      "releaseVersion": "run-20260618-024810",
+      "releaseVersion": "run-20260618-061908",
       "tupleId": "avalonia:linux:linux-x64",
       "head": "avalonia",
       "platform": "linux",
       "rid": "linux-x64",
       "arch": "x64",
       "kind": "installer",
-      "installedBuildSelector": "stable/run-20260618-024810/avalonia/linux/x64",
+      "installedBuildSelector": "stable/run-20260618-061908/avalonia/linux/x64",
       "currentForInstalledBuild": true,
-      "channelRationale": "Published stable channel keeps primary-route avalonia:linux:linux-x64 current for installed build selector stable/run-20260618-024810/avalonia/linux/x64.",
-      "correctnessReason": "Offer avalonia-linux-x64-installer to installed build selector stable/run-20260618-024810/avalonia/linux/x64 because tuple avalonia:linux:linux-x64 is currently promoted for this channel.",
+      "channelRationale": "Published stable channel keeps primary-route avalonia:linux:linux-x64 current for installed build selector stable/run-20260618-061908/avalonia/linux/x64.",
+      "correctnessReason": "Offer avalonia-linux-x64-installer to installed build selector stable/run-20260618-061908/avalonia/linux/x64 because tuple avalonia:linux:linux-x64 is currently promoted for this channel.",
       "recoveryProofRefs": [
         "/downloads/install/avalonia-linux-x64-installer",
         "startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
         "desktopTupleCoverage.desktopRouteTruth[avalonia:linux:linux-x64]"
       ],
       "conciergeAssetRefs": {
-        "releaseExplainerPacket": "concierge/release/stable/run-20260618-024810/avalonia-linux-x64-installer",
-        "supportClosurePacket": "concierge/support/stable/run-20260618-024810/avalonia-linux-x64-installer",
+        "releaseExplainerPacket": "concierge/release/stable/run-20260618-061908/avalonia-linux-x64-installer",
+        "supportClosurePacket": "concierge/support/stable/run-20260618-061908/avalonia-linux-x64-installer",
         "publicTrustWrapper": "/downloads/install/avalonia-linux-x64-installer"
       }
     }
   ],
   "desktopSurfaceRefs": [
     {
-      "registryId": "desktop-surface:stable:run-20260618-024810:avalonia:linux:linux-x64",
+      "registryId": "desktop-surface:stable:run-20260618-061908:avalonia:linux:linux-x64",
       "artifactId": "avalonia-linux-x64-installer",
       "channelId": "stable",
-      "releaseVersion": "run-20260618-024810",
+      "releaseVersion": "run-20260618-061908",
       "tupleId": "avalonia:linux:linux-x64",
       "head": "avalonia",
       "platform": "linux",
@@ -332,22 +332,22 @@
       "arch": "x64",
       "kind": "installer",
       "installAccessClass": "open_public",
-      "desktopChannelRef": "desktop-channel:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "installGuidanceRef": "install-guidance:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "participationReceiptRef": "participation-receipt:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "rewardPublicationRef": "reward-publication:binding:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "publicationBindingId": "binding:stable:run-20260618-024810:avalonia:linux:linux-x64",
+      "desktopChannelRef": "desktop-channel:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "installGuidanceRef": "install-guidance:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "participationReceiptRef": "participation-receipt:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "rewardPublicationRef": "reward-publication:binding:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "publicationBindingId": "binding:stable:run-20260618-061908:avalonia:linux:linux-x64",
       "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
       "rationale": "stable keeps avalonia:linux:linux-x64 guest-readable so desktop channel, install guidance, participation, and reward refs stay governed without exposing provider internals."
     }
   ],
   "artifactIdentityRegistry": [
     {
-      "registryId": "artifact-identity:stable:run-20260618-024810:avalonia:linux:linux-x64",
+      "registryId": "artifact-identity:stable:run-20260618-061908:avalonia:linux:linux-x64",
       "artifactFamilyId": "artifact-family:avalonia:linux:linux-x64",
       "artifactId": "avalonia-linux-x64-installer",
       "channelId": "stable",
-      "releaseVersion": "run-20260618-024810",
+      "releaseVersion": "run-20260618-061908",
       "tupleId": "avalonia:linux:linux-x64",
       "head": "avalonia",
       "platform": "linux",
@@ -355,13 +355,13 @@
       "arch": "x64",
       "kind": "installer",
       "previewRef": "registry-preview:avalonia-linux-x64-installer:avalonia:linux:linux-x64",
-      "captionRef": "registry-caption:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "packetRef": "registry-packet:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "localeRef": "registry-locale:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "retentionRef": "registry-retention:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "publicationBindingId": "binding:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "signedInShelfRef": "shelf:signed-in:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "publicShelfRef": "shelf:public:stable:run-20260618-024810:avalonia-linux-x64-installer",
+      "captionRef": "registry-caption:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "packetRef": "registry-packet:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "localeRef": "registry-locale:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "retentionRef": "registry-retention:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "publicationBindingId": "binding:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "signedInShelfRef": "shelf:signed-in:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "publicShelfRef": "shelf:public:stable:run-20260618-061908:avalonia-linux-x64-installer",
       "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
       "retentionState": "current",
       "publicationState": "published"
@@ -369,11 +369,11 @@
   ],
   "artifactPublicationBindings": [
     {
-      "bindingId": "binding:stable:run-20260618-024810:avalonia:linux:linux-x64",
+      "bindingId": "binding:stable:run-20260618-061908:avalonia:linux:linux-x64",
       "artifactFamilyId": "artifact-family:avalonia:linux:linux-x64",
       "artifactId": "avalonia-linux-x64-installer",
       "channelId": "stable",
-      "releaseVersion": "run-20260618-024810",
+      "releaseVersion": "run-20260618-061908",
       "tupleId": "avalonia:linux:linux-x64",
       "head": "avalonia",
       "platform": "linux",
@@ -382,13 +382,13 @@
       "kind": "installer",
       "publicationScope": "signed-in-and-public",
       "publicationState": "published",
-      "signedInShelfRef": "shelf:signed-in:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "publicShelfRef": "shelf:public:stable:run-20260618-024810:avalonia-linux-x64-installer",
+      "signedInShelfRef": "shelf:signed-in:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "publicShelfRef": "shelf:public:stable:run-20260618-061908:avalonia-linux-x64-installer",
       "previewRef": "registry-preview:avalonia-linux-x64-installer:avalonia:linux:linux-x64",
-      "captionRef": "registry-caption:stable:run-20260618-024810:avalonia:linux:linux-x64",
-      "packetRef": "registry-packet:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "localeRef": "registry-locale:stable:run-20260618-024810:avalonia-linux-x64-installer",
-      "retentionRef": "registry-retention:stable:run-20260618-024810:avalonia-linux-x64-installer",
+      "captionRef": "registry-caption:stable:run-20260618-061908:avalonia:linux:linux-x64",
+      "packetRef": "registry-packet:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "localeRef": "registry-locale:stable:run-20260618-061908:avalonia-linux-x64-installer",
+      "retentionRef": "registry-retention:stable:run-20260618-061908:avalonia-linux-x64-installer",
       "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
       "retentionState": "current",
       "rationale": "stable keeps primary tuple avalonia:linux:linux-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
@@ -418,10 +418,10 @@
     },
     "proofFreshness": {
       "status": "fresh",
-      "releaseProofGeneratedAt": "2026-06-18T03:33:15Z",
+      "releaseProofGeneratedAt": "2026-06-18T08:40:58Z",
       "releaseProofAgeSeconds": 0,
       "releaseProofMaxAgeSeconds": 604800,
-      "uiLocalizationGeneratedAt": "2026-06-18T03:33:15Z",
+      "uiLocalizationGeneratedAt": "2026-06-18T08:40:58Z",
       "uiLocalizationAgeSeconds": 0,
       "uiLocalizationMaxAgeSeconds": 604800,
       "summary": "Release proof age is 0s (max 604800s) and UI localization gate age is 0s (max 604800s)."
@@ -438,13 +438,13 @@
     "status": "closed",
     "owner": "chummer6-hub-registry",
     "channelId": "stable",
-    "releaseVersion": "run-20260618-024810",
+    "releaseVersion": "run-20260618-061908",
     "persistence": {
       "contractName": "Chummer.Hub.Registry.Contracts",
       "artifactCount": 1,
       "runtimeBundleHeadCount": 0,
       "registryProjectionCount": 4,
-      "summary": "Registry persistence owns 1 published artifacts, 0 runtime bundle heads, and 4 governed projection rows for stable/run-20260618-024810."
+      "summary": "Registry persistence owns 1 published artifacts, 0 runtime bundle heads, and 4 governed projection rows for stable/run-20260618-061908."
     },
     "releaseChannel": {
       "publicationStatus": "published",
@@ -454,7 +454,7 @@
       "promotedInstallerTupleCount": 1,
       "desktopRouteTruthCount": 2,
       "publicTrustPosture": "preview",
-      "summary": "Release-channel truth for stable/run-20260618-024810 keeps 1 promoted installer tuples and 2 explicit desktop route-truth rows under stable rollout posture."
+      "summary": "Release-channel truth for stable/run-20260618-061908 keeps 1 promoted installer tuples and 2 explicit desktop route-truth rows under stable rollout posture."
     },
     "artifactLineage": {
       "artifactIdentityCount": 1,
@@ -486,6 +486,6 @@
       "unknownRuntimeBundleHeadCount": 0,
       "summary": "Compatibility boundary tracks 1 compatible artifacts, 0 compatible runtime bundle heads, and 0 compatible exchange-lineage rows while 0 artifact rows and 0 runtime bundle heads remain unknown."
     },
-    "summary": "Registry boundary coverage is closed for stable/run-20260618-024810 across persistence, release-channel, artifact-lineage, publication, entitlement, and compatibility surfaces."
+    "summary": "Registry boundary coverage is closed for stable/run-20260618-061908 across persistence, release-channel, artifact-lineage, publication, entitlement, and compatibility surfaces."
   }
 }

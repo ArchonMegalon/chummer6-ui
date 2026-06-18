@@ -28,21 +28,21 @@
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#F1F5F9" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#173A6C" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#123F7A" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#DDE9DD" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#E9EEF5" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#F2F5FA" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#123F7A" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#173A6C" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#9A6700" />
           <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#DC2626" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#2B67D9" />
-          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#047857" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#2C6B3F" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#1C4A2D" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="ChummerShellWindowBackgroundBrush" Color="#050B16" />
@@ -66,21 +66,21 @@
           <SolidColorBrush x:Key="ChummerShellSelectionPanelBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellSelectionInsetBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellSelectionTitleBorderBrush" Color="#334155" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#173A6C" />
-          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#2C5FB8" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBackgroundBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellActiveMenuBorderBrush" Color="#90C39A" />
           <SolidColorBrush x:Key="ChummerShellDialogHeaderBrush" Color="#111827" />
           <SolidColorBrush x:Key="ChummerShellCodeSurfaceBrush" Color="#0F172A" />
           <SolidColorBrush x:Key="ChummerShellInputBackgroundBrush" Color="#162031" />
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#123F7A" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#F59E0B" />
           <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#F87171" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#60A5FA" />
-          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#34D399" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#90C39A" />
+          <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#90C39A" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

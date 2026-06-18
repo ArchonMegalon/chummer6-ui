@@ -168,8 +168,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");
         StringAssert.Contains(classicPortSurface, "Background = DesktopShellTheme.ResolveThemeBrush(\"ChummerShellSurfaceBrush\", \"#FBFCFE\")");
-        Assert.IsFalse(appTheme.Contains("#1C4A2D", StringComparison.Ordinal));
-        Assert.IsFalse(appTheme.Contains("#90C39A", StringComparison.Ordinal));
+        StringAssert.Contains(appTheme, "ChummerShellActiveMenuBorderBrush");
+        StringAssert.Contains(appTheme, "#1C4A2D");
+        StringAssert.Contains(appTheme, "#90C39A");
         Assert.IsFalse(desktopDialogSource.Contains("Background = Brushes.Transparent", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("Background = Brushes.Transparent", StringComparison.Ordinal));
     }

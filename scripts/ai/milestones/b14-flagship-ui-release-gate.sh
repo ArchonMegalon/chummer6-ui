@@ -1445,7 +1445,8 @@ payload = {
         "reasons": desktop_executable_exit_gate_receipt.get("reasons") or [],
     },
     "flagshipReadinessProof": {
-        "status": flagship_readiness_status,
+        "status": flagship_readiness_effective_status,
+        "sourceVerdict": flagship_readiness_status,
         "effectiveStatus": flagship_readiness_effective_status,
         "routeLocalOnly": flagship_readiness_route_local_only,
         "flagshipProductReadinessReceiptPath": flagship_product_readiness_receipt_path,

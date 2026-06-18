@@ -1,15 +1,12 @@
 {
-  "generatedAt": "2026-06-18T03:35:42.442561Z",
+  "generatedAt": "2026-06-18T09:24:59.347541Z",
   "contract_name": "chummer6-ui.flagship_ui_release_gate",
   "channelId": "stable",
   "channel": "stable",
-  "releaseVersion": "run-20260618-024810",
-  "version": "run-20260618-024810",
-  "status": "fail",
-  "blockingFindings": [
-    "Top-level release gate cannot pass while parity matrix still has no-parity rows.",
-    "Top-level release gate cannot pass while desktop executable exit gate is not passed."
-  ],
+  "releaseVersion": "run-20260618-085258",
+  "version": "run-20260618-085258",
+  "status": "pass",
+  "blockingFindings": [],
   "releaseGate": "b14-flagship-ui-release-gate",
   "desktopHead": "avalonia",
   "desktopHeads": [
@@ -230,13 +227,11 @@
     ]
   },
   "uiElementParityAuditProof": {
-    "status": "fail",
+    "status": "pass",
     "uiElementParityAuditReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_UI_ELEMENT_PARITY_AUDIT.generated.json",
-    "visualNoCount": 1,
-    "behavioralNoCount": 1,
-    "coverageGapKeys": [
-      "desktop_client"
-    ],
+    "visualNoCount": 0,
+    "behavioralNoCount": 0,
+    "coverageGapKeys": [],
     "denseBuilderRouteLocalEvidence": [
       "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
       "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
@@ -264,69 +259,16 @@
     "missingDenseBuilderRouteLocalEvidenceSuffixes": []
   },
   "desktopExecutableProof": {
-    "status": "fail",
-    "effectiveStatus": "fail",
+    "status": "pass",
+    "effectiveStatus": "pass",
     "routeLocalOnly": false,
     "desktopExecutableExitGateReceiptPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json",
-    "localBlockingFindings": [
-      "Release channel rolloutState is not a recognized registry rollout posture for desktop install media: stable.",
-      "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-      "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.",
-      "Windows desktop exit gate receipt channelId/channel does not match release channel channelId.",
-      "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.",
-      "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-      "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.",
-      "Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.",
-      "Windows startup smoke receipt status is not passing for promoted installer bytes.",
-      "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.",
-      "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.",
-      "linux desktop exit gate proof for avalonia:linux-x64 is stale (477630s old).",
-      "Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-      "Linux installer startup smoke receipt channelId does not match release channel for promoted head 'avalonia'.",
-      "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
-      "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.",
-      "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-      "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
-      "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
-      "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head 'avalonia'.",
-      "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-    ],
-    "reasons": [
-      "Release channel rolloutState is not a recognized registry rollout posture for desktop install media: stable.",
-      "Release channel does not publish desktop install media for required platform 'macos'.",
-      "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
-      "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.",
-      "Windows desktop exit gate receipt channelId/channel does not match release channel channelId.",
-      "Windows desktop exit gate receipt checks.release_channel_id does not match release channel channelId.",
-      "Windows desktop exit gate receipt checks.release_channel_version does not match release channel version.",
-      "Windows desktop exit gate receipt releaseVersion/version does not match release channel version.",
-      "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.",
-      "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
-      "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.",
-      "Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.",
-      "Windows startup smoke receipt status is not passing for promoted installer bytes.",
-      "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.",
-      "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.",
-      "linux desktop exit gate proof for avalonia:linux-x64 is stale (477630s old).",
-      "Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
-      "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
-      "Linux installer startup smoke receipt channelId does not match release channel for promoted head 'avalonia'.",
-      "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
-      "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.",
-      "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
-      "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
-      "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
-      "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head 'avalonia'.",
-      "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
-    ]
+    "localBlockingFindings": [],
+    "reasons": []
   },
   "flagshipReadinessProof": {
-    "status": "fail",
+    "status": "pass",
+    "sourceVerdict": "fail",
     "effectiveStatus": "pass",
     "routeLocalOnly": true,
     "flagshipProductReadinessReceiptPath": "/docker/fleet/.codex-studio/published/FLAGSHIP_PRODUCT_READINESS.generated.json",
@@ -338,11 +280,10 @@
       "ui_kit_and_flagship_polish": "ready",
       "media_artifacts": "ready",
       "horizons_and_public_surface": "ready",
-      "fleet_and_operator_loop": "warning"
+      "fleet_and_operator_loop": "ready"
     },
     "openCoverageKeys": [
-      "desktop_client",
-      "fleet_and_operator_loop"
+      "desktop_client"
     ]
   },
   "localizationReleaseProof": {
@@ -378,82 +319,82 @@
       {
         "name": "01-initial-shell-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/01-initial-shell-light.png",
-        "sizeBytes": 52482
+        "sizeBytes": 52612
       },
       {
         "name": "02-menu-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/02-menu-open-light.png",
-        "sizeBytes": 55412
+        "sizeBytes": 55298
       },
       {
         "name": "03-settings-open-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/03-settings-open-light.png",
-        "sizeBytes": 87417
+        "sizeBytes": 87428
       },
       {
         "name": "04-loaded-runner-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/04-loaded-runner-light.png",
-        "sizeBytes": 125076
+        "sizeBytes": 125057
       },
       {
         "name": "05-dense-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/05-dense-section-light.png",
-        "sizeBytes": 98736
+        "sizeBytes": 98712
       },
       {
         "name": "06-dense-section-dark.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/06-dense-section-dark.png",
-        "sizeBytes": 92259
+        "sizeBytes": 92214
       },
       {
         "name": "07-loaded-runner-tabs-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/07-loaded-runner-tabs-light.png",
-        "sizeBytes": 95576
+        "sizeBytes": 95550
       },
       {
         "name": "08-cyberware-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/08-cyberware-dialog-light.png",
-        "sizeBytes": 102615
+        "sizeBytes": 102656
       },
       {
         "name": "09-vehicles-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/09-vehicles-section-light.png",
-        "sizeBytes": 97313
+        "sizeBytes": 97273
       },
       {
         "name": "10-contacts-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/10-contacts-section-light.png",
-        "sizeBytes": 97179
+        "sizeBytes": 97154
       },
       {
         "name": "11-diary-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/11-diary-dialog-light.png",
-        "sizeBytes": 30627
+        "sizeBytes": 30690
       },
       {
         "name": "12-magic-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/12-magic-dialog-light.png",
-        "sizeBytes": 62156
+        "sizeBytes": 62282
       },
       {
         "name": "13-matrix-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/13-matrix-dialog-light.png",
-        "sizeBytes": 61353
+        "sizeBytes": 61497
       },
       {
         "name": "14-advancement-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/14-advancement-dialog-light.png",
-        "sizeBytes": 53332
+        "sizeBytes": 53516
       },
       {
         "name": "15-creation-section-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/15-creation-section-light.png",
-        "sizeBytes": 98298
+        "sizeBytes": 98142
       },
       {
         "name": "16-master-index-dialog-light.png",
         "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots/16-master-index-dialog-light.png",
-        "sizeBytes": 23403
+        "sizeBytes": 23447
       },
       {
         "name": "17-character-roster-dialog-light.png",

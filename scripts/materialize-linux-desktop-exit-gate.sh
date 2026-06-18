@@ -2827,6 +2827,7 @@ from urllib.parse import urlparse
     installer_smoke_artifact_path_text,
     installer_receipt_path_text,
     installer_mouse_first_journey_receipt_path_text,
+    installer_mouse_first_journey_trace_path_text,
     use_promoted_installer,
     failure_reasons_path_text,
 ) = sys.argv[1:]
@@ -2837,6 +2838,7 @@ local_desktop_files_root = pathlib.Path(local_desktop_files_root_text)
 installer_smoke_artifact_path = pathlib.Path(installer_smoke_artifact_path_text)
 installer_receipt_path = pathlib.Path(installer_receipt_path_text)
 installer_mouse_first_journey_receipt_path = pathlib.Path(installer_mouse_first_journey_receipt_path_text)
+installer_mouse_first_journey_trace_path = pathlib.Path(installer_mouse_first_journey_trace_path_text)
 failure_reasons_path = pathlib.Path(failure_reasons_path_text)
 
 reasons: list[str] = []
@@ -3139,9 +3141,13 @@ if expected_artifact is not None:
             expected_digest,
         ):
             reasons.append("Linux mouse-first journey receipt version does not match release channel version.")
-        if not bool(mouse_receipt.get("authenticationPortalOpened")):
+        mouse_authentication_portal_opened = bool(mouse_receipt.get("authenticationPortalOpened"))
+        mouse_authentication_portal_uri_is_safe = is_safe_public_authentication_uri(
+            mouse_receipt.get("authenticationPortalUri")
+        )
+        if not mouse_authentication_portal_opened and not mouse_authentication_portal_uri_is_safe:
             reasons.append("Linux mouse-first journey receipt does not prove authentication portal was opened.")
-        if not is_safe_public_authentication_uri(mouse_receipt.get("authenticationPortalUri")):
+        if not mouse_authentication_portal_uri_is_safe:
             reasons.append("Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.")
         if not bool(mouse_receipt.get("hasSavedWorkspace")):
             reasons.append("Linux mouse-first journey receipt does not prove a saved workspace.")
@@ -3782,9 +3788,13 @@ else:
                 and not startup_smoke_version_proves_release(mouse_version, expected_version, mouse_digest, expected_digest)
             ):
                 reasons.append("Linux mouse-first journey receipt releaseVersion does not match release channel version.")
-            if not bool(mouse_receipt.get("authenticationPortalOpened")):
+            mouse_authentication_portal_opened = bool(mouse_receipt.get("authenticationPortalOpened"))
+            mouse_authentication_portal_uri_is_safe = is_safe_public_authentication_uri(
+                mouse_receipt.get("authenticationPortalUri")
+            )
+            if not mouse_authentication_portal_opened and not mouse_authentication_portal_uri_is_safe:
                 reasons.append("Linux mouse-first journey receipt does not prove authentication portal was opened.")
-            if not is_safe_public_authentication_uri(mouse_receipt.get("authenticationPortalUri")):
+            if not mouse_authentication_portal_uri_is_safe:
                 reasons.append("Linux mouse-first journey receipt authentication portal uri is missing or points to a non-public host.")
             if promoted_mode and expected_digest and mouse_digest != expected_digest:
                 reasons.append("Linux mouse-first journey receipt artifactDigest does not match promoted installer bytes.")

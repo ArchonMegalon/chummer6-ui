@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-06-18T03:28:11.893061Z",
+  "generatedAt": "2026-06-18T09:15:23.914709Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
   "channelId": "stable",
   "status": "pass",
   "summary": "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, SR4 baseline proof, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
   "reasons": [],
   "evidence": {
-    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "ledgerPath": "/docker/chummercomplete/chummer6-ui/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
     "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
@@ -21,8 +21,8 @@
     "verificationExit": 0,
     "materializerExit": 0,
     "releaseChannelChannelId": "stable",
-    "releaseChannelGeneratedAt": "2026-06-18T02:48:10Z",
-    "releaseChannelAgeSeconds": 2401,
+    "releaseChannelGeneratedAt": "2026-06-18T08:56:41Z",
+    "releaseChannelAgeSeconds": 1122,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -87,7 +87,7 @@
       "workflowGateTests": true
     },
     "sr4ReceiptChannelId": "stable",
-    "sr4ReceiptGeneratedAt": "2026-06-18T03:24:55.739481Z",
+    "sr4ReceiptGeneratedAt": "2026-06-18T09:12:13.515103Z",
     "failureCount": 0
   },
   "sourceArtifactReview": {
@@ -107,10 +107,10 @@
     "status": "pass",
     "summary": "SR6 workflow parity proof is aligned to a current release-channel identity.",
     "reasons": [],
-    "path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "channelId": "stable",
-    "generatedAt": "2026-06-18T02:48:10Z",
-    "ageSeconds": 2401,
+    "generatedAt": "2026-06-18T08:56:41Z",
+    "ageSeconds": 1122,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -121,7 +121,7 @@
     "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
     "channelId": "stable",
-    "generatedAt": "2026-06-18T03:24:55.739481Z"
+    "generatedAt": "2026-06-18T09:12:13.515103Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

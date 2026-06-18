@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T03:24:55.561089Z",
+  "generatedAt": "2026-06-18T09:12:13.351175Z",
   "contract_name": "chummer6-ui.sr4_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR4 workflow-family execution evidence is explicitly grounded for recovery-reload-migration-roundtrips.",

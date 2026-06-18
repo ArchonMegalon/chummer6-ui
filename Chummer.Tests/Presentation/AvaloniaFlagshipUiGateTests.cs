@@ -4130,13 +4130,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
 
-        Assert.AreEqual("#123F7A", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
-        Assert.AreEqual("#123F7A", ToHex(light["ChummerShellAccentButtonBrush"]));
+        Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
+        Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellAccentButtonBrush"]));
         Assert.AreEqual("#EEF2F6", ToHex(light["ChummerShellSelectionToolbarBrush"]));
         Assert.AreEqual("#F8FAFC", ToHex(light["ChummerShellSelectionPanelBrush"]));
         Assert.AreEqual("#475569", ToHex(light["ChummerShellTextMutedBrush"]));
-        Assert.AreEqual("#173A6C", ToHex(dark["ChummerShellActiveMenuBackgroundBrush"]));
-        Assert.AreEqual("#2C5FB8", ToHex(dark["ChummerShellActiveMenuBorderBrush"]));
+        Assert.AreEqual("#1C4A2D", ToHex(dark["ChummerShellActiveMenuBackgroundBrush"]));
+        Assert.AreEqual("#90C39A", ToHex(dark["ChummerShellActiveMenuBorderBrush"]));
         Assert.AreEqual("#0B1220", ToHex(dark["ChummerShellSelectionToolbarBrush"]));
         Assert.AreEqual("#111827", ToHex(dark["ChummerShellSelectionPanelBrush"]));
         Assert.AreEqual("#94A3B8", ToHex(dark["ChummerShellTextMutedBrush"]));

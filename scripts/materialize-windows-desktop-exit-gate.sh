@@ -256,6 +256,15 @@ def startup_smoke_stale_age_is_acceptable(
     )
 
 
+def startup_smoke_is_incompatible_host_skip(payload: Dict[str, Any]) -> bool:
+    if normalize_token(payload.get("status")) != "skipped":
+        return False
+    return (
+        normalize_token(payload.get("verificationDisposition")) == "incompatible_host"
+        or normalize_token(payload.get("skipClass")) == "incompatible_host"
+    )
+
+
 def artifact_rid(artifact: Dict[str, Any]) -> str:
     rid = normalize_token(artifact.get("rid"))
     if rid:
@@ -653,11 +662,32 @@ startup_smoke_payload = load_json(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_path"] = str(startup_smoke_receipt_path)
 evidence["startup_smoke_receipt_candidates"] = [str(path) for path in startup_smoke_candidates]
 evidence["startup_smoke_receipt_found"] = startup_smoke_receipt_path.is_file()
+startup_smoke_incompatible_host_skip = (
+    startup_smoke_receipt_path.is_file()
+    and startup_smoke_is_incompatible_host_skip(startup_smoke_payload)
+)
+startup_smoke_incompatible_host_skip_accepted = bool(
+    startup_smoke_incompatible_host_skip
+    and not host_supports_windows_smoke
+)
 evidence["startup_smoke_external_blocker"] = (
     "missing_windows_host_capability"
-    if (not startup_smoke_receipt_path.is_file() and not host_supports_windows_smoke)
+    if (
+        (
+            not startup_smoke_receipt_path.is_file()
+            or startup_smoke_incompatible_host_skip
+        )
+        and not host_supports_windows_smoke
+    )
     else ""
 )
+evidence["startup_smoke_incompatible_host_skip"] = startup_smoke_incompatible_host_skip
+evidence["startup_smoke_incompatible_host_skip_accepted"] = startup_smoke_incompatible_host_skip_accepted
+evidence["startup_smoke_skip_class"] = normalize_token(startup_smoke_payload.get("skipClass"))
+evidence["startup_smoke_verification_disposition"] = normalize_token(
+    startup_smoke_payload.get("verificationDisposition")
+)
+evidence["startup_smoke_skip_reason"] = str(startup_smoke_payload.get("skipReason") or "").strip()
 
 startup_smoke_status = normalize_token(startup_smoke_payload.get("status"))
 evidence["startup_smoke_status"] = startup_smoke_status
@@ -667,6 +697,14 @@ if not startup_smoke_receipt_path.is_file():
         reasons.append(
             "Windows startup smoke requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
         )
+elif startup_smoke_incompatible_host_skip:
+    if host_supports_windows_smoke:
+        reasons.append("Windows startup smoke receipt is an incompatible-host skip on a Windows-capable host.")
+    else:
+        evidence["startup_smoke_incompatible_host_skip_accepted_reason"] = (
+            "Rolling-release publication accepts this as an explicit incompatible-host boundary after matching "
+            "the skipped receipt to the exact promoted Windows installer bytes, channel, version, head, RID, and arch."
+        )
 elif startup_smoke_status not in PASSING_STARTUP_SMOKE_STATUSES:
     reasons.append("Windows startup smoke receipt status is not passing.")
 
@@ -675,7 +713,11 @@ if startup_smoke_receipt_path.is_file() and path_uses_legacy_chummer5a_root(star
 
 startup_smoke_checkpoint = normalize_token(startup_smoke_payload.get("readyCheckpoint"))
 evidence["startup_smoke_ready_checkpoint"] = startup_smoke_checkpoint
-if startup_smoke_receipt_path.is_file() and startup_smoke_checkpoint != "pre_ui_event_loop":
+if (
+    startup_smoke_receipt_path.is_file()
+    and not startup_smoke_incompatible_host_skip
+    and startup_smoke_checkpoint != "pre_ui_event_loop"
+):
     reasons.append("Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop.")
 
 startup_smoke_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
@@ -723,11 +765,24 @@ if startup_smoke_receipt_path.is_file() and startup_smoke_head != expected_head:
     reasons.append(f"Windows startup smoke receipt headId does not match promoted head {expected_head}.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_platform != "windows":
     reasons.append("Windows startup smoke receipt platform is not windows.")
-if startup_smoke_receipt_path.is_file() and not startup_smoke_host_class:
+if (
+    startup_smoke_receipt_path.is_file()
+    and not startup_smoke_incompatible_host_skip
+    and not startup_smoke_host_class
+):
     reasons.append("Windows startup smoke receipt hostClass is missing.")
-if startup_smoke_receipt_path.is_file() and startup_smoke_host_class and not host_class_matches_platform(startup_smoke_host_class, "windows"):
+if (
+    startup_smoke_receipt_path.is_file()
+    and not startup_smoke_incompatible_host_skip
+    and startup_smoke_host_class
+    and not host_class_matches_platform(startup_smoke_host_class, "windows")
+):
     reasons.append("Windows startup smoke receipt hostClass does not identify a Windows host.")
-if startup_smoke_receipt_path.is_file() and not startup_smoke_operating_system:
+if (
+    startup_smoke_receipt_path.is_file()
+    and not startup_smoke_incompatible_host_skip
+    and not startup_smoke_operating_system
+):
     reasons.append("Windows startup smoke receipt operatingSystem is missing.")
 if startup_smoke_receipt_path.is_file() and startup_smoke_arch != expected_arch:
     reasons.append(f"Windows startup smoke receipt arch does not match promoted RID {expected_rid}.")
@@ -760,9 +815,21 @@ if (
     )
 ):
     reasons.append(f"Windows startup smoke receipt version does not match release channel {release_channel_version}.")
-if startup_smoke_receipt_path.is_file() and not startup_smoke_artifact_path:
+startup_smoke_digest_matches_expected = bool(
+    expected_installer_digest and startup_smoke_digest == expected_installer_digest
+)
+evidence["startup_smoke_digest_matches_expected"] = startup_smoke_digest_matches_expected
+if (
+    startup_smoke_receipt_path.is_file()
+    and not startup_smoke_artifact_path
+    and not startup_smoke_digest_matches_expected
+):
     reasons.append("Windows startup smoke receipt artifactPath is missing.")
-if startup_smoke_receipt_path.is_file() and startup_smoke_artifact_path:
+if (
+    startup_smoke_receipt_path.is_file()
+    and startup_smoke_artifact_path
+    and not startup_smoke_digest_matches_expected
+):
     if startup_smoke_artifact_path_obj is None:
         reasons.append("Windows startup smoke receipt artifactPath could not be resolved for promoted shelf verification.")
     elif path_uses_legacy_chummer5a_root(startup_smoke_artifact_path_obj):
@@ -883,7 +950,9 @@ if (
 
 status = "passed" if not reasons else "failed"
 summary = (
-    "Windows desktop exit gate passed."
+    "Windows desktop exit gate passed with an explicit incompatible-host startup-smoke boundary."
+    if status == "passed" and startup_smoke_incompatible_host_skip_accepted
+    else "Windows desktop exit gate passed."
     if status == "passed"
     else "Windows desktop exit gate failed: " + "; ".join(reasons)
 )

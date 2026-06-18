@@ -2022,7 +2022,11 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(ownerWindow, _state.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _state.HeadId)");
-        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(");
+        RequireContains(source, "out string loginUrl");
+        RequireContains(source, "out string? failureReason");
+        RequireContains(source, "ShowManualBrowserFallbackAsync(loginUrl, failureReason)");
+        RequireContains(source, "DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(_state)");
     }
 
     private static void BlazorDesktopShell_blocks_unlinked_installs_with_visible_claim_gate()

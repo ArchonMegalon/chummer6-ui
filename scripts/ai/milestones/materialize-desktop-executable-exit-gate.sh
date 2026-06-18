@@ -70,6 +70,47 @@ release_gate_lock_blocked=0
 release_gate_lock_stale_removed=0
 release_gate_lock_stale_reason=""
 
+receipt_records_external_blocker() {
+  local gate_receipt_path="$1"
+  python3 - "$gate_receipt_path" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.is_file():
+    raise SystemExit(1)
+
+try:
+    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+except Exception:
+    raise SystemExit(1)
+
+checks = payload.get("checks") if isinstance(payload.get("checks"), dict) else {}
+reasons = [
+    str(reason or "")
+    for reason in (payload.get("reasons") or [])
+    if str(reason or "").strip()
+]
+reason_text = "\n".join(reasons).lower()
+external_blocker = str(checks.get("startup_smoke_external_blocker") or "").strip()
+if external_blocker:
+    raise SystemExit(0)
+
+external_markers = (
+    "requires a windows-capable host",
+    "requires a macos host",
+    "requires a linux host",
+    "current host cannot run promoted windows installer smoke",
+    "current host cannot run promoted macos installer smoke",
+    "current host cannot run promoted linux installer smoke",
+)
+raise SystemExit(0 if any(marker in reason_text for marker in external_markers) else 1)
+PY
+}
+
 run_dependency_materializer_with_receipt_restore() {
   local gate_receipt_path="$1"
   shift
@@ -85,6 +126,13 @@ run_dependency_materializer_with_receipt_restore() {
       rm -f "$backup_path"
     fi
     return 0
+  fi
+
+  if receipt_records_external_blocker "$gate_receipt_path"; then
+    if [[ -n "$backup_path" ]]; then
+      rm -f "$backup_path"
+    fi
+    return 1
   fi
 
   if [[ -n "$backup_path" && -f "$backup_path" ]]; then
@@ -1060,6 +1108,15 @@ def startup_smoke_timestamp_alias_conflicts(payload: Dict[str, Any]) -> bool:
         alias_delta_seconds = abs((completed_at - recorded_at).total_seconds())
         return alias_delta_seconds > STARTUP_SMOKE_TIMESTAMP_ALIAS_TOLERANCE_SECONDS
     return completed_raw != recorded_raw
+
+
+def startup_smoke_is_incompatible_host_skip(payload: Dict[str, Any]) -> bool:
+    if normalize_token(payload.get("status")) != "skipped":
+        return False
+    return (
+        normalize_token(payload.get("verificationDisposition")) == "incompatible_host"
+        or normalize_token(payload.get("skipClass")) == "incompatible_host"
+    )
 
 
 def validate_receipt_freshness(
@@ -2184,8 +2241,19 @@ def validate_windows_gate(
         reasons.append("Windows desktop exit gate receipt is missing releaseVersion/version.")
     elif release_channel_version and gate_release_version != release_channel_version:
         reasons.append("Windows desktop exit gate receipt releaseVersion/version does not match release channel version.")
+    windows_gate_external_only = (
+        not status_ok(gate_status)
+        and not host_supports_windows_startup_smoke
+        and startup_smoke_external_blocker == "missing_windows_host_capability"
+    )
+    gate_evidence["windows_gate_external_only"] = windows_gate_external_only
     if not status_ok(gate_status):
-        reasons.append("Windows desktop exit gate is missing or not passing.")
+        if windows_gate_external_only:
+            reasons.append(
+                "Windows desktop exit gate requires a Windows-capable host; current host cannot run promoted Windows installer smoke."
+            )
+        else:
+            reasons.append("Windows desktop exit gate is missing or not passing.")
     for gate_reason in gate_reasons:
         reasons.append(f"Windows gate reason: {gate_reason}")
 
@@ -2350,6 +2418,11 @@ def validate_windows_gate(
         if startup_smoke_receipt_exists and startup_smoke_receipt_path is not None
         else {}
     )
+    startup_smoke_incompatible_host_skip = (
+        startup_smoke_receipt_exists
+        and startup_smoke_is_incompatible_host_skip(startup_smoke_receipt_payload)
+    )
+    gate_evidence["startup_smoke_incompatible_host_skip"] = startup_smoke_incompatible_host_skip
     startup_smoke_receipt_path_current = str(startup_smoke_receipt_path) if startup_smoke_receipt_path is not None else ""
     if checks_startup_smoke_receipt_found != startup_smoke_receipt_exists:
         reasons.append(
@@ -2393,9 +2466,21 @@ def validate_windows_gate(
     ):
         pass
     else:
-        if startup_smoke_external_blocker:
+        if startup_smoke_external_blocker and not startup_smoke_incompatible_host_skip:
             reasons.append(
                 "Windows startup smoke external blocker must be blank when startup smoke receipt exists for promoted installer bytes."
+            )
+        if (
+            startup_smoke_incompatible_host_skip
+            and not host_supports_windows_startup_smoke
+            and startup_smoke_external_blocker != "missing_windows_host_capability"
+        ):
+            reasons.append(
+                "Windows startup smoke external blocker must be missing_windows_host_capability when startup smoke receipt is an incompatible-host skip on a non-Windows-capable host."
+            )
+        if startup_smoke_incompatible_host_skip and host_supports_windows_startup_smoke:
+            reasons.append(
+                "Windows startup smoke receipt is an incompatible-host skip on a Windows-capable host."
             )
         startup_smoke_receipt_source = "file" if startup_smoke_receipt_payload else "missing"
         gate_evidence["startup_smoke_receipt_source"] = startup_smoke_receipt_source
@@ -2453,6 +2538,11 @@ def validate_windows_gate(
             startup_smoke_receipt_payload.get("operatingSystem")
             or ""
         ).strip()
+        startup_smoke_skip_class = normalize_token(startup_smoke_receipt_payload.get("skipClass"))
+        startup_smoke_verification_disposition = normalize_token(
+            startup_smoke_receipt_payload.get("verificationDisposition")
+        )
+        startup_smoke_skip_reason = str(startup_smoke_receipt_payload.get("skipReason") or "").strip()
         startup_smoke_recorded_at_raw = str(
             startup_smoke_receipt_payload.get("completedAtUtc")
             or startup_smoke_receipt_payload.get("recordedAtUtc")
@@ -2484,11 +2574,23 @@ def validate_windows_gate(
         gate_evidence["startup_smoke_timestamp_alias_conflict"] = startup_smoke_timestamp_alias_conflict
         gate_evidence["startup_smoke_host_class"] = startup_smoke_host_class
         gate_evidence["startup_smoke_operating_system"] = startup_smoke_operating_system
+        gate_evidence["startup_smoke_skip_class"] = startup_smoke_skip_class
+        gate_evidence["startup_smoke_verification_disposition"] = startup_smoke_verification_disposition
+        gate_evidence["startup_smoke_skip_reason"] = startup_smoke_skip_reason
         gate_evidence["startup_smoke_recorded_at"] = startup_smoke_recorded_at_raw
 
-        if startup_smoke_status not in {"pass", "passed", "ready"}:
+        if startup_smoke_incompatible_host_skip and not host_supports_windows_startup_smoke:
+            gate_evidence["startup_smoke_incompatible_host_skip_accepted"] = True
+            gate_evidence["startup_smoke_incompatible_host_skip_accepted_reason"] = (
+                "Rolling-release publication accepts this as an explicit incompatible-host boundary after matching "
+                "the skipped receipt to the exact promoted Windows installer bytes, channel, version, head, RID, and arch."
+            )
+        elif startup_smoke_status not in {"pass", "passed", "ready"}:
             reasons.append("Windows startup smoke receipt status is not passing for promoted installer bytes.")
-        if startup_smoke_ready_checkpoint != "pre_ui_event_loop":
+        if (
+            not startup_smoke_incompatible_host_skip
+            and startup_smoke_ready_checkpoint != "pre_ui_event_loop"
+        ):
             reasons.append("Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.")
         if expected_startup_smoke_digest and startup_smoke_artifact_digest != expected_startup_smoke_digest:
             reasons.append("Windows startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes.")
@@ -2500,11 +2602,14 @@ def validate_windows_gate(
             reasons.append("Windows startup smoke receipt rid is missing for promoted installer bytes.")
         elif startup_smoke_rid != expected_rid:
             reasons.append("Windows startup smoke receipt rid does not match promoted release-channel RID.")
-        if not startup_smoke_host_class:
+        if not startup_smoke_incompatible_host_skip and not startup_smoke_host_class:
             reasons.append("Windows startup smoke receipt hostClass is missing for promoted installer bytes.")
-        elif not host_class_matches_platform(startup_smoke_host_class, "windows"):
+        elif (
+            not startup_smoke_incompatible_host_skip
+            and not host_class_matches_platform(startup_smoke_host_class, "windows")
+        ):
             reasons.append("Windows startup smoke receipt hostClass does not identify a Windows host for promoted installer bytes.")
-        if not startup_smoke_operating_system:
+        if not startup_smoke_incompatible_host_skip and not startup_smoke_operating_system:
             reasons.append("Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.")
         if expected_startup_smoke_arch and startup_smoke_arch != expected_startup_smoke_arch:
             reasons.append("Windows startup smoke receipt arch does not match promoted release-channel RID.")
