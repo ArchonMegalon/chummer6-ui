@@ -270,10 +270,45 @@ public sealed class DesktopCrashRuntimeTests
             WriteExecutable(Path.Combine(tempDirectory, "gio"), "#!/usr/bin/env bash\nif [[ \"$1\" == \"open\" ]]; then echo 'Operation not supported' >&2; exit 1; fi\necho 'Operation not supported' >&2\nexit 1\n");
             Environment.SetEnvironmentVariable("PATH", $"{tempDirectory}:{previousPath}");
 
-            bool opened = DesktopCrashRuntime.TryOpenPathInShell("https://chummer.run/login?next=test", out string? failureReason);
+            bool opened = DesktopCrashRuntime.TryOpenPathInShell("/tmp/test-path", out string? failureReason);
 
             Assert.IsFalse(opened, "A launcher that exits immediately with a non-zero code must not be treated as a successful browser handoff.");
             StringAssert.Contains(failureReason ?? string.Empty, "Operation not supported", StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", previousPath);
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
+    public void TryOpenPathInShell_linux_url_uses_python_webbrowser_fallback_when_default_launchers_fail()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            Assert.Inconclusive("URL launcher fallback behavior is only exercised on Linux.");
+        }
+
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"desktop-shell-open-fallback-{Guid.NewGuid():N}");
+        string? previousPath = Environment.GetEnvironmentVariable("PATH");
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            WriteExecutable(Path.Combine(tempDirectory, "xdg-open"), "#!/usr/bin/env bash\necho 'Operation not supported' >&2\nexit 1\n");
+            WriteExecutable(Path.Combine(tempDirectory, "gio"), "#!/usr/bin/env bash\nif [[ \"$1\" == \"open\" ]]; then echo 'Operation not supported' >&2; exit 1; fi\necho 'Operation not supported' >&2\nexit 1\n");
+            WriteExecutable(
+                Path.Combine(tempDirectory, "python3"),
+                "#!/usr/bin/env bash\n# Python compatibility shim; return success for webbrowser fallback path.\nexit 0\n");
+            Environment.SetEnvironmentVariable("PATH", $"{tempDirectory}:{previousPath}");
+
+            bool opened = DesktopCrashRuntime.TryOpenPathInShell("https://chummer.run/login?next=test", out string? failureReason);
+
+            Assert.IsTrue(opened, "Python webbrowser fallback should be used when standard launcher commands fail.");
+            Assert.IsTrue(string.IsNullOrWhiteSpace(failureReason), failureReason);
         }
         finally
         {

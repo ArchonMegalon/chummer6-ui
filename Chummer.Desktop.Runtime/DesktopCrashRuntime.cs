@@ -341,6 +341,20 @@ public static class DesktopCrashRuntime
             }
         }
 
+        static bool LooksLikeUrl(string value)
+        {
+            return Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
+                && (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(uri.Scheme, Uri.UriSchemeFtp, StringComparison.OrdinalIgnoreCase));
+        }
+
+        static bool IsWslEnvironment()
+        {
+            return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WSL_DISTRO_NAME"))
+                || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WSL_INTEROP"));
+        }
+
         try
         {
             List<string> failures = [];
@@ -392,6 +406,7 @@ public static class DesktopCrashRuntime
                 return false;
             }
 
+            bool isUrl = LooksLikeUrl(path);
             string? xdgOpen = Which("xdg-open");
             if (!string.IsNullOrWhiteSpace(xdgOpen))
             {
@@ -425,7 +440,66 @@ public static class DesktopCrashRuntime
                 }
             }
 
-            if (failures.Count > 0)
+            if (isUrl)
+            {
+                string? wslOpen = Which("wslview");
+                if (!string.IsNullOrWhiteSpace(wslOpen))
+                {
+                    ProcessStartInfo wslviewStartInfo = new(wslOpen);
+                    wslviewStartInfo.ArgumentList.Add(path);
+                    if (TryStartObserved(wslviewStartInfo, "wslview", out string? wslviewFailure))
+                    {
+                        return true;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(wslviewFailure))
+                    {
+                        failures.Add(wslviewFailure);
+                    }
+                }
+
+                string? python3 = Which("python3") ?? Which("python");
+                if (!string.IsNullOrWhiteSpace(python3))
+                {
+                    ProcessStartInfo pythonStartInfo = new(python3);
+                    pythonStartInfo.ArgumentList.Add("-c");
+                    pythonStartInfo.ArgumentList.Add("import sys,webbrowser; sys.exit(0 if webbrowser.open(sys.argv[1]) else 1)");
+                    pythonStartInfo.ArgumentList.Add(path);
+                    if (TryStartObserved(pythonStartInfo, "python webbrowser", out string? pythonFailure))
+                    {
+                        return true;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(pythonFailure))
+                    {
+                        failures.Add(pythonFailure);
+                    }
+                }
+
+                if (IsWslEnvironment())
+                {
+                    string? cmdExe = Which("cmd.exe");
+                    if (!string.IsNullOrWhiteSpace(cmdExe))
+                    {
+                        ProcessStartInfo cmdStartInfo = new(cmdExe);
+                        cmdStartInfo.ArgumentList.Add("/c");
+                        cmdStartInfo.ArgumentList.Add("start");
+                        cmdStartInfo.ArgumentList.Add(string.Empty);
+                        cmdStartInfo.ArgumentList.Add(path);
+                        if (TryStartObserved(cmdStartInfo, "cmd.exe", out string? cmdFailure))
+                        {
+                            return true;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(cmdFailure))
+                        {
+                            failures.Add(cmdFailure);
+                        }
+                    }
+                }
+            }
+
+            if (!isUrl && failures.Count > 0)
             {
                 failureReason = string.Join(" ", failures.Where(static failure => !string.IsNullOrWhiteSpace(failure)));
                 return false;
