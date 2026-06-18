@@ -154,6 +154,10 @@ public sealed class DesktopThemeManagerTests
         string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
         string shellTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
         string aliceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+        string scaffoldSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonWindowScaffold.cs"));
+        string localCoProcessorSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopLocalCoProcessorWindow.cs"));
+        string runnerPassportSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunnerPassportWindow.cs"));
+        string versionHistorySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopVersionHistoryWindow.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
         string sectionHost = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
@@ -164,6 +168,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSurfaceBrush}\" />");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(conversationList);");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(evidenceList);");
+        StringAssert.Contains(scaffoldSource, "Background = ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#E3EAF3\")");
+        StringAssert.Contains(localCoProcessorSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
+        StringAssert.Contains(runnerPassportSource, "DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);");
+        StringAssert.Contains(versionHistorySource, "DesktopShellTheme.ApplyShellTextInputTheme(historyBox);");
         StringAssert.Contains(desktopDialogSource, "ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellListBoxTheme(listBox);");
         StringAssert.Contains(sectionHost, "Background=\"{DynamicResource ChummerShellSurfaceBrush}\"");

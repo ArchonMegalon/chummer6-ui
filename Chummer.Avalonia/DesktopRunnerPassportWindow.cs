@@ -121,6 +121,7 @@ internal sealed class DesktopRunnerPassportWindow : Window
                 ItemsSource = detailModes,
                 SelectedIndex = 0
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
             detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         }
         RefreshDetail();

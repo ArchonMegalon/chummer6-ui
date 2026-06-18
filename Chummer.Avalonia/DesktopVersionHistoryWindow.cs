@@ -18,15 +18,16 @@ internal sealed class DesktopVersionHistoryWindow : Window
 
         string historyText = LoadHistoryText();
 
-        Content = DesktopShellTheme.CreateWindowSurface(
-            new TextBox
-            {
-                Text = historyText,
-                IsReadOnly = true,
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap
-            },
-            padding: 12);
+        TextBox historyBox = new()
+        {
+            Text = historyText,
+            IsReadOnly = true,
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap
+        };
+        DesktopShellTheme.ApplyShellTextInputTheme(historyBox);
+
+        Content = DesktopShellTheme.CreateWindowSurface(historyBox, padding: 12);
     }
 
     public static async Task ShowAsync(Window owner)

@@ -115,6 +115,7 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
                 ItemsSource = detailModes,
                 SelectedIndex = 0
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
             detailModeCombo.SelectionChanged += (_, _) => RefreshDetail();
         }
         RefreshDetail();

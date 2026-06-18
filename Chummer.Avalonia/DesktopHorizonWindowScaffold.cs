@@ -43,6 +43,7 @@ internal static class DesktopHorizonWindowScaffold
         {
             Content = new Border
             {
+                Background = ResolveThemeBrush("ChummerShellWindowBackgroundBrush", "#E3EAF3"),
                 Padding = new Thickness(16),
                 Child = root
             }
