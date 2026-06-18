@@ -1935,6 +1935,33 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void CreateCommandDialog_auto_alice_without_active_character_still_offers_build_origin_and_rules_modes()
+    {
+        DesktopDialogFactory factory = new();
+
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4,
+            activeSectionId: null,
+            activeDialogId: null);
+
+        Assert.AreEqual("character_create", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSurfaceId"));
+        Assert.AreEqual("GuidedBuildPlan", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSupportMode"));
+        Assert.AreEqual("new_character", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceHandoffCommandId"));
+        Assert.AreEqual("build_help", DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceConversationMode"));
+        StringAssert.Contains(dialog.Message ?? string.Empty, "No runner is open yet");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSettingsGuide"), "Strict avoids restricted picks");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceSettingsGuide"), "Ware advice");
+        CollectionAssert.AreEqual(
+            new[] { "build_help", "rules_coach", "origin_dossier" },
+            dialog.Fields.Single(field => string.Equals(field.Id, "autoAliceConversationMode", StringComparison.Ordinal)).Options!.Select(option => option.Value).ToArray());
+    }
+
+    [TestMethod]
     public void RebuildDynamicDialog_new_character_normalizes_build_method_for_selected_ruleset()
     {
         DesktopDialogState dialog = new(

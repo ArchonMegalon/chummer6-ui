@@ -390,6 +390,141 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_auto_alice_blank_state_build_help_opens_new_character_without_workspace_error()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string? capturedCommandId = null;
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = DesktopAliceAssistant.BuildPreviewDialog(
+                factory.CreateCommandDialog(
+                    DesktopAliceAssistant.CommandId,
+                    profile: null,
+                    DesktopPreferenceState.Default,
+                    activeSectionJson: null,
+                    currentWorkspace: null,
+                    rulesetId: RulesetDefaults.Sr4),
+                CharacterOverviewState.Empty)
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ExecuteCommandAsync: (commandId, _) =>
+            {
+                capturedCommandId = commandId;
+                return Task.CompletedTask;
+            });
+
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Complete first-pass character from scratch");
+        Assert.IsFalse(
+            (DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings") ?? string.Empty).Contains("Open or create a workspace first", StringComparison.Ordinal),
+            "Blank-state ALICE build help must not require an existing workspace.");
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.OpenHandoffActionId, context, CancellationToken.None);
+
+        Assert.AreEqual("new_character", capturedCommandId);
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_auto_alice_rules_coach_explains_legality_ware_and_quality_settings()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4);
+        dialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => field.Id switch
+                {
+                    "autoAliceConversationMode" => field with { Value = "rules_coach" },
+                    "autoAliceGmRequirements" => field with { Value = "Must be magically active and Intelligence 2+." },
+                    _ => field
+                })
+                .ToArray()
+        };
+        CharacterOverviewState published = CharacterOverviewState.Empty with { ActiveDialog = dialog };
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.PreviewActionId, context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Strict |");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Standard |");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Ware |");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Qualities |");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "Intelligence 2+");
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_auto_alice_origin_mode_hands_off_to_origin_dossier_for_finished_or_blank_characters()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogFactory factory = new();
+        string? capturedCommandId = null;
+        DesktopDialogState dialog = factory.CreateCommandDialog(
+            DesktopAliceAssistant.CommandId,
+            profile: null,
+            DesktopPreferenceState.Default,
+            activeSectionJson: null,
+            currentWorkspace: null,
+            rulesetId: RulesetDefaults.Sr4);
+        dialog = dialog with
+        {
+            Fields = dialog.Fields
+                .Select(field => field.Id switch
+                {
+                    "autoAliceConversationMode" => field with { Value = "origin_dossier" },
+                    "autoAliceArchetype" => field with { Value = "decker" },
+                    "autoAliceGmRequirements" => field with { Value = "Must be addicted to an illegal drug; GM grants +20000 nuyen." },
+                    _ => field
+                })
+                .ToArray()
+        };
+        CharacterOverviewState published = CharacterOverviewState.Empty with { ActiveDialog = dialog };
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published,
+            ExecuteCommandAsync: (commandId, _) =>
+            {
+                capturedCommandId = commandId;
+                return Task.CompletedTask;
+            });
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.PreviewActionId, context, CancellationToken.None);
+
+        Assert.IsNotNull(published.ActiveDialog);
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "origin dossier");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Sheet Changes | none");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "+20000 nuyen");
+        CollectionAssert.Contains(
+            published.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
+            DesktopAliceAssistant.OpenHandoffActionId);
+
+        await coordinator.CoordinateAsync(DesktopAliceAssistant.OpenHandoffActionId, context, CancellationToken.None);
+
+        Assert.AreEqual("new_character_origin", capturedCommandId);
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_create_character_opens_conditional_workflow_dialog()
     {
         DialogCoordinator coordinator = new();

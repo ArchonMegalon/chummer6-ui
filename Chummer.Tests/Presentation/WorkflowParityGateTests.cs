@@ -951,6 +951,11 @@ public sealed class WorkflowParityGateTests
                 ("rigger", "Rigger"),
                 ("adept", "Adept"),
                 ("generalist", "Generalist")),
+            ("dialog.auto_alice", "autoAliceConversationMode", _) => Create(
+                "build_help",
+                ("build_help", "Build help"),
+                ("rules_coach", "Rules coach"),
+                ("origin_dossier", "Origin Dossier")),
             ("dialog.auto_alice", "autoAliceOptimization", _) => Create(
                 "balanced",
                 ("balanced", "Balanced"),

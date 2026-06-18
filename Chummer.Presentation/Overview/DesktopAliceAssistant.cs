@@ -15,12 +15,18 @@ internal static class DesktopAliceAssistant
     private const string SurfaceLabelFieldId = "autoAliceSurfaceLabel";
     private const string SupportModeFieldId = "autoAliceSupportMode";
     private const string HandoffCommandFieldId = "autoAliceHandoffCommandId";
+    private const string ConversationModeFieldId = "autoAliceConversationMode";
     private const string RulesetFieldId = "autoAliceRulesetId";
     private const string WorkspaceFieldId = "autoAliceWorkspaceId";
     private const string ArchetypeFieldId = "autoAliceArchetype";
     private const string OptimizationFieldId = "autoAliceOptimization";
     private const string LegalityFieldId = "autoAliceLegality";
     private const string ComplexityFieldId = "autoAliceComplexity";
+    private const string GmRequirementsFieldId = "autoAliceGmRequirements";
+
+    private const string BuildHelpConversationMode = "build_help";
+    private const string RulesCoachConversationMode = "rules_coach";
+    private const string OriginDossierConversationMode = "origin_dossier";
 
     public static DesktopDialogState CreateDialog(
         string? activeSectionId,
@@ -32,7 +38,12 @@ internal static class DesktopAliceAssistant
         AliceSurfacePlan plan = ResolvePlan(activeSectionId, activeDialogId);
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string workspaceId = currentWorkspace?.Value ?? string.Empty;
-        string message = plan.SupportMode switch
+        bool blankState = currentWorkspace is null
+            && string.IsNullOrWhiteSpace(activeSectionId)
+            && string.IsNullOrWhiteSpace(activeDialogId);
+        string message = blankState
+            ? "No runner is open yet. ALICE can plan a complete first build, explain the settings, or start an origin dossier. Use the guided workflow handoff when ready."
+            : plan.SupportMode switch
         {
             AliceSupportMode.QuickAddApply => IsPreviewRuleset(normalizedRulesetId)
                 ? $"ALICE can propose one scoped SR4 preview change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then review it before you apply."
@@ -43,7 +54,7 @@ internal static class DesktopAliceAssistant
             AliceSupportMode.SettingsHandoff => IsPreviewRuleset(normalizedRulesetId)
                 ? "ALICE can suggest an SR4-safe settings posture here, then hand you to the real settings form for deliberate edits."
                 : "ALICE can suggest a sane settings posture here, then hand you to the real settings form for deliberate edits.",
-            _ => "No editable runner surface is active. Open a build, gear, combat, magic, contacts, or settings lane first."
+            _ => "No runner is open yet. ALICE can still plan a complete first build, explain the settings, or start an origin dossier."
         };
 
         return new DesktopDialogState(
@@ -89,13 +100,19 @@ internal static class DesktopAliceAssistant
 
     public static string? TryGetHandoffCommandId(DesktopDialogState dialog, CharacterOverviewState state)
     {
+        AliceSurfacePlan plan = ResolvePlanFromDialog(dialog, state.ActiveSectionId, state.ActiveDialog?.Id);
+        AliceProposal proposal = BuildProposal(dialog, plan);
+        if (!string.IsNullOrWhiteSpace(proposal.HandoffCommandId))
+        {
+            return proposal.HandoffCommandId;
+        }
+
         string? stored = DesktopDialogFieldValueParser.GetValue(dialog, HandoffCommandFieldId);
         if (!string.IsNullOrWhiteSpace(stored))
         {
             return stored;
         }
 
-        AliceSurfacePlan plan = ResolvePlanFromDialog(dialog, state.ActiveSectionId, state.ActiveDialog?.Id);
         return plan.HandoffCommandId;
     }
 
@@ -113,6 +130,19 @@ internal static class DesktopAliceAssistant
             HiddenField(RulesetFieldId, rulesetId),
             HiddenField(WorkspaceFieldId, workspaceId),
             new DesktopDialogField(
+                ConversationModeFieldId,
+                "Mode",
+                BuildHelpConversationMode,
+                BuildHelpConversationMode,
+                InputType: "select",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
+                Options:
+                [
+                    new(BuildHelpConversationMode, "Build help"),
+                    new(RulesCoachConversationMode, "Rules coach"),
+                    new(OriginDossierConversationMode, "Origin Dossier")
+                ]),
+            new DesktopDialogField(
                 "autoAliceSurfaceContext",
                 "Current Surface",
                 $"Surface | {plan.SurfaceLabel}{Environment.NewLine}Support | {plan.SupportLabel}{Environment.NewLine}Posture | {plan.SurfaceSummary}",
@@ -123,12 +153,21 @@ internal static class DesktopAliceAssistant
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
                 "autoAliceQuestionPrompt",
-                "Interview",
-                "Answer a few questions first. ALICE stays scoped to the current visible frame.",
-                "Answer a few questions first.",
+                "How This Works",
+                "Choose build help, rules coach, or origin dossier. ALICE can work before a character exists, and finished characters are not changed unless you apply a separate explicit edit.",
+                "Choose a mode first.",
                 IsReadOnly: true,
                 IsMultiline: true,
                 VisualKind: DesktopDialogFieldVisualKinds.Snippet),
+            new DesktopDialogField(
+                "autoAliceSettingsGuide",
+                "Settings Guide",
+                "Strict avoids restricted picks. Standard allows common legal restricted choices. Anything includes table exceptions and always needs review. Simple keeps the path obvious, Standard balances depth, and Deep explores tighter tradeoffs. Ware advice calls out essence, nuyen, legality, and recovery risk before anything is applied.",
+                "Strict vs Standard explanation",
+                IsReadOnly: true,
+                IsMultiline: true,
+                VisualKind: DesktopDialogFieldVisualKinds.Snippet,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
             new DesktopDialogField(
                 ArchetypeFieldId,
                 "Archetype",
@@ -181,7 +220,14 @@ internal static class DesktopAliceAssistant
                     new("simple", "Simple"),
                     new("standard", "Standard"),
                     new("deep", "Deep")
-                ])
+                ]),
+            new DesktopDialogField(
+                GmRequirementsFieldId,
+                "GM Requirements / Grants",
+                string.Empty,
+                "Optional: must be magically active, must have Intelligence 2+, must have an illegal addiction, bonus nuyen, extra quality, availability or ware exception, required gear, banned choices.",
+                IsMultiline: true,
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
         ];
     }
 
@@ -314,7 +360,7 @@ internal static class DesktopAliceAssistant
             "qualities" => BuildPlan("qualities", "Qualities", AliceSupportMode.QuickAddApply),
             "create" or "metatype" or "priority" => BuildPlan("character_create", "Character Create", AliceSupportMode.GuidedBuildPlan, "new_character"),
             "settings" => BuildPlan("character_settings", "Character Settings", AliceSupportMode.SettingsHandoff, "character_settings"),
-            _ => BuildPlan("unavailable", "Current Surface", AliceSupportMode.Unavailable)
+            _ => BuildPlan("character_create", "New Character", AliceSupportMode.GuidedBuildPlan, "new_character")
         };
     }
 
@@ -333,7 +379,7 @@ internal static class DesktopAliceAssistant
             AliceSupportMode.QuickAddApply => "Scoped apply",
             AliceSupportMode.GuidedBuildPlan => "Guided handoff",
             AliceSupportMode.SettingsHandoff => "Settings handoff",
-            _ => "Unavailable"
+            _ => "Build from scratch"
         };
 
     private static string ResolveSurfaceSummary(string surfaceId, AliceSupportMode mode)
@@ -342,7 +388,7 @@ internal static class DesktopAliceAssistant
             AliceSupportMode.QuickAddApply => $"ALICE can add one reasonable {surfaceId.Replace('_', ' ')} proposal on first-party rails.",
             AliceSupportMode.GuidedBuildPlan => "ALICE can recommend a build direction, but the create surface still needs the named workflow.",
             AliceSupportMode.SettingsHandoff => "ALICE can suggest defaults, but the settings lane still owns the actual edits.",
-            _ => "No editable ALICE surface is currently active."
+            _ => "ALICE can start from a blank table, explain settings, or open the origin dossier path."
         };
 
     private static string? NormalizeSurfaceId(string? value)
@@ -379,14 +425,26 @@ internal static class DesktopAliceAssistant
         string optimization = DesktopDialogFieldValueParser.GetValue(dialog, OptimizationFieldId) ?? "balanced";
         string legality = DesktopDialogFieldValueParser.GetValue(dialog, LegalityFieldId) ?? "strict";
         string complexity = DesktopDialogFieldValueParser.GetValue(dialog, ComplexityFieldId) ?? "standard";
+        string conversationMode = NormalizeConversationMode(DesktopDialogFieldValueParser.GetValue(dialog, ConversationModeFieldId));
+        string gmRequirements = DesktopDialogFieldValueParser.GetValue(dialog, GmRequirementsFieldId) ?? string.Empty;
 
         string rulesetId = RulesetDefaults.NormalizeOptional(DesktopDialogFieldValueParser.GetValue(dialog, RulesetFieldId)) ?? RulesetDefaults.Sr5;
 
+        if (string.Equals(conversationMode, OriginDossierConversationMode, StringComparison.Ordinal))
+        {
+            return BuildOriginDossierProposal(rulesetId, archetype, optimization, legality, complexity, gmRequirements);
+        }
+
+        if (string.Equals(conversationMode, RulesCoachConversationMode, StringComparison.Ordinal))
+        {
+            return BuildRulesCoachProposal(rulesetId, archetype, optimization, legality, complexity, gmRequirements);
+        }
+
         return plan.SupportMode switch
         {
-            AliceSupportMode.QuickAddApply => BuildQuickAddProposal(plan, rulesetId, archetype, optimization, legality, complexity),
-            AliceSupportMode.GuidedBuildPlan => BuildGuidedBuildProposal(plan, rulesetId, archetype, optimization, legality, complexity),
-            AliceSupportMode.SettingsHandoff => BuildSettingsProposal(plan, rulesetId, archetype, optimization, legality, complexity),
+            AliceSupportMode.QuickAddApply => BuildQuickAddProposal(plan, rulesetId, archetype, optimization, legality, complexity, gmRequirements),
+            AliceSupportMode.GuidedBuildPlan => BuildGuidedBuildProposal(plan, rulesetId, archetype, optimization, legality, complexity, gmRequirements),
+            AliceSupportMode.SettingsHandoff => BuildSettingsProposal(plan, rulesetId, archetype, optimization, legality, complexity, gmRequirements),
             _ => new AliceProposal(
                 "No ALICE proposal is available from the current desktop surface.",
                 "ALICE could not find a supported editable frame. Open a gear, combat, magic, contacts, skills, or build surface first.",
@@ -405,7 +463,8 @@ internal static class DesktopAliceAssistant
         string archetype,
         string optimization,
         string legality,
-        string complexity)
+        string complexity,
+        string gmRequirements)
     {
         WorkspaceQuickAddRequest request = plan.SurfaceId switch
         {
@@ -433,13 +492,14 @@ internal static class DesktopAliceAssistant
             $"Kind | {request.Kind}{Environment.NewLine}" +
             $"Bias | {optimization}{Environment.NewLine}" +
             $"Legality | {legality}{Environment.NewLine}" +
-            $"Complexity | {complexity}";
+            $"Complexity | {complexity}{FormatGmRequirementLine(gmRequirements)}";
         string warningList = legality switch
         {
             "anything" => "Review availability and legality before applying. ALICE is not overriding table policy.",
             "standard" => "Review table-specific legality and campaign overlays before applying.",
             _ => "Strict legality posture selected. ALICE stayed on safer defaults where possible."
         };
+        warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         if (IsPreviewRuleset(rulesetId))
         {
             warningList += $"{Environment.NewLine}SR4 preview lane: review BP/Karma legality, source coverage, and table posture before committing.";
@@ -469,7 +529,8 @@ internal static class DesktopAliceAssistant
         string archetype,
         string optimization,
         string legality,
-        string complexity)
+        string complexity,
+        string gmRequirements)
     {
         bool sr4Preview = IsPreviewRuleset(rulesetId);
         string changeList =
@@ -477,10 +538,12 @@ internal static class DesktopAliceAssistant
             $"Bias | {optimization}{Environment.NewLine}" +
             $"Legality | {legality}{Environment.NewLine}" +
             $"Complexity | {complexity}{Environment.NewLine}" +
+            $"Scope | Complete first-pass character from scratch{FormatGmRequirementLine(gmRequirements)}{Environment.NewLine}" +
             $"Next step | Open the guided {(sr4Preview ? "SR4 BP/Karma" : "new-character")} workflow";
         string warningList = sr4Preview
             ? "SR4 remains a promoted preview lane. ALICE is shaping the lane, not mutating the build silently, and the explicit BP or Karma workflow still owns the final build."
             : "This surface still needs the named character-creation workflow. ALICE is shaping the lane, not mutating the build silently.";
+        warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         string summary = sr4Preview
             ? $"ALICE recommends an SR4 {FormatChoiceLabel(archetype)} preview start with {optimization} posture. Use the guided BP or Karma workflow next."
             : $"ALICE recommends a {FormatChoiceLabel(archetype)} start with {optimization} posture. Use the guided character workflow next.";
@@ -504,16 +567,18 @@ internal static class DesktopAliceAssistant
         string archetype,
         string optimization,
         string legality,
-        string complexity)
+        string complexity,
+        string gmRequirements)
     {
         string changeList =
             $"Compact posture | {(string.Equals(complexity, "simple", StringComparison.Ordinal) ? "On" : "Off")}{Environment.NewLine}" +
             $"Bias | {optimization}{Environment.NewLine}" +
             $"Legality posture | {legality}{Environment.NewLine}" +
-            $"Archetype anchor | {FormatChoiceLabel(archetype)}";
+            $"Archetype anchor | {FormatChoiceLabel(archetype)}{FormatGmRequirementLine(gmRequirements)}";
         string warningList = IsPreviewRuleset(rulesetId)
             ? "SR4 remains a preview lane. Settings changes still require the named settings form, and ALICE is only suggesting safer defaults here."
             : "Settings changes still require the named settings lane. ALICE is only suggesting defaults here.";
+        warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         string summary = IsPreviewRuleset(rulesetId)
             ? $"ALICE suggests calmer SR4 preview defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit."
             : $"ALICE suggests calmer defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit.";
@@ -528,6 +593,90 @@ internal static class DesktopAliceAssistant
             null,
             string.Empty);
     }
+
+    private static AliceProposal BuildRulesCoachProposal(
+        string rulesetId,
+        string archetype,
+        string optimization,
+        string legality,
+        string complexity,
+        string gmRequirements)
+    {
+        string changeList =
+            $"Strict | Avoid restricted picks and table exceptions until the GM approves them.{Environment.NewLine}" +
+            $"Standard | Allow common legal restricted choices, then flag what needs review.{Environment.NewLine}" +
+            $"Anything | Include table exceptions, but never treat them as legal without GM approval.{Environment.NewLine}" +
+            $"Ware | Explain essence, nuyen, availability, legality, and recovery tradeoffs before suggesting it.{Environment.NewLine}" +
+            $"Qualities | Separate story hooks from mechanical picks; negative qualities must still fit the rules and table.{Environment.NewLine}" +
+            $"Current frame | {RulesetLabel(rulesetId)} {FormatChoiceLabel(archetype)} · {optimization} · {legality} · {complexity}{FormatGmRequirementLine(gmRequirements)}";
+        string warningList = AppendGmRequirementWarning(
+            "Rules coach explains tradeoffs and sequencing. It does not override edition rules, source coverage, or GM constraints.",
+            gmRequirements);
+
+        return new AliceProposal(
+            "Rules coach explanation ready.",
+            $"ALICE can explain {RulesetLabel(rulesetId)} build settings, legality posture, ware tradeoffs, qualities, and availability before you commit a pick.",
+            changeList,
+            warningList,
+            string.Empty,
+            null,
+            null,
+            string.Empty);
+    }
+
+    private static AliceProposal BuildOriginDossierProposal(
+        string rulesetId,
+        string archetype,
+        string optimization,
+        string legality,
+        string complexity,
+        string gmRequirements)
+    {
+        string changeList =
+            $"Dossier | Origin story, build seed, GM hooks, portrait prompts, scene prompts, PDF, audiobook notes, and video plan{Environment.NewLine}" +
+            $"Ruleset | {RulesetLabel(rulesetId)}{Environment.NewLine}" +
+            $"Archetype | {FormatChoiceLabel(archetype)}{Environment.NewLine}" +
+            $"Tone | {optimization} · {legality} · {complexity}{FormatGmRequirementLine(gmRequirements)}{Environment.NewLine}" +
+            "Sheet Changes | none; finished characters are not rewritten";
+        string warningList = AppendGmRequirementWarning(
+            "Origin dossier creates story and media. ALICE may use the story as a seed for suggestions, but mechanics still require explicit character-creation or edit actions.",
+            gmRequirements);
+
+        return new AliceProposal(
+            "Origin dossier is ready to start.",
+            $"ALICE can create an origin dossier for a {RulesetLabel(rulesetId)} {FormatChoiceLabel(archetype)} before creation or for a finished character.",
+            changeList,
+            warningList,
+            "Open Origin Dossier",
+            "new_character_origin",
+            null,
+            string.Empty);
+    }
+
+    private static string NormalizeConversationMode(string? value)
+        => value switch
+        {
+            RulesCoachConversationMode => RulesCoachConversationMode,
+            OriginDossierConversationMode => OriginDossierConversationMode,
+            _ => BuildHelpConversationMode
+        };
+
+    private static string FormatGmRequirementLine(string gmRequirements)
+        => string.IsNullOrWhiteSpace(gmRequirements)
+            ? string.Empty
+            : $"{Environment.NewLine}GM Requirements | {gmRequirements.Trim()}";
+
+    private static string AppendGmRequirementWarning(string warningList, string gmRequirements)
+        => string.IsNullOrWhiteSpace(gmRequirements)
+            ? warningList
+            : $"{warningList}{Environment.NewLine}GM requirements are treated as constraints or grants to explain, not silent sheet edits: {gmRequirements.Trim()}";
+
+    private static string RulesetLabel(string rulesetId)
+        => string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
+            ? "SR4"
+            : string.Equals(rulesetId, RulesetDefaults.Sr6, StringComparison.Ordinal)
+                ? "SR6"
+                : "SR5";
 
     private static WorkspaceQuickAddRequest BuildGearRequest(string archetype, string optimization)
     {
