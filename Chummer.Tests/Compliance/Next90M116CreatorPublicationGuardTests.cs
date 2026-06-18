@@ -42,8 +42,8 @@ public sealed class Next90M116CreatorPublicationGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M116 chummer6-ui creator publication desktop surface is complete; future shards must verify the\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "\"Open Creator Artifact Shelf\"");
         StringAssert.Contains(scriptText, "\"Review Moderation Flow\"");
         StringAssert.Contains(scriptText, "DesktopCreatorPublicationWindow.ShowAsync(");
@@ -147,8 +147,8 @@ public sealed class Next90M116CreatorPublicationGuardTests
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M116_UI_CREATOR_PUBLICATION.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m116-ui-creator-publication-check.sh"),
                 "bash scripts/ai/milestones/next90-m116-ui-creator-publication-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
-                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
             },
             ReadStringArray(closedPackage.GetProperty("proof")));
     }

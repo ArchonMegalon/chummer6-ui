@@ -56,8 +56,8 @@ public sealed class Next90M114RuleEnvironmentStudioGuardTests
         StringAssert.Contains(scriptText, "\"rule_environment_studio:desktop\"");
         StringAssert.Contains(scriptText, "\"explain_receipts:desktop\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m114-ui-rule-studio-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M114RuleEnvironmentStudioGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "\"queue_design_block_parity\": normalize_whitespace(queue_block) == normalize_whitespace(design_queue_block)");
         StringAssert.Contains(scriptText, "\"queue_work_task_matches\": yaml_scalar(queue_block, \"work_task_id\") == WORK_TASK_ID");
         StringAssert.Contains(scriptText, "\"queue_repo_matches\": yaml_scalar(queue_block, \"repo\") == \"chummer6-ui\"");

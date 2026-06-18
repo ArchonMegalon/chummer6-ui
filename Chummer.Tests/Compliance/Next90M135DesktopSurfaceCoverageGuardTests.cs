@@ -176,8 +176,8 @@ public sealed class Next90M135DesktopSurfaceCoverageGuardTests
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m135-ui-desktop-surface-coverage-check.sh"),
                 "bash scripts/ai/milestones/veteran-task-time-evidence-gate.sh",
                 "bash scripts/ai/milestones/next90-m135-ui-desktop-surface-coverage-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M135DesktopSurfaceCoverageGuardTests\" --no-restore",
-                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M135DesktopSurfaceCoverageGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
             },
             ReadStringArray(closedPackage.GetProperty("proof")));
     }

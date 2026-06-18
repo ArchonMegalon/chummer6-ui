@@ -621,8 +621,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
         Button button = new()
         {
             Content = label,
-            MinWidth = 104
+            MinWidth = 112,
+            Padding = new Thickness(10, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
         };
+        button.Classes.Add("shell-action");
+        ToolTip.SetTip(button, label);
+
         if (isDefault)
         {
             button.FontWeight = FontWeight.SemiBold;
@@ -889,6 +895,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
             _exitButton.Content = "Close";
         }
 
+        RefreshButtonTip(_followThroughButton);
+        RefreshButtonTip(_accountButton);
+        RefreshButtonTip(_copyLoginUrlButton);
+        RefreshButtonTip(_exitButton);
+
         _claimCodeHintText.IsVisible = !claimed;
         _claimCodeLabelText.IsVisible = !claimed;
         _claimCodeEntryRow.IsVisible = !claimed;
@@ -955,15 +966,24 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void ShowManualBrowserFallback(string loginUrl, string? failureReason)
     {
         _lastLoginUrl = loginUrl;
+        string headline = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language);
         string detail = string.IsNullOrWhiteSpace(failureReason)
-            ? string.Empty
-            : $" Host detail: {failureReason.Trim()}";
-        _claimCodeHintText.Text = $"{DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language)} {loginUrl}{detail}";
+            ? "Copy or open the link below, sign in, then return here. The local callback will finish automatically when this desktop can receive it."
+            : $"Copy or open the link below, sign in, then return here. Host detail: {failureReason.Trim()}";
+        _claimCodeHintText.Text = $"{headline}\n{detail}\n{loginUrl}";
         _claimCodeHintText.IsVisible = true;
         ToolTip.SetTip(_claimCodeHintText, loginUrl);
         UpdateMatrixHandoffState("Manual browser fallback ready");
         RefreshSummary();
         RefreshActionState();
+    }
+
+    private static void RefreshButtonTip(Button button)
+    {
+        if (button.Content is string text && !string.IsNullOrWhiteSpace(text))
+        {
+            ToolTip.SetTip(button, text);
+        }
     }
 
     private void UpdateMatrixHandoffState(string message)

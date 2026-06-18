@@ -42,8 +42,8 @@ public sealed class Next90M118OrganizerOperationsGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M118 chummer6-ui organizer desktop operations are complete; future shards must verify the\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "\"Open Organizer Operations\"");
         StringAssert.Contains(scriptText, "\"Review Organizer Roles\"");
         StringAssert.Contains(scriptText, "\"Organizer lane:\"");
@@ -154,8 +154,8 @@ public sealed class Next90M118OrganizerOperationsGuardTests
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M118_UI_ORGANIZER_OPS.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m118-ui-organizer-ops-check.sh"),
                 "bash scripts/ai/milestones/next90-m118-ui-organizer-ops-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore",
-                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M118OrganizerOperationsGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
             },
             ReadStringArray(closedPackage.GetProperty("proof")));
     }

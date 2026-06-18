@@ -10,6 +10,11 @@
 .env.*
 !.env.example
 
+# Local desktop runtime state
+Chummer/state/workspaces/*.json
+Docker/Downloads/startup-smoke/release-regression-*.json
+Docker/Downloads/startup-smoke/startup-smoke-avalonia-osx-*.receipt.json
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

@@ -42,8 +42,8 @@ public sealed class Next90M119FirstSessionFlowGuardTests
         StringAssert.Contains(scriptText, "\"first_playable_session:desktop\"");
         StringAssert.Contains(scriptText, "\"campaign_entry:first_session\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "CreateButton(\"Starter\", OpenStarterLaneReviewAsync)");
         StringAssert.Contains(scriptText, "OpenStarterLaneReviewAsync()");
         StringAssert.Contains(scriptText, "CreateButton(\"Starter\", OpenStarterLaneReviewAsync)");
@@ -137,8 +137,8 @@ public sealed class Next90M119FirstSessionFlowGuardTests
             new[]
             {
                 "bash scripts/ai/milestones/next90-m119-ui-first-session-flow-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore",
-                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M119FirstSessionFlowGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
             },
             ReadStringArray(evidence.GetProperty("proofCommands")));
     }

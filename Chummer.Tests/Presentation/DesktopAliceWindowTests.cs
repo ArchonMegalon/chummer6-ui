@@ -40,6 +40,18 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "BuildNarrativePacket(");
         StringAssert.Contains(source, "BuildSeededAssistantMessage(");
         StringAssert.Contains(source, "OriginDossierBundle");
+        StringAssert.Contains(source, "AliceOriginWizardPanel");
+        StringAssert.Contains(source, "AliceOriginArchetypeCombo");
+        StringAssert.Contains(source, "AliceOriginBuildFrameCombo");
+        StringAssert.Contains(source, "AliceOriginPressureCombo");
+        StringAssert.Contains(source, "AliceOriginGmRequirementPresetCombo");
+        StringAssert.Contains(source, "AliceOriginStartDossierButton");
+        StringAssert.Contains(source, "BuildOriginStarterPrompt(");
+        StringAssert.Contains(source, "Troll decker");
+        StringAssert.Contains(source, "SR4 BP");
+        StringAssert.Contains(source, "Matrix identity theft");
+        StringAssert.Contains(source, "Must be addicted to an illegal drug");
+        StringAssert.Contains(source, "Must have Logic or Intuition 2+");
         StringAssert.Contains(source, "Approve canon");
         StringAssert.Contains(source, "Render dossier PDF");
         StringAssert.Contains(source, "Generate portraits");

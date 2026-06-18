@@ -113,7 +113,7 @@ public sealed class Next90M143DirectOutputProofGuardTests
             new[]
             {
                 "bash scripts/ai/milestones/next90-m143-ui-direct-output-proof-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M143DirectOutputProofGuardTests\" --no-restore",
             },
             ReadStringArray(evidence.GetProperty("proofCommands")));
     }

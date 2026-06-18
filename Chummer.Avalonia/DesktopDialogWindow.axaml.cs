@@ -490,7 +490,7 @@ public partial class DesktopDialogWindow : Window
     {
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = new TextBlock
@@ -530,7 +530,7 @@ public partial class DesktopDialogWindow : Window
 
         return new Border
         {
-            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Padding = new Thickness(0, 0, 0, 4),
             Child = header

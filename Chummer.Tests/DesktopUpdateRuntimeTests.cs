@@ -947,6 +947,118 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Linux_deb_installer_command_uses_dpkg_direct_for_root_and_pkexec_for_desktop_users()
+    {
+        const string installerPath = "/tmp/chummer-avalonia-linux-x64-installer.deb";
+
+        object? rootCommand = InvokePrivateStatic<object?>(
+            "ResolveLinuxDebInstallerCommand",
+            installerPath,
+            true,
+            true,
+            true);
+        object? desktopCommand = InvokePrivateStatic<object?>(
+            "ResolveLinuxDebInstallerCommand",
+            installerPath,
+            false,
+            true,
+            true);
+        object? missingPrivilegeCommand = InvokePrivateStatic<object?>(
+            "ResolveLinuxDebInstallerCommand",
+            installerPath,
+            false,
+            true,
+            false);
+        object? missingDpkgCommand = InvokePrivateStatic<object?>(
+            "ResolveLinuxDebInstallerCommand",
+            installerPath,
+            true,
+            false,
+            true);
+
+        Assert.IsNotNull(rootCommand);
+        Assert.AreEqual("dpkg", GetPrivateProperty<string>(rootCommand, "FileName"));
+        CollectionAssert.AreEqual(
+            new[] { "-i", installerPath },
+            GetPrivateProperty<IReadOnlyList<string>>(rootCommand, "Arguments").ToArray());
+
+        Assert.IsNotNull(desktopCommand);
+        Assert.AreEqual("pkexec", GetPrivateProperty<string>(desktopCommand, "FileName"));
+        CollectionAssert.AreEqual(
+            new[] { "dpkg", "-i", installerPath },
+            GetPrivateProperty<IReadOnlyList<string>>(desktopCommand, "Arguments").ToArray());
+
+        Assert.IsNull(missingPrivilegeCommand);
+        Assert.IsNull(missingDpkgCommand);
+    }
+
+    [TestMethod]
+    public async Task TryHandleSpecialModeAsync_installer_launch_failure_records_structured_failure_reason()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-installer-failure-{Guid.NewGuid():N}");
+        string stageRoot = Path.Combine(tempRoot, "stage");
+        string statePath = Path.Combine(tempRoot, "state.json");
+        string requestPath = Path.Combine(stageRoot, "installer-request.json");
+        string missingInstallerPath = Path.Combine(stageRoot, "missing-installer.deb");
+        Directory.CreateDirectory(stageRoot);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260618-024810",
+              "ChannelId": "stable",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-051119",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": null,
+              "PendingUpdateVersion": "run-20260618-051119",
+              "PendingUpdateChannelId": "stable",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z"
+            }
+            """);
+        File.WriteAllText(
+            requestPath,
+            $$"""
+            {
+              "ParentProcessId": 0,
+              "StageRoot": "{{stageRoot.Replace("\\", "\\\\")}}",
+              "InstallerPath": "{{missingInstallerPath.Replace("\\", "\\\\")}}",
+              "StateFilePath": "{{statePath.Replace("\\", "\\\\")}}",
+              "Version": "run-20260618-051119",
+              "ChannelId": "stable",
+              "HeadId": "avalonia",
+              "RelaunchArgs": []
+            }
+            """);
+
+        try
+        {
+            int? exitCode = await DesktopUpdateRuntime.TryHandleSpecialModeAsync(
+                ["--desktop-update-launch-installer", requestPath],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual(1, exitCode);
+
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("installer_launch_failed", GetStringProperty(state.RootElement, "lastFailureReason"));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastError") ?? string.Empty, "Installer payload was not found");
+            Assert.IsNotNull(GetDateTimeProperty(state.RootElement, "lastFailureAtUtc"));
+            Assert.AreEqual("run-20260618-051119", GetStringProperty(state.RootElement, "pendingUpdateVersion"));
+            Assert.AreEqual("stable", GetStringProperty(state.RootElement, "pendingUpdateChannelId"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public void Update_configuration_load_honors_legacy_manifest_and_boolean_aliases()
     {
         using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
@@ -1035,6 +1147,15 @@ public sealed class DesktopUpdateRuntimeTests
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
         Assert.IsNotNull(method, $"Expected DesktopUpdateRuntime.{methodName} to remain available for coverage.");
         return (T)method.Invoke(null, args)!;
+    }
+
+    private static T GetPrivateProperty<T>(object target, string propertyName)
+    {
+        System.Reflection.PropertyInfo? property = target.GetType().GetProperty(
+            propertyName,
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.IsNotNull(property, $"Expected {target.GetType().Name}.{propertyName} to remain available for coverage.");
+        return (T)property.GetValue(target)!;
     }
 
     private static object InvokeNestedStatic(string nestedTypeName, string methodName, params object?[] args)

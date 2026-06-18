@@ -7211,7 +7211,7 @@ public class MigrationComplianceTests
         string uiE2ePath = FindPath("scripts", "e2e-ui.sh");
         string uiE2eText = File.ReadAllText(uiE2ePath);
 
-        StringAssert.Contains(componentSuiteText, "dotnet test Chummer.Tests/Chummer.Tests.csproj");
+        StringAssert.Contains(componentSuiteText, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj");
         StringAssert.Contains(componentSuiteText, "FullyQualifiedName~BlazorShellComponentTests");
 
         StringAssert.Contains(uiE2eText, "CHUMMER_UI_PLAYWRIGHT");

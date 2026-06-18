@@ -106,7 +106,8 @@ internal sealed class DesktopAboutWindow : Window
             IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.Wrap,
-            MinHeight = 160
+            MinHeight = 132,
+            MaxHeight = 180
         };
         DesktopShellTheme.ApplyShellTextInputTheme(textBox);
         return textBox;

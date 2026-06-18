@@ -34,7 +34,11 @@ internal static class DesktopShellTheme
     public static void ApplyPrimaryButton(Button button)
     {
         ArgumentNullException.ThrowIfNull(button);
-        button.Classes.Add("shell-action");
+        if (!button.Classes.Contains("shell-action"))
+        {
+            button.Classes.Add("shell-action");
+        }
+
         button.Classes.Add("primary");
     }
 
@@ -45,6 +49,8 @@ internal static class DesktopShellTheme
         textBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
         textBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
         textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
+        textBox.Padding = new Thickness(8, 4);
     }
 
     public static void ApplyShellComboBoxTheme(ComboBox comboBox)
@@ -53,6 +59,8 @@ internal static class DesktopShellTheme
         comboBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
         comboBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
         comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
+        comboBox.Padding = new Thickness(8, 4);
     }
 
     public static void ApplyShellListBoxTheme(ListBox listBox)
@@ -62,6 +70,7 @@ internal static class DesktopShellTheme
         listBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
         listBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
         listBox.BorderThickness = new Thickness(1);
+        listBox.Padding = new Thickness(2);
     }
 
     public static void ApplyShellReadOnlyPanelTheme(Border panel)
@@ -161,8 +170,14 @@ internal static class DesktopShellTheme
         Button button = new()
         {
             Content = label,
-            MinWidth = minWidth
+            MinWidth = minWidth,
+            Padding = new Thickness(10, 4),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
         };
+        button.Classes.Add("shell-action");
+        ToolTip.SetTip(button, label);
+
         if (isPrimary)
         {
             button.FontWeight = FontWeight.SemiBold;

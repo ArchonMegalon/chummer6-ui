@@ -40,7 +40,8 @@ is_public_artifact() {
 
 strip_non_public_manifest_rows() {
   local manifest_path="$1"
-  python3 - "$manifest_path" <<'PY'
+  python3 - "$manifest_path" "$REPO_ROOT" <<'PY'
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -72,6 +73,7 @@ def is_public_file_name(file_name: str) -> bool:
 
 
 path = Path(sys.argv[1])
+repo_root = Path(sys.argv[2])
 payload = json.loads(path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(0)
@@ -101,6 +103,14 @@ for key in ("installAwareArtifactRegistry", "desktopSurfaceRefs", "artifactIdent
         row for row in rows
         if isinstance(row, dict) and str(row.get("artifactId") or row.get("id") or "").strip() in allowed_artifact_ids
     ]
+
+verifier_path = repo_root.parent / "chummer-hub-registry" / "scripts" / "verify_public_release_channel.py"
+if verifier_path.is_file():
+    spec = importlib.util.spec_from_file_location("verify_public_release_channel", verifier_path)
+    if spec is not None and spec.loader is not None:
+        verifier = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(verifier)
+        payload["registryBoundaryCoverage"] = verifier.expected_registry_boundary_coverage(payload)
 
 path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY

@@ -38,8 +38,8 @@ public sealed class Next90M145DesktopExplainDrawerGuardTests
         StringAssert.Contains(guardScript, "NEXT90_M145_UI_DESKTOP_EXPLAIN_DRAWER_AND_FOLLOW_UP.generated.json");
         StringAssert.Contains(guardScript, "TASK_LOCAL_TELEMETRY.generated.json");
         StringAssert.Contains(guardScript, "ACTIVE_RUN_HANDOFF.generated.md");
-        StringAssert.Contains(guardScript, "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M145DesktopExplainDrawerGuardTests\" --no-restore");
-        StringAssert.Contains(guardScript, "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy|FullyQualifiedName~Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up|FullyQualifiedName~Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer\" --no-restore -p:BuildProjectReferences=false");
+        StringAssert.Contains(guardScript, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M145DesktopExplainDrawerGuardTests\" --no-restore");
+        StringAssert.Contains(guardScript, "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Standalone_section_context_reads_canonical_explanation_packet_fields_for_text_first_drawer_copy|FullyQualifiedName~Standalone_section_context_projects_packet_backed_explain_drawer_actions_for_desktop_launch_and_follow_up|FullyQualifiedName~Standalone_section_context_launches_source_anchor_from_packet_backed_explain_drawer\" --no-restore -p:BuildProjectReferences=false");
 
         StringAssert.Contains(projectText, "Compliance\\Next90M145DesktopExplainDrawerGuardTests.cs");
     }

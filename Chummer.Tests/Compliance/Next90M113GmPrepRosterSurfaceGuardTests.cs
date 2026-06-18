@@ -40,8 +40,8 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "\"gm_prep_packets:desktop\"");
         StringAssert.Contains(scriptText, "\"roster_movement:desktop\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs\": [");
         StringAssert.Contains(scriptText, "\"ShowGmPrepAsync\"");
         StringAssert.Contains(scriptText, "\"ShowRosterMovementAsync\"");
@@ -178,10 +178,10 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
             "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",
             proofCommands.GetProperty("directProofCommand").GetString());
         Assert.AreEqual(
-            "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore",
+            "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore",
             proofCommands.GetProperty("targetedTestCommand").GetString());
         Assert.AreEqual(
-            "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
+            "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore",
             proofCommands.GetProperty("presentationTestCommand").GetString());
     }
 

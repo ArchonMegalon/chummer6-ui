@@ -423,6 +423,20 @@ finalize_windows_signing_receipt() {
     "$installer_path"
 }
 
+stage_installer_for_downloads_manifest() {
+  local installer_name="$1"
+  local installer_path="$DIST_DIR/$installer_name"
+  local downloads_files_dir="$DIST_DIR/files"
+
+  if [[ ! -f "$installer_path" ]]; then
+    echo "Cannot stage missing installer for downloads manifest: $installer_path" >&2
+    exit 1
+  fi
+
+  mkdir -p "$downloads_files_dir"
+  cp -f "$installer_path" "$downloads_files_dir/$installer_name"
+}
+
 has_macos_signing_identity() {
   [[ -n "${CHUMMER_MAC_APP_SIGN_IDENTITY:-}" ]]
 }
@@ -1133,6 +1147,7 @@ case "$RID" in
     build_portable_artifacts
     build_windows_installer
     finalize_windows_signing_receipt
+    stage_installer_for_downloads_manifest "chummer-$APP_KEY-$RID-installer.exe"
     ;;
   linux-*)
     bundle_demo_character_fixture
@@ -1140,6 +1155,7 @@ case "$RID" in
     prune_release_symbols
     build_portable_artifacts
     build_linux_installer
+    stage_installer_for_downloads_manifest "chummer-$APP_KEY-$RID-installer.deb"
     ;;
   osx-*)
     bundle_demo_character_fixture

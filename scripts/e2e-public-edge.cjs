@@ -13,12 +13,11 @@ const defaultHeaders = useForwardedPublicHeaders
 
 const requiredLandingLinks = [
   '/downloads',
-  '/now',
   '/help',
-  '/signup',
-  '/ledger',
+  '/play',
+  '/status',
   '/contact',
-  '/faq'
+  '/feedback'
 ];
 
 const checks = [
@@ -27,16 +26,18 @@ const checks = [
     assert: text =>
       text.includes('Chummer')
       && text.includes('Open downloads')
-      && text.includes('Black Ledger command deck')
+      && text.includes('Build the runner. Run the night.')
+      && text.includes('Download Chummer')
+      && !text.includes('Open Black Ledger')
       && requiredLandingLinks.every(link => text.includes(link))
   },
   {
     url: `${baseUrl}/downloads/`,
     assert: text =>
       text.includes('Install Chummer')
-      && text.includes('guided install handoff')
-      && text.includes('Create an account first')
-      && text.includes('Main platform downloads')
+      && text.includes('Get the latest Windows or Linux installer.')
+      && text.includes('Nightly')
+      && text.includes('Stable')
       && text.includes('Chummer for Windows')
       && text.includes('Recommended desktop build for Linux')
   },
@@ -46,10 +47,10 @@ const checks = [
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     },
     assert: text =>
-      text.includes('Recommended for Windows')
+      text.includes('Recommended')
       && text.includes('Chummer for Windows')
-      && text.includes('guided install handoff')
-      && text.includes('Open downloads')
+      && text.includes('Install path')
+      && text.includes('Build run-')
   },
   {
     url: `${baseUrl}/downloads/releases.json`,
@@ -96,14 +97,15 @@ const checks = [
   {
     url: `${baseUrl}/status`,
     assert: text =>
-      text.includes('Current status')
-      && text.includes('Public Stable')
-      && text.includes('What works now, what needs caution, and where to go next')
+      text.includes('Release status')
+      && text.includes('Current release')
+      && text.includes('Validation Passed')
+      && text.includes('Build run-')
   },
   {
     url: `${baseUrl}/ledger`,
     assert: text =>
-      text.includes('Black Ledger command deck')
+      text.includes('Black Ledger command map')
       && text.includes('Emerald Sprawl: First Pressure')
       && text.includes('Open command map')
   },
@@ -119,7 +121,10 @@ const checks = [
   },
   {
     url: `${baseUrl}/artifacts`,
-    assert: text => text.includes('Proof gallery')
+    assert: text =>
+      text.includes('Detail gallery')
+      && text.includes('Dossiers, recaps, and release details')
+      && text.includes('Open downloads')
   },
   {
     url: `${baseUrl}/faq`,
@@ -159,7 +164,8 @@ const checks = [
     url: `${baseUrl}/coach/`,
     assert: (text, response) =>
       /\/status\/?$/.test(response.url)
-      && text.includes('Current status')
+      && text.includes('Release status')
+      && text.includes('Validation Passed')
   }
 ];
 

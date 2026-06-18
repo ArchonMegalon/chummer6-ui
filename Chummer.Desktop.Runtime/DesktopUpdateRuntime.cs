@@ -72,6 +72,7 @@ public static class DesktopUpdateRuntime
     private const int StartupManifestBackoffMinutes = 2;
     private const int StartupDownloadBackoffMinutes = 5;
     private const int StartupApplyBackoffMinutes = 10;
+    private const int InstallerCommandTimeoutMinutes = 10;
     private const int RollbackWindowDays = 1;
     private static readonly Regex RunVersionPattern = new(
         "^run-(?<date>\\d{8})-(?<time>\\d{6})$",
@@ -882,9 +883,12 @@ public static class DesktopUpdateRuntime
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
             if (priorState is not null)
             {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
                 DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
                 {
-                    LastError = ex.Message
+                    LastError = ex.Message,
+                    LastFailureReason = "update_apply_failed",
+                    LastFailureAtUtc = now
                 });
             }
 
@@ -902,19 +906,21 @@ public static class DesktopUpdateRuntime
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
             if (priorState is not null)
             {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
                 DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
                 {
                     ChannelId = string.IsNullOrWhiteSpace(request.ChannelId) ? priorState.ChannelId : request.ChannelId,
                     LastError = null,
                     LastFailureReason = null,
                     LastFailureAtUtc = null,
-                    LastUpdateLaunchAttemptAtUtc = DateTimeOffset.UtcNow,
+                    LastUpdateLaunchAttemptAtUtc = now,
                     PendingUpdateVersion = null,
                     PendingUpdateChannelId = null,
                     PendingUpdatePreparedAtUtc = null
                 });
             }
 
+            TryDeleteDirectory(request.StageRoot);
             return 0;
         }
         catch (Exception ex)
@@ -922,9 +928,12 @@ public static class DesktopUpdateRuntime
             DesktopUpdateState? priorState = DesktopUpdateStateStore.Load(request.StateFilePath);
             if (priorState is not null)
             {
+                DateTimeOffset now = DateTimeOffset.UtcNow;
                 DesktopUpdateStateStore.Save(request.StateFilePath, priorState with
                 {
-                    LastError = ex.Message
+                    LastError = ex.Message,
+                    LastFailureReason = "installer_launch_failed",
+                    LastFailureAtUtc = now
                 });
             }
 
@@ -1373,15 +1382,15 @@ public static class DesktopUpdateRuntime
 
         if (OperatingSystem.IsLinux())
         {
-            if (TryStartCommand("xdg-open", installerPath)
-                || TryStartCommand("gio", "open", installerPath)
-                || TryStartCommand("pkexec", "dpkg", "-i", installerPath))
+            if (installerPath.EndsWith(".deb", StringComparison.OrdinalIgnoreCase))
             {
+                InstallLinuxDebianPackage(installerPath);
+                TryLaunchLinuxInstalledApplication(headId, relaunchArgs);
                 return;
             }
 
             throw new InvalidOperationException(
-                $"Could not launch Linux installer '{installerPath}'. Expected xdg-open, gio, or pkexec+dpkg to be available.");
+                $"Desktop installer launch is not supported on Linux for '{installerPath}'. Expected a Debian package.");
         }
 
         if (OperatingSystem.IsMacOS())
@@ -1442,6 +1451,216 @@ public static class DesktopUpdateRuntime
         {
             return false;
         }
+    }
+
+    private static void InstallLinuxDebianPackage(string installerPath)
+    {
+        bool dpkgAvailable = CommandExists("dpkg");
+        bool pkexecAvailable = CommandExists("pkexec");
+        DesktopUpdateCommandSpec? command = ResolveLinuxDebInstallerCommand(
+            installerPath,
+            IsRunningAsRoot(),
+            dpkgAvailable,
+            pkexecAvailable);
+        if (command is null)
+        {
+            throw new InvalidOperationException(
+                "Could not apply Linux .deb update automatically. Expected root dpkg or pkexec+dpkg to be available.");
+        }
+
+        RunCommandToSuccessfulExit(command, TimeSpan.FromMinutes(InstallerCommandTimeoutMinutes));
+    }
+
+    private static DesktopUpdateCommandSpec? ResolveLinuxDebInstallerCommand(
+        string installerPath,
+        bool runningAsRoot,
+        bool dpkgAvailable,
+        bool pkexecAvailable)
+    {
+        if (string.IsNullOrWhiteSpace(installerPath) || !dpkgAvailable)
+        {
+            return null;
+        }
+
+        if (runningAsRoot)
+        {
+            return new DesktopUpdateCommandSpec("dpkg", ["-i", installerPath]);
+        }
+
+        return pkexecAvailable
+            ? new DesktopUpdateCommandSpec("pkexec", ["dpkg", "-i", installerPath])
+            : null;
+    }
+
+    private static void TryLaunchLinuxInstalledApplication(string headId, IReadOnlyList<string> relaunchArgs)
+    {
+        string launcherPath = ResolveLinuxInstalledLauncherPath(headId);
+        if (!File.Exists(launcherPath))
+        {
+            Console.Error.WriteLine($"Linux update installed, but launcher '{launcherPath}' was not found for relaunch.");
+            return;
+        }
+
+        try
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = launcherPath,
+                UseShellExecute = false,
+                WorkingDirectory = Path.GetDirectoryName(launcherPath) ?? Path.GetTempPath()
+            };
+            foreach (string arg in relaunchArgs)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+
+            Process.Start(startInfo);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Linux update installed, but relaunch via '{launcherPath}' failed: {ex.Message}");
+        }
+    }
+
+    private static string ResolveLinuxInstalledLauncherPath(string headId)
+    {
+        string normalizedHead = string.IsNullOrWhiteSpace(headId)
+            ? "avalonia"
+            : headId.Trim().ToLowerInvariant();
+        normalizedHead = Regex.Replace(normalizedHead, "[^a-z0-9-]+", "-").Trim('-');
+        if (string.IsNullOrWhiteSpace(normalizedHead))
+        {
+            normalizedHead = "avalonia";
+        }
+
+        return Path.Combine("/usr/bin", $"chummer6-{normalizedHead}");
+    }
+
+    private static bool CommandExists(string command)
+    {
+        try
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = OperatingSystem.IsWindows() ? "where" : "which",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add(command);
+
+            using Process? process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return false;
+            }
+
+            process.WaitForExit(2000);
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsRunningAsRoot()
+    {
+        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
+        {
+            return false;
+        }
+
+        if (string.Equals(Environment.UserName, "root", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("UID"), out int uid) && uid == 0)
+        {
+            return true;
+        }
+
+        try
+        {
+            ProcessStartInfo startInfo = new()
+            {
+                FileName = "id",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add("-u");
+
+            using Process? process = Process.Start(startInfo);
+            if (process is null)
+            {
+                return false;
+            }
+
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(2000);
+            return process.ExitCode == 0
+                && int.TryParse(output.Trim(), out int observedUid)
+                && observedUid == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void RunCommandToSuccessfulExit(DesktopUpdateCommandSpec command, TimeSpan timeout)
+    {
+        ProcessStartInfo startInfo = new()
+        {
+            FileName = command.FileName,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            WorkingDirectory = Path.GetTempPath()
+        };
+        foreach (string arg in command.Arguments)
+        {
+            startInfo.ArgumentList.Add(arg);
+        }
+
+        using Process? process = Process.Start(startInfo);
+        if (process is null)
+        {
+            throw new InvalidOperationException($"Could not start '{command.FileName}'.");
+        }
+
+        Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> errorTask = process.StandardError.ReadToEndAsync();
+        if (!process.WaitForExit((int)Math.Min(timeout.TotalMilliseconds, int.MaxValue)))
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+            }
+
+            throw new TimeoutException($"Timed out waiting for '{command.FileName}' to finish the Linux update install.");
+        }
+
+        string errorText = errorTask.GetAwaiter().GetResult().Trim();
+        string outputText = outputTask.GetAwaiter().GetResult().Trim();
+        if (process.ExitCode == 0)
+        {
+            return;
+        }
+
+        string detail = !string.IsNullOrWhiteSpace(errorText) ? errorText : outputText;
+        throw new InvalidOperationException(
+            string.IsNullOrWhiteSpace(detail)
+                ? $"'{command.FileName}' exited with code {process.ExitCode}."
+                : $"'{command.FileName}' exited with code {process.ExitCode}: {detail}");
     }
 
     private static void CopyDirectory(string sourceDirectory, string destinationDirectory)
@@ -1788,6 +2007,10 @@ public static class DesktopUpdateRuntime
         string ChannelId,
         string HeadId,
         IReadOnlyList<string> RelaunchArgs);
+
+    private sealed record DesktopUpdateCommandSpec(
+        string FileName,
+        IReadOnlyList<string> Arguments);
 
     private sealed record ApplyRequestDto(
         int ParentProcessId,

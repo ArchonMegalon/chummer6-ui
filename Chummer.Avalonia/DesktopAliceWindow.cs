@@ -41,6 +41,9 @@ internal sealed class DesktopAliceWindow : Window
     private readonly string _coachConversationId = $"alice-coach-{Guid.NewGuid():N}";
     private readonly string _buildConversationId = $"alice-build-{Guid.NewGuid():N}";
     private string _gmAllowanceNotes = string.Empty;
+    private string _originArchetypeSelection = "Use current character";
+    private string _originBuildFrameSelection = "Use current ruleset";
+    private string _originPressureSelection = "Street-level survival";
     private BuildLabHandoffProjection? _selectedHandoff;
     private DesktopBuildPathCandidate? _selectedBuildPath;
     private Action? _refreshAssistantContext;
@@ -68,7 +71,7 @@ internal sealed class DesktopAliceWindow : Window
         _selectedHandoff = campaignSummary?.BuildLabHandoffs.OrderByDescending(item => item.UpdatedAtUtc).FirstOrDefault();
         _selectedBuildPath = buildPathCandidates.FirstOrDefault();
 
-        Title = "ALICE";
+        Title = "Alice";
         Width = 940;
         Height = 680;
         MinWidth = 840;
@@ -87,14 +90,14 @@ internal sealed class DesktopAliceWindow : Window
                     {
                         new TextBlock
                         {
-                            Text = "ALICE",
+                            Text = "Alice",
                             FontSize = 22,
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         },
                         new TextBlock
                         {
-                            Text = "ALICE keeps build compare, rule diffs, tradeoffs, and apply-safe follow-through on first-party rails. This desktop bench surfaces the current handoff lane instead of forcing blind browser jumps.",
+                            Text = "Alice helps with rules, build choices, and optional origin dossiers inside the desktop client. Browser handoff stays available, but the first path is local.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateAssistantCard(),
@@ -268,6 +271,97 @@ internal sealed class DesktopAliceWindow : Window
         };
         DesktopShellTheme.ApplyShellTextInputTheme(gmAllowanceBox);
 
+        ComboBox originArchetypeCombo = new()
+        {
+            Name = "AliceOriginArchetypeCombo",
+            MinWidth = 220,
+            ItemsSource = BuildOriginArchetypeOptions(),
+            SelectedItem = _recentWorkspaces.Count == 0 ? "Troll decker" : "Use current character"
+        };
+        DesktopShellTheme.ApplyShellComboBoxTheme(originArchetypeCombo);
+        _originArchetypeSelection = originArchetypeCombo.SelectedItem?.ToString() ?? _originArchetypeSelection;
+
+        ComboBox originBuildFrameCombo = new()
+        {
+            Name = "AliceOriginBuildFrameCombo",
+            MinWidth = 220,
+            ItemsSource = BuildOriginBuildFrameOptions(),
+            SelectedItem = _rulesetId == RulesetDefaults.Sr4 ? "SR4 BP" : "Use current ruleset"
+        };
+        DesktopShellTheme.ApplyShellComboBoxTheme(originBuildFrameCombo);
+        _originBuildFrameSelection = originBuildFrameCombo.SelectedItem?.ToString() ?? _originBuildFrameSelection;
+
+        ComboBox originPressureCombo = new()
+        {
+            Name = "AliceOriginPressureCombo",
+            MinWidth = 220,
+            ItemsSource = BuildOriginPressureOptions(),
+            SelectedItem = "Street-level survival"
+        };
+        DesktopShellTheme.ApplyShellComboBoxTheme(originPressureCombo);
+        _originPressureSelection = originPressureCombo.SelectedItem?.ToString() ?? _originPressureSelection;
+
+        ComboBox originGmPresetCombo = new()
+        {
+            Name = "AliceOriginGmRequirementPresetCombo",
+            MinWidth = 260,
+            ItemsSource = BuildOriginGmRequirementPresetOptions(),
+            SelectedItem = "No preset"
+        };
+        DesktopShellTheme.ApplyShellComboBoxTheme(originGmPresetCombo);
+
+        TextBlock originWizardGuideText = new()
+        {
+            Name = "AliceOriginWizardGuideText",
+            Text = "Pick the runner shape first, then add any GM requirement that must steer the story. Finished characters stay safe: the dossier adds story and media, it does not rewrite the sheet.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+
+        Border originWizardPanel = new()
+        {
+            Name = "AliceOriginWizardPanel",
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            BorderThickness = new Thickness(1),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Start an origin dossier",
+                        FontWeight = FontWeight.SemiBold,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    originWizardGuideText,
+                    new WrapPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        ItemHeight = double.NaN,
+                        ItemWidth = double.NaN,
+                        Children =
+                        {
+                            CreateFieldColumn("Archetype", originArchetypeCombo),
+                            CreateFieldColumn("Build frame", originBuildFrameCombo),
+                            CreateFieldColumn("Story pressure", originPressureCombo),
+                            CreateFieldColumn("GM requirement", originGmPresetCombo)
+                        }
+                    }
+                }
+            }
+        };
+
+        originArchetypeCombo.SelectionChanged += (_, _) =>
+            _originArchetypeSelection = originArchetypeCombo.SelectedItem?.ToString() ?? _originArchetypeSelection;
+        originBuildFrameCombo.SelectionChanged += (_, _) =>
+            _originBuildFrameSelection = originBuildFrameCombo.SelectedItem?.ToString() ?? _originBuildFrameSelection;
+        originPressureCombo.SelectionChanged += (_, _) =>
+            _originPressureSelection = originPressureCombo.SelectedItem?.ToString() ?? _originPressureSelection;
+
         TextBlock statusText = new()
         {
             Name = "AliceAssistantStatusText",
@@ -369,6 +463,7 @@ internal sealed class DesktopAliceWindow : Window
         {
             modeGuideText.Text = BuildModeGuide(modeCombo.SelectedItem?.ToString());
             settingsGuideText.Text = BuildModeSettingsGuide(modeCombo.SelectedItem?.ToString());
+            originWizardPanel.IsVisible = IsOriginDossierMode(modeCombo.SelectedItem?.ToString());
         }
 
         void RefreshModeShortcuts()
@@ -482,8 +577,8 @@ internal sealed class DesktopAliceWindow : Window
                 }
                 else
                 {
-                    actionRow.Children.Add(CreateButton("Open proposal studio", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenProposalStudioButton"));
-                    actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
+                    actionRow.Children.Add(CreateButton("Start origin dossier", StartOriginDossierAsync, isPrimary: true, name: "AliceOriginStartDossierButton"));
+                    actionRow.Children.Add(CreateButton("Open account Alice", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), name: "AliceAssistantOpenAccountButton"));
                 }
             }
             else
@@ -899,6 +994,29 @@ internal sealed class DesktopAliceWindow : Window
             promptBox.Text = string.Empty;
         }
 
+        async Task StartOriginDossierAsync()
+        {
+            _originArchetypeSelection = originArchetypeCombo.SelectedItem?.ToString() ?? _originArchetypeSelection;
+            _originBuildFrameSelection = originBuildFrameCombo.SelectedItem?.ToString() ?? _originBuildFrameSelection;
+            _originPressureSelection = originPressureCombo.SelectedItem?.ToString() ?? _originPressureSelection;
+
+            string gmPreset = originGmPresetCombo.SelectedItem?.ToString() ?? "No preset";
+            if (!string.Equals(gmPreset, "No preset", StringComparison.Ordinal)
+                && gmAllowanceBox.Text?.Contains(gmPreset, StringComparison.OrdinalIgnoreCase) != true)
+            {
+                gmAllowanceBox.Text = string.IsNullOrWhiteSpace(gmAllowanceBox.Text)
+                    ? gmPreset
+                    : $"{gmAllowanceBox.Text.Trim()}; {gmPreset}";
+            }
+
+            promptBox.Text = BuildOriginStarterPrompt(
+                _originArchetypeSelection,
+                _originBuildFrameSelection,
+                _originPressureSelection,
+                gmAllowanceBox.Text);
+            await AskAsync().ConfigureAwait(true);
+        }
+
         _refreshAssistantContext = ApplyIdleState;
         modeCombo.SelectionChanged += (_, _) =>
         {
@@ -920,6 +1038,7 @@ internal sealed class DesktopAliceWindow : Window
                 modeShortcutRow,
                 modeCombo,
                 modeGuideText,
+                originWizardPanel,
                 new Border
                 {
                     Name = "AliceSettingsGuideCard",
@@ -1439,6 +1558,89 @@ internal sealed class DesktopAliceWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+    private static Control CreateFieldColumn(string label, Control field)
+        => new StackPanel
+        {
+            Width = 220,
+            Margin = new Thickness(0, 0, 10, 8),
+            Spacing = 4,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = label,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                field
+            }
+        };
+
+    private static IReadOnlyList<string> BuildOriginArchetypeOptions()
+        =>
+        [
+            "Use current character",
+            "Troll decker",
+            "Street samurai",
+            "Combat mage",
+            "Face",
+            "Rigger",
+            "Adept infiltrator",
+            "Technomancer",
+            "Custom from prompt"
+        ];
+
+    private static IReadOnlyList<string> BuildOriginBuildFrameOptions()
+        =>
+        [
+            "Use current ruleset",
+            "SR4 BP",
+            "SR5 priority",
+            "SR6 priority",
+            "Karma",
+            "Life modules"
+        ];
+
+    private static IReadOnlyList<string> BuildOriginPressureOptions()
+        =>
+        [
+            "Street-level survival",
+            "Corporate escape",
+            "Gang fallout",
+            "Awakened debt",
+            "Military burnout",
+            "Family obligation",
+            "Black clinic debt",
+            "Matrix identity theft"
+        ];
+
+    private static IReadOnlyList<string> BuildOriginGmRequirementPresetOptions()
+        =>
+        [
+            "No preset",
+            "Must be addicted to an illegal drug",
+            "Must be magically active",
+            "Must have Logic or Intuition 2+",
+            "Extra ware allowance",
+            "Restricted gear allowed",
+            "Must owe a dangerous contact",
+            "Must hide a legal SIN"
+        ];
+
+    private static string BuildOriginStarterPrompt(string archetype, string buildFrame, string pressure, string? gmRequirement)
+    {
+        string runnerShape = string.Equals(archetype, "Use current character", StringComparison.Ordinal)
+            ? "the current character"
+            : archetype;
+        string gmClause = string.IsNullOrWhiteSpace(gmRequirement)
+            ? "No additional GM requirement."
+            : $"GM requirement: {gmRequirement.Trim()}.";
+
+        return $"Create an origin dossier for {runnerShape}. Build frame: {buildFrame}. Story pressure: {pressure}. {gmClause} " +
+               "Explain how the qualities, ware, attributes, first gear, and first contacts came from the backstory. " +
+               "Keep it useful for Alice follow-up suggestions.";
+    }
+
     private static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
         => CreateCard(title, summary, leadControl, null, actions);
 
@@ -1503,8 +1705,12 @@ internal sealed class DesktopAliceWindow : Window
             Content = label,
             MinWidth = 132,
             Padding = new Thickness(10, 6),
-            HorizontalAlignment = HorizontalAlignment.Left
+            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
         };
+        button.Classes.Add("shell-action");
+        ToolTip.SetTip(button, label);
 
         if (isPrimary)
         {
@@ -1535,8 +1741,12 @@ internal sealed class DesktopAliceWindow : Window
             Content = label,
             MinWidth = 132,
             Padding = new Thickness(10, 6),
-            HorizontalAlignment = HorizontalAlignment.Left
+            HorizontalAlignment = HorizontalAlignment.Left,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
         };
+        button.Classes.Add("shell-action");
+        ToolTip.SetTip(button, label);
 
         if (isPrimary)
         {
@@ -1819,8 +2029,9 @@ internal sealed class DesktopAliceWindow : Window
         WorkspaceListItem? workspace = _recentWorkspaces.FirstOrDefault();
         string alias = FirstNonEmpty(workspace?.Summary.Alias, workspace?.Summary.Name, "Unnamed runner");
         string metatype = FirstNonEmpty(workspace?.Summary.Metatype, "Unknown metatype");
-        string buildMethod = FirstNonEmpty(workspace?.Summary.BuildMethod, "Unspecified build");
-        string archetypeHint = _selectedBuildPath?.Suggestion.Title
+        string buildMethod = FirstNonEmpty(workspace?.Summary.BuildMethod, ResolveOriginBuildFrameHint(), "Unspecified build");
+        string archetypeHint = ResolveOriginArchetypeHint()
+            ?? _selectedBuildPath?.Suggestion.Title
             ?? _selectedHandoff?.Title
             ?? "Unclassified shadow asset";
         string[] causalityHints = new string?[]
@@ -1838,6 +2049,8 @@ internal sealed class DesktopAliceWindow : Window
         string[] standoutSignals = new string?[]
         {
             $"Ruleset {_rulesetId ?? workspace?.RulesetId ?? "unknown"}",
+            !string.IsNullOrWhiteSpace(_originPressureSelection) ? $"Origin pressure: {_originPressureSelection}" : null,
+            !string.IsNullOrWhiteSpace(_originBuildFrameSelection) && !string.Equals(_originBuildFrameSelection, "Use current ruleset", StringComparison.Ordinal) ? $"Origin build frame: {_originBuildFrameSelection}" : null,
             !string.IsNullOrWhiteSpace(workspace?.Summary.Karma.ToString()) ? $"Karma {workspace!.Summary.Karma:0}" : null,
             !string.IsNullOrWhiteSpace(workspace?.Summary.Nuyen.ToString()) ? $"Nuyen {workspace!.Summary.Nuyen:0}" : null,
             _selectedBuildPath?.Suggestion.TrustTier,
@@ -1878,6 +2091,19 @@ internal sealed class DesktopAliceWindow : Window
                 ?? _selectedHandoff?.RuleEnvironmentDiff?.AfterFingerprint
                 ?? _selectedHandoff?.RuleEnvironmentDiff?.BeforeFingerprint);
     }
+
+    private string? ResolveOriginArchetypeHint()
+        => string.IsNullOrWhiteSpace(_originArchetypeSelection)
+            || string.Equals(_originArchetypeSelection, "Use current character", StringComparison.Ordinal)
+            || string.Equals(_originArchetypeSelection, "Custom from prompt", StringComparison.Ordinal)
+                ? null
+                : _originArchetypeSelection;
+
+    private string? ResolveOriginBuildFrameHint()
+        => string.IsNullOrWhiteSpace(_originBuildFrameSelection)
+            || string.Equals(_originBuildFrameSelection, "Use current ruleset", StringComparison.Ordinal)
+                ? null
+                : _originBuildFrameSelection;
 
     private static CharacterNarrativeDraft BuildOriginDraft(CharacterNarrativePacket packet)
     {

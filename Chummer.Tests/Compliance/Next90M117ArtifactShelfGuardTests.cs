@@ -42,8 +42,8 @@ public sealed class Next90M117ArtifactShelfGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_COMPLETION_ACTION = \"verify_closed_package_only\"");
         StringAssert.Contains(scriptText, "EXPECTED_DO_NOT_REOPEN_REASON = \"M117 chummer6-ui desktop artifact shelf entry points are complete; future shards must verify the\"");
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh\"");
-        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
-        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore'");
         StringAssert.Contains(scriptText, "\"Open Public Proof Shelf\"");
         StringAssert.Contains(scriptText, "\"Open Creator Artifact Shelf\"");
         StringAssert.Contains(scriptText, "OpenArtifactShelfView(\"public\")");
@@ -144,8 +144,8 @@ public sealed class Next90M117ArtifactShelfGuardTests
                 Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M117_UI_ARTIFACT_SHELF.generated.json"),
                 Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m117-ui-artifact-shelf-check.sh"),
                 "bash scripts/ai/milestones/next90-m117-ui-artifact-shelf-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
-                "dotnet test Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M117ArtifactShelfGuardTests|FullyQualifiedName~Next90M116CreatorPublicationGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"AccessibilitySignoffSmokeTests\" --no-restore",
             },
             ReadStringArray(closedPackage.GetProperty("proof")));
     }

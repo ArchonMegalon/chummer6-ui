@@ -112,7 +112,7 @@ public sealed class Next90M142DirectWorkflowProofGuardTests
             new[]
             {
                 "bash scripts/ai/milestones/next90-m142-ui-direct-workflow-proof-check.sh",
-                "dotnet test Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests\" --no-restore",
+                "dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M142DirectWorkflowProofGuardTests\" --no-restore",
             },
             ReadStringArray(evidence.GetProperty("proofCommands")));
     }
