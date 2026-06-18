@@ -29,6 +29,9 @@ The executable gate is green only when all of the following are true:
    - explicit character-creation section posture
    - a dense shell state in light theme
    - a dense shell state in dark theme
+   - every promoted client surface through the Chummer5A human parity screenshot matrix, not just sampled hero screens
+   - every add/edit/delete workflow family that can mutate runner state
+   - every dialog family whose row template, combobox template, tooltip host, or selection posture can drift away from Chummer5A familiarity
 4. `WORKBENCH_RELEASE_SIGNOFF.md` cites this gate as part of the release closeout bar.
 
 ## Executable lane
@@ -50,6 +53,7 @@ That lane:
 - verifies the release signoff document cites the gate
 - acquires `.codex-studio/locks/b14-flagship-ui-release-gate.lock` and stages screenshots in per-run temp directories before publishing, so concurrent runs cannot wipe in-flight screenshot evidence
 - publishes screenshot evidence under `.codex-studio/published/ui-flagship-release-gate-screenshots/`
+- fail-closes on `scripts/verify_chummer5a_human_parity_screenshot_matrix.py` so every required screenshot token must exist and pass before release truth can claim premium desktop parity
 - publishes `.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json`
 
 ## Why this gate exists

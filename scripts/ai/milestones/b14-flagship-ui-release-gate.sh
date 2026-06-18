@@ -21,6 +21,7 @@ lock_owner_pid_path="$lock_dir/owner.pid"
 lock_stale_max_age_seconds="${CHUMMER_FLAGSHIP_UI_RELEASE_GATE_LOCK_STALE_MAX_AGE_SECONDS:-300}"
 capture_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-gate-screenshots.XXXXXX")"
 staged_screenshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/chummer-ui-flagship-published-screenshots.XXXXXX")"
+api_runtime_log_path="$(mktemp "${TMPDIR:-/tmp}/chummer-ui-flagship-api.XXXXXX.log")"
 signoff_path="$repo_root/docs/WORKBENCH_RELEASE_SIGNOFF.md"
 avalonia_gate_tests_path="$repo_root/Chummer.Tests/Presentation/AvaloniaFlagshipUiGateTests.cs"
 dual_head_tests_path="$repo_root/Chummer.Tests/Presentation/DualHeadAcceptanceTests.cs"
@@ -78,6 +79,11 @@ flagship_product_readiness_materializer_path="${CHUMMER_FLAGSHIP_PRODUCT_READINE
 human_side_rule_authority_approval_path="${CHUMMER_HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL_PATH:-/docker/chummercomplete/chummer-core-engine/.codex-studio/published/HUMAN_SIDE_RULE_AUTHORITY_GOLD_APPROVAL.generated.json}"
 ui_parity_audit_probe_path="${CHUMMER_UI_PARITY_AUDIT_PROBE_PATH:-/docker/fleet/scripts/codex-shims/codexea_ui_parity_audit_probe.py}"
 nuget_packages="${CHUMMER_NUGET_PACKAGES:-$repo_root/.codex-studio/.nuget/packages}"
+api_base_url="${CHUMMER_API_BASE_URL:-${CHUMMER_WEB_BASE_URL:-http://127.0.0.1:8088}}"
+api_project_path="${CHUMMER_API_AUTOSTART_PROJECT:-$repo_root/Chummer.Api/Chummer.Api.csproj}"
+api_build_output_path="${CHUMMER_API_AUTOSTART_BUILD_OUTPUT:-$repo_root/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll}"
+api_autostart_timeout_seconds="${CHUMMER_API_AUTOSTART_TIMEOUT_SECONDS:-90}"
+api_server_pid=""
 
 # Route-local proof markers for milestone 142:
 # "family:dense_builder_and_career_workflows"
@@ -158,6 +164,11 @@ printf '%s\n' "$$" >"$lock_owner_pid_path"
 
 cleanup() {
   rm -rf "$capture_screenshot_dir" "$staged_screenshot_dir"
+  if [[ -n "$api_server_pid" ]] && kill -0 "$api_server_pid" 2>/dev/null; then
+    kill "$api_server_pid" 2>/dev/null || true
+    wait "$api_server_pid" 2>/dev/null || true
+  fi
+  rm -f "$api_runtime_log_path"
   rm -f "$lock_owner_pid_path"
   rmdir "$lock_dir" 2>/dev/null || rm -rf "$lock_dir" 2>/dev/null || true
 }
@@ -190,6 +201,8 @@ run_dual_head_acceptance_tests() {
   local rc=0
   test_log="$(mktemp "${TMPDIR:-/tmp}/chummer-dual-head.XXXXXX.log")"
   set +e
+  CHUMMER_API_BASE_URL="$api_base_url" \
+  CHUMMER_WEB_BASE_URL="$api_base_url" \
   dotnet test --project Chummer.Tests/Chummer.Tests.csproj --no-restore -v minimal \
     --filter "FullyQualifiedName~Chummer.Tests.Presentation.DualHeadAcceptanceTests" >"$test_log" 2>&1
   rc=$?
@@ -201,6 +214,72 @@ run_dual_head_acceptance_tests() {
   cat "$test_log" >&2
   rm -f "$test_log"
   return $rc
+}
+
+probe_api_surface() {
+  local probe_path="$1"
+  local status
+  status="$(
+    curl -sS -o /dev/null -m 2 -w '%{http_code}' \
+      "${api_base_url%/}${probe_path}" 2>/dev/null || true
+  )"
+  case "$status" in
+    200|401|403|404|405)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+api_surface_ready() {
+  probe_api_surface "/api/workspaces?maxCount=1" && probe_api_surface "/api/shell/bootstrap"
+}
+
+ensure_local_api_runtime() {
+  export CHUMMER_API_BASE_URL="$api_base_url"
+  export CHUMMER_WEB_BASE_URL="$api_base_url"
+
+  if api_surface_ready; then
+    return 0
+  fi
+
+  if [[ "$api_base_url" != http://127.0.0.1:* && "$api_base_url" != http://localhost:* ]]; then
+    echo "[b14] FAIL: cross-head runtime is unavailable at non-local base URL: $api_base_url" >&2
+    return 1
+  fi
+
+  if [[ ! -f "$api_project_path" ]]; then
+    echo "[b14] FAIL: missing API autostart project: $api_project_path" >&2
+    return 1
+  fi
+
+  local run_cmd=(dotnet run --project "$api_project_path" --no-restore)
+  if [[ -f "$api_build_output_path" ]]; then
+    run_cmd+=(--no-build)
+  fi
+  run_cmd+=(--urls "$api_base_url")
+
+  "${run_cmd[@]}" >"$api_runtime_log_path" 2>&1 &
+  api_server_pid="$!"
+
+  local deadline=$((SECONDS + api_autostart_timeout_seconds))
+  while (( SECONDS < deadline )); do
+    if api_surface_ready; then
+      return 0
+    fi
+    if ! kill -0 "$api_server_pid" 2>/dev/null; then
+      echo "[b14] FAIL: local API autostart exited early. Log: $api_runtime_log_path" >&2
+      cat "$api_runtime_log_path" >&2 || true
+      return 1
+    fi
+    sleep 1
+  done
+
+  echo "[b14] FAIL: local API autostart timed out at $api_base_url. Log: $api_runtime_log_path" >&2
+  cat "$api_runtime_log_path" >&2 || true
+  return 1
 }
 
 receipt_passes_recently() {
@@ -668,6 +747,7 @@ for path in list(screenshot_dir.glob("*.png")) + [screenshot_dir / "SCREENSHOT_C
 PY
 
 echo "[b14] running cross-head workflow parity tests..."
+ensure_local_api_runtime
 run_with_retry 3 "cross-head workflow parity tests" run_dual_head_acceptance_tests
 
 echo "[b14] running explicit Chummer5a legacy UI element parity gate..."

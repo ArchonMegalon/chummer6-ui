@@ -157,6 +157,13 @@ public static class DesktopUpdateRuntime
             status = "attention_required";
             recommendedAction = "Review the last update error and route support before promotion.";
         }
+        else if (!string.IsNullOrWhiteSpace(state?.PendingUpdateVersion))
+        {
+            status = "update_staged";
+            recommendedAction = configuration.AutoApply
+                ? "Update is staged. Chummer is installing it in place and should relaunch on the new build."
+                : "Update is staged for this install. Finish the handoff before continuing work.";
+        }
         else if (state?.LastCheckedAt is null)
         {
             status = "never_checked";

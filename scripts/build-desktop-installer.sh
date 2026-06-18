@@ -1092,11 +1092,25 @@ EOF
 [Desktop Entry]
 Type=Application
 Name=$APP_DISPLAY
-Exec=/usr/bin/chummer6-$APP_KEY
+Exec=/usr/bin/chummer6-$APP_KEY %u
 Terminal=false
 Categories=Game;
 StartupNotify=true
+MimeType=x-scheme-handler/chummer;
 EOF
+
+  cat > "$stage_root/DEBIAN/postinst" <<EOF
+#!/bin/sh
+set -e
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database /usr/share/applications >/dev/null 2>&1 || true
+fi
+if command -v xdg-mime >/dev/null 2>&1; then
+  xdg-mime default chummer6-$APP_KEY.desktop x-scheme-handler/chummer >/dev/null 2>&1 || true
+fi
+exit 0
+EOF
+  chmod 0755 "$stage_root/DEBIAN/postinst"
 
   if dpkg-deb --help 2>&1 | grep -q -- '--root-owner-group'; then
     dpkg-deb --root-owner-group --build "$stage_root" "$DIST_DIR/$installer_name" >/dev/null

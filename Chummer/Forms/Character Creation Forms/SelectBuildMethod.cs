@@ -50,6 +50,9 @@ namespace Chummer
             _objGenericToken = _objGenericCancellationTokenSource.Token;
             _blnForExistingCharacter = blnUseCurrentValues;
             InitializeComponent();
+            lblDescription.Visible = false;
+            gpbBooks.Visible = false;
+            gpbCustomData.Visible = false;
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();

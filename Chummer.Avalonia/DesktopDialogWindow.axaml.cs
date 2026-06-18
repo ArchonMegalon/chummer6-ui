@@ -558,9 +558,6 @@ public partial class DesktopDialogWindow : Window
         {
             Padding = new Thickness(5, 4),
             Margin = new Thickness(0),
-            Background = ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
-            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
-            BorderThickness = new Thickness(0, 0, 0, 1),
             Child = body
         };
     }
@@ -871,8 +868,8 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F7FAFD"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
             CornerRadius = new CornerRadius(6),
             Padding = new Thickness(10),
             Child = card
@@ -1294,7 +1291,7 @@ public partial class DesktopDialogWindow : Window
             Name = "newCharacterPrioritySumToTenLabel",
             Text = runtimeState.SumToTenLabel,
             FontWeight = FontWeight.SemiBold,
-            Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#483D8B"),
+            Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C"),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             IsVisible = !string.IsNullOrWhiteSpace(runtimeState.SumToTenLabel)
         };
@@ -1555,7 +1552,7 @@ public partial class DesktopDialogWindow : Window
                 new Border
                 {
                     BorderThickness = new Thickness(1),
-                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#C7D2E1"),
+                    BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                     Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
                     CornerRadius = default,
                     Padding = new Thickness(8, 6),
@@ -1702,7 +1699,7 @@ public partial class DesktopDialogWindow : Window
         Border resultsSummaryBorder = new()
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             Child = new TextBlock
@@ -1966,7 +1963,7 @@ public partial class DesktopDialogWindow : Window
         if (linkedSourceAvailable)
         {
             sourceValueText.TextDecorations = TextDecorations.Underline;
-            sourceValueText.Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#1E90FF");
+            sourceValueText.Foreground = ResolveThemeBrush("ChummerShellInfoBrush", "#173A6C");
             sourceValueText.PointerPressed += async (_, _) =>
             {
                 await ExecuteSafeAsync(
@@ -2310,11 +2307,9 @@ public partial class DesktopDialogWindow : Window
                 IsEnabled = !field.IsReadOnly,
                 MinWidth = 180
             };
+            ApplyShellComboBoxTheme(comboBox);
             comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
-                new TextBlock
-                {
-                    Text = option?.Label ?? string.Empty
-                });
+                CreateComboBoxOptionText(option?.Label ?? string.Empty));
             if (!field.IsReadOnly)
             {
                 comboBox.SelectionChanged += (_, _) =>
@@ -2388,7 +2383,7 @@ public partial class DesktopDialogWindow : Window
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                 Background = Brushes.Transparent,
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
@@ -2441,7 +2436,7 @@ public partial class DesktopDialogWindow : Window
             tabs.Children.Add(new Border
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                 Background = Brushes.Transparent,
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
@@ -2491,7 +2486,7 @@ public partial class DesktopDialogWindow : Window
         panel.Children.Add(new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             MinHeight = 136,
             Child = previewControl
@@ -2539,7 +2534,7 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             MinHeight = 136,
             Child = previewControl
@@ -2601,7 +2596,7 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             Child = rows
@@ -2647,7 +2642,7 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             Child = new TextBlock
@@ -2663,7 +2658,7 @@ public partial class DesktopDialogWindow : Window
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#808080"),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
@@ -2960,12 +2955,9 @@ public partial class DesktopDialogWindow : Window
             IsEnabled = !field.IsReadOnly,
             MinWidth = minWidth
         };
+        ApplyShellComboBoxTheme(comboBox);
         comboBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
-            new TextBlock
-            {
-                Text = option?.Label ?? string.Empty,
-                TextWrapping = TextWrapping.Wrap
-            });
+            CreateComboBoxOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
         if (!field.IsReadOnly)
         {
             comboBox.SelectionChanged += (_, _) =>
@@ -2989,8 +2981,24 @@ public partial class DesktopDialogWindow : Window
             SelectedIndex = 0,
             IsEnabled = false
         };
+        ApplyShellComboBoxTheme(comboBox);
         return comboBox;
     }
+
+    private static void ApplyShellComboBoxTheme(ComboBox comboBox)
+    {
+        comboBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        comboBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+    }
+
+    private static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
+        => new()
+        {
+            Text = text,
+            TextWrapping = wrapping,
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827")
+        };
 
     private ListBox BuildSelectListBox(DesktopDialogField field)
     {

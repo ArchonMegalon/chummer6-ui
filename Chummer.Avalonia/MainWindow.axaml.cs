@@ -127,6 +127,7 @@ public partial class MainWindow : Window
             onReportIssueRequested: ToolStrip_OnReportIssueRequested,
             onSettingsRequested: ToolStrip_OnSettingsRequested,
             onLoadDemoRunnerRequested: ToolStrip_OnLoadDemoRunnerRequested,
+            onStartOriginRequested: ToolStrip_OnStartOriginRequested,
             onKeepLocalWorkRequested: SummaryHeader_OnKeepLocalWorkRequested,
             onWorkspaceSupportRequested: SummaryHeader_OnWorkspaceSupportRequested,
             onMenuSelected: MenuBar_OnMenuSelected,

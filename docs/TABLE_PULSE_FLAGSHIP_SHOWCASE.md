@@ -58,6 +58,98 @@ The flagship posture is a five-layer play loop:
    - opposition clocks
    - living newsroom framing
 
+## Visual Anchors
+
+### Table Pulse Live Pressure
+
+![Table Pulse flagship scene art](images/flagship/table-pulse.png)
+
+Table Pulse is the live pressure rail: a GM-governed action board that turns heat into bounded reactions, receipts, and public-safe fallout.
+
+### ALICE Origin Dossier
+
+![ALICE origin dossier horizon art](images/flagship/alice.png)
+
+Origin Dossier and ALICE bring a user-first lane into the stack: approved canon, grounded build help, and derivative dossier media on one governed rail.
+
+
+## User-First Entry Arc
+
+The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, Signal Deck, and the living-world stack.
+
+1. A player starts from Origin Dossier instead of facing a cold chargen sheet.
+2. Approved canon freezes a stable narrative spine before downstream media regenerates.
+3. ALICE uses the approved canon later as bounded context for build help, rules coach follow-up, and GM-steered tradeoff explanation.
+4. Table Pulse, Runner Passport, and the living newsroom then make that runner feel present in a governed city instead of trapped in a one-session character form.
+
+The user-first lane must stay honest about:
+
+- approved origin canon may shape later ALICE suggestions
+- GM gimmicks and allowances may steer narrative context without becoming auto-applied mechanics
+- media packets derive from canon and receipts, not the other way around
+- ALICE remains advisory and explainable even when the origin lane is rich and cinematic
+
+## Origin Dossier And ALICE
+
+Origin Dossier is the premium narrative-first lane for turning runner identity into approved canon, derivative dossier media, and later ALICE follow-up context without letting story text silently mutate build truth.
+
+It must show:
+
+- origin draft and canon approval
+- blank-state start and finished-runner additive entry points
+- bundle root and derivative dossier media outputs
+- voice-selection posture before audiobook packet generation
+- bounded GM gimmick steering as advisory context
+- later ALICE follow-up that references approved canon instead of inventing a new story spine
+
+The ALICE connection is explicit:
+
+- ALICE owns the native desktop workbench for Build Help, Rules Coach, and Origin Dossier.
+- Origin Dossier may start before chargen or from an already-finished runner without forcing mechanics back into edit mode.
+- The approved origin canon feeds later ALICE explanations about tradeoffs, upgrades, and risk.
+- GM allowances may appear in ALICE context and output, but they must not silently rewrite mechanics.
+- Narration lanes should expose voice posture as an explicit user choice, not an invisible provider default.
+- The lane is strongest when narrative continuity and rules explanation stay on the same governed rail.
+
+It must not imply:
+
+- origin prose becomes mechanical truth by itself
+- downstream portrait or video providers become rules authority
+- ALICE is an autonomous build oracle
+
+## GM Cockpit And Steering
+
+GM Cockpit is the calm authority surface for steering Table Pulse, origin-dossier context, remote reactions, and public-safe fallout without turning a maintenance list into the product experience.
+
+It must show:
+
+- pulse policy and heat thresholds
+- recipient reasoning, quiet-hours, mute, and opt-out posture
+- GM allowances and gimmicks as explicit advisory context
+- mini-game prompt source, chosen response, and proposed consequence
+- public-safe release controls before newsroom or Black Ledger projection
+- receipt trail, override reason, and what remains manual review
+
+Origin and GM gimmick flow:
+
+1. GM steer may come before the origin story so it can shape tone, faction pressure, and allowed context.
+2. The fixed SR4 troll decker test gimmick is a clinic contact that fronts restricted starter ware and one over-availability deck part.
+3. ALICE may explain how that changes story pressure, legality posture, availability risk, and ware consequences.
+4. The cockpit must keep those allowances advisory until a GM or player explicitly applies legal mechanics in the normal character workflow.
+
+Visual language:
+
+- control room, action board, pressure map, and dossier drawer rather than admin table
+- dense but scannable cards for heat, consent, receipt, and consequence state
+- one strong primary action for adjudicate, approve, suppress, or request revision
+
+It must not imply:
+
+- the GM cockpit is an autonomous simulator
+- GM gimmicks auto-apply ware, money, gear, qualities, or availability exceptions
+- public media can bypass private campaign posture or GM approval
+
+
 ## Hero Surfaces
 
 ### Signal Deck
@@ -119,7 +211,7 @@ It must show:
 
 ### Living Newsroom
 
-Living Newsroom is the surface.
+Living Newsroom is the public-safe consequence layer.
 
 It should feel:
 
@@ -221,6 +313,16 @@ Call this flagship only when all of the following are true:
 4. Public-safe projection stays bounded by GM authority.
 5. The system still feels fast, legible, and exciting for players.
 
+## Related Horizon
+
+### ALICE
+
+Current status: Shipped native desktop workbench with build help, rules coach, and origin-first chargen handoff.
+
+Why a reader should care: This is the closest user-first entry into Chummer’s broader living-world stack.
+
+Connection here: Origin Dossier creates approved canon; ALICE later uses that canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation.
+
 ## Design Source Anchors
 
 These docs are generated from the published Chummer6 design canon and dramatic briefing,
@@ -228,3 +330,5 @@ then rewritten into Jammer5-style docs language for the public docs repo.
 
 - TABLE_PULSE_LIVING_WORLD_STACK_20260523.md
 - TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md
+- ORIGIN_DOSSIER_ALICE_GM_GIMMICK_E2E_GATE.md
+- horizons/alice.md

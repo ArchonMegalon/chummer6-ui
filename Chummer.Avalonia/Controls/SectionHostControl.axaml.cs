@@ -830,7 +830,7 @@ public partial class SectionHostControl : UserControl
             Text = "Build explain receipt and environment diff",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
         });
         BuildLabTrustReceiptPanel.Children.Add(DesktopExplainCompanionLauncher.CreateLaunchButton(
             this,
@@ -850,7 +850,7 @@ public partial class SectionHostControl : UserControl
             {
                 Text = $"Build compare companion: {BuildBuildCompareCompanionBadge(_buildLab)}",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
             });
 
             if (HasBuildBlockerReceipt(_buildLab))
@@ -859,7 +859,7 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"Build blocker receipt: {BuildBuildBlockerBadge(_buildLab)}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
                 });
             }
         }
@@ -876,7 +876,7 @@ public partial class SectionHostControl : UserControl
                 Text = section.Title,
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
             });
 
             foreach (string line in section.Lines)
@@ -885,7 +885,7 @@ public partial class SectionHostControl : UserControl
                 {
                     Text = $"- {line}",
                     TextWrapping = TextWrapping.Wrap,
-                    Foreground = new SolidColorBrush(Color.Parse("#4F3C16"))
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700")
                 });
             }
 
@@ -2224,8 +2224,10 @@ public partial class SectionHostControl : UserControl
             Padding = emphasizeValue ? new Thickness(3d, 2d) : new Thickness(4d, 3d),
             MinWidth = emphasizeValue ? 38d : 76d,
             MinHeight = emphasizeValue ? 28d : 32d,
-            Background = new SolidColorBrush(Color.Parse(emphasizeValue ? "#FFF2F2F2" : "#FFF7F4EB")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#FF8D8D8D")),
+            Background = DesktopShellTheme.ResolveThemeBrush(
+                emphasizeValue ? "ChummerShellSelectionToolbarBrush" : "ChummerShellSelectionPanelBrush",
+                emphasizeValue ? "#EEF2F6" : "#F8FAFC"),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             BorderThickness = new Thickness(1d)
         };
 

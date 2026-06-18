@@ -36,7 +36,9 @@ namespace Chummer
         protected PlayerDashboard()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
             this.TranslateWinForm();
+            this.UpdateParentForToolTipControls();
             CenterToParent();
             // auto hide the form at creation
             Hide();

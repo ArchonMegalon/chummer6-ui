@@ -33,8 +33,10 @@ internal sealed class DesktopAliceWindow : Window
     private readonly IAvaloniaCoachSidecarClient? _coachSidecarClient;
     private readonly string? _rulesetId;
     private readonly string? _workspaceId;
+    private readonly string? _preferredConversationMode;
     private readonly string _coachConversationId = $"alice-coach-{Guid.NewGuid():N}";
     private readonly string _buildConversationId = $"alice-build-{Guid.NewGuid():N}";
+    private string _gmAllowanceNotes = string.Empty;
     private BuildLabHandoffProjection? _selectedHandoff;
     private DesktopBuildPathCandidate? _selectedBuildPath;
     private Action? _refreshAssistantContext;
@@ -49,7 +51,8 @@ internal sealed class DesktopAliceWindow : Window
         IReadOnlyList<WorkspaceListItem> recentWorkspaces,
         IReadOnlyList<DesktopBuildPathCandidate> buildPathCandidates,
         IAvaloniaCoachSidecarClient? coachSidecarClient,
-        string? rulesetId)
+        string? rulesetId,
+        string? preferredConversationMode)
     {
         _campaignSummary = campaignSummary;
         _recentWorkspaces = recentWorkspaces;
@@ -57,6 +60,7 @@ internal sealed class DesktopAliceWindow : Window
         _coachSidecarClient = coachSidecarClient;
         _rulesetId = RulesetDefaults.NormalizeOptional(rulesetId);
         _workspaceId = recentWorkspaces.FirstOrDefault()?.Id.Value;
+        _preferredConversationMode = preferredConversationMode;
         _selectedHandoff = campaignSummary?.BuildLabHandoffs.OrderByDescending(item => item.UpdatedAtUtc).FirstOrDefault();
         _selectedBuildPath = buildPathCandidates.FirstOrDefault();
 
@@ -111,11 +115,17 @@ internal sealed class DesktopAliceWindow : Window
     }
 
     public static async Task ShowAsync(Window owner, string headId)
+        => await ShowAsync(owner, headId, preferredConversationMode: null).ConfigureAwait(true);
+
+    public static async Task ShowOriginDraftAsync(Window owner, string headId)
+        => await ShowAsync(owner, headId, "Origin draft").ConfigureAwait(true);
+
+    private static async Task ShowAsync(Window owner, string headId, string? preferredConversationMode)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopAliceWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopAliceWindow dialog = await CreateAsync(preferredConversationMode).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -126,7 +136,7 @@ internal sealed class DesktopAliceWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopAliceWindow> CreateAsync()
+    private static async Task<DesktopAliceWindow> CreateAsync(string? preferredConversationMode)
     {
         AccountCampaignSummary? summary = null;
         IReadOnlyList<WorkspaceListItem> workspaces = Array.Empty<WorkspaceListItem>();
@@ -150,7 +160,7 @@ internal sealed class DesktopAliceWindow : Window
             buildPathCandidates = Array.Empty<DesktopBuildPathCandidate>();
         }
 
-        return new DesktopAliceWindow(summary, workspaces, buildPathCandidates, coachSidecarClient, effectiveRulesetId);
+        return new DesktopAliceWindow(summary, workspaces, buildPathCandidates, coachSidecarClient, effectiveRulesetId, preferredConversationMode);
     }
 
     private Control CreateAssistantCard()
@@ -164,7 +174,40 @@ internal sealed class DesktopAliceWindow : Window
             Name = "AliceConversationModeCombo",
             MinWidth = 220,
             ItemsSource = modes,
-            SelectedIndex = HasBuildPathContext ? 0 : 1
+            SelectedItem = modes.Contains(_preferredConversationMode ?? string.Empty, StringComparer.Ordinal)
+                ? _preferredConversationMode
+                : (HasBuildPathContext ? "Build help" : "Rules coach")
+        };
+        DesktopShellTheme.ApplyShellComboBoxTheme(modeCombo);
+
+        WrapPanel modeShortcutRow = new()
+        {
+            Name = "AliceModeShortcutRow",
+            Orientation = Orientation.Horizontal,
+            ItemHeight = double.NaN,
+            ItemWidth = double.NaN
+        };
+
+        TextBlock modeGuideText = new()
+        {
+            Name = "AliceModeGuideText",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+
+        TextBlock settingsGuideTitleText = new()
+        {
+            Name = "AliceSettingsGuideTitleText",
+            Text = "How these settings work",
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock settingsGuideText = new()
+        {
+            Name = "AliceSettingsGuideText",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
 
         ListBox conversationList = new()
@@ -183,6 +226,25 @@ internal sealed class DesktopAliceWindow : Window
             MinHeight = 78,
             Watermark = "Ask ALICE about the current build, rules tradeoffs, or what to add next."
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(promptBox);
+
+        TextBlock gmAllowanceGuideText = new()
+        {
+            Name = "AliceGmAllowanceGuideText",
+            Text = "GM allowances are advisory only. Add extra ware, availability, money, gear, qualities, or house exceptions here. ALICE will use them in explanations and dossier output, but will not auto-apply them.",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+
+        TextBox gmAllowanceBox = new()
+        {
+            Name = "AliceGmAllowanceTextBox",
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            MinHeight = 64,
+            Watermark = "Optional GM allowances or exceptions"
+        };
+        DesktopShellTheme.ApplyShellTextInputTheme(gmAllowanceBox);
 
         TextBlock statusText = new()
         {
@@ -241,6 +303,16 @@ internal sealed class DesktopAliceWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        gmAllowanceBox.TextChanged += (_, _) =>
+        {
+            _gmAllowanceNotes = gmAllowanceBox.Text?.Trim() ?? string.Empty;
+            RefreshAssistantContextSummary();
+            if (string.IsNullOrWhiteSpace(promptBox.Text))
+            {
+                evidenceList.ItemsSource = BuildIdleEvidence(modeCombo.SelectedItem?.ToString());
+            }
+        };
+
         List<AliceConversationTurnEntry> ActiveHistory()
         {
             string mode = modeCombo.SelectedItem?.ToString() ?? "Build help";
@@ -265,6 +337,33 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     conversationList.ScrollIntoView(selectedItem);
                 }
+            }
+        }
+
+        void RefreshModeGuide()
+        {
+            modeGuideText.Text = BuildModeGuide(modeCombo.SelectedItem?.ToString());
+            settingsGuideText.Text = BuildModeSettingsGuide(modeCombo.SelectedItem?.ToString());
+        }
+
+        void RefreshModeShortcuts()
+        {
+            modeShortcutRow.Children.Clear();
+            foreach ((string label, string mode) in BuildModeShortcuts())
+            {
+                bool isPrimary = string.Equals(modeCombo.SelectedItem?.ToString(), mode, StringComparison.Ordinal);
+                Button button = CreateButton(
+                    label,
+                    () =>
+                    {
+                        modeCombo.SelectedItem = mode;
+                        return Task.CompletedTask;
+                    },
+                    isPrimary: isPrimary,
+                    name: $"AliceModeShortcut_{SanitizeNameToken(mode)}");
+                button.MinWidth = 0;
+                button.Margin = new Thickness(0, 0, 8, 8);
+                modeShortcutRow.Children.Add(button);
             }
         }
 
@@ -366,9 +465,21 @@ internal sealed class DesktopAliceWindow : Window
                 actionRow.Children.Add(CreateButton("Open account ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "AliceAssistantOpenAccountButton"));
                 actionRow.Children.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "AliceAssistantOpenPublicButton"));
             }
+            if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
+            {
+                actionRow.Children.Add(CreateButton("Clear GM allowances", () =>
+                {
+                    gmAllowanceBox.Text = string.Empty;
+                    _gmAllowanceNotes = string.Empty;
+                    RefreshAssistantContextSummary();
+                    evidenceList.ItemsSource = BuildIdleEvidence(modeCombo.SelectedItem?.ToString());
+                    return Task.CompletedTask;
+                }, name: "AliceClearGmAllowanceButton"));
+            }
             RefreshAssistantContextSummary();
             RefreshStarterPrompts();
             RefreshConversationFeed();
+            RefreshModeShortcuts();
         }
 
         void ShowOriginBundleState(
@@ -750,7 +861,12 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         _refreshAssistantContext = ApplyIdleState;
-        modeCombo.SelectionChanged += (_, _) => ApplyIdleState();
+        modeCombo.SelectionChanged += (_, _) =>
+        {
+            RefreshModeGuide();
+            ApplyIdleState();
+        };
+        RefreshModeGuide();
         ApplyIdleState();
 
         StackPanel body = new()
@@ -762,7 +878,27 @@ internal sealed class DesktopAliceWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantRulesetBadge", "Ruleset", _rulesetId ?? "none"),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContextBadge", "Context", !string.IsNullOrWhiteSpace(_workspaceId) ? "workspace" : "global"),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("AliceAssistantContinuityBadge", "Continuity", HasBuildPathContext || HasHandoffContext ? "attached" : "local")),
+                modeShortcutRow,
                 modeCombo,
+                modeGuideText,
+                new Border
+                {
+                    Name = "AliceSettingsGuideCard",
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+                    BorderThickness = new Thickness(1),
+                    Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F8FAFC"),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(10),
+                    Child = new StackPanel
+                    {
+                        Spacing = 4,
+                        Children =
+                        {
+                            settingsGuideTitleText,
+                            settingsGuideText
+                        }
+                    }
+                },
                 new Border
                 {
                     Name = "AliceAssistantContextCard",
@@ -784,12 +920,14 @@ internal sealed class DesktopAliceWindow : Window
                 },
                 conversationList,
                 starterPromptRow,
+                gmAllowanceGuideText,
+                gmAllowanceBox,
                 promptBox,
                 statusText,
                 new Border
                 {
                     Name = "AliceAssistantAnswerCard",
-                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -875,6 +1013,7 @@ internal sealed class DesktopAliceWindow : Window
             ItemsSource = detailModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(detailModeCombo);
 
         ListBox handoffList = new()
         {
@@ -987,7 +1126,7 @@ internal sealed class DesktopAliceWindow : Window
                 new Border
                 {
                     Name = "AliceSelectedHandoffCard",
-                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -1036,6 +1175,7 @@ internal sealed class DesktopAliceWindow : Window
             ItemsSource = proposalModes,
             SelectedIndex = 0
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(proposalModeCombo);
 
         ComboBox buildPathCombo = new()
         {
@@ -1050,6 +1190,7 @@ internal sealed class DesktopAliceWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 })
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(buildPathCombo);
 
         TextBlock selectedBuildPathTitleText = new()
         {
@@ -1068,6 +1209,14 @@ internal sealed class DesktopAliceWindow : Window
         {
             Name = "AliceSelectedBuildPathWarningsText",
             TextWrapping = TextWrapping.Wrap
+        };
+
+        TextBlock buildPathGuideText = new()
+        {
+            Name = "AliceBuildPathGuideText",
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            Text = "Summary compares the visible starter route. Runtime focuses on workspace and return compatibility. Warnings surfaces watchouts and proposed changes before any apply-safe step."
         };
 
         void RefreshSelectedBuildPath()
@@ -1144,11 +1293,12 @@ internal sealed class DesktopAliceWindow : Window
         {
             body.Children.Add(proposalModeCombo);
             body.Children.Add(buildPathCombo);
+            body.Children.Add(buildPathGuideText);
             body.Children.Add(
                 new Border
                 {
                     Name = "AliceSelectedBuildPathCard",
-                    BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                    BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(4),
                     Padding = new Thickness(10),
@@ -1399,6 +1549,30 @@ internal sealed class DesktopAliceWindow : Window
                 : "Ask about the next build move; ALICE will answer from the current desktop context."
         };
 
+    private static string BuildModeGuide(string? mode)
+        => mode switch
+        {
+            "Rules coach" => "Rules coach explains edition-specific constraints and tradeoffs. Ask directly about legality, qualities, ware, magic, or sequencing and ALICE will answer rules-wise.",
+            "Origin draft" => "Origin dossier builds the optional dossier bundle: story seed, canon approval, portraits, scenes, audiobook, and video. Use this before a build, during creation, or on a finished character. Narrative output does not force later build changes unless you explicitly choose to act on it.",
+            _ => "Build help stays on build progression and proposal-safe next steps. Legality: Strict stays conservative on restricted/banned picks, Standard allows common table-legal restricted choices, Anything ignores legality posture and requires manual review. Complexity: Simple favors obvious picks, Standard balances depth, Deep explores higher-friction optimizations. Ware posture is always explained rules-wise before apply."
+        };
+
+    private static string BuildModeSettingsGuide(string? mode)
+        => mode switch
+        {
+            "Rules coach" => "Use Rules coach when you need the rules explained, not just a suggestion. Ask what legality strict vs standard changes, when ware becomes a problem, whether qualities stack the way you think, or what sequence is safest under the current edition.",
+            "Origin draft" => "Use Origin Dossier to create narrative output from the current build or from a blank/new character state. Generate the story first, then approve canon, then render the dossier assets. On finished characters this stays additive: it creates story/media output without silently changing the sheet.",
+            _ => "Build Help uses three main settings. Legality: Strict avoids restricted or table-sensitive picks, Standard permits common legal restricted options, Anything ignores legality posture and needs manual review. Complexity: Simple keeps the plan obvious, Standard balances depth, Deep explores tighter optimizations. Ware posture is explained rules-wise before ALICE proposes or compares implants."
+        };
+
+    private static IReadOnlyList<(string Label, string Mode)> BuildModeShortcuts()
+        =>
+        [
+            ("Build Help", "Build help"),
+            ("Rules Coach", "Rules coach"),
+            ("Origin Dossier", "Origin draft")
+        ];
+
     private string BuildIdleAssistantAnswer(string? mode)
         => mode switch
         {
@@ -1436,6 +1610,11 @@ internal sealed class DesktopAliceWindow : Window
                 : "No preview-backed build path is available yet.");
         }
 
+        if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
+        {
+            lines.Add($"GM allowances: {_gmAllowanceNotes}");
+        }
+
         return lines.ToArray();
     }
 
@@ -1457,10 +1636,28 @@ internal sealed class DesktopAliceWindow : Window
         if (_buildPathCandidates.Count > 0)
         {
             DesktopBuildPathCandidate lead = _buildPathCandidates[0];
-            return $"ALICE could not reach the grounded build route, so it stayed local. The strongest visible candidate is '{lead.Suggestion.Title}'. {lead.Preview?.CampaignReturnSummary ?? lead.Preview?.RuntimeCompatibilitySummary ?? "Open the proposal studio card below for the current bounded preview."}";
+            string leadSummary = lead.Preview?.CampaignReturnSummary
+                ?? lead.Preview?.RuntimeCompatibilitySummary
+                ?? "Open the proposal studio card below for the current bounded preview.";
+            if (_originBundle is not null)
+            {
+                return $"ALICE could not reach the grounded build route, so it stayed local. Approved origin canon: {_originBundle.Canon.Summary}. " +
+                       $"The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary} " +
+                       $"Next additions should reinforce the approved origin instead of breaking causality. " +
+                       $"{AppendGmAllowanceDetail("Any GM allowances remain advisory and still require manual mechanical review")}";
+            }
+
+            if (_originDraft is not null)
+            {
+                return $"ALICE could not reach the grounded build route, so it stayed local. Current origin seed: {_originDraft.Summary}. " +
+                       $"The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary} " +
+                       $"Treat the draft as narrative guidance until canon is approved.";
+            }
+
+            return $"ALICE could not reach the grounded build route, so it stayed local. The strongest visible candidate is '{lead.Suggestion.Title}'. {leadSummary}";
         }
 
-        return "ALICE could not reach the grounded build route, and there is no preview-backed build candidate yet. Open a workspace or reconnect account context first.";
+        return BuildScratchCharacterAnswer(message);
     }
 
     private string[] BuildLocalFallbackEvidence(string mode)
@@ -1476,12 +1673,30 @@ internal sealed class DesktopAliceWindow : Window
             return BuildIdleEvidence(mode);
         }
 
-        return _buildPathCandidates.Count > 0
-            ? _buildPathCandidates
+        if (_buildPathCandidates.Count > 0)
+        {
+            List<string> lines = _buildPathCandidates
                 .Take(3)
                 .Select(candidate => $"{candidate.Suggestion.Title} · {candidate.Preview?.RuntimeCompatibilitySummary ?? candidate.Suggestion.TrustTier}")
-                .ToArray()
-            : BuildIdleEvidence(mode);
+                .ToList();
+            if (_originBundle is not null)
+            {
+                lines.Insert(0, $"Approved origin canon: {_originBundle.Canon.Summary}");
+            }
+            else if (_originDraft is not null)
+            {
+                lines.Insert(0, $"Origin seed: {_originDraft.Summary}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
+            {
+                lines.Add($"GM allowances: {_gmAllowanceNotes}");
+            }
+
+            return lines.ToArray();
+        }
+
+        return BuildScratchCharacterEvidence();
     }
 
     private AliceAssistantContextProjection BuildAssistantContextProjection(string? mode)
@@ -1503,7 +1718,7 @@ internal sealed class DesktopAliceWindow : Window
             {
                 detail = $"{detail} Approved canon bundle: {Path.GetFileName(_originBundle.BundleDirectory)}.";
             }
-            return new AliceAssistantContextProjection(title, summary, detail);
+            return new AliceAssistantContextProjection(title, summary, AppendGmAllowanceDetail(detail));
         }
 
         if (string.Equals(mode, "Rules coach", StringComparison.Ordinal))
@@ -1511,19 +1726,19 @@ internal sealed class DesktopAliceWindow : Window
             return new AliceAssistantContextProjection(
                 "Rules coach context",
                 !string.IsNullOrWhiteSpace(_rulesetId) ? $"Pinned to {_rulesetId}" : "No explicit ruleset pin is available yet.",
-                _originDraft is null
+                AppendGmAllowanceDetail(_originDraft is null
                     ? "ALICE answers from ruleset, workspace, and handoff context only."
                     : _originBundle is null
                         ? "A generated origin draft is available and can inform later ALICE guidance without changing build truth."
-                        : "An approved origin dossier bundle is available and seeds later ALICE guidance without mutating build truth.");
+                        : "An approved origin dossier bundle is available and seeds later ALICE guidance without mutating build truth."));
         }
 
         return new AliceAssistantContextProjection(
             "Build continuity",
-            _selectedBuildPath?.Suggestion.Title ?? "No selected build path",
-            _selectedHandoff?.Summary
+            _selectedBuildPath?.Suggestion.Title ?? "Blank-state build start",
+            AppendGmAllowanceDetail(_selectedHandoff?.Summary
                 ?? _selectedBuildPath?.Preview?.RuntimeCompatibilitySummary
-                ?? "ALICE stays bounded to the current workspace and preview-safe build path lane.");
+                ?? "ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open."));
     }
 
     private CharacterNarrativePacket BuildNarrativePacket(string prompt)
@@ -1564,7 +1779,8 @@ internal sealed class DesktopAliceWindow : Window
         {
             _selectedBuildPath?.Preview?.RequiresConfirmation == true ? "This path still requires explicit confirmation before apply." : null,
             _selectedBuildPath?.Preview?.DiagnosticMessages.Count > 0 ? string.Join(" | ", _selectedBuildPath.Preview.DiagnosticMessages.Take(2)) : null,
-            _selectedHandoff?.Watchouts?.Count > 0 ? string.Join(" | ", _selectedHandoff.Watchouts.Take(2)) : null
+            _selectedHandoff?.Watchouts?.Count > 0 ? string.Join(" | ", _selectedHandoff.Watchouts.Take(2)) : null,
+            !string.IsNullOrWhiteSpace(_gmAllowanceNotes) ? $"GM allowances: {_gmAllowanceNotes}" : null
         }
         .Where(static line => !string.IsNullOrWhiteSpace(line))
         .Take(3)
@@ -1578,6 +1794,7 @@ internal sealed class DesktopAliceWindow : Window
             RulesetId: _rulesetId ?? workspace?.RulesetId ?? "unknown",
             ArchetypeHint: archetypeHint,
             Prompt: prompt,
+            GmAllowanceNotes: string.IsNullOrWhiteSpace(_gmAllowanceNotes) ? null : _gmAllowanceNotes,
             WorkspaceName: workspace?.Summary.Name,
             LeadBuildPathTitle: _selectedBuildPath?.Suggestion.Title,
             LeadHandoffTitle: _selectedHandoff?.Title,
@@ -1655,23 +1872,169 @@ internal sealed class DesktopAliceWindow : Window
 
     private string BuildSeededAssistantMessage(string mode, string message)
     {
+        string allowancePrefix = string.IsNullOrWhiteSpace(_gmAllowanceNotes)
+            ? string.Empty
+            : $"GM allowances: {_gmAllowanceNotes}{Environment.NewLine}";
+
         if (string.Equals(mode, "Origin draft", StringComparison.Ordinal))
         {
-            return message;
+            return string.IsNullOrWhiteSpace(allowancePrefix)
+                ? message
+                : $"{allowancePrefix}User request: {message}";
         }
 
         if (_originBundle is not null)
         {
-            return $"Approved origin canon summary: {_originBundle.Canon.Summary}{Environment.NewLine}Approved origin canon prose: {_originBundle.Canon.Prose}{Environment.NewLine}User request: {message}";
+            return $"{allowancePrefix}Approved origin canon summary: {_originBundle.Canon.Summary}{Environment.NewLine}Approved origin canon prose: {_originBundle.Canon.Prose}{Environment.NewLine}User request: {message}";
         }
 
         if (_originDraft is not null)
         {
-            return $"Origin seed summary: {_originDraft.Summary}{Environment.NewLine}Origin seed prose: {_originDraft.Prose}{Environment.NewLine}User request: {message}";
+            return $"{allowancePrefix}Origin seed summary: {_originDraft.Summary}{Environment.NewLine}Origin seed prose: {_originDraft.Prose}{Environment.NewLine}User request: {message}";
         }
 
-        return message;
+        return string.IsNullOrWhiteSpace(allowancePrefix)
+            ? message
+            : $"{allowancePrefix}User request: {message}";
     }
+
+    private string BuildScratchCharacterAnswer(string message)
+    {
+        string ruleset = _rulesetId ?? "the active ruleset";
+        string buildTitle = _selectedBuildPath?.Suggestion.Title ?? "Custom scratch build";
+        string buildMethod = InferScratchBuildMethod(message);
+        string metatype = InferScratchMetatype(message);
+        string role = InferScratchRole(message);
+        string qualities = InferScratchQualities(role);
+        string gear = InferScratchGear(role);
+        string attributes = InferScratchAttributes(role);
+        string skills = InferScratchSkills(role);
+
+        return $"{buildTitle} is valid as a blank-state start. Build {metatype} on {buildMethod} for {ruleset}. " +
+               $"Start from role: {role}. " +
+               $"Attributes first: {attributes}. " +
+               $"Core skills: {skills}. " +
+               $"Early qualities or edge picks: {qualities}. " +
+               $"Early gear and ware posture: {gear}. " +
+               $"ALICE treats this as a full from-scratch draft, so you can continue from these settings even before any character file exists.";
+    }
+
+    private string[] BuildScratchCharacterEvidence()
+    {
+        List<string> lines =
+        [
+            !string.IsNullOrWhiteSpace(_rulesetId) ? $"Ruleset: {_rulesetId}" : "Ruleset: not pinned, using the active desktop default.",
+            _selectedBuildPath?.Suggestion.Title is { Length: > 0 } title
+                ? $"Selected build path: {title}"
+                : "Selected build path: none, using a custom scratch build.",
+            "Blank-state start is supported.",
+            "No open workspace is required to draft a first full build proposal."
+        ];
+
+        if (!string.IsNullOrWhiteSpace(_gmAllowanceNotes))
+        {
+            lines.Add($"GM allowances: {_gmAllowanceNotes}");
+        }
+
+        return lines.ToArray();
+    }
+
+    private static string InferScratchBuildMethod(string message)
+    {
+        string normalized = message.ToLowerInvariant();
+        if (normalized.Contains("karma") || normalized.Contains("bp") || normalized.Contains("build point"))
+        {
+            return "Build Points";
+        }
+
+        if (normalized.Contains("sum-to-ten") || normalized.Contains("sum to ten"))
+        {
+            return "Sum-to-Ten";
+        }
+
+        return "Priority";
+    }
+
+    private static string InferScratchMetatype(string message)
+    {
+        string normalized = message.ToLowerInvariant();
+        if (normalized.Contains("troll")) return "Troll";
+        if (normalized.Contains("ork")) return "Ork";
+        if (normalized.Contains("dwarf")) return "Dwarf";
+        if (normalized.Contains("elf")) return "Elf";
+        if (normalized.Contains("human")) return "Human";
+        return "Human";
+    }
+
+    private static string InferScratchRole(string message)
+    {
+        string normalized = message.ToLowerInvariant();
+        if (normalized.Contains("decker")) return "decker";
+        if (normalized.Contains("rigger")) return "rigger";
+        if (normalized.Contains("face")) return "face";
+        if (normalized.Contains("mage") || normalized.Contains("magician")) return "mage";
+        if (normalized.Contains("adept")) return "adept";
+        if (normalized.Contains("samurai")) return "street samurai";
+        if (normalized.Contains("shaman")) return "shaman";
+        return "generalist runner";
+    }
+
+    private static string InferScratchAttributes(string role)
+        => role switch
+        {
+            "decker" => "LOG, INT, REA, then enough BOD/WIL to survive bad turns.",
+            "rigger" => "REA, LOG, INT, then AGI if the runner may leave the vehicle.",
+            "face" => "CHA, INT, WIL, then enough REA/BOD to stay standing.",
+            "mage" => "MAG path first, then WIL, LOG, INT, with enough CHA or AGI to match tradition and table role.",
+            "adept" => "AGI or STR first depending on offense, then REA and WIL.",
+            "street samurai" => "AGI, REA, BOD, then STR or WIL depending on the combat lane.",
+            "shaman" => "CHA, WIL, INT, then enough REA/BOD for table survival.",
+            _ => "BOD, REA, WIL, then the primary mental or social stat for the chosen lane."
+        };
+
+    private static string InferScratchSkills(string role)
+        => role switch
+        {
+            "decker" => "Hacking, Electronic Warfare, Computer, Cybercombat, plus Perception and one social fallback.",
+            "rigger" => "Pilot, Gunnery, Electronic Warfare, Mechanic coverage, plus Perception.",
+            "face" => "Con, Etiquette, Negotiation, a read-the-room skill, and one reliable backup offense lane.",
+            "mage" => "Spellcasting, Counterspelling, Assensing, Summoning or Binding, plus one mundane survival lane.",
+            "adept" => "Primary attack skill, Perception, Sneaking or Athletics, then role-specific support.",
+            "street samurai" => "Primary weapon skill, Perception, Sneaking, Athletics, and a clean backup weapon lane.",
+            "shaman" => "Spellcasting, Summoning, Assensing, Counterspelling, and one social or stealth support lane.",
+            _ => "Perception, one attack lane, one infiltration or movement lane, one social fallback, and one role-defining specialty."
+        };
+
+    private static string InferScratchQualities(string role)
+        => role switch
+        {
+            "decker" => "qualities that improve initiative safety, matrix action economy, or planning discipline; avoid stacking flashy liabilities early.",
+            "rigger" => "qualities that improve control reliability, perception, or vehicle command discipline.",
+            "face" => "qualities that reinforce first-impression, negotiation reliability, or social recovery.",
+            "mage" => "qualities that stabilize drain management, magical focus, or tradition identity.",
+            "adept" => "qualities that support action economy, stealth, or the core combat approach.",
+            "street samurai" => "qualities that reinforce toughness, initiative reliability, or target access.",
+            "shaman" => "qualities that support summoning rhythm, drain safety, or spirit identity.",
+            _ => "qualities that reinforce consistency and survivability before niche expression."
+        };
+
+    private static string InferScratchGear(string role)
+        => role switch
+        {
+            "decker" => "buy the matrix core first, then initiative protection, then basic runner survival gear; ware stays conservative unless the table explicitly wants heavier augmentation.",
+            "rigger" => "fund the command platform, one dependable vehicle or drone package, and repair coverage before luxuries.",
+            "face" => "prioritize identity, armor that can pass socially, communication gear, and one clean escape or defense lane.",
+            "mage" => "stabilize magical tooling and survival basics first; ware needs strict justification because it can fight the core role.",
+            "adept" => "gear should reinforce movement, concealment, and the primary offense plan before side toys.",
+            "street samurai" => "weapon, armor, initiative, and medical survival first; ware should follow the chosen combat identity instead of fragmenting it.",
+            "shaman" => "focus on magical tooling, survival gear, and one realistic mundane fallback.",
+            _ => "buy survivability, movement, communication, and the primary role kit before flavor extras."
+        };
+
+    private string AppendGmAllowanceDetail(string detail)
+        => string.IsNullOrWhiteSpace(_gmAllowanceNotes)
+            ? detail
+            : $"{detail} GM allowances: {_gmAllowanceNotes}.";
 
     private string? ResolveAssistantRuntimeFingerprint()
         => _selectedBuildPath?.Preview?.RuntimeFingerprint
@@ -1706,6 +2069,7 @@ internal sealed class DesktopAliceWindow : Window
                 artifactKind = "origin_canon",
                 originDossierBundle = true,
                 approvedAtUtc = DateTimeOffset.UtcNow,
+                gmAllowanceNotes = _originPacket.GmAllowanceNotes,
                 packet = _originPacket,
                 canon = _originDraft,
                 providerLanes = new
@@ -1749,6 +2113,7 @@ internal sealed class DesktopAliceWindow : Window
             VideoPosterPath: null,
             MediaFactoryVideoReceiptPath: null,
             RenderedVideoPath: null,
+            GmAllowanceNotes: _originPacket.GmAllowanceNotes,
             RuntimeFingerprint: _originDraft.RuntimeFingerprint);
         return _originBundle;
     }
@@ -1772,6 +2137,9 @@ internal sealed class DesktopAliceWindow : Window
             $"Ruleset: {bundle.Packet.RulesetId}",
             $"Build method: {bundle.Packet.BuildMethod}",
             $"Metatype: {bundle.Packet.Metatype}",
+            .. (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes)
+                ? new[] { $"GM allowances: {bundle.GmAllowanceNotes}" }
+                : Array.Empty<string>()),
             string.Empty,
             "GM hooks:",
             .. bundle.Canon.GmHooks.Select(static hook => $"- {hook}"),
@@ -2243,6 +2611,11 @@ internal sealed class DesktopAliceWindow : Window
             "Default voice lane: Soundmadeseen",
             "Alternate voice lane: Unmixr AI"
         ];
+
+        if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
+        {
+            lines.Add($"GM allowances: {bundle.GmAllowanceNotes}");
+        }
 
         if (!string.IsNullOrWhiteSpace(bundle.DossierPdfPath))
         {
@@ -2851,6 +3224,12 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine($"- Build method: {packet.BuildMethod}");
         builder.AppendLine($"- Archetype hint: {packet.ArchetypeHint}");
         builder.AppendLine();
+        if (!string.IsNullOrWhiteSpace(packet.GmAllowanceNotes))
+        {
+            builder.AppendLine("## GM Allowances");
+            builder.AppendLine(packet.GmAllowanceNotes);
+            builder.AppendLine();
+        }
         builder.AppendLine("## Summary");
         builder.AppendLine(draft.Summary);
         builder.AppendLine();
@@ -2885,6 +3264,11 @@ internal sealed class DesktopAliceWindow : Window
         StringBuilder builder = new();
         builder.AppendLine($"Soundmadeseen audiobook brief for {bundle.Packet.Alias}");
         builder.AppendLine();
+        if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
+        {
+            builder.AppendLine($"GM allowances: {bundle.GmAllowanceNotes}");
+            builder.AppendLine();
+        }
         builder.AppendLine(bundle.Canon.Summary);
         builder.AppendLine();
         builder.AppendLine(bundle.Canon.Prose);
@@ -2905,6 +3289,11 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine();
         builder.AppendLine("Voice direction: intimate dossier reading with slightly more expressive cadence than the default operator voice.");
         builder.AppendLine();
+        if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
+        {
+            builder.AppendLine($"GM allowances: {bundle.GmAllowanceNotes}");
+            builder.AppendLine();
+        }
         builder.AppendLine(bundle.Canon.Summary);
         builder.AppendLine();
         builder.AppendLine(bundle.Canon.Prose);
@@ -2931,6 +3320,10 @@ internal sealed class DesktopAliceWindow : Window
         builder.AppendLine($"- Default voice script: {bundle.SoundmadeseenScriptPath}");
         builder.AppendLine($"- Alternate voice script: {bundle.UnmixrScriptPath}");
         builder.AppendLine($"- Media-factory request: {requestPath}");
+        if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
+        {
+            builder.AppendLine($"- GM allowances: {bundle.GmAllowanceNotes}");
+        }
         builder.AppendLine();
         builder.AppendLine("## Voice lanes");
         builder.AppendLine("- Default: Soundmadeseen");
@@ -3194,7 +3587,7 @@ internal sealed class DesktopAliceWindow : Window
             mode switch
             {
                 "Rules coach" => "Rules coach",
-                "Origin draft" => "Origin draft",
+                "Origin draft" => "Origin dossier",
                 _ => "Build help"
             },
             body,
@@ -3262,6 +3655,7 @@ internal sealed class DesktopAliceWindow : Window
         string RulesetId,
         string ArchetypeHint,
         string Prompt,
+        string? GmAllowanceNotes,
         string? WorkspaceName,
         string? LeadBuildPathTitle,
         string? LeadHandoffTitle,
@@ -3321,5 +3715,6 @@ internal sealed class DesktopAliceWindow : Window
         string? VideoPosterPath,
         string? MediaFactoryVideoReceiptPath,
         string? RenderedVideoPath,
+        string? GmAllowanceNotes,
         string? RuntimeFingerprint = null);
 }

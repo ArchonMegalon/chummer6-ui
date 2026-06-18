@@ -7,6 +7,7 @@ namespace Chummer.Avalonia.Controls;
 public partial class WorkspaceStripControl : UserControl
 {
     public event EventHandler? LoadDemoRunnerRequested;
+    public event EventHandler? StartOriginRequested;
 
     public WorkspaceStripControl()
     {
@@ -48,11 +49,18 @@ public partial class WorkspaceStripControl : UserControl
             language);
         LoadDemoRunnerQuickActionButton.Content = "Sample";
         ToolTip.SetTip(LoadDemoRunnerQuickActionButton, fullLabel);
+        StartOriginQuickActionButton.Content = "Origin Dossier";
+        ToolTip.SetTip(StartOriginQuickActionButton, "Open ALICE directly in Origin draft mode.");
     }
 
     private void LoadDemoRunnerQuickActionButton_OnClick(object? sender, RoutedEventArgs e)
     {
         LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void StartOriginQuickActionButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        StartOriginRequested?.Invoke(this, EventArgs.Empty);
     }
 }
 

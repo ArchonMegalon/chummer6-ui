@@ -46,7 +46,7 @@ internal sealed class DesktopHorizonsWindow : Window
             Name = "HorizonsPostureText",
             Text = BuildPostureSummary(),
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#4B6278"))
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4B6278")
         };
 
         _searchBox = new TextBox
@@ -55,13 +55,14 @@ internal sealed class DesktopHorizonsWindow : Window
             Watermark = "Filter horizons",
             MinWidth = 240
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(_searchBox);
         _searchBox.TextChanged += (_, _) => BuildCatalog();
 
         _filterStatusText = new TextBlock
         {
             Name = "HorizonsFilterStatusText",
             TextWrapping = TextWrapping.Wrap,
-            Foreground = new SolidColorBrush(Color.Parse("#4B6278"))
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4B6278")
         };
 
         _catalogStack = new StackPanel
@@ -173,7 +174,7 @@ internal sealed class DesktopHorizonsWindow : Window
                 Name = "HorizonsEmptyStateText",
                 Text = "No horizons match the current filter. Clear the search or try a different horizon name.",
                 TextWrapping = TextWrapping.Wrap,
-                Foreground = new SolidColorBrush(Color.Parse("#4B6278"))
+                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4B6278")
             });
         }
     }
@@ -253,12 +254,9 @@ internal sealed class DesktopHorizonsWindow : Window
             ItemsSource = targets,
             SelectedIndex = 0,
             ItemTemplate = new FuncDataTemplate<DesktopHorizonRouteOption>((option, _) =>
-                new TextBlock
-                {
-                    Text = option.Label,
-                    TextWrapping = TextWrapping.Wrap
-                })
+                DesktopShellTheme.CreateComboBoxOptionText(option.Label, TextWrapping.Wrap))
         };
+        DesktopShellTheme.ApplyShellComboBoxTheme(targetCombo);
 
         return CreateCard(
             "Karma Forge",
@@ -534,30 +532,16 @@ internal sealed class DesktopHorizonsWindow : Window
             stack.Children.Add(leadControl);
         }
 
-        WrapPanel actionRow = new()
-        {
-            Orientation = Orientation.Horizontal,
-            ItemHeight = double.NaN,
-            ItemWidth = double.NaN
-        };
+        stack.Children.Add(DesktopShellTheme.CreateWrapActionRow(actions, new Thickness(0, 0, 8, 8)));
 
-        foreach (Button action in actions)
-        {
-            action.Margin = new Thickness(0, 0, 8, 8);
-            actionRow.Children.Add(action);
-        }
-
-        stack.Children.Add(actionRow);
-
-        return new Border
-        {
-            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
-            BorderThickness = new Thickness(1),
-            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F2F5FA"),
-            CornerRadius = new CornerRadius(6),
-            Padding = new Thickness(12),
-            Child = stack
-        };
+        return DesktopShellTheme.CreateSection(
+            title,
+            stack,
+            null,
+            padding: 12,
+            cornerRadius: 6,
+            includeHeading: false,
+            spacing: 8);
     }
 
     private Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false, string? name = null)

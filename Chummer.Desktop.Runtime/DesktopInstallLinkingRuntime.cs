@@ -66,8 +66,12 @@ public static class DesktopInstallLinkingRuntime
     private const string DefaultPublicWebBaseUrl = "https://chummer.run/";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string InstallLinkCallbackEnvironmentVariable = "CHUMMER_INSTALL_LINK_CALLBACK_URI";
+    private const string InstallLinkHeadlessTimeoutSecondsEnvironmentVariable = "CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS";
+    private const string InstallLinkHeadlessOpenBrowserEnvironmentVariable = "CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER";
     private const string ClaimCodeSwitch = "--install-claim-code";
     private const string InstallLinkCallbackSwitch = "--install-link-callback";
+    private const string InstallLinkHeadlessSwitch = "--install-link-headless";
+    private const string InstallLinkConsoleSwitch = "--install-link-console";
     private const string StateRootDirectoryName = "install-linking";
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string PendingInstallLinkCallbackFileName = "pending-install-link-callback.txt";
@@ -170,6 +174,102 @@ public static class DesktopInstallLinkingRuntime
         => Task.Run(() => InitializeForStartupAsync(headId, args, cancellationToken), cancellationToken)
             .GetAwaiter()
             .GetResult();
+
+    public static async Task<int?> TryHandleHeadlessInstallLinkModeAsync(
+        string headId,
+        string[] args,
+        DesktopInstallLinkingStartupContext startupContext,
+        TextWriter output,
+        TextWriter error,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(startupContext);
+        ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(error);
+
+        if (!IsHeadlessInstallLinkRequested(args))
+        {
+            return null;
+        }
+
+        DesktopInstallLinkingState state = startupContext.State;
+        await output.WriteLineAsync("Chummer install-link headless mode").ConfigureAwait(false);
+        await output.WriteLineAsync($"Install ID: {state.InstallationId}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Head: {state.HeadId}").ConfigureAwait(false);
+        await output.WriteLineAsync($"Platform: {state.Platform}/{state.Arch}").ConfigureAwait(false);
+
+        if (startupContext.ClaimResult is { Succeeded: false } failedClaim)
+        {
+            await error.WriteLineAsync($"Startup callback was received but not accepted: {failedClaim.Message}").ConfigureAwait(false);
+        }
+
+        if (startupContext.ClaimResult?.Succeeded == true || IsClaimed(state))
+        {
+            await output.WriteLineAsync($"Install already linked: {ResolveLinkedUserLabel(state)}").ConfigureAwait(false);
+            return 0;
+        }
+
+        string relativePath = BuildClaimPortalRelativePathForInstall(state);
+        string absoluteUri = BuildPublicPortalAbsoluteUri(relativePath);
+        await output.WriteLineAsync("Open this URL to sign in and finish linking this Linux install:").ConfigureAwait(false);
+        await output.WriteLineAsync(absoluteUri).ConfigureAwait(false);
+        await output.WriteLineAsync("If the browser cannot call back into WSL, copy the callback URL from the browser page and run:").ConfigureAwait(false);
+        await output.WriteLineAsync($"{InstallLinkHeadlessSwitch} {InstallLinkCallbackSwitch} \"<callback-url>\"").ConfigureAwait(false);
+
+        if (ShouldOpenHeadlessInstallLinkBrowser())
+        {
+            bool opened = TryOpenRelativePortal(relativePath);
+            await output.WriteLineAsync(opened
+                ? "Browser handoff requested; waiting for the local callback."
+                : "Browser handoff could not be opened automatically; use the URL above.")
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            await output.WriteLineAsync("Browser auto-open disabled; use the URL above.").ConfigureAwait(false);
+        }
+
+        TimeSpan timeout = ResolveHeadlessInstallLinkTimeout();
+        if (timeout <= TimeSpan.Zero)
+        {
+            await error.WriteLineAsync("Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+            return 2;
+        }
+
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.Add(timeout);
+        try
+        {
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                DesktopInstallLinkingState currentState = LoadOrCreateState(headId);
+                if (IsClaimed(currentState))
+                {
+                    await output.WriteLineAsync($"Install linked: {ResolveLinkedUserLabel(currentState)}").ConfigureAwait(false);
+                    return 0;
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            await error.WriteLineAsync("Install-link headless mode was cancelled.").ConfigureAwait(false);
+            return 130;
+        }
+
+        state = LoadOrCreateState(headId);
+        if (IsClaimed(state))
+        {
+            await output.WriteLineAsync($"Install linked: {ResolveLinkedUserLabel(state)}").ConfigureAwait(false);
+            return 0;
+        }
+
+        await error.WriteLineAsync("Install-link headless wait timed out before a callback arrived.").ConfigureAwait(false);
+        return 2;
+    }
 
     public static DesktopInstallLinkingState LoadOrCreateState(string headId)
     {
@@ -1153,6 +1253,104 @@ public static class DesktopInstallLinkingRuntime
         }
 
         return null;
+    }
+
+    private static bool IsHeadlessInstallLinkRequested(IReadOnlyList<string> args)
+    {
+        for (int i = 0; i < args.Count; i++)
+        {
+            if (ArgumentMatchesSwitch(args[i], InstallLinkHeadlessSwitch)
+                || ArgumentMatchesSwitch(args[i], InstallLinkConsoleSwitch))
+            {
+                return true;
+            }
+        }
+
+        string? fromEnvironment = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS");
+        return IsTruthyEnvironmentValue(fromEnvironment);
+    }
+
+    private static bool ShouldOpenHeadlessInstallLinkBrowser()
+    {
+        string? configured = Environment.GetEnvironmentVariable(InstallLinkHeadlessOpenBrowserEnvironmentVariable);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return true;
+        }
+
+        return !IsFalsyEnvironmentValue(configured);
+    }
+
+    private static TimeSpan ResolveHeadlessInstallLinkTimeout()
+    {
+        string? configured = Environment.GetEnvironmentVariable(InstallLinkHeadlessTimeoutSecondsEnvironmentVariable);
+        if (int.TryParse(configured, out int seconds))
+        {
+            return TimeSpan.FromSeconds(Math.Max(0, seconds));
+        }
+
+        return TimeSpan.FromMinutes(10);
+    }
+
+    private static bool ArgumentMatchesSwitch(string? arg, string switchName)
+    {
+        if (string.IsNullOrWhiteSpace(arg))
+        {
+            return false;
+        }
+
+        string normalizedArg = NormalizeSwitchToken(arg);
+        string normalizedSwitch = NormalizeSwitchToken(switchName);
+        return string.Equals(normalizedArg, normalizedSwitch, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeSwitchToken(string value)
+    {
+        string normalized = value.Trim().Trim('"');
+        int equalsIndex = normalized.IndexOf('=');
+        int colonIndex = normalized.IndexOf(':');
+        int valueSeparatorIndex = equalsIndex >= 0 && colonIndex >= 0
+            ? Math.Min(equalsIndex, colonIndex)
+            : Math.Max(equalsIndex, colonIndex);
+        if (valueSeparatorIndex >= 0)
+        {
+            normalized = normalized[..valueSeparatorIndex];
+        }
+
+        while (normalized.StartsWith("-", StringComparison.Ordinal) || normalized.StartsWith("/", StringComparison.Ordinal))
+        {
+            normalized = normalized[1..];
+        }
+
+        return normalized.Trim();
+    }
+
+    private static bool IsTruthyEnvironmentValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        string normalized = value.Trim();
+        return string.Equals(normalized, "1", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "true", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "yes", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "on", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsFalsyEnvironmentValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        string normalized = value.Trim();
+        return string.Equals(normalized, "0", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "false", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "no", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(normalized, "off", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryReadValueAfterSwitch(IReadOnlyList<string> args, int index, out string? claimCode)

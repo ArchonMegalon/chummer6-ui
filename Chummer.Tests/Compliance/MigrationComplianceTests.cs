@@ -4203,6 +4203,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(visualGateScriptText, "12-magic-dialog-light.png");
         StringAssert.Contains(visualGateScriptText, "13-matrix-dialog-light.png");
         StringAssert.Contains(visualGateScriptText, "creation_method_has_rhythm_markers");
+
+        string flagshipGateDocText = File.ReadAllText(FindPath("docs", "FLAGSHIP_UI_RELEASE_GATE.md"));
+        StringAssert.Contains(flagshipGateDocText, "every promoted client surface through the Chummer5A human parity screenshot matrix");
+        StringAssert.Contains(flagshipGateDocText, "every add/edit/delete workflow family that can mutate runner state");
+        StringAssert.Contains(flagshipGateDocText, "scripts/verify_chummer5a_human_parity_screenshot_matrix.py");
         StringAssert.Contains(visualGateScriptText, "advancement_method_has_rhythm_markers");
         StringAssert.Contains(visualGateScriptText, "gear_method_has_rhythm_markers");
         StringAssert.Contains(visualGateScriptText, "contacts_diary_method_has_rhythm_markers");

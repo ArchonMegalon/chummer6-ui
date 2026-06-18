@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T14:58:30.409580Z",
+  "generatedAt": "2026-06-18T03:33:15.686749Z",
   "contract_name": "chummer6-ui.classic_dense_workbench_posture_gate",
   "status": "pass",
   "summary": "Classic dense Avalonia workbench posture is default and the first false-complete frontier slice is closed.",
@@ -24,9 +24,9 @@
     "status": "pass",
     "reasons": [],
     "numericDensityTokens": {
-      "Window.FontSize": 12.0,
+      "Window.FontSize": 13.0,
       "TextBlock.shell-title.FontSize": 22.0,
-      "TextBlock.shell-section-title.FontSize": 11.0,
+      "TextBlock.shell-section-title.FontSize": 12.0,
       "TextBlock.shell-metric-value.FontSize": 15.0,
       "Button.menu-button.MinHeight": 24.0
     },
@@ -77,9 +77,9 @@
       "Classic dense workbench posture is covered by `scripts/ai/milestones/classic-dense-workbench-posture-gate.sh`"
     ],
     "numericDensityTokens": {
-      "Window.FontSize": 12.0,
+      "Window.FontSize": 13.0,
       "TextBlock.shell-title.FontSize": 22.0,
-      "TextBlock.shell-section-title.FontSize": 11.0,
+      "TextBlock.shell-section-title.FontSize": 12.0,
       "TextBlock.shell-metric-value.FontSize": 15.0,
       "Button.menu-button.MinHeight": 24.0
     },

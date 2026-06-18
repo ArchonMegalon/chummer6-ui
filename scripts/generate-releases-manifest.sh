@@ -775,6 +775,31 @@ payload = json.loads(source_path.read_text(encoding="utf-8-sig"))
 if not isinstance(payload, dict):
     raise SystemExit(f"source manifest payload must be a JSON object: {source_path}")
 
+
+def artifact_file_name(row: object) -> str:
+    if not isinstance(row, dict):
+        return ""
+    file_name = str(row.get("fileName") or "").strip()
+    if file_name:
+        return file_name
+    download_url = str(row.get("downloadUrl") or row.get("url") or "").strip()
+    return Path(download_url).name if download_url else ""
+
+
+def is_public_file_name(file_name: str) -> bool:
+    name = file_name.strip().lower()
+    if not name:
+        return False
+    if name.endswith(("-installer.deb", "-installer.exe", "-installer.pkg", "-installer.dmg", "-installer.msix")):
+        if "-osx-" in name or "-macos-" in name:
+            return False
+        return True
+    if name.endswith((".zip", ".tar.gz")):
+        return False
+    if name.endswith(".exe") and not name.endswith("-installer.exe"):
+        return False
+    return False
+
 loaded_channel = str(payload.get("channelId") or payload.get("channel") or "").strip().lower()
 if not release_channel:
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -834,6 +859,36 @@ for collection_name in ("artifacts", "downloads", "desktopRouteTruth", "installA
         if "channelId" in row or "channel" in row:
             row["channelId"] = release_channel
             row["channel"] = release_channel
+
+allowed_artifact_ids: set[str] = set()
+allowed_file_names: set[str] = set()
+for collection_name in ("artifacts", "downloads"):
+    rows = payload.get(collection_name)
+    if not isinstance(rows, list):
+        continue
+    filtered_rows = []
+    for row in rows:
+        file_name = artifact_file_name(row)
+        if not is_public_file_name(file_name):
+            continue
+        filtered_rows.append(row)
+        if isinstance(row, dict):
+            artifact_id = str(row.get("artifactId") or row.get("id") or "").strip()
+            if artifact_id:
+                allowed_artifact_ids.add(artifact_id)
+        if file_name:
+            allowed_file_names.add(file_name)
+    payload[collection_name] = filtered_rows
+
+for collection_name in ("installAwareArtifactRegistry", "desktopSurfaceRefs", "artifactIdentityRegistry", "artifactPublicationBindings"):
+    rows = payload.get(collection_name)
+    if not isinstance(rows, list) or not allowed_artifact_ids:
+        continue
+    payload[collection_name] = [
+        row for row in rows
+        if isinstance(row, dict)
+        and str(row.get("artifactId") or row.get("id") or "").strip() in allowed_artifact_ids
+    ]
 
 output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY

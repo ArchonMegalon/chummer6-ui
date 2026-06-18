@@ -46,6 +46,7 @@
     <AvaloniaResource Include="..\Chummer\chummer6-icon-preview.png"
                       Link="Assets/chummer6-icon-preview.png" />
     <AvaloniaResource Include="Assets\chummer5a-icons\*.png" />
+    <AvaloniaResource Include="Assets\install-link\*.png" />
     <Content Include="..\Chummer\chummer.ico"
              Link="chummer.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

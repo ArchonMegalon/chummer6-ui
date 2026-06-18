@@ -508,6 +508,152 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow()
+    {
+        WithRuntimeHarness(harness =>
+        {
+            string bundleRoot = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-bundles");
+            HashSet<string> existingBundleDirectories = Directory.Exists(bundleRoot)
+                ? Directory.GetDirectories(bundleRoot).ToHashSet(StringComparer.Ordinal)
+                : [];
+
+            harness.WaitForReady();
+            harness.Click("HorizonsButton");
+            harness.WaitUntil(() => DesktopHorizonsWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open Horizons hub before validating ALICE flow");
+
+            Window hubWindow = DesktopHorizonsWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("Horizons hub window was not opened.");
+
+            RaiseClick(harness.FindControlInWindow<Button>(hubWindow, "HorizonsOpenWorkbench_alice"));
+            harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is { IsVisible: true }, context: "open ALICE workbench for runtime-backed flow validation");
+
+            Window aliceWindow = DesktopAliceWindow.LastOpenedWindowForTesting
+                ?? throw new AssertFailedException("ALICE workbench did not stay open.");
+
+            ComboBox modeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceConversationModeCombo");
+            TextBlock settingsGuideText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceSettingsGuideText");
+            TextBlock contextDetailText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantContextDetailText");
+            TextBox gmAllowanceBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceGmAllowanceTextBox");
+            TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
+            TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
+            TextBlock answerText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantAnswerText");
+            Button askButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceAskButton");
+
+            modeCombo.SelectedItem = "Build help";
+            harness.WaitUntil(
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Legality: Strict avoids restricted", StringComparison.Ordinal)
+                    && (settingsGuideText.Text ?? string.Empty).Contains("Standard permits common legal restricted options", StringComparison.Ordinal),
+                context: "Build-help settings explainer must spell out legality and complexity behavior");
+
+            promptBox.Text = "Build me a troll decker from scratch for SR4 with standard legality and stable first-pass gear.";
+            RaiseClick(askButton);
+            harness.WaitUntil(
+                () => !string.IsNullOrWhiteSpace(answerText.Text)
+                    && !(statusText.Text ?? string.Empty).Contains("Type a grounded question", StringComparison.Ordinal),
+                context: "blank-state build help must answer instead of dead-ending");
+            Assert.IsFalse(
+                (answerText.Text ?? string.Empty).Contains("Open or create a workspace first", StringComparison.Ordinal),
+                "Blank-state build help must not require an already-open character or workspace.");
+
+            modeCombo.SelectedItem = "Origin draft";
+            harness.WaitUntil(
+                () => (settingsGuideText.Text ?? string.Empty).Contains("On finished characters this stays additive", StringComparison.Ordinal),
+                context: "origin-dossier explainer must stay visible when switching modes");
+
+            gmAllowanceBox.Text = "GM allows one restricted ware exception, +20000 nuyen, and one extra quality if the origin supports it.";
+            harness.WaitUntil(
+                () => (contextDetailText.Text ?? string.Empty).Contains("GM allowances:", StringComparison.Ordinal)
+                    && (contextDetailText.Text ?? string.Empty).Contains("+20000 nuyen", StringComparison.Ordinal),
+                context: "GM allowances must feed the visible ALICE context before origin generation");
+
+            promptBox.Text = "Draft an origin dossier for a troll decker whose GM wants the backstory to justify the restricted ware and bonus nuyen.";
+            RaiseClick(askButton);
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("generated a grounded origin draft", StringComparison.Ordinal),
+                context: "origin-dossier mode must generate a grounded draft");
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginApproveCanonButton") is { IsVisible: true },
+                context: "origin-dossier draft must expose canon approval");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("approved the origin canon", StringComparison.Ordinal),
+                context: "origin draft must be approvable into a dossier bundle");
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBundleFolderButton") is { IsVisible: true },
+                context: "approved dossier bundle must expose bundle actions");
+
+            harness.WaitUntil(
+                () => Directory.Exists(bundleRoot)
+                    && Directory.GetDirectories(bundleRoot).Any(path => !existingBundleDirectories.Contains(path)),
+                context: "origin approval must create a real bundle directory");
+            string createdBundleDirectory = Directory.GetDirectories(bundleRoot)
+                .Where(path => !existingBundleDirectories.Contains(path))
+                .OrderByDescending(Directory.GetCreationTimeUtc)
+                .First();
+            harness.WaitUntil(
+                () => File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.md"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.json")),
+                context: "origin approval must write canonical bundle artifacts");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("canonical portrait", StringComparison.Ordinal)
+                    && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginSelectPortrait1Button") is { IsVisible: true },
+                context: "origin bundle must generate portrait candidates");
+            harness.WaitUntil(
+                () => Directory.EnumerateFiles(Path.Combine(createdBundleDirectory, "portraits"), "*.png").Any()
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-portrait-set.json")),
+                context: "portrait generation must produce local portrait artifacts");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginSelectPortrait2Button"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("updated the canonical portrait", StringComparison.Ordinal),
+                context: "portrait selection must update canonical origin media state");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateSceneSetButton"));
+            harness.WaitUntil(
+                () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginSelectScene1Button") is { IsVisible: true },
+                context: "origin bundle must generate scene candidates");
+            harness.WaitUntil(
+                () => Directory.EnumerateFiles(Path.Combine(createdBundleDirectory, "scenes"), "*.png").Any()
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-scene-set.json")),
+                context: "scene generation must produce local scene artifacts");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginSelectScene1Button"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("updated the canonical scene", StringComparison.Ordinal),
+                context: "scene selection must update canonical origin media state");
+
+            RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGenerateDossierVideoButton"));
+            harness.WaitUntil(
+                () => (statusText.Text ?? string.Empty).Contains("prepared the dossier video storyboard", StringComparison.Ordinal)
+                    && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenVideoPosterButton") is { IsVisible: true },
+                context: "origin bundle must prepare the dossier video lane after GM-steered canon approval");
+            harness.WaitUntil(
+                () => File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier.pdf"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video.storyboard.md"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video-poster.png"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "vidboard-origin-dossier.packet.json")),
+                context: "video preparation must produce the dependent dossier PDF plus storyboard, poster, and vidBoard packet artifacts");
+
+            modeCombo.SelectedItem = "Build help";
+            harness.WaitUntil(
+                () => (settingsGuideText.Text ?? string.Empty).Contains("Legality: Strict avoids restricted", StringComparison.Ordinal),
+                context: "switching back to build help must restore the settings explainer");
+            Assert.IsTrue(
+                (contextDetailText.Text ?? string.Empty).Contains("GM allowances:", StringComparison.Ordinal),
+                "GM allowances must remain visible in ALICE context after returning from origin-dossier mode.");
+
+            aliceWindow.Close();
+            harness.WaitUntil(() => DesktopAliceWindow.LastOpenedWindowForTesting is null, context: "close ALICE after runtime-backed origin flow validation");
+            hubWindow.Close();
+            harness.AdvanceFrames(12);
+        });
+    }
+
+    [TestMethod]
     public void Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions()
     {
         WithRuntimeHarness(harness =>
@@ -1060,6 +1206,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             (string ButtonName, string ExpectedLabel)[] expectedButtons =
             [
                 ("ClassicToolStripAutoAliceButton", "ALICE"),
+                ("ClassicToolStripStartOriginButton", "Origin Dossier"),
                 ("ImportFileButton", "Open"),
                 ("SaveButton", "Save"),
                 ("PrintButton", "Print"),
@@ -2128,6 +2275,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             control.ImportFileRequested += (_, _) => raisedEvents.Add("import_file");
             control.ImportRawRequested += (_, _) => raisedEvents.Add("import_raw");
             control.AutoAliceRequested += (_, _) => raisedEvents.Add("auto_alice");
+            control.StartOriginRequested += (_, _) => raisedEvents.Add("origin_dossier");
             control.SaveRequested += (_, _) => raisedEvents.Add("save");
             control.CloseWorkspaceRequested += (_, _) => raisedEvents.Add("close_workspace");
             control.DesktopHomeRequested += (_, _) => raisedEvents.Add("desktop_home");
@@ -2143,6 +2291,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             (string ButtonName, string EventId)[] buttonMap =
             [
                 ("ToolStripAutoAliceButton", "auto_alice"),
+                ("ToolStripStartOriginButton", "origin_dossier"),
                 ("DesktopHomeButton", "desktop_home"),
                 ("HorizonsButton", "horizons"),
                 ("CampaignWorkspaceButton", "campaign_workspace"),
@@ -2242,13 +2391,18 @@ public sealed class AvaloniaFlagshipUiGateTests
         WithStandaloneControl<WorkspaceStripControl>(control =>
         {
             int loadDemoRunnerRequests = 0;
+            int startOriginRequests = 0;
             control.LoadDemoRunnerRequested += (_, _) => loadDemoRunnerRequests++;
+            control.StartOriginRequested += (_, _) => startOriginRequests++;
             control.SetState(new WorkspaceStripState("No runner loaded.", ShowQuickStartAction: true));
 
             Assert.IsTrue(FindDescendant<Control>(control, "QuickStartContainer").IsVisible);
+            Assert.AreEqual("Origin Dossier", FindDescendant<Button>(control, "StartOriginQuickActionButton").Content?.ToString());
             RaiseClick(FindDescendant<Button>(control, "LoadDemoRunnerQuickActionButton"));
+            RaiseClick(FindDescendant<Button>(control, "StartOriginQuickActionButton"));
 
             Assert.AreEqual(1, loadDemoRunnerRequests, "Workspace quick-start CTA must raise its load-demo-runner event.");
+            Assert.AreEqual(1, startOriginRequests, "Workspace quick-start origin CTA must open ALICE in origin mode.");
         });
     }
 
@@ -3969,6 +4123,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         Dictionary<string, Color> dark = themeBrushes["Dark"];
 
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");

@@ -21,6 +21,9 @@ internal sealed class DesktopUpdateWindow : Window
     private readonly WrapPanel _currentActionsRow;
     private readonly WrapPanel _followThroughActionsRow;
     private readonly WrapPanel _installActionsRow;
+    private readonly Border _statusBanner;
+    private readonly TextBlock _statusBannerTitleText;
+    private readonly TextBlock _statusBannerBodyText;
     private bool _isChecking;
 
     private DesktopUpdateWindow(
@@ -53,6 +56,30 @@ internal sealed class DesktopUpdateWindow : Window
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
+
+        _statusBannerTitleText = new TextBlock
+        {
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _statusBannerBodyText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _statusBanner = DesktopShellTheme.CreateUtilityPanel(
+            new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    _statusBannerTitleText,
+                    _statusBannerBodyText
+                }
+            },
+            padding: 10,
+            cornerRadius: 6);
 
         _currentText = new TextBlock
         {
@@ -96,6 +123,7 @@ internal sealed class DesktopUpdateWindow : Window
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         },
+                        _statusBanner,
                         _introText,
                         _statusText,
                         CreateSection(S("desktop.update.section.current"), _currentText, _currentActionsRow),
@@ -141,6 +169,7 @@ internal sealed class DesktopUpdateWindow : Window
         return _updateStatus.Status switch
         {
             "disabled" => S("desktop.update.intro.disabled"),
+            "update_staged" => "The next build is already staged for this install. Chummer should finish the in-place update and relaunch on the newer build.",
             "update_available" => S("desktop.update.intro.available"),
             "attention_required" => S("desktop.update.intro.attention"),
             "never_checked" => S("desktop.update.intro.never_checked"),
@@ -174,6 +203,11 @@ internal sealed class DesktopUpdateWindow : Window
             $"Latest available: {(_updateStatus.LastManifestVersion ?? S("desktop.home.value.unknown"))}"
         ];
 
+        if (string.Equals(_updateStatus.Status, "update_staged", StringComparison.Ordinal))
+        {
+            lines.Add("Update state: staged for in-place install and relaunch.");
+        }
+
         if (!string.IsNullOrWhiteSpace(_updateStatus.RecommendedAction))
         {
             lines.Add(_updateStatus.RecommendedAction);
@@ -202,6 +236,11 @@ internal sealed class DesktopUpdateWindow : Window
                 "desktop.update.pending_update",
                 _updateStatus.PendingUpdateVersion,
                 string.IsNullOrWhiteSpace(_updateStatus.PendingUpdateChannelId) ? _updateStatus.ChannelId : _updateStatus.PendingUpdateChannelId));
+
+            if (_updateStatus.AutoApply)
+            {
+                lines.Add("Auto-apply stays on. The updater should install the staged build in place and relaunch without another approval prompt.");
+            }
         }
         else
         {
@@ -300,6 +339,11 @@ internal sealed class DesktopUpdateWindow : Window
             if (result.ExitRequested)
             {
                 _statusText.Text = S("desktop.update.apply_scheduled");
+                _statusBannerTitleText.Text = "Installing update";
+                _statusBannerBodyText.Text = "Chummer is closing this build, applying the staged update in place, and relaunching the newer build.";
+                _statusBanner.Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellChromeAccentBrush", "#DEE8F6");
+                _statusBanner.BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA");
+                await Task.Delay(1200).ConfigureAwait(true);
                 if (global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
                 {
                     desktop.Shutdown();
@@ -364,9 +408,49 @@ internal sealed class DesktopUpdateWindow : Window
         _currentText.Text = BuildCurrentBody();
         _followThroughText.Text = BuildFollowThroughBody();
         _installText.Text = BuildInstallBody();
+        ApplyStatusBanner();
         ResetActionRow(_currentActionsRow, CreateCurrentActions());
         ResetActionRow(_followThroughActionsRow, CreateFollowThroughActions());
         ResetActionRow(_installActionsRow, CreateInstallActions());
+    }
+
+    private void ApplyStatusBanner()
+    {
+        (string title, string body, string brushKey, string fallback) = _updateStatus.Status switch
+        {
+            "update_staged" => (
+                "Update staged",
+                "A newer build is already staged for this install. Chummer should install it in place and relaunch on the next step.",
+                "ChummerShellChromeAccentBrush",
+                "#DEE8F6"),
+            "update_available" => (
+                "Update available",
+                "A newer published build is available for this desktop. Check now or let the release lane move this install forward.",
+                "ChummerShellSelectionPanelBrush",
+                "#F8FAFC"),
+            "attention_required" => (
+                "Needs attention",
+                "Update posture, proof posture, or rollout posture needs review before this install is treated as current.",
+                "ChummerShellSelectionPanelBrush",
+                "#F8FAFC"),
+            "disabled" => (
+                "Updater disabled",
+                "This install is not currently attached to a working desktop update manifest.",
+                "ChummerShellSelectionPanelBrush",
+                "#F8FAFC"),
+            _ => (
+                "Current build",
+                "This install currently matches the latest known release truth for its configured update lane.",
+                "ChummerShellSurfaceAltBrush",
+                "#F2F5FA")
+        };
+
+        _statusBannerTitleText.Text = title;
+        _statusBannerBodyText.Text = body;
+        _statusBanner.Background = DesktopShellTheme.ResolveThemeBrush(brushKey, fallback);
+        _statusBanner.BorderBrush = string.Equals(_updateStatus.Status, "update_staged", StringComparison.Ordinal)
+            ? DesktopShellTheme.ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#60A5FA")
+            : DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
     }
 
     private static Border CreateSection(string title, Control body, Control? actionContent)

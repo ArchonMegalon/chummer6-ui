@@ -1,26 +1,43 @@
 {
-  "generated_at": "2026-06-12T18:29:22.714920Z",
+  "generated_at": "2026-06-18T03:35:42.399268Z",
   "probe_kind": "ui_parity_audit",
-  "status": "pass",
+  "status": "fail",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
   "summary": {
     "total_elements": 84,
-    "visual_yes_count": 84,
-    "visual_no_count": 0,
-    "behavioral_yes_count": 84,
-    "behavioral_no_count": 0,
+    "visual_yes_count": 83,
+    "visual_no_count": 1,
+    "behavioral_yes_count": 83,
+    "behavioral_no_count": 1,
     "chummer6_only_extra_present_count": 0,
     "removable_extra_present_count": 0,
-    "coverage_gap_keys": [],
+    "coverage_gap_keys": [
+      "desktop_client"
+    ],
     "active_runs_count": 3,
-    "productive_active_runs_count": 2,
+    "productive_active_runs_count": 3,
     "nonproductive_active_runs_count": 0
   },
-  "visualNoCount": 0,
-  "behavioralNoCount": 0,
-  "releaseBlockingNoCount": 0,
-  "coverageGapKeys": [],
-  "findings": [],
+  "visualNoCount": 1,
+  "behavioralNoCount": 1,
+  "releaseBlockingNoCount": 1,
+  "coverageGapKeys": [
+    "desktop_client"
+  ],
+  "findings": [
+    {
+      "severity": "high",
+      "category": "ui_parity_gap",
+      "summary": "Dice Initiative And Table Utilities is not directly parity-proven.",
+      "detail": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative']."
+    },
+    {
+      "severity": "high",
+      "category": "readiness_gap",
+      "summary": "Flagship readiness still contains open coverage keys outside the surface-level desktop parity matrix.",
+      "detail": "desktop_client: Executable desktop exit gate proof is missing or not passed. Desktop shell/install/support liveliness must be proven from shipped artifacts., Executable gate blocker: Release channel rolloutState is not a recognized registry rollout posture for desktop install media: stable., Executable gate blocker: Release channel does not publish desktop install media for required platform 'macos'., Executable gate blocker: Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos., Executable gate blocker: Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete., Executable gate blocker: Windows desktop exit gate receipt channelId/channel does not match release channel channelId., Executable gate blocker: Windows desktop exit gate receipt checks.release_channel_id does not match release channel channelId., Executable gate blocker: Windows desktop exit gate receipt checks.release_channel_version does not match release channel version., Executable gate blocker: Windows desktop exit gate receipt releaseVersion/version does not match release channel version., Executable gate blocker: Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel., Executable gate blocker: Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version., Executable gate blocker: Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel., Executable gate blocker: Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel., Executable gate blocker: Windows startup smoke receipt status is not passing for promoted installer bytes., Executable gate blocker: Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes., Executable gate blocker: Windows startup smoke receipt operatingSystem is missing for promoted installer bytes., Executable gate blocker: linux desktop exit gate proof for avalonia:linux-x64 is stale (477630s old)., Executable gate blocker: Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head 'avalonia'., Executable gate blocker: Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head 'avalonia'., Executable gate blocker: Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'., Executable gate blocker: Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'., Executable gate blocker: Linux installer startup smoke receipt channelId does not match release channel for promoted head 'avalonia'., Executable gate blocker: Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'., Executable gate blocker: Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel., Executable gate blocker: Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version., Executable gate blocker: Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel., Executable gate blocker: Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel., Executable gate blocker: Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head 'avalonia'., Executable gate blocker: Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64., Executable gate reports stale passing platform gate receipts for non-promoted desktop tuples: macos:avalonia:osx-arm64., Release channel publishes Linux installer media, but executable-gate evidence is missing passing Linux startup-smoke tuple proof., Release channel publishes Windows installer media, but executable-gate evidence is missing passing Windows startup-smoke tuple proof., Chummer5A UI element parity audit still has unresolved release-blocking rows: Dice Initiative And Table Utilities (no/no)., Chummer5A UI element parity audit still reports open parity gaps: visual_no_count=1, behavioral_no_count=1."
+    }
+  ],
   "notes": [
     "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
     "The repo does not contain a true dual-product per-control pixel diff for literally every window control on every dialog; items without direct screenshot/runtime proof are scored `no` even when broader readiness artifacts pass.",
@@ -1289,19 +1306,17 @@
       "id": "family:dice_initiative_and_table_utilities",
       "label": "Dice Initiative And Table Utilities",
       "category": "workflow_family",
-      "visual_parity": "yes",
-      "behavioral_parity": "yes",
+      "visual_parity": "no",
+      "behavioral_parity": "no",
       "present_in_chummer5a": "yes",
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
+      "reason": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {
@@ -2712,19 +2727,17 @@
       "id": "family:dice_initiative_and_table_utilities",
       "label": "Dice Initiative And Table Utilities",
       "category": "workflow_family",
-      "visual_parity": "yes",
-      "behavioral_parity": "yes",
+      "visual_parity": "no",
+      "behavioral_parity": "no",
       "present_in_chummer5a": "yes",
       "present_in_chummer6": "yes",
       "removable_if_not_in_chummer5a": "no",
       "removable_without_workflow_degradation": "no",
-      "reason": "Route-local dice and initiative proof cites the generated dice dialog parity, runboard initiative route, and deterministic core receipts directly.",
+      "reason": "At least one declared compare artifact for this Chummer5A family lacks direct parity proof: ['menu:dice_roller', 'workflow:initiative'].",
       "evidence": [
         "/docker/fleet/docs/chummer5a-oracle/veteran_workflow_packs.yaml",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/GENERATED_DIALOG_ELEMENT_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/SECTION_HOST_RULESET_PARITY.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M121_UI_GM_RUNBOARD_ROUTE.generated.json",
-        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/NEXT90_M142_UI_DIRECT_WORKFLOW_PROOF.generated.json"
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
+        "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
       ]
     },
     {

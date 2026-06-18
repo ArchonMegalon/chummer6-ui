@@ -1,0 +1,1 @@
+/docker/chummercomplete/chummer-design/products/chummer/CHUMMER5A_FAMILIARITY_BRIDGE.md

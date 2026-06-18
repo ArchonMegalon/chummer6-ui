@@ -21,6 +21,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -43,6 +44,11 @@ namespace Chummer
 {
     public static class ColorManager
     {
+        private sealed class ThemedDrawRegistration
+        {
+            public DrawItemEventHandler DrawItemHandler { get; init; }
+        }
+
         // The setting for whether stuff uses dark mode or light mode is accessible purely through a specific registry key
         // So we save that key for accessing both at startup and should the setting be changed while Chummer is running
         private static readonly RegistryKey s_ObjPersonalizeKey;
@@ -168,6 +174,7 @@ namespace Chummer
         private static readonly ConcurrentDictionary<Color, Color> s_DicDarkModeColors = new ConcurrentDictionary<Color, Color>();
         private static readonly ConcurrentDictionary<Color, Color> s_DicInverseDarkModeColors = new ConcurrentDictionary<Color, Color>();
         private static readonly ConcurrentDictionary<Color, Color> s_DicDimmedColors = new ConcurrentDictionary<Color, Color>();
+        private static readonly ConditionalWeakTable<Control, ThemedDrawRegistration> s_ThemedDrawRegistrations = new ConditionalWeakTable<Control, ThemedDrawRegistration>();
 
         /// <summary>
         /// Returns a version of a color that has its lightness almost inverted (slightly increased lightness from inversion, slight desaturation)
@@ -447,6 +454,40 @@ namespace Chummer
 
         private static void ApplyColorsRecursively(Control objControl, bool blnLightMode, CancellationToken token = default)
         {
+            void EnsureThemedListDraw(Control control)
+            {
+                if (control == null || s_ThemedDrawRegistrations.TryGetValue(control, out _))
+                    return;
+
+                switch (control)
+                {
+                    case CheckedListBox checkedListBox:
+                    {
+                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(checkedListBox, e);
+                        checkedListBox.DrawMode = DrawMode.OwnerDrawFixed;
+                        checkedListBox.DrawItem += handler;
+                        s_ThemedDrawRegistrations.Add(checkedListBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                        break;
+                    }
+                    case ListBox listBox:
+                    {
+                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(listBox, e);
+                        listBox.DrawMode = DrawMode.OwnerDrawFixed;
+                        listBox.DrawItem += handler;
+                        s_ThemedDrawRegistrations.Add(listBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                        break;
+                    }
+                    case ComboBox comboBox when comboBox is not ElasticComboBox:
+                    {
+                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(comboBox, e);
+                        comboBox.DrawMode = DrawMode.OwnerDrawFixed;
+                        comboBox.DrawItem += handler;
+                        s_ThemedDrawRegistrations.Add(comboBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                        break;
+                    }
+                }
+            }
+
             void ApplyButtonStyle()
             {
                 // Buttons look weird if colored based on anything other than the default color scheme in dark mode
@@ -646,7 +687,24 @@ namespace Chummer
                     break;
 
                 case ListBox _:
+                    EnsureThemedListDraw(objControl);
+                    objControl.DoThreadSafe((x, y) =>
+                    {
+                        if (blnLightMode)
+                        {
+                            x.ForeColor = WindowTextLight;
+                            x.BackColor = WindowLight;
+                        }
+                        else
+                        {
+                            x.ForeColor = WindowTextDark;
+                            x.BackColor = WindowDark;
+                        }
+                    }, token);
+                    break;
                 case ComboBox _:
+                    EnsureThemedListDraw(objControl);
+                    goto case TableCell;
                 case TableCell _:
                     objControl.DoThreadSafe((x, y) =>
                     {
@@ -821,6 +879,77 @@ namespace Chummer
 
             foreach (Control objChild in objControl.DoThreadSafeFunc((x, y) => x.Controls, token))
                 ApplyColorsRecursively(objChild, blnLightMode, token);
+        }
+
+        private static void DrawThemedListControlItem(Control objControl, DrawItemEventArgs e)
+        {
+            if (objControl is ComboBox comboBox
+                && e.Index == -1
+                && comboBox.DropDownStyle != ComboBoxStyle.DropDownList)
+            {
+                return;
+            }
+
+            if (e.Index < 0)
+            {
+                using (SolidBrush objBackBrush = new SolidBrush(objControl.BackColor))
+                {
+                    e.Graphics.FillRectangle(objBackBrush, e.Bounds);
+                }
+                return;
+            }
+
+            bool blnSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            bool blnEnabled = objControl.Enabled;
+            Color objBackColor;
+            Color objForeColor;
+            if (!blnEnabled)
+            {
+                objBackColor = Control;
+                objForeColor = GrayText;
+            }
+            else if (blnSelected)
+            {
+                objBackColor = Highlight;
+                objForeColor = HighlightText;
+            }
+            else
+            {
+                objBackColor = objControl.BackColor;
+                objForeColor = objControl.ForeColor;
+            }
+
+            using (SolidBrush objBackBrush = new SolidBrush(objBackColor))
+            {
+                e.Graphics.FillRectangle(objBackBrush, e.Bounds);
+            }
+
+            object objItem;
+            string strItemText;
+            switch (objControl)
+            {
+                case ListBox listBox:
+                    objItem = listBox.Items[e.Index];
+                    strItemText = listBox.GetItemText(objItem);
+                    break;
+                case ComboBox comboBox:
+                    objItem = comboBox.Items[e.Index];
+                    strItemText = comboBox.GetItemText(objItem);
+                    break;
+                default:
+                    return;
+            }
+            Rectangle objTextBounds = Rectangle.Inflate(e.Bounds, -4, 0);
+            TextRenderer.DrawText(
+                e.Graphics,
+                strItemText,
+                objControl.Font,
+                objTextBounds,
+                objForeColor,
+                TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+
+            if ((e.State & DrawItemState.Focus) == DrawItemState.Focus)
+                e.DrawFocusRectangle();
         }
 
         private static void ApplyColorsRecursively(ToolStripItem tssItem, bool blnLightMode, CancellationToken token = default)

@@ -38,7 +38,9 @@ namespace Chummer
         {
             InitializeComponent();
             UpdateTabs();
+            this.UpdateLightDarkMode();
             this.TranslateWinForm();
+            this.UpdateParentForToolTipControls();
             frmInitative = new frmInitiative();
             frmInitative.Hide();
             VisibleChanged += GameMasterDashboard_VisibleChanged;

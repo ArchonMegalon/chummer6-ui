@@ -3,6 +3,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using Chummer.Avalonia;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -129,6 +130,105 @@ public sealed class DesktopInstallLinkingShellChromeTests
             "Closing the unlinked install-link window should exit the desktop instead of trapping the user in the dialog.");
     }
 
+    [TestMethod]
+    public void Avalonia_startup_supports_headless_install_linking_before_graphics_init()
+    {
+        string source = FindPath("Chummer.Avalonia", "Program.cs");
+        string text = File.ReadAllText(source);
+
+        StringAssert.Contains(text, "DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(");
+        StringAssert.Contains(text, "Console.Out");
+        StringAssert.Contains(text, "Console.Error");
+        Assert.IsTrue(
+            text.IndexOf("TryHandleHeadlessInstallLinkModeAsync(", StringComparison.Ordinal)
+            < text.IndexOf("BuildAvaloniaApp()", StringComparison.Ordinal),
+            "Headless install-link mode must run before Avalonia platform detection so WSL/no-GUI linking does not require GL startup.");
+    }
+
+    [TestMethod]
+    public void Install_link_window_uses_flagship_matrix_uplink_shell_with_local_callback_polling()
+    {
+        string source = FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs");
+        string text = File.ReadAllText(source);
+
+        StringAssert.Contains(text, "InstallLinkMatrixUplinkHero");
+        StringAssert.Contains(text, "InstallLinkMatrixUplinkRender");
+        StringAssert.Contains(text, "Assets/install-link/matrix-uplink-login.png");
+        StringAssert.Contains(text, "InstallLinkMatrixIdentityVault");
+        StringAssert.Contains(text, "HOST VAULT DOSSIER");
+        StringAssert.Contains(text, "NOT IMPORTED");
+        StringAssert.Contains(text, "EXTRACTED");
+        StringAssert.Contains(text, "InstallLinkMatrixJackOutMonitor");
+        StringAssert.Contains(text, "SAFEHOUSE MONITOR");
+        StringAssert.Contains(text, "Live client overlay");
+        StringAssert.Contains(text, "Only the verified email claim leaves the host.");
+        StringAssert.Contains(text, "CreateMatrixSignalRail");
+        StringAssert.Contains(text, "WrapPanel");
+        StringAssert.Contains(text, "BeginAutomaticHandoffAsync();");
+        StringAssert.Contains(text, "TryOpenClaimPortalForInstall(_state)");
+        StringAssert.Contains(text, "PollForClaimedInstallAsync");
+        StringAssert.Contains(text, "DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId)");
+    }
+
+    [TestMethod]
+    public void Install_link_matrix_uplink_render_is_packaged_as_avalonia_resource()
+    {
+        string assetPath = FindPath("Chummer.Avalonia", "Assets", "install-link", "matrix-uplink-login.png");
+        string projectPath = FindPath("Chummer.Avalonia", "Chummer.Avalonia.csproj");
+        string projectText = File.ReadAllText(projectPath);
+
+        Assert.IsTrue(new FileInfo(assetPath).Length > 100_000, "The install-link render should be a real flagship image asset, not a tiny placeholder.");
+        StringAssert.Contains(projectText, "Assets\\install-link\\*.png");
+    }
+
+    [TestMethod]
+    public void Matrix_uplink_overlay_extracts_only_verified_email_for_claimed_install()
+    {
+        DesktopInstallLinkingState state = CreateInstallState(
+            status: "claimed",
+            userId: "opaque-user-42",
+            subjectId: "subject-42",
+            linkedEmail: "tibor@example.test");
+
+        Assert.AreEqual("t****@e****.test -> tibor@example.test", DesktopInstallLinkingWindow.BuildEmailClaimDisplay(state));
+        Assert.AreEqual("tibor@example.test", DesktopInstallLinkingWindow.BuildMonitorEmailDisplay(state));
+        Assert.AreEqual("CHUMMER UPLINK COMPLETE", DesktopInstallLinkingWindow.BuildMonitorStateDisplay(state));
+        Assert.AreEqual("LOCAL INSTALL LINKED", DesktopInstallLinkingWindow.BuildMonitorLinkDisplay(state));
+        Assert.AreEqual("tibor@example.test", DesktopInstallLinkingWindow.ResolveEmailForOverlay(state));
+    }
+
+    [TestMethod]
+    public void Matrix_uplink_overlay_keeps_unclaimed_profile_data_sealed()
+    {
+        DesktopInstallLinkingState state = CreateInstallState(status: "guest");
+
+        Assert.AreEqual("email claim sealed", DesktopInstallLinkingWindow.BuildEmailClaimDisplay(state));
+        Assert.AreEqual("email pending", DesktopInstallLinkingWindow.BuildMonitorEmailDisplay(state));
+        Assert.AreEqual("UPLINK WAITING", DesktopInstallLinkingWindow.BuildMonitorStateDisplay(state));
+        Assert.AreEqual("LOCAL INSTALL PENDING", DesktopInstallLinkingWindow.BuildMonitorLinkDisplay(state));
+        Assert.IsNull(DesktopInstallLinkingWindow.ResolveEmailForOverlay(state));
+    }
+
+    [TestMethod]
+    public void Matrix_uplink_overlay_uses_failed_jackout_state_when_claim_fails()
+    {
+        DesktopInstallLinkingState state = CreateInstallState(status: "guest", lastClaimError: "expired claim");
+
+        Assert.AreEqual("UPLINK LOST", DesktopInstallLinkingWindow.BuildMonitorStateDisplay(state));
+    }
+
+    [TestMethod]
+    public void Matrix_uplink_overlay_compacts_long_email_for_monitor_fit()
+    {
+        string compact = DesktopInstallLinkingWindow.CompactOverlayValue(
+            "very.long.runner.identity.with.scope@example.very-long-domain.test",
+            34);
+
+        Assert.IsTrue(compact.Length <= 34);
+        StringAssert.Contains(compact, "...");
+        StringAssert.EndsWith(compact, "domain.test");
+    }
+
     private static string FindPath(params string[] parts)
     {
         string? current = AppContext.BaseDirectory;
@@ -150,7 +250,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
         string status,
         string? userId = "user-runner-7",
         string? subjectId = "subject-runner-7",
-        string? linkedEmail = null)
+        string? linkedEmail = null,
+        string? lastClaimError = null)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
         bool claimed = string.Equals(status, "claimed", StringComparison.Ordinal);
@@ -170,6 +271,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             LastPromptDismissedAtUtc: null,
             PublicKey: "public",
             PrivateKey: "private",
+            LastClaimError: lastClaimError,
             GrantToken: claimed ? "grant-token" : null,
             UserId: claimed ? userId : null,
             SubjectId: claimed ? subjectId : null,

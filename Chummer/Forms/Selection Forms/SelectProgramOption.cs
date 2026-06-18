@@ -40,7 +40,9 @@ namespace Chummer
         public SelectProgramOption(Character objCharacter)
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
             this.TranslateWinForm();
+            this.UpdateParentForToolTipControls();
             _objCharacter = objCharacter;
             MoveControls();
             // Load the Programs information.

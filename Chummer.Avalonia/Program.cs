@@ -29,6 +29,18 @@ internal static class Program
             "avalonia",
             args,
             CancellationToken.None).ConfigureAwait(false);
+        int? installLinkHeadlessExitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                args,
+                App.InstallLinkingStartupContext,
+                Console.Out,
+                Console.Error,
+                CancellationToken.None)
+            .ConfigureAwait(false);
+        if (installLinkHeadlessExitCode is not null)
+        {
+            return installLinkHeadlessExitCode.Value;
+        }
 
         AppBuilder builder = BuildAvaloniaApp();
         int? startupSmokeExitCode = await DesktopStartupSmokeRuntime.TryHandleAsync(

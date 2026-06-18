@@ -37,6 +37,10 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Software\\Classes\\{ChummerProtocolScheme}");
         StringAssert.Contains(installerProgramText, "\"URL: Chummer Protocol\"");
         StringAssert.Contains(installerProgramText, "commandKey.SetValue(string.Empty, $\"\\\"{launchPath}\\\" {InstallLinkCallbackSwitch} \\\"%1\\\"\")");
+        StringAssert.Contains(installerScriptText, "Exec=/usr/bin/chummer6-$APP_KEY %u");
+        StringAssert.Contains(installerScriptText, "MimeType=x-scheme-handler/chummer;");
+        StringAssert.Contains(installerScriptText, "update-desktop-database /usr/share/applications");
+        StringAssert.Contains(installerScriptText, "xdg-mime default chummer6-$APP_KEY.desktop x-scheme-handler/chummer");
         StringAssert.Contains(installerProgramText, "AutoUpdateSwitch = \"--auto-update\"");
         StringAssert.Contains(installerProgramText, "LaunchHeadSwitch = \"--launch-head\"");
         StringAssert.Contains(installerProgramText, "RelaunchArgSwitch = \"--relaunch-arg\"");

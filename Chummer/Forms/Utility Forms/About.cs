@@ -28,7 +28,16 @@ namespace Chummer
         public About()
         {
             InitializeComponent();
+            txtDescription.BorderStyle = BorderStyle.None;
+            txtDescription.TabStop = false;
+            txtContributors.BorderStyle = BorderStyle.None;
+            txtContributors.TabStop = false;
+            txtDisclaimer.BorderStyle = BorderStyle.None;
+            txtDisclaimer.TabStop = false;
             this.UpdateLightDarkMode();
+            txtDescription.BackColor = ColorManager.Control;
+            txtContributors.BackColor = ColorManager.Control;
+            txtDisclaimer.BackColor = ColorManager.Control;
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();
         }

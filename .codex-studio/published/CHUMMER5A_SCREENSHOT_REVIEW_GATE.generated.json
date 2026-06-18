@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-14T19:36:19.758700Z",
+  "generatedAt": "2026-06-18T03:35:45.075417Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
-  "channelId": "public_stable",
-  "channel": "public_stable",
-  "releaseVersion": "run-20260612-121055",
-  "version": "run-20260612-121055",
+  "channelId": "stable",
+  "channel": "stable",
+  "releaseVersion": "run-20260618-024810",
+  "version": "run-20260618-024810",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -32,7 +32,7 @@
     "reasons": [],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "pass"
+      "flagshipGate": "fail"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -290,12 +290,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260612-121055",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+    "releaseChannelChannelId": "stable",
+    "releaseChannelVersion": "run-20260618-024810",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -320,7 +320,32 @@
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
-    "desktopExecutableLocalBlockingFindings": [],
+    "desktopExecutableLocalBlockingFindings": [
+      "Release channel rolloutState is not a recognized registry rollout posture for desktop install media: stable.",
+      "Release channel desktopTupleCoverage requiredDesktopPlatforms is missing required policy platform(s): macos.",
+      "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.",
+      "Windows desktop exit gate receipt channelId/channel does not match release channel channelId.",
+      "Windows gate embedded release_channel_windows_artifact channelId/channel does not match promoted release channel.",
+      "Windows gate embedded release_channel_windows_artifact version/releaseVersion does not match promoted release channel version.",
+      "Windows gate embedded release_channel_windows_artifact sha256 does not match promoted release channel.",
+      "Windows gate embedded release_channel_windows_artifact sizeBytes does not match promoted release channel.",
+      "Windows startup smoke receipt status is not passing for promoted installer bytes.",
+      "Windows startup smoke receipt readyCheckpoint is not pre_ui_event_loop for promoted installer bytes.",
+      "Windows startup smoke receipt operatingSystem is missing for promoted installer bytes.",
+      "linux desktop exit gate proof for avalonia:linux-x64 is stale (477630s old).",
+      "Linux desktop exit gate receipt head channelId/channel does not match release channel for promoted head 'avalonia'.",
+      "Linux desktop exit gate receipt checks.release_channel_id does not match release channel channelId for promoted head 'avalonia'.",
+      "Linux desktop exit gate receipt checks.release_channel_version does not match release channel version for promoted head 'avalonia'.",
+      "Linux desktop exit gate receipt releaseVersion/version does not match release channel version for promoted head 'avalonia'.",
+      "Linux installer startup smoke receipt channelId does not match release channel for promoted head 'avalonia'.",
+      "Linux installer startup smoke receipt version does not match release channel version for promoted head 'avalonia'.",
+      "Linux gate embedded release_channel_linux_artifact channelId/channel does not match promoted release channel.",
+      "Linux gate embedded release_channel_linux_artifact version/releaseVersion does not match promoted release channel version.",
+      "Linux gate embedded release_channel_linux_artifact sha256 does not match promoted release channel.",
+      "Linux gate embedded release_channel_linux_artifact sizeBytes does not match promoted release channel.",
+      "Linux installer startup smoke receipt artifactDigest does not match promoted release-channel artifact bytes for head 'avalonia'.",
+      "Stale passing platform gate receipts exist for non-promoted desktop tuples: macos:avalonia:osx-arm64."
+    ],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",

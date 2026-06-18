@@ -43,6 +43,7 @@ internal static class MainWindowControlBinder
         EventHandler onReportIssueRequested,
         EventHandler onSettingsRequested,
         EventHandler onLoadDemoRunnerRequested,
+        EventHandler onStartOriginRequested,
         EventHandler onKeepLocalWorkRequested,
         EventHandler onWorkspaceSupportRequested,
         EventHandler<string> onMenuSelected,
@@ -66,6 +67,7 @@ internal static class MainWindowControlBinder
         AttachMenuBarHandlers(classicMenuBar);
         summaryHeader.NavigationTabSelected += onNavigationTabSelected;
         summaryHeader.LoadDemoRunnerRequested += onLoadDemoRunnerRequested;
+        summaryHeader.StartOriginRequested += onStartOriginRequested;
         summaryHeader.KeepLocalWorkRequested += onKeepLocalWorkRequested;
         summaryHeader.SaveLocalWorkRequested += onSaveRequested;
         summaryHeader.CampaignWorkspaceRequested += onCampaignWorkspaceRequested;
@@ -112,6 +114,7 @@ internal static class MainWindowControlBinder
             surface.OpenForExportRequested += onOpenForExportRequested;
             surface.ImportRawRequested += onImportRawRequested;
             surface.AutoAliceRequested += onAutoAliceRequested;
+            surface.StartOriginRequested += onStartOriginRequested;
             surface.SaveRequested += onSaveRequested;
             surface.PrintRequested += onPrintRequested;
             surface.CopyRequested += onCopyRequested;

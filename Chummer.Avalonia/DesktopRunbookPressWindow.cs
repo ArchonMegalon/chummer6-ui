@@ -229,7 +229,7 @@ internal sealed class DesktopRunbookPressWindow : Window
             details.Children.Add(entryList);
             details.Children.Add(new Border
             {
-                BorderBrush = new SolidColorBrush(Color.Parse("#D3DCE5")),
+                BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(10),

@@ -18,12 +18,20 @@
  */
 
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Chummer
 {
     public class ElasticComboBox : ComboBox
     {
+        public ElasticComboBox()
+        {
+            DrawMode = DrawMode.OwnerDrawFixed;
+            FlatStyle = FlatStyle.Popup;
+            IntegralHeight = false;
+        }
+
         protected override void OnSelectedIndexChanged(EventArgs e)
         {
             base.OnSelectedIndexChanged(e);
@@ -77,6 +85,60 @@ namespace Chummer
         {
             base.OnValueMemberChanged(e);
             ResizeDropDown();
+        }
+
+        protected override void OnDrawItem(DrawItemEventArgs e)
+        {
+            if (e.Index < -1)
+            {
+                base.OnDrawItem(e);
+                return;
+            }
+
+            // Editable combo boxes render their active text through the native edit control.
+            // Drawing the -1 "selected item" surface here produces duplicated, overlapping text.
+            if (e.Index == -1 && DropDownStyle != ComboBoxStyle.DropDownList)
+                return;
+
+            bool blnEnabled = Enabled;
+            bool blnSelected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
+            Color objBackColor;
+            Color objForeColor;
+            if (!blnEnabled)
+            {
+                objBackColor = ColorManager.Control;
+                objForeColor = ColorManager.GrayText;
+            }
+            else if (blnSelected)
+            {
+                objBackColor = ColorManager.Highlight;
+                objForeColor = ColorManager.HighlightText;
+            }
+            else
+            {
+                objBackColor = BackColor;
+                objForeColor = ForeColor;
+            }
+
+            using (SolidBrush objBackBrush = new SolidBrush(objBackColor))
+            using (SolidBrush objForeBrush = new SolidBrush(objForeColor))
+            {
+                e.Graphics.FillRectangle(objBackBrush, e.Bounds);
+                string strItemText = e.Index >= 0 && e.Index < Items.Count
+                    ? GetItemText(Items[e.Index])
+                    : Text;
+                Rectangle objTextBounds = Rectangle.Inflate(e.Bounds, -4, 0);
+                TextRenderer.DrawText(
+                    e.Graphics,
+                    strItemText,
+                    Font,
+                    objTextBounds,
+                    objForeColor,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            }
+
+            if ((e.State & DrawItemState.Focus) == DrawItemState.Focus)
+                e.DrawFocusRectangle();
         }
 
         private void ResizeDropDown()

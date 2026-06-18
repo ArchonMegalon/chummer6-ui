@@ -173,7 +173,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             Padding = new Thickness(10),
             CornerRadius = new CornerRadius(6),
             Background = Brushes.Transparent,
-            BorderBrush = new SolidColorBrush(Color.Parse("#3f4b53")),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#475569"),
             BorderThickness = new Thickness(1),
             Child = new StackPanel
             {

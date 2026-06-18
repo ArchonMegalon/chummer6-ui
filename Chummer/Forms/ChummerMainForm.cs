@@ -1407,6 +1407,8 @@ namespace Chummer
                                     {
                                         x.FormClosed += (o, args) => ResetChummerUpdater(x);
                                         x.SilentMode = true;
+                                        x.Show();
+                                        x.WindowState = FormWindowState.Minimized;
                                     }, objNewToken);
                                 }
                                 else

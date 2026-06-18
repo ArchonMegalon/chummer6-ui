@@ -100,8 +100,8 @@ internal static class DesktopTrustPanelFactory
     {
         Border panel = new()
         {
-            Background = new SolidColorBrush(Color.Parse("#FFF6E1")),
-            BorderBrush = new SolidColorBrush(Color.Parse("#D9B05F")),
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellSelectionPanelBrush", "#F8FAFC"),
+            BorderBrush = DesktopShellTheme.ResolveThemeBrush("ChummerShellWarningBrush", "#9A6700"),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(14)

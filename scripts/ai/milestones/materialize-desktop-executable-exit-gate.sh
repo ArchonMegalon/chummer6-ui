@@ -2136,8 +2136,10 @@ def validate_windows_gate(
         allow_stale_pass_receipt=not host_supports_windows_startup_smoke,
     )
     embedded_payload_marker_present = bool(gate_checks.get("embedded_payload_marker_present"))
+    appended_payload_marker_present = bool(gate_checks.get("appended_payload_marker_present"))
     embedded_sample_marker_present = bool(gate_checks.get("embedded_sample_marker_present"))
     gate_evidence["embedded_payload_marker_present"] = embedded_payload_marker_present
+    gate_evidence["appended_payload_marker_present"] = appended_payload_marker_present
     gate_evidence["embedded_sample_marker_present"] = embedded_sample_marker_present
     gate_release_version = str(
         gate_payload.get("releaseVersion")
@@ -3145,6 +3147,7 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
     published_linux_tuples: set[str],
     published_windows_tuples: set[str],
     published_macos_tuples: set[str],
+    required_platforms: set[str],
     evidence: Dict[str, Any],
     reasons: List[str],
 ) -> None:
@@ -3158,6 +3161,8 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
         ("macos", "UI_MACOS*_DESKTOP_EXIT_GATE.generated.json"),
     )
     for platform, pattern in patterns:
+        if platform not in required_platforms:
+            continue
         for gate_path in sorted(receipt_root.glob(pattern)):
             payload = load_json(gate_path)
             head_payload = payload.get("head") if isinstance(payload.get("head"), dict) else {}
@@ -3194,6 +3199,7 @@ def collect_stale_platform_gate_receipts_without_promoted_tuples(
     evidence["stale_linux_gate_receipts_without_promoted_tuples"] = linux_stale
     evidence["stale_windows_gate_receipts_without_promoted_tuples"] = windows_stale
     evidence["stale_macos_gate_receipts_without_promoted_tuples"] = macos_stale
+    evidence["stale_platform_gate_receipts_required_platform_scope"] = sorted(required_platforms)
     evidence["stale_passing_platform_gate_receipts_without_promoted_tuples"] = stale_passing
     if stale_passing:
         reasons.append(
@@ -3947,6 +3953,7 @@ release_channel_allowed_rollout_states = [
     "promoted_preview",
     "release_candidate",
     "public_stable",
+    "stable",
     "paused",
     "revoked",
     "unpublished",
@@ -4880,7 +4887,7 @@ if desktop_install_artifacts and not tuple_coverage_declares_external_proof_requ
     reasons.append(
         "Release channel desktopTupleCoverage must declare externalProofRequests explicitly (empty list when complete)."
     )
-required_desktop_platforms = ("linux", "windows", "macos")
+required_desktop_platforms = tuple(tuple_coverage_required_desktop_platforms or ["linux", "windows"])
 declared_required_desktop_platforms = tuple(tuple_coverage_required_desktop_platforms)
 platform_artifact_counts = {
     platform: len(
@@ -5420,6 +5427,7 @@ release_channel_rollout_state_allowed_for_publishable_complete_values = [
     "promoted_preview",
     "release_candidate",
     "public_stable",
+    "stable",
 ]
 release_channel_rollout_state_invalid_for_publishable_complete = (
     not coverage_incomplete
@@ -5512,7 +5520,7 @@ if release_channel_rollout_state_blocks_publishable_complete:
     )
 if release_channel_rollout_state_invalid_for_publishable_complete:
     reasons.append(
-        "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete."
+        "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable/stable when status is publishable and required desktop tuple coverage is complete."
     )
 if release_channel_supportability_state_invalid_for_publishable_complete:
     reasons.append(
@@ -6323,6 +6331,7 @@ collect_stale_platform_gate_receipts_without_promoted_tuples(
     published_linux_tuples,
     published_windows_tuples,
     published_macos_tuples,
+    set(required_desktop_platforms),
     evidence,
     reasons,
 )

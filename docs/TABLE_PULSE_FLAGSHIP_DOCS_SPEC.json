@@ -114,6 +114,7 @@
       },
       {
         "name": "Living Newsroom",
+        "descriptor": "the public-safe consequence layer",
         "feels": [
           "cinematic",
           "reactive",
@@ -323,8 +324,103 @@
       "the system still keeps GM and consent authority intact"
     ]
   },
+  "user_first_story": {
+    "title": "User-First Entry Arc",
+    "summary": "The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, Signal Deck, and the living-world stack.",
+    "beats": [
+      "A player starts from Origin Dossier instead of facing a cold chargen sheet.",
+      "Approved canon freezes a stable narrative spine before downstream media regenerates.",
+      "ALICE uses the approved canon later as bounded context for build help, rules coach follow-up, and GM-steered tradeoff explanation.",
+      "Table Pulse, Runner Passport, and the living newsroom then make that runner feel present in a governed city instead of trapped in a one-session character form."
+    ],
+    "truths": [
+      "approved origin canon may shape later ALICE suggestions",
+      "GM gimmicks and allowances may steer narrative context without becoming auto-applied mechanics",
+      "media packets derive from canon and receipts, not the other way around",
+      "ALICE remains advisory and explainable even when the origin lane is rich and cinematic"
+    ]
+  },
+  "origin_dossier_spotlight": {
+    "title": "Origin Dossier And ALICE",
+    "summary": "Origin Dossier is the premium narrative-first lane for turning runner identity into approved canon, derivative dossier media, and later ALICE follow-up context without letting story text silently mutate build truth.",
+    "must_show": [
+      "origin draft and canon approval",
+      "blank-state start and finished-runner additive entry points",
+      "bundle root and derivative dossier media outputs",
+      "voice-selection posture before audiobook packet generation",
+      "bounded GM gimmick steering as advisory context",
+      "later ALICE follow-up that references approved canon instead of inventing a new story spine"
+    ],
+    "alice_connection": [
+      "ALICE owns the native desktop workbench for Build Help, Rules Coach, and Origin Dossier.",
+      "Origin Dossier may start before chargen or from an already-finished runner without forcing mechanics back into edit mode.",
+      "The approved origin canon feeds later ALICE explanations about tradeoffs, upgrades, and risk.",
+      "GM allowances may appear in ALICE context and output, but they must not silently rewrite mechanics.",
+      "Narration lanes should expose voice posture as an explicit user choice, not an invisible provider default.",
+      "The lane is strongest when narrative continuity and rules explanation stay on the same governed rail."
+    ],
+    "must_not_imply": [
+      "origin prose becomes mechanical truth by itself",
+      "downstream portrait or video providers become rules authority",
+      "ALICE is an autonomous build oracle"
+    ]
+  },
+  "gm_cockpit_spotlight": {
+    "title": "GM Cockpit And Steering",
+    "summary": "GM Cockpit is the calm authority surface for steering Table Pulse, origin-dossier context, remote reactions, and public-safe fallout without turning a maintenance list into the product experience.",
+    "must_show": [
+      "pulse policy and heat thresholds",
+      "recipient reasoning, quiet-hours, mute, and opt-out posture",
+      "GM allowances and gimmicks as explicit advisory context",
+      "mini-game prompt source, chosen response, and proposed consequence",
+      "public-safe release controls before newsroom or Black Ledger projection",
+      "receipt trail, override reason, and what remains manual review"
+    ],
+    "origin_gimmick_flow": [
+      "GM steer may come before the origin story so it can shape tone, faction pressure, and allowed context.",
+      "The fixed SR4 troll decker test gimmick is a clinic contact that fronts restricted starter ware and one over-availability deck part.",
+      "ALICE may explain how that changes story pressure, legality posture, availability risk, and ware consequences.",
+      "The cockpit must keep those allowances advisory until a GM or player explicitly applies legal mechanics in the normal character workflow."
+    ],
+    "visual_language": [
+      "control room, action board, pressure map, and dossier drawer rather than admin table",
+      "dense but scannable cards for heat, consent, receipt, and consequence state",
+      "one strong primary action for adjudicate, approve, suppress, or request revision"
+    ],
+    "must_not_imply": [
+      "the GM cockpit is an autonomous simulator",
+      "GM gimmicks auto-apply ware, money, gear, qualities, or availability exceptions",
+      "public media can bypass private campaign posture or GM approval"
+    ]
+  },
+  "related_horizons": [
+    {
+      "name": "ALICE",
+      "status": "Shipped native desktop workbench with build help, rules coach, and origin-first chargen handoff.",
+      "reader_why": "This is the closest user-first entry into Chummer’s broader living-world stack.",
+      "connection": "Origin Dossier creates approved canon; ALICE later uses that canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation."
+    }
+  ],
+  "visual_gallery": [
+    {
+      "title": "Table Pulse Live Pressure",
+      "image_source": "/docker/chummercomplete/chummer-design/products/chummer/public-guide-curated-assets/assets/horizons/table-pulse.png",
+      "image_output": "images/flagship/table-pulse.png",
+      "alt": "Table Pulse flagship scene art",
+      "caption": "Table Pulse is the live pressure rail: a GM-governed action board that turns heat into bounded reactions, receipts, and public-safe fallout."
+    },
+    {
+      "title": "ALICE Origin Dossier",
+      "image_source": "/docker/chummercomplete/chummer-design/products/chummer/public-guide-curated-assets/assets/horizons/alice.png",
+      "image_output": "images/flagship/alice.png",
+      "alt": "ALICE origin dossier horizon art",
+      "caption": "Origin Dossier and ALICE bring a user-first lane into the stack: approved canon, grounded build help, and derivative dossier media on one governed rail."
+    }
+  ],
   "published_design_sources": [
     "TABLE_PULSE_LIVING_WORLD_STACK_20260523.md",
-    "TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md"
+    "TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md",
+    "ORIGIN_DOSSIER_ALICE_GM_GIMMICK_E2E_GATE.md",
+    "horizons/alice.md"
   ]
 }

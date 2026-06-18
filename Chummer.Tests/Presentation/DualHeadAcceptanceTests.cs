@@ -2060,16 +2060,17 @@ public class DualHeadAcceptanceTests
 
     private static async Task<(bool IsAvailable, string FailureReason)> IsRuntimeAvailableAsync()
     {
+        Uri? runtimeBaseUri = ResolveRuntimeBaseUri();
         try
         {
-            if (BaseUri is null)
+            if (runtimeBaseUri is null)
             {
                 return (false, "CHUMMER_API_BASE_URL/CHUMMER_WEB_BASE_URL is not configured or invalid.");
             }
 
             using var probe = new HttpClient
             {
-                BaseAddress = BaseUri,
+                BaseAddress = runtimeBaseUri,
                 Timeout = RuntimeProbeTimeout
             };
             if (!string.IsNullOrWhiteSpace(ApiKey))
@@ -2084,43 +2085,44 @@ public class DualHeadAcceptanceTests
                 return (true, string.Empty);
             }
 
-            return (false, $"Chummer API runtime returned {(int)response.StatusCode} {response.StatusCode} at {BaseUri}.");
+            return (false, $"Chummer API runtime returned {(int)response.StatusCode} {response.StatusCode} at {runtimeBaseUri}.");
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException socketException)
         {
             string message = socketException.SocketErrorCode switch
             {
                 SocketError.ConnectionRefused or SocketError.HostNotFound or SocketError.NetworkUnreachable
-                    => $"Chummer API runtime is not reachable at {BaseUri?.ToString() ?? "environment configuration"}.",
-                _ => $"Chummer API runtime socket error at {BaseUri?.ToString() ?? "environment configuration"}: {socketException.Message}"
+                    => $"Chummer API runtime is not reachable at {runtimeBaseUri?.ToString() ?? "environment configuration"}.",
+                _ => $"Chummer API runtime socket error at {runtimeBaseUri?.ToString() ?? "environment configuration"}: {socketException.Message}"
             };
 
             return (false, message);
         }
         catch (SocketException)
         {
-            return (false, $"Chummer API runtime socket error at {BaseUri?.ToString() ?? "environment configuration"}.");
+            return (false, $"Chummer API runtime socket error at {runtimeBaseUri?.ToString() ?? "environment configuration"}.");
         }
         catch (TaskCanceledException)
         {
-            return (false, $"Chummer API runtime probe timed out after {RuntimeProbeTimeout.TotalSeconds:0.0}s at {BaseUri?.ToString() ?? "environment configuration"}.");
+            return (false, $"Chummer API runtime probe timed out after {RuntimeProbeTimeout.TotalSeconds:0.0}s at {runtimeBaseUri?.ToString() ?? "environment configuration"}.");
         }
         catch (Exception ex)
         {
-            return (false, $"Chummer API runtime probe failed at {BaseUri?.ToString() ?? "environment configuration"}: {ex.Message}");
+            return (false, $"Chummer API runtime probe failed at {runtimeBaseUri?.ToString() ?? "environment configuration"}: {ex.Message}");
         }
     }
 
     private static RuntimeClientLease CreateClient()
     {
-        if (BaseUri is null)
+        Uri? runtimeBaseUri = ResolveRuntimeBaseUri();
+        if (runtimeBaseUri is null)
         {
             throw new InvalidOperationException("Base URI is not configured.");
         }
 
         var client = new HttpClient
             {
-                BaseAddress = BaseUri,
+                BaseAddress = runtimeBaseUri,
                 Timeout = TimeSpan.FromSeconds(30)
             };
 
@@ -2131,6 +2133,23 @@ public class DualHeadAcceptanceTests
         }
 
         return new RuntimeClientLease(client);
+    }
+
+    private static Uri? ResolveRuntimeBaseUri()
+    {
+        if (BaseUri is null)
+        {
+            return null;
+        }
+
+        if (BaseUri.IsLoopback)
+        {
+            return BaseUri;
+        }
+
+        return TryResolveLoopbackBaseUri(out Uri? loopbackUri)
+            ? loopbackUri
+            : BaseUri;
     }
 
     private sealed class RuntimeClientLease : IDisposable

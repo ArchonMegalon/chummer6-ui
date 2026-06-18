@@ -22,6 +22,90 @@ to_bool() {
   [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
 }
 
+is_public_artifact() {
+  local artifact_name
+  artifact_name="$(basename "$1")"
+  case "$artifact_name" in
+    chummer-*-osx-*installer.dmg|chummer-*-osx-*installer.pkg|chummer-*-macos-*installer.dmg|chummer-*-macos-*installer.pkg)
+      return 1
+      ;;
+    chummer-*-win-*.zip|chummer-*-win-*.tar.gz|chummer-*-win-*.exe)
+      if [[ "$artifact_name" != *-installer.exe ]]; then
+        return 1
+      fi
+      ;;
+  esac
+  return 0
+}
+
+strip_non_public_manifest_rows() {
+  local manifest_path="$1"
+  python3 - "$manifest_path" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+
+def file_name_for(row: object) -> str:
+    if not isinstance(row, dict):
+        return ""
+    file_name = str(row.get("fileName") or "").strip()
+    if file_name:
+        return file_name
+    raw = str(row.get("downloadUrl") or row.get("url") or "").strip()
+    return Path(raw).name if raw else ""
+
+
+def is_public_file_name(file_name: str) -> bool:
+    name = file_name.strip().lower()
+    if not name:
+        return False
+    if name.endswith(("-installer.deb", "-installer.exe", "-installer.msix")):
+        return True
+    if name.endswith(("-installer.dmg", "-installer.pkg")):
+        return False
+    if name.endswith((".zip", ".tar.gz")):
+        return False
+    if name.endswith(".exe") and not name.endswith("-installer.exe"):
+        return False
+    return False
+
+
+path = Path(sys.argv[1])
+payload = json.loads(path.read_text(encoding="utf-8-sig"))
+if not isinstance(payload, dict):
+    raise SystemExit(0)
+
+allowed_artifact_ids: set[str] = set()
+for key in ("artifacts", "downloads"):
+    rows = payload.get(key)
+    if not isinstance(rows, list):
+        continue
+    filtered = []
+    for row in rows:
+        name = file_name_for(row)
+        if not is_public_file_name(name):
+            continue
+        filtered.append(row)
+        if isinstance(row, dict):
+            artifact_id = str(row.get("artifactId") or row.get("id") or "").strip()
+            if artifact_id:
+                allowed_artifact_ids.add(artifact_id)
+    payload[key] = filtered
+
+for key in ("installAwareArtifactRegistry", "desktopSurfaceRefs", "artifactIdentityRegistry", "artifactPublicationBindings"):
+    rows = payload.get(key)
+    if not isinstance(rows, list) or not allowed_artifact_ids:
+        continue
+    payload[key] = [
+        row for row in rows
+        if isinstance(row, dict) and str(row.get("artifactId") or row.get("id") or "").strip() in allowed_artifact_ids
+    ]
+
+path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+PY
+}
+
 if [[ -z "$PUBLIC_SKIP_STARTUP_SMOKE_FILTER" ]]; then
   if [[ "${RELEASE_CHANNEL:-preview}" =~ ^[Pp][Rr][Ee][Vv][Ii][Ee][Ww]$ ]]; then
     PUBLIC_SKIP_STARTUP_SMOKE_FILTER="true"
@@ -161,6 +245,7 @@ discover_live_downloads_mirror_dirs() {
   local configured="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_MIRROR_DIRS:-}"
   local deploy_dir_physical=""
   local canonical_downloads_physical=""
+  local portal_downloads_physical=""
   local candidate=""
   local sibling_root=""
 
@@ -176,11 +261,18 @@ discover_live_downloads_mirror_dirs() {
 
   deploy_dir_physical="$(realpath -m "$DEPLOY_DIR")"
   canonical_downloads_physical="$(realpath -m "$REPO_ROOT/Docker/Downloads")"
+  portal_downloads_physical="$(realpath -m "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads")"
+
   if [[ "$deploy_dir_physical" != "$canonical_downloads_physical" ]]; then
-    return 0
+    append_unique_downloads_mirror_dir "$REPO_ROOT/Docker/Downloads"
+  fi
+
+  if [[ "$deploy_dir_physical" != "$portal_downloads_physical" ]]; then
+    append_unique_downloads_mirror_dir "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads"
   fi
 
   for sibling_root in \
+    "$REPO_ROOT/../chummer-hub-registry/.codex-studio/published" \
     "$REPO_ROOT/../chummer.run-services/Chummer.Portal/downloads" \
     "$REPO_ROOT/../chummer6-hub/Chummer.Portal/downloads" \
     "$REPO_ROOT/../chummer-presentation/Docker/Downloads"
@@ -252,7 +344,9 @@ sync_live_downloads_mirror_dir() {
 }
 
 for artifact in "${artifacts[@]}"; do
-  cp "$artifact" "$sync_source_dir/"
+  if is_public_artifact "$artifact"; then
+    cp "$artifact" "$sync_source_dir/"
+  fi
 done
 
 release_version="${RELEASE_VERSION:-}"
@@ -316,6 +410,9 @@ CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FI
 CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
 CHUMMER_EXTERNAL_PROOF_BASE_URL="${CHUMMER_EXTERNAL_PROOF_BASE_URL:-https://chummer.run}" \
 bash "$SCRIPT_DIR/generate-releases-manifest.sh"
+
+strip_non_public_manifest_rows "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json"
+strip_non_public_manifest_rows "$DEPLOY_DIR/releases.json"
 
 readarray -t promoted_file_names < <(python3 - "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" <<'PY'
 import json

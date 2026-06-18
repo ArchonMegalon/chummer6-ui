@@ -99,7 +99,8 @@ internal sealed class DesktopAboutWindow : Window
         };
 
     private static TextBox BuildReadOnlyBox(string text)
-        => new()
+    {
+        TextBox textBox = new()
         {
             Text = text,
             IsReadOnly = true,
@@ -107,6 +108,9 @@ internal sealed class DesktopAboutWindow : Window
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 160
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
+        return textBox;
+    }
 
     private static AboutAssemblyProjection BuildProjection()
     {
@@ -161,11 +165,21 @@ internal sealed class DesktopAboutWindow : Window
 
 internal static class DesktopAboutWindowLayoutExtensions
 {
-    public static T At<T>(this T control, int row, int column)
+    public static T At<T>(this T control, int row, int column, int rowSpan = 1, int columnSpan = 1)
         where T : Control
     {
         Grid.SetRow(control, row);
         Grid.SetColumn(control, column);
+        if (rowSpan > 1)
+        {
+            Grid.SetRowSpan(control, rowSpan);
+        }
+
+        if (columnSpan > 1)
+        {
+            Grid.SetColumnSpan(control, columnSpan);
+        }
+
         return control;
     }
 }

@@ -164,12 +164,12 @@ internal sealed class DesktopHomeWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
-        _installActionsRow = CreateActionRow(CreateInstallActions());
-        _updateActionsRow = CreateActionRow(CreateUpdateActions());
-        _campaignActionsRow = CreateActionRow(CreateCampaignActions());
-        _supportActionsRow = CreateActionRow(CreateSupportActions());
-        _buildActionsRow = CreateActionRow(CreateBuildExplainActions());
-        _workspaceActionsRow = CreateActionRow(CreateWorkspaceActions());
+        _installActionsRow = DesktopShellTheme.CreateStackActionRow(CreateInstallActions(), spacing: 8);
+        _updateActionsRow = DesktopShellTheme.CreateStackActionRow(CreateUpdateActions(), spacing: 8);
+        _campaignActionsRow = DesktopShellTheme.CreateStackActionRow(CreateCampaignActions(), spacing: 8);
+        _supportActionsRow = DesktopShellTheme.CreateStackActionRow(CreateSupportActions(), spacing: 8);
+        _buildActionsRow = DesktopShellTheme.CreateStackActionRow(CreateBuildExplainActions(), spacing: 8);
+        _workspaceActionsRow = DesktopShellTheme.CreateStackActionRow(CreateWorkspaceActions(), spacing: 8);
 
         Content = new ScrollViewer
         {
@@ -1083,6 +1083,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
+        actions.Add(CreateButton("Start Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)));
         actions.Add(CreateButton("Explain", OpenRuleEnvironmentStudioAsync));
         return actions;
     }
@@ -1118,6 +1119,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             return
             [
+                CreateButton("Start Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId), isPrimary: true),
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
                 CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
             ];
@@ -1134,6 +1136,7 @@ internal sealed class DesktopHomeWindow : Window
         return
         [
             CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
+            CreateButton("Origin Dossier", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)),
             CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
         ];
     }
@@ -1184,47 +1187,35 @@ internal sealed class DesktopHomeWindow : Window
             stack.Children.Add(CreateHorizonQuickLaunchRow(entry.Title, entry.Summary, buttons.ToArray()));
         }
 
-        stack.Children.Add(CreateActionRow(
+        stack.Children.Add(DesktopShellTheme.CreateStackActionRow(
         [
             CreateButton(S("desktop.home.button.open_settings"), OpenSettingsAsync),
             CreateButton(S("desktop.home.button.open_horizons_public"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons"))
-        ]));
+        ], spacing: 8));
 
         return stack;
     }
 
     private static Border CreateHorizonQuickLaunchRow(string title, string summary, params Button[] actions)
-    {
-        StackPanel content = new()
-        {
-            Spacing = 6,
-            Children =
+        => DesktopShellTheme.CreateSection(
+            title,
+            new StackPanel
             {
-                new TextBlock
+                Spacing = 6,
+                Children =
                 {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    TextWrapping = TextWrapping.Wrap
-                },
-                new TextBlock
-                {
-                    Text = summary,
-                    TextWrapping = TextWrapping.Wrap
-                },
-                CreateActionRow(actions)
-            }
-        };
-
-        return new Border
-        {
-            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE7"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(8),
-            Child = content
-        };
-    }
+                    new TextBlock
+                    {
+                        Text = summary,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    DesktopShellTheme.CreateStackActionRow(actions, spacing: 8)
+                }
+            },
+            null,
+            padding: 8,
+            cornerRadius: 8,
+            spacing: 6);
 
     private static string CreateNextSafeActionButtonLabel(string nextSafeAction, string fallbackLabel, string? prefixLabel = null)
     {
@@ -1495,83 +1486,35 @@ internal sealed class DesktopHomeWindow : Window
         _supportText.Text = BuildSupportBody();
         _buildExplainText.Text = BuildBuildExplainBody();
         _workspaceSummaryText.Text = BuildWorkspaceSummary();
-        ResetActionRow(_installActionsRow, CreateInstallActions());
-        ResetActionRow(_updateActionsRow, CreateUpdateActions());
-        ResetActionRow(_campaignActionsRow, CreateCampaignActions());
-        ResetActionRow(_supportActionsRow, CreateSupportActions());
-        ResetActionRow(_buildActionsRow, CreateBuildExplainActions());
-        ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
+        DesktopShellTheme.ResetActionRow(_installActionsRow, CreateInstallActions());
+        DesktopShellTheme.ResetActionRow(_updateActionsRow, CreateUpdateActions());
+        DesktopShellTheme.ResetActionRow(_campaignActionsRow, CreateCampaignActions());
+        DesktopShellTheme.ResetActionRow(_supportActionsRow, CreateSupportActions());
+        DesktopShellTheme.ResetActionRow(_buildActionsRow, CreateBuildExplainActions());
+        DesktopShellTheme.ResetActionRow(_workspaceActionsRow, CreateWorkspaceActions());
     }
 
     private static Border CreateSection(string title, string body, IReadOnlyList<Button> actions)
-        => CreateSection(
+        => DesktopShellTheme.CreateSection(
             title,
             new TextBlock
             {
                 Text = body,
                 TextWrapping = TextWrapping.Wrap
             },
-            CreateActionRow(actions));
+            DesktopShellTheme.CreateStackActionRow(actions, spacing: 8),
+            padding: 8,
+            cornerRadius: 10,
+            spacing: 8);
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
-    {
-        ToolTip.SetTip(body, title);
-        StackPanel content = new()
-        {
-            Spacing = 8,
-            Children =
-            {
-                new TextBlock
-                {
-                    Text = title,
-                    FontWeight = FontWeight.SemiBold,
-                    Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#17324F"),
-                    TextWrapping = TextWrapping.Wrap
-                },
-                body
-            }
-        };
-
-        if (actionContent is not null)
-        {
-            content.Children.Add(actionContent);
-        }
-
-        return new Border
-        {
-            Background = ResolveThemeBrush("ChummerShellSurfaceAltBrush", "#F8FAFD"),
-            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#D4DCE7"),
-            BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(8),
-            Child = content
-        };
-    }
-
-    private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
-    {
-        StackPanel actionRow = new()
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 8
-        };
-
-        foreach (Button action in actions)
-        {
-            actionRow.Children.Add(action);
-        }
-
-        return actionRow;
-    }
-
-    private static void ResetActionRow(StackPanel actionRow, IReadOnlyList<Button> actions)
-    {
-        actionRow.Children.Clear();
-        foreach (Button action in actions)
-        {
-            actionRow.Children.Add(action);
-        }
-    }
+        => DesktopShellTheme.CreateSection(
+            title,
+            body,
+            actionContent,
+            padding: 8,
+            cornerRadius: 10,
+            spacing: 8);
 
     private Button CreateButton(string label, Func<bool> action, bool closeWindow = false, bool isPrimary = false)
         => CreateButton(
@@ -1585,40 +1528,7 @@ internal sealed class DesktopHomeWindow : Window
             isPrimary);
 
     private Button CreateButton(string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
-    {
-        Button button = new()
-        {
-            Content = label,
-            MinWidth = 92,
-            MinHeight = 30,
-            Padding = new Thickness(12, 6),
-            HorizontalAlignment = HorizontalAlignment.Left,
-            Background = isPrimary
-                ? ResolveThemeBrush("ChummerShellAccentButtonBrush", "#163A59")
-                : ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF"),
-            Foreground = isPrimary
-                ? ResolveThemeBrush("ChummerShellAccentButtonForegroundBrush", "#F8FBFF")
-                : ResolveThemeBrush("ChummerShellForegroundBrush", "#17324F"),
-            BorderBrush = isPrimary
-                ? ResolveThemeBrush("ChummerShellActiveMenuBorderBrush", "#7FB3DA")
-                : ResolveThemeBrush("ChummerShellBorderBrush", "#B8C7D9"),
-            BorderThickness = new Thickness(1)
-        };
-        if (isPrimary)
-        {
-            button.FontWeight = FontWeight.SemiBold;
-        }
-
-        button.Click += async (_, _) =>
-        {
-            await action().ConfigureAwait(true);
-            if (closeWindow && TopLevel.GetTopLevel(button) is Window window)
-            {
-                window.Close();
-            }
-        };
-        return button;
-    }
+        => DesktopShellTheme.CreateButton(label, action, closeWindow, isPrimary, minWidth: 92);
 
     private Border CreateFlagshipHero()
     {

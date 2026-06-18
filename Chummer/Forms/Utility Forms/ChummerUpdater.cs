@@ -37,7 +37,6 @@ namespace Chummer
         private static readonly Lazy<Logger> s_ObjLogger = new Lazy<Logger>(LogManager.GetCurrentClassLogger);
         private static Logger Log => s_ObjLogger.Value;
         private int _intSilentMode;
-        private bool _blnSilentModeUpdateWasDenied;
         private string _strDownloadFile = string.Empty;
         private string _strLatestVersion = string.Empty;
         private string _strTempLatestVersionZipPath = string.Empty;
@@ -54,6 +53,36 @@ namespace Chummer
         private readonly CancellationToken _objGenericToken;
         private readonly HttpClient _httpClient;
         private string _strExceptionString;
+
+        private async Task SetUpdaterStatusAsync(string text, CancellationToken token = default)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return;
+            await lblUpdaterStatus.DoThreadSafeAsync(x => x.Text = text, token).ConfigureAwait(false);
+        }
+
+        private static async Task<string> GetAutomaticUpdateStatusTextAsync(string languageKey, string fallbackText, CancellationToken token = default)
+        {
+            string strStatus = await LanguageManager.GetStringAsync(languageKey, token: token).ConfigureAwait(false);
+            return string.IsNullOrWhiteSpace(strStatus) || string.Equals(strStatus, languageKey, StringComparison.Ordinal)
+                ? fallbackText
+                : strStatus;
+        }
+
+        private async Task PresentAutomaticUpdateProgressAsync(string statusText, CancellationToken token = default)
+        {
+            await this.DoThreadSafeAsync(x =>
+            {
+                if (!x.Visible)
+                    x.Show();
+                if (x.WindowState == FormWindowState.Minimized)
+                    x.WindowState = FormWindowState.Normal;
+                x.BringToFront();
+                x.Activate();
+            }, token).ConfigureAwait(false);
+            await pgbOverallProgress.DoThreadSafeAsync(x => x.Style = ProgressBarStyle.Marquee, token).ConfigureAwait(false);
+            await SetUpdaterStatusAsync(statusText, token).ConfigureAwait(false);
+        }
 
         public ChummerUpdater()
         {
@@ -174,7 +203,7 @@ namespace Chummer
                                             objNewChangelogSource);
                 objNewChangelogSource.Dispose();
             }
-            if (_blnIsConnected && SilentMode && !_blnSilentModeUpdateWasDenied)
+            if (_blnIsConnected && SilentMode)
             {
                 CancellationTokenSource objNewUpdatesSource = new CancellationTokenSource();
                 objTemp = Interlocked.Exchange(ref _objUpdatesDownloaderCancellationTokenSource, objNewUpdatesSource);
@@ -205,8 +234,8 @@ namespace Chummer
                 e.Cancel = true;
                 try
                 {
-                    if (sender is Control ctlSender)
-                        await ctlSender.DoThreadSafeAsync(x => x.Hide(), _objGenericToken).ConfigureAwait(false);
+                    if (sender is Form frmSender)
+                        await frmSender.DoThreadSafeAsync(x => x.WindowState = FormWindowState.Minimized, _objGenericToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -1311,6 +1340,11 @@ namespace Chummer
                 await cmdUpdate.DoThreadSafeAsync(x => x.Enabled = false, token).ConfigureAwait(false);
                 await cmdRestart.DoThreadSafeAsync(x => x.Enabled = false, token).ConfigureAwait(false);
                 await cmdCleanReinstall.DoThreadSafeAsync(x => x.Enabled = false, token).ConfigureAwait(false);
+                if (SilentMode)
+                {
+                    string strStatus = await GetAutomaticUpdateStatusTextAsync("String_Downloading_Update", "Downloading update...", token).ConfigureAwait(false);
+                    await PresentAutomaticUpdateProgressAsync(strStatus, token).ConfigureAwait(false);
+                }
                 if (File.Exists(_strTempLatestVersionZipPath))
                 {
                     File.Move(_strTempLatestVersionZipPath, _strTempLatestVersionZipPath + ".old");
@@ -1318,6 +1352,11 @@ namespace Chummer
                 token.ThrowIfCancellationRequested();
                 try
                 {
+                    await pgbOverallProgress.DoThreadSafeAsync(x =>
+                    {
+                        x.Style = ProgressBarStyle.Continuous;
+                        x.Value = 0;
+                    }, token).ConfigureAwait(false);
                     await DownloadFileAsync(
                         uriDownloadFileAddress,
                         _strTempLatestVersionZipPath,
@@ -1433,24 +1472,17 @@ namespace Chummer
                         x.Enabled = true;
                 }, _objGenericToken).ConfigureAwait(false);
                 await cmdCleanReinstall.DoThreadSafeAsync(x => x.Enabled = true, _objGenericToken).ConfigureAwait(false);
+                await pgbOverallProgress.DoThreadSafeAsync(x =>
+                {
+                    x.Style = ProgressBarStyle.Continuous;
+                    x.Value = 100;
+                }, _objGenericToken).ConfigureAwait(false);
                 Log.Info("wc_DownloadExeFileCompleted exit");
                 if (SilentMode)
                 {
-                    if (await Program.ShowScrollableMessageBoxAsync(this, await LanguageManager.GetStringAsync("Message_Update_CloseForms", token: _objGenericToken).ConfigureAwait(false),
-                            await LanguageManager.GetStringAsync(
-                                "Title_Update", token: _objGenericToken).ConfigureAwait(false), MessageBoxButtons.YesNo,
-                            MessageBoxIcon.Question, token: _objGenericToken).ConfigureAwait(false) ==
-                        DialogResult.Yes)
-                    {
-                        await DoUpdate(_objGenericToken).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _blnSilentModeUpdateWasDenied
-                            = true; // only actually go through with the attempt in Silent Mode once, don't prompt user any more if they canceled out once already
-                        _blnIsConnected = false;
-                        await this.DoThreadSafeAsync(x => x.Close(), _objGenericToken).ConfigureAwait(false);
-                    }
+                    string strStatus = await GetAutomaticUpdateStatusTextAsync("Button_Install_Restart", "Installing update...", _objGenericToken).ConfigureAwait(false);
+                    await PresentAutomaticUpdateProgressAsync(strStatus, _objGenericToken).ConfigureAwait(false);
+                    await DoUpdate(_objGenericToken).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException)

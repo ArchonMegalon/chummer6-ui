@@ -74,12 +74,12 @@
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
-          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
+          <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#123F7A" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
           <SolidColorBrush x:Key="ChummerShellWarningBrush" Color="#F59E0B" />
           <SolidColorBrush x:Key="ChummerShellDangerBrush" Color="#F87171" />
-          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#90C39A" />
+          <SolidColorBrush x:Key="ChummerShellFocusRingBrush" Color="#60A5FA" />
           <SolidColorBrush x:Key="ChummerShellSuccessBrush" Color="#34D399" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
@@ -191,7 +191,7 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="Padding" Value="5,1" />
       <Setter Property="MinHeight" Value="32" />
       <Setter Property="CornerRadius" Value="6" />
     </Style>
@@ -206,7 +206,7 @@
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="Padding" Value="9,4" />
-      <Setter Property="MinHeight" Value="26" />
+      <Setter Property="MinHeight" Value="24" />
     </Style>
     <Style Selector="Button.menu-button:pointerover">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeSubtleBrush}" />
@@ -243,7 +243,7 @@
     <Style Selector="Menu.classic-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
-      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="Padding" Value="3,1" />
       <Setter Property="MinHeight" Value="32" />
       <Setter Property="FontSize" Value="14" />
       <Setter Property="FontWeight" Value="SemiBold" />
@@ -334,7 +334,7 @@
       <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="ListBoxItem">
-      <Setter Property="Padding" Value="6,4" />
+      <Setter Property="Padding" Value="3,1" />
       <Setter Property="Margin" Value="0,0,0,2" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
@@ -390,7 +390,13 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
+    <Style Selector="ComboBoxItem TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="ComboBox TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock">

@@ -37,6 +37,7 @@ public partial class SummaryHeaderControl : UserControl
 
     public event EventHandler<string>? NavigationTabSelected;
     public event EventHandler? LoadDemoRunnerRequested;
+    public event EventHandler? StartOriginRequested;
     public event EventHandler? KeepLocalWorkRequested;
     public event EventHandler? SaveLocalWorkRequested;
     public event EventHandler? CampaignWorkspaceRequested;
@@ -46,6 +47,7 @@ public partial class SummaryHeaderControl : UserControl
     {
         InitializeComponent();
         WorkspaceStripControl.LoadDemoRunnerRequested += WorkspaceStripControl_OnLoadDemoRunnerRequested;
+        WorkspaceStripControl.StartOriginRequested += WorkspaceStripControl_OnStartOriginRequested;
         BuildRestoreActionButtons();
         ApplyAutomationProperties();
         SetWorkspaceStripState(_workspaceStripState);
@@ -297,6 +299,9 @@ public partial class SummaryHeaderControl : UserControl
 
     private void WorkspaceStripControl_OnLoadDemoRunnerRequested(object? sender, EventArgs e)
         => LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);
+
+    private void WorkspaceStripControl_OnStartOriginRequested(object? sender, EventArgs e)
+        => StartOriginRequested?.Invoke(this, EventArgs.Empty);
 
     private void UpdateVisibility()
     {

@@ -11,7 +11,7 @@
       <WrapPanel x:Name="ClassicActionStrip"
                  Grid.Column="0"
                  Orientation="Horizontal"
-                 ItemHeight="30">
+                 ItemHeight="28">
         <Button x:Name="ImportFileButton"
                 MinWidth="76"
                 Padding="10,4"
@@ -144,16 +144,26 @@
                 Click="CloseWorkspaceButton_OnClick" />
       </WrapPanel>
 
-      <Button x:Name="ClassicToolStripAutoAliceButton"
-              Grid.Column="1"
-              MinWidth="116"
-              Padding="12,4"
-              Margin="10,0,0,0"
-              VerticalAlignment="Top"
-              Content="Auto ALICE"
-              ToolTip.Tip="Auto ALICE"
-              Classes="shell-action primary"
-              Click="AutoAliceButton_OnClick" />
+      <StackPanel Grid.Column="1"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  Margin="10,0,0,0"
+                  VerticalAlignment="Top">
+        <Button x:Name="ClassicToolStripAutoAliceButton"
+                MinWidth="116"
+                Padding="12,4"
+                Content="Auto ALICE"
+                ToolTip.Tip="Auto ALICE"
+                Classes="shell-action primary"
+                Click="AutoAliceButton_OnClick" />
+        <Button x:Name="ClassicToolStripStartOriginButton"
+                MinWidth="146"
+                Padding="12,4"
+                Content="Origin Dossier"
+                ToolTip.Tip="Start Origin Dossier"
+                Classes="shell-action primary"
+                Click="StartOriginButton_OnClick" />
+      </StackPanel>
 
       <Border x:Name="StatusTextBorder"
               Grid.Row="1"

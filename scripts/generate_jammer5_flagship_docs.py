@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -25,8 +26,39 @@ def numbered_lines(items: list[str]) -> list[str]:
     return [f"{index}. {item}" for index, item in enumerate(items, start=1)]
 
 
+def image_markdown(image_output: str, alt: str) -> str:
+    return f"![{alt}]({image_output})"
+
+
+def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
+    synced: list[dict[str, str]] = []
+    for item in list(spec.get("visual_gallery") or []):
+        row = dict(item or {})
+        source = Path(str(row.get("image_source") or "").strip())
+        output_rel = str(row.get("image_output") or "").strip()
+        if not source.is_file() or not output_rel:
+            continue
+        destination = DOCS / output_rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        synced.append(
+            {
+                "title": str(row.get("title") or "").strip(),
+                "image_output": output_rel,
+                "alt": str(row.get("alt") or "").strip(),
+                "caption": str(row.get("caption") or "").strip(),
+            }
+        )
+    return synced
+
+
 def render_showcase(spec: dict[str, Any]) -> str:
     overview = spec["overview"]
+    user_first = dict(spec.get("user_first_story") or {})
+    origin = dict(spec.get("origin_dossier_spotlight") or {})
+    gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
+    related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
+    visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
     lines: list[str] = [
         f"# {overview['title']}",
         "",
@@ -62,6 +94,81 @@ def render_showcase(spec: dict[str, Any]) -> str:
     for index, layer in enumerate(overview["layers"], start=1):
         lines.append(f"{index}. `{layer['name']}`")
         lines.extend([f"   - {item}" for item in layer["items"]])
+    if visual_gallery:
+        lines.extend(["", "## Visual Anchors", ""])
+        for item in visual_gallery:
+            lines.extend(
+                [
+                    f"### {item['title']}",
+                    "",
+                    image_markdown(item["image_output"], item["alt"]),
+                    "",
+                    item["caption"],
+                    "",
+                ]
+            )
+    if user_first:
+        lines.extend(
+            [
+                "",
+                f"## {user_first['title']}",
+                "",
+                str(user_first.get("summary") or "").strip(),
+                "",
+                *numbered_lines(list(user_first.get("beats") or [])),
+                "",
+                "The user-first lane must stay honest about:",
+                "",
+                *bullet_lines(list(user_first.get("truths") or [])),
+                "",
+            ]
+        )
+    if origin:
+        lines.extend(
+            [
+                f"## {origin['title']}",
+                "",
+                str(origin.get("summary") or "").strip(),
+                "",
+                "It must show:",
+                "",
+                *bullet_lines(list(origin.get("must_show") or [])),
+                "",
+                "The ALICE connection is explicit:",
+                "",
+                *bullet_lines(list(origin.get("alice_connection") or [])),
+                "",
+                "It must not imply:",
+                "",
+                *bullet_lines(list(origin.get("must_not_imply") or [])),
+                "",
+            ]
+        )
+    if gm_cockpit:
+        lines.extend(
+            [
+                f"## {gm_cockpit['title']}",
+                "",
+                str(gm_cockpit.get("summary") or "").strip(),
+                "",
+                "It must show:",
+                "",
+                *bullet_lines(list(gm_cockpit.get("must_show") or [])),
+                "",
+                "Origin and GM gimmick flow:",
+                "",
+                *numbered_lines(list(gm_cockpit.get("origin_gimmick_flow") or [])),
+                "",
+                "Visual language:",
+                "",
+                *bullet_lines(list(gm_cockpit.get("visual_language") or [])),
+                "",
+                "It must not imply:",
+                "",
+                *bullet_lines(list(gm_cockpit.get("must_not_imply") or [])),
+                "",
+            ]
+        )
     lines.extend(["", "## Hero Surfaces", ""])
     for surface in overview["surfaces"]:
         descriptor = surface.get("descriptor", "the surface")
@@ -120,6 +227,25 @@ def render_showcase(spec: dict[str, Any]) -> str:
             "",
             *numbered_lines(overview["flagship_bar"]),
             "",
+            "## Related Horizon",
+            "",
+        ]
+    )
+    for row in related_horizons:
+        lines.extend(
+            [
+                f"### {row['name']}",
+                "",
+                f"Current status: {row['status']}",
+                "",
+                f"Why a reader should care: {row['reader_why']}",
+                "",
+                f"Connection here: {row['connection']}",
+                "",
+            ]
+        )
+    lines.extend(
+        [
             "## Design Source Anchors",
             "",
             "These docs are generated from the published Chummer6 design canon and dramatic briefing,",
@@ -246,6 +372,28 @@ def render_minigames(spec: dict[str, Any]) -> str:
 
 
 def render_index_section(spec: dict[str, Any]) -> str:
+    visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
+    related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
+    gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
+    gallery_lines: list[str] = []
+    if visual_gallery:
+        gallery_lines.extend(["<div>", "  <p><strong>Visual anchors</strong></p>"])
+        for item in visual_gallery:
+            gallery_lines.extend(
+                [
+                    "  <div>",
+                    f"    <p><img src=\"{item['image_output']}\" alt=\"{item['alt']}\" style=\"max-width:100%; height:auto;\"></p>",
+                    f"    <p><strong>{item['title']}</strong>: {item['caption']}</p>",
+                    "  </div>",
+                ]
+            )
+        gallery_lines.append("</div>")
+    horizon_lines: list[str] = []
+    if related_horizons:
+        horizon_lines.extend(["<ul>"])
+        for row in related_horizons:
+            horizon_lines.append(f"  <li><strong>{row['name']}</strong>: {row['connection']}</li>")
+        horizon_lines.append("</ul>")
     return "\n".join(
         [
             INDEX_START,
@@ -259,7 +407,11 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "  <li><a href=\"TABLE_PULSE_REMOTE_REACTION_MINIGAMES.md\">Remote Reaction Minigames</a></li>",
             "</ul>",
             "",
-            "<p>These generated docs cover Signal Deck, Runner Passport, the GM cockpit, living newsroom projection, consent and privacy gates, and the new reaction mini-games in a wow-forward but fail-closed product language.</p>",
+            "<p>These generated docs cover Signal Deck, Runner Passport, the GM cockpit, living newsroom projection, consent and privacy gates, the user-first origin-dossier lane, and the new reaction mini-games in a wow-forward but fail-closed product language.</p>",
+            *gallery_lines,
+            "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
+            f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on an authority surface instead of an internal maintenance list.</p>",
+            *horizon_lines,
             INDEX_END,
         ]
     )
@@ -276,6 +428,7 @@ def replace_between(text: str, start: str, end: str, replacement: str) -> str:
 
 def main() -> None:
     spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+    spec["_synced_visual_gallery"] = sync_visual_gallery(spec)
     SHOWCASE_PATH.write_text(render_showcase(spec), encoding="utf-8")
     MINIGAMES_PATH.write_text(render_minigames(spec), encoding="utf-8")
 

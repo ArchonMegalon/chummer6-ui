@@ -322,13 +322,13 @@ def select_startup_smoke_receipt(
         digest = normalize_token(payload.get("artifactDigest"))
         timestamp = _startup_smoke_candidate_timestamp(payload, path)
         score = (
-            int(status in PASSING_STARTUP_SMOKE_STATUSES),
-            int(checkpoint == "pre_ui_event_loop"),
             int(head == normalized_expected_head),
             int(platform_name == normalized_expected_platform),
             int(rid == normalized_expected_rid),
             int(not normalized_expected_digest or digest == normalized_expected_digest),
             int(not normalized_expected_channel or channel == normalized_expected_channel),
+            int(status in PASSING_STARTUP_SMOKE_STATUSES),
+            int(checkpoint == "pre_ui_event_loop"),
             timestamp,
         )
         if best_score is None or score > best_score:

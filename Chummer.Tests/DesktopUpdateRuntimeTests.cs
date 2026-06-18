@@ -554,6 +554,46 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void GetCurrentStatus_reports_update_staged_when_pending_update_is_already_prepared()
+    {
+        using TestStateRootScope stateRootScope = new();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = "/tmp/manifest.json",
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        string statePath = stateRootScope.StatePathForHead("avalonia");
+        Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+        File.WriteAllText(
+            statePath,
+            """
+            {
+              "HeadId": "avalonia",
+              "Platform": "linux",
+              "Arch": "x64",
+              "InstalledVersion": "run-20260617-110751",
+              "ChannelId": "preview",
+              "LastCheckedAt": "2026-06-18T06:00:00Z",
+              "LastManifestVersion": "run-20260618-061500",
+              "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+              "LastError": null,
+              "PendingUpdateVersion": "run-20260618-061500",
+              "PendingUpdateChannelId": "preview",
+              "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z"
+            }
+            """);
+
+        DesktopUpdateClientStatus status = DesktopUpdateRuntime.GetCurrentStatus("avalonia");
+
+        Assert.AreEqual("update_staged", status.Status);
+        Assert.AreEqual("run-20260618-061500", status.PendingUpdateVersion);
+        StringAssert.Contains(status.RecommendedAction, "installing it in place", StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
     public void ShouldPromptForStartupUpdate_returns_true_for_unseen_update_and_false_after_marking_prompt_shown()
     {
         using TestStateRootScope stateRootScope = new();

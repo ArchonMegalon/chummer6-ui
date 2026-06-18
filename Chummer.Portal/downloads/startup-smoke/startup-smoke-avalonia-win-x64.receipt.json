@@ -3,7 +3,7 @@
   "headId": "avalonia",
   "version": "run-20260617-190001",
   "releaseVersion": "run-20260617-190001",
-  "channelId": "preview",
+  "channelId": "public_stable",
   "platform": "windows",
   "arch": "x64",
   "rid": "win-x64",
@@ -14,7 +14,7 @@
   "recordedAtUtc": "2026-06-17T16:02:59.987699+00:00",
   "startedAtUtc": "2026-06-17T16:02:59.987699+00:00",
   "completedAtUtc": "2026-06-17T16:02:59.987699+00:00",
-  "artifactPath": "/docker/chummercomplete/_staging/nightly-run-20260617-190001/files/chummer-avalonia-win-x64-installer.exe",
+  "artifactPath": "/tmp/tmp.ILkND0timI/chummer-avalonia-win-x64-installer.exe",
   "artifactFileName": "chummer-avalonia-win-x64-installer.exe",
   "fileName": "chummer-avalonia-win-x64-installer.exe",
   "artifactRelativePath": "files/chummer-avalonia-win-x64-installer.exe",
@@ -24,5 +24,5 @@
   "skipClass": "incompatible_host",
   "verificationDisposition": "incompatible_host",
   "hostMachine": "x86_64",
-  "channel": "preview"
+  "channel": "public_stable"
 }

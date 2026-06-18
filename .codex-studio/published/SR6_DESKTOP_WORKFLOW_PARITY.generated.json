@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-06-15T12:13:37.817382Z",
+  "generatedAt": "2026-06-18T03:28:11.893061Z",
   "contract_name": "chummer6-ui.sr6_desktop_workflow_parity",
-  "channelId": "public_stable",
+  "channelId": "stable",
   "status": "pass",
   "summary": "SR6 desktop workflow carry-forward parity is explicitly proven across source artifacts, release-channel identity, SR4 baseline proof, workflow-family readiness, executable test references, recursive workflow gate execution for recursive menu workflows, legacy UI-control workflows, quick-action roots, and returned-surface parity, receipt proof, and materialization.",
   "reasons": [],
   "evidence": {
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
     "releaseChannelExists": true,
     "ledgerPath": "/docker/chummercomplete/chummer6-ui/docs/SR6_WORKFLOW_PARITY_LEDGER.json",
     "sr4ReceiptPath": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
@@ -20,9 +20,9 @@
     "executionExit": 0,
     "verificationExit": 0,
     "materializerExit": 0,
-    "releaseChannelChannelId": "public_stable",
-    "releaseChannelGeneratedAt": "2026-06-13T18:49:54Z",
-    "releaseChannelAgeSeconds": 149023,
+    "releaseChannelChannelId": "stable",
+    "releaseChannelGeneratedAt": "2026-06-18T02:48:10Z",
+    "releaseChannelAgeSeconds": 2401,
     "releaseChannelFutureSkewSeconds": 0,
     "requiredFamilyCount": 10,
     "ledgerFamilyCount": 10,
@@ -86,8 +86,8 @@
       "uiGateTests": true,
       "workflowGateTests": true
     },
-    "sr4ReceiptChannelId": "public_stable",
-    "sr4ReceiptGeneratedAt": "2026-06-15T12:07:14.680741Z",
+    "sr4ReceiptChannelId": "stable",
+    "sr4ReceiptGeneratedAt": "2026-06-18T03:24:55.739481Z",
     "failureCount": 0
   },
   "sourceArtifactReview": {
@@ -107,10 +107,10 @@
     "status": "pass",
     "summary": "SR6 workflow parity proof is aligned to a current release-channel identity.",
     "reasons": [],
-    "path": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
-    "channelId": "public_stable",
-    "generatedAt": "2026-06-13T18:49:54Z",
-    "ageSeconds": 149023,
+    "path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+    "channelId": "stable",
+    "generatedAt": "2026-06-18T02:48:10Z",
+    "ageSeconds": 2401,
     "futureSkewSeconds": 0,
     "maxAgeSeconds": 86400,
     "maxFutureSkewSeconds": 300
@@ -120,8 +120,8 @@
     "summary": "SR4 baseline workflow parity proof is present and aligned for SR6 carry-forward closure.",
     "reasons": [],
     "path": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json",
-    "channelId": "public_stable",
-    "generatedAt": "2026-06-15T12:07:14.680741Z"
+    "channelId": "stable",
+    "generatedAt": "2026-06-18T03:24:55.739481Z"
   },
   "workflowFamilyReview": {
     "status": "pass",

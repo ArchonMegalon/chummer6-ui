@@ -4,6 +4,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Overview;
 
@@ -15,18 +17,29 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly DesktopUpdateClientStatus _updateStatus;
     private readonly string _language;
     private readonly TextBlock _summaryText;
+    private readonly TextBlock _linkStateText;
     private readonly TextBlock _statusText;
+    private readonly TextBlock _matrixHandoffStateText;
+    private readonly TextBlock _matrixVaultNameText;
+    private readonly TextBlock _matrixVaultFamilyText;
+    private readonly TextBlock _matrixEmailClaimText;
+    private readonly TextBlock _matrixPrivacyText;
+    private readonly TextBlock _matrixMonitorStateText;
+    private readonly TextBlock _matrixMonitorEmailText;
+    private readonly TextBlock _matrixMonitorLinkText;
     private readonly TextBlock _claimCodeHintText;
     private readonly TextBlock _claimCodeLabelText;
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
     private readonly TextBlock _moreToolsHeading;
-    private readonly StackPanel _moreToolsPanel;
+    private readonly WrapPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
     private readonly Button _accountButton;
     private readonly Button _redeemClaimCodeButton;
     private readonly Button _exitButton;
+    private CancellationTokenSource? _handoffPollCancellation;
     private bool _allowGuestClose;
+    private bool _automaticHandoffStarted;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context)
     {
@@ -36,10 +49,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
         _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
-        Width = 700;
-        Height = 460;
-        MinWidth = 560;
-        MinHeight = 360;
+        Width = 880;
+        Height = 540;
+        MinWidth = 760;
+        MinHeight = 520;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         _summaryText = new TextBlock
@@ -49,10 +62,79 @@ internal sealed class DesktopInstallLinkingWindow : Window
             TextWrapping = TextWrapping.Wrap
         };
 
+        _linkStateText = new TextBlock
+        {
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        };
+
         _statusText = new TextBlock
         {
             IsVisible = false,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixHandoffStateText = new TextBlock
+        {
+            Text = "Awaiting account handoff",
+            FontWeight = FontWeight.SemiBold,
+            Foreground = Brushes.White,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixVaultNameText = new TextBlock
+        {
+            Text = "profile visible if provider allows",
+            FontSize = 11,
+            Foreground = new SolidColorBrush(Color.Parse("#C7FBE8")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixVaultFamilyText = new TextBlock
+        {
+            Text = "given/family optional",
+            FontSize = 11,
+            Foreground = new SolidColorBrush(Color.Parse("#C7FBE8")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixEmailClaimText = new TextBlock
+        {
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = new SolidColorBrush(Color.Parse("#FFF1A8")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixPrivacyText = new TextBlock
+        {
+            Text = "Only the verified email claim leaves the host.",
+            FontSize = 10,
+            Foreground = new SolidColorBrush(Color.Parse("#D7FBE8")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixMonitorStateText = new TextBlock
+        {
+            FontSize = 10,
+            FontWeight = FontWeight.SemiBold,
+            Foreground = new SolidColorBrush(Color.Parse("#8EF9E4")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixMonitorEmailText = new TextBlock
+        {
+            FontSize = 12,
+            FontWeight = FontWeight.Bold,
+            Foreground = new SolidColorBrush(Color.Parse("#FFF1A8")),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        _matrixMonitorLinkText = new TextBlock
+        {
+            FontSize = 9,
+            Foreground = new SolidColorBrush(Color.Parse("#D7FBE8")),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -74,9 +156,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _claimCodeTextBox = new TextBox
         {
             Watermark = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.claim_code_watermark", _language),
-            MinWidth = 320,
+            MinWidth = 280,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(_claimCodeTextBox);
 
         _followThroughButton = CreateButton(string.Empty, OpenFollowThroughAsync, isDefault: true);
         _accountButton = CreateButton(string.Empty, OpenAccountAsync);
@@ -88,7 +171,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ExitDesktopAsync);
         _claimCodeEntryRow = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
+            Orientation = Orientation.Vertical,
             HorizontalAlignment = HorizontalAlignment.Stretch,
             Spacing = 6,
             IsVisible = false,
@@ -104,11 +187,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         };
-        _moreToolsPanel = new StackPanel
+        _moreToolsPanel = new WrapPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Left,
-            Spacing = 6,
+            ItemHeight = 32,
             Children =
             {
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language), OpenAccountAsync),
@@ -118,56 +201,23 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_report_issue", _language), OpenReportIssueAsync)
             }
         };
+        foreach (Control tool in _moreToolsPanel.Children)
+        {
+            tool.Margin = new Thickness(0, 0, 6, 6);
+        }
 
         Content = DesktopShellTheme.CreateWindowSurface(
-            new StackPanel
+            new Grid
             {
-                Spacing = 10,
+                ColumnDefinitions = new ColumnDefinitions("320,*"),
+                ColumnSpacing = 14,
                 Children =
                 {
-                    _summaryText,
-                    new TextBlock
-                    {
-                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language),
-                        FontWeight = FontWeight.SemiBold,
-                        TextWrapping = TextWrapping.Wrap
-                    },
-                    _statusText,
-                    DesktopShellTheme.CreateUtilityPanel(
-                        new StackPanel
-                        {
-                            Orientation = Orientation.Vertical,
-                            HorizontalAlignment = HorizontalAlignment.Stretch,
-                            Spacing = 8,
-                            Children =
-                            {
-                                new TextBlock
-                                {
-                                    Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.next_step", _language),
-                                    FontWeight = FontWeight.SemiBold,
-                                    TextWrapping = TextWrapping.Wrap
-                                },
-                                _claimCodeHintText,
-                                _claimCodeLabelText,
-                                _claimCodeEntryRow,
-                                new StackPanel
-                                {
-                                    Orientation = Orientation.Horizontal,
-                                    HorizontalAlignment = HorizontalAlignment.Left,
-                                    Spacing = 6,
-                                    Children =
-                                    {
-                                        _followThroughButton,
-                                        _accountButton,
-                                        _exitButton
-                                    }
-                                },
-                                _moreToolsHeading,
-                                _moreToolsPanel
-                            }
-                        })
+                    CreateMatrixUplinkHero(),
+                    CreateInstallLinkingPanel().At(0, 1)
                 }
-            });
+            },
+            padding: 12);
 
         Closing += OnClosing;
         Opened += (_, _) =>
@@ -178,10 +228,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _state = context.ClaimResult.State;
                 RefreshSummary();
                 RefreshActionState();
+                if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+                {
+                    BeginAutomaticHandoffAsync();
+                }
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", _language));
+                BeginAutomaticHandoffAsync();
             }
         };
 
@@ -216,6 +271,320 @@ internal sealed class DesktopInstallLinkingWindow : Window
         await dialog.ShowDialog(owner);
     }
 
+    private Control CreateMatrixUplinkHero()
+    {
+        Grid visual = new()
+        {
+            RowDefinitions = new RowDefinitions("Auto,*,Auto")
+        };
+
+        Bitmap? render = TryLoadMatrixUplinkRender();
+        if (render is not null)
+        {
+            visual.Children.Add(new Image
+            {
+                Name = "InstallLinkMatrixUplinkRender",
+                Source = render,
+                Stretch = Stretch.UniformToFill,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            }.At(0, 0, rowSpan: 3));
+        }
+
+        visual.Children.Add(new Border
+        {
+            Background = new LinearGradientBrush
+            {
+                StartPoint = new RelativePoint(0d, 0d, RelativeUnit.Relative),
+                EndPoint = new RelativePoint(1d, 1d, RelativeUnit.Relative),
+                GradientStops =
+                [
+                    new GradientStop(Color.Parse("#AA020617"), 0d),
+                    new GradientStop(Color.Parse("#330F766E"), 0.48d),
+                    new GradientStop(Color.Parse("#BB020617"), 1d)
+                ]
+            }
+        }.At(0, 0, rowSpan: 3));
+
+        visual.Children.Add(new StackPanel
+        {
+            Margin = new Thickness(16),
+            Spacing = 6,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "CHUMMER MATRIX UPLINK",
+                    FontSize = 12,
+                    FontWeight = FontWeight.SemiBold,
+                    Foreground = new SolidColorBrush(Color.Parse("#8EF9E4")),
+                    TextWrapping = TextWrapping.Wrap
+                },
+                new TextBlock
+                {
+                    Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language),
+                    FontSize = 28,
+                    FontWeight = FontWeight.Bold,
+                    Foreground = Brushes.White,
+                    TextWrapping = TextWrapping.Wrap
+                }
+            }
+        }.At(0, 0));
+
+        visual.Children.Add(CreateMatrixIdentityVaultOverlay().At(1, 0));
+
+        visual.Children.Add(new StackPanel
+        {
+            Margin = new Thickness(16, 0, 16, 16),
+            VerticalAlignment = VerticalAlignment.Bottom,
+            Spacing = 8,
+            Children =
+            {
+                CreateMatrixSignalRail(),
+                CreateMatrixJackOutMonitor(),
+                new Border
+                {
+                    Background = new SolidColorBrush(Color.Parse("#B0021110")),
+                    BorderBrush = new SolidColorBrush(Color.Parse("#668EF9E4")),
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(8),
+                    Padding = new Thickness(10),
+                    Child = new StackPanel
+                    {
+                        Spacing = 6,
+                        Children =
+                        {
+                            _matrixHandoffStateText,
+                            new TextBlock
+                            {
+                                Text = "Local callback listening. Browser fallback remains available.",
+                                Foreground = new SolidColorBrush(Color.Parse("#D7FBE8")),
+                                TextWrapping = TextWrapping.Wrap
+                            }
+                        }
+                    }
+                }
+            }
+        }.At(2, 0));
+
+        return new Border
+        {
+            Name = "InstallLinkMatrixUplinkHero",
+            Background = new SolidColorBrush(Color.Parse("#06130F")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#33F5D37A")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            ClipToBounds = true,
+            Child = visual
+        };
+    }
+
+    private Control CreateMatrixIdentityVaultOverlay()
+        => new Border
+        {
+            Name = "InstallLinkMatrixIdentityVault",
+            Margin = new Thickness(16, 8),
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Color.Parse("#B0021110")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#66F5D37A")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10),
+            Child = new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "HOST VAULT DOSSIER",
+                        FontSize = 10,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = new SolidColorBrush(Color.Parse("#8EF9E4")),
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    CreateMatrixDossierRow("Name", _matrixVaultNameText, "NOT IMPORTED"),
+                    CreateMatrixDossierRow("Given/family", _matrixVaultFamilyText, "NOT IMPORTED"),
+                    CreateMatrixDossierRow("Email claim", _matrixEmailClaimText, "EXTRACTED"),
+                    _matrixPrivacyText
+                }
+            }
+        };
+
+    private static Control CreateMatrixDossierRow(string label, TextBlock value, string stamp)
+        => new Border
+        {
+            Background = new SolidColorBrush(Color.Parse("#80081714")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#3346F6D1")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(7, 5),
+            Child = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("82,*,72"),
+                ColumnSpacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = label,
+                        FontSize = 10,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = new SolidColorBrush(Color.Parse("#8EF9E4")),
+                        TextWrapping = TextWrapping.Wrap
+                    }.At(0, 0),
+                    value.At(0, 1),
+                    new TextBlock
+                    {
+                        Text = stamp,
+                        FontSize = 9,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = string.Equals(stamp, "EXTRACTED", StringComparison.Ordinal)
+                            ? new SolidColorBrush(Color.Parse("#FFF1A8"))
+                            : new SolidColorBrush(Color.Parse("#B6C7D1")),
+                        TextAlignment = TextAlignment.Right,
+                        TextWrapping = TextWrapping.Wrap
+                    }.At(0, 2)
+                }
+            }
+        };
+
+    private Control CreateMatrixJackOutMonitor()
+        => new Border
+        {
+            Name = "InstallLinkMatrixJackOutMonitor",
+            Background = new SolidColorBrush(Color.Parse("#CC020617")),
+            BorderBrush = new SolidColorBrush(Color.Parse("#88F5D37A")),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10, 8),
+            Child = new StackPanel
+            {
+                Spacing = 3,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "SAFEHOUSE MONITOR",
+                        FontSize = 9,
+                        FontWeight = FontWeight.SemiBold,
+                        Foreground = new SolidColorBrush(Color.Parse("#8EF9E4")),
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    _matrixMonitorStateText,
+                    _matrixMonitorEmailText,
+                    _matrixMonitorLinkText
+                }
+            }
+        };
+
+    private Control CreateInstallLinkingPanel()
+    {
+        WrapPanel primaryActions = DesktopShellTheme.CreateWrapActionRow(
+        [
+            _followThroughButton,
+            _accountButton,
+            _exitButton
+        ]);
+
+        return new StackPanel
+        {
+            Spacing = 10,
+            Children =
+            {
+                _summaryText,
+                new TextBlock
+                {
+                    Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.heading", _language),
+                    FontSize = 20,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                _linkStateText,
+                _statusText,
+                DesktopShellTheme.CreateUtilityPanel(
+                    new StackPanel
+                    {
+                        Orientation = Orientation.Vertical,
+                        HorizontalAlignment = HorizontalAlignment.Stretch,
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.next_step", _language),
+                                FontWeight = FontWeight.SemiBold,
+                                TextWrapping = TextWrapping.Wrap
+                            },
+                            _claimCodeHintText,
+                            _claimCodeLabelText,
+                            _claimCodeEntryRow,
+                            primaryActions,
+                            _moreToolsHeading,
+                            _moreToolsPanel
+                        }
+                    })
+            }
+        };
+    }
+
+    private static Control CreateMatrixSignalRail()
+        => new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,*,*"),
+            ColumnSpacing = 6,
+            Children =
+            {
+                CreateMatrixSignalNode("Callback", 0.88d).At(0, 0),
+                CreateMatrixSignalNode("Account", 0.68d).At(0, 1),
+                CreateMatrixSignalNode("Grant", 0.46d).At(0, 2)
+            }
+        };
+
+    private static Control CreateMatrixSignalNode(string label, double fillWidth)
+    {
+        Grid track = new()
+        {
+            Height = 30,
+            RowDefinitions = new RowDefinitions("*,Auto")
+        };
+        track.Children.Add(new Border
+        {
+            Height = 4,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Color.Parse("#466577"))
+        }.At(0, 0));
+        track.Children.Add(new Border
+        {
+            Height = 4,
+            Width = Math.Max(26d, 82d * fillWidth),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = new SolidColorBrush(Color.Parse("#8EF9E4"))
+        }.At(0, 0));
+        track.Children.Add(new TextBlock
+        {
+            Text = label,
+            FontSize = 10,
+            Foreground = new SolidColorBrush(Color.Parse("#D7FBE8")),
+            TextAlignment = TextAlignment.Center
+        }.At(1, 0));
+        return track;
+    }
+
+    private static Bitmap? TryLoadMatrixUplinkRender()
+    {
+        try
+        {
+            using Stream stream = AssetLoader.Open(new Uri("avares://Chummer.Avalonia/Assets/install-link/matrix-uplink-login.png"));
+            return new Bitmap(stream);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private Button CreateButton(string label, Func<Task> action, bool isDefault = false)
     {
         Button button = new()
@@ -231,6 +600,93 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         button.Click += async (_, _) => await action();
         return button;
+    }
+
+    private void BeginAutomaticHandoffAsync()
+    {
+        if (_automaticHandoffStarted || DesktopInstallLinkingRuntime.IsClaimed(_state))
+        {
+            return;
+        }
+
+        _automaticHandoffStarted = true;
+        _ = RunAutomaticHandoffAsync();
+    }
+
+    private async Task RunAutomaticHandoffAsync()
+    {
+        try
+        {
+            UpdateMatrixHandoffState("Preparing local callback");
+            await Task.Delay(250).ConfigureAwait(true);
+            if (DesktopInstallLinkingRuntime.IsClaimed(_state))
+            {
+                return;
+            }
+
+            bool opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state);
+            if (opened)
+            {
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
+                StartClaimPolling("Waiting for browser callback");
+            }
+            else
+            {
+                UpdateMatrixHandoffState("Manual linking ready");
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateMatrixHandoffState("Manual linking ready");
+            SetStatus(ex.Message);
+        }
+    }
+
+    private void StartClaimPolling(string stateLabel)
+    {
+        _handoffPollCancellation?.Cancel();
+        _handoffPollCancellation?.Dispose();
+        _handoffPollCancellation = new CancellationTokenSource();
+        UpdateMatrixHandoffState(stateLabel);
+        _ = PollForClaimedInstallAsync(_handoffPollCancellation.Token);
+    }
+
+    private async Task PollForClaimedInstallAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            for (int attempt = 0; attempt < 80; attempt++)
+            {
+                await Task.Delay(750, cancellationToken).ConfigureAwait(true);
+                DesktopInstallLinkingState current = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+                if (!DesktopInstallLinkingRuntime.IsClaimed(current))
+                {
+                    continue;
+                }
+
+                _state = current;
+                RefreshSummary();
+                RefreshActionState();
+                if (Owner is MainWindow ownerWindow)
+                {
+                    ownerWindow.ApplyInstallLinkingChrome(_state);
+                }
+
+                SetStatus(!string.IsNullOrWhiteSpace(_state.LastClaimMessage)
+                    ? _state.LastClaimMessage
+                    : FormatClaimStatus(_state, _language));
+                return;
+            }
+
+            if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+            {
+                UpdateMatrixHandoffState("Browser sign-in pending");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     private async Task CopyInstallIdAsync()
@@ -329,6 +785,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
         if (opened)
         {
             SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
+            if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+            {
+                StartClaimPolling("Waiting for browser callback");
+            }
         }
         else
         {
@@ -353,6 +813,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private void RefreshActionState()
     {
         bool claimed = DesktopInstallLinkingRuntime.IsClaimed(_state);
+        _linkStateText.Text = FormatClaimStatus(_state, _language);
+        UpdateMatrixHandoffState(claimed ? "Grant accepted" : "Waiting for account link");
+        RefreshMatrixIdentityOverlay();
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.home.button.open_devices_access", _language);
@@ -368,8 +831,20 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _moreToolsPanel.IsVisible = claimed;
     }
 
+    private void RefreshMatrixIdentityOverlay()
+    {
+        _matrixEmailClaimText.Text = BuildEmailClaimDisplay(_state);
+        _matrixMonitorStateText.Text = BuildMonitorStateDisplay(_state);
+        _matrixMonitorEmailText.Text = BuildMonitorEmailDisplay(_state);
+        _matrixMonitorLinkText.Text = BuildMonitorLinkDisplay(_state);
+        ToolTip.SetTip(_matrixEmailClaimText, "Live client overlay. The render asset contains no user email or profile data.");
+        ToolTip.SetTip(_matrixMonitorEmailText, "Live client overlay. Chummer links only the verified email claim.");
+    }
+
     private void OnClosing(object? sender, WindowClosingEventArgs e)
     {
+        _handoffPollCancellation?.Cancel();
+
         if (DesktopInstallLinkingRuntime.IsClaimed(_state) || _allowGuestClose)
         {
             return;
@@ -392,14 +867,143 @@ internal sealed class DesktopInstallLinkingWindow : Window
         ToolTip.SetTip(_statusText, message);
     }
 
-    private static string BuildSummary(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus, string language)
+    private void UpdateMatrixHandoffState(string message)
     {
-        string claimStatus = DesktopInstallLinkingRuntime.IsClaimed(state)
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
+        _matrixHandoffStateText.Text = message.Trim();
+    }
+
+    internal static string BuildEmailClaimDisplay(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        string? email = ResolveEmailForOverlay(state);
+        if (!DesktopInstallLinkingRuntime.IsClaimed(state) || string.IsNullOrWhiteSpace(email))
+        {
+            return "email claim sealed";
+        }
+
+        return $"{BuildMaskedEmailForOverlay(email)} -> {CompactOverlayValue(email, 34)}";
+    }
+
+    internal static string BuildMonitorEmailDisplay(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        string? email = ResolveEmailForOverlay(state);
+        return DesktopInstallLinkingRuntime.IsClaimed(state) && !string.IsNullOrWhiteSpace(email)
+            ? CompactOverlayValue(email, 36)
+            : "email pending";
+    }
+
+    internal static string BuildMonitorStateDisplay(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (DesktopInstallLinkingRuntime.IsClaimed(state))
+        {
+            return "CHUMMER UPLINK COMPLETE";
+        }
+
+        return string.IsNullOrWhiteSpace(state.LastClaimError)
+            ? "UPLINK WAITING"
+            : "UPLINK LOST";
+    }
+
+    internal static string BuildMonitorLinkDisplay(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        return DesktopInstallLinkingRuntime.IsClaimed(state)
+            ? "LOCAL INSTALL LINKED"
+            : "LOCAL INSTALL PENDING";
+    }
+
+    internal static string BuildMaskedEmailForOverlay(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return "sealed";
+        }
+
+        string normalized = email.Trim();
+        int at = normalized.IndexOf('@', StringComparison.Ordinal);
+        if (at <= 0 || at >= normalized.Length - 1)
+        {
+            return "sealed";
+        }
+
+        string local = normalized[..at];
+        string domain = normalized[(at + 1)..];
+        int dot = domain.LastIndexOf('.');
+        string domainStem = dot > 0 ? domain[..dot] : domain;
+        string suffix = dot > 0 ? domain[dot..] : string.Empty;
+        char localHead = local[0];
+        char domainHead = domainStem.Length > 0 ? domainStem[0] : '*';
+        return $"{localHead}****@{domainHead}****{suffix}";
+    }
+
+    internal static string? ResolveEmailForOverlay(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        if (LooksLikeEmail(state.LinkedEmail))
+        {
+            return state.LinkedEmail!.Trim();
+        }
+
+        if (LooksLikeEmail(state.UserId))
+        {
+            return state.UserId!.Trim();
+        }
+
+        if (LooksLikeEmail(state.SubjectId))
+        {
+            return state.SubjectId!.Trim();
+        }
+
+        return null;
+    }
+
+    internal static string CompactOverlayValue(string value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        string normalized = value.Trim();
+        if (normalized.Length <= maxLength || maxLength < 12)
+        {
+            return normalized;
+        }
+
+        int suffixLength = Math.Max(5, maxLength / 2);
+        int prefixLength = Math.Max(4, maxLength - suffixLength - 3);
+        return string.Concat(normalized[..prefixLength], "...", normalized[^suffixLength..]);
+    }
+
+    private static bool LooksLikeEmail(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+           && value.Contains('@', StringComparison.Ordinal)
+           && value.Trim().IndexOf('@', StringComparison.Ordinal) > 0
+           && value.Trim().IndexOf('@', StringComparison.Ordinal) < value.Trim().Length - 1;
+
+    private static string FormatClaimStatus(DesktopInstallLinkingState state, string language)
+        => DesktopInstallLinkingRuntime.IsClaimed(state)
             ? DesktopLocalizationCatalog.GetRequiredFormattedString(
                 "desktop.install_link.summary.linked_status",
                 language,
                 state.GrantExpiresAtUtc?.ToUniversalTime().ToString("yyyy-MM-dd HH:mm") ?? "Unknown")
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.summary.guest_status", language);
+
+    private static string BuildSummary(DesktopInstallLinkingState state, DesktopUpdateClientStatus updateStatus, string language)
+    {
+        string claimStatus = FormatClaimStatus(state, language);
 
         List<string> lines =
         [

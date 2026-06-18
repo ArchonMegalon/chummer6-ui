@@ -1,0 +1,1 @@
+/docker/chummercomplete/chummer-design/products/chummer/FLAGSHIP_PRODUCT_BAR.md

@@ -77,8 +77,24 @@ public partial class MainWindow
 
     private async void ToolStrip_OnAutoAliceRequested(object? sender, EventArgs e)
     {
-        await OpenDesktopCommandFromSurfaceAsync(DesktopAliceAssistant.CommandId, "open auto alice");
-        await TrackDesktopShellEventAsync("desktop_open_auto_alice", "toolstrip");
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopAliceWindow.ShowAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_auto_alice", "toolstrip");
+            },
+            "open desktop alice");
+    }
+
+    private async void ToolStrip_OnStartOriginRequested(object? sender, EventArgs e)
+    {
+        await RunUiActionAsync(
+            async () =>
+            {
+                await DesktopAliceWindow.ShowOriginDraftAsync(this, DesktopHeadId);
+                await TrackDesktopShellEventAsync("desktop_open_origin_draft", "workspace_strip");
+            },
+            "open alice origin draft");
     }
 
     private async void ToolStrip_OnPrintRequested(object? sender, EventArgs e)

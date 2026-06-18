@@ -22,6 +22,10 @@
               Classes="shell-action quiet"
               Content="Open Sample"
               Click="LoadDemoRunnerQuickActionButton_OnClick" />
+      <Button x:Name="StartOriginQuickActionButton"
+              Classes="shell-action quiet"
+              Content="Origin Dossier"
+              Click="StartOriginQuickActionButton_OnClick" />
     </StackPanel>
     <TextBlock x:Name="WorkspaceCaptionText"
                IsVisible="False"

@@ -54,6 +54,7 @@ namespace Chummer
             InitializeComponent();
             this.UpdateLightDarkMode(objMyToken);
             this.TranslateWinForm(token: objMyToken);
+            this.UpdateParentForToolTipControls();
             txtNotes.Text = _strNotes = strOldNotes.NormalizeLineEndings();
             btnColorSelect.Enabled = _strNotes.Length > 0;
 

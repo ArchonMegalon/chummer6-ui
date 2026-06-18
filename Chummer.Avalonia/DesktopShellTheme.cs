@@ -38,6 +38,31 @@ internal static class DesktopShellTheme
         button.Classes.Add("primary");
     }
 
+    public static void ApplyShellTextInputTheme(TextBox textBox)
+    {
+        ArgumentNullException.ThrowIfNull(textBox);
+        textBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        textBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        textBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+    }
+
+    public static void ApplyShellComboBoxTheme(ComboBox comboBox)
+    {
+        ArgumentNullException.ThrowIfNull(comboBox);
+        comboBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
+        comboBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+    }
+
+    public static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
+        => new()
+        {
+            Text = text,
+            TextWrapping = wrapping,
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827")
+        };
+
     public static Border CreateSection(
         string title,
         Control body,

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T17:22:50.538603Z",
+  "generatedAt": "2026-06-18T03:28:11.711127Z",
   "contract_name": "chummer6-ui.sr6_workflow_family_execution_receipt",
   "status": "pass",
   "summary": "SR6 workflow-family execution evidence is explicitly grounded for dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare.",
@@ -68,7 +68,7 @@
       "maxAttempts": 2
     },
     "apiProbe": {
-      "baseUrl": "http://127.0.0.1:5090",
+      "baseUrl": "http://127.0.0.1:8088",
       "results": [
         {
           "path": "/api/workspaces?maxCount=1",

@@ -78,6 +78,8 @@ namespace Chummer
             if (string.IsNullOrEmpty(_objCharacter.SettingsKey))
                 _objCharacter.SettingsKey = GlobalSettings.DefaultCharacterSetting;
             InitializeComponent();
+            lblSourceLabel.Visible = false;
+            lblSource.Visible = false;
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();

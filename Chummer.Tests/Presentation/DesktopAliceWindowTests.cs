@@ -26,6 +26,10 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal($\"/account/alice/{Uri.EscapeDataString(lead.HandoffId)}\")");
         StringAssert.Contains(source, "CreateAssistantCard()");
         StringAssert.Contains(source, "AliceConversationModeCombo");
+        StringAssert.Contains(source, "ShowOriginDraftAsync");
+        StringAssert.Contains(source, "AliceModeGuideText");
+        StringAssert.Contains(source, "AliceGmAllowanceGuideText");
+        StringAssert.Contains(source, "AliceGmAllowanceTextBox");
         StringAssert.Contains(source, "AliceConversationList");
         StringAssert.Contains(source, "AliceStarterPromptRow");
         StringAssert.Contains(source, "AliceQuestionTextBox");
@@ -93,6 +97,15 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "MediaFactoryVideoReceiptPath");
         StringAssert.Contains(source, "RenderedVideoPath");
         StringAssert.Contains(source, "BuildSimplePdfDocument(");
+        StringAssert.Contains(source, "Strict stays conservative on restricted/banned picks");
+        StringAssert.Contains(source, "Complexity: Simple favors obvious picks");
+        StringAssert.Contains(source, "Ware posture is always explained rules-wise before apply.");
+        StringAssert.Contains(source, "Use this before a build, during creation, or on a finished character.");
+        StringAssert.Contains(source, "GM allowances are advisory only.");
+        StringAssert.Contains(source, "Clear GM allowances");
+        StringAssert.Contains(source, "GM allowances:");
+        StringAssert.Contains(source, "## GM Allowances");
+        StringAssert.Contains(source, "gmAllowanceNotes");
     }
 
     [TestMethod]
@@ -121,5 +134,19 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "SendBuildTurnAsync");
         StringAssert.Contains(source, "AiRouteTypes.Coach");
         StringAssert.Contains(source, "AiRouteTypes.Build");
+    }
+
+    [TestMethod]
+    public void DesktopAliceWindow_source_supports_blank_state_build_help_without_workspace_dead_end()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+
+        StringAssert.Contains(source, "BuildScratchCharacterAnswer(");
+        StringAssert.Contains(source, "BuildScratchCharacterEvidence(");
+        StringAssert.Contains(source, "Blank-state start is supported.");
+        StringAssert.Contains(source, "No open workspace is required to draft a first full build proposal.");
+        StringAssert.Contains(source, "ALICE treats this as a full from-scratch draft");
+        StringAssert.Contains(source, "ALICE can draft a complete from-scratch runner from the current settings even when no workspace is open.");
     }
 }

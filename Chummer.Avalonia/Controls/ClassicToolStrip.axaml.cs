@@ -15,6 +15,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     private static readonly IReadOnlyDictionary<string, string> ButtonIconAssets = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [nameof(ClassicToolStripAutoAliceButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
+        [nameof(ClassicToolStripStartOriginButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/folder_script_go.png",
         [nameof(SaveButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/disk.png",
         [nameof(PrintButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/printer.png",
         [nameof(CopyButton)] = "avares://Chummer.Avalonia/Assets/chummer5a-icons/page_copy.png",
@@ -40,6 +41,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     public event EventHandler? OpenForExportRequested;
     public event EventHandler? ImportRawRequested;
     public event EventHandler? AutoAliceRequested;
+    public event EventHandler? StartOriginRequested;
     public event EventHandler? SaveRequested;
     public event EventHandler? PrintRequested;
     public event EventHandler? CopyRequested;
@@ -85,6 +87,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
     private void ApplyLabels()
     {
         SetButtonLabel("ClassicToolStripAutoAliceButton", ShellChromeBoundary.FormatCommandLabel(DesktopAliceAssistant.CommandId), "ALICE");
+        SetButtonLabel("ClassicToolStripStartOriginButton", "Start Origin Dossier", "Origin Dossier");
         SetButtonLabel("ImportFileButton", "Open Character", "Open");
         SetButtonLabel("SaveButton", "Save Character", "Save");
         SetButtonLabel("PrintButton", "Print Character", "Print");
@@ -169,6 +172,7 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
 
     private void ImportFileButton_OnClick(object? sender, RoutedEventArgs e) => ImportFileRequested?.Invoke(this, EventArgs.Empty);
     private void AutoAliceButton_OnClick(object? sender, RoutedEventArgs e) => AutoAliceRequested?.Invoke(this, EventArgs.Empty);
+    private void StartOriginButton_OnClick(object? sender, RoutedEventArgs e) => StartOriginRequested?.Invoke(this, EventArgs.Empty);
     private void OpenForPrintingButton_OnClick(object? sender, RoutedEventArgs e) => OpenForPrintingRequested?.Invoke(this, EventArgs.Empty);
     private void OpenForExportButton_OnClick(object? sender, RoutedEventArgs e) => OpenForExportRequested?.Invoke(this, EventArgs.Empty);
     private void ImportRawButton_OnClick(object? sender, RoutedEventArgs e) => ImportRawRequested?.Invoke(this, EventArgs.Empty);

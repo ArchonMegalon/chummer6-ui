@@ -3,7 +3,7 @@
   "headId": "avalonia",
   "version": "run-20260617-190001",
   "releaseVersion": "run-20260617-190001",
-  "channelId": "preview",
+  "channelId": "public_stable",
   "platform": "linux",
   "arch": "x64",
   "rid": "linux-x64",
@@ -28,11 +28,11 @@
   "artifactInstallLaunchCapturePath": "/docker/chummercomplete/_staging/nightly-run-20260617-190001/startup-smoke/installed-launch-avalonia-linux-x64.bin",
   "artifactInstallWrapperCapturePath": "/docker/chummercomplete/_staging/nightly-run-20260617-190001/startup-smoke/installed-wrapper-avalonia-linux-x64.sh",
   "artifactInstallDesktopEntryCapturePath": "/docker/chummercomplete/_staging/nightly-run-20260617-190001/startup-smoke/installed-desktop-entry-avalonia-linux-x64.desktop",
-  "artifactPath": "/docker/chummercomplete/_staging/nightly-run-20260617-190001/files/chummer-avalonia-linux-x64-installer.deb",
+  "artifactPath": "/tmp/tmp.ILkND0timI/chummer-avalonia-linux-x64-installer.deb",
   "artifactFileName": "chummer-avalonia-linux-x64-installer.deb",
   "fileName": "chummer-avalonia-linux-x64-installer.deb",
   "artifactRelativePath": "files/chummer-avalonia-linux-x64-installer.deb",
   "artifactSha256": "2b178e15826f1bcb54f506bc039f51287e9579b9e5e85dc9d40b7d66a4a810ed",
   "artifactId": "avalonia-linux-x64-installer",
-  "channel": "preview"
+  "channel": "public_stable"
 }

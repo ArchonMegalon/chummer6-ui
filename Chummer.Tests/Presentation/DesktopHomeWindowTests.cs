@@ -215,9 +215,11 @@ public sealed class DesktopHomeWindowTests
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry)");
         StringAssert.Contains(source, "CreateHorizonQuickLaunchRow(");
-        StringAssert.Contains(source, "Children =");
-        StringAssert.Contains(source, "body");
-        StringAssert.Contains(source, "content.Children.Add(actionContent);");
+        StringAssert.Contains(source, "Start Origin Dossier");
+        StringAssert.Contains(source, "\"Origin Dossier\", () => DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)");
+        StringAssert.Contains(source, "DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId)");
+        StringAssert.Contains(source, "DesktopShellTheme.CreateSection(");
+        StringAssert.Contains(source, "DesktopShellTheme.CreateStackActionRow(");
         Assert.IsTrue(entries.Count >= 10);
         Assert.AreEqual("Karma Forge", karmaForge.Title);
     }

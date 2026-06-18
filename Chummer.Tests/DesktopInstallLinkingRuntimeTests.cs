@@ -70,6 +70,107 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public async Task TryHandleHeadlessInstallLinkModeAsync_ignores_normal_startup()
+    {
+        using StringWriter output = new();
+        using StringWriter error = new();
+        DesktopInstallLinkingStartupContext context = new(
+            State: CreateState() with { Status = "guest", ClaimedAtUtc = null },
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: true,
+            PromptReason: "claim_required");
+
+        int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+            "avalonia",
+            Array.Empty<string>(),
+            context,
+            output,
+            error,
+            CancellationToken.None);
+
+        Assert.IsNull(exitCode);
+        Assert.AreEqual(string.Empty, output.ToString());
+        Assert.AreEqual(string.Empty, error.ToString());
+    }
+
+    [TestMethod]
+    public async Task TryHandleHeadlessInstallLinkModeAsync_prints_browser_callback_url_without_gui()
+    {
+        string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
+        string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "0");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "0");
+            using StringWriter output = new();
+            using StringWriter error = new();
+            DesktopInstallLinkingStartupContext context = new(
+                State: CreateState() with
+                {
+                    Status = "guest",
+                    ClaimedAtUtc = null,
+                    GrantId = null,
+                    GrantToken = null,
+                    GrantIssuedAtUtc = null,
+                    GrantExpiresAtUtc = null
+                },
+                ClaimResult: null,
+                StartupClaimCode: null,
+                ShouldPrompt: true,
+                PromptReason: "claim_required");
+
+            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                ["--install-link-headless"],
+                context,
+                output,
+                error,
+                CancellationToken.None);
+
+            string outputText = output.ToString();
+            Assert.AreEqual(2, exitCode);
+            StringAssert.Contains(outputText, "Chummer install-link headless mode");
+            StringAssert.Contains(outputText, "Install ID: ins-avalonia-1");
+            StringAssert.Contains(outputText, "https://chummer.run/login?next=");
+            StringAssert.Contains(outputText, "installLinkCallbackUri%3Dhttp%253A%252F%252F127.0.0.1%253A", StringComparison.Ordinal);
+            StringAssert.Contains(outputText, "--install-link-headless --install-link-callback");
+            StringAssert.Contains(outputText, "Browser auto-open disabled");
+            StringAssert.Contains(error.ToString(), "timed out");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+        }
+    }
+
+    [TestMethod]
+    public async Task TryHandleHeadlessInstallLinkModeAsync_exits_cleanly_when_already_linked()
+    {
+        using StringWriter output = new();
+        using StringWriter error = new();
+        DesktopInstallLinkingStartupContext context = new(
+            State: CreateState() with { UserId = "runner@example.test" },
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: false,
+            PromptReason: "none");
+
+        int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+            "avalonia",
+            ["--install-link-console"],
+            context,
+            output,
+            error,
+            CancellationToken.None);
+
+        Assert.AreEqual(0, exitCode);
+        StringAssert.Contains(output.ToString(), "Install already linked: runner@example.test");
+        Assert.AreEqual(string.Empty, error.ToString());
+    }
+
+    [TestMethod]
     public void BuildSupportPortalRelativePathForUpdate_includes_manifest_and_error_context()
     {
         string path = DesktopInstallLinkingRuntime.BuildSupportPortalRelativePathForUpdate(

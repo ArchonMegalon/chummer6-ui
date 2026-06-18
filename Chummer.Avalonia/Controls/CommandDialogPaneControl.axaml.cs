@@ -614,9 +614,6 @@ public partial class CommandDialogPaneControl : UserControl
         {
             Padding = new Thickness(5, 4),
             Margin = new Thickness(0),
-            Background = ResolveThemeBrush("ChummerShellSelectionInsetBrush", "#F1F5F9"),
-            BorderBrush = ResolveThemeBrush("ChummerShellSelectionTitleBorderBrush", "#CBD5E1"),
-            BorderThickness = new Thickness(0, 0, 0, 1),
             Child = body
         };
     }
@@ -854,11 +851,9 @@ public partial class CommandDialogPaneControl : UserControl
                 IsEnabled = !field.IsReadOnly,
                 MinWidth = 180
             };
+            DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
             comboBox.ItemTemplate = new FuncDataTemplate<DialogFieldOptionDisplayItem>((option, _) =>
-                new TextBlock
-                {
-                    Text = option?.Label ?? string.Empty
-                });
+                DesktopShellTheme.CreateComboBoxOptionText(option?.Label ?? string.Empty));
             if (!field.IsReadOnly)
             {
                 comboBox.SelectionChanged += (_, _) =>
@@ -939,7 +934,7 @@ public partial class CommandDialogPaneControl : UserControl
             Border panel = new()
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = Brushes.Gray,
+                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                 Background = Brushes.Transparent,
                 Padding = new Thickness(6, 4),
                 MinHeight = string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.List, StringComparison.Ordinal)
@@ -1017,7 +1012,7 @@ public partial class CommandDialogPaneControl : UserControl
             tabs.Children.Add(new Border
             {
                 BorderThickness = new Thickness(1),
-                BorderBrush = Brushes.Gray,
+                BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
                 Background = Brushes.Transparent,
                 Margin = new Thickness(0, 0, 4, 4),
                 Padding = new Thickness(8, 3),
@@ -1067,7 +1062,7 @@ public partial class CommandDialogPaneControl : UserControl
         panel.Children.Add(new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = Brushes.Gray,
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             MinHeight = 136,
             Child = previewControl
@@ -1136,7 +1131,7 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = Brushes.Gray,
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             Child = rows
@@ -1148,7 +1143,7 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = Brushes.Gray,
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             Child = new TextBlock
@@ -1164,7 +1159,7 @@ public partial class CommandDialogPaneControl : UserControl
         return new Border
         {
             BorderThickness = new Thickness(1),
-            BorderBrush = Brushes.Gray,
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
             MinHeight = minHeight,
