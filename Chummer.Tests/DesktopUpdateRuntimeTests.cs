@@ -594,7 +594,7 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
-    public async Task CheckAndScheduleStartupUpdateAsync_already_current_does_not_record_failure_timestamp()
+    public async Task CheckAndScheduleStartupUpdateAsync_already_current_reconciles_channel_and_failure_timestamp()
     {
         string releaseVersion = ResolveCurrentRuntimeReleaseProperty("Version");
         string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-current-{Guid.NewGuid():N}.json");
@@ -632,7 +632,7 @@ public sealed class DesktopUpdateRuntimeTests
                   "Platform": "{{DesktopUpdatePlatformIdentity.Current().Platform}}",
                   "Arch": "{{DesktopUpdatePlatformIdentity.Current().Arch}}",
                   "InstalledVersion": "{{releaseVersion}}",
-                  "ChannelId": "stable",
+                  "ChannelId": "preview",
                   "LastCheckedAt": "2026-06-18T06:00:00Z",
                   "LastManifestVersion": "{{releaseVersion}}",
                   "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
@@ -649,6 +649,7 @@ public sealed class DesktopUpdateRuntimeTests
 
             Assert.AreEqual("already_current", result.Reason);
             using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("stable", GetStringProperty(state.RootElement, "channelId"));
             Assert.IsNull(GetStringProperty(state.RootElement, "lastFailureReason"));
             Assert.IsNull(GetDateTimeProperty(state.RootElement, "lastFailureAtUtc"));
         }

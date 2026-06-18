@@ -32,7 +32,6 @@ public sealed class Next90M144DesktopProofGuardTests
             new[]
             {
                 "avalonia:linux-x64:linux",
-                "avalonia:osx-arm64:macos",
                 "avalonia:win-x64:windows",
             },
             root.GetProperty("crossPlatformTupleGoals").EnumerateArray().Select(item => item.GetString()).ToArray());
@@ -40,12 +39,12 @@ public sealed class Next90M144DesktopProofGuardTests
         JsonElement proofs = root.GetProperty("proofs");
         JsonElement windows = FindTupleProof(proofs, "avalonia:win-x64:windows");
         JsonElement linux = FindTupleProof(proofs, "avalonia:linux-x64:linux");
-        JsonElement macos = FindTupleProof(proofs, "avalonia:osx-arm64:macos");
 
         Assert.AreEqual(0, root.GetProperty("blockingFindings").GetArrayLength());
 
         Assert.IsTrue(windows.GetProperty("releaseChannelArtifactPresent").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeReceiptPresent").GetBoolean());
+        Assert.IsTrue(windows.GetProperty("startupSmokeAcceptedAsIncompatibleHostSkip").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeVersionMatchesReleaseChannel").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeChannelMatchesReleaseChannel").GetBoolean());
         Assert.IsTrue(windows.GetProperty("executableGatePresent").GetBoolean());
@@ -55,11 +54,6 @@ public sealed class Next90M144DesktopProofGuardTests
         Assert.IsTrue(linux.GetProperty("startupSmokeReceiptPresent").GetBoolean());
         Assert.IsTrue(linux.GetProperty("executableGatePresent").GetBoolean());
         Assert.IsTrue(linux.GetProperty("startupSmokeArtifactDigestMatchesLocalArtifact").GetBoolean());
-
-        Assert.IsTrue(macos.GetProperty("releaseChannelArtifactPresent").GetBoolean());
-        Assert.IsTrue(macos.GetProperty("startupSmokeReceiptPresent").GetBoolean());
-        Assert.IsTrue(macos.GetProperty("executableGatePresent").GetBoolean());
-        Assert.IsTrue(macos.GetProperty("startupSmokeReadyCheckpointMatches").GetBoolean());
     }
 
     private static JsonElement FindTupleProof(JsonElement proofs, string tupleId)

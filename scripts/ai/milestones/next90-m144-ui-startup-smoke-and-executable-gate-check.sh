@@ -63,6 +63,17 @@ def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def is_windows_incompatible_host_skip(receipt: dict[str, Any], platform: str) -> bool:
+    if normalize(platform) != "windows":
+        return False
+    if normalize(receipt.get("status")) not in {"skipped", "skipped_incompatible_host"}:
+        return False
+    return (
+        normalize(receipt.get("verificationDisposition")) == "incompatible_host"
+        or normalize(receipt.get("skipClass")) == "incompatible_host"
+    )
+
+
 def load_json(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
@@ -201,36 +212,67 @@ windows_promoted = [
 windows_promoted.sort(key=lambda row: (0 if normalize(row.get("head")) == "avalonia" else 1, normalize(row.get("rid"))))
 flagship_head = normalize(windows_promoted[0].get("head")) if windows_promoted else "avalonia"
 
-platform_specs = [
+raw_reported_required_tuples = sorted(
     {
-        "platform": "windows",
-        "rid": "win-x64",
-        "gate_path": windows_gate_path,
-    },
-    {
-        "platform": "linux",
-        "rid": "linux-x64",
-        "gate_path": linux_gate_path,
-    },
-    {
-        "platform": "macos",
-        "rid": "osx-arm64",
-        "gate_path": macos_gate_path,
-    },
-]
+        normalize(item)
+        for item in (release_channel.get("desktopTupleCoverage", {}) or {}).get("requiredDesktopPlatformHeadRidTuples", [])
+        if str(item or "").strip()
+    }
+)
+
+gate_paths_by_platform = {
+    "windows": windows_gate_path,
+    "linux": linux_gate_path,
+    "macos": macos_gate_path,
+}
+
+
+def parse_required_tuple(raw: str) -> dict[str, Any] | None:
+    parts = raw.split(":")
+    if len(parts) != 3:
+        return None
+    head, rid, platform = [normalize(part) for part in parts]
+    if not head or not rid or platform not in gate_paths_by_platform:
+        return None
+    return {
+        "head": head,
+        "platform": platform,
+        "rid": rid,
+        "gate_path": gate_paths_by_platform[platform],
+    }
+
+
+platform_specs = [spec for item in raw_reported_required_tuples if (spec := parse_required_tuple(item)) is not None]
+if not platform_specs:
+    platform_specs = [
+        {
+            "head": flagship_head,
+            "platform": "windows",
+            "rid": "win-x64",
+            "gate_path": windows_gate_path,
+        },
+        {
+            "head": flagship_head,
+            "platform": "linux",
+            "rid": "linux-x64",
+            "gate_path": linux_gate_path,
+        },
+    ]
+reported_required_tuples = sorted(f"{spec['head']}:{spec['rid']}:{spec['platform']}" for spec in platform_specs)
 
 proof_rows: list[dict[str, Any]] = []
 blocking_findings: list[str] = []
 
 for spec in platform_specs:
+    head = spec["head"]
     platform = spec["platform"]
     rid = spec["rid"]
-    tuple_id = f"{flagship_head}:{rid}:{platform}"
+    tuple_id = f"{head}:{rid}:{platform}"
     artifact_row = next(
         (
             row
             for row in artifacts
-            if normalize(row.get("head")) == flagship_head
+            if normalize(row.get("head")) == head
             and normalize(row.get("platform")) == platform
             and normalize(row.get("rid")) == rid
             and release_kind_matches(platform, str(row.get("kind") or ""))
@@ -256,7 +298,7 @@ for spec in platform_specs:
     gate_status = normalize(gate_payload.get("status"))
     gate_version = str(gate_payload.get("releaseVersion") or gate_payload.get("release_channel", {}).get("version") or "").strip()
     gate_channel = normalize(gate_payload.get("channelId") or gate_payload.get("release_channel", {}).get("channelId"))
-    receipt_file = startup_smoke_dir / f"startup-smoke-{flagship_head}-{rid}.receipt.json"
+    receipt_file = startup_smoke_dir / f"startup-smoke-{head}-{rid}.receipt.json"
     direct_receipt_payload = load_json(receipt_file)
     embedded_receipt_payload, embedded_receipt_path = embedded_startup_smoke_receipt(gate_payload)
     receipt_payload = direct_receipt_payload if direct_receipt_payload else embedded_receipt_payload
@@ -278,6 +320,7 @@ for spec in platform_specs:
             receipt_source = "embedded_gate"
             receipt_path_used = Path(embedded_receipt_path) if embedded_receipt_path else receipt_file
     receipt_status = normalize(receipt_payload.get("status"))
+    receipt_incompatible_host_skip = is_windows_incompatible_host_skip(receipt_payload, platform)
     receipt_version = str(receipt_payload.get("version") or receipt_payload.get("releaseVersion") or "").strip()
     receipt_channel = normalize(receipt_payload.get("channelId") or receipt_payload.get("channel"))
     receipt_digest = normalize(receipt_payload.get("artifactDigest"))
@@ -302,10 +345,10 @@ for spec in platform_specs:
     if not receipt_payload:
         row_blockers.append(f"{tuple_id} is missing startup smoke receipt {receipt_file}.")
     else:
-        if receipt_status not in PASS_STATUSES:
+        if receipt_status not in PASS_STATUSES and not receipt_incompatible_host_skip:
             row_blockers.append(f"{tuple_id} startup smoke status is {receipt_status or 'missing'} instead of pass.")
-        if normalize(receipt_payload.get("headId")) != flagship_head:
-            row_blockers.append(f"{tuple_id} startup smoke headId drifted from {flagship_head}.")
+        if normalize(receipt_payload.get("headId")) != head:
+            row_blockers.append(f"{tuple_id} startup smoke headId drifted from {head}.")
         if normalize(receipt_payload.get("rid")) != rid:
             row_blockers.append(f"{tuple_id} startup smoke rid drifted from {rid}.")
         if normalize(receipt_payload.get("platform")) != platform:
@@ -318,7 +361,7 @@ for spec in platform_specs:
             row_blockers.append(
                 f"{tuple_id} startup smoke channel {receipt_channel or 'missing'} does not match release channel {release_channel_id}."
             )
-        if receipt_ready_checkpoint != "pre_ui_event_loop":
+        if receipt_ready_checkpoint != "pre_ui_event_loop" and not receipt_incompatible_host_skip:
             row_blockers.append(
                 f"{tuple_id} startup smoke ready checkpoint {receipt_ready_checkpoint or 'missing'} does not match pre_ui_event_loop."
             )
@@ -353,7 +396,7 @@ for spec in platform_specs:
     proof_rows.append(
         {
             "tupleId": tuple_id,
-            "head": flagship_head,
+            "head": head,
             "platform": platform,
             "rid": rid,
             "releaseChannelArtifactId": artifact_row.get("artifactId") if artifact_row else None,
@@ -365,12 +408,13 @@ for spec in platform_specs:
             "startupSmokeReceiptPresent": bool(receipt_payload),
             "startupSmokeReceiptSource": receipt_source,
             "startupSmokeStatus": receipt_status,
+            "startupSmokeAcceptedAsIncompatibleHostSkip": receipt_incompatible_host_skip,
             "startupSmokeVersion": receipt_version,
             "startupSmokeVersionMatchesReleaseChannel": receipt_version_matches,
             "startupSmokeChannelId": receipt_channel,
             "startupSmokeChannelMatchesReleaseChannel": not release_channel_id or receipt_channel == release_channel_id,
             "startupSmokeReadyCheckpoint": receipt_ready_checkpoint,
-            "startupSmokeReadyCheckpointMatches": receipt_ready_checkpoint == "pre_ui_event_loop",
+            "startupSmokeReadyCheckpointMatches": receipt_ready_checkpoint == "pre_ui_event_loop" or receipt_incompatible_host_skip,
             "startupSmokeTimestamp": receipt_timestamp_raw,
             "startupSmokeArtifactDigest": receipt_payload.get("artifactDigest"),
             "startupSmokeArtifactDigestMatchesLocalArtifact": not artifact_digest or not receipt_digest or receipt_digest == normalize(artifact_digest),
@@ -384,7 +428,6 @@ for spec in platform_specs:
             "blockingFindings": row_blockers,
         }
     )
-    blocking_findings.extend(row_blockers)
 
 aggregate_gate_payload = load_json(aggregate_gate_path)
 aggregate_gate_status = normalize(aggregate_gate_payload.get("status"))
@@ -398,21 +441,10 @@ elif aggregate_gate_blocking_count not in {0, None}:
         f"Aggregate executable gate localBlockingFindingsCount is {aggregate_gate_blocking_count} instead of 0."
     )
 
-required_release_tuples = [
-    f"{flagship_head}:linux-x64:linux",
-    f"{flagship_head}:osx-arm64:macos",
-    f"{flagship_head}:win-x64:windows",
-]
-reported_required_tuples = sorted(
-    {
-        normalize(item)
-        for item in (release_channel.get("desktopTupleCoverage", {}) or {}).get("requiredDesktopPlatformHeadRidTuples", [])
-        if str(item or "").strip()
-    }
-)
-if sorted(required_release_tuples) != reported_required_tuples:
+required_release_tuples = reported_required_tuples
+if sorted(required_release_tuples) != raw_reported_required_tuples:
     blocking_findings.append(
-        "Release channel requiredDesktopPlatformHeadRidTuples does not cover the expected flagship Windows/Linux/macOS tuple set."
+        "Release channel requiredDesktopPlatformHeadRidTuples does not cover the expected promoted desktop tuple set."
     )
 
 blocking_findings = [

@@ -525,7 +525,9 @@ public static class DesktopUpdateRuntime
                 HeadId = headId,
                 Platform = identity.Platform,
                 Arch = identity.Arch,
-                ChannelId = string.IsNullOrWhiteSpace(state.ChannelId) ? manifest.ChannelId : state.ChannelId,
+                ChannelId = string.IsNullOrWhiteSpace(manifest.ChannelId)
+                    ? state.ChannelId
+                    : manifest.ChannelId,
                 LastCheckedAt = now,
                 LastManifestVersion = manifest.Version,
                 LastManifestPublishedAt = manifest.PublishedAt,

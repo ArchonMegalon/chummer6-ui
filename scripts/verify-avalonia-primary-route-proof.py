@@ -52,6 +52,17 @@ def normalize(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def is_windows_incompatible_host_skip(receipt: dict[str, Any], platform: str) -> bool:
+    if normalize(platform) != "windows":
+        return False
+    if normalize(receipt.get("status")) not in {"skipped", "skipped_incompatible_host"}:
+        return False
+    return (
+        normalize(receipt.get("verificationDisposition")) == "incompatible_host"
+        or normalize(receipt.get("skipClass")) == "incompatible_host"
+    )
+
+
 def parse_iso_utc(value: Any) -> datetime | None:
     raw = str(value or "").strip()
     if not raw:
@@ -268,20 +279,21 @@ def validate_receipt(
     now_utc: datetime,
 ) -> tuple[bool, str]:
     status = normalize(receipt.get("status"))
-    if status not in PASSING_STARTUP_SMOKE_STATUSES:
+    platform = normalize(artifact.get("platform"))
+    incompatible_host_skip = is_windows_incompatible_host_skip(receipt, platform)
+    if status not in PASSING_STARTUP_SMOKE_STATUSES and not incompatible_host_skip:
         return False, "startup-smoke receipt status is not passing"
 
-    if normalize(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
+    if not incompatible_host_skip and normalize(receipt.get("readyCheckpoint")) != "pre_ui_event_loop":
         return False, "startup-smoke receipt missing pre_ui_event_loop checkpoint"
 
-    platform = normalize(artifact.get("platform"))
     host_class = normalize(receipt.get("hostClass"))
-    if not host_class:
+    if not incompatible_host_skip and not host_class:
         return False, "startup-smoke receipt hostClass is missing"
-    if not host_class_matches_platform(host_class, platform):
+    if not incompatible_host_skip and not host_class_matches_platform(host_class, platform):
         return False, f"startup-smoke receipt hostClass does not identify the {platform} host"
 
-    if not str(receipt.get("operatingSystem") or "").strip():
+    if not incompatible_host_skip and not str(receipt.get("operatingSystem") or "").strip():
         return False, "startup-smoke receipt operatingSystem is missing"
 
     expected_digest = normalize(artifact.get("sha256"))

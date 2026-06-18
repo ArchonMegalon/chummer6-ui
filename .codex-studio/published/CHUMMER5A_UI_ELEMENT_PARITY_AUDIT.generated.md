@@ -1,6 +1,6 @@
 # Chummer5A UI Element Parity Audit
 
-Generated at: 2026-06-18T12:06:29.958863Z
+Generated at: 2026-06-18T15:46:46.698050Z
 
 ## Scope
 This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.

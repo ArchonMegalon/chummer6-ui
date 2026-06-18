@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-18T12:06:29.958863Z",
+  "generated_at": "2026-06-18T15:46:46.698050Z",
   "probe_kind": "ui_parity_audit",
   "status": "pass",
   "scope_note": "This matrix covers every parity-tracked visible surface and currently-present disallowed extra represented in the Chummer5A oracle, screenshot review gate, visual familiarity gate, workflow execution gate, and veteran workflow packs.",
