@@ -53,7 +53,10 @@ public sealed record DesktopInstallLinkingState(
     DateTimeOffset? GrantExpiresAtUtc = null,
     string? UserId = null,
     string? SubjectId = null,
-    string? LinkedEmail = null);
+    string? LinkedEmail = null,
+    DateTimeOffset? LastBrowserDispatchAttemptUtc = null,
+    string? LastBrowserDispatchUri = null,
+    string? LastBrowserDispatchFailure = null);
 
 public static class DesktopInstallLinkingRuntime
 {
@@ -338,13 +341,39 @@ public static class DesktopInstallLinkingRuntime
     public static bool TryOpenAccountPortalForInstall(DesktopInstallLinkingState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return TryOpenPublicPortal(BuildAccountPortalRelativePathForInstall(state));
+        return TryOpenAccountPortalForInstall(state, out _, out _);
+    }
+
+    public static bool TryOpenAccountPortalForInstall(
+        DesktopInstallLinkingState state,
+        out string absoluteUri,
+        out string? failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortalForInstallState(
+            state,
+            BuildAccountPortalRelativePathForInstall(state),
+            out absoluteUri,
+            out failureReason);
     }
 
     public static bool TryOpenClaimPortalForInstall(DesktopInstallLinkingState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return TryOpenPublicPortal(BuildClaimPortalRelativePathForInstall(state));
+        return TryOpenClaimPortalForInstall(state, out _, out _);
+    }
+
+    public static bool TryOpenClaimPortalForInstall(
+        DesktopInstallLinkingState state,
+        out string absoluteUri,
+        out string? failureReason)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return TryOpenPublicPortalForInstallState(
+            state,
+            BuildClaimPortalRelativePathForInstall(state),
+            out absoluteUri,
+            out failureReason);
     }
 
     public static bool TryOpenRelativePortal(string relativePath)
@@ -362,6 +391,12 @@ public static class DesktopInstallLinkingRuntime
         ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
         Uri uri = ResolvePublicWebAddress();
         return new Uri(uri, relativePath.Trim()).ToString();
+    }
+
+    public static string BuildClaimPortalAbsoluteUriForInstall(DesktopInstallLinkingState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return BuildPublicPortalAbsoluteUri(BuildClaimPortalRelativePathForInstall(state));
     }
 
     public static bool TryOpenSupportPortal()
@@ -595,7 +630,11 @@ public static class DesktopInstallLinkingRuntime
                         "Workspace continuity: support can review claimed-install entitlement and stale-state details.",
                         "Local workspace state stays under explicit user control.",
                         string.IsNullOrWhiteSpace(state.LastClaimMessage) ? null : $"Hub message: {state.LastClaimMessage}",
-                        string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}"
+                        string.IsNullOrWhiteSpace(state.LastClaimError) ? null : $"Claim error: {state.LastClaimError}",
+                        state.LastBrowserDispatchAttemptUtc is null
+                            ? null
+                            : $"Browser handoff attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC",
+                        string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure) ? null : $"Browser handoff error: {state.LastBrowserDispatchFailure}"
                     }.Where(static item => !string.IsNullOrWhiteSpace(item))),
                 InstallationId: state.InstallationId,
                 ApplicationVersion: state.ApplicationVersion,
@@ -1846,6 +1885,74 @@ public static class DesktopInstallLinkingRuntime
         return DesktopCrashRuntime.TryOpenPathInShell(new Uri(uri, relativePath).ToString());
     }
 
+    private static bool TryOpenPublicPortalForInstallState(
+        DesktopInstallLinkingState state,
+        string relativePath,
+        out string absoluteUri,
+        out string? failureReason)
+    {
+        Uri uri = ResolvePublicWebAddress();
+        absoluteUri = new Uri(uri, relativePath).ToString();
+        bool opened = DesktopCrashRuntime.TryOpenPathInShell(absoluteUri, out failureReason);
+        RecordBrowserDispatchAttempt(state, absoluteUri, opened ? null : failureReason);
+        return opened;
+    }
+
+    private static void RecordBrowserDispatchAttempt(
+        DesktopInstallLinkingState state,
+        string absoluteUri,
+        string? failureReason)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        string? normalizedFailure = NormalizeBrowserDispatchFailure(failureReason);
+        DesktopInstallLinkingState currentState;
+        try
+        {
+            currentState = LoadOrCreateState(state.HeadId);
+        }
+        catch
+        {
+            currentState = state;
+        }
+
+        if (!string.Equals(currentState.InstallationId, state.InstallationId, StringComparison.OrdinalIgnoreCase))
+        {
+            currentState = state;
+        }
+
+        string? claimError = currentState.LastClaimError;
+        if (normalizedFailure is not null && !IsClaimed(currentState))
+        {
+            claimError = $"Browser handoff could not open automatically: {normalizedFailure}";
+        }
+        else if (claimError?.StartsWith("Browser handoff could not open automatically:", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            claimError = null;
+        }
+
+        SaveState(currentState with
+        {
+            LastBrowserDispatchAttemptUtc = now,
+            LastBrowserDispatchUri = string.IsNullOrWhiteSpace(absoluteUri) ? null : absoluteUri.Trim(),
+            LastBrowserDispatchFailure = normalizedFailure,
+            LastClaimError = claimError,
+            UpdatedAtUtc = now
+        });
+    }
+
+    private static string? NormalizeBrowserDispatchFailure(string? failureReason)
+    {
+        if (string.IsNullOrWhiteSpace(failureReason))
+        {
+            return null;
+        }
+
+        string normalized = failureReason.Trim();
+        return normalized.Length <= 600
+            ? normalized
+            : $"{normalized[..597]}...";
+    }
+
     private static string BuildSupportPortalRelativePath(SupportPortalPrefill prefill)
     {
         List<string> query = [];
@@ -2121,6 +2228,16 @@ public static class DesktopInstallLinkingRuntime
         if (!string.IsNullOrWhiteSpace(state.LastClaimError))
         {
             lines.Add($"Claim error: {state.LastClaimError}");
+        }
+
+        if (state.LastBrowserDispatchAttemptUtc is not null)
+        {
+            lines.Add($"Browser handoff attempt: {state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime():yyyy-MM-dd HH:mm} UTC");
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure))
+        {
+            lines.Add($"Browser handoff error: {state.LastBrowserDispatchFailure}");
         }
 
         if (updateStatus is not null)

@@ -165,9 +165,35 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "CreateMatrixSignalRail");
         StringAssert.Contains(text, "WrapPanel");
         StringAssert.Contains(text, "BeginAutomaticHandoffAsync();");
-        StringAssert.Contains(text, "TryOpenClaimPortalForInstall(_state)");
+        StringAssert.Contains(text, "TryOpenClaimPortalForInstall(");
+        StringAssert.Contains(text, "out string loginUrl");
+        StringAssert.Contains(text, "out string? failureReason");
+        StringAssert.Contains(text, "ShowManualBrowserFallbackAsync(loginUrl, failureReason)");
+        StringAssert.Contains(text, "desktop.install_link.button.copy_login_url");
         StringAssert.Contains(text, "PollForClaimedInstallAsync");
         StringAssert.Contains(text, "DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId)");
+    }
+
+    [TestMethod]
+    public void Help_menu_login_video_preview_reuses_matrix_uplink_without_forcing_browser_or_exit()
+    {
+        string installWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
+        string selectionSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.SelectionHandlers.cs"));
+        string projectorSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs"));
+        string catalogSource = File.ReadAllText(FindPath("Chummer.Presentation", "Shell", "CatalogOnlyRulesetShellCatalogResolver.cs"));
+        string labelSource = File.ReadAllText(FindPath("Chummer.Presentation", "UiKit", "ShellChromeBoundary.cs"));
+
+        StringAssert.Contains(catalogSource, "Command(\"show_login_video\", \"command.show_login_video\", \"help\", false)");
+        StringAssert.Contains(projectorSource, "\"show_login_video\"");
+        StringAssert.Contains(labelSource, "[\"show_login_video\"] = \"Show Login Video\"");
+        StringAssert.Contains(selectionSource, "case \"show_login_video\":");
+        StringAssert.Contains(selectionSource, "DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId)");
+        StringAssert.Contains(installWindowSource, "ShowLoginVideoAsync(Window owner, string headId)");
+        StringAssert.Contains(installWindowSource, "PromptReason: \"desktop_help_login_video\"");
+        StringAssert.Contains(installWindowSource, "loginVideoPreview: true");
+        StringAssert.Contains(installWindowSource, "_allowGuestClose = loginVideoPreview;");
+        StringAssert.Contains(installWindowSource, "The browser will not open unless you press the login button.");
+        StringAssert.Contains(installWindowSource, "_exitButton.Content = \"Close\";");
     }
 
     [TestMethod]

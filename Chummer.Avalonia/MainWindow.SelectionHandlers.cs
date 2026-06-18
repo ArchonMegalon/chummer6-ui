@@ -20,6 +20,11 @@ public partial class MainWindow
 
     private async void CommandDialogPane_OnCommandSelected(object? sender, string commandId)
     {
+        if (await TryHandleHostCommandAsync(commandId))
+        {
+            return;
+        }
+
         await RunUiActionAsync(
             () => _interactionCoordinator.ExecuteCommandAsync(commandId, CancellationToken.None),
             $"execute command '{commandId}'");
@@ -136,7 +141,7 @@ public partial class MainWindow
 
     private async void MenuBar_OnMenuCommandSelected(object? sender, string commandId)
     {
-        if (await TryHandleMenuHostCommandAsync(commandId))
+        if (await TryHandleHostCommandAsync(commandId))
         {
             return;
         }
@@ -217,7 +222,7 @@ public partial class MainWindow
         return false;
     }
 
-    private async Task<bool> TryHandleMenuHostCommandAsync(string commandId)
+    private async Task<bool> TryHandleHostCommandAsync(string commandId)
     {
         switch (commandId)
         {
@@ -246,6 +251,11 @@ public partial class MainWindow
                 return true;
             case "discord":
                 await OpenExternalMenuCommandAsync(commandId, LegacyDiscordUrl);
+                return true;
+            case "show_login_video":
+                await RunUiActionAsync(
+                    () => DesktopInstallLinkingWindow.ShowLoginVideoAsync(this, DesktopHeadId),
+                    "show login video");
                 return true;
             case "revision_history":
                 await RunUiActionAsync(

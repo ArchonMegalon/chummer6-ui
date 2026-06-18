@@ -354,7 +354,7 @@ public partial class MainWindow
         }
 
         e.Handled = true;
-        if (await TryHandleMenuHostCommandAsync(commandId))
+        if (await TryHandleHostCommandAsync(commandId))
         {
             return;
         }

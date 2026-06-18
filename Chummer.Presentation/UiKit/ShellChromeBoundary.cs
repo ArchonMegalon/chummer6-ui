@@ -48,6 +48,7 @@ public static class ShellChromeBoundary
         ["restart"] = "Restart",
         ["wiki"] = "Wiki",
         ["discord"] = "Discord",
+        ["show_login_video"] = "Show Login Video",
         ["revision_history"] = "Revision History",
         ["dumpshock"] = "Issue Tracker",
         ["report_bug"] = "Report Issue",

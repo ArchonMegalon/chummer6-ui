@@ -296,7 +296,11 @@ sync_live_downloads_mirror_dir() {
 
   resolved_target_dir="$(realpath -m "$target_dir")"
   resolved_deploy_dir="$(realpath -m "$DEPLOY_DIR")"
-  resolved_portal_dir="$(realpath -m "$PORTAL_DOWNLOADS_DIR")"
+  if [[ -n "$PORTAL_DOWNLOADS_DIR" ]]; then
+    resolved_portal_dir="$(realpath -m "$PORTAL_DOWNLOADS_DIR")"
+  else
+    resolved_portal_dir="$resolved_deploy_dir"
+  fi
 
   if [[ "$resolved_target_dir" == "$resolved_deploy_dir" || "$resolved_target_dir" == "$resolved_portal_dir" ]]; then
     return 0

@@ -253,12 +253,61 @@ public sealed class DesktopCrashRuntimeTests
         Assert.IsTrue(ignored);
     }
 
+    [TestMethod]
+    public void TryOpenPathInShell_treats_fast_linux_browser_launcher_failure_as_failed_handoff()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            Assert.Inconclusive("Linux browser launcher failure handling is only exercised on Linux.");
+        }
+
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"desktop-shell-open-{Guid.NewGuid():N}");
+        string? previousPath = Environment.GetEnvironmentVariable("PATH");
+        Directory.CreateDirectory(tempDirectory);
+        try
+        {
+            WriteExecutable(Path.Combine(tempDirectory, "xdg-open"), "#!/usr/bin/env bash\necho 'Operation not supported' >&2\nexit 1\n");
+            WriteExecutable(Path.Combine(tempDirectory, "gio"), "#!/usr/bin/env bash\nif [[ \"$1\" == \"open\" ]]; then echo 'Operation not supported' >&2; exit 1; fi\necho 'Operation not supported' >&2\nexit 1\n");
+            Environment.SetEnvironmentVariable("PATH", $"{tempDirectory}:{previousPath}");
+
+            bool opened = DesktopCrashRuntime.TryOpenPathInShell("https://chummer.run/login?next=test", out string? failureReason);
+
+            Assert.IsFalse(opened, "A launcher that exits immediately with a non-zero code must not be treated as a successful browser handoff.");
+            StringAssert.Contains(failureReason ?? string.Empty, "Operation not supported", StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("PATH", previousPath);
+            if (Directory.Exists(tempDirectory))
+            {
+                Directory.Delete(tempDirectory, recursive: true);
+            }
+        }
+    }
+
     private static object BuildEnvelope(DesktopCrashReport report, string summary, DesktopCrashClaimSnapshot? snapshot)
     {
         MethodInfo method = typeof(DesktopCrashRuntime).GetMethod("BuildEnvelope", BindingFlags.NonPublic | BindingFlags.Static)
             ?? throw new InvalidOperationException("BuildEnvelope method was not found.");
         return method.Invoke(null, [report, summary, snapshot])
             ?? throw new InvalidOperationException("BuildEnvelope returned null.");
+    }
+
+    private static void WriteExecutable(string path, string content)
+    {
+        File.WriteAllText(path, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        if (OperatingSystem.IsLinux())
+        {
+            File.SetUnixFileMode(
+                path,
+                UnixFileMode.UserRead
+                | UnixFileMode.UserWrite
+                | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead
+                | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead
+                | UnixFileMode.OtherExecute);
+        }
     }
 
     private static string? GetEnvelopeProperty(object envelope, string propertyName)

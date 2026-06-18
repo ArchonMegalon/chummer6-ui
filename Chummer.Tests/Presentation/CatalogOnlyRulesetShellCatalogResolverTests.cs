@@ -125,6 +125,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         "close_all",
         "wiki",
         "discord",
+        "show_login_video",
         "revision_history",
         "dumpshock",
         "about"

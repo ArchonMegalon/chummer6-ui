@@ -594,6 +594,163 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_already_current_does_not_record_failure_timestamp()
+    {
+        string releaseVersion = ResolveCurrentRuntimeReleaseProperty("Version");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-current-{Guid.NewGuid():N}.json");
+        File.WriteAllText(
+            manifestPath,
+            $$"""
+            {
+              "channelId": "stable",
+              "version": "{{releaseVersion}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": []
+            }
+            """);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+            File.WriteAllText(
+                statePath,
+                $$"""
+                {
+                  "HeadId": "avalonia",
+                  "Platform": "{{DesktopUpdatePlatformIdentity.Current().Platform}}",
+                  "Arch": "{{DesktopUpdatePlatformIdentity.Current().Arch}}",
+                  "InstalledVersion": "{{releaseVersion}}",
+                  "ChannelId": "stable",
+                  "LastCheckedAt": "2026-06-18T06:00:00Z",
+                  "LastManifestVersion": "{{releaseVersion}}",
+                  "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+                  "LastError": null,
+                  "LastFailureReason": null,
+                  "LastFailureAtUtc": "2026-06-18T06:16:00Z"
+                }
+                """);
+
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("already_current", result.Reason);
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.IsNull(GetStringProperty(state.RootElement, "lastFailureReason"));
+            Assert.IsNull(GetDateTimeProperty(state.RootElement, "lastFailureAtUtc"));
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_completed_pending_update_clears_stage_artifacts()
+    {
+        string releaseVersion = ResolveCurrentRuntimeReleaseProperty("Version");
+        string releaseChannel = ResolveCurrentRuntimeReleaseProperty("ChannelId");
+        string oldVersion = string.Equals(releaseVersion, "run-20000101-000000", StringComparison.OrdinalIgnoreCase)
+            ? "run-19990101-000000"
+            : "run-20000101-000000";
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-completed-{Guid.NewGuid():N}.json");
+        File.WriteAllText(
+            manifestPath,
+            $$"""
+            {
+              "channelId": "{{releaseChannel}}",
+              "version": "{{releaseVersion}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": []
+            }
+            """);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            string tempRoot = stateRootScope.TempRootForHead("avalonia");
+            string stageDirectory = Path.Combine(tempRoot, "stage-completed");
+            string helperPath = Path.Combine(tempRoot, "Chummer-update-helper-test.Avalonia");
+            Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+            Directory.CreateDirectory(stageDirectory);
+            File.WriteAllText(Path.Combine(stageDirectory, "installer-request.json"), "{}");
+            File.WriteAllText(helperPath, "helper");
+            File.WriteAllText(
+                statePath,
+                $$"""
+                {
+                  "HeadId": "avalonia",
+                  "Platform": "{{DesktopUpdatePlatformIdentity.Current().Platform}}",
+                  "Arch": "{{DesktopUpdatePlatformIdentity.Current().Arch}}",
+                  "InstalledVersion": "{{oldVersion}}",
+                  "ChannelId": "preview",
+                  "LastCheckedAt": "2026-06-18T06:00:00Z",
+                  "LastManifestVersion": "{{releaseVersion}}",
+                  "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+                  "LastError": "previous error",
+                  "LastFailureReason": "update_apply_failed",
+                  "LastFailureAtUtc": "2026-06-18T06:16:00Z",
+                  "PendingUpdateVersion": "{{releaseVersion}}",
+                  "PendingUpdateChannelId": "{{releaseChannel}}",
+                  "PendingUpdatePreparedAtUtc": "2026-06-18T06:16:00Z"
+                }
+                """);
+
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("already_current", result.Reason);
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual(releaseVersion, GetStringProperty(state.RootElement, "installedVersion"));
+            Assert.AreEqual(releaseChannel, GetStringProperty(state.RootElement, "channelId"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "lastError"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "lastFailureReason"));
+            Assert.IsNull(GetDateTimeProperty(state.RootElement, "lastFailureAtUtc"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "pendingUpdateVersion"));
+            Assert.IsNull(GetStringProperty(state.RootElement, "pendingUpdateChannelId"));
+            Assert.IsNotNull(GetDateTimeProperty(state.RootElement, "lastUpdateLaunchAttemptAtUtc"));
+            Assert.IsFalse(Directory.Exists(stageDirectory));
+            Assert.IsFalse(File.Exists(helperPath));
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
     public void ShouldPromptForStartupUpdate_returns_true_for_unseen_update_and_false_after_marking_prompt_shown()
     {
         using TestStateRootScope stateRootScope = new();
@@ -893,6 +1050,13 @@ public sealed class DesktopUpdateRuntimeTests
         return method.Invoke(null, args)!;
     }
 
+    private static string ResolveCurrentRuntimeReleaseProperty(string propertyName)
+    {
+        object release = InvokeNestedStatic("DesktopReleaseMetadata", "Load", "avalonia");
+        object? value = release.GetType().GetProperty(propertyName)!.GetValue(release);
+        return Convert.ToString(value) ?? string.Empty;
+    }
+
     private sealed class TestEnvironmentScope : IDisposable
     {
         private readonly Dictionary<string, string?> _priorValues = [];
@@ -938,6 +1102,19 @@ public sealed class DesktopUpdateRuntimeTests
                 identity.Platform,
                 identity.Arch,
                 "state.json");
+        }
+
+        public string TempRootForHead(string headId)
+        {
+            DesktopUpdatePlatformIdentity identity = DesktopUpdatePlatformIdentity.Current();
+            return Path.Combine(
+                Root,
+                "Chummer6",
+                "desktop-update",
+                headId,
+                identity.Platform,
+                identity.Arch,
+                "tmp");
         }
 
         public void Dispose()

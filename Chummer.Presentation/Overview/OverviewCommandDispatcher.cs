@@ -99,6 +99,13 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
                     Notice = "Exit is handled by the desktop shell."
                 });
                 return;
+            case "show_login_video":
+                context.Publish(context.State with
+                {
+                    Error = null,
+                    Notice = "Login video is handled by the desktop shell."
+                });
+                return;
             case "close_all":
             case "restart":
                 await context.CloseAllAsync(ct, "Workspace reset complete.");

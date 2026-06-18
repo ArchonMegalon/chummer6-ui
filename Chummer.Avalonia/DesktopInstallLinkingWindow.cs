@@ -35,17 +35,22 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly WrapPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
     private readonly Button _accountButton;
+    private readonly Button _copyLoginUrlButton;
     private readonly Button _redeemClaimCodeButton;
     private readonly Button _exitButton;
     private CancellationTokenSource? _handoffPollCancellation;
+    private readonly bool _loginVideoPreview;
     private bool _allowGuestClose;
     private bool _automaticHandoffStarted;
+    private string? _lastLoginUrl;
 
-    public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context)
+    public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context, bool loginVideoPreview = false)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         _state = context.State;
+        _loginVideoPreview = loginVideoPreview;
+        _allowGuestClose = loginVideoPreview;
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
         _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
@@ -163,6 +168,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         _followThroughButton = CreateButton(string.Empty, OpenFollowThroughAsync, isDefault: true);
         _accountButton = CreateButton(string.Empty, OpenAccountAsync);
+        _copyLoginUrlButton = CreateButton(
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_login_url", _language),
+            CopyLoginUrlAsync);
         _redeemClaimCodeButton = CreateButton(
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.redeem_claim_code", _language),
             RedeemClaimCodeAsync);
@@ -228,10 +236,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _state = context.ClaimResult.State;
                 RefreshSummary();
                 RefreshActionState();
-                if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
+                if (!_loginVideoPreview && !DesktopInstallLinkingRuntime.IsClaimed(_state))
                 {
                     BeginAutomaticHandoffAsync();
                 }
+            }
+            else if (_loginVideoPreview)
+            {
+                SetStatus("Login video preview. The browser will not open unless you press the login button.");
+                UpdateMatrixHandoffState("Login video preview");
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
@@ -257,6 +270,23 @@ internal sealed class DesktopInstallLinkingWindow : Window
             PromptReason: "desktop_shell");
 
         DesktopInstallLinkingWindow dialog = new(context);
+        await dialog.ShowDialog(owner);
+    }
+
+    public static async Task ShowLoginVideoAsync(Window owner, string headId)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        DesktopInstallLinkingState state = DesktopInstallLinkingRuntime.LoadOrCreateState(headId);
+        DesktopInstallLinkingStartupContext context = new(
+            State: state,
+            ClaimResult: null,
+            StartupClaimCode: null,
+            ShouldPrompt: true,
+            PromptReason: "desktop_help_login_video");
+
+        DesktopInstallLinkingWindow dialog = new(context, loginVideoPreview: true);
         await dialog.ShowDialog(owner);
     }
 
@@ -484,6 +514,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         [
             _followThroughButton,
             _accountButton,
+            _copyLoginUrlButton,
             _exitButton
         ]);
 
@@ -624,7 +655,10 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 return;
             }
 
-            bool opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state);
+            bool opened = DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(
+                _state,
+                out string loginUrl,
+                out string? failureReason);
             if (opened)
             {
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
@@ -632,8 +666,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else
             {
+                _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+                await ShowManualBrowserFallbackAsync(loginUrl, failureReason).ConfigureAwait(true);
                 UpdateMatrixHandoffState("Manual linking ready");
-                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
             }
         }
         catch (Exception ex)
@@ -699,6 +734,27 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         await Clipboard.SetTextAsync(_state.InstallationId);
         SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.install_id_copied", _language));
+    }
+
+    private async Task CopyLoginUrlAsync()
+    {
+        string loginUrl = _lastLoginUrl ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(loginUrl))
+        {
+            loginUrl = DesktopInstallLinkingRuntime.BuildClaimPortalAbsoluteUriForInstall(_state);
+            _lastLoginUrl = loginUrl;
+        }
+
+        if (Clipboard is null)
+        {
+            ShowManualBrowserFallback(loginUrl, null);
+            SetStatus($"{DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.clipboard_unavailable", _language)} {loginUrl}");
+            return;
+        }
+
+        await Clipboard.SetTextAsync(loginUrl);
+        ShowManualBrowserFallback(loginUrl, null);
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", _language));
     }
 
     private async Task RedeemClaimCodeAsync()
@@ -778,9 +834,11 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private Task OpenAccountAsync()
     {
+        string accountUrl;
+        string? failureReason;
         bool opened = DesktopInstallLinkingRuntime.IsClaimed(_state)
-            ? DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state)
-            : DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state);
+            ? DesktopInstallLinkingRuntime.TryOpenAccountPortalForInstall(_state, out accountUrl, out failureReason)
+            : DesktopInstallLinkingRuntime.TryOpenClaimPortalForInstall(_state, out accountUrl, out failureReason);
 
         if (opened)
         {
@@ -792,7 +850,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
         else
         {
-            SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.unable_open_account", _language));
+            _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
+            return ShowManualBrowserFallbackAsync(accountUrl, failureReason);
         }
 
         return Task.CompletedTask;
@@ -823,7 +882,13 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
         _followThroughButton.IsVisible = claimed;
+        _copyLoginUrlButton.IsVisible = !claimed;
         _exitButton.IsVisible = !claimed;
+        if (_loginVideoPreview)
+        {
+            _exitButton.Content = "Close";
+        }
+
         _claimCodeHintText.IsVisible = !claimed;
         _claimCodeLabelText.IsVisible = !claimed;
         _claimCodeEntryRow.IsVisible = !claimed;
@@ -865,6 +930,40 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _statusText.Text = message;
         _statusText.IsVisible = !string.IsNullOrWhiteSpace(message);
         ToolTip.SetTip(_statusText, message);
+    }
+
+    private async Task ShowManualBrowserFallbackAsync(string loginUrl, string? failureReason)
+    {
+        ShowManualBrowserFallback(loginUrl, failureReason);
+        if (Clipboard is not null && !string.IsNullOrWhiteSpace(loginUrl))
+        {
+            try
+            {
+                await Clipboard.SetTextAsync(loginUrl);
+                SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.login_url_copied", _language));
+                return;
+            }
+            catch
+            {
+                // The visible fallback remains available below.
+            }
+        }
+
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language));
+    }
+
+    private void ShowManualBrowserFallback(string loginUrl, string? failureReason)
+    {
+        _lastLoginUrl = loginUrl;
+        string detail = string.IsNullOrWhiteSpace(failureReason)
+            ? string.Empty
+            : $" Host detail: {failureReason.Trim()}";
+        _claimCodeHintText.Text = $"{DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language)} {loginUrl}{detail}";
+        _claimCodeHintText.IsVisible = true;
+        ToolTip.SetTip(_claimCodeHintText, loginUrl);
+        UpdateMatrixHandoffState("Manual browser fallback ready");
+        RefreshSummary();
+        RefreshActionState();
     }
 
     private void UpdateMatrixHandoffState(string message)
@@ -1031,6 +1130,22 @@ internal sealed class DesktopInstallLinkingWindow : Window
         if (!string.IsNullOrWhiteSpace(state.LastClaimError))
         {
             lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString("desktop.install_link.summary.claim_error", language, state.LastClaimError));
+        }
+
+        if (state.LastBrowserDispatchAttemptUtc is not null)
+        {
+            lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.install_link.summary.browser_open_attempt",
+                language,
+                state.LastBrowserDispatchAttemptUtc.Value.ToUniversalTime().ToString("yyyy-MM-dd HH:mm")));
+        }
+
+        if (!string.IsNullOrWhiteSpace(state.LastBrowserDispatchFailure))
+        {
+            lines.Add(DesktopLocalizationCatalog.GetRequiredFormattedString(
+                "desktop.install_link.summary.browser_open_error",
+                language,
+                state.LastBrowserDispatchFailure));
         }
 
         lines.AddRange(DesktopSurfacePostureText.BuildLines(updateStatus));

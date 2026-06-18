@@ -55,6 +55,7 @@ internal static class MainWindowShellFrameProjector
             {
                 "wiki",
                 "discord",
+                "show_login_video",
                 "revision_history",
                 "dumpshock",
                 "about"

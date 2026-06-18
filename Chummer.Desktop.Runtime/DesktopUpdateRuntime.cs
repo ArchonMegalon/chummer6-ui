@@ -458,9 +458,17 @@ public static class DesktopUpdateRuntime
             state = state with
             {
                 InstalledVersion = releaseMetadata.Version,
-                ChannelId = releaseMetadata.ChannelId
+                ChannelId = releaseMetadata.ChannelId,
+                LastError = null,
+                LastFailureReason = null,
+                LastFailureAtUtc = null,
+                PendingUpdateVersion = null,
+                PendingUpdateChannelId = null,
+                PendingUpdatePreparedAtUtc = null,
+                LastUpdateLaunchAttemptAtUtc = now
             };
             DesktopUpdateStateStore.Save(paths.StateFilePath, state);
+            CleanupCompletedUpdateArtifacts(paths.TempRoot);
         }
         else if (string.IsNullOrWhiteSpace(state.InstalledVersion))
         {
@@ -538,7 +546,7 @@ public static class DesktopUpdateRuntime
                 PendingUpdateVersion = null,
                 PendingUpdateChannelId = null,
                 PendingUpdatePreparedAtUtc = null,
-                LastUpdateLaunchAttemptAtUtc = null
+                LastUpdateLaunchAttemptAtUtc = state.LastUpdateLaunchAttemptAtUtc
             };
 
             string installedVersion = string.IsNullOrWhiteSpace(updatedState.InstalledVersion)
@@ -566,7 +574,7 @@ public static class DesktopUpdateRuntime
                 {
                     LastError = null,
                     LastFailureReason = null,
-                    LastFailureAtUtc = now,
+                    LastFailureAtUtc = null,
                     RetryAttempt = 0,
                     NextRetryAtUtc = null
                 };
@@ -1551,6 +1559,24 @@ public static class DesktopUpdateRuntime
             catch
             {
             }
+        }
+    }
+
+    private static void CleanupCompletedUpdateArtifacts(string tempRoot)
+    {
+        if (!Directory.Exists(tempRoot))
+        {
+            return;
+        }
+
+        foreach (string entry in Directory.GetDirectories(tempRoot))
+        {
+            TryDeleteDirectory(entry);
+        }
+
+        foreach (string file in Directory.GetFiles(tempRoot))
+        {
+            TryDeleteFile(file);
         }
     }
 

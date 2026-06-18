@@ -48,12 +48,14 @@ public class CommandAvailabilityEvaluatorTests
         AppCommandDefinition openCharacter = new("open_character", "Open", "file", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition globalSettings = new("global_settings", "Options", "tools", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition reportBug = new("report_bug", "Report Issue", "tools", false, true, RulesetDefaults.Sr5);
+        AppCommandDefinition showLoginVideo = new("show_login_video", "Show Login Video", "help", false, true, RulesetDefaults.Sr5);
         AppCommandDefinition saveCharacter = new("save_character", "Save", "file", true, true, RulesetDefaults.Sr5);
 
         Assert.IsTrue(evaluator.IsCommandEnabled(newCharacter, state));
         Assert.IsTrue(evaluator.IsCommandEnabled(openCharacter, state));
         Assert.IsTrue(evaluator.IsCommandEnabled(globalSettings, state));
         Assert.IsTrue(evaluator.IsCommandEnabled(reportBug, state));
+        Assert.IsTrue(evaluator.IsCommandEnabled(showLoginVideo, state));
         Assert.IsFalse(evaluator.IsCommandEnabled(saveCharacter, state));
     }
 

@@ -1413,7 +1413,6 @@ mkdir -p "$DOWNLOADS_DIR"
 restore_local_manifests_from_registry_if_needed \
   "$CANONICAL_MANIFEST_PATH" \
   "$MANIFEST_PATH" \
-  "$RELEASE_CHANNEL" \
   "$RELEASE_VERSION" \
   "$CANONICAL_FILES_DIR" \
   "$REGISTRY_FILES_DIR"

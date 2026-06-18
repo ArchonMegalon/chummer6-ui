@@ -24,6 +24,7 @@ public static class OverviewCommandPolicy
         "new_window",
         "wiki",
         "discord",
+        "show_login_video",
         "revision_history",
         "dumpshock",
         "print_setup",

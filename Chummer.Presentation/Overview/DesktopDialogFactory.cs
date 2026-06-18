@@ -374,6 +374,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "https://discord.gg/mJB7st9",
                 BuildExternalLinkFields("Community Discord", "https://discord.gg/mJB7st9", "Community chat opens in the browser instead of replacing the desktop workbench."),
                 [new DesktopDialogAction("close", "Close", true)]),
+            "show_login_video" => new DesktopDialogState(
+                "dialog.show_login_video",
+                "Show Login Video",
+                "The Avalonia desktop host opens the Matrix uplink login video on demand, including after the install is already linked.",
+                BuildWindowUtilityFields("Show Matrix uplink login video", "The Help menu opens the same flagship login render without forcing account linking or browser startup. Use the login button inside that surface only when you want to link this copy."),
+                [new DesktopDialogAction("close", "Close", true)]),
             "revision_history" => new DesktopDialogState(
                 "dialog.revision_history",
                 "Revision History",

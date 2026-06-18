@@ -1858,6 +1858,7 @@ public sealed class WorkflowParityGateTests
             new MenuWorkflowContract("print_setup", WorkflowShape.Choice),
             new MenuWorkflowContract("report_bug", WorkflowShape.Info),
             new MenuWorkflowContract("revision_history", WorkflowShape.Info),
+            new MenuWorkflowContract("show_login_video", WorkflowShape.Info),
             new MenuWorkflowContract("switch_ruleset", WorkflowShape.Choice),
             new MenuWorkflowContract("translator", WorkflowShape.Info),
             new MenuWorkflowContract("update", WorkflowShape.Info),

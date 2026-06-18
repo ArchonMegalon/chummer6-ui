@@ -56,6 +56,13 @@ public class OverviewCommandPolicyTests
     }
 
     [TestMethod]
+    public void Show_login_video_is_treated_as_known_help_dialog_command_with_desktop_host_override()
+    {
+        Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand("show_login_video"));
+        Assert.IsTrue(OverviewCommandPolicy.IsDialogCommand("show_login_video"));
+    }
+
+    [TestMethod]
     public void Unknown_command_is_not_marked_as_known()
     {
         Assert.IsFalse(OverviewCommandPolicy.IsKnownSharedCommand("totally_unknown_command"));

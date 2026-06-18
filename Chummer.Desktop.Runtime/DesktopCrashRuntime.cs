@@ -235,26 +235,77 @@ public static class DesktopCrashRuntime
     }
 
     public static bool TryOpenPathInShell(string path)
+        => TryOpenPathInShell(path, out _);
+
+    public static bool TryOpenPathInShell(string path, out string? failureReason)
     {
+        failureReason = null;
         if (string.IsNullOrWhiteSpace(path))
         {
+            failureReason = "Path is required.";
             return false;
         }
 
-        static bool TryStart(ProcessStartInfo processStartInfo)
+        static bool TryStartDetached(ProcessStartInfo processStartInfo, out string? failureReason)
         {
+            failureReason = null;
             try
             {
                 using Process? process = Process.Start(processStartInfo);
                 if (process is null)
                 {
+                    failureReason = $"{processStartInfo.FileName} did not start.";
                     return false;
                 }
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                failureReason = ex.Message;
+                return false;
+            }
+        }
+
+        static bool TryStartObserved(ProcessStartInfo processStartInfo, string commandLabel, out string? failureReason)
+        {
+            failureReason = null;
+            try
+            {
+                processStartInfo.UseShellExecute = false;
+                processStartInfo.CreateNoWindow = true;
+                processStartInfo.RedirectStandardOutput = true;
+                processStartInfo.RedirectStandardError = true;
+                using Process? process = Process.Start(processStartInfo);
+                if (process is null)
+                {
+                    failureReason = $"{commandLabel} did not start.";
+                    return false;
+                }
+
+                if (!process.WaitForExit(2000))
+                {
+                    return true;
+                }
+
+                if (process.ExitCode == 0)
+                {
+                    return true;
+                }
+
+                string errorText = process.StandardError.ReadToEnd();
+                string outputText = process.StandardOutput.ReadToEnd();
+                string detail = string.IsNullOrWhiteSpace(errorText)
+                    ? outputText.Trim()
+                    : errorText.Trim();
+                failureReason = string.IsNullOrWhiteSpace(detail)
+                    ? $"{commandLabel} exited with code {process.ExitCode}."
+                    : $"{commandLabel} exited with code {process.ExitCode}: {detail}";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                failureReason = $"{commandLabel} failed: {ex.Message}";
                 return false;
             }
         }
@@ -292,6 +343,7 @@ public static class DesktopCrashRuntime
 
         try
         {
+            List<string> failures = [];
             if (OperatingSystem.IsWindows())
             {
                 ProcessStartInfo windowsStartInfo = new()
@@ -299,52 +351,108 @@ public static class DesktopCrashRuntime
                     FileName = path,
                     UseShellExecute = true
                 };
-                return TryStart(windowsStartInfo);
+                bool opened = TryStartDetached(windowsStartInfo, out failureReason);
+                if (!opened && string.IsNullOrWhiteSpace(failureReason))
+                {
+                    failureReason = "Windows shell could not open the path.";
+                }
+
+                return opened;
             }
 
             if (OperatingSystem.IsMacOS())
             {
-                return TryStart(
-                    new ProcessStartInfo("open", $"\"{path}\"")
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    })
-                    || TryStart(new ProcessStartInfo("open", path) { UseShellExecute = true });
+                ProcessStartInfo openStartInfo = new("open")
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                openStartInfo.ArgumentList.Add(path);
+                if (TryStartObserved(openStartInfo, "open", out string? openFailure))
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(openFailure))
+                {
+                    failures.Add(openFailure);
+                }
+
+                if (TryStartDetached(new ProcessStartInfo("open", path) { UseShellExecute = true }, out string? detachedOpenFailure))
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(detachedOpenFailure))
+                {
+                    failures.Add(detachedOpenFailure);
+                }
+
+                failureReason = string.Join(" ", failures.Where(static failure => !string.IsNullOrWhiteSpace(failure)));
+                return false;
             }
 
             string? xdgOpen = Which("xdg-open");
-            if (!string.IsNullOrWhiteSpace(xdgOpen)
-                && TryStart(
-                    new ProcessStartInfo(xdgOpen, $"\"{path}\"")
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }))
+            if (!string.IsNullOrWhiteSpace(xdgOpen))
             {
-                return true;
+                ProcessStartInfo xdgStartInfo = new(xdgOpen);
+                xdgStartInfo.ArgumentList.Add(path);
+                if (TryStartObserved(xdgStartInfo, "xdg-open", out string? xdgFailure))
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(xdgFailure))
+                {
+                    failures.Add(xdgFailure);
+                }
             }
 
             string? gioOpen = Which("gio");
-            if (!string.IsNullOrWhiteSpace(gioOpen)
-                && TryStart(
-                    new ProcessStartInfo(gioOpen, $"open \"{path}\"")
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    }))
+            if (!string.IsNullOrWhiteSpace(gioOpen))
+            {
+                ProcessStartInfo gioStartInfo = new(gioOpen);
+                gioStartInfo.ArgumentList.Add("open");
+                gioStartInfo.ArgumentList.Add(path);
+                if (TryStartObserved(gioStartInfo, "gio open", out string? gioFailure))
+                {
+                    return true;
+                }
+
+                if (!string.IsNullOrWhiteSpace(gioFailure))
+                {
+                    failures.Add(gioFailure);
+                }
+            }
+
+            if (failures.Count > 0)
+            {
+                failureReason = string.Join(" ", failures.Where(static failure => !string.IsNullOrWhiteSpace(failure)));
+                return false;
+            }
+
+            if (TryStartDetached(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            }, out string? shellFailure))
             {
                 return true;
             }
 
-            return TryStart(new ProcessStartInfo
+            if (!string.IsNullOrWhiteSpace(shellFailure))
             {
-                FileName = path,
-                UseShellExecute = true
-            });
+                failures.Add(shellFailure);
+            }
+
+            failureReason = failures.Count == 0
+                ? "No supported desktop browser launcher was available."
+                : string.Join(" ", failures.Where(static failure => !string.IsNullOrWhiteSpace(failure)));
+            return false;
         }
-        catch
+        catch (Exception ex)
         {
+            failureReason = ex.Message;
             return false;
         }
     }

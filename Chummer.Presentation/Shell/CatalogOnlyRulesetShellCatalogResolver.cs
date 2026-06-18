@@ -70,6 +70,7 @@ public sealed class CatalogOnlyRulesetShellCatalogResolver : IRulesetShellCatalo
         Command("close_all", "command.close_all", "windows", false),
         Command("wiki", "command.wiki", "help", false),
         Command("discord", "command.discord", "help", false),
+        Command("show_login_video", "command.show_login_video", "help", false),
         Command("revision_history", "command.revision_history", "help", false),
         Command("dumpshock", "command.dumpshock", "help", false),
         Command("about", "command.about", "help", false)
