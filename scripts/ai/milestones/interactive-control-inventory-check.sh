@@ -756,6 +756,7 @@ else:
             for marker in (
                 "Workspace: none (open: 0, n/a)",
                 "State: ready, workspace=none, open=0, saved=unsaved, last-command=close_window",
+                "Character: none",
             )
         )
         if len(root_labels) not in {0, 4}:

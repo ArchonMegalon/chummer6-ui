@@ -4,7 +4,7 @@
     "public_shell_clickability": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/PUBLIC_SHELL_CLICKABILITY_GATE.generated.json",
     "public_ui_frame_integrity": "/docker/chummercomplete/chummer.run-services/tests/public/ui-frame-integrity.spec.ts"
   },
-  "generated_at_utc": "2026-06-12T18:54:09Z",
+  "generated_at_utc": "2026-06-18T19:58:38Z",
   "privacy_boundary": {
     "no_private_campaign_data": true,
     "no_private_runner_sheets": true,

@@ -91,6 +91,7 @@ EXPECTED_COMMAND_IDS = [
     "close_all",
     "wiki",
     "discord",
+    "show_login_video",
     "revision_history",
     "dumpshock",
     "about",

@@ -1,8 +1,8 @@
 {
   "contract_name": "chummer6-ui.next90_m144_startup_smoke_and_executable_gate",
-  "generated_at": "2026-06-18T15:57:15Z",
-  "status": "pass",
-  "summary": "Cross-platform startup-smoke and executable-gate proof is current for the promoted flagship bytes.",
+  "generated_at": "2026-06-18T19:34:29Z",
+  "status": "fail",
+  "summary": "Cross-platform startup-smoke and executable-gate proof is still blocked for the promoted flagship bytes.",
   "title": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",
   "task": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",
   "packageId": "next90-m144-ui-capture-fresh-windows-linux-and-macos-startup-smoke-and-executable-gate-p",
@@ -22,7 +22,7 @@
   "releaseChannel": {
     "path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
     "present": true,
-    "channelId": "stable",
+    "channelId": "public_stable",
     "version": "run-20260618-142358",
     "requiredDesktopPlatformHeadRidTuples": [
       "avalonia:linux-x64:linux",
@@ -57,7 +57,7 @@
       "startupSmokeAcceptedAsIncompatibleHostSkip": false,
       "startupSmokeVersion": "run-20260618-142358",
       "startupSmokeVersionMatchesReleaseChannel": true,
-      "startupSmokeChannelId": "stable",
+      "startupSmokeChannelId": "public_stable",
       "startupSmokeChannelMatchesReleaseChannel": true,
       "startupSmokeReadyCheckpoint": "pre_ui_event_loop",
       "startupSmokeReadyCheckpointMatches": true,
@@ -70,19 +70,21 @@
       "executableGateVersion": "run-20260618-142358",
       "executableGateVersionMatchesReleaseChannel": true,
       "executableGateChannelId": "stable",
-      "executableGateChannelMatchesReleaseChannel": true,
-      "blockingFindings": []
+      "executableGateChannelMatchesReleaseChannel": false,
+      "blockingFindings": [
+        "avalonia:linux-x64:linux executable gate channel stable does not match release channel public_stable."
+      ]
     },
     {
       "tupleId": "avalonia:win-x64:windows",
       "head": "avalonia",
       "platform": "windows",
       "rid": "win-x64",
-      "releaseChannelArtifactId": "avalonia-win-x64-installer",
-      "releaseChannelArtifactPresent": true,
-      "localArtifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
-      "localArtifactPresent": true,
-      "localArtifactDigest": "sha256:e086ef0a4c7a207af76461cc4ba5daf680842833fb1fa1d5b1486d7cb1f06707",
+      "releaseChannelArtifactId": null,
+      "releaseChannelArtifactPresent": false,
+      "localArtifactPath": "",
+      "localArtifactPresent": false,
+      "localArtifactDigest": "",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "startupSmokeReceiptPresent": true,
       "startupSmokeReceiptSource": "direct",
@@ -90,7 +92,7 @@
       "startupSmokeAcceptedAsIncompatibleHostSkip": true,
       "startupSmokeVersion": "run-20260618-142358",
       "startupSmokeVersionMatchesReleaseChannel": true,
-      "startupSmokeChannelId": "stable",
+      "startupSmokeChannelId": "public_stable",
       "startupSmokeChannelMatchesReleaseChannel": true,
       "startupSmokeReadyCheckpoint": "",
       "startupSmokeReadyCheckpointMatches": true,
@@ -103,13 +105,32 @@
       "executableGateVersion": "run-20260618-142358",
       "executableGateVersionMatchesReleaseChannel": true,
       "executableGateChannelId": "stable",
-      "executableGateChannelMatchesReleaseChannel": true,
-      "blockingFindings": []
+      "executableGateChannelMatchesReleaseChannel": false,
+      "blockingFindings": [
+        "avalonia:win-x64:windows is missing a promoted windows installer/media row in RELEASE_CHANNEL.generated.json.",
+        "avalonia:win-x64:windows is missing a local artifact under Docker/Downloads/files.",
+        "avalonia:win-x64:windows executable gate channel stable does not match release channel public_stable."
+      ]
     }
   ],
-  "blockingFindings": [],
-  "blocking_findings": [],
-  "reasons": [],
-  "blockingFindingsCount": 0,
-  "blocking_findings_count": 0
+  "blockingFindings": [
+    "avalonia:linux-x64:linux executable gate channel stable does not match release channel public_stable.",
+    "avalonia:win-x64:windows is missing a promoted windows installer/media row in RELEASE_CHANNEL.generated.json.",
+    "avalonia:win-x64:windows is missing a local artifact under Docker/Downloads/files.",
+    "avalonia:win-x64:windows executable gate channel stable does not match release channel public_stable."
+  ],
+  "blocking_findings": [
+    "avalonia:linux-x64:linux executable gate channel stable does not match release channel public_stable.",
+    "avalonia:win-x64:windows is missing a promoted windows installer/media row in RELEASE_CHANNEL.generated.json.",
+    "avalonia:win-x64:windows is missing a local artifact under Docker/Downloads/files.",
+    "avalonia:win-x64:windows executable gate channel stable does not match release channel public_stable."
+  ],
+  "reasons": [
+    "avalonia:linux-x64:linux executable gate channel stable does not match release channel public_stable.",
+    "avalonia:win-x64:windows is missing a promoted windows installer/media row in RELEASE_CHANNEL.generated.json.",
+    "avalonia:win-x64:windows is missing a local artifact under Docker/Downloads/files.",
+    "avalonia:win-x64:windows executable gate channel stable does not match release channel public_stable."
+  ],
+  "blockingFindingsCount": 4,
+  "blocking_findings_count": 4
 }

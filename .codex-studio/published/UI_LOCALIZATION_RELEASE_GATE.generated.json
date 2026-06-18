@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-17T17:27:12Z",
+  "generated_at": "2026-06-18T20:04:47Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 398,
+  "default_key_count": 403,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 177ms"
+      "  duration: 180ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 398,
-      "minimum_override_count": 398,
-      "default_key_count": 398,
+      "override_count": 403,
+      "minimum_override_count": 403,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 398,
+      "override_count": 403,
       "minimum_override_count": 40,
-      "default_key_count": 398,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 398,
+      "override_count": 403,
       "minimum_override_count": 40,
-      "default_key_count": 398,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 398,
+      "override_count": 403,
       "minimum_override_count": 40,
-      "default_key_count": 398,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 398,
+      "override_count": 403,
       "minimum_override_count": 40,
-      "default_key_count": 398,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 398,
+      "override_count": 403,
       "minimum_override_count": 40,
-      "default_key_count": 398,
+      "default_key_count": 403,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,7 +99,7 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-11T06:13:35Z",
+    "generated_at": "2026-06-18T12:17:38Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
@@ -131,7 +131,7 @@
     ],
     "receipts": [
       {
-        "path": "/tmp/m113-proof-9055e11f161944489ea11fe5e9851910/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": "/tmp/m113-proof-e4e0cef6dbc3407289df0bccfcb5874e/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -370,8 +370,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 229,
-      "required_key_count": 229,
+      "matched_default_key_count": 234,
+      "required_key_count": 234,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -440,6 +440,7 @@
         "desktop.home.section.install_support",
         "desktop.home.section.update_posture",
         "desktop.install_link.button.copy_install_id",
+        "desktop.install_link.button.copy_login_url",
         "desktop.install_link.button.exit_desktop",
         "desktop.install_link.button.link_copy",
         "desktop.install_link.button.login_website",
@@ -458,6 +459,8 @@
         "desktop.install_link.status.clipboard_unavailable",
         "desktop.install_link.status.install_id_copied",
         "desktop.install_link.status.linking",
+        "desktop.install_link.status.login_url_copied",
+        "desktop.install_link.status.manual_login_url",
         "desktop.install_link.status.opened_account",
         "desktop.install_link.status.opened_downloads",
         "desktop.install_link.status.opened_support",
@@ -468,6 +471,8 @@
         "desktop.install_link.status.unable_open_support",
         "desktop.install_link.status.unable_open_work_route",
         "desktop.install_link.summary",
+        "desktop.install_link.summary.browser_open_attempt",
+        "desktop.install_link.summary.browser_open_error",
         "desktop.install_link.summary.channel",
         "desktop.install_link.summary.claim_error",
         "desktop.install_link.summary.guest_status",

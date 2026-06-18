@@ -10,7 +10,7 @@
     "workflow_execution": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_WORKFLOW_EXECUTION_GATE.generated.json"
   },
   "contract_name": "REAL_CHUMMER_CLASSIC_PARITY_SEED_INVENTORY",
-  "generated_at": "2026-06-12T18:54:09Z",
+  "generated_at": "2026-06-18T19:58:38Z",
   "items": [
     {
       "category": "baseline_surface",

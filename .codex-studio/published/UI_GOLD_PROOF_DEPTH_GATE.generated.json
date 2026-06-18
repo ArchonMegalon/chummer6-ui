@@ -1,6 +1,6 @@
 {
   "failures": [],
-  "generated_at": "2026-06-12T18:54:09Z",
+  "generated_at": "2026-06-18T19:58:38Z",
   "normalized_artifacts": {
     "parity_inventory": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PARITY_INVENTORY.generated.json",
     "public_surface_qa_targets": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/PUBLIC_SURFACE_QA_TARGETS.generated.json"

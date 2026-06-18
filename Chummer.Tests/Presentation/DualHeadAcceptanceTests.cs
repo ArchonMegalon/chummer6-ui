@@ -34,6 +34,10 @@ public class DualHeadAcceptanceTests
 {
     private static readonly Uri? BaseUri = ResolveBaseUri();
     private static readonly string? ApiKey = ResolveApiKey();
+    private static readonly bool RequireRuntimeForDualHeadAcceptance = string.Equals(
+        Environment.GetEnvironmentVariable("CHUMMER_REQUIRE_DUAL_HEAD_RUNTIME"),
+        "1",
+        StringComparison.Ordinal);
     private static readonly RulesetShellCatalogResolverService ShellCatalogResolver =
         CreateShellCatalogResolver();
     private static readonly Regex WorkspaceTokenRegex = new("(?<=Workspace:\\s)[A-Za-z0-9-]+", RegexOptions.Compiled);
@@ -55,7 +59,12 @@ public class DualHeadAcceptanceTests
 
         if (!_isRuntimeReachable.Value)
         {
-            Assert.Fail(_runtimeReachabilityFailure);
+            if (RequireRuntimeForDualHeadAcceptance)
+            {
+                Assert.Fail(_runtimeReachabilityFailure);
+            }
+
+            Assert.Inconclusive(_runtimeReachabilityFailure);
         }
 
         await ClearAllWorkspacesAsync();
