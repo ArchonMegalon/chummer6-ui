@@ -76,7 +76,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
     user_first = dict(spec.get("user_first_story") or {})
     origin = dict(spec.get("origin_dossier_spotlight") or {})
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
-    related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
+    related_surfaces = [
+        dict(item)
+        for item in list(spec.get("related_surfaces") or [])
+        if isinstance(item, dict)
+    ]
     visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
     videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     lines: list[str] = [
@@ -245,11 +249,11 @@ def render_showcase(spec: dict[str, Any]) -> str:
             "",
             *numbered_lines(overview["flagship_bar"]),
             "",
-            "## Related Horizon",
+            "## Related Surface",
             "",
         ]
     )
-    for row in related_horizons:
+    for row in related_surfaces:
         lines.extend(
             [
                 f"### {row['name']}",
@@ -388,7 +392,11 @@ def render_minigames(spec: dict[str, Any]) -> str:
 
 def render_index_section(spec: dict[str, Any]) -> str:
     visual_gallery = [dict(item) for item in list(spec.get("_synced_visual_gallery") or []) if isinstance(item, dict)]
-    related_horizons = [dict(item) for item in list(spec.get("related_horizons") or []) if isinstance(item, dict)]
+    related_surfaces = [
+        dict(item)
+        for item in list(spec.get("related_surfaces") or [])
+        if isinstance(item, dict)
+    ]
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
     videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     gallery_lines: list[str] = []
@@ -411,12 +419,12 @@ def render_index_section(spec: dict[str, Any]) -> str:
         for item in video_items:
             video_html.append(f"  <li>{item[2:]}</li>")
         video_html.append("</ul>")
-    horizon_lines: list[str] = []
-    if related_horizons:
-        horizon_lines.extend(["<ul>"])
-        for row in related_horizons:
-            horizon_lines.append(f"  <li><strong>{row['name']}</strong>: {row['connection']}</li>")
-        horizon_lines.append("</ul>")
+    surface_lines: list[str] = []
+    if related_surfaces:
+        surface_lines.extend(["<ul>"])
+        for row in related_surfaces:
+            surface_lines.append(f"  <li><strong>{row['name']}</strong>: {row['connection']}</li>")
+        surface_lines.append("</ul>")
     return "\n".join(
         [
             INDEX_START,
@@ -434,8 +442,8 @@ def render_index_section(spec: dict[str, Any]) -> str:
             *gallery_lines,
             *video_html,
             "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
-            f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on an authority surface instead of an internal maintenance list.</p>",
-            *horizon_lines,
+            f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on one calm control surface.</p>",
+            *surface_lines,
             INDEX_END,
         ]
     )

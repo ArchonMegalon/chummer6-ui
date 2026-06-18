@@ -1,9 +1,9 @@
 {
   "site_title": "Chummer6 Flagship Table Pulse",
-  "site_summary": "Governed live-play and living-world systems for Chummer6, with dramatic but receipt-backed follow-through.",
+  "site_summary": "Live-table pressure, player follow-up, and GM-approved world fallout for Chummer6.",
   "editorial_posture": {
     "opening": "Chummer6 should feel useful before it feels large. This guide explains the live-table and living-world layer from the player and GM point of view: what you can open, what changes at the table, and what still stays under human authority.",
-    "source_note": "This guide follows the Chummer6 design canon, the public-guide source set, and the verified horizon videos. Treat it as a product guide, not as a rules engine or an unbounded release promise."
+    "source_note": "This guide follows the Chummer6 design canon and the public-guide source set. Treat it as a product guide, not as a rules engine or an unbounded release promise."
   },
   "public_videos": [
     {
@@ -142,7 +142,7 @@
           "aftermath",
           "faction motion",
           "opposition clocks",
-          "Black Ledger-compatible public fallout"
+          "GM-approved public fallout"
         ],
         "must_never_imply": [
           "private table truth leaked automatically",
@@ -183,7 +183,7 @@
         "description": "Enough validated response can produce public-safe fallout.",
         "items": [
           "newsroom beat",
-          "Black Ledger-compatible consequence",
+          "public-safe city consequence",
           "after-action brief"
         ]
       }
@@ -193,7 +193,7 @@
         "seeing live pressure become playable",
         "watching a Signal Deck prompt cascade into faction consequences",
         "seeing Passport identity, role path, and city pressure connect",
-        "watching a remote reaction mini-game end in a newsroom or Black Ledger fallout beat"
+        "watching a remote reaction mini-game end in a newsroom or public-safe city fallout beat"
       ],
       "must_not_come_from": [
         "surveillance framing",
@@ -206,7 +206,7 @@
       "a run spikes heat and the GM approves a bounded pulse packet",
       "a player receives a Signal Deck card with one sharp risky choice and one safer choice",
       "the choice resolves into Passport movement, faction pressure, and a receipt trail",
-      "the city later reflects that action through rumor, newsroom fallout, or Black Ledger-safe consequence"
+      "the city later reflects that action through rumor, newsroom fallout, or public-safe consequence"
     ],
     "hard_truths": [
       "private campaigns default silent",
@@ -391,7 +391,7 @@
       "recipient reasoning, quiet-hours, mute, and opt-out posture",
       "GM allowances and gimmicks as explicit advisory context",
       "mini-game prompt source, chosen response, and proposed consequence",
-      "public-safe release controls before newsroom or Black Ledger projection",
+      "public-safe release controls before any newsroom or public map projection",
       "receipt trail, override reason, and what remains manual review"
     ],
     "origin_gimmick_flow": [
@@ -411,7 +411,7 @@
       "public media can bypass private campaign posture or GM approval"
     ]
   },
-  "related_horizons": [
+  "related_surfaces": [
     {
       "name": "ALICE",
       "status": "Shipped native desktop workbench with build help, rules coach, and origin-first chargen handoff.",
@@ -431,7 +431,7 @@
       "title": "ALICE Origin Dossier",
       "image_source": "/docker/chummercomplete/chummer-design/products/chummer/public-guide-curated-assets/assets/horizons/alice.png",
       "image_output": "images/flagship/alice.png",
-      "alt": "ALICE origin dossier horizon art",
+      "alt": "ALICE origin dossier scene art",
       "caption": "Origin Dossier and ALICE bring a user-first lane into the stack: approved canon, grounded build help, and derivative dossier media on one governed rail."
     }
   ],

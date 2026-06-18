@@ -43,7 +43,7 @@ Table Pulse is the live pressure rail: a GM-governed action board that turns hea
 
 ### ALICE Origin Dossier
 
-![ALICE origin dossier horizon art](images/flagship/alice.png)
+![ALICE origin dossier scene art](images/flagship/alice.png)
 
 Origin Dossier and ALICE bring a user-first lane into the stack: approved canon, grounded build help, and derivative dossier media on one governed rail.
 
@@ -108,7 +108,7 @@ What the GM can trust:
 - recipient reasoning, quiet-hours, mute, and opt-out posture
 - GM allowances and gimmicks as explicit advisory context
 - mini-game prompt source, chosen response, and proposed consequence
-- public-safe release controls before newsroom or Black Ledger projection
+- public-safe release controls before any newsroom or public map projection
 - receipt trail, override reason, and what remains manual review
 
 From origin story to table call:
@@ -205,7 +205,7 @@ What the reader should understand:
 - aftermath
 - faction motion
 - opposition clocks
-- Black Ledger-compatible public fallout
+- GM-approved public fallout
 
 It does not mean:
 
@@ -244,7 +244,7 @@ Players or factions respond inside governed rails.
 Enough validated response can produce public-safe fallout.
 
 - newsroom beat
-- Black Ledger-compatible consequence
+- public-safe city consequence
 - after-action brief
 
 ## The Moment It Should Create
@@ -256,7 +256,7 @@ The effect comes from:
 - seeing live pressure become playable
 - watching a Signal Deck prompt cascade into faction consequences
 - seeing Passport identity, role path, and city pressure connect
-- watching a remote reaction mini-game end in a newsroom or Black Ledger fallout beat
+- watching a remote reaction mini-game end in a newsroom or public-safe city fallout beat
 
 What would make it feel cheap:
 
@@ -272,7 +272,7 @@ The flagship version should let a reader immediately picture the best-case loop:
 1. a run spikes heat and the GM approves a bounded pulse packet
 2. a player receives a Signal Deck card with one sharp risky choice and one safer choice
 3. the choice resolves into Passport movement, faction pressure, and a receipt trail
-4. the city later reflects that action through rumor, newsroom fallout, or Black Ledger-safe consequence
+4. the city later reflects that action through rumor, newsroom fallout, or public-safe consequence
 
 ## Promises We Should Not Break
 
@@ -293,7 +293,7 @@ Call the stack ready only when all of the following are true:
 4. Public-safe projection stays bounded by GM authority.
 5. The system still feels fast, legible, and exciting for players.
 
-## Related Horizon
+## Related Surface
 
 ### ALICE
 
@@ -305,7 +305,7 @@ Connection here: Origin Dossier creates approved canon; ALICE later uses that ca
 
 ## Where This Comes From
 
-This guide follows the Chummer6 design canon, the public-guide source set, and the verified horizon videos. Treat it as a product guide, not as a rules engine or an unbounded release promise.
+This guide follows the Chummer6 design canon and the public-guide source set. Treat it as a product guide, not as a rules engine or an unbounded release promise.
 
 - TABLE_PULSE_LIVING_WORLD_STACK_20260523.md
 - TABLE_PULSE_LIVING_WORLD_DRAMA6_BRIEF_20260523.md
