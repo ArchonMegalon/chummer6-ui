@@ -10,14 +10,14 @@
     {
       "id": "avalonia-linux-x64-installer",
       "platform": "Avalonia Desktop Linux X64 Installer",
-      "url": "/downloads/files/chummer-avalonia-linux-x64-installer.deb",
+      "url": "https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb",
       "sha256": "188d224ca56781e2876fc743b3ca002753453d582f0a8c6d6f49c4bee6600cae",
       "sizeBytes": 36864148,
       "format": "deb",
       "flavor": "installer",
       "kind": "installer",
       "head": "avalonia",
-      "platformId": "linux-x64",
+      "platformId": "linux",
       "arch": "x64",
       "fileName": "chummer-avalonia-linux-x64-installer.deb",
       "channelId": "public_stable",
@@ -26,19 +26,20 @@
       "releaseVersion": "run-20260618-142358",
       "compatibilityState": "compatible",
       "compatibilityReason": null,
-      "installAccessClass": "open_public"
+      "installAccessClass": "open_public",
+      "artifactId": "avalonia-linux-x64-installer"
     },
     {
       "id": "avalonia-win-x64-installer",
       "platform": "Avalonia Desktop Windows X64 Installer",
-      "url": "/downloads/files/chummer-avalonia-win-x64-installer.exe",
+      "url": "https://chummer.run/downloads/files/chummer-avalonia-win-x64-installer.exe",
       "sha256": "e086ef0a4c7a207af76461cc4ba5daf680842833fb1fa1d5b1486d7cb1f06707",
       "sizeBytes": 98934135,
       "format": "exe",
       "flavor": "installer",
       "kind": "installer",
       "head": "avalonia",
-      "platformId": "windows-x64",
+      "platformId": "windows",
       "arch": "x64",
       "fileName": "chummer-avalonia-win-x64-installer.exe",
       "channelId": "public_stable",
@@ -47,7 +48,8 @@
       "releaseVersion": "run-20260618-142358",
       "compatibilityState": "compatible",
       "compatibilityReason": null,
-      "installAccessClass": "open_public"
+      "installAccessClass": "open_public",
+      "artifactId": "avalonia-win-x64-installer"
     }
   ],
   "source": "registry",
@@ -84,8 +86,8 @@
     ],
     "uiLocalizationReleaseGate": {
       "status": "pass",
-      "generatedAt": "2026-06-17T17:27:12Z",
-      "defaultKeyCount": 398,
+      "generatedAt": "2026-06-18T20:04:47Z",
+      "defaultKeyCount": 403,
       "explicitFallbackRuntime": "pass",
       "signoffSmokeRunnerStatus": "pass",
       "shippingLocales": [
@@ -100,8 +102,8 @@
         {
           "locale": "en-us",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
-          "minimumOverrideCount": 398,
+          "overrideCount": 403,
+          "minimumOverrideCount": 403,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
           "legacyDataXmlPresent": true
@@ -109,7 +111,7 @@
         {
           "locale": "de-de",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
+          "overrideCount": 403,
           "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
@@ -118,7 +120,7 @@
         {
           "locale": "fr-fr",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
+          "overrideCount": 403,
           "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
@@ -127,7 +129,7 @@
         {
           "locale": "ja-jp",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
+          "overrideCount": 403,
           "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
@@ -136,7 +138,7 @@
         {
           "locale": "pt-br",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
+          "overrideCount": 403,
           "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
@@ -145,7 +147,7 @@
         {
           "locale": "zh-cn",
           "untranslatedKeyCount": 0,
-          "overrideCount": 398,
+          "overrideCount": 403,
           "minimumOverrideCount": 40,
           "missingReleaseSeedKeys": [],
           "legacyXmlPresent": true,
@@ -495,12 +497,12 @@
       "packetRef": "registry-packet:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
+      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260618-142358:avalonia:linux:linux-x64",
+      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
-      "retentionState": "current",
-      "publicationState": "published"
+      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer"
     },
     {
       "registryId": "artifact-identity:public_stable:run-20260618-142358:avalonia:windows:win-x64",
@@ -519,12 +521,12 @@
       "packetRef": "registry-packet:public_stable:run-20260618-142358:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260618-142358:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260618-142358:avalonia-win-x64-installer",
+      "retentionState": "current",
       "publicationBindingId": "binding:public_stable:run-20260618-142358:avalonia:windows:win-x64",
+      "publicationState": "published",
       "signedInShelfRef": "shelf:signed-in:public_stable:run-20260618-142358:avalonia-win-x64-installer",
       "publicShelfRef": "shelf:public:public_stable:run-20260618-142358:avalonia-win-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
-      "retentionState": "current",
-      "publicationState": "published"
+      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer"
     }
   ],
   "artifactPublicationBindings": [
@@ -549,8 +551,8 @@
       "packetRef": "registry-packet:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260618-142358:avalonia-linux-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
       "retentionState": "current",
+      "publicInstallRoute": "/downloads/install/avalonia-linux-x64-installer",
       "rationale": "public_stable keeps primary tuple avalonia:linux:linux-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     },
     {
@@ -574,8 +576,8 @@
       "packetRef": "registry-packet:public_stable:run-20260618-142358:avalonia-win-x64-installer",
       "localeRef": "registry-locale:public_stable:run-20260618-142358:avalonia-win-x64-installer",
       "retentionRef": "registry-retention:public_stable:run-20260618-142358:avalonia-win-x64-installer",
-      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
       "retentionState": "current",
+      "publicInstallRoute": "/downloads/install/avalonia-win-x64-installer",
       "rationale": "public_stable keeps primary tuple avalonia:windows:win-x64 published so signed-in and public shelves cite the same governed preview, caption, and install refs."
     }
   ],
@@ -606,10 +608,10 @@
       "releaseProofGeneratedAt": "2026-06-18T02:39:16Z",
       "releaseProofAgeSeconds": 42408,
       "releaseProofMaxAgeSeconds": 604800,
-      "uiLocalizationGeneratedAt": "2026-06-17T17:27:12Z",
-      "uiLocalizationAgeSeconds": 75532,
+      "uiLocalizationGeneratedAt": "2026-06-18T20:04:47Z",
+      "uiLocalizationAgeSeconds": 0,
       "uiLocalizationMaxAgeSeconds": 604800,
-      "summary": "Release proof age is 42408s (max 604800s) and UI localization gate age is 75532s (max 604800s)."
+      "summary": "Release proof age is 42408s (max 604800s) and UI localization gate age is 0s (max 604800s)."
     },
     "revocationFacts": {
       "status": "clear",
