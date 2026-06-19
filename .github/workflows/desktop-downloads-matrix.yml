@@ -133,7 +133,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: ArchonMegalon/chummer6-core
-          ref: fleet/core
+          ref: main
           path: c
 
       - name: Checkout run-services compatibility tree
