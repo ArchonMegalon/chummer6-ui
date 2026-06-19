@@ -683,29 +683,29 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.RulesetSpotlight, "home");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
-        RequireContains(projection.ExplainFocus, "Campaign handoff:");
+        RequireContains(projection.ExplainFocus, "Campaign next step:");
         RequireContains(projection.RuntimeHealthSummary, "runtime");
         RequireContains(projection.RuntimeHealthSummary, "runtime drift requires a rebind");
         RequireNotEmpty(projection.ReturnTarget, nameof(projection.ReturnTarget));
         RequireNotEmpty(projection.RulePosture, nameof(projection.RulePosture));
         if (projection.CompatibilityReceipts.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility receipts for the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility records for the flagship home cockpit.");
         }
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility receipt:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility record:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Edge Runner Starter is ready");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path record: Edge Runner Starter is ready");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path runtime:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path return:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path support:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab handoff:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab next step:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab tradeoff:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab progression:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build Lab coverage detail:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Rules navigator:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration receipt:");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication receipt:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Migration record:");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication record:");
         if (projection.BuildPathComparisons.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
@@ -715,6 +715,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.Summary, "Metatype B");
         RequireContains(projection.Summary, "SR6");
         RequireContains(projection.Summary, "Used, Prototype");
+        RequireNoPlayerFacingMachineryTerms(projection);
         if (projection.Watchouts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home cockpit.");
@@ -746,13 +747,38 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.ReturnTarget, "No workspace return target");
         RequireContains(projection.RulePosture, "Shadowrun 5");
         RequireContains(projection.RulePosture, ".chum5");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no grounded runtime fingerprint");
-        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path receipt: Street Sam Starter is available");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "no current runtime fingerprint");
+        RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Build path record: Street Sam Starter is available");
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
+        RequireNoPlayerFacingMachineryTerms(projection);
         if (projection.Watchouts.Count < 2)
         {
             throw new InvalidOperationException("Desktop build/explain projection should keep explicit watchouts even before the first workspace exists.");
         }
+    }
+
+    private static void RequireNoPlayerFacingMachineryTerms(DesktopHomeBuildExplainProjection projection)
+    {
+        string visible = string.Join(
+            "\n",
+            [
+                projection.Summary,
+                projection.NextSafeAction,
+                projection.ExplainFocus,
+                projection.RuntimeHealthSummary,
+                projection.ReturnTarget,
+                projection.RulePosture,
+                .. projection.CompatibilityReceipts,
+                .. projection.BuildPathComparisons,
+                .. projection.Watchouts
+            ]);
+
+        RequireDoesNotContain(visible, "receipt");
+        RequireDoesNotContain(visible, "proof");
+        RequireDoesNotContain(visible, "provider");
+        RequireDoesNotContain(visible, "grounded");
+        RequireDoesNotContain(visible, "handoff");
+        RequireDoesNotContain(visible, " lane");
     }
 
     private static void DesktopHomeSupportProjector_uses_real_support_case_truth()

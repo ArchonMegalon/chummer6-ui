@@ -55,7 +55,7 @@ public static class DesktopHomeBuildExplainProjector
             compatibilityReceipts.AddRange(BuildBuildPathReceipts(leadBuildPath));
             compatibilityReceipts.AddRange(campaignReceipts);
 
-            return new DesktopHomeBuildExplainProjection(
+            return Humanize(new DesktopHomeBuildExplainProjection(
                 RulesetId: resolvedRulesetId,
                 RulesetSpotlight: rulesetSpotlight,
                 "No workspace is pinned yet. Start with one dossier or import so Build Lab can compare grounded variants before the first living-dossier handoff.",
@@ -81,7 +81,7 @@ public static class DesktopHomeBuildExplainProjector
                 }
                 .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray());
+                .ToArray()));
         }
 
         WorkspaceListItem leadWorkspace = workspaces[0];
@@ -105,7 +105,7 @@ public static class DesktopHomeBuildExplainProjector
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-            return new DesktopHomeBuildExplainProjection(
+            return Humanize(new DesktopHomeBuildExplainProjection(
                 RulesetId: resolvedRulesetId,
                 RulesetSpotlight: rulesetSpotlight,
                 $"Continue {displayName} on {leadWorkspace.RulesetId} and inspect explain traces before you export, publish, or reopen campaign work.",
@@ -126,7 +126,7 @@ public static class DesktopHomeBuildExplainProjector
                     .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
                     .Concat(campaignWatchouts)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray());
+                    .ToArray()));
         }
 
         string buildLane = string.IsNullOrWhiteSpace(build.BuildMethod) ? leadWorkspace.Summary.BuildMethod : build.BuildMethod;
@@ -183,7 +183,7 @@ public static class DesktopHomeBuildExplainProjector
         watchouts.AddRange(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId));
         watchouts.AddRange(campaignWatchouts);
 
-        return new DesktopHomeBuildExplainProjection(
+        return Humanize(new DesktopHomeBuildExplainProjection(
             RulesetId: resolvedRulesetId,
             RulesetSpotlight: rulesetSpotlight,
             $"Build posture: {buildLane} with {priorityLadder}; contact points {build.ContactPointsUsed}/{build.ContactPoints}; special track {build.TotalSpecial}.\nRules posture: {rules.GameEdition} · {rules.Settings} · {gameplayMode}; limits {rules.MaxKarma} Karma / {rules.MaxNuyen} nuyen; banned ware {bannedWare}.",
@@ -200,7 +200,7 @@ public static class DesktopHomeBuildExplainProjector
             watchouts
                 .Where(static item => !string.IsNullOrWhiteSpace(item))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray());
+                .ToArray()));
     }
 
     private static string? ResolveRulesetId(params string?[] candidates)
@@ -523,6 +523,21 @@ public static class DesktopHomeBuildExplainProjector
 
         return $"{label} {trimmed}";
     }
+
+    private static DesktopHomeBuildExplainProjection Humanize(DesktopHomeBuildExplainProjection projection)
+        => projection with
+        {
+            RulesetSpotlight = PlayerFacingCopyHumanizer.Clean(projection.RulesetSpotlight),
+            Summary = PlayerFacingCopyHumanizer.Clean(projection.Summary),
+            NextSafeAction = PlayerFacingCopyHumanizer.Clean(projection.NextSafeAction),
+            ExplainFocus = PlayerFacingCopyHumanizer.Clean(projection.ExplainFocus),
+            RuntimeHealthSummary = PlayerFacingCopyHumanizer.Clean(projection.RuntimeHealthSummary),
+            ReturnTarget = PlayerFacingCopyHumanizer.Clean(projection.ReturnTarget),
+            RulePosture = PlayerFacingCopyHumanizer.Clean(projection.RulePosture),
+            CompatibilityReceipts = PlayerFacingCopyHumanizer.CleanLines(projection.CompatibilityReceipts),
+            BuildPathComparisons = PlayerFacingCopyHumanizer.CleanLines(projection.BuildPathComparisons),
+            Watchouts = PlayerFacingCopyHumanizer.CleanLines(projection.Watchouts)
+        };
 
     private static string BuildBannedWareSummary(IReadOnlyList<string> bannedWareGrades)
     {

@@ -188,7 +188,7 @@ public sealed class DesktopAliceWindowTests
     public void PlayerFacingCopyHumanizer_removes_provider_and_proof_language_from_visible_copy()
     {
         string cleaned = Chummer.Presentation.PlayerFacingCopyHumanizer.Clean(
-            "ALICE generated an Unmixr AI narration receipt from the approved origin canon through a media-factory lane.");
+            "ALICE generated an Unmixr AI narration receipt from the approved origin canon through a media-factory provider lane.");
 
         StringAssert.Contains(cleaned, "Alice");
         StringAssert.Contains(cleaned, "Unmixr");
@@ -197,5 +197,6 @@ public sealed class DesktopAliceWindowTests
         Assert.IsFalse(cleaned.Contains("Unmixr AI", StringComparison.Ordinal));
         Assert.IsFalse(cleaned.Contains("generated", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(cleaned.Contains("media-factory", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cleaned.Contains("provider", StringComparison.OrdinalIgnoreCase));
     }
 }
