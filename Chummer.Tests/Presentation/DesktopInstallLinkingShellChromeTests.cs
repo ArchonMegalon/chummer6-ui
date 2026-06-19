@@ -281,6 +281,30 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.EndsWith(compact, "domain.test");
     }
 
+    [TestMethod]
+    public void Report_issue_window_keeps_labels_visible_and_actions_human_facing()
+    {
+        string reportWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopReportIssueWindow.cs"));
+        string localizationSource = File.ReadAllText(FindPath("Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.expected_label\"), _bugExpectedBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.actual_label\"), _bugActualBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.repro_label\"), _bugReproStepsBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.bug.evidence_label\"), _bugEvidenceBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.summary_label\"), _feedbackSummaryBox)");
+        StringAssert.Contains(reportWindowSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        StringAssert.Contains(reportWindowSource, "DesktopShellTheme.ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
+        StringAssert.Contains(reportWindowSource, "ToolTip.SetTip(box, null);");
+        StringAssert.Contains(localizationSource, "[\"desktop.report.button.open_bug\"] = \"Open Bug Report\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.report.button.copy_bug\"] = \"Copy Bug Report\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.report.button.open_feedback\"] = \"Open Feedback\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.report.button.copy_feedback\"] = \"Copy Feedback\"");
+        Assert.IsFalse(localizationSource.Contains("Open Private Bug Draft", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("Open Private Feedback Draft", StringComparison.Ordinal));
+        Assert.IsFalse(localizationSource.Contains("Privaten Fehlerentwurf", StringComparison.Ordinal));
+    }
+
     private static string FindPath(params string[] parts)
     {
         string? current = AppContext.BaseDirectory;

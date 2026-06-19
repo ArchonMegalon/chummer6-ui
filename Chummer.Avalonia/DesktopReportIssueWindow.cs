@@ -52,7 +52,8 @@ internal sealed class DesktopReportIssueWindow : Window
         {
             Text = BuildContextBody(),
             IsVisible = false,
-            TextWrapping = TextWrapping.Wrap
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
 
         _bugTitleBox = CreateInputBox(S("desktop.report.bug.title_watermark"), S("desktop.report.bug.title_label"));
@@ -78,7 +79,8 @@ internal sealed class DesktopReportIssueWindow : Window
                             Text = S("desktop.report.heading"),
                             FontSize = 22,
                             FontWeight = FontWeight.SemiBold,
-                            TextWrapping = TextWrapping.Wrap
+                            TextWrapping = TextWrapping.Wrap,
+                            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
                         },
                         _statusText,
                         CreateSection(
@@ -171,7 +173,8 @@ internal sealed class DesktopReportIssueWindow : Window
                 {
                     Text = label,
                     FontWeight = FontWeight.SemiBold,
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#0f172a")
                 },
                 input
             }
