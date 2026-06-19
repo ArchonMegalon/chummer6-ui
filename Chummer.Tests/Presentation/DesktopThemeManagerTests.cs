@@ -334,6 +334,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "CreateAttributeValueStepper(");
         StringAssert.Contains(sectionHostSource, "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"");
         StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
+        StringAssert.Contains(sectionHostSource, "\"B\"");
+        StringAssert.Contains(sectionHostSource, "\"K\"");
+        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} base allocation\"");
+        StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} karma adjustment\"");
+        StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
         Assert.IsFalse(sectionHostSource.Contains("NumericUpDown", StringComparison.Ordinal));
     }
 

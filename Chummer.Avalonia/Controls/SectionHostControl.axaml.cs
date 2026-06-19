@@ -306,7 +306,7 @@ public partial class SectionHostControl : UserControl
         Grid grid = new()
         {
             Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
-            ColumnDefinitions = new ColumnDefinitions("*,72,72,88,118"),
+            ColumnDefinitions = new ColumnDefinitions("*,82,82,72,110"),
             ColumnSpacing = 8,
             Margin = new Thickness(0d, 0d, 0d, 1d)
         };
@@ -352,6 +352,8 @@ public partial class SectionHostControl : UserControl
 
         Control baseEditor = CreateAttributeValueStepper(
             $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
+            "B",
+            $"{row.DisplayName} base allocation",
             baseValue,
             0,
             Math.Max(0, row.PriorityMaximum),
@@ -374,6 +376,8 @@ public partial class SectionHostControl : UserControl
 
         Control karmaEditor = CreateAttributeValueStepper(
             $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
+            "K",
+            $"{row.DisplayName} karma adjustment",
             karmaValue,
             0,
             Math.Max(0, row.KarmaMaximum),
@@ -485,6 +489,8 @@ public partial class SectionHostControl : UserControl
 
     private static Grid CreateAttributeValueStepper(
         string name,
+        string label,
+        string accessibleName,
         int value,
         int minimum,
         int maximum,
@@ -499,12 +505,28 @@ public partial class SectionHostControl : UserControl
         Grid stepper = new()
         {
             Name = name,
-            ColumnDefinitions = new ColumnDefinitions("22,*,22"),
+            ColumnDefinitions = new ColumnDefinitions("16,20,*,20,20"),
             MinHeight = 26,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
+        ToolTip.SetTip(stepper, $"{accessibleName}: {minimum}-{maximum}");
+        global::Avalonia.Automation.AutomationProperties.SetName(stepper, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetHelpText(stepper, $"{accessibleName}. Use minus and plus to set a value from {minimum} to {maximum}.");
 
-        Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border);
+        TextBlock labelText = new()
+        {
+            Text = label,
+            Foreground = foreground,
+            FontSize = 11,
+            FontWeight = FontWeight.SemiBold,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center
+        };
+        ToolTip.SetTip(labelText, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetName(labelText, accessibleName);
+
+        Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border, $"Decrease {accessibleName}");
         TextBlock valueText = new()
         {
             Text = current.ToString(CultureInfo.InvariantCulture),
@@ -515,10 +537,15 @@ public partial class SectionHostControl : UserControl
             TextAlignment = TextAlignment.Center,
             MinWidth = 20
         };
-        Button increment = CreateAttributeStepperButton("+", $"{name}_Increase", enabled, foreground, surface, border);
+        ToolTip.SetTip(valueText, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");
+        Button increment = CreateAttributeStepperButton("+", $"{name}_Increase", enabled, foreground, surface, border, $"Increase {accessibleName}");
 
-        Grid.SetColumn(valueText, 1);
-        Grid.SetColumn(increment, 2);
+        Grid.SetColumn(labelText, 0);
+        Grid.SetColumn(valueText, 2);
+        Grid.SetColumn(decrement, 3);
+        Grid.SetColumn(increment, 4);
+        stepper.Children.Add(labelText);
         stepper.Children.Add(decrement);
         stepper.Children.Add(valueText);
         stepper.Children.Add(increment);
@@ -556,7 +583,8 @@ public partial class SectionHostControl : UserControl
         bool enabled,
         IBrush foreground,
         IBrush background,
-        IBrush border)
+        IBrush border,
+        string accessibleName)
     {
         Button button = new()
         {
@@ -573,6 +601,9 @@ public partial class SectionHostControl : UserControl
             BorderThickness = new Thickness(1),
             IsEnabled = enabled
         };
+        ToolTip.SetTip(button, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetName(button, accessibleName);
+        global::Avalonia.Automation.AutomationProperties.SetHelpText(button, accessibleName);
         return button;
     }
 

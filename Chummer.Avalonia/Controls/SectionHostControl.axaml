@@ -150,7 +150,7 @@
                 Padding="4,3">
           <Grid RowDefinitions="Auto,*" RowSpacing="4">
             <Grid x:Name="AttributeParityHeaderGrid"
-                  ColumnDefinitions="*,72,72,88,118"
+                  ColumnDefinitions="*,82,82,72,110"
                   ColumnSpacing="8">
               <TextBlock Grid.Column="0" Text="Attribute" Classes="shell-section-title" />
               <TextBlock Grid.Column="1" Text="Base" Classes="shell-caption" HorizontalAlignment="Right" />
