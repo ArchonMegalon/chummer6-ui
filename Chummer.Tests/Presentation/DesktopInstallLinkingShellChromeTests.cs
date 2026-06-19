@@ -175,7 +175,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
-    public void Install_link_window_contains_first_run_alice_visibility_choice()
+    public void Install_link_window_contains_first_run_optional_tools_visibility_choice()
     {
         string installWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
         string preferenceSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.PreferenceState.cs"));
@@ -184,16 +184,16 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "InstallLinkGuidedToolsVisibleOption");
         StringAssert.Contains(installWindowSource, "InstallLinkGuidedToolsHiddenOption");
         StringAssert.Contains(installWindowSource, "InstallLinkFeatureVisibility");
-        StringAssert.Contains(installWindowSource, "CreateAlicePreferencePanel");
-        StringAssert.Contains(installWindowSource, "ApplyAliceFeaturePreference");
+        StringAssert.Contains(installWindowSource, "CreateGuidedToolsPreferencePanel");
+        StringAssert.Contains(installWindowSource, "ApplyGuidedFeaturePreference");
         StringAssert.Contains(installWindowSource, "DisableAiFeatures");
         StringAssert.Contains(installWindowSource, "DesktopPreferenceRuntime.SaveState");
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Show Alice, dossiers, and guided help");
-        StringAssert.Contains(localizationSource, "Hide Alice, dossiers, and guided help");
-        StringAssert.Contains(localizationSource, "desktop.install_link.status.alice_hidden");
+        StringAssert.Contains(localizationSource, "Show optional tools");
+        StringAssert.Contains(localizationSource, "Keep Chummer quiet");
+        StringAssert.Contains(localizationSource, "desktop.install_link.status.guided_tools_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
     }
 

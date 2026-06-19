@@ -38,7 +38,7 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
                     new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
                     new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox"),
-                    new DesktopDialogField("globalDisableAiFeatures", "Hide AI features", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalDisableAiFeatures", "Hide optional tools", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -117,22 +117,22 @@ public class DialogCoordinatorTests
             DialogFactory: new DesktopDialogFactory(),
             Publish: state => published = state,
             GetShellBootstrapAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before shell bootstrap."),
-            GetRuntimeInspectorProfileAsync: static (_, _, _) => throw new InvalidOperationException("AI gate should block before runtime inspection."),
-            GetMasterIndexAsync: static _ => throw new InvalidOperationException("AI gate should block before master index."),
-            GetTranslatorLanguagesAsync: static _ => throw new InvalidOperationException("AI gate should block before translator languages."),
-            SaveAsync: static _ => throw new InvalidOperationException("AI gate should block before save."),
-            DownloadAsync: static _ => throw new InvalidOperationException("AI gate should block before download."),
-            PrintAsync: static _ => throw new InvalidOperationException("AI gate should block before print."),
-            ImportAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before import."),
-            LoadAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before load."),
-            CreateResetState: static (_, _) => throw new InvalidOperationException("AI gate should block before reset."),
-            CloseAllAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before close all."),
-            CloseWorkspaceAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before close workspace."));
+            GetRuntimeInspectorProfileAsync: static (_, _, _) => throw new InvalidOperationException("Optional-tool gate should block before runtime inspection."),
+            GetMasterIndexAsync: static _ => throw new InvalidOperationException("Optional-tool gate should block before master index."),
+            GetTranslatorLanguagesAsync: static _ => throw new InvalidOperationException("Optional-tool gate should block before translator languages."),
+            SaveAsync: static _ => throw new InvalidOperationException("Optional-tool gate should block before save."),
+            DownloadAsync: static _ => throw new InvalidOperationException("Optional-tool gate should block before download."),
+            PrintAsync: static _ => throw new InvalidOperationException("Optional-tool gate should block before print."),
+            ImportAsync: static (_, _) => throw new InvalidOperationException("Optional-tool gate should block before import."),
+            LoadAsync: static (_, _) => throw new InvalidOperationException("Optional-tool gate should block before load."),
+            CreateResetState: static (_, _) => throw new InvalidOperationException("Optional-tool gate should block before reset."),
+            CloseAllAsync: static (_, _) => throw new InvalidOperationException("Optional-tool gate should block before close all."),
+            CloseWorkspaceAsync: static (_, _) => throw new InvalidOperationException("Optional-tool gate should block before close workspace."));
 
         await dispatcher.DispatchAsync(DesktopAliceAssistant.CommandId, context, CancellationToken.None);
 
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "AI features are hidden");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Optional tools are hidden");
     }
 
     [TestMethod]

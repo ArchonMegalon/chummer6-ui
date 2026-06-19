@@ -16,7 +16,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             {
                 ActiveDialog = null,
                 Error = null,
-                Notice = "AI features are hidden in Global Settings."
+                Notice = "Optional tools are hidden in Settings."
             });
             return;
         }

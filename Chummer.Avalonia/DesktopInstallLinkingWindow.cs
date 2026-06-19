@@ -32,7 +32,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly TextBlock _claimCodeLabelText;
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
-    private readonly TextBlock _alicePreferenceStatusText;
+    private readonly TextBlock _guidedPreferenceStatusText;
     private readonly RadioButton _guidedToolsRadioButton;
     private readonly RadioButton _quietToolsRadioButton;
     private readonly TextBlock _moreToolsHeading;
@@ -194,9 +194,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton
             }
         };
-        _alicePreferenceStatusText = new TextBlock
+        _guidedPreferenceStatusText = new TextBlock
         {
-            Text = BuildAlicePreferenceStatus(_preferences, _language),
+            Text = BuildGuidedToolsPreferenceStatus(_preferences, _language),
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
             TextWrapping = TextWrapping.Wrap
         };
@@ -220,7 +220,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             if (_guidedToolsRadioButton.IsChecked == true)
             {
-                ApplyAliceFeaturePreference(disableAiFeatures: false);
+                ApplyGuidedFeaturePreference(disableAiFeatures: false);
             }
         };
         _quietToolsRadioButton = new RadioButton
@@ -243,7 +243,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             if (_quietToolsRadioButton.IsChecked == true)
             {
-                ApplyAliceFeaturePreference(disableAiFeatures: true);
+                ApplyGuidedFeaturePreference(disableAiFeatures: true);
             }
         };
         _moreToolsHeading = new TextBlock
@@ -590,7 +590,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 },
                 _linkStateText,
                 _statusText,
-                CreateAlicePreferencePanel(),
+                CreateGuidedToolsPreferencePanel(),
                 DesktopShellTheme.CreateUtilityPanel(
                     new StackPanel
                     {
@@ -617,7 +617,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         };
     }
 
-    private Control CreateAlicePreferencePanel()
+    private Control CreateGuidedToolsPreferencePanel()
         => DesktopShellTheme.CreateUtilityPanel(
             new StackPanel
             {
@@ -645,7 +645,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                             _quietToolsRadioButton
                         }
                     },
-                    _alicePreferenceStatusText
+                    _guidedPreferenceStatusText
                 }
             });
 
@@ -960,14 +960,14 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
-    private void ApplyAliceFeaturePreference(bool disableAiFeatures)
+    private void ApplyGuidedFeaturePreference(bool disableAiFeatures)
     {
         DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
             _preferences with { DisableAiFeatures = disableAiFeatures });
         _preferences = nextPreferences;
         DesktopPreferenceRuntime.SaveState(_state.HeadId, nextPreferences);
         DesktopPreferenceStateRuntime.SetCurrent(nextPreferences);
-        _alicePreferenceStatusText.Text = BuildAlicePreferenceStatus(nextPreferences, _language);
+        _guidedPreferenceStatusText.Text = BuildGuidedToolsPreferenceStatus(nextPreferences, _language);
         if (_guidedToolsRadioButton.IsChecked != !disableAiFeatures)
         {
             _guidedToolsRadioButton.IsChecked = !disableAiFeatures;
@@ -985,8 +985,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         SetStatus(DesktopLocalizationCatalog.GetRequiredString(
             disableAiFeatures
-                ? "desktop.install_link.status.alice_hidden"
-                : "desktop.install_link.status.alice_visible",
+                ? "desktop.install_link.status.guided_tools_hidden"
+                : "desktop.install_link.status.guided_tools_visible",
             _language));
     }
 
@@ -1106,7 +1106,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         }
     }
 
-    internal static string BuildAlicePreferenceStatus(DesktopPreferenceState preferences, string language)
+    internal static string BuildGuidedToolsPreferenceStatus(DesktopPreferenceState preferences, string language)
     {
         ArgumentNullException.ThrowIfNull(preferences);
 
