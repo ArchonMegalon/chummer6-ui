@@ -5,66 +5,118 @@ env:
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    # GitHub schedules run in UTC. Two candidates cover Europe/Vienna DST;
+    # the release-window job below allows only the one that is 08:00 local.
+    - cron: '0 6 * * *'
+    - cron: '0 7 * * *'
   workflow_dispatch:
     inputs:
       deploy_portal_downloads:
-        description: "Compatibility input only. Desktop builds now auto-deploy when a downloads target is configured."
+        description: "Deploy downloads only when force_publish_downloads is also true."
         required: false
         default: true
         type: boolean
       publish_github_release:
-        description: "Compatibility input only. Desktop builds now auto-sync the rolling GitHub release when the workflow runs."
+        description: "Publish rolling GitHub release only when force_publish_downloads is also true."
         required: false
         default: true
         type: boolean
+      force_publish_downloads:
+        description: "Explicitly publish outside the daily 08:00 Europe/Vienna release window."
+        required: false
+        default: false
+        type: boolean
+      build_platform:
+        description: "Manual proof target. Forced publishes always build the public Windows+Linux lanes."
+        required: false
+        default: linux-x64
+        type: choice
+        options:
+          - linux-x64
+          - win-x64
+          - public-windows-linux
       require_external_deploy:
         description: "Fail if no portal directory, object-storage, or HTTP promotion target is configured."
         required: false
         default: false
         type: boolean
-  push:
-    branches:
-      - main
-      - Docker
-    paths:
-      - '.github/workflows/desktop-downloads-matrix.yml'
-      - 'Chummer.Avalonia/**'
-      - 'Chummer.Application/**'
-      - 'Chummer.Blazor.Desktop/**'
-      - 'Chummer.Blazor/**'
-      - 'Chummer.Core/**'
-      - 'Chummer.Rulesets.Sr5/**'
-      - 'Chummer.Desktop.Runtime/**'
-      - 'Chummer.Desktop.Installer/**'
-      - 'Chummer.Infrastructure/**'
-      - 'Chummer.Portal/**'
-      - 'Chummer.Presentation/**'
-      - 'Directory.Build.props'
-      - 'global.json'
-      - 'scripts/generate-releases-manifest.sh'
-      - 'scripts/resolve-desktop-release-context.sh'
-      - 'scripts/prepare-macos-signing-keychain.sh'
-      - 'scripts/sign-windows-artifacts.ps1'
-      - 'scripts/sync-github-release-assets.py'
-      - 'scripts/build-desktop-installer.sh'
-      - 'scripts/run-desktop-startup-smoke.sh'
-      - 'scripts/publish-download-bundle.sh'
-      - 'scripts/publish-download-bundle-http.sh'
-      - 'scripts/publish-download-bundle-s3.sh'
-      - 'scripts/verify-releases-manifest.sh'
-      - 'scripts/verify-desktop-external-deploy-readiness.py'
-      - 'scripts/validate-amend-manifests.sh'
-      - 'scripts/ai/milestones/b14-flagship-ui-release-gate.sh'
-      - 'scripts/ai/milestones/b15-localization-release-gate.sh'
-      - 'Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs'
 
 permissions:
   contents: write
 
 jobs:
+  release-window:
+    name: Daily Release Window
+    runs-on: ubuntu-latest
+    outputs:
+      publish_allowed: ${{ steps.window.outputs.publish_allowed }}
+      reason: ${{ steps.window.outputs.reason }}
+      build_matrix: ${{ steps.window.outputs.build_matrix }}
+    steps:
+      - id: window
+        shell: bash
+        run: |
+          set -euo pipefail
+          publish_allowed=false
+          reason="manual build only"
+
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            vienna_hour="$(TZ=Europe/Vienna date +%H)"
+            vienna_stamp="$(TZ=Europe/Vienna date +%Y-%m-%dT%H:%M:%S%z)"
+            if [[ "$vienna_hour" == "08" ]]; then
+              publish_allowed=true
+              reason="scheduled 08:00 Europe/Vienna window ($vienna_stamp)"
+            else
+              reason="scheduled outside 08:00 Europe/Vienna window ($vienna_stamp)"
+            fi
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.force_publish_downloads }}" == "true" ]]; then
+            publish_allowed=true
+            reason="manual force_publish_downloads override"
+          fi
+
+          echo "publish_allowed=$publish_allowed" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "$reason"
+          python3 - "$GITHUB_OUTPUT" "${{ github.event_name }}" "${{ inputs.build_platform || 'public-windows-linux' }}" "${{ inputs.force_publish_downloads || 'false' }}" <<'PY'
+          import json
+          import sys
+
+          output_path, event_name, requested_platform, force_publish = sys.argv[1:5]
+          win_x64 = {
+              "app": "avalonia",
+              "project": "Chummer.Avalonia/Chummer.Avalonia.csproj",
+              "os": "windows-2025-vs2026",
+              "rid": "win-x64",
+              "installer_ext": "exe",
+              "launch_target": "Chummer.Avalonia.exe",
+              "tolerate_failure": False,
+          }
+          linux_x64 = {
+              "app": "avalonia",
+              "project": "Chummer.Avalonia/Chummer.Avalonia.csproj",
+              "os": "ubuntu-latest",
+              "rid": "linux-x64",
+              "installer_ext": "deb",
+              "launch_target": "Chummer.Avalonia",
+              "tolerate_failure": False,
+          }
+
+          if event_name == "schedule" or force_publish.lower() == "true" or requested_platform == "public-windows-linux":
+              include = [win_x64, linux_x64]
+          elif requested_platform == "win-x64":
+              include = [win_x64]
+          else:
+              include = [linux_x64]
+
+          matrix = json.dumps({"include": include}, separators=(",", ":"))
+          with open(output_path, "a", encoding="utf-8") as fh:
+              fh.write(f"build_matrix={matrix}\n")
+          PY
+
   build-desktop:
     name: Build ${{ matrix.app }} ${{ matrix.rid }}
+    needs: release-window
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.release-window.outputs.publish_allowed == 'true' }}
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.tolerate_failure }}
     defaults:
@@ -80,43 +132,7 @@ jobs:
       CHUMMER_LOCAL_MEDIA_CONTRACTS_ASSEMBLY: ${{ github.workspace }}/m/src/Chummer.Media.Contracts/bin/Release/net10.0/Chummer.Media.Contracts.dll
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: windows-2025-vs2026
-            rid: win-x64
-            installer_ext: exe
-            launch_target: Chummer.Avalonia.exe
-            tolerate_failure: false
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: windows-2025-vs2026
-            rid: win-arm64
-            installer_ext: exe
-            launch_target: Chummer.Avalonia.exe
-            tolerate_failure: true
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: ubuntu-latest
-            rid: linux-x64
-            installer_ext: deb
-            launch_target: Chummer.Avalonia
-            tolerate_failure: false
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: ubuntu-latest
-            rid: linux-arm64
-            installer_ext: deb
-            launch_target: Chummer.Avalonia
-            tolerate_failure: true
-          - app: avalonia
-            project: Chummer.Avalonia/Chummer.Avalonia.csproj
-            os: macos-latest
-            rid: osx-arm64
-            installer_ext: dmg
-            launch_target: Chummer.Avalonia
-            tolerate_failure: true
+      matrix: ${{ fromJSON(needs.release-window.outputs.build_matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -610,8 +626,8 @@ jobs:
 
   publish-github-release:
     name: Publish Rolling GitHub Release
-    needs: generate-manifest
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: [generate-manifest, release-window]
+    if: ${{ needs.release-window.outputs.publish_allowed == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)) }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_GITHUB_RELEASE_REPO: ${{ vars.CHUMMER_GITHUB_RELEASE_REPO }}
@@ -665,8 +681,8 @@ jobs:
 
   audit-external-deploy-readiness:
     name: Audit External Deploy Readiness
-    needs: generate-manifest
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    needs: [generate-manifest, release-window]
+    if: ${{ needs.release-window.outputs.publish_allowed == 'true' }}
     runs-on: ubuntu-latest
     env:
       REQUIRE_EXTERNAL_DEPLOY: ${{ github.event_name == 'workflow_dispatch' && inputs.require_external_deploy }}
@@ -724,8 +740,8 @@ jobs:
 
   deploy-downloads:
     name: Deploy Downloads Bundle
-    needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' }}
+    needs: [generate-manifest, release-window]
+    if: ${{ needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR != '' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)) }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_DEPLOY_DIR }}
@@ -795,8 +811,8 @@ jobs:
 
   deploy-downloads-http:
     name: Deploy Downloads Bundle (HTTP Promote)
-    needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_RELEASE_UPLOAD_URL != '' }}
+    needs: [generate-manifest, release-window]
+    if: ${{ needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main' && vars.CHUMMER_RELEASE_UPLOAD_URL != '' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)) }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_RELEASE_UPLOAD_URL: ${{ vars.CHUMMER_RELEASE_UPLOAD_URL }}
@@ -850,8 +866,8 @@ jobs:
 
   deploy-downloads-object-storage:
     name: Deploy Downloads Bundle (Object Storage)
-    needs: generate-manifest
-    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' }}
+    needs: [generate-manifest, release-window]
+    if: ${{ needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main' && vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI != '' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)) }}
     runs-on: ubuntu-latest
     env:
       CHUMMER_PORTAL_DOWNLOADS_S3_URI: ${{ vars.CHUMMER_PORTAL_DOWNLOADS_S3_URI }}

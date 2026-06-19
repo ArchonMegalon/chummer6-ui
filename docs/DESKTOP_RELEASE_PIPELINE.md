@@ -29,7 +29,9 @@ It does not own promoted release-channel truth.
 5. `chummer6-hub-registry` materializes `RELEASE_CHANNEL.generated.json` and the compatibility `releases.json`.
 6. `chummer6-hub` serves public downloads by consuming the registry projection.
 
-When a downloads deploy target is configured, the successful mainline `Desktop Downloads Matrix` build is responsible for replacing the live `chummer.run` shelf automatically. The public downloads shelf is latest-only: a green build must publish the newest bundle without a second manual release pass.
+When a downloads deploy target is configured, the `Desktop Downloads Matrix` workflow publishes the live `chummer.run` shelf once per day during the 08:00 Europe/Vienna release window. Pushes do not publish downloads. Manual workflow runs are build/proof runs by default; they publish only when `force_publish_downloads` is explicitly enabled.
+
+Local proof work should build only the surface and platform needed for the change. A desktop UI fix should use targeted unit/UI tests and, when packaging is needed, the affected public platform only. A full Windows+Linux release package is reserved for the scheduled release window or an explicit operator override.
 
 For the public shelf, Windows `win-x64` and Linux `linux-x64` are the rolling-release scope. Mainline builds resolve to `preview` automatically for that scope, and `public_stable` remains an explicit promotion step. macOS remains buildable and publishable as a bounded artifact lane, but it does not get to hold back the public Windows/Linux shelf when the current public promotion policy is Windows/Linux-only.
 

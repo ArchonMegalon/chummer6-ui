@@ -102,9 +102,9 @@ Local-preview note:
 
 Workflow path:
 1. Push the release-ready source to `main` or run workflow `Desktop Downloads Matrix` from `main`.
-2. The same workflow now also owns the scheduled nightly publication path; there is no separate authoritative nightly deploy workflow anymore.
-3. If `CHUMMER_RELEASE_UPLOAD_URL` is configured, deploy job `deploy-downloads-http` runs automatically after bundle generation.
-4. Job uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
+2. Pushes do not publish the downloads shelf. The workflow owns the scheduled nightly publication path and only publishes during the 08:00 Europe/Vienna release window.
+3. Manual workflow runs are build/proof runs by default. They publish only when `force_publish_downloads` is explicitly enabled.
+4. If `CHUMMER_RELEASE_UPLOAD_URL` is configured and the release window allows publication, deploy job `deploy-downloads-http` uploads the finished desktop bundle with `scripts/publish-download-bundle-http.sh`.
 5. Job verifies the live `RELEASE_CHANNEL.generated.json` response from `chummer.run`.
 
 Manual path:
@@ -112,16 +112,18 @@ Manual path:
 2. `RUNBOOK_MODE=downloads-verify DOWNLOADS_VERIFY_LINKS=1 DOWNLOADS_VERIFY_TARGET=<portalBaseOrManifestUrl> bash scripts/runbook.sh`
 3. Local host shortcut for the newest staged nightly:
 `RUNBOOK_MODE=publish-latest-nightly bash scripts/runbook.sh`
+This command is guarded by the same daily cadence. It exits without publishing before 08:00 Europe/Vienna or when the downloads shelf was already published today. Use `CHUMMER_FORCE_NIGHTLY_PUBLISH=1` only for an explicit emergency/operator override.
 
 Release-build handoff expectation:
 1. If a staged latest-build bundle verifies but still lists `missingRequiredPlatforms` for the public Windows/Linux promotion scope, do not promote it to `public_stable`.
 2. Materialize the release-build handoff and finish the missing platform smoke/signing/upload work first.
 
 Operational rule:
-1. The public `chummer.run` shelf is latest-only. After a successful build with a configured live upload target, the new bundle must be published automatically; leaving `chummer.run` on an older build is a release-pipeline failure.
-2. Mainline rolling release scope is Windows `win-x64` and Linux `linux-x64`. macOS may still build and publish bounded artifacts, but it must not block the public Windows/Linux shelf from advancing.
-3. `preview` is the rolling release lane for mainline Windows/Linux builds. `public_stable` remains explicit promotion only.
-4. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
+1. The public `chummer.run` shelf is a rolling daily shelf. It should advance once per day in the morning release window after the required proof passes, not after every local build.
+2. Build only what the proof needs. Local work should use targeted tests and the affected platform; the full public Windows `win-x64` plus Linux `linux-x64` package set is for scheduled release proof or explicit override.
+3. Mainline rolling release scope is Windows `win-x64` and Linux `linux-x64`. macOS may still build and publish bounded artifacts, but it must not block the public Windows/Linux shelf from advancing.
+4. `preview` is the rolling release lane for mainline Windows/Linux builds. `public_stable` remains explicit promotion only.
+5. Public channels are proof-backed, not best-effort. If the resolved channel is `release_candidate` or `public_stable`, the workflow must either:
 emit Windows signing and macOS signing/notarization receipts, or
 run with `CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE=true` so the public-promotion evidence records `unsigned_public_release` explicitly.
 
