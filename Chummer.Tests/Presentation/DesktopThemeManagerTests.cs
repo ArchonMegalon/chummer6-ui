@@ -409,6 +409,39 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void ComboBoxes_and_textboxes_keep_readable_non_hover_colors_in_kde_dark_mode()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
+        string shellTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
+        string classicPortSurface = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
+
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSelectionInsetBrush}\" />");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellInputBackgroundBrush}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellInputForegroundBrush}\" />");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
+        StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#111111\");");
+        StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
+
+        Assert.IsFalse(appTheme.Contains(
+            "<Style Selector=\"ComboBoxItem:selected TextBlock\">\n      <Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellSelectionForegroundBrush}\" />",
+            StringComparison.Ordinal));
+        Assert.IsFalse(appTheme.Contains(
+            "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">\n      <Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellSelectionForegroundBrush}\" />",
+            StringComparison.Ordinal));
+        Assert.IsFalse(appTheme.Contains(
+            "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">\n      <Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellSelectionForegroundBrush}\" />",
+            StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Selection_add_surfaces_do_not_label_readonly_context_as_navigation()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

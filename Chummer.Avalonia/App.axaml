@@ -194,6 +194,8 @@
     </Style>
     <Style Selector="TextBox:focus">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellFocusRingBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
     </Style>
     <Style Selector="Button">
       <Setter Property="Background" Value="{DynamicResource ChummerShellChromeBrush}" />
@@ -412,8 +414,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected">
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionInsetBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -425,19 +427,19 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock.shell-caption">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:pointerover TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock.shell-option-label">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:selected TextBlock.shell-option-meta">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:pointerover TextBlock.shell-option-label">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -448,22 +450,30 @@
     <Style Selector="TextBox">
       <Setter Property="MinHeight" Value="30" />
       <Setter Property="Padding" Value="8,4" />
-      <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CaretBrush" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
       <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="TextBox:pointerover">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
     </Style>
     <Style Selector="TextBox:focus">
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+      <Setter Property="Background" Value="{DynamicResource ChummerShellInputBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellInputForegroundBrush}" />
     </Style>
     <Style Selector="TextBox:disabled">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="Background" Value="{DynamicResource ChummerShellPanelOverlayBrush}" />
+    </Style>
+    <Style Selector="TextBox /template/ TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
     </Style>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />

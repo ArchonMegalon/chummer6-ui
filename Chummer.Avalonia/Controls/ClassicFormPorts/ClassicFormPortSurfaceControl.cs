@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Chummer.Avalonia;
 
 namespace Chummer.Avalonia.Controls;
 
@@ -132,6 +133,7 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
             return;
         }
 
+        DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);
         string[] materialized = labels.Where(static label => !string.IsNullOrWhiteSpace(label)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         comboBox.ItemsSource = materialized.Length == 0 ? [emptyMessage] : materialized;
         comboBox.SelectedIndex = 0;
