@@ -64,9 +64,6 @@ public static class DesktopInstallLinkingRuntime
     private const string ApiBaseUrlEnvironmentVariable = "CHUMMER_API_BASE_URL";
     private const string ApiKeyEnvironmentVariable = "CHUMMER_API_KEY";
     private const string WebBaseUrlEnvironmentVariable = "CHUMMER_WEB_BASE_URL";
-    private const string PublicWebBaseUrlEnvironmentVariable = "CHUMMER_PUBLIC_WEB_BASE_URL";
-    private const string AllowInternalPublicPortalHostsEnvironmentVariable = "CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS";
-    private const string DefaultPublicWebBaseUrl = "https://chummer.run/";
     private const string ClaimCodeEnvironmentVariable = "CHUMMER_INSTALL_CLAIM_CODE";
     private const string InstallLinkCallbackEnvironmentVariable = "CHUMMER_INSTALL_LINK_CALLBACK_URI";
     private const string InstallLinkHeadlessTimeoutSecondsEnvironmentVariable = "CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS";
@@ -91,13 +88,6 @@ public static class DesktopInstallLinkingRuntime
         PropertyNameCaseInsensitive = true,
         WriteIndented = true
     };
-
-    private static readonly string[] UnsafePublicPortalHostTokens =
-    [
-        "chummer-api",
-        "chummer-web",
-        "host.docker.internal"
-    ];
 
     public static async Task<DesktopInstallLinkingStartupContext> InitializeForStartupAsync(
         string headId,
@@ -223,10 +213,18 @@ public static class DesktopInstallLinkingRuntime
 
         if (ShouldOpenHeadlessInstallLinkBrowser())
         {
-            bool opened = TryOpenRelativePortal(relativePath);
+            bool opened = TryOpenClaimPortalForInstall(state, out string dispatchedUri, out string? failureReason);
+            if (!string.Equals(dispatchedUri, absoluteUri, StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(dispatchedUri))
+            {
+                await output.WriteLineAsync($"Browser URL: {dispatchedUri}").ConfigureAwait(false);
+            }
+
             await output.WriteLineAsync(opened
                 ? "Browser handoff requested; waiting for the local callback."
-                : "Browser handoff could not be opened automatically; use the URL above.")
+                : string.IsNullOrWhiteSpace(failureReason)
+                    ? "Browser handoff could not be opened automatically; use the URL above."
+                    : $"Browser handoff could not be opened automatically: {failureReason}. Use the URL above.")
                 .ConfigureAwait(false);
         }
         else
@@ -392,6 +390,9 @@ public static class DesktopInstallLinkingRuntime
         Uri uri = ResolvePublicWebAddress();
         return new Uri(uri, relativePath.Trim()).ToString();
     }
+
+    public static Uri ResolvePublicPortalBaseAddress()
+        => ResolvePublicWebAddress();
 
     public static string BuildClaimPortalAbsoluteUriForInstall(DesktopInstallLinkingState state)
     {
@@ -1755,129 +1756,11 @@ public static class DesktopInstallLinkingRuntime
             return uri;
         }
 
-        return new Uri(DefaultPublicWebBaseUrl, UriKind.Absolute);
+        return ResolvePublicPortalBaseAddress();
     }
 
     private static Uri ResolvePublicWebAddress()
-    {
-        Uri? uri;
-        if (TryResolvePublicPortalAddress(PublicWebBaseUrlEnvironmentVariable, out uri))
-        {
-            return uri!;
-        }
-
-        if (TryResolvePublicPortalAddress(WebBaseUrlEnvironmentVariable, out uri))
-        {
-            return uri!;
-        }
-
-        return new Uri(DefaultPublicWebBaseUrl, UriKind.Absolute);
-    }
-
-    private static bool TryResolvePublicPortalAddress(string environmentVariable, out Uri? uri)
-    {
-        uri = null;
-        string? configured = Environment.GetEnvironmentVariable(environmentVariable);
-        if (string.IsNullOrWhiteSpace(configured)
-            || !Uri.TryCreate(configured, UriKind.Absolute, out Uri? parsed)
-            || !IsSafePublicPortalAddress(
-                parsed,
-                allowInternalHosts: IsInternalPublicPortalHostAllowed()))
-        {
-            return false;
-        }
-
-        uri = parsed;
-        return true;
-    }
-
-    private static bool IsSafePublicPortalAddress(Uri uri, bool allowInternalHosts = false)
-    {
-        if (!uri.IsAbsoluteUri)
-        {
-            return false;
-        }
-
-        if (!string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        string host = uri.Host.Trim();
-        if (string.IsNullOrWhiteSpace(host))
-        {
-            return false;
-        }
-
-        if (uri.IsLoopback
-            || string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(host, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(host, "::1", StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        return allowInternalHosts
-            || !IsInternalPortalHost(host);
-    }
-
-    private static bool IsInternalPortalHost(string host)
-    {
-        string normalizedHost = host.Trim().ToLowerInvariant().TrimEnd('.');
-        if (string.IsNullOrWhiteSpace(normalizedHost))
-        {
-            return true;
-        }
-
-        if (string.Equals(normalizedHost, "localhost", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalizedHost, "127.0.0.1", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalizedHost, "::1", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (IPAddress.TryParse(normalizedHost, out IPAddress? address))
-        {
-            return !IPAddress.IsLoopback(address);
-        }
-
-        return IsInternalPortalHostPattern(normalizedHost, UnsafePublicPortalHostTokens);
-    }
-
-    private static bool IsInternalPublicPortalHostAllowed()
-    {
-        string? rawValue = Environment.GetEnvironmentVariable(AllowInternalPublicPortalHostsEnvironmentVariable);
-        return string.Equals(rawValue, "1", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(rawValue, "true", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(rawValue, "yes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(rawValue, "on", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsInternalPortalHostPattern(string normalizedHost, string[] tokens)
-    {
-        foreach (string token in tokens)
-        {
-            if (string.Equals(normalizedHost, token, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            if (normalizedHost.StartsWith($"{token}.", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.EndsWith($".{token}", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.StartsWith($"{token}-", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.EndsWith($"-{token}", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.Contains($".{token}.", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.Contains($".{token}-", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.Contains($"-{token}.", StringComparison.OrdinalIgnoreCase)
-                || normalizedHost.Contains($"-{token}-", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+        => DesktopPublicPortalRuntime.ResolvePublicPortalBaseAddress();
 
     private static bool TryOpenPublicPortal(string relativePath)
     {

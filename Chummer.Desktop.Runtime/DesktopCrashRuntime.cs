@@ -505,6 +505,12 @@ public static class DesktopCrashRuntime
                 return false;
             }
 
+            if (isUrl && failures.Count > 0)
+            {
+                failureReason = string.Join(" ", failures.Where(static failure => !string.IsNullOrWhiteSpace(failure)));
+                return false;
+            }
+
             if (TryStartDetached(new ProcessStartInfo
             {
                 FileName = path,
@@ -861,7 +867,7 @@ public static class DesktopCrashRuntime
             return uri;
         }
 
-        return new Uri("https://chummer.run/", UriKind.Absolute);
+        return DesktopPublicPortalRuntime.ResolvePublicPortalBaseAddress();
     }
 
     private sealed record DesktopCrashPendingMarker(

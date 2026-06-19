@@ -66,7 +66,7 @@ public static class DesktopUpdateRuntime
     private const string LegacyManifestEnvironmentVariable = "CHUMMER_PORTAL_DOWNLOADS_VERIFY_URL";
     private const string UpdateRootDirectoryName = "desktop-update";
     private const string UpdateProcessPathOverrideEnvironmentVariable = "CHUMMER_DESKTOP_UPDATE_PROCESS_PATH_OVERRIDE";
-    private const string DefaultPublicManifestLocation = "https://chummer.run/downloads/RELEASE_CHANNEL.generated.json";
+    private const string DefaultPublicManifestRelativePath = "/downloads/RELEASE_CHANNEL.generated.json";
     private const int ManifestLoadRetryCount = 3;
     private const int ArtifactDownloadRetryCount = 3;
     private const int StartupManifestBackoffMinutes = 2;
@@ -1056,6 +1056,9 @@ public static class DesktopUpdateRuntime
         return new Uri(expandedPath);
     }
 
+    private static string ResolveDefaultPublicManifestLocation()
+        => DesktopPublicPortalRuntime.BuildPublicPortalAbsoluteUri(DefaultPublicManifestRelativePath);
+
     private static bool TryCompareReleaseVersions(string installedVersion, string manifestVersion, out int comparison)
     {
         comparison = 0;
@@ -1849,7 +1852,7 @@ public static class DesktopUpdateRuntime
                 DesktopReleaseMetadata releaseMetadata = DesktopReleaseMetadata.Load("desktop");
                 if (!string.Equals(releaseMetadata.ChannelId, "local", StringComparison.OrdinalIgnoreCase))
                 {
-                    manifestLocation = DefaultPublicManifestLocation;
+                    manifestLocation = ResolveDefaultPublicManifestLocation();
                 }
             }
 

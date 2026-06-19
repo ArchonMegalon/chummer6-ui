@@ -994,6 +994,23 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public void Linux_deb_installer_path_does_not_use_desktop_mime_handoff()
+    {
+        string repoRoot = DesktopRepoRootLocator.ResolveChummerPresentationRepoRootOrFallback(
+            AppContext.BaseDirectory,
+            Directory.GetCurrentDirectory());
+        string runtime = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Desktop.Runtime", "DesktopUpdateRuntime.cs"));
+
+        Assert.Contains("InstallLinuxDebianPackage(installerPath)", runtime, StringComparison.Ordinal);
+        Assert.Contains("ResolveLinuxDebInstallerCommand", runtime, StringComparison.Ordinal);
+        Assert.Contains("dpkg", runtime, StringComparison.Ordinal);
+        Assert.Contains("pkexec", runtime, StringComparison.Ordinal);
+        Assert.DoesNotContain("gio", runtime, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("xdg-open", runtime, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("application/vnd.debian.binary-package", runtime, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
     public async Task TryHandleSpecialModeAsync_installer_launch_failure_records_structured_failure_reason()
     {
         string tempRoot = Path.Combine(Path.GetTempPath(), $"desktop-update-installer-failure-{Guid.NewGuid():N}");
@@ -1076,6 +1093,23 @@ public sealed class DesktopUpdateRuntimeTests
         Assert.AreEqual(true, configurationType.GetProperty("Enabled")!.GetValue(configuration));
         Assert.AreEqual(false, configurationType.GetProperty("AutoApply")!.GetValue(configuration));
         Assert.AreEqual("/tmp/promoted", configurationType.GetProperty("ManifestLocation")!.GetValue(configuration));
+    }
+
+    [TestMethod]
+    public void Default_public_manifest_location_uses_public_portal_base_override()
+    {
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            ["CHUMMER_PUBLIC_BASE_URL"] = "https://updates.example.test/chummer/",
+            ["CHUMMER_PUBLIC_WEB_BASE_URL"] = "https://public-web.example.test/chummer/",
+            ["CHUMMER_WEB_BASE_URL"] = "https://web.example.test/chummer/"
+        });
+
+        string manifestLocation = InvokePrivateStatic<string>("ResolveDefaultPublicManifestLocation");
+
+        Assert.AreEqual(
+            "https://updates.example.test/downloads/RELEASE_CHANNEL.generated.json",
+            manifestLocation);
     }
 
     [TestMethod]

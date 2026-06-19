@@ -146,6 +146,97 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public async Task TryHandleHeadlessInstallLinkModeAsync_persists_browser_dispatch_failure()
+    {
+        if (!OperatingSystem.IsLinux())
+        {
+            Assert.Inconclusive("Linux browser handoff failure persistence is exercised on Linux.");
+        }
+
+        string tempRoot = Path.Combine(Path.GetTempPath(), "desktop-install-linking-browser-failure-tests", Guid.NewGuid().ToString("N"));
+        string launcherRoot = Path.Combine(tempRoot, "launchers");
+        string? previousStateRoot = Environment.GetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT");
+        string? previousOpenBrowser = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER");
+        string? previousTimeout = Environment.GetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS");
+        string? previousPath = Environment.GetEnvironmentVariable("PATH");
+        string? previousWslDistro = Environment.GetEnvironmentVariable("WSL_DISTRO_NAME");
+        string? previousWslInterop = Environment.GetEnvironmentVariable("WSL_INTEROP");
+        Directory.CreateDirectory(launcherRoot);
+
+        try
+        {
+            WriteExecutable(Path.Combine(launcherRoot, "xdg-open"), "#!/bin/sh\necho 'Operation not supported' >&2\nexit 1\n");
+            WriteExecutable(Path.Combine(launcherRoot, "gio"), "#!/bin/sh\necho 'Operation not supported' >&2\nexit 1\n");
+            WriteExecutable(Path.Combine(launcherRoot, "python3"), "#!/bin/sh\necho 'webbrowser unavailable' >&2\nexit 1\n");
+
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", tempRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", "1");
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", "0");
+            Environment.SetEnvironmentVariable("PATH", $"{launcherRoot}:{previousPath}");
+            Environment.SetEnvironmentVariable("WSL_DISTRO_NAME", null);
+            Environment.SetEnvironmentVariable("WSL_INTEROP", null);
+
+            using StringWriter output = new();
+            using StringWriter error = new();
+            DesktopInstallLinkingStartupContext context = new(
+                State: CreateState() with
+                {
+                    Status = "guest",
+                    ClaimedAtUtc = null,
+                    GrantId = null,
+                    GrantToken = null,
+                    GrantIssuedAtUtc = null,
+                    GrantExpiresAtUtc = null
+                },
+                ClaimResult: null,
+                StartupClaimCode: null,
+                ShouldPrompt: true,
+                PromptReason: "claim_required");
+
+            int? exitCode = await DesktopInstallLinkingRuntime.TryHandleHeadlessInstallLinkModeAsync(
+                "avalonia",
+                ["--install-link-headless"],
+                context,
+                output,
+                error,
+                CancellationToken.None);
+
+            string outputText = output.ToString();
+            Assert.AreEqual(2, exitCode);
+            StringAssert.Contains(outputText, "Browser handoff could not be opened automatically:", StringComparison.Ordinal);
+            StringAssert.Contains(outputText, "Operation not supported", StringComparison.Ordinal);
+            StringAssert.Contains(outputText, "https://chummer.run/login?next=", StringComparison.Ordinal);
+
+            string statePath = Path.Combine(
+                tempRoot,
+                "Chummer6",
+                "install-linking",
+                "avalonia",
+                "linux",
+                "x64",
+                "state.json");
+            Assert.IsTrue(File.Exists(statePath), "Headless browser dispatch should persist install-linking state.");
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastBrowserDispatchUri") ?? string.Empty, "https://chummer.run/login?next=", StringComparison.Ordinal);
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastBrowserDispatchFailure") ?? string.Empty, "Operation not supported", StringComparison.Ordinal);
+            StringAssert.Contains(GetStringProperty(state.RootElement, "lastClaimError") ?? string.Empty, "Browser handoff could not open automatically", StringComparison.Ordinal);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_DESKTOP_STATE_ROOT", previousStateRoot);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_OPEN_BROWSER", previousOpenBrowser);
+            Environment.SetEnvironmentVariable("CHUMMER_INSTALL_LINK_HEADLESS_TIMEOUT_SECONDS", previousTimeout);
+            Environment.SetEnvironmentVariable("PATH", previousPath);
+            Environment.SetEnvironmentVariable("WSL_DISTRO_NAME", previousWslDistro);
+            Environment.SetEnvironmentVariable("WSL_INTEROP", previousWslInterop);
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task TryHandleHeadlessInstallLinkModeAsync_exits_cleanly_when_already_linked()
     {
         using StringWriter output = new();
@@ -336,10 +427,12 @@ public sealed class DesktopInstallLinkingRuntimeTests
     [TestMethod]
     public void BuildPublicPortalAbsoluteUri_uses_web_base_override()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "https://hub.example.test/root/");
 
@@ -349,6 +442,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
         }
@@ -357,11 +451,13 @@ public sealed class DesktopInstallLinkingRuntimeTests
     [TestMethod]
     public void BuildPublicPortalAbsoluteUri_prefers_explicit_public_web_base_override()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", "https://chummer.run/");
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", "http://chummer-api:8080/");
@@ -372,6 +468,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
@@ -379,8 +476,35 @@ public sealed class DesktopInstallLinkingRuntimeTests
     }
 
     [TestMethod]
+    public void BuildPublicPortalAbsoluteUri_prefers_explicit_public_base_override()
+    {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
+        string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        try
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", "https://portal.example.test/root/");
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", "https://public-web.example.test/root/");
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "https://web.example.test/root/");
+
+            string absoluteUri = DesktopInstallLinkingRuntime.BuildPublicPortalAbsoluteUri("/account/access/install-link");
+            Uri baseAddress = DesktopInstallLinkingRuntime.ResolvePublicPortalBaseAddress();
+
+            Assert.AreEqual("https://portal.example.test/account/access/install-link", absoluteUri);
+            Assert.AreEqual("https://portal.example.test/root/", baseAddress.AbsoluteUri);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+        }
+    }
+
+    [TestMethod]
     public void BuildPublicPortalAbsoluteUri_rejects_internal_container_host_and_falls_back_to_public_web_host()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
@@ -398,6 +522,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         ];
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
             foreach (string blockedCandidate in blockedBaseCandidates)
             {
@@ -411,6 +536,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
@@ -420,11 +546,13 @@ public sealed class DesktopInstallLinkingRuntimeTests
     [TestMethod]
     public void BuildPublicPortalAbsoluteUri_allows_internal_container_host_when_internal_host_override_is_set()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         string? previousInternalPortalOverride = Environment.GetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS");
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", "http://chummer-api:8080/");
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
             Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "1");
@@ -435,6 +563,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", previousInternalPortalOverride);
@@ -444,11 +573,13 @@ public sealed class DesktopInstallLinkingRuntimeTests
     [TestMethod]
     public void BuildPublicPortalAbsoluteUri_allows_internal_tunneled_google_auth_url_when_internal_host_override_is_set()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         string? previousInternalPortalOverride = Environment.GetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS");
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", "http://chummer-api:8080/");
             Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", "true");
             string claimRelativePath =
@@ -462,6 +593,7 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
             Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_ALLOW_INTERNAL_PUBLIC_WEB_HOSTS", previousInternalPortalOverride);
@@ -471,10 +603,14 @@ public sealed class DesktopInstallLinkingRuntimeTests
     [TestMethod]
     public void ResolveApiBaseAddress_falls_back_to_public_web_host_when_api_host_is_unset()
     {
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         try
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", null);
 
@@ -490,6 +626,8 @@ public sealed class DesktopInstallLinkingRuntimeTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
         }
@@ -1017,6 +1155,24 @@ public sealed class DesktopInstallLinkingRuntimeTests
             GrantExpiresAtUtc: now.AddDays(30),
             UserId: "user-1",
             SubjectId: "subject-1");
+    }
+
+    private static string? GetStringProperty(JsonElement root, string propertyName)
+        => root.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+
+    private static void WriteExecutable(string path, string content)
+    {
+        File.WriteAllText(path, content, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            File.SetUnixFileMode(
+                path,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute
+                | UnixFileMode.GroupRead | UnixFileMode.GroupExecute
+                | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+        }
     }
 
     private static DesktopUpdateClientStatus CreateUpdateStatus()

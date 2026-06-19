@@ -146,10 +146,14 @@ public sealed class DesktopCrashRuntimeTests
     {
         string? previousApiBase = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
         string? previousWebBase = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
+        string? previousPublicBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
+        string? previousPublicWebBase = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL");
         try
         {
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", null);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", null);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", null);
 
             MethodInfo method = typeof(DesktopCrashRuntime).GetMethod(
                 "ResolveApiBaseAddress",
@@ -165,6 +169,8 @@ public sealed class DesktopCrashRuntimeTests
         {
             Environment.SetEnvironmentVariable("CHUMMER_API_BASE_URL", previousApiBase);
             Environment.SetEnvironmentVariable("CHUMMER_WEB_BASE_URL", previousWebBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL", previousPublicBase);
+            Environment.SetEnvironmentVariable("CHUMMER_PUBLIC_WEB_BASE_URL", previousPublicWebBase);
         }
     }
 
