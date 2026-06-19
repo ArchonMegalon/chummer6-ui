@@ -2068,7 +2068,7 @@ if [[ -n "$STARTUP_SMOKE_DIR" && -d "$STARTUP_SMOKE_DIR" ]]; then
   resolved_canonical_startup_smoke_dir="$(realpath -m "$canonical_startup_smoke_dir")"
   if [[ "$resolved_startup_smoke_dir" != "$resolved_canonical_startup_smoke_dir" ]]; then
     mkdir -p "$canonical_startup_smoke_dir"
-    find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -exec rm -f -- {} +
+    find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
     if find "$STARTUP_SMOKE_DIR" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
       cp "$STARTUP_SMOKE_DIR"/* "$canonical_startup_smoke_dir"/
       normalize_startup_smoke_receipt_channel_identity "$canonical_startup_smoke_dir" "$effective_release_channel"
@@ -2228,12 +2228,12 @@ sync_portal_outputs() {
   portal_startup_smoke_dir="$PORTAL_DOWNLOADS_DIR/startup-smoke"
   mkdir -p "$portal_startup_smoke_dir"
   find "$portal_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
-  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
-    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$portal_startup_smoke_dir"/
+  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
+    cp -f "$canonical_startup_smoke_dir"/* "$portal_startup_smoke_dir"/
     normalize_startup_smoke_receipt_channel_identity "$portal_startup_smoke_dir" "$effective_release_channel"
-    echo "synced startup-smoke receipts -> $portal_startup_smoke_dir"
+    echo "synced startup-smoke evidence -> $portal_startup_smoke_dir"
   else
-    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for portal sync"
+    echo "no startup-smoke evidence found in $canonical_startup_smoke_dir for portal sync"
   fi
 
   portal_files_dir="$PORTAL_DOWNLOADS_DIR/files"
@@ -2270,12 +2270,12 @@ sync_presentation_downloads_mirror() {
   mirror_startup_smoke_dir="$mirror_downloads_dir/startup-smoke"
   mkdir -p "$mirror_startup_smoke_dir"
   find "$mirror_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
-  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
-    cp -f "$canonical_startup_smoke_dir"/startup-smoke-*.receipt.json "$mirror_startup_smoke_dir"/
+  if [[ -d "$canonical_startup_smoke_dir" ]] && find "$canonical_startup_smoke_dir" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
+    cp -f "$canonical_startup_smoke_dir"/* "$mirror_startup_smoke_dir"/
     normalize_startup_smoke_receipt_channel_identity "$mirror_startup_smoke_dir" "$effective_release_channel"
-    echo "synced startup-smoke receipts -> $mirror_startup_smoke_dir"
+    echo "synced startup-smoke evidence -> $mirror_startup_smoke_dir"
   else
-    echo "no startup-smoke receipts found in $canonical_startup_smoke_dir for $mirror_label sync"
+    echo "no startup-smoke evidence found in $canonical_startup_smoke_dir for $mirror_label sync"
   fi
 
   mirror_files_dir="$mirror_downloads_dir/files"

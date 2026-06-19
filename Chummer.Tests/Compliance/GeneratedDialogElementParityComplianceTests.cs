@@ -81,9 +81,9 @@ public sealed class GeneratedDialogElementParityComplianceTests
         Assert.AreEqual("chummer6-ui.generated_dialog_element_parity", root.GetProperty("contract_name").GetString());
 
         JsonElement evidence = root.GetProperty("evidence");
-        Assert.AreEqual(28, evidence.GetProperty("commandDialogCount").GetInt32());
+        Assert.AreEqual(30, evidence.GetProperty("commandDialogCount").GetInt32());
         Assert.AreEqual(47, evidence.GetProperty("legacyControlCount").GetInt32());
-        Assert.AreEqual(14, evidence.GetProperty("rebuildableDialogCount").GetInt32());
+        Assert.AreEqual(15, evidence.GetProperty("rebuildableDialogCount").GetInt32());
         Assert.IsTrue(evidence.GetProperty("wiredIntoStandardVerify").GetBoolean());
         Assert.AreEqual(0, evidence.GetProperty("failureCount").GetInt32());
         Assert.AreEqual(0, evidence.GetProperty("reasonCount").GetInt32());

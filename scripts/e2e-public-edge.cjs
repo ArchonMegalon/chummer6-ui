@@ -35,7 +35,7 @@ const checks = [
     url: `${baseUrl}/downloads/`,
     assert: text =>
       text.includes('Install Chummer')
-      && text.includes('Get the latest Windows or Linux installer.')
+      && text.includes('Choose the latest build for Windows or Linux.')
       && text.includes('Nightly')
       && text.includes('Stable')
       && text.includes('Chummer for Windows')
@@ -49,7 +49,7 @@ const checks = [
     assert: text =>
       text.includes('Recommended')
       && text.includes('Chummer for Windows')
-      && text.includes('Install path')
+      && text.includes('Use the main install path for this platform.')
       && text.includes('Build run-')
   },
   {
@@ -114,6 +114,13 @@ const checks = [
     assert: text =>
       text.includes('Open the right support case')
       && text.includes('Product bug')
+  },
+  {
+    url: `${baseUrl}/now`,
+    assert: text =>
+      text.includes('What works today')
+      && text.includes('Build run-')
+      && text.includes('Start from downloads')
   },
   {
     url: `${baseUrl}/what-is-chummer`,

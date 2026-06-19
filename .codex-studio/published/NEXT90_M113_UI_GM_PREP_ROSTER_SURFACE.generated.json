@@ -21,7 +21,7 @@
     "registry_task_unique": true
   },
   "failures": [],
-  "generatedAt": "2026-05-28T18:00:32Z",
+  "generatedAt": "2026-06-19T01:29:41Z",
   "packageId": "next90-m113-ui-gm-prep-roster-surface",
   "proofCommands": {
     "directProofCommand": "bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh",

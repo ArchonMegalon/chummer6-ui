@@ -15,6 +15,7 @@ FILES_SOURCE="$BUNDLE_DIR/files"
 RELEASE_PROOF_PATH="${RELEASE_PROOF_PATH:-}"
 STARTUP_SMOKE_SOURCE="${STARTUP_SMOKE_SOURCE:-$BUNDLE_DIR/startup-smoke}"
 PUBLIC_SKIP_STARTUP_SMOKE_FILTER="${CHUMMER_PUBLIC_SKIP_STARTUP_SMOKE_FILTER:-}"
+SYNC_LIVE_DOWNLOADS_MIRRORS="${CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS:-true}"
 
 to_bool() {
   local value
@@ -324,8 +325,8 @@ sync_live_downloads_mirror_dir() {
   startup_smoke_dir="$target_dir/startup-smoke"
   mkdir -p "$startup_smoke_dir"
   find "$startup_smoke_dir" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' -exec rm -f -- {} +
-  if [[ -d "$DEPLOY_DIR/startup-smoke" ]] && find "$DEPLOY_DIR/startup-smoke" -maxdepth 1 -type f -name 'startup-smoke-*.receipt.json' | grep -q .; then
-    cp -f "$DEPLOY_DIR"/startup-smoke/startup-smoke-*.receipt.json "$startup_smoke_dir"/
+  if [[ -d "$DEPLOY_DIR/startup-smoke" ]] && find "$DEPLOY_DIR/startup-smoke" -mindepth 1 -maxdepth 1 -type f | grep -q .; then
+    cp -f "$DEPLOY_DIR"/startup-smoke/* "$startup_smoke_dir"/
   fi
 
   files_dir="$target_dir/files"
@@ -408,7 +409,9 @@ release_version="${release_version:-unpublished}"
 release_channel="${release_channel:-docker}"
 release_published_at="${release_published_at:-$default_published_at}"
 live_downloads_mirror_dirs=()
-discover_live_downloads_mirror_dirs
+if to_bool "$SYNC_LIVE_DOWNLOADS_MIRRORS"; then
+  discover_live_downloads_mirror_dirs
+fi
 
 DOWNLOADS_DIR="$sync_source_dir" \
 MANIFEST_PATH="$DEPLOY_DIR/releases.json" \

@@ -3048,19 +3048,18 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
-        StringAssert.Contains(portalRouteProbeText, "'/now'");
         StringAssert.Contains(portalRouteProbeText, "'/help'");
-        StringAssert.Contains(portalRouteProbeText, "'/signup'");
-        StringAssert.Contains(portalRouteProbeText, "'/ledger'");
         StringAssert.Contains(portalRouteProbeText, "'/contact'");
-        StringAssert.Contains(portalRouteProbeText, "'/faq'");
         StringAssert.Contains(portalRouteProbeText, "response.url.endsWith('/login?next=%2Faccount')");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/downloads/releases.json`");
         StringAssert.Contains(portalRouteProbeText, "Install Chummer");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/now`");
+        StringAssert.Contains(portalRouteProbeText, "What works today");
         StringAssert.Contains(portalRouteProbeText, "What Is Chummer?");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/play`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/status`");
         StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/ledger`");
+        StringAssert.Contains(portalRouteProbeText, "url: `${baseUrl}/faq`");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-check");
         StringAssert.Contains(portalFixtureProbeText, "deep-link-signoff");
         StringAssert.Contains(portalFixtureProbeText, "cross-origin-opener-policy");
@@ -4048,7 +4047,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(executableGateScriptText, "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableGateScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable/stable when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableGateScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
         StringAssert.Contains(executableGateScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.");
@@ -5836,21 +5835,24 @@ public class MigrationComplianceTests
         string avaloniaProjectorPath = FindPath("Chummer.Avalonia", "MainWindow.ShellFrameProjector.cs");
         string avaloniaProjectorText = File.ReadAllText(avaloniaProjectorPath);
 
-        Assert.IsFalse(
-            shellSurfaceResolverText.Contains("overviewState.Session.ActiveWorkspaceId", StringComparison.Ordinal),
-            "Shell surface resolver must not source the active workspace from overview session state.");
-        Assert.IsFalse(
-            shellSurfaceResolverText.Contains("overviewState.WorkspaceId", StringComparison.Ordinal),
-            "Shell surface resolver must not source the active workspace from overview workspace state.");
+        StringAssert.Contains(
+            shellSurfaceResolverText,
+            "CharacterWorkspaceId? activeWorkspaceId = ResolvePresentedActiveWorkspaceId(overviewState, shellState);");
+        StringAssert.Contains(
+            shellSurfaceResolverText,
+            "ResolvePresentedOpenWorkspaces(");
+        StringAssert.Contains(
+            shellSurfaceResolverText,
+            "CharacterWorkspaceId? overviewActiveWorkspaceId = overviewState.Session.ActiveWorkspaceId ?? overviewState.WorkspaceId;");
+        StringAssert.Contains(
+            shellSurfaceResolverText,
+            "return shellState.ActiveWorkspaceId;");
         Assert.IsFalse(
             shellSurfaceResolverText.Contains("overviewState.ActiveTabId", StringComparison.Ordinal),
             "Shell surface resolver must not source the active tab from overview state.");
-        Assert.IsFalse(
-            shellSurfaceResolverText.Contains("overviewState.Session.OpenWorkspaces", StringComparison.Ordinal),
-            "Shell surface resolver must not source open workspaces from overview session state.");
-        Assert.IsFalse(
-            shellSurfaceResolverText.Contains("overviewState.OpenWorkspaces", StringComparison.Ordinal),
-            "Shell surface resolver must not source open workspace saved status from overview state.");
+        StringAssert.Contains(
+            shellSurfaceResolverText,
+            "ResolveOverviewOpenWorkspaces(overviewState)");
         Assert.IsFalse(
             shellSurfaceResolverText.Contains("overviewState.LastCommandId", StringComparison.Ordinal),
             "Shell surface resolver must not fall back to overview command history.");
@@ -5861,7 +5863,7 @@ public class MigrationComplianceTests
             shellSurfaceResolverText.Contains("overviewState.Error", StringComparison.Ordinal),
             "Shell surface resolver must not fall back to overview errors.");
         StringAssert.Contains(shellSurfaceResolverText, "string? activeTabId = shellState.ActiveTabId;");
-        StringAssert.Contains(shellSurfaceResolverText, "CharacterWorkspaceId? activeWorkspaceId = shellState.ActiveWorkspaceId;");
+        StringAssert.Contains(shellSurfaceResolverText, "CharacterWorkspaceId? activeWorkspaceId = ResolvePresentedActiveWorkspaceId(overviewState, shellState);");
         StringAssert.Contains(shellSurfaceResolverText, "shellState.OpenWorkspaces");
         StringAssert.Contains(shellSurfaceResolverText, "LastCommandId: shellState.LastCommandId");
         StringAssert.Contains(shellSurfaceResolverText, "Notice = shellState.Notice");
@@ -6897,6 +6899,7 @@ public class MigrationComplianceTests
                     ["CHUMMER_ALLOW_UNSIGNED_PUBLIC_RELEASE"] = "true",
                     ["CHUMMER_EXTERNAL_PROOF_BASE_URL"] = "https://chummer.run",
                     ["CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE"] = "0",
+                    ["CHUMMER_PUBLIC_EDGE_DOWNLOADS_SYNC_MIRRORS"] = "false",
                 });
 
             Assert.AreEqual(0, result.ExitCode, result.Output);

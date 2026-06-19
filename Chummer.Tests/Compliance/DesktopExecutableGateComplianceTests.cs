@@ -973,7 +973,7 @@ public sealed class DesktopExecutableGateComplianceTests
         StringAssert.Contains(executableScriptText, "Release channel rolloutState cannot be paused/revoked when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_rollout_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableScriptText, "release_channel_rollout_state_invalid_for_publishable_complete");
-        StringAssert.Contains(executableScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable when status is publishable and required desktop tuple coverage is complete.");
+        StringAssert.Contains(executableScriptText, "Release channel rolloutState must be local_docker_preview/promoted_preview/release_candidate/public_stable/stable when status is publishable and required desktop tuple coverage is complete.");
         StringAssert.Contains(executableScriptText, "release_channel_supportability_state_allowed_for_publishable_complete_values");
         StringAssert.Contains(executableScriptText, "release_channel_supportability_state_invalid_for_publishable_complete");
         StringAssert.Contains(executableScriptText, "Release channel supportabilityState must be local_docker_proven/preview_supported/gold_supported when status is publishable and required desktop tuple coverage is complete.");
