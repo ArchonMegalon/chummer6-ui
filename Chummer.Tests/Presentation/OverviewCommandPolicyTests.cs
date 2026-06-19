@@ -64,6 +64,33 @@ public class OverviewCommandPolicyTests
     }
 
     [TestMethod]
+    public void Guided_horizon_policy_hides_only_assistant_and_local_automation_lanes()
+    {
+        DesktopPreferenceState quiet = DesktopPreferenceState.Default with { DisableAiFeatures = true };
+
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("alice", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("local_co_processor", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("knowledge_fabric", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("quicksilver", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("karma_forge", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon("alice", DesktopPreferenceState.Default));
+    }
+
+    [TestMethod]
+    public void Guided_route_policy_hides_alice_and_local_coprocessor_routes()
+    {
+        DesktopPreferenceState quiet = DesktopPreferenceState.Default with { DisableAiFeatures = true };
+
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/alice", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/account/alice/build-123", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/local-co-processor", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/account/local-co-processor?tab=policy", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/rules", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/account/quicksilver", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForRoute("/account/alice", DesktopPreferenceState.Default));
+    }
+
+    [TestMethod]
     public void Show_login_video_is_treated_as_known_help_dialog_command_with_desktop_host_override()
     {
         Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand("show_login_video"));

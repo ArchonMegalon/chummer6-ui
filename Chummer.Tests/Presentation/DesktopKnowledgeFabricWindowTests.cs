@@ -18,5 +18,7 @@ public sealed class DesktopKnowledgeFabricWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/rules\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/rules/receipts\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/edition-studio\")");
+        StringAssert.Contains(source, "AreGuidedToolsVisible()");
+        StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/local-co-processor\")");
     }
 }

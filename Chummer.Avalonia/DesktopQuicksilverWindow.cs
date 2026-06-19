@@ -12,10 +12,12 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopQuicksilverWindow : Window
 {
     internal static DesktopQuicksilverWindow? LastOpenedWindowForTesting { get; private set; }
+    private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
 
-    private DesktopQuicksilverWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopQuicksilverWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
+        _headId = headId;
         _campaignSummary = campaignSummary;
 
         Title = "Quicksilver";
@@ -27,7 +29,9 @@ internal sealed class DesktopQuicksilverWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Quicksilver",
-            "Quicksilver is the native command deck for the account context: rules answers, build handoffs, publications, and workbenches stay one move away.",
+            AreGuidedToolsVisible()
+                ? "Quicksilver is the native command deck for the account context: rules answers, build handoffs, publications, and workbenches stay one move away."
+                : "Quicksilver is the native command deck for the account context: rules answers, publications, and workbenches stay one move away.",
             CreateCommandDeckCard(),
             CreateJumpTargetsCard(),
             new StackPanel
@@ -48,7 +52,7 @@ internal sealed class DesktopQuicksilverWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopQuicksilverWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopQuicksilverWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -59,33 +63,51 @@ internal sealed class DesktopQuicksilverWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopQuicksilverWindow> CreateAsync()
-        => new(await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Quicksilver requires an IChummerClient instance.").ConfigureAwait(true));
+    private static async Task<DesktopQuicksilverWindow> CreateAsync(string headId)
+        => new(headId, await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Quicksilver requires an IChummerClient instance.").ConfigureAwait(true));
 
     private Control CreateCommandDeckCard()
     {
+        bool showGuidedTools = AreGuidedToolsVisible();
         StackPanel details = new()
         {
             Spacing = 4,
             Children =
             {
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
-                    DesktopHorizonWindowScaffold.CreateMetricBadge("QuicksilverBadgeHandoffs", "Handoffs", (_campaignSummary?.BuildLabHandoffs.Count ?? 0).ToString()),
+                    DesktopHorizonWindowScaffold.CreateMetricBadge(
+                        "QuicksilverBadgeHandoffs",
+                        showGuidedTools ? "Handoffs" : "Workspaces",
+                        (showGuidedTools ? (_campaignSummary?.BuildLabHandoffs.Count ?? 0) : (_campaignSummary?.Workspaces.Count ?? 0)).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("QuicksilverBadgeRules", "Rules", (_campaignSummary?.RulesNavigator.Count ?? 0).ToString())),
-                DesktopHorizonWindowScaffold.CreateDetailText($"ALICE handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}. Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}."),
+                DesktopHorizonWindowScaffold.CreateDetailText(showGuidedTools
+                    ? $"ALICE handoffs: {_campaignSummary?.BuildLabHandoffs.Count ?? 0}. Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}."
+                    : $"Rules answers: {_campaignSummary?.RulesNavigator.Count ?? 0}. Workspaces: {_campaignSummary?.Workspaces.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText($"Creator publications: {_campaignSummary?.CreatorPublications.Count ?? 0}. Workspaces: {_campaignSummary?.Workspaces.Count ?? 0}."),
                 DesktopHorizonWindowScaffold.CreateDetailText("Quicksilver should compress the distance between decision surfaces rather than becoming another dead launcher.")
             }
         };
 
+        List<Button> actions =
+        [
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account deck", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver"), isPrimary: true),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/quicksilver"))
+        ];
+
+        if (showGuidedTools)
+        {
+            actions.Add(DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice")));
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Command deck",
             "Use the signed-in command deck for jump targets that matter to the current account context.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account deck", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver"), isPrimary: true),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/quicksilver")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice")));
+            actions.ToArray());
     }
+
+    private bool AreGuidedToolsVisible()
+        => !DesktopPreferenceRuntime.LoadOrCreateState(_headId).DisableAiFeatures;
 
     private Control CreateJumpTargetsCard()
     {

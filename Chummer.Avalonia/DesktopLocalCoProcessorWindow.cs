@@ -5,6 +5,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Desktop.Runtime;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
@@ -47,6 +48,13 @@ internal sealed class DesktopLocalCoProcessorWindow : Window
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
+
+        if (OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(
+            "local_co_processor",
+            DesktopPreferenceRuntime.LoadOrCreateState(headId)))
+        {
+            return;
+        }
 
         DesktopLocalCoProcessorWindow dialog = await CreateAsync().ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;

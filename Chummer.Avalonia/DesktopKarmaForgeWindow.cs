@@ -47,7 +47,9 @@ internal sealed class DesktopKarmaForgeWindow : Window
                         },
                         new TextBlock
                         {
-                            Text = "Governed package work stays in the desktop now: browse packages, jump into intake, review your signed-in package shelf, and keep ALICE one move away when a rules package turns into a build tradeoff.",
+                            Text = AreGuidedToolsVisible()
+                                ? "Governed package work stays in the desktop now: browse packages, jump into intake, review your signed-in package shelf, and keep ALICE one move away when a rules package turns into a build tradeoff."
+                                : "Governed package work stays in the desktop now: browse packages, jump into intake, and review your signed-in package shelf.",
                             TextWrapping = TextWrapping.Wrap
                         },
                         CreateStatusCard(),
@@ -105,13 +107,20 @@ internal sealed class DesktopKarmaForgeWindow : Window
 
     private Control CreateStatusCard()
     {
+        bool showGuidedTools = AreGuidedToolsVisible();
         string signedInLine = _campaignSummary is null
             ? "Signed-in account context is not currently available in this desktop session."
-            : "Signed-in account context is available. Use the account package shelf and ALICE bench without leaving the client blind.";
+            : showGuidedTools
+                ? "Signed-in account context is available. Use the account package shelf and ALICE bench without leaving the client blind."
+                : "Signed-in account context is available. Use the account package shelf without leaving the client blind.";
 
         string handoffLine = _campaignSummary is null
-            ? "ALICE handoff counts are unavailable until the client can read the signed-in campaign spine."
-            : $"ALICE handoffs in account context: {_campaignSummary.BuildLabHandoffs.Count}. Campaigns: {_campaignSummary.Campaigns.Count}. Workspaces: {_campaignSummary.Workspaces.Count}.";
+            ? (showGuidedTools
+                ? "ALICE handoff counts are unavailable until the client can read the signed-in campaign spine."
+                : "Package handoff counts are unavailable until the client can read the signed-in campaign spine.")
+            : showGuidedTools
+                ? $"ALICE handoffs in account context: {_campaignSummary.BuildLabHandoffs.Count}. Campaigns: {_campaignSummary.Campaigns.Count}. Workspaces: {_campaignSummary.Workspaces.Count}."
+                : $"Package context: campaigns {_campaignSummary.Campaigns.Count}. Workspaces {_campaignSummary.Workspaces.Count}.";
 
         StackPanel lead = new()
         {
@@ -131,14 +140,27 @@ internal sealed class DesktopKarmaForgeWindow : Window
             }
         };
 
+        List<Button> actions =
+        [
+            CreateButton("Open account packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"), isPrimary: !showGuidedTools, name: "KarmaForgeOpenAccountPackagesFromStatusButton")
+        ];
+
+        if (showGuidedTools)
+        {
+            actions.Insert(0, CreateButton("Open ALICE workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "KarmaForgeOpenAliceWorkbenchButton"));
+            actions.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "KarmaForgeOpenPublicAliceButton"));
+        }
+
         return CreateCard(
             "Current posture",
             signedInLine,
             lead,
             "KarmaForgeStatusCard",
-            CreateButton("Open ALICE workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "KarmaForgeOpenAliceWorkbenchButton"),
-            CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "KarmaForgeOpenPublicAliceButton"));
+            actions.ToArray());
     }
+
+    private bool AreGuidedToolsVisible()
+        => !DesktopPreferenceRuntime.LoadOrCreateState(_headId).DisableAiFeatures;
 
     private Control CreatePackageTargetsCard()
     {

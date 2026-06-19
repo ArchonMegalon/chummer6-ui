@@ -23,7 +23,8 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "CreateNativeLaunchCard(");
         StringAssert.Contains(source, "CreateNativeAdjunctActionButton(");
         StringAssert.Contains(source, "ShouldShowWorkbenchEntry");
-        StringAssert.Contains(source, "!_preferences.DisableAiFeatures");
+        StringAssert.Contains(source, ".Where(ShouldShowWorkbenchEntry)");
+        StringAssert.Contains(source, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(entry.Id, _preferences)");
         StringAssert.Contains(source, "DesktopKarmaForgeWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id)");
@@ -46,6 +47,14 @@ public sealed class DesktopHorizonsWindowTests
             ProductSpineCatalog.ListKarmaForgeTargets().Select(static target => target.RelativeHref).ToArray());
 
         string launcherSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonWorkbenchLauncher.cs"));
-        StringAssert.Contains(launcherSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId).DisableAiFeatures");
+        StringAssert.Contains(launcherSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(");
+        StringAssert.Contains(launcherSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId)");
+
+        string homeSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHomeWindow.cs"));
+        StringAssert.Contains(homeSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, _preferences)");
+
+        string dialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        StringAssert.Contains(dialogSource, "DesktopPreferenceRuntime.LoadOrCreateState(\"avalonia\")");
+        StringAssert.Contains(dialogSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, preferences)");
     }
 }

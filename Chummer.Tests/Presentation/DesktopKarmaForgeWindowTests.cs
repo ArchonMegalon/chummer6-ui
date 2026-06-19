@@ -18,6 +18,8 @@ public sealed class DesktopKarmaForgeWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/packages\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/participate/karma-forge#karma-forge-intake\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
+        StringAssert.Contains(source, "AreGuidedToolsVisible()");
+        StringAssert.Contains(source, "if (showGuidedTools)");
 
         IReadOnlyList<DesktopHorizonRouteOption> targets = ProductSpineCatalog.ListKarmaForgeTargets();
         CollectionAssert.AreEqual(

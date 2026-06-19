@@ -19,5 +19,7 @@ public sealed class DesktopQuicksilverWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/quicksilver\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/runsites\")");
+        StringAssert.Contains(source, "AreGuidedToolsVisible()");
+        StringAssert.Contains(source, "if (showGuidedTools)");
     }
 }

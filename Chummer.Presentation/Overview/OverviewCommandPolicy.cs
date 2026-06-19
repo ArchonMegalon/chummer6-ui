@@ -1,4 +1,5 @@
 using Chummer.Contracts.Presentation;
+using System.Linq;
 
 namespace Chummer.Presentation.Overview;
 
@@ -57,6 +58,20 @@ public static class OverviewCommandPolicy
         "new_character_origin"
     };
 
+    private static readonly HashSet<string> AiFeatureHorizonIds = new(StringComparer.Ordinal)
+    {
+        "alice",
+        "local_co_processor"
+    };
+
+    private static readonly string[] AiFeatureRoutePrefixes =
+    [
+        "/alice",
+        "/account/alice",
+        "/local-co-processor",
+        "/account/local-co-processor"
+    ];
+
     private static readonly HashSet<string> CoreCommandIds = new(StringComparer.Ordinal)
     {
         "save_character",
@@ -85,6 +100,21 @@ public static class OverviewCommandPolicy
 
     public static bool IsBlockedByAiFeaturePreference(string commandId, DesktopPreferenceState preferences)
         => preferences.DisableAiFeatures && IsAiFeatureCommand(commandId);
+
+    public static bool IsAiFeatureHorizon(string horizonId) => AiFeatureHorizonIds.Contains(horizonId);
+
+    public static bool IsBlockedByAiFeaturePreferenceForHorizon(string horizonId, DesktopPreferenceState preferences)
+        => preferences.DisableAiFeatures && IsAiFeatureHorizon(horizonId);
+
+    public static bool IsAiFeatureRoute(string relativeHref)
+        => AiFeatureRoutePrefixes.Any(prefix =>
+            relativeHref.Equals(prefix, StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "/", StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "#", StringComparison.Ordinal)
+            || relativeHref.StartsWith(prefix + "?", StringComparison.Ordinal));
+
+    public static bool IsBlockedByAiFeaturePreferenceForRoute(string relativeHref, DesktopPreferenceState preferences)
+        => preferences.DisableAiFeatures && IsAiFeatureRoute(relativeHref);
 
     public static bool IsKnownSharedCommand(string commandId)
     {

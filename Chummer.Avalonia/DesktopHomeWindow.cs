@@ -1178,7 +1178,8 @@ internal sealed class DesktopHomeWindow : Window
             CreateButton("My packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"))));
 
         foreach (DesktopHorizonWorkbenchEntry entry in DesktopHorizonWorkbenchCatalog.ListEntries()
-                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal)))
+                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal))
+                     .Where(item => !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, _preferences)))
         {
             List<Button> buttons =
             [

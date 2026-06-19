@@ -10,11 +10,13 @@ namespace Chummer.Avalonia;
 internal sealed class DesktopKnowledgeFabricWindow : Window
 {
     internal static DesktopKnowledgeFabricWindow? LastOpenedWindowForTesting { get; private set; }
+    private readonly string _headId;
     private readonly AccountCampaignSummary? _campaignSummary;
     private bool HasRulesContext => (_campaignSummary?.RulesNavigator.Count ?? 0) > 0;
 
-    private DesktopKnowledgeFabricWindow(AccountCampaignSummary? campaignSummary)
+    private DesktopKnowledgeFabricWindow(string headId, AccountCampaignSummary? campaignSummary)
     {
+        _headId = headId;
         _campaignSummary = campaignSummary;
 
         Title = "Knowledge Fabric";
@@ -26,7 +28,9 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Knowledge Fabric",
-            "Knowledge Fabric keeps grounded rules answers, provenance labels, and source-aware explain posture visible before any assistant tone gets mistaken for mechanics truth.",
+            AreGuidedToolsVisible()
+                ? "Knowledge Fabric keeps grounded rules answers, provenance labels, and source-aware explain posture visible before any assistant tone gets mistaken for mechanics truth."
+                : "Knowledge Fabric keeps grounded rules answers, provenance labels, and source-aware explain posture visible without changing rules receipts into guesses.",
             CreateRulesAnswerCard(),
             CreateExplainCard(),
             new StackPanel
@@ -47,7 +51,7 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
-        DesktopKnowledgeFabricWindow dialog = await CreateAsync().ConfigureAwait(true);
+        DesktopKnowledgeFabricWindow dialog = await CreateAsync(headId).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
         if (owner.Icon is not null)
@@ -58,8 +62,8 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
         await dialog.ShowDialog(owner);
     }
 
-    private static async Task<DesktopKnowledgeFabricWindow> CreateAsync()
-        => new(await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Knowledge Fabric requires an IChummerClient instance.").ConfigureAwait(true));
+    private static async Task<DesktopKnowledgeFabricWindow> CreateAsync(string headId)
+        => new(headId, await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Knowledge Fabric requires an IChummerClient instance.").ConfigureAwait(true));
 
     private Control CreateRulesAnswerCard()
     {
@@ -139,12 +143,24 @@ internal sealed class DesktopKnowledgeFabricWindow : Window
             details.Children.Insert(0, detailModeCombo);
         }
 
+        List<Button> actions =
+        [
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open rules route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Quicksilver", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver"))
+        ];
+
+        if (AreGuidedToolsVisible())
+        {
+            actions.Add(DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Local Co-Processor", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor")));
+        }
+
         return DesktopHorizonWindowScaffold.CreateCard(
             "Explain and source posture",
             "The explain lane should show answer, evidence, and studio posture without collapsing all of that into one assistant sentence.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open rules route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/rules"), isPrimary: HasRulesContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Quicksilver", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/quicksilver")),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Local Co-Processor", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/local-co-processor")));
+            actions.ToArray());
     }
+
+    private bool AreGuidedToolsVisible()
+        => !DesktopPreferenceRuntime.LoadOrCreateState(_headId).DisableAiFeatures;
 }

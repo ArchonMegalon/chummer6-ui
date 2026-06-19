@@ -136,7 +136,8 @@ internal sealed class DesktopHorizonsWindow : Window
         string query = _searchBox.Text?.Trim() ?? string.Empty;
         bool hasQuery = !string.IsNullOrWhiteSpace(query);
 
-        IEnumerable<DesktopHorizonWorkbenchEntry> entries = DesktopHorizonWorkbenchCatalog.ListEntries();
+        IEnumerable<DesktopHorizonWorkbenchEntry> entries = DesktopHorizonWorkbenchCatalog.ListEntries()
+            .Where(ShouldShowWorkbenchEntry);
         if (hasQuery)
         {
             entries = entries.Where(entry =>
@@ -320,8 +321,7 @@ internal sealed class DesktopHorizonsWindow : Window
     }
 
     private bool ShouldShowWorkbenchEntry(DesktopHorizonWorkbenchEntry entry)
-        => !_preferences.DisableAiFeatures
-            || !string.Equals(entry.Id, "alice", StringComparison.Ordinal);
+        => !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(entry.Id, _preferences);
 
     private Control CreateNativeLaunchCard(DesktopHorizonWorkbenchEntry entry, Func<Task> openNative)
     {

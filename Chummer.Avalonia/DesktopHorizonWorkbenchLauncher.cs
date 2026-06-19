@@ -47,8 +47,9 @@ internal static class DesktopHorizonWorkbenchLauncher
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
         ArgumentException.ThrowIfNullOrWhiteSpace(horizonId);
 
-        if (string.Equals(horizonId, "alice", StringComparison.Ordinal)
-            && DesktopPreferenceRuntime.LoadOrCreateState(headId).DisableAiFeatures)
+        if (OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(
+            horizonId,
+            DesktopPreferenceRuntime.LoadOrCreateState(headId)))
         {
             return Task.CompletedTask;
         }

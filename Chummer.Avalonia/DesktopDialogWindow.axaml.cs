@@ -747,6 +747,7 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateLegacyHorizonWorkbenchPane()
     {
+        var preferences = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
         StackPanel content = new()
         {
             Spacing = 10
@@ -767,7 +768,8 @@ public partial class DesktopDialogWindow : Window
         content.Children.Add(CreateKarmaForgeWorkbenchRow());
 
         foreach (DesktopHorizonWorkbenchEntry entry in DesktopHorizonWorkbenchCatalog.ListEntries()
-                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal)))
+                     .Where(static item => !string.Equals(item.Id, "karma_forge", StringComparison.Ordinal))
+                     .Where(item => !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, preferences)))
         {
             content.Children.Add(CreateHorizonWorkbenchRow(entry));
         }

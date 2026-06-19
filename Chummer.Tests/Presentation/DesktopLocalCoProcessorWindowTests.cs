@@ -19,5 +19,7 @@ public sealed class DesktopLocalCoProcessorWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/local-co-processor\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/local-co-processor\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/alice\")");
+        StringAssert.Contains(source, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(");
+        StringAssert.Contains(source, "DesktopPreferenceRuntime.LoadOrCreateState(headId)");
     }
 }
