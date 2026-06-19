@@ -1,8 +1,8 @@
 {
   "contract_name": "chummer.weekly_product_pulse",
   "contract_version": 3,
-  "generated_at": "2026-06-18T17:17:07Z",
-  "as_of": "2026-06-18",
+  "generated_at": "2026-06-19T01:09:18Z",
+  "as_of": "2026-06-19",
   "scorecard_source": "products/chummer/PRODUCT_HEALTH_SCORECARD.yaml",
   "progress_report_source": "products/chummer/PROGRESS_REPORT.generated.json",
   "progress_history_source": "products/chummer/PROGRESS_HISTORY.generated.json",
@@ -70,12 +70,12 @@
   "public_promise_drift_count": 0,
   "governor_decisions": [
     {
-      "decision_id": "2026-06-18-focus-next-12-biggest-wins",
+      "decision_id": "2026-06-19-focus-next-12-biggest-wins",
       "action": "focus_shift",
-      "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 100% overall progress in 'Public-fit polish', history depth has reached 40 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
+      "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 100% overall progress in 'Public-fit polish', history depth has reached 42 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
       "cited_signals": [
         "overall_progress_percent=100",
-        "history_snapshot_count=40",
+        "history_snapshot_count=42",
         "oldest_blocker_days=0",
         "phase_label=Public-fit polish",
         "longest_pole=Core Engine",
@@ -83,7 +83,7 @@
       ]
     },
     {
-      "decision_id": "2026-06-18-launch-governance",
+      "decision_id": "2026-06-19-launch-governance",
       "action": "freeze_launch",
       "reason": "Freeze launch expansion until the whole-product final claim returns to pass (current: fail).",
       "cited_signals": [
@@ -164,12 +164,12 @@
     "public_promise_drift_count": 0,
     "governor_decisions": [
       {
-        "decision_id": "2026-06-18-focus-next-12-biggest-wins",
+        "decision_id": "2026-06-19-focus-next-12-biggest-wins",
         "action": "focus_shift",
-        "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 100% overall progress in 'Public-fit polish', history depth has reached 40 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
+        "reason": "Keep delivery focus on Next 12 Biggest Wins. The pulse shows 100% overall progress in 'Public-fit polish', history depth has reached 42 snapshots, and the pacing risk remains concentrated in Core Engine while trust/publication/utility closure still needs measured completion on the active registry.",
         "cited_signals": [
           "overall_progress_percent=100",
-          "history_snapshot_count=40",
+          "history_snapshot_count=42",
           "oldest_blocker_days=0",
           "phase_label=Public-fit polish",
           "longest_pole=Core Engine",
@@ -177,7 +177,7 @@
         ]
       },
       {
-        "decision_id": "2026-06-18-launch-governance",
+        "decision_id": "2026-06-19-launch-governance",
         "action": "freeze_launch",
         "reason": "Freeze launch expansion until the whole-product final claim returns to pass (current: fail).",
         "cited_signals": [
@@ -201,7 +201,7 @@
     "current_recommended_wave": "Next 12 Biggest Wins",
     "overall_progress_percent": 100,
     "phase_label": "Public-fit polish",
-    "history_snapshot_count": 40,
+    "history_snapshot_count": 42,
     "longest_pole": "Core Engine",
     "launch_readiness": "Hold launch expansion until the whole-product final claim returns to pass (current: fail).",
     "provider_route_stewardship": {
@@ -255,26 +255,18 @@
       "local_release_proof_status": "passed",
       "proven_journey_count": 5,
       "proven_route_count": 10,
-      "history_snapshot_count": 40,
-      "summary": "Current local edge proof passed. 5 journey proofs and 10 trust routes are on record. 40 weekly snapshots are on record for the current public trust posture."
+      "history_snapshot_count": 42,
+      "summary": "Current local edge proof passed. 5 journey proofs and 10 trust routes are on record. 42 weekly snapshots are on record for the current public trust posture."
     },
     "progress_trend": {
       "state": "steady",
       "direction": "flat",
       "delta_percent": 0,
-      "from_as_of": "2026-06-12",
-      "to_as_of": "2026-06-17",
-      "summary": "Flat trend 0% from 2026-06-12 to 2026-06-17. Trend window: 2026-05-22 100% -> 2026-05-29 100% -> 2026-05-30 100% -> 2026-06-01 100% -> 2026-06-02 100% -> 2026-06-04 100% -> 2026-06-12 100% -> 2026-06-17 100%.",
+      "from_as_of": "2026-06-18",
+      "to_as_of": "2026-06-19",
+      "summary": "Flat trend 0% from 2026-06-18 to 2026-06-19. Trend window: 2026-05-30 100% -> 2026-06-01 100% -> 2026-06-02 100% -> 2026-06-04 100% -> 2026-06-12 100% -> 2026-06-17 100% -> 2026-06-18 100% -> 2026-06-19 100%.",
       "sample_count": 8,
       "samples": [
-        {
-          "as_of": "2026-05-22",
-          "overall_progress_percent": 100
-        },
-        {
-          "as_of": "2026-05-29",
-          "overall_progress_percent": 100
-        },
         {
           "as_of": "2026-05-30",
           "overall_progress_percent": 100
@@ -297,6 +289,14 @@
         },
         {
           "as_of": "2026-06-17",
+          "overall_progress_percent": 100
+        },
+        {
+          "as_of": "2026-06-18",
+          "overall_progress_percent": 100
+        },
+        {
+          "as_of": "2026-06-19",
           "overall_progress_percent": 100
         }
       ]
