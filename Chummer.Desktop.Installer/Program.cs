@@ -1687,21 +1687,21 @@ internal static class Program
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(24, 24, 24, 22),
+                Padding = new Padding(22, 20, 22, 20),
                 BackColor = Color.FromArgb(14, 19, 28)
             };
 
             Panel glyphTile = new()
             {
-                Size = new Size(64, 64),
+                Size = new Size(56, 56),
                 Location = new Point(0, 0),
                 BackColor = Color.FromArgb(22, 28, 40)
             };
 
             PictureBox appGlyph = new()
             {
-                Size = new Size(46, 46),
-                Location = new Point(9, 9),
+                Size = new Size(42, 42),
+                Location = new Point(7, 7),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.Transparent
             };
@@ -1719,12 +1719,12 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "INSTALLER",
-                Font = new Font("Segoe UI Semibold", 8F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 7.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(116, 223, 193),
                 Dock = DockStyle.Top,
-                Height = 16,
+                Height = 14,
                 TextAlign = ContentAlignment.BottomLeft,
-                Margin = new Padding(0, 0, 0, 4)
+                Margin = new Padding(0, 0, 0, 2)
             };
 
             Label titleLabel = new()
@@ -1734,9 +1734,9 @@ internal static class Program
                 Font = new Font("Segoe UI Semibold", 18F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 36,
+                Height = 34,
                 TextAlign = ContentAlignment.BottomLeft,
-                Margin = new Padding(0, 0, 0, 4),
+                Margin = new Padding(0, 0, 0, 2),
                 AutoEllipsis = true
             };
 
@@ -1747,16 +1747,16 @@ internal static class Program
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = 28,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 0, 0, 16)
+                Margin = new Padding(0, 0, 0, 8)
             };
 
             _statusLabel = new Label
             {
                 AutoSize = false,
                 Text = "Preparing installer",
-                Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
                 Height = 24,
@@ -1770,7 +1770,7 @@ internal static class Program
                 Dock = DockStyle.Top,
                 Height = 10,
                 BackColor = Color.FromArgb(33, 42, 58),
-                Margin = new Padding(0, 0, 0, 12)
+                Margin = new Padding(0, 0, 0, 8)
             };
 
             _progressFill = new Panel
@@ -1822,14 +1822,14 @@ internal static class Program
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
-                Height = 20,
+                Height = 18,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
             Panel textColumn = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(18, 0, 0, 0)
+                Padding = new Padding(16, 0, 0, 0)
             };
             textColumn.Controls.Add(copyLabel);
             textColumn.Controls.Add(titleLabel);
@@ -1838,7 +1838,7 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 72
+                Height = 86
             };
             heroRow.Controls.Add(textColumn);
             heroRow.Controls.Add(glyphTile);
@@ -1849,11 +1849,11 @@ internal static class Program
                 Padding = new Padding(0)
             };
 
-            body.Controls.Add(hintLabel);
-            body.Controls.Add(_progressTrack);
-            body.Controls.Add(progressMetaRow);
-            body.Controls.Add(_statusLabel);
             body.Controls.Add(heroRow);
+            body.Controls.Add(_statusLabel);
+            body.Controls.Add(progressMetaRow);
+            body.Controls.Add(_progressTrack);
+            body.Controls.Add(hintLabel);
             surface.Controls.Add(body);
             Controls.Add(surface);
             Controls.Add(accentBar);
