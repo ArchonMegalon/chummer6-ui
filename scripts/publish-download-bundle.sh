@@ -141,6 +141,12 @@ payload = json.loads(manifest_path.read_text(encoding="utf-8-sig"))
 downloads = payload.get("downloads") or []
 failures: list[str] = []
 seen: set[str] = set()
+sidecars = {
+    "aur-packages.json",
+    "chummer6-bin-aur-source.tar.gz",
+    "chummer6-bin.PKGBUILD",
+    "chummer6-bin.SRCINFO",
+}
 
 for artifact in downloads:
     if not isinstance(artifact, dict):
@@ -166,6 +172,8 @@ for artifact in downloads:
 
 for file_path in sorted(files_root.iterdir()):
     if not file_path.is_file():
+        continue
+    if file_path.name in sidecars:
         continue
     if file_path.name not in seen:
         failures.append(f"bundle contains extra file not present in manifest: {file_path.name}")
@@ -295,6 +303,58 @@ discover_live_downloads_mirror_dirs() {
   done
 }
 
+resolve_aur_materializer() {
+  local configured="${CHUMMER_AUR_MATERIALIZER:-}"
+  local candidate=""
+
+  if [[ -n "$configured" ]]; then
+    if [[ -f "$configured" ]]; then
+      printf '%s\n' "$configured"
+      return 0
+    fi
+    echo "Configured AUR materializer is missing: $configured" >&2
+    return 1
+  fi
+
+  for candidate in \
+    "$REPO_ROOT/scripts/materialize-aur-package.py" \
+    "$REPO_ROOT/../chummer.run-services/scripts/materialize-aur-package.py" \
+    "$REPO_ROOT/../chummer6-hub/scripts/materialize-aur-package.py"
+  do
+    if [[ -f "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+remove_aur_sidecar() {
+  rm -f \
+    "$DEPLOY_DIR/aur-packages.json" \
+    "$DEPLOY_DIR/files/chummer6-bin-aur-source.tar.gz" \
+    "$DEPLOY_DIR/files/chummer6-bin.PKGBUILD" \
+    "$DEPLOY_DIR/files/chummer6-bin.SRCINFO"
+}
+
+materialize_aur_sidecar() {
+  local materializer=""
+
+  if materializer="$(resolve_aur_materializer)"; then
+    python3 "$materializer" \
+      --manifest "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" \
+      --files-root "$DEPLOY_DIR/files" \
+      --output-root "$DEPLOY_DIR" \
+      --downloads-prefix "${CHUMMER_PUBLIC_DOWNLOADS_PREFIX:-https://chummer.run/downloads/files}" \
+      --optional >/dev/null
+    return 0
+  fi
+
+  remove_aur_sidecar
+  echo "AUR materializer not found; removed stale AUR sidecar files from $DEPLOY_DIR." >&2
+}
+
 sync_live_downloads_mirror_dir() {
   local target_dir="$1"
   local target_label="$2"
@@ -321,6 +381,11 @@ sync_live_downloads_mirror_dir() {
   mkdir -p "$target_dir"
   cp "$DEPLOY_DIR/releases.json" "$target_dir/releases.json"
   cp "$DEPLOY_DIR/RELEASE_CHANNEL.generated.json" "$target_dir/RELEASE_CHANNEL.generated.json"
+  if [[ -f "$DEPLOY_DIR/aur-packages.json" ]]; then
+    cp "$DEPLOY_DIR/aur-packages.json" "$target_dir/aur-packages.json"
+  else
+    rm -f "$target_dir/aur-packages.json"
+  fi
 
   startup_smoke_dir="$target_dir/startup-smoke"
   mkdir -p "$startup_smoke_dir"
@@ -331,6 +396,10 @@ sync_live_downloads_mirror_dir() {
 
   files_dir="$target_dir/files"
   mkdir -p "$files_dir"
+  rm -f \
+    "$files_dir"/chummer6-bin-aur-source.tar.gz \
+    "$files_dir"/chummer6-bin.PKGBUILD \
+    "$files_dir"/chummer6-bin.SRCINFO
   find "$files_dir" -maxdepth 1 -type f \
     \( -name "chummer-avalonia-*.exe" -o -name "chummer-avalonia-*.zip" -o -name "chummer-avalonia-*.tar.gz" -o \
        -name "chummer-avalonia-*-installer.exe" -o -name "chummer-avalonia-*-installer.deb" -o \
@@ -351,6 +420,12 @@ sync_live_downloads_mirror_dir() {
       exit 1
     fi
     cp "$source_path" "$files_dir/"
+  done
+  for file_name in chummer6-bin-aur-source.tar.gz chummer6-bin.PKGBUILD chummer6-bin.SRCINFO; do
+    source_path="$DEPLOY_DIR/files/$file_name"
+    if [[ -f "$source_path" ]]; then
+      cp "$source_path" "$files_dir/"
+    fi
   done
 
   CHUMMER_VERIFY_REQUIRE_COMPLETE_DESKTOP_COVERAGE="${CHUMMER_RELEASE_REQUIRE_COMPLETE_DESKTOP_COVERAGE:-1}" \
@@ -474,6 +549,8 @@ for file_name in "${promoted_file_names[@]}"; do
   fi
   cp "$source_path" "$DEPLOY_DIR/files/"
 done
+
+materialize_aur_sidecar
 
 if [[ "${#live_downloads_mirror_dirs[@]}" -gt 0 ]]; then
   for mirror_dir in "${live_downloads_mirror_dirs[@]}"; do

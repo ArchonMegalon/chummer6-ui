@@ -79,6 +79,7 @@
     <Compile Include="ContentOverlayCatalogServiceTests.cs" />
     <Compile Include="CoreXmlNodeExtensionsTests.cs" />
     <Compile Include="Compliance\DesktopInstallerParityComplianceTests.cs" />
+    <Compile Include="Compliance\DownloadPublishAurSidecarGuardTests.cs" />
     <Compile Include="Compliance\DelegateCommandRouteParityComplianceTests.cs" />
     <Compile Include="Compliance\DesktopExecutableGateComplianceTests.cs" />
     <Compile Include="Compliance\DesktopWorkflowExecutionGateRefreshComplianceTests.cs" />
