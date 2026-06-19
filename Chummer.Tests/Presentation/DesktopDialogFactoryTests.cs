@@ -2149,6 +2149,32 @@ public class DesktopDialogFactoryTests
     }
 
     [TestMethod]
+    public void Character_option_filter_suppresses_ai_metatype_options_when_ai_features_are_disabled()
+    {
+        DesktopDialogFieldOption[] options =
+        [
+            new("Human", "Human"),
+            new("A.I.", "A.I."),
+            new("E-Ghost", "E-Ghost"),
+            new("Xenosapient", "Xenosapient")
+        ];
+
+        string[] quietOptions = DesktopDialogFactory
+            .FilterAiRestrictedCharacterOptionsForPreferences(
+                options,
+                DesktopPreferenceState.Default with { DisableAiFeatures = true })
+            .Select(option => option.Value)
+            .ToArray();
+        string[] enabledOptions = DesktopDialogFactory
+            .FilterAiRestrictedCharacterOptionsForPreferences(options, DesktopPreferenceState.Default)
+            .Select(option => option.Value)
+            .ToArray();
+
+        CollectionAssert.AreEqual(new[] { "Human" }, quietOptions);
+        CollectionAssert.AreEqual(new[] { "Human", "A.I.", "E-Ghost", "Xenosapient" }, enabledOptions);
+    }
+
+    [TestMethod]
     public void BuildNewCharacterContinuationDialog_uses_karma_route_for_non_priority_builds()
     {
         DesktopDialogState dialog = BuildNewCharacterContinuationDialog(

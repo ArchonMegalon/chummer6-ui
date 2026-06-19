@@ -64,6 +64,20 @@ public class OverviewCommandPolicyTests
     }
 
     [TestMethod]
+    public void Ai_feature_preference_blocks_ai_character_and_companion_options_without_blocking_critter_commands()
+    {
+        DesktopPreferenceState quiet = DesktopPreferenceState.Default with { DisableAiFeatures = true };
+
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I.", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I. - 6 Depth", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("E-Ghost", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Open Explain Companion", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("New Critter", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Human", quiet));
+        Assert.IsFalse(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I.", DesktopPreferenceState.Default));
+    }
+
+    [TestMethod]
     public void Guided_horizon_policy_hides_only_assistant_and_local_automation_lanes()
     {
         DesktopPreferenceState quiet = DesktopPreferenceState.Default with { DisableAiFeatures = true };

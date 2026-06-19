@@ -568,15 +568,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         ];
 
     private static DesktopDialogFieldOption[] BuildOriginMetatypeOptions()
-        =>
-        [
-            new("auto", "Fit the story"),
-            new("human", "Human"),
-            new("elf", "Elf"),
-            new("dwarf", "Dwarf"),
-            new("ork", "Ork"),
-            new("troll", "Troll")
-        ];
+        => FilterAiRestrictedCharacterOptionsForPreferences(
+            [
+                new("auto", "Fit the story"),
+                new("human", "Human"),
+                new("elf", "Elf"),
+                new("dwarf", "Dwarf"),
+                new("ork", "Ork"),
+                new("troll", "Troll")
+            ],
+            DesktopPreferenceStateRuntime.Current).ToArray();
 
     private static DesktopDialogFieldOption[] BuildOriginBuildPreferenceOptions(string? rulesetId)
     {
@@ -1425,7 +1426,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category)
     {
         string normalizedCategory = string.IsNullOrWhiteSpace(category) ? "Standard" : category.Trim();
-        return normalizedCategory switch
+        IReadOnlyList<DesktopDialogFieldOption> options = normalizedCategory switch
         {
             "Metahuman" =>
             [
@@ -1452,7 +1453,17 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Troll", "Troll")
             ]
         };
+        return FilterAiRestrictedCharacterOptionsForPreferences(options, DesktopPreferenceStateRuntime.Current);
     }
+
+    internal static IReadOnlyList<DesktopDialogFieldOption> FilterAiRestrictedCharacterOptionsForPreferences(
+        IReadOnlyList<DesktopDialogFieldOption> options,
+        DesktopPreferenceState preferences)
+        => options
+            .Where(option =>
+                !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption(option.Value, preferences)
+                && !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption(option.Label, preferences))
+            .ToArray();
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityMetatypeOptions(string? category, string heritagePriority)
     {

@@ -58,6 +58,18 @@ public static class OverviewCommandPolicy
         "new_character_origin"
     };
 
+    private static readonly HashSet<string> AiFeatureCharacterOrCompanionOptionIds = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AI",
+        "A.I",
+        "A.I.",
+        "Artificial Intelligence",
+        "E-Ghost",
+        "Xenosapient",
+        "Explain Companion",
+        "Open Explain Companion"
+    };
+
     private static readonly HashSet<string> AiFeatureHorizonIds = new(StringComparer.Ordinal)
     {
         "alice",
@@ -100,6 +112,19 @@ public static class OverviewCommandPolicy
 
     public static bool IsBlockedByAiFeaturePreference(string commandId, DesktopPreferenceState preferences)
         => preferences.DisableAiFeatures && IsAiFeatureCommand(commandId);
+
+    public static bool IsAiFeatureCharacterOrCompanionOption(string optionId)
+    {
+        string token = (optionId ?? string.Empty).Trim();
+        return AiFeatureCharacterOrCompanionOptionIds.Contains(token)
+            || token.StartsWith("A.I. -", StringComparison.OrdinalIgnoreCase)
+            || token.StartsWith("AI -", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption(
+        string optionId,
+        DesktopPreferenceState preferences)
+        => preferences.DisableAiFeatures && IsAiFeatureCharacterOrCompanionOption(optionId);
 
     public static bool IsAiFeatureHorizon(string horizonId) => AiFeatureHorizonIds.Contains(horizonId);
 

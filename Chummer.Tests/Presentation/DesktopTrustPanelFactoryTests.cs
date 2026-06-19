@@ -144,6 +144,45 @@ public sealed class DesktopTrustPanelFactoryTests
         StringAssert.Contains(context.Message ?? string.Empty, "Grounded explain receipt");
     }
 
+    [TestMethod]
+    public void CreateLaunchButton_hides_companion_when_ai_features_are_disabled()
+    {
+        EnsureHeadlessPlatform();
+        DesktopPreferenceState previousPreferences = DesktopPreferenceStateRuntime.Current;
+        try
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(DesktopPreferenceState.Default with { DisableAiFeatures = true });
+            DesktopExplainCompanionRequest request = new(
+                Title: "Build lab explain companion",
+                SurfaceId: "build_lab:desktop",
+                SurfaceLabel: "Desktop build lab explain companion",
+                Sections:
+                [
+                    new DesktopTrustReceiptSection(
+                        "Grounded explain receipt",
+                        ["Support handoff receipt: support/build-lab/123", "Correlation key: build-lab/123"])
+                ],
+                SurfaceFamilyId: "build_lab",
+                WorkspaceId: "ws-77",
+                RulesetId: RulesetDefaults.Sr6,
+                RuntimeFingerprint: "sha256:runtime");
+
+            Button companionButton = DesktopExplainCompanionLauncher.CreateLaunchButton(
+                new Border(),
+                request,
+                "OpenSuppressedExplainCompanionButton");
+
+            Assert.IsFalse(companionButton.IsVisible);
+            Assert.IsFalse(companionButton.IsEnabled);
+            Assert.IsNull(companionButton.Tag);
+            Assert.AreEqual(string.Empty, companionButton.Content?.ToString());
+        }
+        finally
+        {
+            DesktopPreferenceStateRuntime.SetCurrent(previousPreferences);
+        }
+    }
+
     private static void EnsureHeadlessPlatform()
     {
         lock (HeadlessInitLock)

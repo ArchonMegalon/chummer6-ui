@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Contracts.AI;
+using Chummer.Presentation.Overview;
 using System.Globalization;
 
 namespace Chummer.Avalonia;
@@ -38,6 +39,22 @@ internal static class DesktopExplainCompanionLauncher
         DesktopExplainCompanionRequest request,
         string controlName)
     {
+        if (DesktopPreferenceStateRuntime.Current.DisableAiFeatures)
+        {
+            Button suppressedButton = new()
+            {
+                Name = controlName,
+                Content = string.Empty,
+                IsEnabled = false,
+                IsVisible = false,
+                MinWidth = 0,
+                Width = 0,
+                Height = 0
+            };
+            AutomationProperties.SetName(suppressedButton, "Explain companion unavailable");
+            return suppressedButton;
+        }
+
         string launchUri = BuildLaunchUri(request);
         Button button = new()
         {
