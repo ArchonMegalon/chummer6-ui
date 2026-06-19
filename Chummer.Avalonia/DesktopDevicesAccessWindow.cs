@@ -138,10 +138,10 @@ internal sealed class DesktopDevicesAccessWindow : Window
                         _introText,
                         _statusText,
                         CreateGuidedToolsPreferenceSection(),
-                        CreateSection(S("desktop.devices.section.current"), _currentText, _currentActionsRow),
-                        CreateSection(S("desktop.devices.section.claimed"), _devicesText, _devicesActionsRow),
-                        CreateSection(S("desktop.devices.section.claims"), _claimsText, _claimsActionsRow),
-                        CreateSection(S("desktop.devices.section.follow_through"), _accessText, _accessActionsRow),
+                        CreateSection(S("desktop.devices.section.current"), S("desktop.devices.section.current_description"), _currentText, _currentActionsRow),
+                        CreateSection(S("desktop.devices.section.claimed"), S("desktop.devices.section.claimed_description"), _devicesText, _devicesActionsRow),
+                        CreateSection(S("desktop.devices.section.claims"), S("desktop.devices.section.claims_description"), _claimsText, _claimsActionsRow),
+                        CreateSection(S("desktop.devices.section.follow_through"), S("desktop.devices.section.follow_through_description"), _accessText, _accessActionsRow),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -411,7 +411,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         if (LatestPendingClaim is not null || !string.IsNullOrWhiteSpace(_installState.LastClaimCode))
         {
-            actions.Insert(0, CreateButton("Use latest claim code", OpenLatestInstallHandoffAsync, isPrimary: true));
+            actions.Insert(0, CreateButton(S("desktop.devices.button.use_latest_claim"), OpenLatestInstallHandoffAsync, isPrimary: true));
         }
         else
         {
@@ -426,11 +426,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         [
             CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
-            CreateButton(
-                DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language)
-                    : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
-                OpenAccountAsync)
+            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync)
         ];
 
     private async Task CopyInstallIdAsync()
@@ -468,9 +464,6 @@ internal sealed class DesktopDevicesAccessWindow : Window
             await OpenInstallLinkingAsync().ConfigureAwait(true);
         }
     }
-
-    private Task OpenCampaignWorkspaceAsync()
-        => DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId);
 
     private Task OpenUpdateWindowAsync()
         => DesktopUpdateWindow.ShowAsync(this, _installState.HeadId);
@@ -597,6 +590,33 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
     private static string FormatDisplayTime(DateTimeOffset value)
         => value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+
+    private static Border CreateSection(string title, string description, Control body, Control? actionContent)
+    {
+        TextBlock descriptionText = new()
+        {
+            Text = description,
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+
+        return DesktopShellTheme.CreateSection(
+            title,
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    descriptionText,
+                    body
+                }
+            },
+            actionContent,
+            padding: 8,
+            cornerRadius: 4,
+            includeHeading: true,
+            spacing: 6);
+    }
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
         => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 8, cornerRadius: 4, includeHeading: true, spacing: 6);

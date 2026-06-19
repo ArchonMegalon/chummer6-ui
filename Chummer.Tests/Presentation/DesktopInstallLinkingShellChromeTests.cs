@@ -195,6 +195,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(localizationSource, "Keep the interface manual");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
         StringAssert.Contains(localizationSource, "Account and Devices");
+        StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
+        StringAssert.Contains(localizationSource, "desktop.devices.button.use_latest_claim");
         StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(localizationSource, "desktop.install_link.status.guided_tools_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");

@@ -1191,6 +1191,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "desktop.devices.section.claimed");
         RequireContains(source, "desktop.devices.section.claims");
         RequireContains(source, "desktop.devices.section.follow_through");
+        RequireContains(source, "desktop.devices.section.current_description");
+        RequireContains(source, "desktop.devices.section.claimed_description");
+        RequireContains(source, "desktop.devices.section.claims_description");
+        RequireContains(source, "desktop.devices.section.follow_through_description");
         RequireContains(source, "client.GetDesktopInstallLinkingSummaryAsync");
         RequireContains(source, "client.GetAccountCampaignSummaryAsync");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _installState.HeadId)");
@@ -1201,8 +1205,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
         RequireContains(source, "includeHeading: true");
         RequireContains(source, "desktop.devices.button.reload");
+        RequireContains(source, "desktop.devices.button.use_latest_claim");
         RequireContains(source, "desktop.dialog.action.close");
         RequireDoesNotContain(source, "desktop.install_link.button.open_work");
+        RequireDoesNotContain(source, "Use latest claim code");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "string.Equals(startupSurface, \"devices_access\"");
@@ -1331,7 +1337,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(desktopHomeSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId)");
 
         string installLinkSource = ReadSource("Chummer.Avalonia/DesktopInstallLinkingWindow.cs");
-        RequireContains(installLinkSource, "DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language");
+        RequireContains(installLinkSource, "_preferences = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId);");
+        RequireContains(installLinkSource, "_language = _preferences.Language;");
     }
 
     private static void DesktopHome_wires_the_support_projection_into_the_summary_panel()
