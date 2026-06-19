@@ -45,6 +45,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 280
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(detailsBox);
 
         _statusText = new TextBlock
         {

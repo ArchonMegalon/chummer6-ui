@@ -35,9 +35,9 @@ internal sealed class DesktopAboutWindow : Window
                     BuildTextBlock($"Version {projection.Version}").At(1, 1),
                     BuildTextBlock(projection.Copyright).At(2, 1),
                     BuildTextBlock(projection.Company).At(3, 1),
-                    BuildReadOnlyBox(projection.Description).At(4, 1),
-                    BuildReadOnlyBox(projection.Disclaimer).At(5, 1),
-                    BuildReadOnlyBox(projection.Contributors).At(5, 0)
+                    BuildReadOnlyPanel(projection.Description).At(4, 1),
+                    BuildReadOnlyPanel(projection.Disclaimer).At(5, 1),
+                    BuildReadOnlyPanel(projection.Contributors).At(5, 0)
                 }
             },
             padding: 12);
@@ -98,20 +98,15 @@ internal sealed class DesktopAboutWindow : Window
             VerticalAlignment = VerticalAlignment.Center
         };
 
-    private static TextBox BuildReadOnlyBox(string text)
-    {
-        TextBox textBox = new()
-        {
-            Text = text,
-            IsReadOnly = true,
-            AcceptsReturn = true,
-            TextWrapping = TextWrapping.Wrap,
-            MinHeight = 132,
-            MaxHeight = 180
-        };
-        DesktopShellTheme.ApplyShellTextInputTheme(textBox);
-        return textBox;
-    }
+    private static Control BuildReadOnlyPanel(string text)
+        => DesktopShellTheme.CreateUtilityPanel(
+            new TextBlock
+            {
+                Text = text,
+                TextWrapping = TextWrapping.Wrap
+            },
+            padding: 8,
+            cornerRadius: 4);
 
     private static AboutAssemblyProjection BuildProjection()
     {

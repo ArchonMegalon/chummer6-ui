@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-18T20:55:06.308226Z",
+  "generatedAt": "2026-06-19T00:53:27.981912Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260618-142358",
-  "version": "run-20260618-142358",
+  "releaseVersion": "run-20260619-024645",
+  "version": "run-20260619-024645",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -32,7 +32,7 @@
     "reasons": [],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "fail"
+      "flagshipGate": "pass"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -290,12 +290,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260618-142358",
+    "releaseChannelVersion": "run-20260619-024645",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",
@@ -320,10 +320,7 @@
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
     "flagshipGateExternalDesktopOnly": false,
-    "desktopExecutableLocalBlockingFindings": [
-      "Desktop visual familiarity exit gate release-channel identity does not match release channel channelId.",
-      "Desktop workflow execution gate release-channel identity does not match release channel channelId."
-    ],
+    "desktopExecutableLocalBlockingFindings": [],
     "reviewedJobs": [
       "dense_builder",
       "dense_workbench_and_initiative",

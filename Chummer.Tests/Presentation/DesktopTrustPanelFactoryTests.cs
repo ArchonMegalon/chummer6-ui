@@ -153,9 +153,17 @@ public sealed class DesktopTrustPanelFactoryTests
                 return;
             }
 
-            AppBuilder.Configure<global::Avalonia.Application>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                .SetupWithoutStarting();
+            try
+            {
+                AppBuilder.Configure<global::Avalonia.Application>()
+                    .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+                    .SetupWithoutStarting();
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Setup was already called", StringComparison.Ordinal))
+            {
+                // Several Avalonia presentation tests share one process; another test may have already initialized the platform.
+            }
+
             _headlessInitialized = true;
         }
     }

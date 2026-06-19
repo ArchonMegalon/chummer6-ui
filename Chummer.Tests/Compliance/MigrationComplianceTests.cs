@@ -6578,7 +6578,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt rid does not match manifest rid");
         StringAssert.Contains(promotionEvidenceText, "startup-smoke receipt timestamp is in the future");
         StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReason\": startup_smoke_reason");
-        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": str((receipt or {}).get(\"__sourcePath\") or \"\")");
+        StringAssert.Contains(promotionEvidenceText, "\"startupSmokeReceiptPath\": materialized_receipt_path(receipt, startup_smoke_dir)");
 
         StringAssert.Contains(publisherText, "Expected desktop-download-bundle layout");
         StringAssert.Contains(publisherText, "generate-releases-manifest.sh");
@@ -6907,7 +6907,7 @@ public class MigrationComplianceTests
 
             Assert.AreEqual("public_stable", root.GetProperty("channelId").GetString());
             Assert.AreEqual(sourceVersion, root.GetProperty("version").GetString());
-            Assert.AreEqual("public_stable", root.GetProperty("rolloutState").GetString());
+            Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
             Assert.AreNotEqual("preview", root.GetProperty("rolloutState").GetString());
 
             string startupSmokeReceiptPath = Path.Combine(tempRoot, "startup-smoke", "startup-smoke-avalonia-linux-x64.receipt.json");

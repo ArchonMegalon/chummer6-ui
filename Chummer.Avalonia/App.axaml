@@ -125,6 +125,15 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <Style Selector="TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.shell-option-meta">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellTextMutedBrush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
     <Style Selector="TextBlock.shell-tree-label">
       <Setter Property="FontSize" Value="11" />
       <Setter Property="TextWrapping" Value="NoWrap" />
@@ -169,8 +178,8 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellSurfaceBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellBorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="12" />
-      <Setter Property="Padding" Value="6" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="2" />
       <Setter Property="BoxShadow" Value="0 10 24 0 #120F172A" />
     </Style>
     <Style Selector="Border.shell-card.subtle">
@@ -361,6 +370,18 @@
     <Style Selector="ListBoxItem:selected TextBlock.shell-caption">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
+    <Style Selector="ListBoxItem:selected TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected TextBlock.shell-option-meta">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover TextBlock.shell-option-meta">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="30" />
       <Setter Property="Padding" Value="8,4" />
@@ -410,6 +431,18 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="ComboBoxItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected TextBlock.shell-option-meta">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover TextBlock.shell-option-meta">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
     <Style Selector="TextBox">

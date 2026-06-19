@@ -122,6 +122,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
             TextWrapping = TextWrapping.Wrap,
             MinHeight = 34
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(launchUriTextBox);
         AutomationProperties.SetName(launchUriTextBox, "Inspectable explain companion launch link");
         AutomationProperties.SetHelpText(launchUriTextBox, "Copy-safe launch link for reopening the same receipt, blocker, compare, and environment-diff context.");
         content.Children.Add(launchUriTextBox);
@@ -151,6 +152,7 @@ internal sealed class DesktopExplainCompanionWindow : Window
             MinHeight = 120,
             AcceptsReturn = true
         };
+        DesktopShellTheme.ApplyShellTextInputTheme(receiptTextBox);
         AutomationProperties.SetName(receiptTextBox, "Inspectable explain companion receipt text");
         AutomationProperties.SetHelpText(receiptTextBox, "Copy-safe receipt text for support, blocker, compare, and environment-diff review.");
         content.Children.Add(receiptTextBox);

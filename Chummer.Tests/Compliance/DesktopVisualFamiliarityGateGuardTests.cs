@@ -121,7 +121,8 @@ public sealed class DesktopVisualFamiliarityGateGuardTests
         StringAssert.Contains(gateTestsText, "RightShellWidth: rightShellWidth");
         StringAssert.Contains(gateTestsText, "InlineCommandSurfaceVisible: inlineCommandSurfaceVisible");
         StringAssert.Contains(gateTestsText, "DialogWindowVisible: dialogWindowVisible");
-        StringAssert.Contains(gateTestsText, "string[] visibleMenuCommandIds = CaptureVisibleCommandIds(harness);");
+        StringAssert.Contains(gateTestsText, "string[] visibleMenuCommandIds = !string.IsNullOrWhiteSpace(harness.ShellPresenter.State.OpenMenuId)");
+        StringAssert.Contains(gateTestsText, ": CaptureVisibleCommandIds(harness);");
     }
 
     private static string[] ExtractScreenshotSet(string scriptText, string listName)

@@ -45,12 +45,15 @@ internal static class DesktopShellTheme
     public static void ApplyShellTextInputTheme(TextBox textBox)
     {
         ArgumentNullException.ThrowIfNull(textBox);
-        textBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        textBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        textBox.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#FFFFFF");
+        textBox.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#111111");
         textBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
-        textBox.CaretBrush = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#111111");
+        textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#2C5FB8");
+        textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#FFFFFF");
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
+        ToolTip.SetTip(textBox, null);
     }
 
     public static void ApplyShellComboBoxTheme(ComboBox comboBox)
@@ -81,10 +84,22 @@ internal static class DesktopShellTheme
     }
 
     public static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
+        => CreateOptionText(text, wrapping);
+
+    public static TextBlock CreateOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
         => new()
         {
             Text = text,
-            TextWrapping = wrapping
+            TextWrapping = wrapping,
+            Classes = { "shell-option-label" }
+        };
+
+    public static TextBlock CreateOptionMetaText(string text, TextWrapping wrapping = TextWrapping.Wrap)
+        => new()
+        {
+            Text = text,
+            TextWrapping = wrapping,
+            Classes = { "shell-option-meta" }
         };
 
     public static Border CreateSection(

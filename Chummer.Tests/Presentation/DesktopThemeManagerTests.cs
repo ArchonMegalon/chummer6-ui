@@ -122,11 +122,18 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
 
         Assert.IsFalse(commandDialogSource.Contains("Background = ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#F1F5F9\")", StringComparison.Ordinal));
         Assert.IsFalse(commandDialogSource.Contains("BorderBrush = ResolveThemeBrush(\"ChummerShellSelectionTitleBorderBrush\", \"#CBD5E1\")", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("Background = ResolveThemeBrush(\"ChummerShellSelectionInsetBrush\", \"#F1F5F9\")", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("BorderBrush = ResolveThemeBrush(\"ChummerShellSelectionTitleBorderBrush\", \"#CBD5E1\")", StringComparison.Ordinal));
+        StringAssert.Contains(commandDialogSource, "Classes = { \"shell-option-label\" }");
+        StringAssert.Contains(commandDialogSource, "DesktopShellTheme.CreateOptionMetaText(meta)");
+        StringAssert.Contains(desktopDialogSource, "Classes = { \"shell-option-label\" }");
+        StringAssert.Contains(desktopDialogSource, "CreateOptionMetaText(meta)");
+        StringAssert.Contains(appTheme, "ListBoxItem:selected TextBlock.shell-option-meta");
+        StringAssert.Contains(appTheme, "ComboBoxItem:selected TextBlock.shell-option-meta");
     }
 
     [TestMethod]
@@ -164,8 +171,12 @@ public sealed class DesktopThemeManagerTests
         string classicPortSurface = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
 
         StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
+        StringAssert.Contains(shellTheme, "CreateOptionText(string text");
+        StringAssert.Contains(shellTheme, "CreateOptionMetaText(string text");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSurfaceBrush}\" />");
+        StringAssert.Contains(appTheme, "TextBlock.shell-option-label");
+        StringAssert.Contains(appTheme, "TextBlock.shell-option-meta");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(conversationList);");
         StringAssert.Contains(aliceSource, "DesktopShellTheme.ApplyShellListBoxTheme(evidenceList);");
         StringAssert.Contains(scaffoldSource, "Background = ResolveThemeBrush(\"ChummerShellWindowBackgroundBrush\", \"#E3EAF3\")");
@@ -203,14 +214,16 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
-    public void About_window_read_only_text_boxes_use_shell_input_theme()
+    public void About_window_uses_read_only_shell_panels_instead_of_input_boxes_for_prose()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string aboutSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAboutWindow.cs"));
 
         StringAssert.Contains(aboutSource, "Content = DesktopShellTheme.CreateWindowSurface(");
         StringAssert.Contains(aboutSource, "DesktopShellTheme.CreateUtilityPanel(content, padding: 12, cornerRadius: 6)");
-        StringAssert.Contains(aboutSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
+        StringAssert.Contains(aboutSource, "BuildReadOnlyPanel(projection.Description)");
+        StringAssert.Contains(aboutSource, "DesktopShellTheme.CreateUtilityPanel(");
+        Assert.IsFalse(aboutSource.Contains("private static TextBox BuildReadOnlyBox", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -237,6 +250,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(commandDialogSource, "ApplyTextBoxAccessibility(textBox");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
+        StringAssert.Contains(File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs")), "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(desktopDialogSource, "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(commandDialogSource, "ToolTip.SetTip(textBox, null);");
     }

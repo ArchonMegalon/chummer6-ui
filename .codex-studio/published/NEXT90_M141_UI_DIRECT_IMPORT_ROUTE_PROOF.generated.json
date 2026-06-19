@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-06-18T21:17:58Z",
+  "generatedAt": "2026-06-19T01:07:48Z",
   "status": "pass",
   "unresolved": [],
   "contract_name": "chummer6-ui.next90_m141_ui_direct_import_route_proof",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260618-142358",
-  "version": "run-20260618-142358",
+  "releaseVersion": "run-20260619-024645",
+  "version": "run-20260619-024645",
   "evidence": {
     "packageId": "next90-m141-ui-capture-direct-screenshot-and-runtime-proof-for-translator-xml-amendment",
     "title": "Capture direct screenshot and runtime proof for translator, XML amendment editor, Hero Lab importer, and adjacent import-oracle routes.",
@@ -148,7 +148,7 @@
       "screenshotReviewGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/CHUMMER5A_SCREENSHOT_REVIEW_GATE.generated.json",
       "veteranTaskTimeGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/VETERAN_TASK_TIME_EVIDENCE_GATE.generated.json",
       "uiFlagshipReleaseGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
+      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
       "flagshipFrontier": "/docker/fleet/.codex-studio/published/FULL_PRODUCT_FRONTIER.generated.yaml"
     },
     "receiptChecks": {

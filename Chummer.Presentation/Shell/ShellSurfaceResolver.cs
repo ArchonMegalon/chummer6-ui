@@ -29,17 +29,7 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             shellState.OpenWorkspaces.Select(workspace => workspace.RulesetId),
             shellState.Commands.Select(command => command.RulesetId),
             shellState.NavigationTabs.Select(tab => tab.RulesetId));
-        string activeRulesetId = ResolveRulesetId(
-            ResolveShellWorkspaceRulesetId(shellState.ActiveWorkspaceId, shellState.OpenWorkspaces),
-            shellState.OpenWorkspaces.Select(workspace => workspace.RulesetId),
-            shellState.NavigationTabs.Select(tab => tab.RulesetId),
-            [
-                shellState.ActiveRulesetId,
-                preferredRulesetId
-            ]);
-        CharacterWorkspaceId? activeWorkspaceId = shellState.ActiveWorkspaceId;
-        string? activeTabId = shellState.ActiveTabId;
-        IReadOnlyList<OpenWorkspaceState> openWorkspaces = shellState.OpenWorkspaces
+        IReadOnlyList<OpenWorkspaceState> shellOpenWorkspaces = shellState.OpenWorkspaces
             .Select(workspace => new OpenWorkspaceState(
                 Id: workspace.Id,
                 Name: workspace.Name,
@@ -48,6 +38,21 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
                 RulesetId: RulesetDefaults.NormalizeOptional(workspace.RulesetId) ?? string.Empty,
                 HasSavedWorkspace: workspace.HasSavedWorkspace))
             .ToArray();
+        CharacterWorkspaceId? activeWorkspaceId = ResolvePresentedActiveWorkspaceId(overviewState, shellState);
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces = ResolvePresentedOpenWorkspaces(
+            overviewState,
+            shellState,
+            activeWorkspaceId,
+            shellOpenWorkspaces);
+        string activeRulesetId = ResolveRulesetId(
+            ResolveWorkspaceRulesetId(activeWorkspaceId, openWorkspaces),
+            openWorkspaces.Select(workspace => workspace.RulesetId),
+            shellState.NavigationTabs.Select(tab => tab.RulesetId),
+            [
+                shellState.ActiveRulesetId,
+                preferredRulesetId
+            ]);
+        string? activeTabId = shellState.ActiveTabId;
         bool hasOpenWorkspace = activeWorkspaceId is not null || openWorkspaces.Count > 0;
         IReadOnlyList<NavigationTabDefinition> navigationTabs = FilterPresentedNavigationTabs(
             shellState.NavigationTabs,
@@ -103,6 +108,45 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             .Where(tab => RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab(tab.Id))
             .ToArray();
     }
+
+    private static CharacterWorkspaceId? ResolvePresentedActiveWorkspaceId(
+        CharacterOverviewState overviewState,
+        ShellState shellState)
+    {
+        CharacterWorkspaceId? overviewActiveWorkspaceId = overviewState.Session.ActiveWorkspaceId ?? overviewState.WorkspaceId;
+        if ((shellState.ActiveWorkspaceId is not null || shellState.OpenWorkspaces.Count > 0)
+            && overviewActiveWorkspaceId is { } overviewActive
+            && ResolveOverviewOpenWorkspaces(overviewState).Any(workspace => WorkspaceIdsEqual(workspace.Id, overviewActive)))
+        {
+            return overviewActive;
+        }
+
+        return shellState.ActiveWorkspaceId;
+    }
+
+    private static IReadOnlyList<OpenWorkspaceState> ResolvePresentedOpenWorkspaces(
+        CharacterOverviewState overviewState,
+        ShellState shellState,
+        CharacterWorkspaceId? activeWorkspaceId,
+        IReadOnlyList<OpenWorkspaceState> shellOpenWorkspaces)
+    {
+        if (activeWorkspaceId is not null
+            && (shellState.ActiveWorkspaceId is not null || shellState.OpenWorkspaces.Count > 0))
+        {
+            IReadOnlyList<OpenWorkspaceState> overviewOpenWorkspaces = ResolveOverviewOpenWorkspaces(overviewState);
+            if (overviewOpenWorkspaces.Any(workspace => WorkspaceIdsEqual(workspace.Id, activeWorkspaceId.Value)))
+            {
+                return overviewOpenWorkspaces;
+            }
+        }
+
+        return shellOpenWorkspaces;
+    }
+
+    private static IReadOnlyList<OpenWorkspaceState> ResolveOverviewOpenWorkspaces(CharacterOverviewState overviewState)
+        => overviewState.Session.OpenWorkspaces.Count > 0
+            ? overviewState.Session.OpenWorkspaces
+            : overviewState.OpenWorkspaces;
 
     private static string? ResolvePresentedActiveTabId(
         string? activeTabId,
@@ -164,20 +208,22 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             ?? string.Empty;
     }
 
-    private static string? ResolveShellWorkspaceRulesetId(
+    private static string? ResolveWorkspaceRulesetId(
         CharacterWorkspaceId? activeWorkspaceId,
-        IReadOnlyList<ShellWorkspaceState> openWorkspaces)
+        IReadOnlyList<OpenWorkspaceState> openWorkspaces)
     {
         if (activeWorkspaceId is null)
         {
             return null;
         }
 
-        string activeWorkspaceValue = activeWorkspaceId.Value.Value;
         return openWorkspaces
-            .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, activeWorkspaceValue, StringComparison.Ordinal))
+            .FirstOrDefault(workspace => WorkspaceIdsEqual(workspace.Id, activeWorkspaceId.Value))
             ?.RulesetId;
     }
+
+    private static bool WorkspaceIdsEqual(CharacterWorkspaceId left, CharacterWorkspaceId right)
+        => string.Equals(left.Value, right.Value, StringComparison.Ordinal);
 
     private static WorkflowSurfaceActionBinding[] BuildWorkflowSurfaceActions(
         IReadOnlyList<WorkflowSurfaceDefinition> workflowSurfaces,

@@ -551,20 +551,15 @@ public partial class DesktopDialogWindow : Window
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
                     FontSize = 13,
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Classes = { "shell-option-label" }
                 }
             }
         };
 
         if (!string.IsNullOrWhiteSpace(meta))
         {
-            body.Children.Add(new TextBlock
-            {
-                Text = meta,
-                FontSize = 12,
-                Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
-                TextWrapping = TextWrapping.Wrap
-            });
+            body.Children.Add(CreateOptionMetaText(meta));
         }
 
         return new Border
@@ -1596,11 +1591,7 @@ public partial class DesktopDialogWindow : Window
         };
         ApplyShellListBoxTheme(qualitiesList);
         qualitiesList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
-            new TextBlock
-            {
-                Text = line ?? string.Empty,
-                TextWrapping = TextWrapping.Wrap
-            });
+            CreateOptionText(line ?? string.Empty, TextWrapping.Wrap));
 
         StackPanel inspectLane = new()
         {
@@ -1852,11 +1843,7 @@ public partial class DesktopDialogWindow : Window
         };
         ApplyShellListBoxTheme(resultsList);
         resultsList.ItemTemplate = new FuncDataTemplate<string>((line, _) =>
-            new TextBlock
-            {
-                Text = line ?? string.Empty,
-                TextWrapping = TextWrapping.Wrap
-            });
+            CreateOptionText(line ?? string.Empty, TextWrapping.Wrap));
         ApplyAccessibility(resultsList, resultsListField.AccessibleName, resultsListField.ToolTip, resultsListField.HelpText);
         Grid.SetColumn(resultsList, 0);
         Grid.SetRow(resultsList, 1);
@@ -2253,11 +2240,7 @@ public partial class DesktopDialogWindow : Window
         };
         ApplyAccessibility(settingsCombo, settingsField.AccessibleName, settingsField.ToolTip, settingsField.HelpText);
         settingsCombo.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
-            new TextBlock
-            {
-                Text = option?.Label ?? string.Empty,
-                TextWrapping = TextWrapping.Wrap
-            });
+            CreateOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
         Grid.SetColumn(settingsCombo, 1);
         settingsRow.Children.Add(settingsCombo);
         Button modifySettingsButton = new()
@@ -3203,11 +3186,13 @@ public partial class DesktopDialogWindow : Window
     }
 
     private static TextBlock CreateComboBoxOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
-        => new()
-        {
-            Text = text,
-            TextWrapping = wrapping
-        };
+        => CreateOptionText(text, wrapping);
+
+    private static TextBlock CreateOptionText(string text, TextWrapping wrapping = TextWrapping.NoWrap)
+        => DesktopShellTheme.CreateOptionText(text, wrapping);
+
+    private static TextBlock CreateOptionMetaText(string text, TextWrapping wrapping = TextWrapping.Wrap)
+        => DesktopShellTheme.CreateOptionMetaText(text, wrapping);
 
     private ListBox BuildSelectListBox(DesktopDialogField field)
     {
@@ -3222,11 +3207,7 @@ public partial class DesktopDialogWindow : Window
         };
         ApplyShellListBoxTheme(listBox);
         listBox.ItemTemplate = new FuncDataTemplate<DesktopDialogFieldOption>((option, _) =>
-            new TextBlock
-            {
-                Text = option?.Label ?? string.Empty,
-                TextWrapping = TextWrapping.Wrap
-            });
+            CreateOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
         listBox.SelectionChanged += (_, _) =>
         {
             if (listBox.SelectedItem is DesktopDialogFieldOption selectedOption

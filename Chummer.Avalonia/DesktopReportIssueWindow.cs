@@ -285,8 +285,10 @@ internal sealed class DesktopReportIssueWindow : Window
             TextWrapping = isMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
             MinHeight = minHeight
         };
-        ToolTip.SetTip(box, tooltip);
+        DesktopShellTheme.ApplyShellTextInputTheme(box);
         AutomationProperties.SetName(box, automationName);
+        AutomationProperties.SetHelpText(box, tooltip);
+        ToolTip.SetTip(box, null);
         return box;
     }
 

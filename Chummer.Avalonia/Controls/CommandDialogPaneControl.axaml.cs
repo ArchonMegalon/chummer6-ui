@@ -596,20 +596,15 @@ public partial class CommandDialogPaneControl : UserControl
                     Text = title,
                     FontWeight = FontWeight.SemiBold,
                     FontSize = 13,
-                    TextWrapping = TextWrapping.Wrap
+                    TextWrapping = TextWrapping.Wrap,
+                    Classes = { "shell-option-label" }
                 }
             }
         };
 
         if (!string.IsNullOrWhiteSpace(meta))
         {
-            body.Children.Add(new TextBlock
-            {
-                Text = meta,
-                FontSize = 12,
-                Foreground = ResolveThemeBrush("ChummerShellTextMutedBrush", "#53657D"),
-                TextWrapping = TextWrapping.Wrap
-            });
+            body.Children.Add(DesktopShellTheme.CreateOptionMetaText(meta));
         }
 
         return new Border
@@ -808,11 +803,7 @@ public partial class CommandDialogPaneControl : UserControl
             };
             DesktopShellTheme.ApplyShellListBoxTheme(listBox);
             listBox.ItemTemplate = new FuncDataTemplate<DialogFieldOptionDisplayItem>((option, _) =>
-                new TextBlock
-                {
-                    Text = option?.Label ?? string.Empty,
-                    TextWrapping = TextWrapping.Wrap
-                });
+                DesktopShellTheme.CreateOptionText(option?.Label ?? string.Empty, TextWrapping.Wrap));
             if (!field.IsReadOnly)
             {
                 listBox.SelectionChanged += (_, _) =>
