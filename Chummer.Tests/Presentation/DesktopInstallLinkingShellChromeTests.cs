@@ -197,8 +197,8 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Show helper buttons");
-        StringAssert.Contains(localizationSource, "Hide helper buttons");
+        StringAssert.Contains(localizationSource, "Enable AI features");
+        StringAssert.Contains(localizationSource, "No, emotionally I'm a scared caveman");
         Assert.IsFalse(
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
