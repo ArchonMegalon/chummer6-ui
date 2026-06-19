@@ -126,8 +126,8 @@ internal sealed class DesktopDevicesAccessWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton(S("desktop.support.button.refresh"), RefreshDevicesAccessStateAsync),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.devices.button.reload"), RefreshDevicesAccessStateAsync),
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }
@@ -365,7 +365,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         =>
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _preferences.Language), OpenWorkRouteAsync, isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenWorkRouteAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync),
             CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync)
@@ -376,7 +376,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         [
             CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspaceAsync, isPrimary: true),
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _preferences.Language), OpenWorkRouteAsync)
+                ? CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync),
             CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync)
         ];
@@ -408,9 +408,9 @@ internal sealed class DesktopDevicesAccessWindow : Window
             CreateButton(S("desktop.home.button.open_report_issue"), OpenReportIssueWindowAsync),
             CreateButton(
                 DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _preferences.Language)
+                    ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language)
                     : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language),
-                DesktopInstallLinkingRuntime.IsClaimed(_installState) ? OpenWorkRouteAsync : OpenAccountAsync)
+                OpenAccountAsync)
         ];
 
     private async Task CopyInstallIdAsync()
@@ -567,7 +567,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         => value.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
-        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 8, cornerRadius: 4, includeHeading: false, spacing: 0);
+        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 8, cornerRadius: 4, includeHeading: true, spacing: 6);
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
         => DesktopShellTheme.CreateStackActionRow(actions, spacing: 6);

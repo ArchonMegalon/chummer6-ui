@@ -109,7 +109,7 @@ internal sealed class DesktopReportIssueWindow : Window
                             Children =
                             {
                                 CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }
@@ -142,11 +142,11 @@ internal sealed class DesktopReportIssueWindow : Window
             Spacing = 6,
             Children =
             {
-                _bugTitleBox,
-                _bugExpectedBox,
-                _bugActualBox,
-                _bugReproStepsBox,
-                _bugEvidenceBox
+                CreateField(S("desktop.report.bug.title_label"), _bugTitleBox),
+                CreateField(S("desktop.report.bug.expected_label"), _bugExpectedBox),
+                CreateField(S("desktop.report.bug.actual_label"), _bugActualBox),
+                CreateField(S("desktop.report.bug.repro_label"), _bugReproStepsBox),
+                CreateField(S("desktop.report.bug.evidence_label"), _bugEvidenceBox)
             }
         };
 
@@ -156,8 +156,24 @@ internal sealed class DesktopReportIssueWindow : Window
             Spacing = 6,
             Children =
             {
-                _feedbackSummaryBox,
-                _feedbackDetailBox
+                CreateField(S("desktop.report.feedback.summary_label"), _feedbackSummaryBox),
+                CreateField(S("desktop.report.feedback.detail_label"), _feedbackDetailBox)
+            }
+        };
+
+    private static Control CreateField(string label, TextBox input)
+        => new StackPanel
+        {
+            Spacing = 3,
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = label,
+                    FontWeight = FontWeight.SemiBold,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                input
             }
         };
 
@@ -283,7 +299,8 @@ internal sealed class DesktopReportIssueWindow : Window
         {
             AcceptsReturn = isMultiline,
             TextWrapping = isMultiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
-            MinHeight = minHeight
+            MinHeight = minHeight,
+            Watermark = tooltip
         };
         DesktopShellTheme.ApplyShellTextInputTheme(box);
         AutomationProperties.SetName(box, automationName);

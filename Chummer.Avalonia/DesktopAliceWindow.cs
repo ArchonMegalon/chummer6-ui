@@ -27,9 +27,11 @@ internal sealed class DesktopAliceWindow : Window
     private const string LegacyOriginDraftMode = "Origin draft";
     private const string OriginNarrationRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH";
     private const string OriginVideoRequestPathEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_REQUEST_PATH";
-    private const string MediaFactoryRepoRoot = "/docker/fleet/repos/chummer-media-factory";
-    private const string MediaFactoryNarrationCliProject = "/docker/fleet/repos/chummer-media-factory/tools/OriginDossierNarrationRequestCli/Chummer.Media.Factory.OriginDossierNarrationRequestCli.csproj";
-    private const string MediaFactoryVideoCliProject = "/docker/fleet/repos/chummer-media-factory/tools/OriginDossierVideoRequestCli/Chummer.Media.Factory.OriginDossierVideoRequestCli.csproj";
+    private const string MediaFactoryRepoRootEnv = "CHUMMER_MEDIA_FACTORY_REPO_ROOT";
+    private const string MediaFactoryNarrationCliProjectEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_NARRATION_CLI_PROJECT";
+    private const string MediaFactoryVideoCliProjectEnv = "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_CLI_PROJECT";
+    private const string MediaFactoryNarrationCliProjectRelative = "tools/OriginDossierNarrationRequestCli/Chummer.Media.Factory.OriginDossierNarrationRequestCli.csproj";
+    private const string MediaFactoryVideoCliProjectRelative = "tools/OriginDossierVideoRequestCli/Chummer.Media.Factory.OriginDossierVideoRequestCli.csproj";
     internal static DesktopAliceWindow? LastOpenedWindowForTesting { get; private set; }
     private readonly AccountCampaignSummary? _campaignSummary;
     private readonly IReadOnlyList<WorkspaceListItem> _recentWorkspaces;
@@ -252,6 +254,9 @@ internal sealed class DesktopAliceWindow : Window
             Watermark = "Ask Alice about the current build, rules tradeoffs, or what to add next."
         };
         DesktopShellTheme.ApplyShellTextInputTheme(promptBox);
+        global::Avalonia.Automation.AutomationProperties.SetName(promptBox, "Ask Alice");
+        global::Avalonia.Automation.AutomationProperties.SetHelpText(promptBox, "Ask Alice for build help, rules explanation, or Origin Dossier guidance. Text-box hover tips are disabled so the placeholder does not overlap typed text.");
+        ToolTip.SetTip(promptBox, null);
 
         TextBlock gmAllowanceGuideText = new()
         {
@@ -270,6 +275,9 @@ internal sealed class DesktopAliceWindow : Window
             Watermark = "Optional GM allowances or exceptions"
         };
         DesktopShellTheme.ApplyShellTextInputTheme(gmAllowanceBox);
+        global::Avalonia.Automation.AutomationProperties.SetName(gmAllowanceBox, "GM notes for Alice");
+        global::Avalonia.Automation.AutomationProperties.SetHelpText(gmAllowanceBox, "Optional GM allowances, requirements, or restrictions that should guide Alice and Origin Dossier suggestions.");
+        ToolTip.SetTip(gmAllowanceBox, null);
 
         ComboBox originArchetypeCombo = new()
         {
@@ -3061,22 +3069,24 @@ internal sealed class DesktopAliceWindow : Window
             throw new InvalidOperationException("Origin dossier bundle is missing the media-factory narration request.");
         }
 
-        if (!File.Exists(MediaFactoryNarrationCliProject))
+        string mediaFactoryRepoRoot = ResolveMediaFactoryRepoRoot();
+        string narrationCliProject = ResolveMediaFactoryCliProject(MediaFactoryNarrationCliProjectEnv, MediaFactoryNarrationCliProjectRelative);
+        if (!File.Exists(narrationCliProject))
         {
-            throw new FileNotFoundException("Origin dossier narration CLI project was not found.", MediaFactoryNarrationCliProject);
+            throw new FileNotFoundException("Origin dossier narration CLI project was not found.", narrationCliProject);
         }
 
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            WorkingDirectory = MediaFactoryRepoRoot,
+            WorkingDirectory = mediaFactoryRepoRoot,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
         startInfo.ArgumentList.Add("run");
         startInfo.ArgumentList.Add("--project");
-        startInfo.ArgumentList.Add(MediaFactoryNarrationCliProject);
+        startInfo.ArgumentList.Add(narrationCliProject);
         startInfo.ArgumentList.Add("--configuration");
         startInfo.ArgumentList.Add("Release");
         startInfo.ArgumentList.Add("--nologo");
@@ -3114,22 +3124,24 @@ internal sealed class DesktopAliceWindow : Window
             throw new InvalidOperationException("Origin dossier bundle is missing the vidBoard packet.");
         }
 
-        if (!File.Exists(MediaFactoryVideoCliProject))
+        string mediaFactoryRepoRoot = ResolveMediaFactoryRepoRoot();
+        string videoCliProject = ResolveMediaFactoryCliProject(MediaFactoryVideoCliProjectEnv, MediaFactoryVideoCliProjectRelative);
+        if (!File.Exists(videoCliProject))
         {
-            throw new FileNotFoundException("Origin dossier video CLI project was not found.", MediaFactoryVideoCliProject);
+            throw new FileNotFoundException("Origin dossier video CLI project was not found.", videoCliProject);
         }
 
         ProcessStartInfo startInfo = new()
         {
             FileName = "dotnet",
-            WorkingDirectory = MediaFactoryRepoRoot,
+            WorkingDirectory = mediaFactoryRepoRoot,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
         startInfo.ArgumentList.Add("run");
         startInfo.ArgumentList.Add("--project");
-        startInfo.ArgumentList.Add(MediaFactoryVideoCliProject);
+        startInfo.ArgumentList.Add(videoCliProject);
         startInfo.ArgumentList.Add("--configuration");
         startInfo.ArgumentList.Add("Release");
         startInfo.ArgumentList.Add("--nologo");
@@ -3171,6 +3183,53 @@ internal sealed class DesktopAliceWindow : Window
         }
 
         return (receiptPath, renderedVideoPath);
+    }
+
+    private static string ResolveMediaFactoryCliProject(string environmentVariable, string relativePath)
+    {
+        string? configured = Environment.GetEnvironmentVariable(environmentVariable);
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return Path.GetFullPath(configured.Trim());
+        }
+
+        return Path.GetFullPath(Path.Combine(ResolveMediaFactoryRepoRoot(), relativePath));
+    }
+
+    private static string ResolveMediaFactoryRepoRoot()
+    {
+        string? configured = Environment.GetEnvironmentVariable(MediaFactoryRepoRootEnv);
+        if (!string.IsNullOrWhiteSpace(configured))
+        {
+            return Path.GetFullPath(configured.Trim());
+        }
+
+        foreach (string root in MediaFactorySearchRoots())
+        {
+            foreach (string relativeCandidate in new[] { "repos/chummer-media-factory", "chummer-media-factory" })
+            {
+                string candidate = Path.GetFullPath(Path.Combine(root, relativeCandidate));
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "chummer-media-factory"));
+    }
+
+    private static IEnumerable<string> MediaFactorySearchRoots()
+    {
+        foreach (string seed in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory })
+        {
+            DirectoryInfo? current = new(seed);
+            while (current is not null)
+            {
+                yield return current.FullName;
+                current = current.Parent;
+            }
+        }
     }
 
     private static void RenderControlToPng(Control control, int width, int height, string outputPath)

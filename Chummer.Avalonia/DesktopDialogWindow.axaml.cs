@@ -321,7 +321,7 @@ public partial class DesktopDialogWindow : Window
         };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), minHeight: 112));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(ResolveSelectionNavigationTitle(navigationField), CreateFieldControl(navigationField), minHeight: 112));
         }
 
         if (candidateField is not null)
@@ -362,6 +362,18 @@ public partial class DesktopDialogWindow : Window
         }
 
         return shell;
+    }
+
+    private static string ResolveSelectionNavigationTitle(DesktopDialogField field)
+    {
+        if (!string.Equals(field.Label, "Navigation", StringComparison.Ordinal))
+        {
+            return field.Label;
+        }
+
+        return field.Id.Contains("CategoryTree", StringComparison.Ordinal)
+            ? "Categories"
+            : "Current selection";
     }
 
     private IEnumerable<Control> BuildSelectionTopFieldRows(IReadOnlyList<DesktopDialogField> fields)
@@ -1131,6 +1143,7 @@ public partial class DesktopDialogWindow : Window
         DesktopDialogField aliasField = FindRequiredField(fields, "newCharacterAlias");
         DesktopDialogField rulesetField = FindRequiredField(fields, "newCharacterRulesetId");
         DesktopDialogField buildMethodField = FindRequiredField(fields, "newCharacterBuildMethod");
+        DesktopDialogField houseRulesField = FindRequiredField(fields, "newCharacterHouseRulesEnabled");
 
         StackPanel shell = new()
         {
@@ -1144,7 +1157,7 @@ public partial class DesktopDialogWindow : Window
         };
         TextBlock settingLabel = new()
         {
-            Text = "Use Setting:",
+            Text = "Build method:",
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             Name = DesktopDialogAccessibility.BuildFieldLabelName("newCharacterBuildMethod")
@@ -1159,19 +1172,21 @@ public partial class DesktopDialogWindow : Window
         Button modifyButton = new()
         {
             Name = "newCharacterModifyButton",
-            Content = "Modify...",
+            Content = "Options",
             MinWidth = 88
         };
+        Control optionsPanel = CreateLegacyFieldGroup(
+            "Options",
+            CreateStandaloneFieldRow(houseRulesField));
+        optionsPanel.IsVisible = false;
         ApplyAccessibility(
             modifyButton,
-            "Modify character settings",
-            "Open Character Settings.",
-            "Open the legacy Character Settings dialog before creating a new character.");
-        modifyButton.Click += async (_, _) =>
+            "Show character options",
+            "Show character options.",
+            "Show house-rule options without closing this build dialog.");
+        modifyButton.Click += (_, _) =>
         {
-            await ExecuteSafeAsync(
-                () => _adapter!.ExecuteCommandAsync("character_settings", CancellationToken.None),
-                "execute command 'character_settings'");
+            optionsPanel.IsVisible = !optionsPanel.IsVisible;
         };
         Grid.SetColumn(modifyButton, 2);
         settingRow.Children.Add(modifyButton);
@@ -1197,10 +1212,11 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "New Runner",
-            CreateLegacyGroupLead("Choose the ruleset, set the build method, and name the runner before the workspace opens."),
+            CreateLegacyGroupLead("Choose the ruleset, build method, and runner name before the character opens."),
             settingRow,
             rulesetRow,
             CreateSplitFieldRow(nameField, aliasField)));
+        shell.Children.Add(optionsPanel);
 
         return shell;
     }
@@ -1236,7 +1252,7 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Runner",
-            CreateLegacyGroupLead("Name the runner and pick the rules context before ALICE turns the origin into a build lane."),
+            CreateLegacyGroupLead("Name the runner and pick the rules context before ALICE turns the origin into a build plan."),
             CreateSplitFieldRow(nameField, aliasField),
             CreateSplitFieldRow(rulesetField, buildPreferenceField)));
 
@@ -1247,7 +1263,7 @@ public partial class DesktopDialogWindow : Window
             CreateOriginSummaryStrip(
                 ("Method", buildMethodField.Value),
                 ("Metatype", metatypeField.Value),
-                ("Lane", pathSummaryField.Value),
+                ("Path", pathSummaryField.Value),
                 ("Pressure", qualityFocusField.Value))));
 
         Grid lifePathGrid = new()
@@ -1287,7 +1303,7 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "GM Steering",
-            CreateLegacyGroupLead("Optional table permissions or requirements. ALICE treats these as constraints, not automatic sheet edits."),
+            CreateLegacyGroupLead("Optional table permissions or requirements. ALICE treats these as guidance, not automatic sheet edits."),
             CreateSplitFieldRow(gmPresetField, gmRequirementsField),
             CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value))));
 
@@ -1521,7 +1537,7 @@ public partial class DesktopDialogWindow : Window
             Spacing = 8,
             Children =
             {
-                CreateRowLabel("Category:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)),
+                CreateRowLabel("Filter:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)),
                 categoryCombo,
                 CreateRowLabel("Metatypes:", "newCharacterMetatypeListLabel"),
                 metatypeList
@@ -1614,7 +1630,7 @@ public partial class DesktopDialogWindow : Window
         {
             Child = CreateLegacySummaryCard(
                 "Selection Detail",
-                "Review karma cost, special attributes, source, and inherited qualities before committing.",
+                "Review karma cost, special attributes, source, and inherited qualities before confirming.",
                 inspectLane)
         };
 
@@ -1656,7 +1672,7 @@ public partial class DesktopDialogWindow : Window
         {
             Child = CreateLegacySummaryCard(
                 "Choice Follow-Through",
-                "Complete the remaining skill choice decisions unlocked by the selected priorities.",
+                "Complete the skill choices unlocked by the selected priorities.",
                 skillChoiceLane),
             IsVisible = skillChoiceLane.Children.Count > 0
         };
@@ -1707,7 +1723,7 @@ public partial class DesktopDialogWindow : Window
             ColumnSpacing = 14,
             RowSpacing = 10
         };
-        selectorGrid.Children.Add(CreateRowLabel("Metatype Category:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
+        selectorGrid.Children.Add(CreateRowLabel("Metatype Filter:", DesktopDialogAccessibility.BuildFieldLabelName(categoryField.Id)));
         Grid.SetColumn(categoryCombo, 1);
         selectorGrid.Children.Add(categoryCombo);
 
@@ -1721,7 +1737,7 @@ public partial class DesktopDialogWindow : Window
         {
             Child = CreateLegacySummaryCard(
                 "Metatype Selection",
-                "Choose the metatype category first, then confirm the exact metatype for the BP workflow.",
+                "Choose a filter first, then confirm the exact metatype.",
                 selectorGrid)
         };
 
@@ -2223,7 +2239,7 @@ public partial class DesktopDialogWindow : Window
         };
         settingsRow.Children.Add(new TextBlock
         {
-            Text = "Use Setting:",
+            Text = "Setting:",
             FontWeight = FontWeight.SemiBold,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         });
@@ -2246,7 +2262,7 @@ public partial class DesktopDialogWindow : Window
         Button modifySettingsButton = new()
         {
             Name = "masterIndexSettingsModifyButton",
-            Content = "Modify...",
+            Content = "Open settings",
             MinWidth = 88
         };
         ApplyAccessibility(

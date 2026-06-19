@@ -224,7 +224,7 @@ internal sealed class DesktopHomeWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton(S("desktop.home.button.continue"), static () => true, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => true, closeWindow: true)
                             }
                         }
                     }

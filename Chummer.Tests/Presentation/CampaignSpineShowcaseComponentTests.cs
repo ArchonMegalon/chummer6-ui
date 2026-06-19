@@ -158,7 +158,7 @@ public sealed class CampaignSpineShowcaseComponentTests
             DossierId: "dossier-1",
             CampaignId: "campaign-1",
             Title: "Ops handoff",
-            Summary: "Chosen build lane lands in campaign truth.",
+            Summary: "Chosen build plan lands in campaign truth.",
             VariantLabel: "Ops-first",
             ProgressionLabel: "25 / 50 / 100 Karma path",
             ExplainEntryId: "buildlab.handoff.1",

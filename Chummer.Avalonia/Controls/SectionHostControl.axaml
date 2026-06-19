@@ -152,11 +152,11 @@
             <Grid x:Name="AttributeParityHeaderGrid"
                   ColumnDefinitions="*,72,72,88,118"
                   ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="Attributes" Classes="shell-section-title" IsVisible="False" />
-              <TextBlock Grid.Column="1" Text="Points" Classes="shell-caption" HorizontalAlignment="Right" IsVisible="False" />
-              <TextBlock Grid.Column="2" Text="Karma" Classes="shell-caption" HorizontalAlignment="Right" IsVisible="False" />
-              <TextBlock Grid.Column="3" Text="Val (Aug)" Classes="shell-caption" HorizontalAlignment="Right" IsVisible="False" />
-              <TextBlock Grid.Column="4" Text="Metatype Limits" Classes="shell-caption" HorizontalAlignment="Right" IsVisible="False" />
+              <TextBlock Grid.Column="0" Text="Attribute" Classes="shell-section-title" />
+              <TextBlock Grid.Column="1" Text="Base" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="2" Text="Karma" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="3" Text="Total" Classes="shell-caption" HorizontalAlignment="Right" />
+              <TextBlock Grid.Column="4" Text="Limits" Classes="shell-caption" HorizontalAlignment="Right" />
             </Grid>
             <ScrollViewer Grid.Row="1"
                           VerticalScrollBarVisibility="Auto"

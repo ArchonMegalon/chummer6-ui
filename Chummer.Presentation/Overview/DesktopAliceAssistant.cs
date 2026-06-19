@@ -49,8 +49,8 @@ internal static class DesktopAliceAssistant
                 ? $"ALICE can propose one scoped SR4 preview change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then review it before you apply."
                 : $"ALICE can propose one scoped change for {plan.SurfaceLabel.ToLowerInvariant()}. Answer the questions, preview the result, then apply it explicitly.",
             AliceSupportMode.GuidedBuildPlan => IsPreviewRuleset(normalizedRulesetId)
-                ? "ALICE can shape the SR4 preview build lane, but this frame still needs the explicit BP or Karma workflow handoff instead of silent mutation."
-                : "ALICE can shape the current build lane, but this frame still needs a guided workflow handoff instead of silent mutation.",
+                ? "ALICE can shape an SR4 preview build, but this frame still needs the explicit BP or Karma workflow handoff instead of silent mutation."
+                : "ALICE can shape the current build, but this frame still needs a guided workflow handoff instead of silent mutation.",
             AliceSupportMode.SettingsHandoff => IsPreviewRuleset(normalizedRulesetId)
                 ? "ALICE can suggest an SR4-safe settings posture here, then hand you to the real settings form for deliberate edits."
                 : "ALICE can suggest a sane settings posture here, then hand you to the real settings form for deliberate edits.",
@@ -502,7 +502,7 @@ internal static class DesktopAliceAssistant
         warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         if (IsPreviewRuleset(rulesetId))
         {
-            warningList += $"{Environment.NewLine}SR4 preview lane: review BP/Karma legality, source coverage, and table posture before committing.";
+            warningList += $"{Environment.NewLine}SR4 preview: review BP/Karma legality, source coverage, and table posture before committing.";
         }
 
         string summary = IsPreviewRuleset(rulesetId)
@@ -541,8 +541,8 @@ internal static class DesktopAliceAssistant
             $"Scope | Complete first-pass character from scratch{FormatGmRequirementLine(gmRequirements)}{Environment.NewLine}" +
             $"Next step | Open the guided {(sr4Preview ? "SR4 BP/Karma" : "new-character")} workflow";
         string warningList = sr4Preview
-            ? "SR4 remains a promoted preview lane. ALICE is shaping the lane, not mutating the build silently, and the explicit BP or Karma workflow still owns the final build."
-            : "This surface still needs the named character-creation workflow. ALICE is shaping the lane, not mutating the build silently.";
+            ? "SR4 remains a promoted preview. ALICE is shaping the build plan, not mutating the build silently, and the explicit BP or Karma workflow still owns the final build."
+            : "This surface still needs the named character-creation workflow. ALICE is shaping the build plan, not mutating the build silently.";
         warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         string summary = sr4Preview
             ? $"ALICE recommends an SR4 {FormatChoiceLabel(archetype)} preview start with {optimization} posture. Use the guided BP or Karma workflow next."
@@ -550,8 +550,8 @@ internal static class DesktopAliceAssistant
 
         return new AliceProposal(
             sr4Preview
-                ? "ALICE shaped the SR4 preview lane. Open the BP or Karma workflow to continue."
-                : "ALICE shaped the build lane. Open the character workflow to continue.",
+                ? "ALICE shaped the SR4 preview build. Open the BP or Karma workflow to continue."
+                : "ALICE shaped the build plan. Open the character workflow to continue.",
             summary,
             changeList,
             warningList,

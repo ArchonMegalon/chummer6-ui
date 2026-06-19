@@ -22,7 +22,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.shell.menu.windows"] = "Windows",
         ["desktop.shell.menu.help"] = "Help",
         ["desktop.shell.tool.desktop_home"] = "Desktop Home",
-        ["desktop.shell.tool.horizons"] = "Horizons",
+        ["desktop.shell.tool.horizons"] = "Workbenches",
         ["desktop.shell.tool.campaign_workspace"] = "Campaign Workspace",
         ["desktop.shell.tool.update_status"] = "Update Status",
         ["desktop.shell.tool.link_copy"] = "Link This Copy",
@@ -85,13 +85,13 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.section.campaign_return"] = "Campaign return and restore",
         ["desktop.home.section.support_closure"] = "Support closure and fix notices",
         ["desktop.home.section.build_explain"] = "Build and explain next",
-        ["desktop.home.section.horizons"] = "Horizons and web workbenches",
+        ["desktop.home.section.horizons"] = "Product areas and web workbenches",
         ["desktop.home.section.language_trust"] = "Language and trust surfaces",
         ["desktop.home.section.recent_workspaces"] = "Recent workspaces",
-        ["desktop.home.horizons.summary"] = "Open the shipped horizon lanes directly from desktop home. Karma Forge, ALICE, Run Control, Black Ledger, Quicksilver, and the rest stay one click away instead of hiding behind browser hunting.",
-        ["desktop.horizons.title"] = "Horizons",
-        ["desktop.horizons.heading"] = "Horizons",
-        ["desktop.horizons.intro"] = "Open shipped horizon lanes from one desktop hub. Use native workbenches first, then fall through to the signed-in or public web lane only when that lane is actually the right target.",
+        ["desktop.home.horizons.summary"] = "Open the main product areas directly from desktop home. ALICE, Ready for Tonight, Run Control, Table Pulse, Black Ledger, and the deeper workbenches stay one click away instead of hiding behind browser hunting.",
+        ["desktop.horizons.title"] = "Workbenches",
+        ["desktop.horizons.heading"] = "Workbenches",
+        ["desktop.horizons.intro"] = "Open Chummer product areas from one desktop hub. Use native workbenches first, then fall through to the signed-in or public web lane only when that lane is actually the right target.",
         ["desktop.horizons.button.open_public_index"] = "Open public index",
         ["desktop.campaign.title"] = "Campaign workspace",
         ["desktop.campaign.heading"] = "Campaign workspace",
@@ -99,7 +99,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.campaign.section.restore"] = "Restore and device posture",
         ["desktop.campaign.section.support"] = "Support and watchouts",
         ["desktop.campaign.section.recent_workspaces"] = "Recent workspaces",
-        ["desktop.campaign.button.refresh"] = "Refresh",
+        ["desktop.campaign.button.refresh"] = "Reload campaign state",
         ["desktop.campaign.intro.guest"] = "This campaign workspace is still using guest and local fallback posture. Link this copy before you trust restore, device-role, or support closure as install-aware truth.",
         ["desktop.campaign.intro.local_fallback"] = "The live campaign server plane is unavailable, so this workspace is showing the strongest safe local campaign digest and restore posture available on this desktop.",
         ["desktop.campaign.intro.watchouts"] = "This campaign workspace is grounded, but it has watchouts to clear before you resume live runboard work.",
@@ -178,7 +178,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.button.open_support_center"] = "Open Support Center",
         ["desktop.home.button.open_report_issue"] = "Report Issue",
         ["desktop.home.button.open_settings"] = "Open Settings",
-        ["desktop.home.button.open_horizons_public"] = "Open Horizons",
+        ["desktop.home.button.open_horizons_public"] = "Open product areas",
         ["desktop.dialog.action.close"] = "Close",
         ["desktop.dialog.action.save"] = "Save",
         ["desktop.dialog.action.cancel"] = "Cancel",
@@ -241,6 +241,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.section.claimed"] = "Claimed devices and restore posture",
         ["desktop.devices.section.claims"] = "Install handoff and recent linked downloads",
         ["desktop.devices.section.follow_through"] = "Access follow-through",
+        ["desktop.devices.button.reload"] = "Reload account state",
         ["desktop.devices.button.copy_claim_code"] = "Open Install Handoff",
         ["desktop.devices.intro.guest"] = "This desktop copy is still guest-only, so devices and access stay quiet until a signed-in install handoff or restore packet attaches this install.",
         ["desktop.devices.intro.pending"] = "A signed-in install handoff is already waiting on the account side, so this surface can finish the link without bouncing you out to a browser ritual.",
@@ -273,7 +274,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.update.section.follow_through"] = "Update follow-through",
         ["desktop.update.section.install"] = "Install context",
         ["desktop.update.button.check_now"] = "Check for Updates",
-        ["desktop.update.button.refresh"] = "Refresh",
+        ["desktop.update.button.refresh"] = "Check again",
         ["desktop.update.intro.disabled"] = "This desktop head cannot promise self-update yet because update truth is not configured locally.",
         ["desktop.update.intro.available"] = "A promoted update is available for this install. Review the release posture before you move back into campaign work.",
         ["desktop.update.intro.attention"] = "This release posture needs review before you trust the current install.",
@@ -294,8 +295,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.support.section.case"] = "Tracked case and closure",
         ["desktop.support.section.release"] = "Release and install context",
         ["desktop.support.section.follow_through"] = "Support follow-through",
-        ["desktop.support.button.refresh"] = "Refresh",
-        ["desktop.support.intro.guest"] = "This desktop copy is still guest-only, so support stays bounded to generic help until the install is linked.",
+        ["desktop.support.button.refresh"] = "Reload support state",
+        ["desktop.support.intro.guest"] = "This desktop copy is guest-only. Link it to enable install-specific fixes and notices.",
         ["desktop.support.intro.quiet"] = "No tracked case is attached right now, but this support surface is ready to expose install-aware closure when a real case exists.",
         ["desktop.support.intro.action_needed"] = "A tracked case needs follow-through before closure is honest on this install.",
         ["desktop.support.intro.tracked"] = "A tracked support case is attached to this install and can be followed through from the flagship desktop.",
@@ -314,7 +315,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.support_case.section.summary"] = "Case summary and trust posture",
         ["desktop.support_case.section.timeline"] = "Timeline and evidence",
         ["desktop.support_case.section.follow_through"] = "Desktop follow-through",
-        ["desktop.support_case.button.refresh"] = "Refresh",
+        ["desktop.support_case.button.refresh"] = "Reload case",
         ["desktop.support_case.button.open_attachment"] = "Open Attachment",
         ["desktop.support_case.intro.preview"] = "This is a bounded tracked-case preview used to live-verify the native support closure surface when no signed-in support case is reachable from this desktop.",
         ["desktop.support_case.intro.fallback"] = "The full tracked-case detail is unavailable right now, so this desktop is showing the strongest safe local support digest instead of dropping you out of the flagship client.",
@@ -571,7 +572,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.campaign.section.restore"] = "Wiederherstellung und Geräte-Posture";
             localized["desktop.campaign.section.support"] = "Support und Watchouts";
             localized["desktop.campaign.section.recent_workspaces"] = "Letzte Arbeitsbereiche";
-            localized["desktop.campaign.button.refresh"] = "Aktualisieren";
+            localized["desktop.campaign.button.refresh"] = "Kampagne neu laden";
             localized["desktop.campaign.intro.guest"] = "Dieser Kampagnen-Arbeitsbereich nutzt noch Gast- und lokale Fallback-Posture. Verknupfen Sie diese Kopie, bevor Sie Wiederherstellung, Geraterolle oder Support-Abschluss als install-aware Wahrheit vertrauen.";
             localized["desktop.campaign.intro.local_fallback"] = "Die Live-Kampagnen-Serverebene ist nicht verfugbar, daher zeigt dieser Arbeitsbereich die starkste sichere lokale Kampagnenzusammenfassung und Wiederherstellungs-Posture auf diesem Desktop.";
             localized["desktop.campaign.intro.watchouts"] = "Dieser Kampagnen-Arbeitsbereich ist geerdet, hat aber noch Watchouts, die vor der Fortsetzung der Live-Runboard-Arbeit zu klaren sind.";
@@ -637,7 +638,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.update.section.follow_through"] = "Update-Nachverfolgung";
             localized["desktop.update.section.install"] = "Installationskontext";
             localized["desktop.update.button.check_now"] = "Nach Updates suchen";
-            localized["desktop.update.button.refresh"] = "Aktualisieren";
+            localized["desktop.update.button.refresh"] = "Erneut prüfen";
             localized["desktop.update.intro.disabled"] = "Dieser Desktop-Head kann noch keine Selbstaktualisierung zusagen, da lokale Update-Wahrheit nicht konfiguriert ist.";
             localized["desktop.update.intro.available"] = "Fur diese Installation ist ein freigegebenes Update verfugbar. Prufen Sie die Release-Posture, bevor Sie in die Kampagnenarbeit zuruckkehren.";
             localized["desktop.update.intro.attention"] = "Diese Release-Posture muss gepruft werden, bevor Sie dieser Installation vertrauen.";
@@ -657,8 +658,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support.section.case"] = "Verfolgter Fall und Abschluss";
             localized["desktop.support.section.release"] = "Release- und Installationskontext";
             localized["desktop.support.section.follow_through"] = "Support-Nachverfolgung";
-            localized["desktop.support.button.refresh"] = "Aktualisieren";
-            localized["desktop.support.intro.guest"] = "Diese Desktop-Kopie ist noch im Gastmodus; Support bleibt daher auf allgemeine Hilfe begrenzt, bis die Installation verknupft ist.";
+            localized["desktop.support.button.refresh"] = "Support neu laden";
+            localized["desktop.support.intro.guest"] = "Diese Desktop-Kopie ist im Gastmodus. Verknuepfe sie, um installationsbezogene Korrekturen und Hinweise zu aktivieren.";
             localized["desktop.support.intro.quiet"] = "Aktuell ist kein verfolgter Fall angebunden, aber diese Support-Flache ist bereit, install-aware Abschluss zu zeigen, sobald ein echter Fall existiert.";
             localized["desktop.support.intro.action_needed"] = "Ein verfolgter Fall braucht Nachverfolgung, bevor der Abschluss auf dieser Installation ehrlich ist.";
             localized["desktop.support.intro.tracked"] = "Ein verfolgter Support-Fall ist an diese Installation gebunden und kann vom Flagship-Desktop aus nachverfolgt werden.";
@@ -721,7 +722,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.section.summary"] = "Fallzusammenfassung und Vertrauenslage";
             localized["desktop.support_case.section.timeline"] = "Zeitachse und Belege";
             localized["desktop.support_case.section.follow_through"] = "Desktop-Nachverfolgung";
-            localized["desktop.support_case.button.refresh"] = "Aktualisieren";
+            localized["desktop.support_case.button.refresh"] = "Fall neu laden";
             localized["desktop.support_case.button.open_attachment"] = "Anhang öffnen";
             localized["desktop.support_case.heading"] = "Verfolgter Support-Fall und Abschlussstatus";
             localized["desktop.support_case.intro.preview"] = "Dies ist eine begrenzte Vorschau eines verfolgten Falls, um die native Support-Abschlussoberflache live zu verifizieren, wenn von diesem Desktop kein angemeldeter Support-Fall erreichbar ist.";
@@ -981,7 +982,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.campaign.section.restore"] = "Restauration et posture appareil";
             localized["desktop.campaign.section.support"] = "Support et alertes";
             localized["desktop.campaign.section.recent_workspaces"] = "Espaces de travail récents";
-            localized["desktop.campaign.button.refresh"] = "Rafraîchir";
+            localized["desktop.campaign.button.refresh"] = "Recharger la campagne";
             localized["desktop.campaign.intro.guest"] = "Cet espace de campagne utilise encore une posture invite et fallback local. Liez cette copie avant de faire confiance a la restauration, au role d'appareil, ou a la cloture support comme verite install-aware.";
             localized["desktop.campaign.intro.local_fallback"] = "Le plan serveur de campagne en direct est indisponible, donc cet espace affiche le digest de campagne local le plus sur et la meilleure posture de restauration disponible sur ce desktop.";
             localized["desktop.campaign.intro.watchouts"] = "Cet espace de campagne est solide, mais il reste des points d'attention a traiter avant de reprendre le runboard en direct.";
@@ -1047,7 +1048,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.update.section.follow_through"] = "Suivi de la mise à jour";
             localized["desktop.update.section.install"] = "Contexte d'installation";
             localized["desktop.update.button.check_now"] = "Vérifier les mises à jour";
-            localized["desktop.update.button.refresh"] = "Rafraîchir";
+            localized["desktop.update.button.refresh"] = "Vérifier à nouveau";
             localized["desktop.update.intro.disabled"] = "Ce head desktop ne peut pas encore promettre l'auto-mise-a-jour, car la verite locale de mise a jour n'est pas configuree.";
             localized["desktop.update.intro.available"] = "Une mise a jour promue est disponible pour cette installation. Verifiez la posture de version avant de revenir au travail de campagne.";
             localized["desktop.update.intro.attention"] = "Cette posture de version doit etre verifiee avant de faire confiance a cette installation.";
@@ -1067,8 +1068,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support.section.case"] = "Dossier suivi et clôture";
             localized["desktop.support.section.release"] = "Contexte de version et d'installation";
             localized["desktop.support.section.follow_through"] = "Suivi du support";
-            localized["desktop.support.button.refresh"] = "Rafraîchir";
-            localized["desktop.support.intro.guest"] = "Cette copie desktop est encore en mode invite, donc le support reste borne a l'aide generale jusqu'a la liaison de l'installation.";
+            localized["desktop.support.button.refresh"] = "Recharger le support";
+            localized["desktop.support.intro.guest"] = "Cette copie desktop est en mode invite. Liez-la pour activer les correctifs et avis propres a l'installation.";
             localized["desktop.support.intro.quiet"] = "Aucun dossier suivi n'est rattache pour l'instant, mais cette surface de support est prete a exposer une cloture liee a l'installation quand un vrai dossier existe.";
             localized["desktop.support.intro.action_needed"] = "Un dossier suivi a besoin d'un suivi avant que la cloture soit honnete sur cette installation.";
             localized["desktop.support.intro.tracked"] = "Un dossier de support suivi est rattache a cette installation et peut etre suivi depuis le desktop flagship.";
@@ -1131,7 +1132,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.section.summary"] = "Résumé du dossier et posture de confiance";
             localized["desktop.support_case.section.timeline"] = "Chronologie et preuves";
             localized["desktop.support_case.section.follow_through"] = "Suivi desktop";
-            localized["desktop.support_case.button.refresh"] = "Rafraîchir";
+            localized["desktop.support_case.button.refresh"] = "Recharger le dossier";
             localized["desktop.support_case.button.open_attachment"] = "Ouvrir la pièce jointe";
             localized["desktop.support_case.heading"] = "Dossier de support suivi et statut de cloture";
             localized["desktop.support_case.intro.preview"] = "Ceci est un apercu borne de dossier suivi utilise pour verifier en direct la surface native de cloture du support quand aucun dossier connecte n'est joignable depuis ce desktop.";
@@ -1391,7 +1392,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.campaign.section.restore"] = "復元とデバイスポスチャ";
             localized["desktop.campaign.section.support"] = "サポートと注意点";
             localized["desktop.campaign.section.recent_workspaces"] = "最近のワークスペース";
-            localized["desktop.campaign.button.refresh"] = "更新";
+            localized["desktop.campaign.button.refresh"] = "キャンペーンを再読み込み";
             localized["desktop.campaign.intro.guest"] = "このキャンペーンワークスペースは、まだゲストとローカルフォールバックの姿勢で動作しています。復元、デバイスロール、サポート完了をインストール連携の真実として信頼する前に、このコピーをリンクしてください。";
             localized["desktop.campaign.intro.local_fallback"] = "ライブのキャンペーンサーバープレーンが利用できないため、このワークスペースはこのデスクトップで利用可能な最も安全なローカルキャンペーンダイジェストと復元姿勢を表示しています。";
             localized["desktop.campaign.intro.watchouts"] = "このキャンペーンワークスペースは安定していますが、ライブのランボード作業を再開する前に確認すべき注意事項があります。";
@@ -1457,7 +1458,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.update.section.follow_through"] = "更新フォローアップ";
             localized["desktop.update.section.install"] = "インストールコンテキスト";
             localized["desktop.update.button.check_now"] = "更新を確認";
-            localized["desktop.update.button.refresh"] = "更新";
+            localized["desktop.update.button.refresh"] = "再チェック";
             localized["desktop.update.intro.disabled"] = "ローカル更新トゥルースが未構成のため、このデスクトップヘッドはまだ自己更新を約束できません。";
             localized["desktop.update.intro.available"] = "このインストールには昇格済み更新があります。キャンペーン作業に戻る前にリリース姿勢を確認してください。";
             localized["desktop.update.intro.attention"] = "このリリース姿勢は、現在のインストールを信頼する前に確認が必要です。";
@@ -1477,8 +1478,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support.section.case"] = "追跡ケースとクローズ";
             localized["desktop.support.section.release"] = "リリースとインストールのコンテキスト";
             localized["desktop.support.section.follow_through"] = "サポートフォローアップ";
-            localized["desktop.support.button.refresh"] = "更新";
-            localized["desktop.support.intro.guest"] = "このデスクトップコピーはまだゲスト専用のため、インストールがリンクされるまでサポートは一般ヘルプに限定されます。";
+            localized["desktop.support.button.refresh"] = "サポートを再読み込み";
+            localized["desktop.support.intro.guest"] = "このデスクトップコピーはゲストモードです。リンクすると、このインストール向けの修正と通知を利用できます。";
             localized["desktop.support.intro.quiet"] = "現在は追跡ケースが接続されていませんが、実ケースが存在すればこのサポート画面は install-aware なクローズを表示できます。";
             localized["desktop.support.intro.action_needed"] = "このインストールで正直なクローズにするには、追跡ケースのフォローアップが必要です。";
             localized["desktop.support.intro.tracked"] = "このインストールには追跡サポートケースが接続されており、旗艦デスクトップからフォローできます。";
@@ -1541,7 +1542,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.section.summary"] = "ケース概要と信頼姿勢";
             localized["desktop.support_case.section.timeline"] = "タイムラインと証拠";
             localized["desktop.support_case.section.follow_through"] = "デスクトップフォローアップ";
-            localized["desktop.support_case.button.refresh"] = "更新";
+            localized["desktop.support_case.button.refresh"] = "ケースを再読み込み";
             localized["desktop.support_case.button.open_attachment"] = "添付を開く";
             localized["desktop.support_case.heading"] = "追跡サポートケースとクローズ状態";
             localized["desktop.support_case.intro.preview"] = "これは追跡ケースの限定プレビューです。このデスクトップからサインイン済みのサポートケースに到達できない場合に、ネイティブのサポートクローズ画面をライブ検証するために使います。";
@@ -1801,7 +1802,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.campaign.section.restore"] = "Restauração e postura do dispositivo";
             localized["desktop.campaign.section.support"] = "Suporte e alertas";
             localized["desktop.campaign.section.recent_workspaces"] = "Workspaces recentes";
-            localized["desktop.campaign.button.refresh"] = "Atualizar";
+            localized["desktop.campaign.button.refresh"] = "Recarregar campanha";
             localized["desktop.campaign.intro.guest"] = "Este workspace de campanha ainda usa postura de convidado e fallback local. Vincule esta copia antes de confiar em restauração, papel do dispositivo ou fechamento de suporte como verdade install-aware.";
             localized["desktop.campaign.intro.local_fallback"] = "O plano de servidor de campanha ao vivo esta indisponivel, entao este workspace mostra o resumo local de campanha mais seguro e a melhor postura de restauração disponivel neste desktop.";
             localized["desktop.campaign.intro.watchouts"] = "Este workspace de campanha esta consistente, mas ainda tem alertas para limpar antes de retomar o trabalho de runboard ao vivo.";
@@ -1867,7 +1868,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.update.section.follow_through"] = "Acompanhamento da atualização";
             localized["desktop.update.section.install"] = "Contexto da instalação";
             localized["desktop.update.button.check_now"] = "Verificar atualizações";
-            localized["desktop.update.button.refresh"] = "Atualizar";
+            localized["desktop.update.button.refresh"] = "Verificar novamente";
             localized["desktop.update.intro.disabled"] = "Este head desktop ainda nao pode prometer autoatualizacao porque a verdade local de atualizacao nao esta configurada.";
             localized["desktop.update.intro.available"] = "Ha uma atualizacao promovida disponivel para esta instalacao. Revise a postura de release antes de voltar ao trabalho de campanha.";
             localized["desktop.update.intro.attention"] = "Esta postura de release precisa ser revisada antes de confiar na instalacao atual.";
@@ -1887,8 +1888,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support.section.case"] = "Caso rastreado e fechamento";
             localized["desktop.support.section.release"] = "Contexto de versão e instalação";
             localized["desktop.support.section.follow_through"] = "Acompanhamento de suporte";
-            localized["desktop.support.button.refresh"] = "Atualizar";
-            localized["desktop.support.intro.guest"] = "Esta copia desktop ainda esta em modo convidado, entao o suporte fica limitado a ajuda geral ate a instalacao ser vinculada.";
+            localized["desktop.support.button.refresh"] = "Recarregar suporte";
+            localized["desktop.support.intro.guest"] = "Esta copia desktop esta em modo convidado. Vincule-a para ativar correcoes e avisos especificos da instalacao.";
             localized["desktop.support.intro.quiet"] = "Nenhum caso rastreado esta anexado agora, mas esta superficie de suporte esta pronta para mostrar fechamento install-aware quando houver um caso real.";
             localized["desktop.support.intro.action_needed"] = "Um caso rastreado precisa de acompanhamento antes que o fechamento seja honesto nesta instalacao.";
             localized["desktop.support.intro.tracked"] = "Um caso de suporte rastreado esta anexado a esta instalacao e pode ser acompanhado pelo desktop flagship.";
@@ -1951,7 +1952,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.section.summary"] = "Resumo do caso e postura de confianca";
             localized["desktop.support_case.section.timeline"] = "Linha do tempo e evidencias";
             localized["desktop.support_case.section.follow_through"] = "Acompanhamento desktop";
-            localized["desktop.support_case.button.refresh"] = "Atualizar";
+            localized["desktop.support_case.button.refresh"] = "Recarregar caso";
             localized["desktop.support_case.button.open_attachment"] = "Abrir anexo";
             localized["desktop.support_case.heading"] = "Caso de suporte rastreado e status de fechamento";
             localized["desktop.support_case.intro.preview"] = "Esta e uma visualizacao limitada de caso rastreado usada para verificar ao vivo a superficie nativa de fechamento de suporte quando nenhum caso conectado esta acessivel neste desktop.";
@@ -2211,7 +2212,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.campaign.section.restore"] = "恢复与设备姿态";
             localized["desktop.campaign.section.support"] = "支持与注意项";
             localized["desktop.campaign.section.recent_workspaces"] = "最近工作区";
-            localized["desktop.campaign.button.refresh"] = "刷新";
+            localized["desktop.campaign.button.refresh"] = "重新载入战役";
             localized["desktop.campaign.intro.guest"] = "该战役工作区仍处于访客与本地回退姿态。请先绑定此副本，再将恢复、设备角色或支持闭环视为安装关联真相。";
             localized["desktop.campaign.intro.local_fallback"] = "实时战役服务器平面当前不可用，因此该工作区正在显示此桌面可用的最安全本地战役摘要与恢复姿态。";
             localized["desktop.campaign.intro.watchouts"] = "该战役工作区已具备基础可信性，但在恢复实时运行看板之前仍有注意项需要清理。";
@@ -2277,7 +2278,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.update.section.follow_through"] = "更新跟进";
             localized["desktop.update.section.install"] = "安装上下文";
             localized["desktop.update.button.check_now"] = "检查更新";
-            localized["desktop.update.button.refresh"] = "刷新";
+            localized["desktop.update.button.refresh"] = "重新检查";
             localized["desktop.update.intro.disabled"] = "由于本地更新真相尚未配置，此桌面头目前还不能承诺自更新。";
             localized["desktop.update.intro.available"] = "此安装有已提升更新可用。返回战役工作前请先检查发布姿态。";
             localized["desktop.update.intro.attention"] = "在信任当前安装前，需要先审查此发布姿态。";
@@ -2297,8 +2298,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support.section.case"] = "跟踪工单与闭环";
             localized["desktop.support.section.release"] = "版本与安装上下文";
             localized["desktop.support.section.follow_through"] = "支持跟进";
-            localized["desktop.support.button.refresh"] = "刷新";
-            localized["desktop.support.intro.guest"] = "此桌面副本仍为访客模式，因此在安装完成绑定前，支持仅限通用帮助。";
+            localized["desktop.support.button.refresh"] = "重新载入支持状态";
+            localized["desktop.support.intro.guest"] = "此桌面副本处于访客模式。绑定后即可启用针对该安装的修复和通知。";
             localized["desktop.support.intro.quiet"] = "当前没有挂接跟踪工单，但当真实工单存在时，此支持界面已可展示 install-aware 闭环。";
             localized["desktop.support.intro.action_needed"] = "在此安装上实现可信闭环前，跟踪工单仍需跟进。";
             localized["desktop.support.intro.tracked"] = "此安装已挂接跟踪支持工单，可从旗舰桌面继续跟进。";
@@ -2361,7 +2362,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.support_case.section.summary"] = "工单摘要与信任姿态";
             localized["desktop.support_case.section.timeline"] = "时间线与证据";
             localized["desktop.support_case.section.follow_through"] = "桌面跟进";
-            localized["desktop.support_case.button.refresh"] = "刷新";
+            localized["desktop.support_case.button.refresh"] = "重新载入工单";
             localized["desktop.support_case.button.open_attachment"] = "打开附件";
             localized["desktop.support_case.heading"] = "跟踪支持工单与关闭状态";
             localized["desktop.support_case.intro.preview"] = "这是一个受限的跟踪工单预览，用于在此桌面无法访问已登录支持工单时，实时验证原生支持关闭界面。";

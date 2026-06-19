@@ -30,6 +30,12 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "AliceModeGuideText");
         StringAssert.Contains(source, "AliceGmAllowanceGuideText");
         StringAssert.Contains(source, "AliceGmAllowanceTextBox");
+        StringAssert.Contains(source, "global::Avalonia.Automation.AutomationProperties.SetName(promptBox, \"Ask Alice\")");
+        StringAssert.Contains(source, "global::Avalonia.Automation.AutomationProperties.SetHelpText(promptBox");
+        StringAssert.Contains(source, "ToolTip.SetTip(promptBox, null)");
+        StringAssert.Contains(source, "global::Avalonia.Automation.AutomationProperties.SetName(gmAllowanceBox, \"GM notes for Alice\")");
+        StringAssert.Contains(source, "global::Avalonia.Automation.AutomationProperties.SetHelpText(gmAllowanceBox");
+        StringAssert.Contains(source, "ToolTip.SetTip(gmAllowanceBox, null)");
         StringAssert.Contains(source, "AliceConversationList");
         StringAssert.Contains(source, "AliceStarterPromptRow");
         StringAssert.Contains(source, "AliceQuestionTextBox");
@@ -103,8 +109,11 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "ExecuteOriginDossierVideoAsync(");
         StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_REQUEST_PATH");
         StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_REQUEST_PATH");
-        StringAssert.Contains(source, "MediaFactoryNarrationCliProject");
-        StringAssert.Contains(source, "MediaFactoryVideoCliProject");
+        StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_REPO_ROOT");
+        StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_NARRATION_CLI_PROJECT");
+        StringAssert.Contains(source, "CHUMMER_MEDIA_FACTORY_ORIGIN_DOSSIER_VIDEO_CLI_PROJECT");
+        StringAssert.Contains(source, "ResolveMediaFactoryRepoRoot(");
+        Assert.IsFalse(source.Contains("/docker/fleet/repos/chummer-media-factory", StringComparison.Ordinal));
         StringAssert.Contains(source, "MediaFactoryNarrationReceiptPath");
         StringAssert.Contains(source, "MediaFactoryVideoReceiptPath");
         StringAssert.Contains(source, "RenderedVideoPath");

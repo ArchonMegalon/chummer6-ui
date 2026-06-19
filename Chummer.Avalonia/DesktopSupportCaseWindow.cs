@@ -127,7 +127,7 @@ internal sealed class DesktopSupportCaseWindow : Window
                             Children =
                             {
                                 CreateButton(S("desktop.support_case.button.refresh"), RefreshSupportCaseAsync),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }

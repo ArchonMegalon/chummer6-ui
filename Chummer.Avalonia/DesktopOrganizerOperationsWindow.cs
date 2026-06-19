@@ -104,7 +104,7 @@ internal sealed class DesktopOrganizerOperationsWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }

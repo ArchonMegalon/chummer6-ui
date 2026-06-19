@@ -1930,7 +1930,7 @@ public class DesktopDialogFactoryTests
             activeDialogId: "dialog.new_character");
 
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "autoAliceRulesetId"));
-        StringAssert.Contains(dialog.Message ?? string.Empty, "SR4 preview build lane");
+        StringAssert.Contains(dialog.Message ?? string.Empty, "SR4 preview build");
         StringAssert.Contains(dialog.Message ?? string.Empty, "BP or Karma workflow");
     }
 

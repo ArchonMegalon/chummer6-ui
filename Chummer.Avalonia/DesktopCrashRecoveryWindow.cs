@@ -118,7 +118,7 @@ internal sealed class DesktopCrashRecoveryWindow : Window
                             Spacing = 10,
                             Children =
                             {
-                                CreateButton(S("desktop.home.button.continue"), ContinueAsync, closeWindow: true, isPrimary: true)
+                                CreateButton(S("desktop.dialog.action.close"), ContinueAsync, closeWindow: true, isPrimary: true)
                             }
                         }
                     }

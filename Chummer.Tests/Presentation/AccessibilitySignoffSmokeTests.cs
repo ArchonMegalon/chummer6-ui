@@ -43,6 +43,7 @@ public sealed class AccessibilitySignoffSmokeTests
         DesktopDevicesAccessSurface_is_a_real_top_level_surface();
         DesktopReportSurface_is_a_real_top_level_surface();
         DesktopCrashRecoverySurface_is_a_real_top_level_surface();
+        DesktopCloseOnlySurfaces_use_explicit_close_copy();
         DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces();
         DesktopHome_degrades_gracefully_when_workspace_bootstrap_is_unavailable();
         DesktopHome_wires_the_campaign_projection_into_the_summary_panel();
@@ -1198,6 +1199,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopReportIssueWindow.ShowAsync(this, _installState.HeadId)");
         RequireContains(source, "DesktopInstallLinkingWindow dialog = new(context);");
         RequireContains(source, "new ScrollViewer");
+        RequireContains(source, "includeHeading: true");
+        RequireContains(source, "desktop.devices.button.reload");
+        RequireContains(source, "desktop.dialog.action.close");
+        RequireDoesNotContain(source, "desktop.install_link.button.open_work");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "string.Equals(startupSurface, \"devices_access\"");
@@ -1224,6 +1229,11 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForBugReport");
         RequireContains(source, "DesktopInstallLinkingRuntime.TryOpenSupportPortalForFeedback");
         RequireContains(source, "new ScrollViewer");
+        RequireContains(source, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
+        RequireContains(source, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        RequireContains(source, "Watermark = tooltip");
+        RequireContains(source, "desktop.dialog.action.close");
+        RequireDoesNotContain(source, "desktop.home.button.continue");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "string.Equals(startupSurface, \"report_issue\"");
@@ -1248,11 +1258,39 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "DesktopCrashRuntime.TryAcknowledgePendingCrashReport");
         RequireContains(source, "CreatePreviewPendingCrashReport");
         RequireContains(source, "new ScrollViewer");
+        RequireContains(source, "desktop.dialog.action.close");
+        RequireDoesNotContain(source, "desktop.home.button.continue");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");
         RequireContains(appSource, "string.Equals(startupSurface, \"crash_recovery\"");
         RequireContains(appSource, "DesktopCrashRecoveryWindow.ShowPreviewAsync(owner, \"avalonia\")");
         RequireContains(appSource, "DesktopCrashRecoveryWindow.TryShowPendingAsync(owner)");
+    }
+
+    private static void DesktopCloseOnlySurfaces_use_explicit_close_copy()
+    {
+        string[] closeOnlySurfaces =
+        [
+            "Chummer.Avalonia/DesktopCampaignArtifactWindow.cs",
+            "Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs",
+            "Chummer.Avalonia/DesktopCreatorPublicationWindow.cs",
+            "Chummer.Avalonia/DesktopCrashRecoveryWindow.cs",
+            "Chummer.Avalonia/DesktopDevicesAccessWindow.cs",
+            "Chummer.Avalonia/DesktopHomeWindow.cs",
+            "Chummer.Avalonia/DesktopHorizonsWindow.cs",
+            "Chummer.Avalonia/DesktopOrganizerOperationsWindow.cs",
+            "Chummer.Avalonia/DesktopReportIssueWindow.cs",
+            "Chummer.Avalonia/DesktopSupportCaseWindow.cs",
+            "Chummer.Avalonia/DesktopSupportWindow.cs",
+            "Chummer.Avalonia/DesktopUpdateWindow.cs"
+        ];
+
+        foreach (string relativePath in closeOnlySurfaces)
+        {
+            string source = ReadSource(relativePath);
+            RequireContains(source, "desktop.dialog.action.close");
+            RequireDoesNotContain(source, "desktop.home.button.continue");
+        }
     }
 
     private static void DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces()

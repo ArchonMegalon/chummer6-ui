@@ -137,7 +137,7 @@ internal sealed class DesktopUpdateWindow : Window
                             Children =
                             {
                                 CreateButton(S("desktop.update.button.refresh"), RefreshUpdateStateAsync),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }

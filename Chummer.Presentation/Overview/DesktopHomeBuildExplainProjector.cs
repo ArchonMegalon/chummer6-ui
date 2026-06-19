@@ -76,8 +76,8 @@ public static class DesktopHomeBuildExplainProjector
                 BuildBuildPathComparisons(buildPathCandidates),
                 new[]
                 {
-                    "No grounded build lane is loaded yet for this desktop head.",
-                    "Rules explanations stay generic until the first workspace is restored into local continuity."
+                    "No grounded build plan is loaded yet for this desktop head.",
+                    "Rules explanations become character-specific after you restore or create the first workspace."
                 }
                 .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -99,7 +99,7 @@ public static class DesktopHomeBuildExplainProjector
             string[] fallbackWatchouts = new[]
             {
                 "Build Lab is falling back to workspace summary until the build and rules sections can be read again.",
-                "Support answers are safer after the dossier reloads the current build lane and rules posture."
+                "Support answers are safer after the dossier reloads the current build and rules posture."
             }
             .Concat(BuildRuntimeWatchouts(runtimeInspector))
             .Distinct(StringComparer.OrdinalIgnoreCase)

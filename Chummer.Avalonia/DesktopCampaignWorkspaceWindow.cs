@@ -142,7 +142,7 @@ internal sealed class DesktopCampaignWorkspaceWindow : Window
                             Children =
                             {
                                 CreateButton(S("desktop.campaign.button.refresh"), RefreshCampaignStateAsync),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }

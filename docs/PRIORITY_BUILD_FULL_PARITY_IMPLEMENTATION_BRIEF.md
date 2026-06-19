@@ -336,11 +336,11 @@ This is the route the user reaches after the priority continuation. It must matc
 Common/Attributes parity pane
 └─ Middle attributes column
    ├─ Header grid (legacy tlpAlias attribute header equivalent)
-   │  ├─ Label "Attributes"
-   │  ├─ Label "Points"
+   │  ├─ Label "Attribute"
+   │  ├─ Label "Base"
    │  ├─ Label "Karma"
-   │  ├─ Label "Val (Aug)"
-   │  └─ Label "Metatype Limits"
+   │  ├─ Label "Total"
+   │  └─ Label "Limits"
    └─ Scrollable top-down attribute rows panel
       ├─ Attribute row 1
       ├─ Attribute row 2

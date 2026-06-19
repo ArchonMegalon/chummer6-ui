@@ -52,7 +52,7 @@ internal sealed class DesktopHorizonsWindow : Window
         _searchBox = new TextBox
         {
             Name = "HorizonsSearchBox",
-            Watermark = "Filter horizons",
+            Watermark = "Filter product areas",
             MinWidth = 240
         };
         DesktopShellTheme.ApplyShellTextInputTheme(_searchBox);
@@ -103,7 +103,7 @@ internal sealed class DesktopHorizonsWindow : Window
                             Children =
                             {
                                 CreateButton(S("desktop.horizons.button.open_public_index"), static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/horizons")),
-                                CreateButton(S("desktop.home.button.continue"), static () => Task.CompletedTask, closeWindow: true)
+                                CreateButton(S("desktop.dialog.action.close"), static () => Task.CompletedTask, closeWindow: true)
                             }
                         }
                     }
@@ -118,7 +118,7 @@ internal sealed class DesktopHorizonsWindow : Window
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
         DesktopPreferenceState preferences = DesktopPreferenceRuntime.LoadOrCreateState(headId);
-        AccountCampaignSummary? campaignSummary = await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop Horizons requires an IChummerClient instance.").ConfigureAwait(true);
+        AccountCampaignSummary? campaignSummary = await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop workbenches require an IChummerClient instance.").ConfigureAwait(true);
         DesktopHorizonsWindow dialog = new(headId, preferences, campaignSummary);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
@@ -157,7 +157,7 @@ internal sealed class DesktopHorizonsWindow : Window
         }
 
         AddGroupedCards(filteredEntries, "First session and participation", static entry =>
-            entry.Id is "ready_for_tonight" or "onramp" or "nexus_pan");
+            entry.Id is "ready_for_tonight" or "nexus_pan");
         AddGroupedCards(filteredEntries, "Build and rules", static entry =>
             entry.Id is "alice" or "knowledge_fabric" or "quicksilver" or "local_co_processor");
         AddGroupedCards(filteredEntries, "Campaign operations", static entry =>
@@ -172,7 +172,7 @@ internal sealed class DesktopHorizonsWindow : Window
             _catalogStack.Children.Add(new TextBlock
             {
                 Name = "HorizonsEmptyStateText",
-                Text = "No horizons match the current filter. Clear the search or try a different horizon name.",
+                Text = "No product areas match the current filter. Clear the search or try a different name.",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#4B6278")
             });
@@ -483,10 +483,10 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         if (string.IsNullOrWhiteSpace(query))
         {
-            return $"Showing {filteredEntries.Count} shipped horizon lane(s). Native workbenches stay first whenever the client has a governed desktop surface.";
+            return $"Showing {filteredEntries.Count} product area(s). Native workbenches stay first whenever the client has a governed desktop surface.";
         }
 
-        return $"Filter '{query}' matched {filteredEntries.Count} horizon lane(s).";
+        return $"Filter '{query}' matched {filteredEntries.Count} product area(s).";
     }
 
     private static string SanitizeToken(string value)

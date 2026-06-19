@@ -236,7 +236,48 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "CreateLegacyOriginBuildPane(fields)");
         StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
+        StringAssert.Contains(desktopDialogSource, "build plan");
         Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopDialogSource.Contains("build lane", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void New_character_dialog_keeps_options_inline_and_uses_player_facing_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string factorySource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs"));
+        int methodStart = desktopDialogSource.IndexOf("private Control CreateLegacyNewCharacterPane", StringComparison.Ordinal);
+        int methodEnd = desktopDialogSource.IndexOf("private Control CreateLegacyOriginWizardPane", StringComparison.Ordinal);
+        Assert.IsTrue(methodStart >= 0 && methodEnd > methodStart, "New-character pane source must be discoverable for the polish gate.");
+        string newCharacterPaneSource = desktopDialogSource[methodStart..methodEnd];
+
+        StringAssert.Contains(newCharacterPaneSource, "Content = \"Options\"");
+        StringAssert.Contains(newCharacterPaneSource, "optionsPanel.IsVisible = !optionsPanel.IsVisible;");
+        StringAssert.Contains(newCharacterPaneSource, "Text = \"Build method:\"");
+        StringAssert.Contains(desktopDialogSource, "CreateRowLabel(\"Metatype Filter:\"");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Standard\", \"Core metatypes\")");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Metahumans only\")");
+        StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All available\")");
+        StringAssert.Contains(factorySource, "\"Remaining Karma | tracked when the character opens\"");
+        Assert.IsFalse(newCharacterPaneSource.Contains("ExecuteCommandAsync(\"character_settings\"", StringComparison.Ordinal));
+        Assert.IsFalse(factorySource.Contains("\"Metatype Category\"", StringComparison.Ordinal));
+        Assert.IsFalse(factorySource.Contains("legacy metatype continuation", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [TestMethod]
+    public void Attribute_editor_keeps_column_headers_visible()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string sectionHostMarkup = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
+
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Attribute\" Classes=\"shell-section-title\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Base\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Karma\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Total\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Limits\" Classes=\"shell-caption\"");
+        Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Val (Aug)\"", StringComparison.Ordinal));
+        Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Points\" Classes=\"shell-caption\" HorizontalAlignment=\"Right\" IsVisible=\"False\"", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -253,5 +294,18 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs")), "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(desktopDialogSource, "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(commandDialogSource, "ToolTip.SetTip(textBox, null);");
+    }
+
+    [TestMethod]
+    public void Selection_add_surfaces_do_not_label_readonly_context_as_navigation()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+
+        StringAssert.Contains(desktopDialogSource, "ResolveSelectionNavigationTitle(navigationField)");
+        StringAssert.Contains(desktopDialogSource, "private static string ResolveSelectionNavigationTitle(DesktopDialogField field)");
+        StringAssert.Contains(desktopDialogSource, "? \"Categories\"");
+        StringAssert.Contains(desktopDialogSource, ": \"Current selection\"");
+        Assert.IsFalse(desktopDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
     }
 }

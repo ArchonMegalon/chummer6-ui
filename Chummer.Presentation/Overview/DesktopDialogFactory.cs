@@ -640,7 +640,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     "House Rules",
                     houseRulesValue,
                     houseRulesValue,
-                    IsReadOnly: true,
+                    InputType: "checkbox",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
             [
@@ -849,7 +849,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     VisualKind: DesktopDialogFieldVisualKinds.Snippet),
                 BuildNewCharacterContextField("newCharacterOriginArchetype", "Origin Archetype", recommendation.ArchetypeLabel),
                 BuildNewCharacterContextField("newCharacterOriginBuildMethod", "Origin Build Method", recommendation.BuildMethod),
-                BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Category", recommendation.MetatypeCategory),
+                BuildNewCharacterContextField("newCharacterOriginMetatypeCategory", "Origin Metatype Filter", recommendation.MetatypeCategory),
                 BuildNewCharacterContextField("newCharacterOriginMetatype", "Origin Metatype", recommendation.Metatype),
                 BuildNewCharacterContextField("newCharacterOriginQualityFocus", "Origin Quality Focus", recommendation.QualityFocus),
                 BuildNewCharacterContextField("newCharacterOriginGmRequirementSummary", "GM Requirement Summary", recommendation.GmRequirementSummary),
@@ -1030,7 +1030,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterPriorityWorkflowDialogId,
             "Select Metatype Priority",
-            "Legacy priority-table creation must materialize its metatype and priority continuation before the workspace opens.",
+            "Choose the metatype and priorities before the character opens.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
@@ -1039,7 +1039,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
-                    "Metatype Category",
+                    "Metatype Filter",
                     resolution.Category,
                     resolution.Category,
                     InputType: "select",
@@ -1178,7 +1178,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterKarmaWorkflowDialogId,
             "Select Metatype",
-            "Legacy karma and life-module creation must materialize the metatype continuation before the workspace opens.",
+            "Choose the metatype before the character opens.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", buildMethod),
@@ -1187,7 +1187,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
-                    "Metatype Category",
+                    "Metatype Filter",
                     category,
                     category,
                     InputType: "select",
@@ -1417,9 +1417,9 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeCategoryOptions()
         => new[]
         {
-            new DesktopDialogFieldOption("Standard", "Standard"),
-            new DesktopDialogFieldOption("Metahuman", "Metahuman"),
-            new DesktopDialogFieldOption("Show All", "Show All")
+            new DesktopDialogFieldOption("Standard", "Core metatypes"),
+            new DesktopDialogFieldOption("Metahuman", "Metahumans only"),
+            new DesktopDialogFieldOption("Show All", "All available")
         };
 
     private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category)
@@ -2215,12 +2215,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool houseRulesEnabled)
     {
         string route = UsesPriorityWorkflow(buildMethod)
-            ? "The priority-table continuation will materialize after you confirm this selection."
-            : "The metatype continuation will materialize after you confirm this selection.";
+            ? "Next you will choose metatype and priorities."
+            : "Next you will choose metatype.";
         string houseRules = houseRulesEnabled
             ? " House rules are enabled in Character Settings."
             : " House rules are currently disabled.";
-        return $"Choose the ruleset and build method before opening the new character workflow for {rulesetId.ToUpperInvariant()}. {route}{houseRules}";
+        return $"Choose the ruleset and build method for {rulesetId.ToUpperInvariant()}. {route}{houseRules}";
     }
 
     private static string BuildNewCharacterPriorityWorkflowSummary(
@@ -2269,9 +2269,22 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             {
                 $"Route | {rulesetId.ToUpperInvariant()} {buildMethod}",
                 $"Metatype | {metatype} ({category})",
-                "Posture | legacy metatype continuation",
+                BuildNewCharacterBudgetLine(rulesetId, buildMethod),
                 $"House Rules | {(houseRulesEnabled ? "Enabled" : "Disabled")}"
             });
+
+    private static string BuildNewCharacterBudgetLine(string rulesetId, string buildMethod)
+    {
+        string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
+        string normalizedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
+        return normalizedBuildMethod switch
+        {
+            "BP" => "Build Points Remaining | tracked when the character opens",
+            "Karma" => "Remaining Karma | tracked when the character opens",
+            "LifeModule" => "Remaining Karma | tracked after life modules are selected",
+            _ => "Budget | priority allocation"
+        };
+    }
 
     private static int GetPriorityLetterValue(string priority)
         => priority switch
