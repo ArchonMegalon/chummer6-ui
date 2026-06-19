@@ -94,7 +94,8 @@ internal sealed class DesktopReportIssueWindow : Window
                             [
                                 CreateButton(S("desktop.report.button.open_bug"), OpenBugDraftAsync, isPrimary: true),
                                 CreateButton(S("desktop.report.button.copy_bug"), CopyBugDraftAsync)
-                            ])),
+                            ]),
+                            includeHeading: true),
                         CreateSection(
                             S("desktop.report.section.feedback"),
                             CreateFeedbackBody(),
@@ -102,7 +103,8 @@ internal sealed class DesktopReportIssueWindow : Window
                             [
                                 CreateButton(S("desktop.report.button.open_feedback"), OpenFeedbackDraftAsync, isPrimary: true),
                                 CreateButton(S("desktop.report.button.copy_feedback"), CopyFeedbackDraftAsync)
-                            ])),
+                            ]),
+                            includeHeading: true),
                         new StackPanel
                         {
                             Orientation = Orientation.Horizontal,
@@ -312,8 +314,8 @@ internal sealed class DesktopReportIssueWindow : Window
         return box;
     }
 
-    private static Border CreateSection(string title, Control body, Control? actionContent)
-        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4, includeHeading: false, spacing: 0);
+    private static Border CreateSection(string title, Control body, Control? actionContent, bool includeHeading = false)
+        => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 10, cornerRadius: 4, includeHeading: includeHeading, spacing: includeHeading ? 6 : 0);
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
         => DesktopShellTheme.CreateStackActionRow(actions, spacing: 6);

@@ -168,8 +168,8 @@ public static class DesktopLocalizationCatalog
         ["desktop.home.workspace_summary.entry"] = "{0} . {1} . {2} UTC",
         ["desktop.home.button.continue"] = "Continue",
         ["desktop.home.button.open_devices_access"] = "Account and Devices",
-        ["desktop.home.button.open_current_workspace"] = "Open Workspace",
-        ["desktop.home.button.open_current_campaign_workspace"] = "Open Workspace",
+        ["desktop.home.button.open_current_workspace"] = "Open Runner Workspace",
+        ["desktop.home.button.open_current_campaign_workspace"] = "Open Campaign Workspace",
         ["desktop.home.button.open_install_support"] = "Open Install Support",
         ["desktop.home.button.open_update_support"] = "Open Update Support",
         ["desktop.home.button.open_work_support"] = "Open Work Support",
@@ -540,8 +540,8 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_campaign_primer"] = "Kampagnen-Priming öffnen";
             localized["desktop.home.button.open_mission_briefing"] = "Mission-Briefing öffnen";
             localized["desktop.home.button.open_devices_access"] = "Konto und Gerate";
-            localized["desktop.home.button.open_current_workspace"] = "Arbeitsbereich offnen";
-            localized["desktop.home.button.open_current_campaign_workspace"] = "Arbeitsbereich offnen";
+            localized["desktop.home.button.open_current_workspace"] = "Runner-Arbeitsbereich offnen";
+            localized["desktop.home.button.open_current_campaign_workspace"] = "Kampagnen-Arbeitsbereich offnen";
             localized["desktop.home.button.open_my_artifacts"] = "Meine Artefakte offnen";
             localized["desktop.home.button.open_campaign_artifacts"] = "Kampagnen-Artefakte offnen";
             localized["desktop.home.button.open_published_artifacts"] = "Veroffentlichte Artefakte offnen";
