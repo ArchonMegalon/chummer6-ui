@@ -105,6 +105,24 @@ namespace Chummer.UI.Attributes
                 }
                 else
                 {
+                    LabelWithToolTip lblBase = new LabelWithToolTip
+                    {
+                        Anchor = AnchorStyles.Right,
+                        AutoSize = true,
+                        Font = new Font(Font, FontStyle.Regular),
+                        Margin = new Padding(3, 0, 3, 1),
+                        Name = "lblBase",
+                        Text = LanguageManager.GetString("Label_Base", token: objMyToken).TrimEnd(':')
+                    };
+                    LabelWithToolTip lblKarma = new LabelWithToolTip
+                    {
+                        Anchor = AnchorStyles.Right,
+                        AutoSize = true,
+                        Font = new Font(Font, FontStyle.Regular),
+                        Margin = new Padding(3, 0, 3, 1),
+                        Name = "lblKarma",
+                        Text = LanguageManager.GetString("String_Karma", token: objMyToken).TrimEnd(':')
+                    };
                     nudKarma = new NumericUpDownEx
                     {
                         Anchor = AnchorStyles.Right,
@@ -112,7 +130,7 @@ namespace Chummer.UI.Attributes
                         InterceptMouseWheel = GlobalSettings.InterceptMode,
                         Margin = new Padding(3, 0, 3, 0),
                         Maximum = 99m,
-                        MinimumSize = new Size(35, 0),
+                        MinimumSize = new Size(42, 0),
                         Name = "nudKarma"
                     };
                     nudKarma.BeforeValueIncrement += nudKarma_BeforeValueIncrement;
@@ -126,7 +144,7 @@ namespace Chummer.UI.Attributes
                         InterceptMouseWheel = GlobalSettings.InterceptMode,
                         Margin = new Padding(3, 0, 3, 0),
                         Maximum = 99m,
-                        MinimumSize = new Size(35, 0),
+                        MinimumSize = new Size(42, 0),
                         Name = "nudBase"
                     };
                     nudBase.BeforeValueIncrement += nudBase_BeforeValueIncrement;
@@ -134,8 +152,25 @@ namespace Chummer.UI.Attributes
                     _tmrBaseChangeTimer = new Timer { Interval = 250 };
                     _tmrBaseChangeTimer.Tick += BaseChangeTimer_Tick;
 
-                    flpRight.Controls.Add(nudKarma);
-                    flpRight.Controls.Add(nudBase);
+                    TableLayoutPanel tlpValues = new TableLayoutPanel
+                    {
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                        ColumnCount = 2,
+                        Margin = new Padding(0),
+                        Name = "tlpAttributeValues",
+                        RowCount = 2
+                    };
+                    tlpValues.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                    tlpValues.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                    tlpValues.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                    tlpValues.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+                    tlpValues.Controls.Add(lblBase, 0, 0);
+                    tlpValues.Controls.Add(lblKarma, 1, 0);
+                    tlpValues.Controls.Add(nudBase, 0, 1);
+                    tlpValues.Controls.Add(nudKarma, 1, 1);
+                    flpRight.Controls.Add(tlpValues);
                 }
 
                 this.UpdateLightDarkMode(token: objMyToken);
