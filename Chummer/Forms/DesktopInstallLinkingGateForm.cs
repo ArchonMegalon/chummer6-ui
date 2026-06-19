@@ -95,6 +95,8 @@ namespace Chummer.Forms
             Controls.Add(objButtons);
             Controls.Add(objInfo);
             Controls.Add(objHeadline);
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             ActiveControl = objLinkButton;
         }
 

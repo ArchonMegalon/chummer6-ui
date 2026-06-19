@@ -52,12 +52,14 @@ namespace Chummer
         public InitiativeUserControl()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
 
             lblRound.Text = LanguageManager.GetString("Label_Round") + LanguageManager.GetString("String_Space") + 1.ToString(GlobalSettings.CultureInfo);
             _intRound = 1;
 
             // setup the list of chummers to show
             chkBoxChummer.DisplayMember = "DisplayInit";
+            this.UpdateParentForToolTipControls();
         }
 
         #region Events

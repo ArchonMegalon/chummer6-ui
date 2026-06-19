@@ -33,6 +33,8 @@ namespace Chummer
         public TestDataEntries()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             _sbdOutputBuilder = Utils.StringBuilderPool.Get();
         }
 

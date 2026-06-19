@@ -33,6 +33,8 @@ namespace Chummer.UI.Table
             _lblText = new LabelWithToolTip();
             ContentField = _lblText;
             Controls.Add(_lblText);
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             _lblText.AutoSize = true;
             _lblText.Click += lblText_Click;
         }

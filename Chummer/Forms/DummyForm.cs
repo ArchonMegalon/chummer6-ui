@@ -26,6 +26,8 @@ namespace Chummer.Forms
         public DummyForm()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
         }
     }
 }

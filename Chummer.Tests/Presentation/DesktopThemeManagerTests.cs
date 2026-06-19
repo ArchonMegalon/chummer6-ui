@@ -86,6 +86,40 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Utility_dashboard_and_table_surfaces_apply_light_dark_mode_at_creation()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        (string Path, string[] Markers)[] themedSurfaces =
+        [
+            (Path.Combine("Chummer", "Forms", "Utility Forms", "About.cs"), ["this.UpdateLightDarkMode();"]),
+            (Path.Combine("Chummer", "Forms", "DesktopInstallLinkingGateForm.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Forms", "Utility Forms", "TestDataEntries.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Forms", "Utility Forms", "InitiativeTracker.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Dashboards", "ConditionMonitorUserControl.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Dashboards", "InitiativeUserControl.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Charts", "ExpenseChart.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Shared", "ObservableCollectionDisplay.cs"), ["this.UpdateLightDarkMode();", "x.UpdateLightDarkMode();", "x.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Shared", "BindingListDisplay.cs"), ["this.UpdateLightDarkMode();", "x.UpdateLightDarkMode();", "x.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Table", "TableView.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Table", "TableCell.cs"), ["this.UpdateLightDarkMode();"]),
+            (Path.Combine("Chummer", "Controls", "Table", "TextTableCell.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Controls", "Table", "SpinnerTableCell.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Forms", "DummyForm.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Forms", "Chummy.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+            (Path.Combine("Chummer", "Forms", "Character Forms", "CharacterShared.cs"), ["this.UpdateLightDarkMode();", "this.UpdateParentForToolTipControls();"]),
+        ];
+
+        foreach ((string relativePath, string[] markers) in themedSurfaces)
+        {
+            string source = File.ReadAllText(Path.Combine(repoRoot, relativePath));
+            foreach (string marker in markers)
+            {
+                StringAssert.Contains(source, marker, $"{relativePath} must apply the shared WinForms theme at construction.");
+            }
+        }
+    }
+
+    [TestMethod]
     public void Horizon_desktop_surfaces_use_shared_neutral_shell_fallbacks_instead_of_legacy_warm_cards()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

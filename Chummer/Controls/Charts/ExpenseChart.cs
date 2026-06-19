@@ -40,6 +40,8 @@ namespace Chummer.UI.Charts
         public ExpenseChart()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             _objMainSeries = new LineSeries
             {
                 Title = LanguageManager.GetString("String_KarmaRemaining"),

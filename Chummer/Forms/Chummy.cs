@@ -66,6 +66,8 @@ namespace Chummer
         public Chummy(Character objCharacter)
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
 
             using (Graphics g = CreateGraphics())
             {

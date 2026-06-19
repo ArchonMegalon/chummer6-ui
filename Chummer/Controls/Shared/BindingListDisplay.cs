@@ -65,6 +65,7 @@ namespace Chummer.Controls.Shared
         public BindingListDisplay(ThreadSafeBindingList<TType> contents, Func<TType, Control> funcCreateControl, bool blnLoadVisibleOnly = true)
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
             Contents = contents ?? throw new ArgumentNullException(nameof(contents));
             _funcCreateControl = funcCreateControl;
             _blnLoadVisibleOnly = blnLoadVisibleOnly;
@@ -1017,6 +1018,11 @@ namespace Chummer.Controls.Shared
                     objNewControl.DoThreadSafe(x => x.Dispose());
                     objNewControl = objOldControl;
                 }
+                objNewControl.DoThreadSafe(x =>
+                {
+                    x.UpdateLightDarkMode();
+                    x.UpdateParentForToolTipControls();
+                });
                 int intHeight = objNewControl.DoThreadSafeFunc(x => x.PreferredSize.Height);
                 objNewControl.DoThreadSafe(x =>
                 {
@@ -1058,6 +1064,11 @@ namespace Chummer.Controls.Shared
                     await objNewControl.DoThreadSafeAsync(x => x.Dispose(), token: token).ConfigureAwait(false);
                     objNewControl = objOldControl;
                 }
+                await objNewControl.DoThreadSafeAsync(x =>
+                {
+                    x.UpdateLightDarkMode();
+                    x.UpdateParentForToolTipControls();
+                }, token: token).ConfigureAwait(false);
                 int intHeight = await objNewControl.DoThreadSafeFuncAsync(x => x.PreferredSize.Height, token: token).ConfigureAwait(false);
                 await objNewControl.DoThreadSafeAsync(x =>
                 {

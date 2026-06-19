@@ -35,6 +35,8 @@ namespace Chummer
         public InitiativeTracker()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             CenterToParent();
         }
     }

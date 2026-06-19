@@ -90,6 +90,11 @@ namespace Chummer
                 DefaultExt = "chum5"
             };
             Load += OnLoad;
+            Load += (_, _) =>
+            {
+                this.UpdateLightDarkMode();
+                this.UpdateParentForToolTipControls();
+            };
             Program.MainForm.OpenCharacterEditorForms?.Add(this);
             string name = "Show_Form_" + GetType();
             PageViewTelemetry pvt = new PageViewTelemetry(name)

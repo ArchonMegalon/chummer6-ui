@@ -67,6 +67,8 @@ namespace Chummer
         public ConditionMonitorUserControl()
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
         }
 
         private void _btnPhysical_Click(object sender, EventArgs e)

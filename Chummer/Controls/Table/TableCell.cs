@@ -33,6 +33,7 @@ namespace Chummer.UI.Table
         {
             ContentField = content;
             InitializeComponent();
+            this.UpdateLightDarkMode();
             Alignment = Alignment.Left;
         }
 

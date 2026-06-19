@@ -38,6 +38,8 @@ namespace Chummer.UI.Table
             _objMyTable = table;
             InitializeComponent();
             ContentField = nudSpinner;
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
             Leave += DoResumeSort;
 
             async void DoResumeSort(object a, EventArgs b)

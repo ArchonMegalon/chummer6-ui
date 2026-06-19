@@ -261,6 +261,8 @@ namespace Chummer.UI.Table
             _funcDefaultFilter = (x, t) => Task.FromResult(true);
             _funcFilter = _funcDefaultFilter;
             InitializeComponent();
+            this.UpdateLightDarkMode();
+            this.UpdateParentForToolTipControls();
         }
 
         private async Task ItemPropertyChanged(int intIndex, T objItem, string strProperty, CancellationToken token = default)
