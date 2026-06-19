@@ -343,14 +343,19 @@ public sealed class DesktopThemeManagerTests
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
+        string sectionHostMarkup = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml"));
+        string sectionHostSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs"));
 
         StringAssert.Contains(desktopDialogSource, "ApplyTextBoxAccessibility(textBox");
         StringAssert.Contains(commandDialogSource, "ApplyTextBoxAccessibility(textBox");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
         StringAssert.Contains(commandDialogSource, "DesktopShellTheme.ApplyShellTextInputTheme(textBox);");
+        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ApplyShellTextInputTheme(SectionPreviewBox);");
+        StringAssert.Contains(sectionHostSource, "DesktopShellTheme.ApplyShellTextInputTheme(XmlInputBox);");
         StringAssert.Contains(File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs")), "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(desktopDialogSource, "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(commandDialogSource, "ToolTip.SetTip(textBox, null);");
+        Assert.IsFalse(sectionHostMarkup.Contains("ToolTip.Tip=\"Paste raw XML", StringComparison.Ordinal));
     }
 
     [TestMethod]

@@ -247,8 +247,7 @@
                    AcceptsReturn="True"
                    TextWrapping="Wrap"
                    MinHeight="64"
-                   MaxHeight="220"
-                   ToolTip.Tip="Paste raw XML when you need a direct import or diagnostics." />
+                   MaxHeight="220" />
         </StackPanel>
       </Expander>
     </Border>

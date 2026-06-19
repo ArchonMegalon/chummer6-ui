@@ -271,7 +271,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "report_bug" => new DesktopDialogState(
                 "dialog.report_bug",
                 "Support and bug reporting",
-                "Use signed-in support for private install issues. GitHub remains available for public bug reports.",
+                "Use signed-in support at /account/support for private install issues. GitHub is still available for public bug reports.",
                 [
                     new DesktopDialogField("supportHub", "Tracked support", "/account/support", "/account/support", IsReadOnly: true),
                     new DesktopDialogField("supportPublic", "Guest support", "/contact", "/contact", IsReadOnly: true),

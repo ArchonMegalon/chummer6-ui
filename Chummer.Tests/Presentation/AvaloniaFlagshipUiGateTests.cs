@@ -3683,8 +3683,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             RuntimeControlInventoryNode shellInventory = CaptureControlInventory(harness.Window);
             AssertInventoryContains(shellInventory, "SaveButton", "Button", toolTipFragment: "Save");
             AssertInventoryContains(shellInventory, "RosterTree", "TreeView");
-            AssertInventoryContains(shellInventory, "AttributeBaseEditor_BOD", "NumericUpDown");
-            AssertInventoryContains(shellInventory, "AttributeKarmaEditor_BOD", "NumericUpDown");
+            AssertInventoryContains(shellInventory, "AttributeBaseEditor_BOD", "Grid");
+            AssertInventoryContains(shellInventory, "AttributeBaseEditor_BOD_Increase", "Button");
+            AssertInventoryContains(shellInventory, "AttributeBaseEditor_BOD_Decrease", "Button");
+            AssertInventoryContains(shellInventory, "AttributeKarmaEditor_BOD", "Grid");
+            AssertInventoryContains(shellInventory, "AttributeKarmaEditor_BOD_Increase", "Button");
+            AssertInventoryContains(shellInventory, "AttributeKarmaEditor_BOD_Decrease", "Button");
         });
 
         WithStandaloneDialogWindow(window =>
@@ -4359,19 +4363,21 @@ public sealed class AvaloniaFlagshipUiGateTests
             PumpStandaloneUi();
 
             Border attributeEditor = FindDescendant<Border>(control, "AttributeParityEditorBorder");
-            NumericUpDown baseEditor = FindDescendant<NumericUpDown>(control, "AttributeBaseEditor_BOD");
-            NumericUpDown karmaEditor = FindDescendant<NumericUpDown>(control, "AttributeKarmaEditor_BOD");
+            Grid baseEditor = FindDescendant<Grid>(control, "AttributeBaseEditor_BOD");
+            Grid karmaEditor = FindDescendant<Grid>(control, "AttributeKarmaEditor_BOD");
+            Button baseIncreaseButton = FindDescendant<Button>(control, "AttributeBaseEditor_BOD_Increase");
             Control? reviewExpander = FindDescendantOrDefault<Expander>(control, "SectionReviewExpander");
             Control reviewPanel = FindDescendant<Control>(control, "SectionReviewPanel");
 
             Assert.IsTrue(attributeEditor.IsVisible, "Character creation parity requires the dedicated attribute editor surface.");
-            Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base numeric editor.");
-            Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma numeric editor.");
+            Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base stepper editor.");
+            Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma stepper editor.");
+            Assert.IsTrue(baseIncreaseButton.IsVisible, "Character creation parity requires visible stepper controls.");
             // Legacy-equivalent chrome gate marker: The section preview header must not invent Review chrome that Chummer5A never had.
             Assert.IsNull(reviewExpander, "Character creation parity must not fall back to the review expander.");
             Assert.IsFalse(reviewPanel.IsVisible, "Character creation parity must not fall back to a profile review panel.");
 
-            baseEditor.Value = 4m;
+            RaiseClick(baseIncreaseButton);
             PumpStandaloneUi();
             Thread.Sleep(300);
             PumpStandaloneUi();
@@ -5128,7 +5134,8 @@ public sealed class AvaloniaFlagshipUiGateTests
 
                 harness.SetActiveSectionForTesting("attributes");
                 harness.WaitUntil(() => harness.FindControl<Control>("AttributeParityEditorBorder").IsVisible);
-                Assert.IsNotNull(harness.FindControlOrDefault<NumericUpDown>("AttributeBaseEditor_BOD"), "Expected numeric attribute editors before capturing character-creation familiarity proof.");
+                Assert.IsNotNull(harness.FindControlOrDefault<Grid>("AttributeBaseEditor_BOD"), "Expected compact attribute stepper editors before capturing character-creation familiarity proof.");
+                Assert.IsNotNull(harness.FindControlOrDefault<Button>("AttributeBaseEditor_BOD_Increase"), "Expected visible attribute stepper buttons before capturing character-creation familiarity proof.");
                 captured[expectedFiles[14]] = CaptureScreenshotProof(harness, expectedFiles[14]);
 
                 OpenMenuUntilCommandVisible(harness, "ToolsMenuButton", "master_index");

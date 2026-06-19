@@ -34,6 +34,8 @@ public partial class SectionHostControl : UserControl
     public SectionHostControl()
     {
         InitializeComponent();
+        DesktopShellTheme.ApplyShellTextInputTheme(SectionPreviewBox);
+        DesktopShellTheme.ApplyShellTextInputTheme(XmlInputBox);
     }
 
     public string XmlInputText => XmlInputBox.Text ?? string.Empty;
