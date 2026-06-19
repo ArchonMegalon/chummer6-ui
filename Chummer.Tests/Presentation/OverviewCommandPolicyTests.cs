@@ -46,6 +46,10 @@ public class OverviewCommandPolicyTests
     {
         Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand(DesktopAliceAssistant.CommandId));
         Assert.IsTrue(OverviewCommandPolicy.IsDialogCommand(DesktopAliceAssistant.CommandId));
+        Assert.IsTrue(OverviewCommandPolicy.IsAiFeatureCommand(DesktopAliceAssistant.CommandId));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreference(
+            DesktopAliceAssistant.CommandId,
+            DesktopPreferenceState.Default with { DisableAiFeatures = true }));
     }
 
     [TestMethod]
@@ -53,6 +57,10 @@ public class OverviewCommandPolicyTests
     {
         Assert.IsTrue(OverviewCommandPolicy.IsKnownSharedCommand("new_character_origin"));
         Assert.IsTrue(OverviewCommandPolicy.IsDialogCommand("new_character_origin"));
+        Assert.IsTrue(OverviewCommandPolicy.IsAiFeatureCommand("new_character_origin"));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreference(
+            "new_character_origin",
+            DesktopPreferenceState.Default with { DisableAiFeatures = true }));
     }
 
     [TestMethod]

@@ -134,6 +134,11 @@ internal sealed class DesktopAliceWindow : Window
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
+        if (DesktopPreferenceRuntime.LoadOrCreateState(headId).DisableAiFeatures)
+        {
+            return;
+        }
+
         DesktopAliceWindow dialog = await CreateAsync(preferredConversationMode).ConfigureAwait(true);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;

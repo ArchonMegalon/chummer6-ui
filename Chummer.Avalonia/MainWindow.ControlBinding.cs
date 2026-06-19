@@ -192,4 +192,10 @@ internal sealed record MainWindowControls(
     {
         CoachSidecar.SetState(state);
     }
+
+    public void SetCoachSidecarVisible(bool isVisible)
+    {
+        CoachSidecar.IsVisible = isVisible;
+        CoachSidecar.IsHitTestVisible = isVisible;
+    }
 }

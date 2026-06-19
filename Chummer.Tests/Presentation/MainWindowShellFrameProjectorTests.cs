@@ -82,6 +82,40 @@ public sealed class MainWindowShellFrameProjectorTests
     }
 
     [TestMethod]
+    public void Project_hides_ai_feature_entry_points_when_global_ai_features_are_disabled()
+    {
+        AppCommandDefinition[] commands =
+        [
+            new AppCommandDefinition("tools", "menu.tools", "menu", false, true, RulesetDefaults.Sr5),
+            new AppCommandDefinition(DesktopAliceAssistant.CommandId, "command.auto_alice", "tools", false, true, RulesetDefaults.Sr5),
+            new AppCommandDefinition("new_character_origin", "command.new_character_origin", "tools", false, true, RulesetDefaults.Sr5),
+            new AppCommandDefinition("global_settings", "command.global_settings", "tools", false, true, RulesetDefaults.Sr5)
+        ];
+
+        MainWindowShellFrame frame = ProjectFrame(
+            RulesetDefaults.Sr5,
+            activeSectionId: "summary",
+            activeTabId: "tab-info",
+            preferences: DesktopPreferenceState.Default with { DisableAiFeatures = true },
+            commands: commands,
+            menuRoots: [commands[0]],
+            openMenuId: "tools");
+
+        string[] commandIds = frame.CommandDialogPaneState.Commands.Select(command => command.Id).ToArray();
+        CollectionAssert.DoesNotContain(commandIds, DesktopAliceAssistant.CommandId);
+        CollectionAssert.DoesNotContain(commandIds, "new_character_origin");
+        CollectionAssert.Contains(commandIds, "global_settings");
+
+        string[] toolsMenuCommandIds = frame.HeaderState.MenuBar.MenuCommandsByMenuId["tools"].Select(command => command.Id).ToArray();
+        CollectionAssert.DoesNotContain(toolsMenuCommandIds, DesktopAliceAssistant.CommandId);
+        CollectionAssert.DoesNotContain(toolsMenuCommandIds, "new_character_origin");
+        CollectionAssert.Contains(toolsMenuCommandIds, "global_settings");
+
+        Assert.AreEqual(false, frame.HeaderState.ToolStrip.ShowAiFeatures);
+        Assert.IsFalse(frame.ChromeState.WorkspaceStrip.ShowOriginDossierAction);
+    }
+
+    [TestMethod]
     public void Project_formats_ruleset_conditioned_navigator_section_action_labels()
     {
         foreach ((string rulesetId, WorkspaceSurfaceActionDefinition action, string expectedLabel) in NavigatorLabelExpectations)
@@ -290,7 +324,11 @@ public sealed class MainWindowShellFrameProjectorTests
         WorkspaceSurfaceActionDefinition[]? workspaceActions = null,
         OpenWorkspaceState[]? openWorkspaces = null,
         CharacterWorkspaceId? activeWorkspaceId = null,
-        string? shellNotice = null)
+        string? shellNotice = null,
+        DesktopPreferenceState? preferences = null,
+        AppCommandDefinition[]? commands = null,
+        AppCommandDefinition[]? menuRoots = null,
+        string? openMenuId = null)
     {
         OpenWorkspaceState[] resolvedOpenWorkspaces = openWorkspaces ?? [];
         CharacterOverviewState overviewState = CharacterOverviewState.Empty with
@@ -300,6 +338,7 @@ public sealed class MainWindowShellFrameProjectorTests
             ActiveSectionRows = [new SectionRowState($"{activeSectionId}.value", "ready")],
             OpenWorkspaces = resolvedOpenWorkspaces,
             WorkspaceId = activeWorkspaceId,
+            Preferences = preferences ?? DesktopPreferenceState.Default,
             ActiveActionId = workspaceActions?
                 .FirstOrDefault(action => string.Equals(action.TargetId, activeSectionId, StringComparison.Ordinal))
                 ?.Id
@@ -307,8 +346,8 @@ public sealed class MainWindowShellFrameProjectorTests
         };
 
         ShellSurfaceState shellSurface = new(
-            Commands: [],
-            MenuRoots: [],
+            Commands: commands ?? [],
+            MenuRoots: menuRoots ?? [],
             NavigationTabs: [],
             WorkspaceActions: workspaceActions ?? [],
             ActiveWorkflowSurfaceActions: [],
@@ -322,7 +361,8 @@ public sealed class MainWindowShellFrameProjectorTests
             WorkflowSurfaces: [],
             ActiveRuntime: null)
         {
-            Notice = shellNotice
+            Notice = shellNotice,
+            OpenMenuId = openMenuId
         };
 
         return MainWindowShellFrameProjector.Project(overviewState, shellSurface, AlwaysAvailableEvaluator.Instance);

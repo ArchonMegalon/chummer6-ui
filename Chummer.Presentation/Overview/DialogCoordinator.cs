@@ -185,6 +185,17 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         if (string.Equals(dialog.Id, DesktopAliceAssistant.DialogId, StringComparison.Ordinal))
         {
+            if (context.State.Preferences.DisableAiFeatures)
+            {
+                context.Publish(context.State with
+                {
+                    ActiveDialog = null,
+                    Error = null,
+                    Notice = "AI features are hidden in Global Settings."
+                });
+                return;
+            }
+
             switch (actionId)
             {
                 case DesktopAliceAssistant.PreviewActionId:

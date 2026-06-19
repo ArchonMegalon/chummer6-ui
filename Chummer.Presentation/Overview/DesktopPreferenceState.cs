@@ -17,7 +17,8 @@ public sealed record DesktopPreferenceState(
     string VisibleChromePolicy = "Menu, toolstrip, dialogs, and optional runner tabs stay compact by default.",
     string SheetLanguage = "",
     bool HideMasterIndex = false,
-    bool AnalyticsOptIn = false)
+    bool AnalyticsOptIn = false,
+    bool DisableAiFeatures = false)
 {
     public static DesktopPreferenceState Default { get; } = new(
         UiScalePercent: 100,
@@ -36,5 +37,6 @@ public sealed record DesktopPreferenceState(
         VisibleChromePolicy: "Menu, toolstrip, dialogs, and optional runner tabs stay compact by default.",
         SheetLanguage: "",
         HideMasterIndex: false,
-        AnalyticsOptIn: false);
+        AnalyticsOptIn: false,
+        DisableAiFeatures: false);
 }

@@ -65,6 +65,8 @@ public partial class ToolStripControl : UserControl, IToolStripSurface
         ApplyVisibility(RosterMovementButton, state.ShowRosterMovement);
         ApplyVisibility(CampaignWorkspaceButton, state.ShowCampaignWorkspace);
         ApplyVisibility(LoadDemoRunnerButton, state.ShowLoadDemoRunner);
+        ApplyVisibility(ToolStripAutoAliceButton, state.ShowAiFeatures);
+        ApplyVisibility(ToolStripStartOriginButton, state.ShowAiFeatures);
     }
 
     public void SetStatusText(string statusText)
@@ -312,4 +314,5 @@ public sealed record ToolStripState(
     bool? ShowGmPrep = null,
     bool? ShowRosterMovement = null,
     bool? ShowCampaignWorkspace = null,
-    bool? ShowLoadDemoRunner = null);
+    bool? ShowLoadDemoRunner = null,
+    bool? ShowAiFeatures = null);

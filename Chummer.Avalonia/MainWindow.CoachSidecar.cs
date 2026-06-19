@@ -2,6 +2,7 @@ using Avalonia.Threading;
 using Chummer.Avalonia.Controls;
 using Chummer.Contracts.AI;
 using Chummer.Contracts.Presentation;
+using Chummer.Desktop.Runtime;
 using Chummer.Presentation.Shell;
 using System.Diagnostics;
 
@@ -22,6 +23,18 @@ public partial class MainWindow
     private void ApplyCoachSidecarState()
     {
         _controls.ApplyCoachSidecar(_coachSidecarState);
+    }
+
+    private void ResetCoachSidecarForDisabledAi()
+    {
+        _coachStatus = null;
+        _coachProviderHealth = [];
+        _coachAudits = [];
+        _coachErrorMessage = null;
+        _coachLaunchStatusMessage = null;
+        _lastCoachScopeKey = null;
+        _coachSidecarState = CoachSidecarPaneState.Empty;
+        ApplyCoachSidecarState();
     }
 
     private void QueueCoachSidecarRefreshIfNeeded(ShellSurfaceState shellSurface)
@@ -231,24 +244,5 @@ public partial class MainWindow
     }
 
     private static string ResolveCoachPublicBaseUrl()
-    {
-        string? configuredPublic = Environment.GetEnvironmentVariable("CHUMMER_PUBLIC_BASE_URL");
-        if (!string.IsNullOrWhiteSpace(configuredPublic))
-        {
-            return configuredPublic.Trim().TrimEnd('/') + "/";
-        }
-
-        string? configuredApi = Environment.GetEnvironmentVariable("CHUMMER_API_BASE_URL");
-        if (Uri.TryCreate(configuredApi, UriKind.Absolute, out Uri? apiUri))
-        {
-            if (string.Equals(apiUri.Host, "chummer-api", StringComparison.OrdinalIgnoreCase))
-            {
-                return "https://chummer.run/";
-            }
-
-            return $"{apiUri.Scheme}://{apiUri.Authority}/";
-        }
-
-        return "https://chummer.run/";
-    }
+        => DesktopPublicPortalRuntime.ResolvePublicPortalBaseAddress().ToString();
 }

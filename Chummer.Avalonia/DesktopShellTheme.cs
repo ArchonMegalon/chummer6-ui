@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
@@ -182,16 +183,17 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(action);
 
+        string resolvedLabel = ResolveCloseActionLabel(label, closeWindow);
         Button button = new()
         {
-            Content = label,
+            Content = resolvedLabel,
             MinWidth = minWidth,
             Padding = new Thickness(10, 4),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
         button.Classes.Add("shell-action");
-        ToolTip.SetTip(button, label);
+        ToolTip.SetTip(button, resolvedLabel);
 
         if (isPrimary)
         {
@@ -210,6 +212,11 @@ internal static class DesktopShellTheme
 
         return button;
     }
+
+    private static string ResolveCloseActionLabel(string label, bool closeWindow)
+        => closeWindow && string.Equals(label, "Close", StringComparison.Ordinal)
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.action.close")
+            : label;
 
     private static void AppendButtons(Panel panel, IReadOnlyList<Button> actions, Thickness? itemMargin)
     {

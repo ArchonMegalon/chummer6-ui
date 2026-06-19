@@ -1291,6 +1291,14 @@ public sealed class AccessibilitySignoffSmokeTests
             RequireContains(source, "desktop.dialog.action.close");
             RequireDoesNotContain(source, "desktop.home.button.continue");
         }
+
+        string shellThemeSource = ReadSource("Chummer.Avalonia/DesktopShellTheme.cs");
+        RequireContains(shellThemeSource, "ResolveCloseActionLabel");
+        RequireContains(shellThemeSource, "DesktopLocalizationCatalog.GetRequiredString(\"desktop.dialog.action.close\")");
+
+        string workbenchScaffoldSource = ReadSource("Chummer.Avalonia/DesktopHorizonWindowScaffold.cs");
+        RequireContains(workbenchScaffoldSource, "ResolveCloseActionLabel");
+        RequireContains(workbenchScaffoldSource, "DesktopLocalizationCatalog.GetRequiredString(\"desktop.dialog.action.close\")");
     }
 
     private static void DesktopPreferencePersistence_is_restart_safe_for_flagship_shell_and_native_surfaces()

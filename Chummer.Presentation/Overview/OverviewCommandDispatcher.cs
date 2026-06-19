@@ -10,6 +10,17 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
 {
     public async Task DispatchAsync(string commandId, OverviewCommandExecutionContext context, CancellationToken ct)
     {
+        if (OverviewCommandPolicy.IsBlockedByAiFeaturePreference(commandId, context.State.Preferences))
+        {
+            context.Publish(context.State with
+            {
+                ActiveDialog = null,
+                Error = null,
+                Notice = "AI features are hidden in Global Settings."
+            });
+            return;
+        }
+
         if (OverviewCommandPolicy.IsRuntimeInspectorCommand(commandId))
         {
             await OpenRuntimeInspectorDialogAsync(context, ct);

@@ -18,7 +18,7 @@ public partial class WorkspaceStripControl : UserControl
     public void SetState(WorkspaceStripState state)
     {
         SetWorkspaceText(state.WorkspaceText);
-        SetQuickStartVisibility(state.ShowQuickStartAction);
+        SetQuickStartVisibility(state.ShowQuickStartAction, state.ShowOriginDossierAction);
     }
 
     public void SetWorkspaceText(string text)
@@ -27,9 +27,11 @@ public partial class WorkspaceStripControl : UserControl
         ToolTip.SetTip(this, text);
     }
 
-    public void SetQuickStartVisibility(bool isVisible)
+    public void SetQuickStartVisibility(bool showSampleAction, bool showOriginDossierAction = true)
     {
-        QuickStartContainer.IsVisible = isVisible;
+        LoadDemoRunnerQuickActionButton.IsVisible = showSampleAction;
+        StartOriginQuickActionButton.IsVisible = showOriginDossierAction;
+        QuickStartContainer.IsVisible = showSampleAction || showOriginDossierAction;
     }
 
     private void ApplyLocalization()
@@ -66,4 +68,5 @@ public partial class WorkspaceStripControl : UserControl
 
 public sealed record WorkspaceStripState(
     string WorkspaceText,
-    bool ShowQuickStartAction = false);
+    bool ShowQuickStartAction = false,
+    bool ShowOriginDossierAction = true);

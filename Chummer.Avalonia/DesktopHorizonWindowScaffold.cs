@@ -4,6 +4,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Chummer.Campaign.Contracts;
 using Chummer.Presentation;
+using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
 
@@ -176,9 +177,10 @@ internal static class DesktopHorizonWindowScaffold
 
     public static Button CreateAsyncButton(Window owner, string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
     {
+        string resolvedLabel = ResolveCloseActionLabel(label, closeWindow);
         Button button = new()
         {
-            Content = label,
+            Content = resolvedLabel,
             MinWidth = 132,
             Padding = new Thickness(10, 6),
             HorizontalAlignment = HorizontalAlignment.Left
@@ -200,6 +202,11 @@ internal static class DesktopHorizonWindowScaffold
 
         return button;
     }
+
+    private static string ResolveCloseActionLabel(string label, bool closeWindow)
+        => closeWindow && string.Equals(label, "Close", StringComparison.Ordinal)
+            ? DesktopLocalizationCatalog.GetRequiredString("desktop.dialog.action.close")
+            : label;
 
     public static async Task<AccountCampaignSummary?> TryReadAccountCampaignSummaryAsync(string requiredMessage)
     {

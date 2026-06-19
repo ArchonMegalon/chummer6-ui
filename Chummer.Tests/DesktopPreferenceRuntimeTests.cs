@@ -42,7 +42,8 @@ public sealed class DesktopPreferenceRuntimeTests
                 CharacterRosterPath = " /Tmp/Roster ",
                 PdfViewerPath = " /usr/bin/zathura ",
                 VisibleChromePolicy = " Compact shell only ",
-                AnalyticsOptIn = true
+                AnalyticsOptIn = true,
+                DisableAiFeatures = true
             });
 
         DesktopPreferenceState loaded = DesktopPreferenceRuntime.LoadOrCreateState("avalonia");
@@ -60,6 +61,7 @@ public sealed class DesktopPreferenceRuntimeTests
         Assert.AreEqual("Compact shell only", loaded.VisibleChromePolicy);
         Assert.AreEqual("de-de", loaded.SheetLanguage);
         Assert.IsTrue(loaded.AnalyticsOptIn);
+        Assert.IsTrue(loaded.DisableAiFeatures);
     }
 
     [TestMethod]

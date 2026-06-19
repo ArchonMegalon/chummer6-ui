@@ -22,6 +22,8 @@ public sealed class DesktopHorizonsWindowTests
         StringAssert.Contains(source, "CreateBlackLedgerCard(");
         StringAssert.Contains(source, "CreateNativeLaunchCard(");
         StringAssert.Contains(source, "CreateNativeAdjunctActionButton(");
+        StringAssert.Contains(source, "ShouldShowWorkbenchEntry");
+        StringAssert.Contains(source, "!_preferences.DisableAiFeatures");
         StringAssert.Contains(source, "DesktopKarmaForgeWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopHorizonWorkbenchLauncher.SupportsNativeWorkbench(entry.Id)");
@@ -42,5 +44,8 @@ public sealed class DesktopHorizonsWindowTests
         CollectionAssert.AreEqual(
             new[] { "/packages", "/account/packages", "/participate/karma-forge#karma-forge-intake" },
             ProductSpineCatalog.ListKarmaForgeTargets().Select(static target => target.RelativeHref).ToArray());
+
+        string launcherSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonWorkbenchLauncher.cs"));
+        StringAssert.Contains(launcherSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId).DisableAiFeatures");
     }
 }

@@ -13,7 +13,11 @@ public sealed class DesktopAliceLaunchPathTests
         string source = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "MainWindow.EventHandlers.cs"));
 
         StringAssert.Contains(source, "private async void ToolStrip_OnAutoAliceRequested");
+        StringAssert.Contains(source, "_adapter.State.Preferences.DisableAiFeatures");
         StringAssert.Contains(source, "DesktopAliceWindow.ShowAsync(this, DesktopHeadId);");
         StringAssert.Contains(source, "open desktop alice");
+
+        string aliceSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs"));
+        StringAssert.Contains(aliceSource, "DesktopPreferenceRuntime.LoadOrCreateState(headId).DisableAiFeatures");
     }
 }

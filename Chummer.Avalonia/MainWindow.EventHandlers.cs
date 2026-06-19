@@ -77,6 +77,11 @@ public partial class MainWindow
 
     private async void ToolStrip_OnAutoAliceRequested(object? sender, EventArgs e)
     {
+        if (_adapter.State.Preferences.DisableAiFeatures)
+        {
+            return;
+        }
+
         await RunUiActionAsync(
             async () =>
             {
@@ -88,6 +93,11 @@ public partial class MainWindow
 
     private async void ToolStrip_OnStartOriginRequested(object? sender, EventArgs e)
     {
+        if (_adapter.State.Preferences.DisableAiFeatures)
+        {
+            return;
+        }
+
         await RunUiActionAsync(
             async () =>
             {

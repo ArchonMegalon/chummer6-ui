@@ -51,6 +51,12 @@ public static class OverviewCommandPolicy
         "copy", "paste"
     };
 
+    private static readonly HashSet<string> AiFeatureCommandIds = new(StringComparer.Ordinal)
+    {
+        DesktopAliceAssistant.CommandId,
+        "new_character_origin"
+    };
+
     private static readonly HashSet<string> CoreCommandIds = new(StringComparer.Ordinal)
     {
         "save_character",
@@ -74,6 +80,11 @@ public static class OverviewCommandPolicy
         => string.Equals(commandId, RuntimeInspectorCommandId, StringComparison.Ordinal);
 
     public static bool IsEditorRelayCommand(string commandId) => EditorRelayCommandIds.Contains(commandId);
+
+    public static bool IsAiFeatureCommand(string commandId) => AiFeatureCommandIds.Contains(commandId);
+
+    public static bool IsBlockedByAiFeaturePreference(string commandId, DesktopPreferenceState preferences)
+        => preferences.DisableAiFeatures && IsAiFeatureCommand(commandId);
 
     public static bool IsKnownSharedCommand(string commandId)
     {

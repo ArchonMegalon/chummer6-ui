@@ -1083,7 +1083,11 @@ internal sealed class DesktopHomeWindow : Window
         {
             actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
         }
-        actions.Add(CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync));
+        if (AreAiFeaturesVisible())
+        {
+            actions.Add(CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync));
+        }
+
         actions.Add(CreateButton("Explain", OpenRuleEnvironmentStudioAsync));
         return actions;
     }
@@ -1117,12 +1121,15 @@ internal sealed class DesktopHomeWindow : Window
     {
         if (_recentWorkspaces.Count == 0)
         {
-            return
-            [
-                CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync, isPrimary: true),
-                CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true),
-                CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport)
-            ];
+            List<Button> actions = [];
+            if (AreAiFeaturesVisible())
+            {
+                actions.Add(CreateButton("Start Origin Dossier", OpenOriginDossierWizardAsync, isPrimary: true));
+            }
+
+            actions.Add(CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), static () => DesktopInstallLinkingRuntime.TryOpenDownloadsPortal(), isPrimary: true));
+            actions.Add(CreateButton(S("desktop.home.button.open_install_support"), OpenInstallSupport));
+            return actions;
         }
 
         string openWorkspaceLabel = RulesetUiDirectiveCatalog.BuildOpenWorkspaceActionLabel(
@@ -1133,12 +1140,17 @@ internal sealed class DesktopHomeWindow : Window
             S("desktop.home.button.open_workspace_followthrough"));
         string? nextActionPrefix = RulesetUiDirectiveCatalog.BuildNextActionPrefix(_recentWorkspaces[0].RulesetId);
 
-        return
+        List<Button> workspaceActions =
         [
-            CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true),
-            CreateButton("Origin Dossier", OpenOriginDossierWizardAsync),
-            CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport)
+            CreateButton(openWorkspaceLabel, OpenCurrentWorkspace, isPrimary: true)
         ];
+        if (AreAiFeaturesVisible())
+        {
+            workspaceActions.Add(CreateButton("Origin Dossier", OpenOriginDossierWizardAsync));
+        }
+
+        workspaceActions.Add(CreateButton(S("desktop.home.button.open_work_support"), OpenWorkspaceSupport));
+        return workspaceActions;
     }
 
     private IReadOnlyList<Button> CreateLanguageActions()
@@ -1414,6 +1426,11 @@ internal sealed class DesktopHomeWindow : Window
 
     private async Task OpenOriginDossierWizardAsync()
     {
+        if (!AreAiFeaturesVisible())
+        {
+            return;
+        }
+
         if (Owner is MainWindow mainWindow)
         {
             Close();
@@ -1423,6 +1440,9 @@ internal sealed class DesktopHomeWindow : Window
 
         await DesktopAliceWindow.ShowOriginDraftAsync(this, _installState.HeadId).ConfigureAwait(true);
     }
+
+    private bool AreAiFeaturesVisible()
+        => !_preferences.DisableAiFeatures;
 
     private async Task OpenSettingsAsync()
     {

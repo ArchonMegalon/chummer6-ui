@@ -2430,7 +2430,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             PdfViewerPath = DesktopDialogFieldValueParser.GetValue(dialog, "globalPdfViewerPath") ?? fallback.PdfViewerPath,
             VisibleChromePolicy = DesktopDialogFieldValueParser.GetValue(dialog, "globalVisibilityPolicy") ?? fallback.VisibleChromePolicy,
             HideMasterIndex = DesktopDialogFieldValueParser.ParseBool(dialog, "globalHideMasterIndex", fallback.HideMasterIndex),
-            AnalyticsOptIn = DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptIn", fallback.AnalyticsOptIn)
+            AnalyticsOptIn = DesktopDialogFieldValueParser.ParseBool(dialog, "globalAnalyticsOptIn", fallback.AnalyticsOptIn),
+            DisableAiFeatures = DesktopDialogFieldValueParser.ParseBool(dialog, "globalDisableAiFeatures", fallback.DisableAiFeatures)
         });
     }
 
@@ -3323,7 +3324,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 preferences.AnalyticsOptIn ? "true" : "false",
                 "false",
                 InputType: "checkbox",
-                LayoutSlot: DesktopDialogFieldLayoutSlots.Left)
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
+            new DesktopDialogField(
+                "globalDisableAiFeatures",
+                "Hide AI features",
+                preferences.DisableAiFeatures ? "true" : "false",
+                "false",
+                InputType: "checkbox",
+                LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
         ];
     }
 

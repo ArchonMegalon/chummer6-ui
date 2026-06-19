@@ -67,6 +67,8 @@ public partial class ClassicToolStrip : UserControl, IToolStripSurface
         ApplyOptionalVisibility("RosterMovementButton", state.ShowRosterMovement);
         ApplyOptionalVisibility("CampaignWorkspaceButton", state.ShowCampaignWorkspace);
         ApplyOptionalVisibility("LoadDemoRunnerButton", state.ShowLoadDemoRunner);
+        ApplyOptionalVisibility("ClassicToolStripAutoAliceButton", state.ShowAiFeatures);
+        ApplyOptionalVisibility("ClassicToolStripStartOriginButton", state.ShowAiFeatures);
     }
 
     public void SetStatusText(string statusText)

@@ -82,6 +82,7 @@ internal static class MainWindowShellFrameProjector
             || state.ActiveNpcPersonaStudio is not null;
         bool showSampleControls = ShouldShowSampleControls();
         IReadOnlyDictionary<string, WorkspaceSurfaceActionDefinition> workspaceActionsById = BuildWorkspaceActionLookup(shellSurface.WorkspaceActions);
+        bool showAiFeatures = !state.Preferences.DisableAiFeatures;
         CommandPaletteItem[] commands = ProjectCommands(state, shellSurface, commandAvailabilityEvaluator);
         NavigatorTabItem[] navigationTabs = ProjectNavigationTabs(state, shellSurface, commandAvailabilityEvaluator);
 
@@ -93,7 +94,8 @@ internal static class MainWindowShellFrameProjector
                     ShowGmPrep: showSampleControls,
                     ShowRosterMovement: showSampleControls,
                     ShowCampaignWorkspace: false,
-                    ShowLoadDemoRunner: !hasOpenWorkspace && showSampleControls),
+                    ShowLoadDemoRunner: !hasOpenWorkspace && showSampleControls,
+                    ShowAiFeatures: showAiFeatures),
                 MenuBar: new MenuBarState(
                     OpenMenuId: shellSurface.OpenMenuId,
                     KnownMenuIds: shellSurface.MenuRoots.Select(menu => menu.Id).ToArray(),
@@ -103,7 +105,8 @@ internal static class MainWindowShellFrameProjector
             ChromeState: new MainWindowChromeState(
                 WorkspaceStrip: new WorkspaceStripState(
                     BuildWorkspaceStripText(workspaceContext, language),
-                    ShowQuickStartAction: !hasOpenWorkspace && showSampleControls),
+                    ShowQuickStartAction: !hasOpenWorkspace && showSampleControls,
+                    ShowOriginDossierAction: !hasOpenWorkspace && showAiFeatures),
                 SummaryHeader: new SummaryHeaderState(
                     NavigationTabsHeading: RulesetUiDirectiveCatalog.BuildNavigationTabsHeading(shellSurface.ActiveRulesetId),
                     NavigationTabs: navigationTabs,
@@ -488,6 +491,11 @@ internal static class MainWindowShellFrameProjector
     {
         IEnumerable<AppCommandDefinition> visibleCommands = shellSurface.Commands
             .Where(command => !string.Equals(command.Group, "menu", StringComparison.Ordinal));
+        if (state.Preferences.DisableAiFeatures)
+        {
+            visibleCommands = visibleCommands.Where(command => !OverviewCommandPolicy.IsAiFeatureCommand(command.Id));
+        }
+
         if (!string.IsNullOrWhiteSpace(shellSurface.OpenMenuId))
         {
             visibleCommands = visibleCommands.Where(command => string.Equals(GetProjectedMenuGroupId(command), shellSurface.OpenMenuId, StringComparison.Ordinal));
@@ -574,6 +582,11 @@ internal static class MainWindowShellFrameProjector
     private static bool IsStateVisibleMenuCommand(CharacterOverviewState state, string menuId, string commandId)
     {
         if (!IsVisibleMenuCommand(menuId, commandId))
+        {
+            return false;
+        }
+
+        if (OverviewCommandPolicy.IsBlockedByAiFeaturePreference(commandId, state.Preferences))
         {
             return false;
         }

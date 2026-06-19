@@ -185,6 +185,7 @@ internal sealed class DesktopHorizonsWindow : Window
         Func<DesktopHorizonWorkbenchEntry, bool> predicate)
     {
         DesktopHorizonWorkbenchEntry[] groupedEntries = filteredEntries
+            .Where(ShouldShowWorkbenchEntry)
             .Where(entry => !string.Equals(entry.Id, "karma_forge", StringComparison.Ordinal))
             .Where(predicate)
             .ToArray();
@@ -317,6 +318,10 @@ internal sealed class DesktopHorizonsWindow : Window
 
         return CreateCard(entry.Title, entry.Summary, null, actions.ToArray());
     }
+
+    private bool ShouldShowWorkbenchEntry(DesktopHorizonWorkbenchEntry entry)
+        => !_preferences.DisableAiFeatures
+            || !string.Equals(entry.Id, "alice", StringComparison.Ordinal);
 
     private Control CreateNativeLaunchCard(DesktopHorizonWorkbenchEntry entry, Func<Task> openNative)
     {

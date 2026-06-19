@@ -37,7 +37,8 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalSheetLanguage", "Sheet Language", "fr-fr", "en-us"),
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
                     new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
-                    new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox"),
+                    new DesktopDialogField("globalDisableAiFeatures", "Hide AI features", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -62,6 +63,7 @@ public class DialogCoordinatorTests
         Assert.IsTrue(published.Preferences.CompactMode);
         Assert.IsTrue(published.Preferences.HideMasterIndex);
         Assert.IsTrue(published.Preferences.AnalyticsOptIn);
+        Assert.IsTrue(published.Preferences.DisableAiFeatures);
         StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
     }
 
@@ -98,6 +100,39 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync("save", context, CancellationToken.None);
 
         Assert.AreEqual(DesktopLocalizationCatalog.DefaultLanguage, published.Preferences.Language);
+    }
+
+    [TestMethod]
+    public async Task DispatchAsync_blocks_ai_feature_commands_when_global_ai_features_are_hidden()
+    {
+        OverviewCommandDispatcher dispatcher = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            Preferences = DesktopPreferenceState.Default with { DisableAiFeatures = true }
+        };
+
+        OverviewCommandExecutionContext context = new(
+            State: published,
+            CurrentWorkspace: null,
+            DialogFactory: new DesktopDialogFactory(),
+            Publish: state => published = state,
+            GetShellBootstrapAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before shell bootstrap."),
+            GetRuntimeInspectorProfileAsync: static (_, _, _) => throw new InvalidOperationException("AI gate should block before runtime inspection."),
+            GetMasterIndexAsync: static _ => throw new InvalidOperationException("AI gate should block before master index."),
+            GetTranslatorLanguagesAsync: static _ => throw new InvalidOperationException("AI gate should block before translator languages."),
+            SaveAsync: static _ => throw new InvalidOperationException("AI gate should block before save."),
+            DownloadAsync: static _ => throw new InvalidOperationException("AI gate should block before download."),
+            PrintAsync: static _ => throw new InvalidOperationException("AI gate should block before print."),
+            ImportAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before import."),
+            LoadAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before load."),
+            CreateResetState: static (_, _) => throw new InvalidOperationException("AI gate should block before reset."),
+            CloseAllAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before close all."),
+            CloseWorkspaceAsync: static (_, _) => throw new InvalidOperationException("AI gate should block before close workspace."));
+
+        await dispatcher.DispatchAsync(DesktopAliceAssistant.CommandId, context, CancellationToken.None);
+
+        Assert.IsNull(published.ActiveDialog);
+        StringAssert.Contains(published.Notice ?? string.Empty, "AI features are hidden");
     }
 
     [TestMethod]
@@ -301,7 +336,7 @@ public class DialogCoordinatorTests
 
         Assert.IsNotNull(published.ActiveDialog);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "SR4");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "SR4 preview lane");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "SR4 preview");
     }
 
     [TestMethod]

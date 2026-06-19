@@ -24,7 +24,17 @@ public partial class MainWindow
 
         ApplyShellFrame(shellFrame);
         BindRosterToWorkspaces(state);
-        QueueCoachSidecarRefreshIfNeeded(shellSurface);
+        if (state.Preferences.DisableAiFeatures)
+        {
+            ResetCoachSidecarForDisabledAi();
+            _controls.SetCoachSidecarVisible(false);
+        }
+        else
+        {
+            _controls.SetCoachSidecarVisible(true);
+            QueueCoachSidecarRefreshIfNeeded(shellSurface);
+        }
+
         ApplyPostRefreshEffects(state);
     }
 
