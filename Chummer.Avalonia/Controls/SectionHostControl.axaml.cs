@@ -300,6 +300,7 @@ public partial class SectionHostControl : UserControl
 
     private Control CreateAttributeParityRow(AttributeParityRowState row)
     {
+        IBrush rowForeground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
         Grid grid = new()
         {
             Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
@@ -311,13 +312,26 @@ public partial class SectionHostControl : UserControl
         TextBlock nameLabel = new()
         {
             Text = row.DisplayName,
+            Foreground = rowForeground,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         grid.Children.Add(nameLabel);
 
+        int baseValue = Math.Clamp(row.BaseValue, 0, Math.Max(0, row.PriorityMaximum));
+        int karmaValue = Math.Clamp(row.KarmaValue, 0, Math.Max(0, row.KarmaMaximum));
+        Action<int> setBaseStepperValue = static _ => { };
+        Action<int> setKarmaStepperValue = static _ => { };
+        bool suppressMirror = false;
+        CancellationTokenSource? baseCommitCancellation = null;
+        CancellationTokenSource? karmaCommitCancellation = null;
+        int pendingBaseValue = baseValue;
+        int pendingKarmaValue = karmaValue;
+
         TextBlock totalValueText = new()
         {
-            Text = BuildAttributeValueDisplay(row.BaseValue + row.KarmaValue, row.MetatypeAugMax),
+            Text = BuildAttributeValueDisplay(baseValue + karmaValue, row.MetatypeAugMax),
+            Foreground = rowForeground,
+            FontWeight = FontWeight.SemiBold,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
@@ -327,47 +341,59 @@ public partial class SectionHostControl : UserControl
         TextBlock limitsText = new()
         {
             Text = $"{row.MetatypeMin} / {row.MetatypeMax} ({row.MetatypeAugMax})",
+            Foreground = rowForeground,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetColumn(limitsText, 4);
         grid.Children.Add(limitsText);
 
-        NumericUpDown baseEditor = new()
-        {
-            Name = $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
-            Minimum = 0,
-            Maximum = Math.Max(0, row.PriorityMaximum),
-            Increment = 1,
-            Value = row.BaseValue,
-            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch,
-            IsEnabled = row.BaseUnlocked
-        };
+        Control baseEditor = CreateAttributeValueStepper(
+            $"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}",
+            baseValue,
+            0,
+            Math.Max(0, row.PriorityMaximum),
+            row.BaseUnlocked,
+            next =>
+            {
+                baseValue = next;
+                pendingBaseValue = baseValue;
+                MirrorCapPressure(baseChanged: true);
+                pendingKarmaValue = karmaValue;
+                RefreshLiveValue();
+                baseCommitCancellation?.Cancel();
+                baseCommitCancellation?.Dispose();
+                baseCommitCancellation = new CancellationTokenSource();
+                _ = ScheduleCommitAsync("base", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);
+            },
+            out setBaseStepperValue);
         Grid.SetColumn(baseEditor, 1);
         grid.Children.Add(baseEditor);
 
-        NumericUpDown karmaEditor = new()
-        {
-            Name = $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
-            Minimum = 0,
-            Maximum = Math.Max(0, row.KarmaMaximum),
-            Increment = 1,
-            Value = row.KarmaValue,
-            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
-        };
+        Control karmaEditor = CreateAttributeValueStepper(
+            $"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}",
+            karmaValue,
+            0,
+            Math.Max(0, row.KarmaMaximum),
+            enabled: true,
+            next =>
+            {
+                karmaValue = next;
+                pendingKarmaValue = karmaValue;
+                MirrorCapPressure(baseChanged: false);
+                pendingBaseValue = baseValue;
+                RefreshLiveValue();
+                karmaCommitCancellation?.Cancel();
+                karmaCommitCancellation?.Dispose();
+                karmaCommitCancellation = new CancellationTokenSource();
+                _ = ScheduleCommitAsync("karma", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);
+            },
+            out setKarmaStepperValue);
         Grid.SetColumn(karmaEditor, 2);
         grid.Children.Add(karmaEditor);
 
-        bool suppressMirror = false;
-        CancellationTokenSource? baseCommitCancellation = null;
-        CancellationTokenSource? karmaCommitCancellation = null;
-        int pendingBaseValue = row.BaseValue;
-        int pendingKarmaValue = row.KarmaValue;
-
         void RefreshLiveValue()
         {
-            int baseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-            int karmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
             totalValueText.Text = BuildAttributeValueDisplay(baseValue + karmaValue, row.MetatypeAugMax);
         }
 
@@ -381,8 +407,6 @@ public partial class SectionHostControl : UserControl
             suppressMirror = true;
             try
             {
-                int baseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-                int karmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
                 int total = baseValue + karmaValue;
                 int totalCap = Math.Max(row.MetatypeMax, row.MetatypeAugMax);
                 if (total <= totalCap)
@@ -397,7 +421,7 @@ public partial class SectionHostControl : UserControl
                         karmaValue--;
                     }
 
-                    karmaEditor.Value = karmaValue;
+                    setKarmaStepperValue(karmaValue);
                 }
                 else
                 {
@@ -406,7 +430,7 @@ public partial class SectionHostControl : UserControl
                         baseValue--;
                     }
 
-                    baseEditor.Value = baseValue;
+                    setBaseStepperValue(baseValue);
                 }
             }
             finally
@@ -444,30 +468,6 @@ public partial class SectionHostControl : UserControl
             });
         }
 
-        baseEditor.ValueChanged += (_, _) =>
-        {
-            pendingBaseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-            MirrorCapPressure(baseChanged: true);
-            pendingKarmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-            RefreshLiveValue();
-            baseCommitCancellation?.Cancel();
-            baseCommitCancellation?.Dispose();
-            baseCommitCancellation = new CancellationTokenSource();
-            _ = ScheduleCommitAsync("base", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);
-        };
-
-        karmaEditor.ValueChanged += (_, _) =>
-        {
-            pendingKarmaValue = Convert.ToInt32(karmaEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-            MirrorCapPressure(baseChanged: false);
-            pendingBaseValue = Convert.ToInt32(baseEditor.Value ?? 0m, CultureInfo.InvariantCulture);
-            RefreshLiveValue();
-            karmaCommitCancellation?.Cancel();
-            karmaCommitCancellation?.Dispose();
-            karmaCommitCancellation = new CancellationTokenSource();
-            _ = ScheduleCommitAsync("karma", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);
-        };
-
         grid.DetachedFromVisualTree += (_, _) =>
         {
             baseCommitCancellation?.Cancel();
@@ -479,6 +479,99 @@ public partial class SectionHostControl : UserControl
         };
 
         return grid;
+    }
+
+    private static Grid CreateAttributeValueStepper(
+        string name,
+        int value,
+        int minimum,
+        int maximum,
+        bool enabled,
+        Action<int> valueChanged,
+        out Action<int> setValue)
+    {
+        int current = Math.Clamp(value, minimum, maximum);
+        IBrush foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+        IBrush surface = DesktopShellTheme.ResolveThemeBrush("ChummerShellSurfaceBrush", "#FFFFFF");
+        IBrush border = DesktopShellTheme.ResolveThemeBrush("ChummerShellBorderBrush", "#CBD5E1");
+        Grid stepper = new()
+        {
+            Name = name,
+            ColumnDefinitions = new ColumnDefinitions("22,*,22"),
+            MinHeight = 26,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
+        };
+
+        Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border);
+        TextBlock valueText = new()
+        {
+            Text = current.ToString(CultureInfo.InvariantCulture),
+            Foreground = foreground,
+            FontWeight = FontWeight.SemiBold,
+            HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            MinWidth = 20
+        };
+        Button increment = CreateAttributeStepperButton("+", $"{name}_Increase", enabled, foreground, surface, border);
+
+        Grid.SetColumn(valueText, 1);
+        Grid.SetColumn(increment, 2);
+        stepper.Children.Add(decrement);
+        stepper.Children.Add(valueText);
+        stepper.Children.Add(increment);
+
+        void ApplyValue(int next, bool emit)
+        {
+            int clamped = Math.Clamp(next, minimum, maximum);
+            if (clamped == current && string.Equals(valueText.Text, clamped.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+            {
+                decrement.IsEnabled = enabled && current > minimum;
+                increment.IsEnabled = enabled && current < maximum;
+                return;
+            }
+
+            current = clamped;
+            valueText.Text = current.ToString(CultureInfo.InvariantCulture);
+            decrement.IsEnabled = enabled && current > minimum;
+            increment.IsEnabled = enabled && current < maximum;
+            if (emit)
+            {
+                valueChanged(current);
+            }
+        }
+
+        decrement.Click += (_, _) => ApplyValue(current - 1, emit: true);
+        increment.Click += (_, _) => ApplyValue(current + 1, emit: true);
+        setValue = next => ApplyValue(next, emit: false);
+        ApplyValue(current, emit: false);
+        return stepper;
+    }
+
+    private static Button CreateAttributeStepperButton(
+        string label,
+        string name,
+        bool enabled,
+        IBrush foreground,
+        IBrush background,
+        IBrush border)
+    {
+        Button button = new()
+        {
+            Name = name,
+            Content = label,
+            Width = 22,
+            Height = 24,
+            Padding = new Thickness(0),
+            HorizontalContentAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalContentAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
+            Foreground = foreground,
+            Background = background,
+            BorderBrush = border,
+            BorderThickness = new Thickness(1),
+            IsEnabled = enabled
+        };
+        return button;
     }
 
     private static bool TryBuildAttributeParityRows(string? sectionId, string previewJson, out AttributeParityRowState[] rows)

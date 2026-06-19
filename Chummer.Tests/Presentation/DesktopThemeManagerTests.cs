@@ -329,6 +329,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostMarkup, "Text=\"Limits\" Classes=\"shell-caption\"");
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Val (Aug)\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Points\" Classes=\"shell-caption\" HorizontalAlignment=\"Right\" IsVisible=\"False\"", StringComparison.Ordinal));
+
+        string sectionHostSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "SectionHostControl.axaml.cs"));
+        StringAssert.Contains(sectionHostSource, "CreateAttributeValueStepper(");
+        StringAssert.Contains(sectionHostSource, "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"");
+        StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
+        Assert.IsFalse(sectionHostSource.Contains("NumericUpDown", StringComparison.Ordinal));
     }
 
     [TestMethod]
