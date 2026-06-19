@@ -1136,18 +1136,193 @@ internal static class Program
         {
             string primaryName = metadata.InstalledHeads[0].DisplayName;
             string secondaryName = metadata.InstalledHeads[1].DisplayName;
-            return MessageBox.Show(
-                $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch {primaryName}\nNo: launch {secondaryName}\nCancel: finish without launching",
-                "Install Complete",
-                MessageBoxButtons.YesNoCancel,
-                MessageBoxIcon.Information);
+            return PromptForInstalledHeadLaunchWithButtons(
+                metadata.DisplayName,
+                $"{metadata.DisplayName} has been installed successfully.",
+                $"Install folder:\n{targetDir}",
+                (
+                    $"Launch {primaryName}",
+                    $"Launch {secondaryName}",
+                    "Finish",
+                    $"Primary: {primaryName}",
+                    $"Secondary: {secondaryName}",
+                    "Skip launch"));
         }
 
-        return MessageBox.Show(
-            $"{metadata.DisplayName} installed to:\n{targetDir}\n\nYes: launch now\nNo: finish without launching",
-            "Install Complete",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Information);
+        return PromptForInstalledHeadLaunchWithButtons(
+            metadata.DisplayName,
+            $"{metadata.DisplayName} has been installed successfully.",
+            $"Install folder:\n{targetDir}",
+            (
+                "Launch now",
+                "Skip",
+                null,
+                "Open Chummer",
+                "Finish",
+                null));
+    }
+
+    private static DialogResult PromptForInstalledHeadLaunchWithButtons(
+        string displayName,
+        string headline,
+        string pathText,
+        (
+            string PrimaryButtonText,
+            string SecondaryButtonText,
+            string? CancelButtonText,
+            string PrimaryFootnote,
+            string SecondaryFootnote,
+            string? _CancelFootnote
+        ) options)
+    {
+        using Form prompt = new()
+        {
+            Text = $"{displayName} Install Complete",
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterScreen,
+            Size = new Size(540, 220),
+            MaximizeBox = false,
+            MinimizeBox = false,
+            ShowInTaskbar = false,
+            TopMost = true
+        };
+
+        Label titleLabel = new()
+        {
+            AutoSize = false,
+            Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Bold, GraphicsUnit.Point),
+            ForeColor = Color.FromArgb(18, 24, 36),
+            Text = headline,
+            Dock = DockStyle.Top,
+            Height = 38,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(18, 4, 12, 0),
+        };
+
+        Label pathLabel = new()
+        {
+            AutoSize = false,
+            Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point),
+            ForeColor = Color.FromArgb(55, 65, 84),
+            Text = pathText,
+            Dock = DockStyle.Top,
+            Height = 46,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(18, 0, 12, 0)
+        };
+
+        Label noteLabel = new()
+        {
+            AutoSize = false,
+            Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
+            ForeColor = Color.FromArgb(90, 102, 124),
+            Text = options.PrimaryFootnote,
+            Dock = DockStyle.Top,
+            Height = 28,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(18, 0, 12, 0)
+        };
+
+        Label secondaryNoteLabel = new()
+        {
+            AutoSize = false,
+            Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
+            ForeColor = Color.FromArgb(90, 102, 124),
+            Text = options.SecondaryFootnote,
+            Dock = DockStyle.Top,
+            Height = 24,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(18, 0, 12, 0)
+        };
+
+        FlowLayoutPanel actions = new()
+        {
+            Dock = DockStyle.Bottom,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(0, 0, 12, 12),
+            AutoSize = true
+        };
+
+        Button primaryButton = new()
+        {
+            Text = options.PrimaryButtonText,
+            AutoSize = true,
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
+            DialogResult = DialogResult.Yes,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+        primaryButton.Click += (_, _) =>
+        {
+            prompt.DialogResult = DialogResult.Yes;
+        };
+
+        Button secondaryButton = new()
+        {
+            Text = options.SecondaryButtonText,
+            AutoSize = true,
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
+            DialogResult = DialogResult.No,
+            Margin = new Padding(8, 0, 0, 0)
+        };
+        secondaryButton.Click += (_, _) =>
+        {
+            prompt.DialogResult = DialogResult.No;
+        };
+
+        Button cancelButton = new()
+        {
+            Text = options.CancelButtonText ?? "Cancel",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point),
+            DialogResult = DialogResult.Cancel,
+            Margin = new Padding(8, 0, 0, 0),
+            Visible = options.CancelButtonText is not null
+        };
+        cancelButton.Click += (_, _) =>
+        {
+            prompt.DialogResult = DialogResult.Cancel;
+        };
+
+        actions.Controls.Add(cancelButton);
+        actions.Controls.Add(secondaryButton);
+        actions.Controls.Add(primaryButton);
+
+        Panel content = new()
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.FromArgb(239, 244, 252),
+            Padding = new Padding(0, 10, 0, 0)
+        };
+
+        content.Controls.Add(secondaryNoteLabel);
+        content.Controls.Add(noteLabel);
+        content.Controls.Add(pathLabel);
+        content.Controls.Add(titleLabel);
+
+        content.Controls.Add(actions);
+
+        prompt.Controls.Add(content);
+        prompt.AcceptButton = primaryButton;
+        prompt.CancelButton = options.CancelButtonText is null ? secondaryButton : cancelButton;
+        prompt.StartPosition = FormStartPosition.CenterScreen;
+
+        if (options.CancelButtonText is null)
+        {
+            secondaryNoteLabel.Text = options.SecondaryFootnote ?? string.Empty;
+            noteLabel.Text = options.PrimaryFootnote;
+            secondaryNoteLabel.Visible = false;
+            content.Padding = new Padding(0, 10, 0, 8);
+            actions.Padding = new Padding(0, 0, 12, 12);
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.PrimaryFootnote))
+        {
+            noteLabel.Visible = true;
+        }
+
+        DialogResult result = prompt.ShowDialog();
+        return result;
     }
 
     private static void LaunchInstalledApp(
@@ -1666,7 +1841,7 @@ internal static class Program
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(640, 280);
+            ClientSize = new Size(600, 250);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -1676,6 +1851,7 @@ internal static class Program
             Text = $"{displayName} Installer";
             BackColor = Color.FromArgb(9, 13, 20);
             ForeColor = Color.White;
+            Font = new Font("Segoe UI", 8.5F, FontStyle.Regular, GraphicsUnit.Point);
 
             Panel accentBar = new()
             {
@@ -1687,21 +1863,21 @@ internal static class Program
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(22, 20, 22, 20),
+                Padding = new Padding(20, 16, 20, 16),
                 BackColor = Color.FromArgb(14, 19, 28)
             };
 
             Panel glyphTile = new()
             {
-                Size = new Size(56, 56),
+                Size = new Size(50, 50),
                 Location = new Point(0, 0),
                 BackColor = Color.FromArgb(22, 28, 40)
             };
 
             PictureBox appGlyph = new()
             {
-                Size = new Size(42, 42),
-                Location = new Point(7, 7),
+                Size = new Size(38, 38),
+                Location = new Point(6, 6),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.Transparent
             };
@@ -1719,10 +1895,10 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "INSTALLER",
-                Font = new Font("Segoe UI Semibold", 7.5F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 7.25F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(116, 223, 193),
                 Dock = DockStyle.Top,
-                Height = 14,
+                Height = 12,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2)
             };
@@ -1731,10 +1907,10 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = displayName,
-                Font = new Font("Segoe UI Semibold", 18F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 15.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 34,
+                Height = 28,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2),
                 AutoEllipsis = true
@@ -1744,22 +1920,22 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "Shortcuts and first launch are prepared automatically.",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 28,
+                Height = 24,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 0, 0, 8)
+                Margin = new Padding(0, 0, 0, 10)
             };
 
             _statusLabel = new Label
             {
                 AutoSize = false,
                 Text = "Preparing installer",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 24,
+                Height = 22,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 8),
                 AutoEllipsis = true
@@ -1784,7 +1960,7 @@ internal static class Program
             Panel progressMetaRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 20,
+                Height = 18,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -1792,11 +1968,11 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "Elapsed: 0s",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Left,
-                Width = 140,
-                Height = 20,
+                Width = 128,
+                Height = 18,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
@@ -1804,11 +1980,11 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "Preparing…",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Right,
-                Width = 92,
-                Height = 20,
+                Width = 72,
+                Height = 18,
                 TextAlign = ContentAlignment.MiddleRight
             };
 
@@ -1819,10 +1995,10 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "This usually takes less than a minute.",
-                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
+                Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
-                Height = 18,
+                Height = 16,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
