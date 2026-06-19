@@ -120,10 +120,8 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         Content = new ScrollViewer
         {
-            Content = new Border
-            {
-                Padding = new Thickness(16),
-                Child = new StackPanel
+            Content = DesktopShellTheme.CreateWindowSurface(
+                new StackPanel
                 {
                     Spacing = 10,
                     Children =
@@ -154,8 +152,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                             }
                         }
                     }
-                }
-            }
+                })
         };
     }
 

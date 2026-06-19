@@ -273,6 +273,21 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Report_and_account_windows_use_explicit_shell_window_surfaces()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string reportSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopReportIssueWindow.cs"));
+        string devicesSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
+
+        StringAssert.Contains(reportSource, "Content = DesktopShellTheme.CreateWindowSurface(");
+        StringAssert.Contains(devicesSource, "Content = DesktopShellTheme.CreateWindowSurface(");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.bug.title_label\"), _bugTitleBox)");
+        StringAssert.Contains(reportSource, "CreateField(S(\"desktop.report.feedback.detail_label\"), _feedbackDetailBox)");
+        Assert.IsFalse(reportSource.Contains("Child = new StackPanel", StringComparison.Ordinal));
+        Assert.IsFalse(devicesSource.Contains("Child = new StackPanel", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
     public void Origin_dossier_dialogs_use_specialized_shell_surfaces_instead_of_generic_field_sheet()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
