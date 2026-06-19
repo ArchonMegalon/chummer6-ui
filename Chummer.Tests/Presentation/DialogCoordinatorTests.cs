@@ -491,7 +491,7 @@ public class DialogCoordinatorTests
                 {
                     "autoAliceConversationMode" => field with { Value = "origin_dossier" },
                     "autoAliceArchetype" => field with { Value = "decker" },
-                    "autoAliceGmRequirements" => field with { Value = "Must be addicted to an illegal drug; GM grants +20000 nuyen." },
+                    "autoAliceGmRequirements" => field with { Value = "Must be addicted to an illegal drug; must be magically active; must have Intelligence 2+; GM grants +20000 nuyen and one ware availability exception." },
                     _ => field
                 })
                 .ToArray()
@@ -514,7 +514,14 @@ public class DialogCoordinatorTests
         Assert.IsNotNull(published.ActiveDialog);
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "origin dossier");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Sheet Changes | none");
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings"), "+20000 nuyen");
+        string? proposalChanges = DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges");
+        string? proposalWarnings = DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalWarnings");
+        StringAssert.Contains(proposalChanges, "Drug addiction constraint");
+        StringAssert.Contains(proposalChanges, "Magical activity constraint");
+        StringAssert.Contains(proposalChanges, "Attribute floor");
+        StringAssert.Contains(proposalWarnings, "+20000 nuyen");
+        StringAssert.Contains(proposalWarnings, "Money grant");
+        StringAssert.Contains(proposalWarnings, "Ware or availability exception");
         CollectionAssert.Contains(
             published.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
             DesktopAliceAssistant.OpenHandoffActionId);

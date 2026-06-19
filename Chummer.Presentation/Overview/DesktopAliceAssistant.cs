@@ -662,14 +662,81 @@ internal static class DesktopAliceAssistant
         };
 
     private static string FormatGmRequirementLine(string gmRequirements)
-        => string.IsNullOrWhiteSpace(gmRequirements)
-            ? string.Empty
-            : $"{Environment.NewLine}GM Requirements | {gmRequirements.Trim()}";
+    {
+        if (string.IsNullOrWhiteSpace(gmRequirements))
+        {
+            return string.Empty;
+        }
+
+        string interpretation = FormatGmRequirementInterpretation(gmRequirements);
+        return string.IsNullOrWhiteSpace(interpretation)
+            ? $"{Environment.NewLine}GM Requirements | {gmRequirements.Trim()}"
+            : $"{Environment.NewLine}GM Requirements | {gmRequirements.Trim()}{Environment.NewLine}{interpretation}";
+    }
 
     private static string AppendGmRequirementWarning(string warningList, string gmRequirements)
-        => string.IsNullOrWhiteSpace(gmRequirements)
-            ? warningList
-            : $"{warningList}{Environment.NewLine}GM requirements are treated as constraints or grants to explain, not silent sheet edits: {gmRequirements.Trim()}";
+    {
+        if (string.IsNullOrWhiteSpace(gmRequirements))
+        {
+            return warningList;
+        }
+
+        string interpretation = FormatGmRequirementInterpretation(gmRequirements);
+        string suffix = string.IsNullOrWhiteSpace(interpretation)
+            ? gmRequirements.Trim()
+            : $"{gmRequirements.Trim()}{Environment.NewLine}{interpretation}";
+        return $"{warningList}{Environment.NewLine}GM requirements are treated as constraints or grants to explain, not silent sheet edits: {suffix}";
+    }
+
+    private static string FormatGmRequirementInterpretation(string gmRequirements)
+    {
+        string normalized = gmRequirements.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        List<string> interpretations = [];
+        if (ContainsAny(normalized, "addict", "illegal drug", "drug addiction"))
+        {
+            interpretations.Add("GM Interpretation | Drug addiction constraint: use as a story hook and quality candidate, not an automatic sheet edit.");
+        }
+
+        if (ContainsAny(normalized, "magically active", "magic active", "awakened"))
+        {
+            interpretations.Add("GM Interpretation | Magical activity constraint: build seed must choose a compatible awakened path.");
+        }
+
+        if (ContainsAny(normalized, "intelligence", "logic", "intuition", "attribute floor", "2+"))
+        {
+            interpretations.Add("GM Interpretation | Attribute floor: preserve the named minimum before optimizing other picks.");
+        }
+
+        if (ContainsAny(normalized, "nuyen", "¥", "money", "cash", "budget", "+"))
+        {
+            interpretations.Add("GM Interpretation | Money grant: track bonus funds separately from normal creation resources.");
+        }
+
+        if (ContainsAny(normalized, "ware", "availability", "restricted", "forbidden", "illegal"))
+        {
+            interpretations.Add("GM Interpretation | Ware or availability exception: explain the exception and require review before any mechanical edit.");
+        }
+
+        if (ContainsAny(normalized, "quality", "qualities"))
+        {
+            interpretations.Add("GM Interpretation | Quality grant: propose candidate qualities, then require explicit selection.");
+        }
+
+        if (ContainsAny(normalized, "gear", "item", "equipment"))
+        {
+            interpretations.Add("GM Interpretation | Gear grant: list the item as a grant candidate before adding it to the sheet.");
+        }
+
+        return string.Join(Environment.NewLine, interpretations.Distinct(StringComparer.Ordinal));
+    }
+
+    private static bool ContainsAny(string value, params string[] needles)
+        => needles.Any(needle => value.Contains(needle, StringComparison.OrdinalIgnoreCase));
 
     private static string RulesetLabel(string rulesetId)
         => string.Equals(rulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
