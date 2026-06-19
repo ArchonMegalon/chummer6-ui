@@ -1,5 +1,6 @@
 using System.Globalization;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -14,11 +15,14 @@ internal sealed class DesktopDevicesAccessWindow : Window
 {
     private DesktopInstallLinkingState _installState;
     private DesktopUpdateClientStatus _updateStatus;
-    private readonly DesktopPreferenceState _preferences;
+    private DesktopPreferenceState _preferences;
     private DesktopInstallLinkingSummaryProjection _installLinkingSummary;
     private AccountCampaignSummary? _campaignSummary;
     private readonly TextBlock _introText;
     private readonly TextBlock _statusText;
+    private readonly TextBlock _guidedPreferenceStatusText;
+    private readonly RadioButton _guidedToolsRadioButton;
+    private readonly RadioButton _manualInterfaceRadioButton;
     private readonly TextBlock _currentText;
     private readonly TextBlock _devicesText;
     private readonly TextBlock _claimsText;
@@ -62,6 +66,24 @@ internal sealed class DesktopDevicesAccessWindow : Window
             TextWrapping = TextWrapping.Wrap,
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
         };
+
+        _guidedPreferenceStatusText = new TextBlock
+        {
+            Text = DesktopInstallLinkingWindow.BuildGuidedToolsPreferenceStatus(_preferences, _preferences.Language),
+            TextWrapping = TextWrapping.Wrap,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+        };
+
+        _guidedToolsRadioButton = CreateGuidedFeatureRadioButton(
+            name: "DevicesAccessGuidedToolsVisibleOption",
+            label: S("desktop.install_link.preference.visible_choice"),
+            isChecked: !_preferences.DisableAiFeatures,
+            disableAiFeatures: false);
+        _manualInterfaceRadioButton = CreateGuidedFeatureRadioButton(
+            name: "DevicesAccessGuidedToolsHiddenOption",
+            label: S("desktop.install_link.preference.hidden_choice"),
+            isChecked: _preferences.DisableAiFeatures,
+            disableAiFeatures: true);
 
         _currentText = new TextBlock
         {
@@ -115,6 +137,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
                         },
                         _introText,
                         _statusText,
+                        CreateGuidedToolsPreferenceSection(),
                         CreateSection(S("desktop.devices.section.current"), _currentText, _currentActionsRow),
                         CreateSection(S("desktop.devices.section.claimed"), _devicesText, _devicesActionsRow),
                         CreateSection(S("desktop.devices.section.claims"), _claimsText, _claimsActionsRow),
@@ -365,7 +388,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         =>
         [
             DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenWorkRouteAsync, isPrimary: true)
+                ? CreateButton(S("desktop.home.button.open_current_workspace"), OpenWorkRouteAsync, isPrimary: true)
                 : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync),
             CreateButton(S("desktop.home.button.open_update_status"), OpenUpdateWindowAsync)
@@ -374,10 +397,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
     private IReadOnlyList<Button> CreateDevicesActions()
         =>
         [
-            CreateButton(S("desktop.home.button.open_current_campaign_workspace"), OpenCampaignWorkspaceAsync, isPrimary: true),
-            DesktopInstallLinkingRuntime.IsClaimed(_installState)
-                ? CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync)
-                : CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync),
+            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _preferences.Language), OpenAccountAsync, isPrimary: true),
             CreateButton(S("desktop.home.button.open_support_center"), OpenSupportWindowAsync)
         ];
 
@@ -514,6 +534,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         {
             _installState = DesktopInstallLinkingRuntime.LoadOrCreateState(_installState.HeadId);
             _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(_installState.HeadId);
+            _preferences = DesktopPreferenceRuntime.LoadOrCreateState(_installState.HeadId);
             (DesktopInstallLinkingSummaryProjection installLinkingSummary, AccountCampaignSummary? campaignSummary) = await ReadAccountStateAsync().ConfigureAwait(true);
             _installLinkingSummary = installLinkingSummary;
             _campaignSummary = campaignSummary;
@@ -526,6 +547,17 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
         _introText.Text = BuildIntro();
         _statusText.Text = S("desktop.devices.status.current");
+        _guidedPreferenceStatusText.Text = DesktopInstallLinkingWindow.BuildGuidedToolsPreferenceStatus(_preferences, _preferences.Language);
+        if (_guidedToolsRadioButton.IsChecked != !_preferences.DisableAiFeatures)
+        {
+            _guidedToolsRadioButton.IsChecked = !_preferences.DisableAiFeatures;
+        }
+
+        if (_manualInterfaceRadioButton.IsChecked != _preferences.DisableAiFeatures)
+        {
+            _manualInterfaceRadioButton.IsChecked = _preferences.DisableAiFeatures;
+        }
+
         _currentText.Text = BuildCurrentBody();
         _devicesText.Text = BuildDevicesBody();
         _claimsText.Text = BuildClaimsBody();
@@ -568,6 +600,89 @@ internal sealed class DesktopDevicesAccessWindow : Window
 
     private static Border CreateSection(string title, Control body, Control? actionContent)
         => DesktopShellTheme.CreateSection(title, body, actionContent, padding: 8, cornerRadius: 4, includeHeading: true, spacing: 6);
+
+    private Control CreateGuidedToolsPreferenceSection()
+        => CreateSection(
+            S("desktop.devices.section.interface"),
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = S("desktop.install_link.preference.summary"),
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155")
+                    },
+                    new StackPanel
+                    {
+                        Spacing = 4,
+                        Children =
+                        {
+                            _guidedToolsRadioButton,
+                            _manualInterfaceRadioButton
+                        }
+                    },
+                    _guidedPreferenceStatusText
+                }
+            },
+            null);
+
+    private RadioButton CreateGuidedFeatureRadioButton(string name, string label, bool isChecked, bool disableAiFeatures)
+    {
+        RadioButton button = new()
+        {
+            Name = name,
+            GroupName = "DevicesAccessFeatureVisibility",
+            Content = label,
+            IsChecked = isChecked
+        };
+        string tip = S("desktop.install_link.preference.tip");
+        ToolTip.SetTip(button, tip);
+        AutomationProperties.SetName(button, label);
+        AutomationProperties.SetHelpText(button, tip);
+        button.IsCheckedChanged += (_, _) =>
+        {
+            if (button.IsChecked == true)
+            {
+                ApplyGuidedFeaturePreference(disableAiFeatures);
+            }
+        };
+
+        return button;
+    }
+
+    private void ApplyGuidedFeaturePreference(bool disableAiFeatures)
+    {
+        DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
+            _preferences with { DisableAiFeatures = disableAiFeatures });
+        _preferences = nextPreferences;
+        DesktopPreferenceRuntime.SaveState(_installState.HeadId, nextPreferences);
+        DesktopPreferenceStateRuntime.SetCurrent(nextPreferences);
+        _guidedPreferenceStatusText.Text = DesktopInstallLinkingWindow.BuildGuidedToolsPreferenceStatus(nextPreferences, nextPreferences.Language);
+
+        if (_guidedToolsRadioButton.IsChecked != !disableAiFeatures)
+        {
+            _guidedToolsRadioButton.IsChecked = !disableAiFeatures;
+        }
+
+        if (_manualInterfaceRadioButton.IsChecked != disableAiFeatures)
+        {
+            _manualInterfaceRadioButton.IsChecked = disableAiFeatures;
+        }
+
+        if (Owner is MainWindow ownerWindow)
+        {
+            ownerWindow.ApplyExternalPreferenceState(nextPreferences);
+        }
+
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString(
+            disableAiFeatures
+                ? "desktop.install_link.status.guided_tools_hidden"
+                : "desktop.install_link.status.guided_tools_visible",
+            nextPreferences.Language));
+    }
 
     private static StackPanel CreateActionRow(IReadOnlyList<Button> actions)
         => DesktopShellTheme.CreateStackActionRow(actions, spacing: 6);

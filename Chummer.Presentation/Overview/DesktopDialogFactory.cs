@@ -3327,7 +3327,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(
                 "globalDisableAiFeatures",
-                "Hide optional tools",
+                "Hide assisted features",
                 preferences.DisableAiFeatures ? "true" : "false",
                 "false",
                 InputType: "checkbox",

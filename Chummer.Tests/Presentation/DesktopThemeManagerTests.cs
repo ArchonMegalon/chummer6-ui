@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Chummer.Tests.Presentation;
@@ -49,6 +51,38 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(selectQualityDesigner.Contains("SystemColors.Highlight", StringComparison.Ordinal));
         Assert.IsFalse(selectMetatypeKarmaDesigner.Contains("SystemColors.Highlight", StringComparison.Ordinal));
         Assert.IsFalse(selectMetatypePriorityDesigner.Contains("SystemColors.Highlight", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Add_select_and_create_winforms_dialogs_participate_in_light_dark_theming()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string formsRoot = Path.Combine(repoRoot, "Chummer", "Forms");
+        string[] unthemedDialogs = Directory
+            .EnumerateFiles(formsRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(static path => !path.EndsWith(".Designer.cs", StringComparison.Ordinal))
+            .Where(static path =>
+            {
+                string fileName = Path.GetFileName(path);
+                return fileName.StartsWith("Add", StringComparison.Ordinal)
+                    || fileName.StartsWith("Create", StringComparison.Ordinal)
+                    || fileName.StartsWith("Select", StringComparison.Ordinal);
+            })
+            .Where(static path =>
+            {
+                string source = File.ReadAllText(path);
+                return !source.Contains("UpdateLightDarkMode(", StringComparison.Ordinal)
+                    && !source.Contains("ColorManager.", StringComparison.Ordinal)
+                    && !source.Contains("LightDark", StringComparison.Ordinal);
+            })
+            .Select(path => Path.GetRelativePath(repoRoot, path))
+            .OrderBy(static path => path, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.AreEqual(
+            0,
+            unthemedDialogs.Length,
+            "Every Add/Select/Create dialog must opt into theming. Missing: " + string.Join(", ", unthemedDialogs));
     }
 
     [TestMethod]

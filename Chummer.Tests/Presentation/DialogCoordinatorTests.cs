@@ -38,7 +38,7 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
                     new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
                     new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox"),
-                    new DesktopDialogField("globalDisableAiFeatures", "Hide optional tools", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalDisableAiFeatures", "Hide assisted features", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -132,7 +132,7 @@ public class DialogCoordinatorTests
         await dispatcher.DispatchAsync(DesktopAliceAssistant.CommandId, context, CancellationToken.None);
 
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Optional tools are hidden");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Assisted features are hidden");
     }
 
     [TestMethod]

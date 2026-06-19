@@ -36,6 +36,7 @@ namespace Chummer
         public AddToken(InitiativeUserControl init)
         {
             InitializeComponent();
+            this.UpdateLightDarkMode();
             //LanguageManager.Load(GlobalSettings.Language, this);
             CenterToParent();
             parentControl = init;

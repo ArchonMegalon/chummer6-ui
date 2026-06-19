@@ -191,8 +191,11 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
-        StringAssert.Contains(localizationSource, "Show optional tools");
-        StringAssert.Contains(localizationSource, "Keep Chummer quiet");
+        StringAssert.Contains(localizationSource, "Use assisted features");
+        StringAssert.Contains(localizationSource, "Keep the interface manual");
+        StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
+        StringAssert.Contains(localizationSource, "Account and Devices");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(localizationSource, "desktop.install_link.status.guided_tools_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
     }
