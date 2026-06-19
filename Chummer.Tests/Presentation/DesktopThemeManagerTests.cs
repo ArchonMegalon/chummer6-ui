@@ -283,8 +283,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
         StringAssert.Contains(desktopDialogSource, "build plan");
+        StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
+        StringAssert.Contains(desktopDialogSource, "\"Origin Story\"");
         Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("build lane", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(desktopDialogSource.Contains("\"ALICE Handoff\"", StringComparison.Ordinal));
+        Assert.IsFalse(desktopDialogSource.Contains("ALICE translates the story", StringComparison.Ordinal));
     }
 
     [TestMethod]
@@ -306,6 +310,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Metahumans only\")");
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All available\")");
         StringAssert.Contains(factorySource, "\"Remaining Karma | tracked when the character opens\"");
+        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"start_from_origin\", \"Start Origin Dossier\")");
         Assert.IsFalse(newCharacterPaneSource.Contains("ExecuteCommandAsync(\"character_settings\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("\"Metatype Category\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("legacy metatype continuation", StringComparison.OrdinalIgnoreCase));
@@ -340,6 +345,20 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs")), "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(desktopDialogSource, "ToolTip.SetTip(textBox, null);");
         StringAssert.Contains(commandDialogSource, "ToolTip.SetTip(textBox, null);");
+    }
+
+    [TestMethod]
+    public void Sr4_metatype_priority_detail_values_pin_shell_foreground_so_kde_dark_mode_cannot_hide_numbers()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+
+        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 1, \"Karma:\", new TextBlock { Text = runtimeState.MetatypeKarma });");
+        StringAssert.Contains(desktopDialogSource, "AddLabeledValueRow(rightFactsGrid, 2, \"Special Attributes:\", new TextBlock { Text = runtimeState.SpecialAttributes });");
+        StringAssert.Contains(desktopDialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\");");
+        StringAssert.Contains(desktopDialogSource, "valueText.FontWeight = FontWeight.SemiBold;");
+        StringAssert.Contains(desktopDialogSource, "Text = attribute.Value,");
+        StringAssert.Contains(desktopDialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\"),");
     }
 
     [TestMethod]

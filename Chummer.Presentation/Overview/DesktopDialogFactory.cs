@@ -644,7 +644,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
             [
-                new DesktopDialogAction("start_from_origin", "Start from Origin"),
+                new DesktopDialogAction("start_from_origin", "Start Origin Dossier"),
                 new DesktopDialogAction("create_character", "OK", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
@@ -673,8 +673,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
         return new DesktopDialogState(
             NewCharacterOriginWizardDialogId,
-            "Start from Origin",
-            "Shape the runner first. The dossier can guide the first build path when you choose to continue.",
+            "Origin Dossier",
+            "Create the story first. Review it, then continue to a guided build if you want mechanics.",
             [
                 new DesktopDialogField(
                     "newCharacterName",
@@ -841,7 +841,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
                 new DesktopDialogField(
                     "newCharacterOriginSummary",
-                    "Origin Preview",
+                    "Story Preview",
                     recommendation.OriginSummary,
                     recommendation.OriginSummary,
                     IsReadOnly: true,
@@ -856,7 +856,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterOriginPathSummary", "Origin Path Summary", recommendation.PathSummary)
             ],
             [
-                new DesktopDialogAction("generate_fitting_build", "Continue to build", true),
+                new DesktopDialogAction("generate_fitting_build", "Review story and build", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }
@@ -896,7 +896,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
             "Origin Dossier",
-            "Review the story and build direction, then open character creation.",
+            "Review the story first. Open guided character creation only when the story and GM constraints look right.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
@@ -932,7 +932,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
-                new DesktopDialogAction("open_origin_guided_chargen", "Open guided chargen", true),
+                new DesktopDialogAction("open_origin_guided_chargen", "Open guided character creation", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
     }

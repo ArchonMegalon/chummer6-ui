@@ -1254,13 +1254,13 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Runner",
-            CreateLegacyGroupLead("Name the runner and pick the rules context before ALICE turns the origin into a build plan."),
+            CreateLegacyGroupLead("Name the runner and pick the rules context before the origin becomes a build plan."),
             CreateSplitFieldRow(nameField, aliasField),
             CreateSplitFieldRow(rulesetField, buildPreferenceField)));
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "Build Target",
-            CreateLegacyGroupLead("Pick an archetype when you know it, or let ALICE infer one from the life path and GM constraints."),
+            CreateLegacyGroupLead("Pick an archetype when you know it, or let the dossier infer one from the life path and GM constraints."),
             CreateSplitFieldRow(archetypeField, metatypePreferenceField),
             CreateOriginSummaryStrip(
                 ("Method", buildMethodField.Value),
@@ -1305,13 +1305,13 @@ public partial class DesktopDialogWindow : Window
 
         shell.Children.Add(CreateLegacyFieldGroup(
             "GM Steering",
-            CreateLegacyGroupLead("Optional table permissions or requirements. ALICE treats these as guidance, not automatic sheet edits."),
+            CreateLegacyGroupLead("Optional table permissions or requirements. These guide the story and build handoff; they do not edit a sheet by themselves."),
             CreateSplitFieldRow(gmPresetField, gmRequirementsField),
             CreateOriginSummaryStrip(("Applied GM Constraint", gmSummaryField.Value))));
 
         shell.Children.Add(CreateLegacySummaryCard(
-            "Origin Dossier Preview",
-            "Review the story seed before generating the ALICE build handoff.",
+            "Story Preview",
+            "Review the story seed before generating the build handoff.",
             CreateFieldControl(summaryField)));
 
         return shell;
@@ -1332,7 +1332,7 @@ public partial class DesktopDialogWindow : Window
         };
 
         shell.Children.Add(CreateLegacyFieldGroup(
-            "ALICE Handoff",
+            "Build Handoff",
             CreateOriginSummaryStrip(
                 ("Runner", aliasField.Value),
                 ("Ruleset", rulesetField.Value.ToUpperInvariant()),
@@ -1344,8 +1344,8 @@ public partial class DesktopDialogWindow : Window
             ColumnSpacing = 12
         };
         reviewGrid.Children.Add(CreateLegacySummaryCard(
-            "Origin Canon",
-            "This narrative can seed later ALICE suggestions without mutating a finished sheet.",
+            "Origin Story",
+            "This story can seed later suggestions without mutating a finished sheet.",
             CreateFieldControl(storyField)));
 
         StackPanel right = new()
@@ -1355,7 +1355,7 @@ public partial class DesktopDialogWindow : Window
             {
                 CreateLegacySummaryCard(
                     "Build Translation",
-                    "ALICE translates the story into a normal guided character-creation lane.",
+                    "The handoff translates the story into a normal guided character-creation path.",
                     CreateFieldControl(buildLogicField)),
                 CreateLegacySummaryCard(
                     "Constraints",
@@ -1396,6 +1396,7 @@ public partial class DesktopDialogWindow : Window
                         new TextBlock
                         {
                             Text = string.IsNullOrWhiteSpace(value) ? "Pending" : value,
+                            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
                             FontWeight = FontWeight.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         }
@@ -1594,6 +1595,8 @@ public partial class DesktopDialogWindow : Window
             TextBlock value = new()
             {
                 Text = attribute.Value,
+                Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
+                FontWeight = FontWeight.SemiBold,
                 HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Left
             };
             Grid.SetRow(value, row);
@@ -3067,6 +3070,7 @@ public partial class DesktopDialogWindow : Window
         if (valueControl is TextBlock valueText)
         {
             valueText.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+            valueText.FontWeight = FontWeight.SemiBold;
             valueText.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
         }
 

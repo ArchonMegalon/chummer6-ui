@@ -638,7 +638,7 @@ public class DialogCoordinatorTests
                 ],
                 Actions:
                 [
-                    new DesktopDialogAction("start_from_origin", "Start from Origin", true)
+                    new DesktopDialogAction("start_from_origin", "Start Origin Dossier", true)
                 ])
         };
 
@@ -690,7 +690,7 @@ public class DialogCoordinatorTests
             string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
             || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
-        StringAssert.Contains(published.Notice ?? string.Empty, "ALICE translated the origin");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated");
     }
 
     [TestMethod]

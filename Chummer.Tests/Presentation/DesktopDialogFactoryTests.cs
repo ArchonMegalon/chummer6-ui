@@ -1759,6 +1759,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("New Character", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Runner", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual("OK", dialog.Actions.Single(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Start Origin Dossier", dialog.Actions.Single(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)).Label);
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "create_character", StringComparison.Ordinal)));
         Assert.IsNotNull(dialog.Actions.SingleOrDefault(action => string.Equals(action.Id, "start_from_origin", StringComparison.Ordinal)));
     }
@@ -1820,6 +1821,7 @@ public class DesktopDialogFactoryTests
         DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(RulesetDefaults.Sr4, "Nova", "Cipher");
 
         Assert.AreEqual("dialog.new_character.origin_wizard", dialog.Id);
+        Assert.AreEqual("Origin Dossier", dialog.Title);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias"));
         Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"));
@@ -1836,6 +1838,7 @@ public class DesktopDialogFactoryTests
             "illegal_addiction");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginSummary"), "upbringing");
         Assert.IsFalse(string.IsNullOrWhiteSpace(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildMethod")));
+        Assert.AreEqual("Review story and build", dialog.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).Label);
     }
 
     [TestMethod]
@@ -1867,6 +1870,7 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
+        Assert.AreEqual("Open guided character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());

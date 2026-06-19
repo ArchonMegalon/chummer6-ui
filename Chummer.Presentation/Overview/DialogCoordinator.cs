@@ -126,7 +126,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             {
                 ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(rulesetId, buildMethod, houseRulesEnabled, name, alias),
                 Error = null,
-                Notice = "ALICE translated the origin into a guided build plan."
+                Notice = "Origin story translated into a guided build plan."
             });
             return;
         }
