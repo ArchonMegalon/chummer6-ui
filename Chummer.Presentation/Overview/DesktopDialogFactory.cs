@@ -271,7 +271,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "report_bug" => new DesktopDialogState(
                 "dialog.report_bug",
                 "Support and bug reporting",
-                "Use the signed-in Hub support surface for tracked install-aware cases. GitHub is still available for public issue reporting, but the flagship desktop flow is claim-aware support closure.",
+                "Use signed-in support for private install issues. GitHub remains available for public bug reports.",
                 [
                     new DesktopDialogField("supportHub", "Tracked support", "/account/support", "/account/support", IsReadOnly: true),
                     new DesktopDialogField("supportPublic", "Guest support", "/contact", "/contact", IsReadOnly: true),
@@ -3327,7 +3327,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 LayoutSlot: DesktopDialogFieldLayoutSlots.Left),
             new DesktopDialogField(
                 "globalDisableAiFeatures",
-                "Hide assisted features",
+                "Hide helper buttons",
                 preferences.DisableAiFeatures ? "true" : "false",
                 "false",
                 InputType: "checkbox",

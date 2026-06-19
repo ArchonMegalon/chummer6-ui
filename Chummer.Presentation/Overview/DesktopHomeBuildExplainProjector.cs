@@ -76,7 +76,7 @@ public static class DesktopHomeBuildExplainProjector
                 BuildBuildPathComparisons(buildPathCandidates),
                 new[]
                 {
-                    "No grounded build plan is loaded yet for this desktop head.",
+                    "No build plan is loaded yet for this copy.",
                     "Rules explanations become character-specific after you restore or create the first workspace."
                 }
                 .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(effectiveRulesetId))

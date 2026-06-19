@@ -28,20 +28,20 @@ public static class DesktopHomeCampaignProjector
         if (summary is null && leadDigest is null)
         {
             return new DesktopHomeCampaignProjection(
-                "No signed-in campaign spine is loaded yet. Link this copy and open the account-aware route before you trust desktop restore, continuity, or install-specific closure.",
-                "Link this copy, open the account-aware route, and refresh the home cockpit before you rely on campaign return or claimed-device restore.",
-                "Restore packet: no account-backed dossiers, campaigns, or reconnectable artifacts are loaded yet for this desktop head.",
-                "Claimed device posture: this copy is still local-only until the account restore packet can attach a device role and channel-aware continuity target.",
-                "Support closure stays strongest after this copy is linked, because fixes, notices, and restore follow-through can then target the exact install and campaign lane.",
+                "No signed-in campaign workspace is loaded yet. Claim this copy before you rely on restore, continuity, or support for this install.",
+                "Claim this copy, open your workspace, and refresh Home before you rely on campaign return or device restore.",
+                "Restore: no account-backed dossiers, campaigns, or reconnectable files are loaded yet.",
+                "Device: this copy is local-only until account restore attaches it to your campaign workspace.",
+                "Support works best after this copy is claimed, because fixes and restore notes can target the exact install.",
                 LeadWorkspaceId: null,
                 ReadinessHighlights:
                 [
-                    "Campaign highlight: the flagship desktop home can reopen grounded campaign continuity as soon as account-backed restore truth is available."
+                    "Campaigns can reopen here as soon as account-backed restore data is available."
                 ],
                 Watchouts:
                 [
-                    "Campaign return remains guest-only until an account-backed restore packet lands on this install.",
-                    "Support and fix notices become install-specific after the linked install, channel, and current campaign workspace line up."
+                    "Campaign return remains guest-only until account restore data lands on this install.",
+                    "Support and fix notices become install-specific after this copy and the current campaign workspace line up."
                 ]);
         }
 
@@ -360,10 +360,10 @@ public static class DesktopHomeCampaignProjector
 
         if (summary.Restore.RecentCampaigns.Count > 0)
         {
-            return "Open the account-aware work surface and restore the current campaign lane before you create another local-only workspace.";
+            return "Open your workspace and restore the current campaign before you create another local-only workspace.";
         }
 
-        return "Link this copy and seed one campaign-facing workspace before you trust desktop return and restore continuity.";
+        return "Claim this copy and create one campaign workspace before you rely on return and restore.";
     }
 
     private static IEnumerable<string> BuildFirstPlayableSessionHighlights(FirstPlayableSessionProjection? firstPlayableSession)

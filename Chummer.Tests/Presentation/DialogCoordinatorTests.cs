@@ -38,7 +38,7 @@ public class DialogCoordinatorTests
                     new DesktopDialogField("globalCompactMode", "Compact", "true", "false"),
                     new DesktopDialogField("globalHideMasterIndex", "Hide Master Index", "true", "false", InputType: "checkbox"),
                     new DesktopDialogField("globalAnalyticsOptIn", "Share anonymous desktop usage", "true", "false", InputType: "checkbox"),
-                    new DesktopDialogField("globalDisableAiFeatures", "Hide assisted features", "true", "false", InputType: "checkbox")
+                    new DesktopDialogField("globalDisableAiFeatures", "Hide helper buttons", "true", "false", InputType: "checkbox")
                 ],
                 Actions:
                 [
@@ -64,7 +64,10 @@ public class DialogCoordinatorTests
         Assert.IsTrue(published.Preferences.HideMasterIndex);
         Assert.IsTrue(published.Preferences.AnalyticsOptIn);
         Assert.IsTrue(published.Preferences.DisableAiFeatures);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Restart the desktop head to fully apply");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Chummer");
+        Assert.IsFalse(
+            (published.Notice ?? string.Empty).Contains("desktop head", StringComparison.OrdinalIgnoreCase),
+            "The settings dialog should not expose internal desktop-head vocabulary.");
     }
 
     [TestMethod]
@@ -132,7 +135,7 @@ public class DialogCoordinatorTests
         await dispatcher.DispatchAsync(DesktopAliceAssistant.CommandId, context, CancellationToken.None);
 
         Assert.IsNull(published.ActiveDialog);
-        StringAssert.Contains(published.Notice ?? string.Empty, "Assisted features are hidden");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Helper buttons are hidden");
     }
 
     [TestMethod]

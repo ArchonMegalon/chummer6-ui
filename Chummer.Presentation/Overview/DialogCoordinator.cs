@@ -191,7 +191,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                 {
                     ActiveDialog = null,
                     Error = null,
-                    Notice = "Assisted features are hidden in Settings."
+                    Notice = "Helper buttons are hidden in Settings."
                 });
                 return;
             }

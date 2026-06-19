@@ -16,7 +16,7 @@ public sealed class OverviewCommandDispatcher : IOverviewCommandDispatcher
             {
                 ActiveDialog = null,
                 Error = null,
-                Notice = "Assisted features are hidden in Settings."
+                Notice = "Helper buttons are hidden in Settings."
             });
             return;
         }

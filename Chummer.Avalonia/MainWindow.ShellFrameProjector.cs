@@ -453,11 +453,11 @@ internal static class MainWindowShellFrameProjector
         if (workspaceContext.ActiveWorkspaceId is null)
         {
             return workspaceContext.OpenWorkspaceCount > 0
-                ? $"Primary desktop head still has {workspaceContext.OpenWorkspaceCount} open workspace tab(s) available for review."
-                : "Primary desktop head has no active workspace yet, so the current local shell stays in place until you pick one.";
+                ? $"{workspaceContext.OpenWorkspaceCount} workspace tab(s) are open for review."
+                : "No workspace is active yet. The current local view stays in place until you pick one.";
         }
 
-        return $"{workspaceContext.ActiveWorkspaceId.Value} stays visible on the current desktop head until you choose review or support.";
+        return $"{workspaceContext.ActiveWorkspaceId.Value} stays visible until you choose review or support.";
     }
 
     private static string BuildWorkspaceTimestampReceipt(ActiveWorkspaceContext workspaceContext)
@@ -465,7 +465,7 @@ internal static class MainWindowShellFrameProjector
         string workspaceLabel = workspaceContext.ActiveWorkspaceId?.Value ?? "no active workspace";
         return workspaceContext.ActiveWorkspaceLastSeenUtc is DateTimeOffset lastSeenUtc
             ? $"{workspaceLabel} was last touched locally at {lastSeenUtc.ToUniversalTime():yyyy-MM-dd HH:mm} UTC and stays visible before any replacement;"
-            : $"{workspaceLabel} stays visible on the current desktop head before any replacement;";
+            : $"{workspaceLabel} stays visible before any replacement;";
     }
 
     private static bool HasRestoreReviewContext(

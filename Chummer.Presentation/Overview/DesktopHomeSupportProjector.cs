@@ -61,7 +61,7 @@ public static class DesktopHomeSupportProjector
                     ? "No tracked support cases are attached to this linked install right now, so closure and fix notices stay quiet until a real install, update, or campaign issue needs one case."
                     : "No tracked support cases are attached yet. Link this copy to enable install-specific fixes and notices.",
                 NextSafeAction: installClaimed
-                    ? "Keep the install-aware support lane quiet until a real install, update, or campaign issue needs one tracked case."
+                    ? "No action needed until a real install, update, or campaign issue needs a tracked case."
                     : "Link this copy before you rely on install-specific support closure or fix notices.",
                 PrimaryActionLabel: null,
                 PrimaryActionHref: null,
@@ -84,7 +84,7 @@ public static class DesktopHomeSupportProjector
                 [
                     installClaimed
                         ? "Support posture: the linked install can open tracked cases directly when a real issue appears."
-                        : "Support posture: the support lane becomes install-aware only after claim and restore attach this copy to an account."
+                        : "Support posture: claim this copy before support can attach fixes and notices to it."
                 ]);
         }
 

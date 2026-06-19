@@ -78,7 +78,7 @@ public class DesktopDialogFactoryTests
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalVisibilityPolicy", StringComparison.Ordinal)));
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalPdfViewerPath", StringComparison.Ordinal)));
         Assert.IsFalse(dialog.Fields.Any(field => string.Equals(field.Id, "globalStartupBehavior", StringComparison.Ordinal)));
-        StringAssert.Contains(dialog.Message ?? string.Empty, "Phase-1 desktop language changes apply on restart.");
+        StringAssert.Contains(dialog.Message ?? string.Empty, "Sprachanderungen gelten nach dem Neustart.");
     }
 
     [TestMethod]
