@@ -148,7 +148,7 @@ public class DesktopLocalizationCatalogTests
     }
 
     [TestMethod]
-    public void Horizon_home_seed_keys_are_localized_for_every_shipping_language_without_fallback_markers()
+    public void Product_area_home_seed_keys_are_localized_for_every_shipping_language_without_fallback_markers()
     {
         string[] keys =
         [
@@ -164,6 +164,43 @@ public class DesktopLocalizationCatalogTests
                 string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
                 Assert.IsFalse(string.IsNullOrWhiteSpace(localizedValue), $"Expected localized value for {key} / {languageCode}.");
                 Assert.IsFalse(localizedValue.Contains("[en-US fallback]", StringComparison.Ordinal), $"Expected non-fallback horizon-home value for {key} / {languageCode}.");
+            }
+        }
+    }
+
+    [TestMethod]
+    public void Product_area_hub_copy_does_not_leak_internal_horizon_or_lane_language()
+    {
+        string[] keys =
+        [
+            "desktop.shell.tool.horizons",
+            "desktop.home.section.horizons",
+            "desktop.home.horizons.summary",
+            "desktop.horizons.title",
+            "desktop.horizons.heading",
+            "desktop.horizons.intro",
+            "desktop.home.button.open_horizons_public"
+        ];
+        string[] blockedFragments =
+        [
+            "horizon",
+            "lane",
+            "レーン",
+            "线路",
+            "视界"
+        ];
+
+        foreach (string languageCode in DesktopLocalizationCatalog.ShippingLanguages.Select(language => language.Code))
+        {
+            foreach (string key in keys)
+            {
+                string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                foreach (string blockedFragment in blockedFragments)
+                {
+                    Assert.IsFalse(
+                        localizedValue.Contains(blockedFragment, StringComparison.OrdinalIgnoreCase),
+                        $"Expected user-facing product-area copy for {key} / {languageCode}, but found '{blockedFragment}' in '{localizedValue}'.");
+                }
             }
         }
     }
