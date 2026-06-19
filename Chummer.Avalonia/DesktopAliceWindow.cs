@@ -608,17 +608,17 @@ internal sealed class DesktopAliceWindow : Window
             {
                 if (_originBundle is not null)
                 {
-                    actionRow.Children.Add(CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.CanonMarkdownPath), isPrimary: true, name: "AliceOriginOpenCanonStoryButton"));
-                    actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
                     if (string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath))
                     {
-                        actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
+                        actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, isPrimary: true, name: "AliceOriginRenderDossierPdfButton"));
                     }
                     else
                     {
-                        actionRow.Children.Add(CreateButton("Open dossier PDF", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
+                        actionRow.Children.Add(CreateButton("Open dossier PDF", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"));
                     }
+                    actionRow.Children.Add(CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.CanonMarkdownPath), name: "AliceOriginOpenCanonStoryButton"));
+                    actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
                     actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
                     actionRow.Children.Add(CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
@@ -748,16 +748,16 @@ internal sealed class DesktopAliceWindow : Window
                 return Task.CompletedTask;
             }
 
-            OriginDossierBundle bundle = EnsureOriginDossierBundle();
+            OriginDossierBundle bundle = EnsureOriginDossierPdf(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Origin story approved.",
-                $"{bundle.Canon.Summary} The story is ready for dossier assets and later build guidance.",
+                $"{bundle.Canon.Summary} The dossier PDF is ready; use the story as Alice's seed for later build guidance.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.CanonMarkdownPath), isPrimary: true, name: "AliceOriginOpenCanonStoryButton"),
+                CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
+                CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.CanonMarkdownPath), name: "AliceOriginOpenCanonStoryButton"),
                 CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"),
-                CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
                 CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
                 CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
                 CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),

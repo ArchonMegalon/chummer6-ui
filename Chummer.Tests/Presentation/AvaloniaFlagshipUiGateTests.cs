@@ -629,6 +629,15 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsNotNull(
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenFlipLinkPacketButton"),
                 "Approved origin dossier must expose the FlipLink handoff after approval.");
+            Button openDossierPdfButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton");
+            Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book/PDF artifact.");
+            WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
+            string firstVisibleAction = actionRow.Children
+                .OfType<Button>()
+                .Where(static button => button.IsVisible)
+                .Select(static button => button.Content?.ToString() ?? string.Empty)
+                .FirstOrDefault() ?? string.Empty;
+            Assert.AreEqual("Open dossier PDF", firstVisibleAction, "The approved origin dossier must be book-first before portrait, voice, or video actions.");
 
             harness.WaitUntil(
                 () => Directory.Exists(bundleRoot)
@@ -641,8 +650,10 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(
                 () => File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.md"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.json"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "fliplink-origin-story.packet.json")),
-                context: "origin approval must write canonical story and FlipLink artifacts");
+                    && File.Exists(Path.Combine(createdBundleDirectory, "fliplink-origin-story.packet.json"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier.pdf"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json")),
+                context: "origin approval must write canonical story, FlipLink, and book-first PDF artifacts");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"));
             harness.WaitUntil(
@@ -679,12 +690,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                     && harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenVideoPosterButton") is { IsVisible: true },
                 context: "origin bundle must prepare the dossier video after GM-steered story approval");
             harness.WaitUntil(
-                () => File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier.pdf"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "markupgo-origin-dossier.packet.json"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video.storyboard.md"))
+                () => File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video.storyboard.md"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "origin-dossier-video-poster.png"))
                     && File.Exists(Path.Combine(createdBundleDirectory, "vidboard-origin-dossier.packet.json")),
-                context: "video preparation must produce the dependent dossier PDF plus storyboard, poster, and vidBoard packet artifacts");
+                context: "video preparation must use the approved book/story and produce storyboard, poster, and vidBoard packet artifacts");
 
             modeCombo.SelectedItem = "Build help";
             harness.WaitUntil(
