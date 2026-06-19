@@ -229,6 +229,18 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Avalonia_shell_uses_app_owned_theme_by_default_instead_of_partial_os_dark_mode()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
+
+        StringAssert.Contains(appTheme, "RequestedThemeVariant=\"Light\"");
+        Assert.IsFalse(
+            appTheme.Contains("RequestedThemeVariant=\"Default\"", StringComparison.Ordinal),
+            "The app must not inherit partial OS dark-mode colors without switching its full shell palette.");
+    }
+
+    [TestMethod]
     public void Home_and_horizons_shell_surfaces_route_sections_and_buttons_through_shared_shell_theme_helpers()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
