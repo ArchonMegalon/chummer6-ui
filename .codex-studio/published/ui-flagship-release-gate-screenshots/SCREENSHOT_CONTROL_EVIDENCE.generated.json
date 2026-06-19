@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19T07:19:11.5454739Z",
+  "generatedAt": "2026-06-19T15:24:57.9390258Z",
   "authority": {
     "visualBaseline": "Chummer5a",
     "releaseAuthorityPlatform": "windows",
@@ -949,7 +949,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
+          "Text": "Time: 2026-06-19 15:24:50Z",
           "X": 468,
           "Y": 766,
           "Width": 150,
@@ -1016,7 +1016,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:50Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1845,7 +1845,7 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
+          "Text": "Time: 2026-06-19 15:24:50Z",
           "X": 468,
           "Y": 766,
           "Width": 150,
@@ -1913,7 +1913,7 @@
         "Menu \u0027file\u0027 opened.",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:50Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -2047,7 +2047,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -2927,7 +2927,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -3016,10 +3016,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 150,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -3101,7 +3101,7 @@
         "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3222,7 +3222,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -4552,7 +4552,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -4605,10 +4605,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 150,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -4732,7 +4732,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4856,7 +4856,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -6105,7 +6105,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -6158,10 +6158,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 149,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -6261,7 +6261,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6387,7 +6387,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -7627,7 +7627,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -7680,10 +7680,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -7782,7 +7782,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7906,7 +7906,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -9146,7 +9146,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -9199,10 +9199,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -9301,7 +9301,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -9425,7 +9425,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -10665,7 +10665,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -10718,10 +10718,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -10820,7 +10820,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10944,7 +10944,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -12184,7 +12184,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -12237,10 +12237,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -12339,7 +12339,7 @@
         "Add Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12465,7 +12465,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -13705,7 +13705,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13758,10 +13758,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -13859,7 +13859,7 @@
         "Add Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13985,7 +13985,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -15225,7 +15225,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15278,10 +15278,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -15380,7 +15380,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15504,7 +15504,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -16744,7 +16744,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -16797,10 +16797,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:08Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -16898,7 +16898,7 @@
         "Add Spell",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:08Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17022,7 +17022,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -18262,7 +18262,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -18315,10 +18315,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:08Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:54Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -18417,7 +18417,7 @@
         "Add Program",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:08Z",
+        "Time: 2026-06-19 15:24:54Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18541,7 +18541,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -19781,7 +19781,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -19834,10 +19834,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:08Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -19936,7 +19936,7 @@
         "Add Initiation",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:08Z",
+        "Time: 2026-06-19 15:24:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -19972,6 +19972,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -20052,7 +20053,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20061,7 +20062,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20070,7 +20071,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -20079,7 +20080,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20088,7 +20089,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20097,7 +20098,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -20108,14 +20109,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -20124,7 +20134,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -20133,7 +20143,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -20142,7 +20152,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -20170,7 +20180,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -20394,7 +20404,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -20403,7 +20413,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -20412,7 +20422,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -20421,7 +20431,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -20430,7 +20440,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -20439,7 +20449,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -20799,7 +20809,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -20808,7 +20818,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20817,7 +20827,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20826,7 +20836,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -20835,7 +20845,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -20844,7 +20854,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -20853,7 +20863,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -20862,7 +20872,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20871,7 +20881,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -20880,7 +20890,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -20889,7 +20899,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -20898,7 +20908,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -20907,7 +20917,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -20916,7 +20926,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20925,7 +20935,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20934,7 +20944,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -20943,7 +20953,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -20952,7 +20962,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -20961,7 +20971,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -20970,7 +20980,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20979,7 +20989,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -20988,7 +20998,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -20997,7 +21007,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -21006,7 +21016,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -21015,7 +21025,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -21024,7 +21034,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21033,7 +21043,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21042,7 +21052,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21051,7 +21061,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21060,7 +21070,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -21069,7 +21079,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -21078,7 +21088,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21087,7 +21097,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21096,7 +21106,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21105,7 +21115,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21114,7 +21124,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -21123,7 +21133,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -21141,7 +21151,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -21150,7 +21160,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -21159,7 +21169,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -21168,7 +21178,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -21177,7 +21187,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21186,7 +21196,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21285,7 +21295,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -21294,7 +21304,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -21303,7 +21313,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -21312,7 +21322,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -21321,7 +21331,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21330,7 +21340,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -21690,7 +21700,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -21699,7 +21709,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -21708,7 +21718,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -21717,7 +21727,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -21726,7 +21736,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21735,7 +21745,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -21744,7 +21754,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -21753,7 +21763,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -21762,7 +21772,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -21771,7 +21781,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -21780,7 +21790,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -21789,7 +21799,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -21798,7 +21808,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -21807,7 +21817,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -21816,7 +21826,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -21825,7 +21835,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -21834,7 +21844,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -21843,7 +21853,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -21852,7 +21862,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -21861,7 +21871,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -21870,7 +21880,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -21879,7 +21889,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -21888,7 +21898,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -21897,7 +21907,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -22031,7 +22041,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -22084,10 +22094,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:08Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -22171,6 +22181,11 @@
         "Complex Forms",
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -22179,7 +22194,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:08Z",
+        "Time: 2026-06-19 15:24:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -22213,6 +22228,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -22293,7 +22309,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -22302,7 +22318,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -22311,7 +22327,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -22320,7 +22336,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -22329,7 +22345,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -22338,7 +22354,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -22349,14 +22365,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -22365,7 +22390,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -22374,7 +22399,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -22383,7 +22408,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -22411,7 +22436,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -22635,7 +22660,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -22644,7 +22669,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -22653,7 +22678,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -22662,7 +22687,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -22671,7 +22696,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -22680,7 +22705,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -23040,7 +23065,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -23049,7 +23074,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23058,7 +23083,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23067,7 +23092,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23076,7 +23101,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23085,7 +23110,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -23094,7 +23119,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -23103,7 +23128,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23112,7 +23137,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23121,7 +23146,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23130,7 +23155,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23139,7 +23164,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -23148,7 +23173,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -23157,7 +23182,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23166,7 +23191,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23175,7 +23200,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23184,7 +23209,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23193,7 +23218,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -23202,7 +23227,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -23211,7 +23236,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23220,7 +23245,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23229,7 +23254,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23238,7 +23263,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23247,7 +23272,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -23256,7 +23281,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -23265,7 +23290,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23274,7 +23299,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23283,7 +23308,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23292,7 +23317,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23301,7 +23326,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -23310,7 +23335,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -23319,7 +23344,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23328,7 +23353,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23337,7 +23362,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23346,7 +23371,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23355,7 +23380,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -23364,7 +23389,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -23382,7 +23407,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23391,7 +23416,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23400,7 +23425,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23409,7 +23434,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23418,7 +23443,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23427,7 +23452,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23526,7 +23551,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23535,7 +23560,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -23544,7 +23569,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23553,7 +23578,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -23562,7 +23587,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23571,7 +23596,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -23931,7 +23956,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23940,7 +23965,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -23949,7 +23974,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23958,7 +23983,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -23967,7 +23992,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23976,7 +24001,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -23985,7 +24010,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -23994,7 +24019,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -24003,7 +24028,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -24012,7 +24037,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -24021,7 +24046,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -24030,7 +24055,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -24039,7 +24064,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -24048,7 +24073,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -24057,7 +24082,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -24066,7 +24091,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -24075,7 +24100,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -24084,7 +24109,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -24093,7 +24118,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -24102,7 +24127,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -24111,7 +24136,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -24120,7 +24145,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -24129,7 +24154,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -24138,7 +24163,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -24272,7 +24297,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -24325,10 +24350,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:08Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -24412,6 +24437,11 @@
         "Complex Forms",
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -24420,7 +24450,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:08Z",
+        "Time: 2026-06-19 15:24:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -24454,6 +24484,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -24534,7 +24565,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -24543,7 +24574,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -24552,7 +24583,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -24561,7 +24592,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -24570,7 +24601,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -24579,7 +24610,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -24590,14 +24621,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -24606,7 +24646,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -24615,7 +24655,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -24624,7 +24664,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -24652,7 +24692,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -24876,7 +24916,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -24885,7 +24925,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -24894,7 +24934,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -24903,7 +24943,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -24912,7 +24952,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -24921,7 +24961,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -25281,7 +25321,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -25290,7 +25330,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -25299,7 +25339,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -25308,7 +25348,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25317,7 +25357,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25326,7 +25366,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -25335,7 +25375,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -25344,7 +25384,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -25353,7 +25393,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -25362,7 +25402,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25371,7 +25411,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25380,7 +25420,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -25389,7 +25429,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -25398,7 +25438,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -25407,7 +25447,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -25416,7 +25456,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25425,7 +25465,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25434,7 +25474,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -25443,7 +25483,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -25452,7 +25492,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -25461,7 +25501,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -25470,7 +25510,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25479,7 +25519,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25488,7 +25528,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -25497,7 +25537,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -25506,7 +25546,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -25515,7 +25555,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -25524,7 +25564,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25533,7 +25573,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25542,7 +25582,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -25551,7 +25591,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -25560,7 +25600,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -25569,7 +25609,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -25578,7 +25618,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25587,7 +25627,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25596,7 +25636,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -25605,7 +25645,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -25623,7 +25663,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25632,7 +25672,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25641,7 +25681,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25650,7 +25690,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25659,7 +25699,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25668,7 +25708,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25767,7 +25807,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25776,7 +25816,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -25785,7 +25825,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25794,7 +25834,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -25803,7 +25843,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -25812,7 +25852,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -26172,7 +26212,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -26181,7 +26221,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -26190,7 +26230,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -26199,7 +26239,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -26208,7 +26248,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -26217,7 +26257,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -26226,7 +26266,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -26235,7 +26275,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -26244,7 +26284,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -26253,7 +26293,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -26262,7 +26302,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -26271,7 +26311,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -26280,7 +26320,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -26289,7 +26329,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -26298,7 +26338,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -26307,7 +26347,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -26316,7 +26356,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -26325,7 +26365,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -26334,7 +26374,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -26343,7 +26383,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -26352,7 +26392,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -26361,7 +26401,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -26370,7 +26410,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -26379,7 +26419,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -26513,7 +26553,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -26566,10 +26606,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:09Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -26653,6 +26693,11 @@
         "Complex Forms",
         "Martial Arts",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -26661,7 +26706,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:09Z",
+        "Time: 2026-06-19 15:24:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -26695,6 +26740,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -26777,7 +26823,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -26786,7 +26832,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -26795,7 +26841,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -26804,7 +26850,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -26813,7 +26859,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -26822,7 +26868,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -26833,14 +26879,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -26849,7 +26904,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -26858,7 +26913,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -26867,7 +26922,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -26895,7 +26950,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -27137,7 +27192,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -27146,7 +27201,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -27155,7 +27210,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -27164,7 +27219,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -27173,7 +27228,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -27182,7 +27237,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -27542,7 +27597,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -27551,7 +27606,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -27560,7 +27615,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -27569,7 +27624,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27578,7 +27633,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27587,7 +27642,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -27596,7 +27651,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -27605,7 +27660,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -27614,7 +27669,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -27623,7 +27678,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27632,7 +27687,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27641,7 +27696,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -27650,7 +27705,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -27659,7 +27714,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -27668,7 +27723,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -27677,7 +27732,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27686,7 +27741,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27695,7 +27750,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -27704,7 +27759,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -27713,7 +27768,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -27722,7 +27777,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -27731,7 +27786,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27740,7 +27795,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27749,7 +27804,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -27758,7 +27813,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -27767,7 +27822,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -27776,7 +27831,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -27785,7 +27840,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -27794,7 +27849,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -27803,7 +27858,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -27812,7 +27867,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -27821,7 +27876,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -27830,7 +27885,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -27839,7 +27894,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -27848,7 +27903,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -27857,7 +27912,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -27866,7 +27921,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -27884,7 +27939,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27893,7 +27948,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -27902,7 +27957,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27911,7 +27966,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -27920,7 +27975,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -27929,7 +27984,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -28028,7 +28083,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -28037,7 +28092,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -28046,7 +28101,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -28055,7 +28110,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -28064,7 +28119,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -28073,7 +28128,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -28433,7 +28488,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -28442,7 +28497,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -28451,7 +28506,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -28460,7 +28515,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -28469,7 +28524,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -28478,7 +28533,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -28487,7 +28542,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -28496,7 +28551,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -28505,7 +28560,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -28514,7 +28569,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -28523,7 +28578,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -28532,7 +28587,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -28541,7 +28596,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -28550,7 +28605,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -28559,7 +28614,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -28568,7 +28623,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -28577,7 +28632,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -28586,7 +28641,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -28595,7 +28650,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -28604,7 +28659,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -28613,7 +28668,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -28622,7 +28677,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -28631,7 +28686,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -28640,7 +28695,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -28774,7 +28829,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -28827,10 +28882,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:09Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:55Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -28915,6 +28970,11 @@
         "Martial Arts",
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -28923,7 +28983,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:09Z",
+        "Time: 2026-06-19 15:24:55Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -29058,7 +29118,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -30406,7 +30466,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -30459,10 +30519,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 150,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -30587,7 +30647,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -30721,7 +30781,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -31970,7 +32030,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -32023,10 +32083,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 149,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -32126,7 +32186,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -32252,7 +32312,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -33501,7 +33561,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -33554,10 +33614,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 149,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -33657,7 +33717,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -33781,7 +33841,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -35030,7 +35090,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -35083,10 +35143,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -35186,7 +35246,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -35310,7 +35370,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -36559,7 +36619,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -36612,10 +36672,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -36715,7 +36775,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -36846,7 +36906,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -38185,7 +38245,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -38238,10 +38298,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -38349,7 +38409,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -38485,7 +38545,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -39824,7 +39884,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -39877,10 +39937,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -39988,7 +40048,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -40117,7 +40177,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -41357,7 +41417,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -41410,10 +41470,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:05Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -41512,7 +41572,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:05Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -41636,7 +41696,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -42876,7 +42936,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -42929,10 +42989,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -43031,7 +43091,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -43155,7 +43215,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -44395,7 +44455,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -44448,10 +44508,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -44550,7 +44610,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -44674,7 +44734,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -45914,7 +45974,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -45967,10 +46027,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:52Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -46069,7 +46129,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:52Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -46193,7 +46253,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -47433,7 +47493,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47486,10 +47546,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -47588,7 +47648,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -47712,7 +47772,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -48952,7 +49012,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -49005,10 +49065,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -49106,7 +49166,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -49230,7 +49290,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -50470,7 +50530,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -50523,10 +50583,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -50624,7 +50684,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -50748,7 +50808,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -51997,7 +52057,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -52050,10 +52110,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:06Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -52153,7 +52213,7 @@
         "Add Complex Form",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:06Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -52274,7 +52334,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -53478,7 +53538,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -53531,10 +53591,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -53632,7 +53692,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -53751,7 +53811,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -54955,7 +55015,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -55008,10 +55068,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -55109,7 +55169,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -55232,7 +55292,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 317,
           "Height": 15
         },
         {
@@ -56562,7 +56622,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 363,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -56615,10 +56675,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:04Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 15:24:51Z",
+          "X": 470,
           "Y": 766,
-          "Width": 150,
+          "Width": 148,
           "Height": 14
         },
         {
@@ -56742,7 +56802,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:04Z",
+        "Time: 2026-06-19 15:24:51Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -56866,7 +56926,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -58106,7 +58166,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -58159,10 +58219,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:07Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:53Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -58261,7 +58321,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:07Z",
+        "Time: 2026-06-19 15:24:53Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -58297,6 +58357,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -58379,7 +58440,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -58388,7 +58449,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -58397,7 +58458,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -58406,7 +58467,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -58415,7 +58476,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -58424,7 +58485,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -58435,14 +58496,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -58451,7 +58521,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -58460,7 +58530,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -58469,7 +58539,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -58497,7 +58567,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -58739,7 +58809,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -58748,7 +58818,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -58757,7 +58827,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -58766,7 +58836,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -58775,7 +58845,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -58784,7 +58854,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -59144,7 +59214,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -59153,7 +59223,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -59162,7 +59232,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -59171,7 +59241,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59180,7 +59250,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59189,7 +59259,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -59198,7 +59268,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -59207,7 +59277,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -59216,7 +59286,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -59225,7 +59295,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59234,7 +59304,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59243,7 +59313,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -59252,7 +59322,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -59261,7 +59331,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -59270,7 +59340,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -59279,7 +59349,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59288,7 +59358,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59297,7 +59367,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -59306,7 +59376,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -59315,7 +59385,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -59324,7 +59394,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -59333,7 +59403,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59342,7 +59412,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59351,7 +59421,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -59360,7 +59430,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -59369,7 +59439,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -59378,7 +59448,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -59387,7 +59457,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59396,7 +59466,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59405,7 +59475,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -59414,7 +59484,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -59423,7 +59493,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -59432,7 +59502,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -59441,7 +59511,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59450,7 +59520,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59459,7 +59529,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -59468,7 +59538,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -59486,7 +59556,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59495,7 +59565,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59504,7 +59574,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59513,7 +59583,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59522,7 +59592,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59531,7 +59601,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59630,7 +59700,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59639,7 +59709,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -59648,7 +59718,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59657,7 +59727,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -59666,7 +59736,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -59675,7 +59745,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -60035,7 +60105,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -60044,7 +60114,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -60053,7 +60123,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -60062,7 +60132,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -60071,7 +60141,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -60080,7 +60150,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -60089,7 +60159,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -60098,7 +60168,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -60107,7 +60177,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -60116,7 +60186,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -60125,7 +60195,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -60134,7 +60204,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -60143,7 +60213,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -60152,7 +60222,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -60161,7 +60231,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -60170,7 +60240,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -60179,7 +60249,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -60188,7 +60258,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -60197,7 +60267,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -60206,7 +60276,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -60215,7 +60285,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -60224,7 +60294,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -60233,7 +60303,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -60242,7 +60312,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -60376,7 +60446,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -60429,10 +60499,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:09Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:56Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -60517,6 +60587,11 @@
         "Martial Arts",
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -60525,7 +60600,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:09Z",
+        "Time: 2026-06-19 15:24:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -60569,6 +60644,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -60651,7 +60727,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -60660,7 +60736,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -60669,7 +60745,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -60678,7 +60754,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -60687,7 +60763,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -60696,7 +60772,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -60707,14 +60783,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -60723,7 +60808,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -60732,7 +60817,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -60741,7 +60826,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -60769,7 +60854,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -61011,7 +61096,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -61020,7 +61105,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -61029,7 +61114,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -61038,7 +61123,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -61047,7 +61132,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -61056,7 +61141,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -61416,7 +61501,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -61425,7 +61510,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -61434,7 +61519,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -61443,7 +61528,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61452,7 +61537,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61461,7 +61546,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -61470,7 +61555,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -61479,7 +61564,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -61488,7 +61573,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -61497,7 +61582,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61506,7 +61591,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61515,7 +61600,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -61524,7 +61609,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -61533,7 +61618,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -61542,7 +61627,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -61551,7 +61636,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61560,7 +61645,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61569,7 +61654,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -61578,7 +61663,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -61587,7 +61672,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -61596,7 +61681,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -61605,7 +61690,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61614,7 +61699,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61623,7 +61708,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -61632,7 +61717,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -61641,7 +61726,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -61650,7 +61735,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -61659,7 +61744,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61668,7 +61753,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61677,7 +61762,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -61686,7 +61771,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -61695,7 +61780,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -61704,7 +61789,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -61713,7 +61798,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61722,7 +61807,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61731,7 +61816,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -61740,7 +61825,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -61758,7 +61843,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61767,7 +61852,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61776,7 +61861,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61785,7 +61870,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61794,7 +61879,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61803,7 +61888,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61902,7 +61987,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61911,7 +61996,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -61920,7 +62005,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61929,7 +62014,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -61938,7 +62023,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -61947,7 +62032,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -62307,7 +62392,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -62316,7 +62401,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -62325,7 +62410,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -62334,7 +62419,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -62343,7 +62428,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -62352,7 +62437,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -62361,7 +62446,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -62370,7 +62455,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -62379,7 +62464,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -62388,7 +62473,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -62397,7 +62482,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -62406,7 +62491,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -62415,7 +62500,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -62424,7 +62509,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -62433,7 +62518,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -62442,7 +62527,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -62451,7 +62536,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -62460,7 +62545,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -62469,7 +62554,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -62478,7 +62563,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -62487,7 +62572,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -62496,7 +62581,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -62505,7 +62590,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -62514,7 +62599,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -62648,7 +62733,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -62701,10 +62786,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:09Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:56Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -62789,6 +62874,11 @@
         "Martial Arts",
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -62797,7 +62887,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:09Z",
+        "Time: 2026-06-19 15:24:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -62841,6 +62931,7 @@
         "AttributeKarmaEditor_BOD",
         "AttributeKarmaEditor_REA",
         "AttributeParityEditorBorder",
+        "AttributeParityHeaderGrid",
         "AttributeParityRow_AGI",
         "AttributeParityRow_BOD",
         "AttributeParityRow_REA",
@@ -62923,7 +63014,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -62932,7 +63023,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -62941,7 +63032,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -62950,7 +63041,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -62959,7 +63050,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -62968,7 +63059,7 @@
           "ControlType": "NumericUpDown",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -62979,14 +63070,23 @@
           "X": 275,
           "Y": 286,
           "Width": 994,
-          "Height": 220
+          "Height": 235
+        },
+        {
+          "Name": "AttributeParityHeaderGrid",
+          "ControlType": "Grid",
+          "Text": "",
+          "X": 280,
+          "Y": 290,
+          "Width": 984,
+          "Height": 15
         },
         {
           "Name": "AttributeParityRow_AGI",
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 327,
+          "Y": 342,
           "Width": 984,
           "Height": 30
         },
@@ -62995,7 +63095,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 30
         },
@@ -63004,7 +63104,7 @@
           "ControlType": "Grid",
           "Text": "",
           "X": 280,
-          "Y": 360,
+          "Y": 375,
           "Width": 984,
           "Height": 30
         },
@@ -63013,7 +63113,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -63041,7 +63141,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 316,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -63283,7 +63383,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -63292,7 +63392,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -63301,7 +63401,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -63310,7 +63410,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -63319,7 +63419,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -63328,7 +63428,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -63688,7 +63788,7 @@
           "ControlType": "ScrollContentPresenter",
           "Text": "",
           "X": 280,
-          "Y": 294,
+          "Y": 309,
           "Width": 984,
           "Height": 208
         },
@@ -63697,7 +63797,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -63706,7 +63806,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -63715,7 +63815,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -63724,7 +63824,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -63733,7 +63833,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -63742,7 +63842,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -63751,7 +63851,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -63760,7 +63860,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -63769,7 +63869,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -63778,7 +63878,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -63787,7 +63887,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 295,
+          "Y": 310,
           "Width": 2,
           "Height": 28
         },
@@ -63796,7 +63896,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -63805,7 +63905,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -63814,7 +63914,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -63823,7 +63923,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -63832,7 +63932,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -63841,7 +63941,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -63850,7 +63950,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -63859,7 +63959,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -63868,7 +63968,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -63877,7 +63977,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -63886,7 +63986,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -63895,7 +63995,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 328,
+          "Y": 343,
           "Width": 2,
           "Height": 28
         },
@@ -63904,7 +64004,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -63913,7 +64013,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -63922,7 +64022,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -63931,7 +64031,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -63940,7 +64040,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -63949,7 +64049,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 891,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -63958,7 +64058,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -63967,7 +64067,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -63976,7 +64076,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -63985,7 +64085,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -63994,7 +64094,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -64003,7 +64103,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 971,
-          "Y": 361,
+          "Y": 376,
           "Width": 2,
           "Height": 28
         },
@@ -64012,7 +64112,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -64030,7 +64130,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -64039,7 +64139,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -64048,7 +64148,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -64057,7 +64157,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -64066,7 +64166,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 927,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -64075,7 +64175,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 1007,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -64174,7 +64274,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -64183,7 +64283,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 34,
           "Height": 28
         },
@@ -64192,7 +64292,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -64201,7 +64301,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 34,
           "Height": 28
         },
@@ -64210,7 +64310,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -64219,7 +64319,7 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 34,
           "Height": 28
         },
@@ -64579,7 +64679,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -64588,7 +64688,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 72,
           "Height": 30
         },
@@ -64597,7 +64697,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -64606,7 +64706,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 72,
           "Height": 30
         },
@@ -64615,7 +64715,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -64624,7 +64724,7 @@
           "ControlType": "ButtonSpinner",
           "Text": "",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 72,
           "Height": 30
         },
@@ -64633,7 +64733,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -64642,7 +64742,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 295,
+          "Y": 310,
           "Width": 68,
           "Height": 28
         },
@@ -64651,7 +64751,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -64660,7 +64760,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 328,
+          "Y": 343,
           "Width": 68,
           "Height": 28
         },
@@ -64669,7 +64769,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 893,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -64678,7 +64778,7 @@
           "ControlType": "StackPanel",
           "Text": "",
           "X": 973,
-          "Y": 361,
+          "Y": 376,
           "Width": 68,
           "Height": 28
         },
@@ -64687,7 +64787,7 @@
           "ControlType": "TextBox",
           "Text": "3",
           "X": 890,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -64696,7 +64796,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 294,
+          "Y": 309,
           "Width": 4,
           "Height": 30
         },
@@ -64705,7 +64805,7 @@
           "ControlType": "TextBox",
           "Text": "5",
           "X": 890,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -64714,7 +64814,7 @@
           "ControlType": "TextBox",
           "Text": "0",
           "X": 970,
-          "Y": 327,
+          "Y": 342,
           "Width": 4,
           "Height": 30
         },
@@ -64723,7 +64823,7 @@
           "ControlType": "TextBox",
           "Text": "4",
           "X": 890,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -64732,7 +64832,7 @@
           "ControlType": "TextBox",
           "Text": "1",
           "X": 970,
-          "Y": 360,
+          "Y": 375,
           "Width": 4,
           "Height": 30
         },
@@ -64741,7 +64841,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 297,
+          "Y": 312,
           "Width": 9,
           "Height": 24
         },
@@ -64750,7 +64850,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 297,
+          "Y": 312,
           "Width": 8,
           "Height": 24
         },
@@ -64759,7 +64859,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -64768,7 +64868,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 330,
+          "Y": 345,
           "Width": 9,
           "Height": 24
         },
@@ -64777,7 +64877,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 895,
-          "Y": 363,
+          "Y": 378,
           "Width": 9,
           "Height": 24
         },
@@ -64786,7 +64886,7 @@
           "ControlType": "TextPresenter",
           "Text": "",
           "X": 975,
-          "Y": 363,
+          "Y": 378,
           "Width": 8,
           "Height": 24
         },
@@ -64920,7 +65020,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 362,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -64973,10 +65073,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 07:19:09Z",
-          "X": 469,
+          "Text": "Time: 2026-06-19 15:24:56Z",
+          "X": 468,
           "Y": 766,
-          "Width": 149,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -65061,6 +65161,11 @@
         "Martial Arts",
         "Menu \u0027file\u0027 opened.",
         "3 visible entries  \u2022  Attribute 1: Body 4",
+        "Attribute",
+        "Base",
+        "Karma",
+        "Total",
+        "Limits",
         "BOD",
         "4 (9)",
         "1 / 6 (9)",
@@ -65069,7 +65174,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 07:19:09Z",
+        "Time: 2026-06-19 15:24:56Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -67015,6 +67120,7 @@
         "KarmaForgeCreatePackageButton",
         "KarmaForgeMyPackagesButton",
         "KarmaForgeOpenAccountPackagesButton",
+        "KarmaForgeOpenAccountPackagesFromStatusButton",
         "KarmaForgeOpenAliceWorkbenchButton",
         "KarmaForgeOpenHorizonsIndexButton",
         "KarmaForgeOpenPackageBrowserButton",
@@ -67129,6 +67235,15 @@
           "Height": 32
         },
         {
+          "Name": "KarmaForgeOpenAccountPackagesFromStatusButton",
+          "ControlType": "Button",
+          "Text": "Open account packages",
+          "X": 205,
+          "Y": 224,
+          "Width": 172,
+          "Height": 32
+        },
+        {
           "Name": "KarmaForgeOpenAliceWorkbenchButton",
           "ControlType": "Button",
           "Text": "Open ALICE workbench",
@@ -67159,7 +67274,7 @@
           "Name": "KarmaForgeOpenPublicAliceButton",
           "ControlType": "Button",
           "Text": "Open public ALICE",
-          "X": 205,
+          "X": 385,
           "Y": 224,
           "Width": 137,
           "Height": 32
@@ -67259,6 +67374,15 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 205,
+          "Y": 224,
+          "Width": 172,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 385,
           "Y": 224,
           "Width": 137,
           "Height": 32
@@ -67463,6 +67587,7 @@
         "Publications: 0",
         "ALICE handoff counts are unavailable until the client can read the signed-in campaign spine.",
         "Open ALICE workbench",
+        "Open account packages",
         "Open public ALICE",
         "Package targets",
         "Keep the public browser, signed-in shelf, and governed intake reachable from one native desktop surface.",
@@ -67474,7 +67599,6 @@
         "My packages",
         "Account-bound follow-through",
         "This desktop copy can still launch Karma Forge lanes, but it cannot yet materialize signed-in package detail without account context.",
-        "Open account packages",
         "Open Horizons index",
         "Open package browser",
         "Open public package browser",

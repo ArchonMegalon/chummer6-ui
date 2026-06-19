@@ -90,13 +90,20 @@ namespace Chummer
 
                 lstGroups.Sort(CompareListItems.CompareNames);
                 await cboSkillGroup.PopulateWithListItemsAsync(lstGroups).ConfigureAwait(false);
+                int intItemCount = await cboSkillGroup.DoThreadSafeFuncAsync(x => x.Items.Count).ConfigureAwait(false);
+                if (intItemCount == 0)
+                {
+                    await cmdOK.DoThreadSafeAsync(x => x.Enabled = false).ConfigureAwait(false);
+                    return;
+                }
+
                 // Select the first Skill in the list.
                 await cboSkillGroup.DoThreadSafeAsync(x => x.SelectedIndex = 0).ConfigureAwait(false);
             }
 
             if (await cboSkillGroup.DoThreadSafeFuncAsync(x => x.Items.Count).ConfigureAwait(false) == 1)
             {
-                _strReturnValue = await cboSkillGroup.DoThreadSafeFuncAsync(x => x.SelectedValue.ToString()).ConfigureAwait(false);
+                _strReturnValue = await cboSkillGroup.DoThreadSafeFuncAsync(x => x.SelectedValue?.ToString() ?? string.Empty).ConfigureAwait(false);
                 await this.DoThreadSafeAsync(x =>
                 {
                     x.DialogResult = DialogResult.OK;
@@ -107,7 +114,10 @@ namespace Chummer
 
         private void cmdOK_Click(object sender, EventArgs e)
         {
-            _strReturnValue = cboSkillGroup.SelectedValue.ToString();
+            _strReturnValue = cboSkillGroup.SelectedValue?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(_strReturnValue))
+                return;
+
             DialogResult = DialogResult.OK;
             Close();
         }

@@ -498,6 +498,24 @@ namespace Chummer
                         z.UseVisualStyleBackColor = true;
                 }, token);
             }
+
+            void ApplyWindowTextStyle()
+            {
+                objControl.DoThreadSafe((x, y) =>
+                {
+                    if (blnLightMode)
+                    {
+                        x.ForeColor = WindowTextLight;
+                        x.BackColor = WindowLight;
+                    }
+                    else
+                    {
+                        x.ForeColor = WindowTextDark;
+                        x.BackColor = WindowDark;
+                    }
+                }, token);
+            }
+
             switch (objControl)
             {
                 case DataGridView objDataGridView:
@@ -704,21 +722,10 @@ namespace Chummer
                     break;
                 case ComboBox _:
                     EnsureThemedListDraw(objControl);
-                    goto case TableCell;
+                    ApplyWindowTextStyle();
+                    break;
                 case TableCell _:
-                    objControl.DoThreadSafe((x, y) =>
-                    {
-                        if (blnLightMode)
-                        {
-                            x.ForeColor = WindowTextLight;
-                            x.BackColor = WindowLight;
-                        }
-                        else
-                        {
-                            x.ForeColor = WindowTextDark;
-                            x.BackColor = WindowDark;
-                        }
-                    }, token);
+                    ApplyWindowTextStyle();
                     break;
 
                 case GroupBox _:
@@ -932,9 +939,9 @@ namespace Chummer
                     objItem = listBox.Items[e.Index];
                     strItemText = listBox.GetItemText(objItem);
                     break;
-                case ComboBox comboBox:
-                    objItem = comboBox.Items[e.Index];
-                    strItemText = comboBox.GetItemText(objItem);
+                case ComboBox objComboBox:
+                    objItem = objComboBox.Items[e.Index];
+                    strItemText = objComboBox.GetItemText(objItem);
                     break;
                 default:
                     return;

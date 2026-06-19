@@ -57,6 +57,9 @@ namespace Chummer
             _objCharacter = objCharacter ?? throw new ArgumentNullException(nameof(objCharacter));
             _strSourceName = strSource ?? string.Empty;
             InitializeComponent();
+            cboExtra.SelectedIndexChanged += (_, _) => RefreshOkState();
+            cboExtra.TextChanged += (_, _) => RefreshOkState();
+            RefreshOkState();
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();
@@ -398,13 +401,18 @@ namespace Chummer
                 else
                     await cboSkill.DoThreadSafeAsync(x => x.Enabled = false).ConfigureAwait(false);
             }
+
+            await this.DoThreadSafeAsync(x => x.RefreshOkState()).ConfigureAwait(false);
         }
 
         private void cmdOK_Click(object sender, EventArgs e)
         {
+            if (!CanAcceptSelection())
+                return;
+
             ValueTuple<string, bool> tupSelected = (ValueTuple<string, bool>)cboSkill.SelectedValue;
             if (tupSelected.Item2)
-                _strReturnValue = tupSelected.Item1 + " (" + (cboExtra.SelectedValue?.ToString() ?? string.Empty) + ")";
+                _strReturnValue = tupSelected.Item1 + " (" + GetSelectedSpecific() + ")";
             else
                 _strReturnValue = tupSelected.Item1;
             DialogResult = DialogResult.OK;
@@ -537,7 +545,17 @@ namespace Chummer
 
         private async void cboSkill_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ValueTuple<string, bool> tupSelected = (ValueTuple<string, bool>)await cboSkill.DoThreadSafeFuncAsync(x => x.SelectedValue).ConfigureAwait(false);
+            object objSelected = await cboSkill.DoThreadSafeFuncAsync(x => x.SelectedValue).ConfigureAwait(false);
+            if (!(objSelected is ValueTuple<string, bool> tupSelected))
+            {
+                await this.DoThreadSafeAsync(x =>
+                {
+                    x.cboExtra.Visible = false;
+                    x.RefreshOkState();
+                }).ConfigureAwait(false);
+                return;
+            }
+
             if (tupSelected.Item2)
             {
                 await BuildExtraList(tupSelected.Item1).ConfigureAwait(false);
@@ -545,6 +563,8 @@ namespace Chummer
             }
             else
                 await cboExtra.DoThreadSafeAsync(x => x.Visible = false).ConfigureAwait(false);
+
+            await this.DoThreadSafeAsync(x => x.RefreshOkState()).ConfigureAwait(false);
         }
 
         private async Task BuildExtraList(string strSelectedCategory, CancellationToken token = default)
@@ -636,6 +656,29 @@ namespace Chummer
                     }
                 }, token: token).ConfigureAwait(false);
             }
+        }
+
+        private bool CanAcceptSelection()
+        {
+            if (!(cboSkill.SelectedValue is ValueTuple<string, bool> tupSelected))
+                return false;
+            if (string.IsNullOrEmpty(tupSelected.Item1))
+                return false;
+            if (!tupSelected.Item2)
+                return true;
+
+            return !string.IsNullOrWhiteSpace(GetSelectedSpecific());
+        }
+
+        private string GetSelectedSpecific()
+        {
+            return cboExtra.SelectedValue?.ToString() ?? cboExtra.Text?.Trim() ?? string.Empty;
+        }
+
+        private void RefreshOkState()
+        {
+            if (cmdOK != null)
+                cmdOK.Enabled = CanAcceptSelection();
         }
     }
 }

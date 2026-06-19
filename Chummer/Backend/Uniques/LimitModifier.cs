@@ -531,7 +531,7 @@ namespace Chummer
                                              MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
-        private static Task ShowInheritedLimitModifierDeleteBlockedAsync(CancellationToken token = default)
+        private static Task<DialogResult> ShowInheritedLimitModifierDeleteBlockedAsync(CancellationToken token = default)
         {
             return Program.ShowScrollableMessageBoxAsync(
                 LanguageManager.GetString("Message_CannotDeleteLimitModifier", token: token),

@@ -44,6 +44,9 @@ namespace Chummer
         public SelectItem()
         {
             InitializeComponent();
+            cboAmmo.SelectedIndexChanged += (_, _) => RefreshOkState();
+            cboAmmo.TextChanged += (_, _) => RefreshOkState();
+            RefreshOkState();
             this.UpdateLightDarkMode();
             this.TranslateWinForm();
             this.UpdateParentForToolTipControls();
@@ -388,8 +391,7 @@ namespace Chummer
                 }
             }
 
-            if (await cboAmmo.DoThreadSafeFuncAsync(x => x.Items.Count).ConfigureAwait(false) < 0)
-                await cmdOK.DoThreadSafeAsync(x => x.Enabled = false).ConfigureAwait(false);
+            await this.DoThreadSafeAsync(x => x.RefreshOkState()).ConfigureAwait(false);
         }
 
         private void cmdCancel_Click(object sender, EventArgs e)
@@ -505,6 +507,9 @@ namespace Chummer
         /// </summary>
         private void AcceptForm()
         {
+            if (!CanAcceptSelection())
+                return;
+
             _strSelectedName = cboAmmo.Text;
             if (cboAmmo == null)
                 _strSelectedItem = string.Empty;
@@ -514,6 +519,23 @@ namespace Chummer
                 _strSelectedItem = _strSelectedName;
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private bool CanAcceptSelection()
+        {
+            if (cboAmmo == null)
+                return false;
+
+            if (cboAmmo.DropDownStyle == ComboBoxStyle.DropDownList)
+                return cboAmmo.SelectedIndex >= 0;
+
+            return !string.IsNullOrWhiteSpace(cboAmmo.Text);
+        }
+
+        private void RefreshOkState()
+        {
+            if (cmdOK != null)
+                cmdOK.Enabled = CanAcceptSelection();
         }
 
         #endregion Methods

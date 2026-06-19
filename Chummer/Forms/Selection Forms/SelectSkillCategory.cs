@@ -59,13 +59,20 @@ namespace Chummer
                 }
 
                 await cboCategory.PopulateWithListItemsAsync(lstCategory).ConfigureAwait(false);
+                int intItemCount = await cboCategory.DoThreadSafeFuncAsync(x => x.Items.Count).ConfigureAwait(false);
+                if (intItemCount == 0)
+                {
+                    await cmdOK.DoThreadSafeAsync(x => x.Enabled = false).ConfigureAwait(false);
+                    return;
+                }
+
                 // Select the first Skill in the list.
                 await cboCategory.DoThreadSafeAsync(x => x.SelectedIndex = 0).ConfigureAwait(false);
             }
 
             if (await cboCategory.DoThreadSafeFuncAsync(x => x.Items.Count).ConfigureAwait(false) == 1)
             {
-                _strSelectedCategory = await cboCategory.DoThreadSafeFuncAsync(x => x.SelectedValue.ToString()).ConfigureAwait(false);
+                _strSelectedCategory = await cboCategory.DoThreadSafeFuncAsync(x => x.SelectedValue?.ToString() ?? string.Empty).ConfigureAwait(false);
                 await this.DoThreadSafeAsync(x =>
                 {
                     x.DialogResult = DialogResult.OK;
@@ -76,7 +83,10 @@ namespace Chummer
 
         private void cmdOK_Click(object sender, EventArgs e)
         {
-            _strSelectedCategory = cboCategory.SelectedValue.ToString();
+            _strSelectedCategory = cboCategory.SelectedValue?.ToString() ?? string.Empty;
+            if (string.IsNullOrEmpty(_strSelectedCategory))
+                return;
+
             DialogResult = DialogResult.OK;
             Close();
         }
