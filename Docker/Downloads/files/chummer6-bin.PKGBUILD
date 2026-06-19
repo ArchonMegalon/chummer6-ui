@@ -1,6 +1,6 @@
 # Maintainer: Chummer release automation <release@chummer.run>
 pkgname=chummer6-bin
-pkgver=20260619.180352
+pkgver=20260619.182618
 pkgrel=1
 pkgdesc='Shadowrun character and campaign companion desktop build'
 arch=('x86_64')
@@ -8,7 +8,7 @@ url='https://chummer.run'
 license=('custom')
 depends=('fontconfig' 'gtk3' 'libx11' 'libxcursor' 'libxext' 'libxfixes' 'libxi' 'libxinerama' 'libxrandr' 'libxrender' 'libglvnd' 'zlib')
 source_x86_64=('chummer-avalonia-linux-x64-installer.deb::https://chummer.run/downloads/files/chummer-avalonia-linux-x64-installer.deb')
-sha256sums_x86_64=('6725059be2272472beb881ca37ee29277f0091c88060c0207d56ffdd28934f26')
+sha256sums_x86_64=('dc27498e5d520b9b47111152f27dccfd95dd02bcc8479e85e31d68c3cc548030')
 options=('!strip')
 
 package() {
