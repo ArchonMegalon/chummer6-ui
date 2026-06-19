@@ -532,7 +532,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             ComboBox modeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceConversationModeCombo");
             TextBlock settingsGuideText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceSettingsGuideText");
             TextBlock contextDetailText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantContextDetailText");
-            TextBox gmAllowanceBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceGmAllowanceTextBox");
             TextBox promptBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceQuestionTextBox");
             TextBlock statusText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantStatusText");
             TextBlock answerText = harness.FindControlInWindow<TextBlock>(aliceWindow, "AliceAssistantAnswerText");
@@ -558,6 +557,37 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(
                 () => (settingsGuideText.Text ?? string.Empty).Contains("Finished characters are not changed", StringComparison.Ordinal),
                 context: "origin-dossier explainer must stay visible when switching modes");
+            Border originWizardPanel = harness.FindControlInWindow<Border>(aliceWindow, "AliceOriginWizardPanel");
+            ComboBox originMetatypeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginMetatypeCombo");
+            ComboBox originArchetypeCombo = harness.FindControlInWindow<ComboBox>(aliceWindow, "AliceOriginArchetypeCombo");
+            Expander advancedStoryControls = harness.FindControlInWindow<Expander>(aliceWindow, "AliceOriginAdvancedStoryControlsExpander");
+            Expander gmNotesControls = harness.FindControlInWindow<Expander>(aliceWindow, "AliceGmAllowanceExpander");
+            WrapPanel starterPromptRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceStarterPromptRow");
+            Button startDossierButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginStartDossierButton");
+            Assert.IsTrue(originWizardPanel.IsVisible, "Origin dossier mode must show the story-first wizard surface.");
+            Assert.IsTrue(originMetatypeCombo.IsVisible, "Origin dossier's default screen must expose only the basic metatype choice.");
+            Assert.IsTrue(originArchetypeCombo.IsVisible, "Origin dossier's default screen must expose only the basic archetype choice.");
+            Assert.AreEqual("Build story", startDossierButton.Content?.ToString(), "Origin dossier must lead with story generation, not media or setup copy.");
+            Assert.IsFalse(advancedStoryControls.IsExpanded, "Story steering controls must stay collapsed by default.");
+            Assert.IsFalse(gmNotesControls.IsExpanded, "GM grant and constraint notes must stay collapsed by default.");
+            Assert.IsFalse(starterPromptRow.IsVisible, "Origin dossier mode must not show generic prompt chips beside the story wizard.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginBuildFrameCombo"),
+                "Build-frame steering must be hidden until the advanced story controls are expanded.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginPressureCombo"),
+                "Story-pressure steering must be hidden until the advanced story controls are expanded.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<ComboBox>(aliceWindow, "AliceOriginGmRequirementPresetCombo"),
+                "GM requirement presets must be hidden until the advanced story controls are expanded.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<TextBox>(aliceWindow, "AliceGmAllowanceTextBox"),
+                "Free-form GM notes must be hidden until the GM notes section is expanded.");
+
+            gmNotesControls.IsExpanded = true;
+            harness.AdvanceFrames(4);
+            TextBox gmAllowanceBox = harness.FindControlInWindow<TextBox>(aliceWindow, "AliceGmAllowanceTextBox");
+            Assert.IsTrue(gmAllowanceBox.IsVisible, "Expanding GM notes must reveal the steering field.");
 
             gmAllowanceBox.Text = "GM allows one restricted ware exception, +20000 nuyen, and one extra quality if the origin supports it.";
             harness.WaitUntil(
