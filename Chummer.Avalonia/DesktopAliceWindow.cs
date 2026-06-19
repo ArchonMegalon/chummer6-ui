@@ -12,6 +12,7 @@ using Chummer.Presentation;
 using Chummer.Contracts.Rulesets;
 using Chummer.Contracts.Workspaces;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Ellipse = Avalonia.Controls.Shapes.Ellipse;
@@ -51,6 +52,9 @@ internal sealed class DesktopAliceWindow : Window
     private Action? _refreshAssistantContext;
     private CharacterNarrativePacket? _originPacket;
     private CharacterNarrativeDraft? _originDraft;
+    private string? _originDraftDirectory;
+    private string? _originDraftMarkdownPath;
+    private string? _originDraftFlipLinkPacketPath;
     private OriginDossierBundle? _originBundle;
     private bool HasHandoffContext => (_campaignSummary?.BuildLabHandoffs.Count ?? 0) > 0;
     private bool HasBuildPathContext => _buildPathCandidates.Count > 0;
@@ -538,7 +542,9 @@ internal sealed class DesktopAliceWindow : Window
             {
                 if (_originBundle is not null)
                 {
-                    actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"));
+                    actionRow.Children.Add(CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.CanonMarkdownPath), isPrimary: true, name: "AliceOriginOpenCanonStoryButton"));
+                    actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), name: "AliceOriginOpenDossierPdfButton"));
                     actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
                     actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
@@ -579,14 +585,16 @@ internal sealed class DesktopAliceWindow : Window
                 }
                 else if (_originDraft is not null)
                 {
-                    actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
-                    actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                    actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
-                    actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                    actionRow.Children.Add(CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
-                    actionRow.Children.Add(CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
-                    actionRow.Children.Add(CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
-                    actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
+                    if (!string.IsNullOrWhiteSpace(_originDraftMarkdownPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftMarkdownPath), isPrimary: true, name: "AliceOriginOpenDraftStoryButton"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath))
+                    {
+                        actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
+                    }
+                    actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, name: "AliceOriginApproveCanonButton"));
+                    actionRow.Children.Add(CreateButton("Rewrite story", RewriteOriginDraftAsync, name: "AliceOriginRegenerateButton"));
                 }
                 else
                 {
@@ -673,7 +681,9 @@ internal sealed class DesktopAliceWindow : Window
                 "Origin story approved.",
                 $"{bundle.Canon.Summary} The story is ready for dossier assets and later build guidance.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), isPrimary: true, name: "AliceOriginOpenBundleFolderButton"),
+                CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.CanonMarkdownPath), isPrimary: true, name: "AliceOriginOpenCanonStoryButton"),
+                CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"),
+                CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"),
                 CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"),
                 CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
                 CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
@@ -936,20 +946,22 @@ internal sealed class DesktopAliceWindow : Window
                 _originPacket = packet;
                 _originDraft = originDraft;
                 _originBundle = null;
+                _originDraftDirectory = null;
+                _originDraftMarkdownPath = null;
+                _originDraftFlipLinkPacketPath = null;
+                EnsureOriginDraftReviewPacket(packet, originDraft);
                 statusText.Text = "Origin draft ready.";
                 answerText.Text = HumanCopy(originDraft.Prose);
-                string[] originEvidence = BuildOriginEvidence(packet, originDraft);
+                string[] originEvidence = BuildOriginEvidence(packet, originDraft)
+                    .Concat(BuildOriginDraftReviewEvidence())
+                    .ToArray();
                 evidenceList.ItemsSource = originEvidence;
                 string[] originActionTitles =
                 [
+                    "Open story",
+                    "Open FlipLink handoff",
                     "Approve story",
-                    "Render dossier PDF",
-                    "Create portraits",
-                    "Create scenes",
-                    "Create default voice script",
-                    "Create alternate voice script",
-                    "Prepare render request",
-                    "Create dossier video"
+                    "Rewrite story"
                 ];
                 ActiveHistory().Add(BuildAssistantTurn(
                     mode,
@@ -958,15 +970,10 @@ internal sealed class DesktopAliceWindow : Window
                     originEvidence,
                     originActionTitles));
                 RefreshConversationFeed();
-                actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, isPrimary: true, name: "AliceOriginApproveCanonButton"));
-                actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, name: "AliceOriginRenderDossierPdfButton"));
-                actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
-                actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                actionRow.Children.Add(CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"));
-                actionRow.Children.Add(CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"));
-                actionRow.Children.Add(CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"));
-                actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
-                actionRow.Children.Add(CreateButton("Rewrite origin", AskAsync, name: "AliceOriginRegenerateButton"));
+                actionRow.Children.Add(CreateButton("Open story", () => !string.IsNullOrWhiteSpace(_originDraftMarkdownPath) && DesktopCrashRuntime.TryOpenPathInShell(_originDraftMarkdownPath), isPrimary: true, name: "AliceOriginOpenDraftStoryButton"));
+                actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => !string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
+                actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, name: "AliceOriginApproveCanonButton"));
+                actionRow.Children.Add(CreateButton("Rewrite story", RewriteOriginDraftAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
                 return;
             }
@@ -1030,6 +1037,17 @@ internal sealed class DesktopAliceWindow : Window
                 _originBuildFrameSelection,
                 _originPressureSelection,
                 gmAllowanceBox.Text);
+            await AskAsync().ConfigureAwait(true);
+        }
+
+        async Task RewriteOriginDraftAsync()
+        {
+            promptBox.Text = _originPacket?.Prompt
+                ?? BuildOriginStarterPrompt(
+                    _originArchetypeSelection,
+                    _originBuildFrameSelection,
+                    _originPressureSelection,
+                    gmAllowanceBox.Text);
             await AskAsync().ConfigureAwait(true);
         }
 
@@ -1663,6 +1681,12 @@ internal sealed class DesktopAliceWindow : Window
     private static string[] HumanLines(IEnumerable<string> values)
         => PlayerFacingCopyHumanizer.CleanLines(values);
 
+    private static string ComputeSha256(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+    }
+
     private static Border CreateCard(string title, string summary, Control? leadControl, params Button[] actions)
         => CreateCard(title, summary, leadControl, null, actions);
 
@@ -2188,6 +2212,50 @@ internal sealed class DesktopAliceWindow : Window
         return HumanLines(lines);
     }
 
+    private IReadOnlyList<string> BuildOriginDraftReviewEvidence()
+    {
+        List<string> lines = [];
+        if (!string.IsNullOrWhiteSpace(_originDraftDirectory))
+        {
+            lines.Add($"Draft folder: {_originDraftDirectory}");
+        }
+        if (!string.IsNullOrWhiteSpace(_originDraftMarkdownPath))
+        {
+            lines.Add($"Story: {Path.GetFileName(_originDraftMarkdownPath)}");
+        }
+        if (!string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath))
+        {
+            lines.Add($"FlipLink handoff: {Path.GetFileName(_originDraftFlipLinkPacketPath)}");
+        }
+
+        return HumanLines(lines);
+    }
+
+    private void EnsureOriginDraftReviewPacket(CharacterNarrativePacket packet, CharacterNarrativeDraft draft)
+    {
+        if (!string.IsNullOrWhiteSpace(_originDraftMarkdownPath)
+            && File.Exists(_originDraftMarkdownPath)
+            && !string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath)
+            && File.Exists(_originDraftFlipLinkPacketPath))
+        {
+            return;
+        }
+
+        string aliasToken = string.IsNullOrWhiteSpace(packet.Alias) ? "runner" : SanitizeNameToken(packet.Alias).ToLowerInvariant();
+        string timestampToken = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
+        string draftDirectory = Path.Combine(Path.GetTempPath(), "chummer-origin-dossier-drafts", $"{timestampToken}-{aliasToken}");
+        Directory.CreateDirectory(draftDirectory);
+
+        string markdownPath = Path.Combine(draftDirectory, "origin-story-draft.md");
+        string flipLinkPacketPath = Path.Combine(draftDirectory, "fliplink-origin-story.packet.json");
+        File.WriteAllText(markdownPath, BuildOriginCanonMarkdown(packet, draft));
+        File.WriteAllText(flipLinkPacketPath, BuildFlipLinkOriginStoryPacket(packet, draft, markdownPath, "draft_review", DateTimeOffset.UtcNow));
+
+        _originDraftDirectory = draftDirectory;
+        _originDraftMarkdownPath = markdownPath;
+        _originDraftFlipLinkPacketPath = flipLinkPacketPath;
+    }
+
     private static string FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(static value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
 
@@ -2409,6 +2477,7 @@ internal sealed class DesktopAliceWindow : Window
 
         string canonMarkdownPath = Path.Combine(bundleDirectory, "origin-canon.md");
         string canonJsonPath = Path.Combine(bundleDirectory, "origin-canon.json");
+        string flipLinkPacketPath = Path.Combine(bundleDirectory, "fliplink-origin-story.packet.json");
         File.WriteAllText(canonMarkdownPath, BuildOriginCanonMarkdown(_originPacket, _originDraft));
         File.WriteAllText(canonJsonPath, JsonSerializer.Serialize(
             new
@@ -2430,6 +2499,7 @@ internal sealed class DesktopAliceWindow : Window
                 }
             },
             new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(flipLinkPacketPath, BuildFlipLinkOriginStoryPacket(_originPacket, _originDraft, canonMarkdownPath, "approved_story", DateTimeOffset.UtcNow));
 
         _originBundle = new OriginDossierBundle(
             Packet: _originPacket,
@@ -2438,6 +2508,7 @@ internal sealed class DesktopAliceWindow : Window
             BundleDirectory: bundleDirectory,
             CanonJsonPath: canonJsonPath,
             CanonMarkdownPath: canonMarkdownPath,
+            FlipLinkPacketPath: flipLinkPacketPath,
             DossierPdfPath: null,
             MarkupGoPacketPath: null,
             PortraitSetJsonPath: null,
@@ -2953,6 +3024,7 @@ internal sealed class DesktopAliceWindow : Window
         [
             $"Dossier folder: {bundle.BundleDirectory}",
             $"Story: {Path.GetFileName(bundle.CanonMarkdownPath)}",
+            $"FlipLink handoff: {Path.GetFileName(bundle.FlipLinkPacketPath)}",
             $"Story data: {Path.GetFileName(bundle.CanonJsonPath)}",
             "Document: MarkupGo",
             "Default voice: Soundmadeseen",
@@ -3657,6 +3729,34 @@ internal sealed class DesktopAliceWindow : Window
         return builder.ToString().TrimEnd();
     }
 
+    private static string BuildFlipLinkOriginStoryPacket(
+        CharacterNarrativePacket packet,
+        CharacterNarrativeDraft draft,
+        string storyMarkdownPath,
+        string status,
+        DateTimeOffset generatedAtUtc)
+        => JsonSerializer.Serialize(
+            new
+            {
+                tool = "FlipLink",
+                artifactKind = "origin_story_review_handoff",
+                contractName = "chummer.origin_dossier.fliplink_handoff.v1",
+                status,
+                generatedAtUtc,
+                title = $"{packet.Alias} Origin Story",
+                source = "chummer_origin_story",
+                sourceStoryMarkdownPath = storyMarkdownPath,
+                sourceStorySha256 = ComputeSha256(storyMarkdownPath),
+                publicationAllowed = false,
+                reviewRequired = true,
+                playerFacing = true,
+                rulesTruth = "not_authoritative",
+                privacyBoundary = "local_character_story_review",
+                summary = HumanCopy(draft.Summary),
+                gmAllowanceNotes = HumanCopy(packet.GmAllowanceNotes)
+            },
+            new JsonSerializerOptions { WriteIndented = true });
+
     private static string BuildSoundmadeseenNarrationScript(OriginDossierBundle bundle)
     {
         StringBuilder builder = new();
@@ -4110,6 +4210,7 @@ internal sealed class DesktopAliceWindow : Window
         string BundleDirectory,
         string CanonJsonPath,
         string CanonMarkdownPath,
+        string FlipLinkPacketPath,
         string? DossierPdfPath,
         string? MarkupGoPacketPath,
         string? PortraitSetJsonPath,

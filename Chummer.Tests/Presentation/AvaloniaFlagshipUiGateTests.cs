@@ -65,6 +65,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         MaxDepth = 256
     };
+    private static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
     private static bool _headlessInitialized;
     private const int HeadlessSessionAttempts = 3;
     private static readonly string[] DefaultChummer5aFixtureUiReconstructionFixtureNames =
@@ -140,7 +141,6 @@ public sealed class AvaloniaFlagshipUiGateTests
         "56-horizon-anarchy-light.png",
         "57-horizon-ghostwire-light.png",
         "58-horizon-ready-for-tonight-light.png",
-        "59-horizon-onramp-light.png",
         "60-horizon-knowledge-fabric-light.png"
     ];
     private static readonly string[] RequiredVeteranCertificationScreenshots =
@@ -179,7 +179,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("improvements-explain-result-parity", "Chummer4/Chummer5a validation, explain, source, and applied-result review lineage.", ["14-advancement-dialog-light.png", "16-master-index-dialog-light.png", "34-workflow-validate-section-light.png", "35-workflow-rules-section-light.png"]),
         new("recovery-reload-migration-roundtrips", "Chummer4/Chummer5a open/import/reload/recovery roundtrip lineage.", ["04-loaded-runner-light.png", "18-import-dialog-light.png", "19-workflow-file-menu-loaded-light.png"]),
         new("dense-workbench-affordances-search-add-edit-remove-preview-drill-in-compare", "Chummer4/Chummer5a dense list, quick action, preview, drill-in, and compare workbench lineage.", ["05-dense-section-light.png", "06-dense-section-dark.png", "07-loaded-runner-tabs-light.png", "24-workflow-gear-section-light.png", "25-workflow-gear-add-dialog-light.png"]),
-        new("native-horizons-surface-catalog", "Every first-class native horizon/workbench surface must stay screenshot-backed on the promoted desktop head.", ["41-horizons-hub-light.png", "42-horizon-karma-forge-light.png", "43-horizon-alice-light.png", "44-horizon-black-ledger-light.png", "45-horizon-run-control-light.png", "46-horizon-runsite-light.png", "47-horizon-jackpoint-light.png", "48-horizon-table-pulse-light.png", "49-horizon-community-hub-light.png", "50-horizon-nexus-pan-light.png", "51-horizon-quicksilver-light.png", "52-horizon-runner-passport-light.png", "53-horizon-runbook-press-light.png", "54-horizon-creator-os-light.png", "55-horizon-local-co-processor-light.png", "56-horizon-anarchy-light.png", "57-horizon-ghostwire-light.png", "58-horizon-ready-for-tonight-light.png", "59-horizon-onramp-light.png", "60-horizon-knowledge-fabric-light.png"])
+        new("native-horizons-surface-catalog", "Every first-class native horizon/workbench surface must stay screenshot-backed on the promoted desktop head.", ["41-horizons-hub-light.png", "42-horizon-karma-forge-light.png", "43-horizon-alice-light.png", "44-horizon-black-ledger-light.png", "45-horizon-run-control-light.png", "46-horizon-runsite-light.png", "47-horizon-jackpoint-light.png", "48-horizon-table-pulse-light.png", "49-horizon-community-hub-light.png", "50-horizon-nexus-pan-light.png", "51-horizon-quicksilver-light.png", "52-horizon-runner-passport-light.png", "53-horizon-runbook-press-light.png", "54-horizon-creator-os-light.png", "55-horizon-local-co-processor-light.png", "56-horizon-anarchy-light.png", "57-horizon-ghostwire-light.png", "58-horizon-ready-for-tonight-light.png", "60-horizon-knowledge-fabric-light.png"])
     ];
     private static readonly HorizonScreenshotSurface[] NativeHorizonScreenshotSurfaces =
     [
@@ -200,7 +200,6 @@ public sealed class AvaloniaFlagshipUiGateTests
         new("anarchy", "56-horizon-anarchy-light.png", "Anarchy", "AnarchyBadgeRuns"),
         new("ghostwire", "57-horizon-ghostwire-light.png", "Ghostwire", "GhostwireBadgeRuns"),
         new("ready_for_tonight", "58-horizon-ready-for-tonight-light.png", "Ready for Tonight", "ReadyForTonightBadgeRuns"),
-        new("onramp", "59-horizon-onramp-light.png", "Onramp", "OnrampBadgeWorkspaces"),
         new("knowledge_fabric", "60-horizon-knowledge-fabric-light.png", "Knowledge Fabric", "KnowledgeFabricBadgeRules")
     ];
     private static HeadlessUnitTestSession? _headlessSession;
@@ -220,6 +219,7 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(homeText, "Desktop shell route anchor");
         Assert.IsFalse(homeText.Contains("panel-grid", StringComparison.Ordinal));
         StringAssert.Contains(showcaseText, "@page \"/showcase\"");
+        StringAssert.Contains(showcaseText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
         StringAssert.Contains(showcaseText, "panel-grid");
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
         Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
@@ -498,7 +498,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireBadgeRuns");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightBadgeRuns");
-            AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampBadgeWorkspaces");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricBadgeRules");
             AssertNativeWorkbenchLaunch(harness, hubWindow, "HorizonsOpenWorkbench_runsite", "Runsite", "RunsiteBadgeWorkspaces");
 
@@ -574,6 +573,18 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(
                 () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginApproveCanonButton") is { IsVisible: true },
                 context: "origin-dossier draft must expose story approval");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftStoryButton"),
+                "Origin dossier must make the generated story the first review artifact.");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftFlipLinkPacketButton"),
+                "Origin dossier must write a FlipLink handoff for draft story review.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"),
+                "Origin dossier must not show production actions before story approval.");
+            Assert.IsNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginGenerateDossierVideoButton"),
+                "Origin dossier must not offer video production before story approval.");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginApproveCanonButton"));
             harness.WaitUntil(
@@ -582,6 +593,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             harness.WaitUntil(
                 () => harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenBundleFolderButton") is { IsVisible: true },
                 context: "approved dossier bundle must expose bundle actions");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenCanonStoryButton"),
+                "Approved origin dossier must keep the story as the first-class artifact.");
+            Assert.IsNotNull(
+                harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenFlipLinkPacketButton"),
+                "Approved origin dossier must expose the FlipLink handoff after approval.");
 
             harness.WaitUntil(
                 () => Directory.Exists(bundleRoot)
@@ -593,8 +610,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 .First();
             harness.WaitUntil(
                 () => File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.md"))
-                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.json")),
-                context: "origin approval must write canonical bundle artifacts");
+                    && File.Exists(Path.Combine(createdBundleDirectory, "origin-canon.json"))
+                    && File.Exists(Path.Combine(createdBundleDirectory, "fliplink-origin-story.packet.json")),
+                context: "origin approval must write canonical story and FlipLink artifacts");
 
             RaiseClick(harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"));
             harness.WaitUntil(
@@ -676,7 +694,6 @@ public sealed class AvaloniaFlagshipUiGateTests
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_anarchy", "Anarchy", "AnarchyDetailModeCombo", "AnarchyDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ghostwire", "Ghostwire", "GhostwireDetailModeCombo", "GhostwireDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_ready_for_tonight", "Ready for Tonight", "ReadyForTonightDetailModeCombo", "ReadyForTonightDetailText");
-            AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_onramp", "Onramp", "OnrampDetailModeCombo", "OnrampDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_knowledge_fabric", "Knowledge Fabric", "KnowledgeFabricDetailModeCombo", "KnowledgeFabricDetailText");
             AssertDetailModeInteraction(harness, hubWindow, "HorizonsOpenWorkbench_runsite", "Runsite", "RunsiteDetailModeCombo", "RunsiteSelectedWorkspaceDetailText");
 
@@ -839,7 +856,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
         StringAssert.Contains(blazorShellText, "private bool ShowLeftPane =>");
-        StringAssert.Contains(blazorShellText, "_shellSurfaceState.OpenWorkspaces.Count > 1");
+        StringAssert.Contains(blazorShellText, "_shellSurfaceState.OpenWorkspaces.Count > 0");
         StringAssert.Contains(shellCatalogText, "[\"file\", \"edit\", \"special\", \"tools\", \"windows\", \"help\"]");
         StringAssert.Contains(shellCatalogText, "Command(\"edit\", \"command.edit\", \"menu\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"special\", \"command.special\", \"menu\", false)");
@@ -3973,9 +3990,9 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist()
+    public void Runtime_backed_shell_keeps_single_workspace_edit_rail_visible()
     {
-        new DesktopShellRulesetCatalogTests().DesktopShell_hides_workspace_left_pane_for_single_runner_posture();
+        new DesktopShellRulesetCatalogTests().DesktopShell_renders_workspace_left_pane_for_single_runner_posture();
     }
 
     [TestMethod]
@@ -4471,6 +4488,8 @@ public sealed class AvaloniaFlagshipUiGateTests
         Assert.IsFalse(
             dialogSource.Contains("Text = text,\n            IsVisible = false,\n            FontWeight = FontWeight.SemiBold", StringComparison.Ordinal),
             "Priority build row labels must remain visible.");
+        StringAssert.Contains(dialogSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
+        StringAssert.Contains(dialogSource, "valueText.Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\"");
         StringAssert.Contains(
             File.ReadAllText(ResolveSourceFile("Chummer.Avalonia", "DesktopDialogWindow.axaml")),
             "<ScrollViewer Grid.Row=\"1\"");
@@ -5335,7 +5354,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             File.WriteAllText(
                 screenshotControlEvidencePath,
                 JsonSerializer.Serialize(screenshotControlEvidencePayload, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine,
-                Encoding.UTF8);
+                Utf8NoBom);
         }
         finally
         {

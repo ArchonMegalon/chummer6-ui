@@ -3055,14 +3055,20 @@ public partial class DesktopDialogWindow : Window
         TextBlock labelText = new()
         {
             Text = label,
-            IsVisible = false,
             FontWeight = FontWeight.SemiBold,
+            Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827"),
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center
         };
         Grid.SetRow(labelText, rowIndex);
         Grid.SetColumn(labelText, 0);
         grid.Children.Add(labelText);
         ToolTip.SetTip(valueControl, label);
+
+        if (valueControl is TextBlock valueText)
+        {
+            valueText.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
+            valueText.VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center;
+        }
 
         Grid.SetRow(valueControl, rowIndex);
         Grid.SetColumn(valueControl, 1);

@@ -53,6 +53,11 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "AliceOriginGmRequirementPresetCombo");
         StringAssert.Contains(source, "AliceOriginStartDossierButton");
         StringAssert.Contains(source, "BuildOriginStarterPrompt(");
+        StringAssert.Contains(source, "EnsureOriginDraftReviewPacket(");
+        StringAssert.Contains(source, "BuildOriginDraftReviewEvidence()");
+        StringAssert.Contains(source, "fliplink-origin-story.packet.json");
+        StringAssert.Contains(source, "Open story");
+        StringAssert.Contains(source, "Open FlipLink handoff");
         StringAssert.Contains(source, "Troll decker");
         StringAssert.Contains(source, "SR4 BP");
         StringAssert.Contains(source, "Matrix identity theft");
@@ -67,6 +72,7 @@ public sealed class DesktopAliceWindowTests
         StringAssert.Contains(source, "Prepare render request");
         StringAssert.Contains(source, "Create dossier video");
         StringAssert.Contains(source, "MarkupGo");
+        StringAssert.Contains(source, "FlipLink");
         StringAssert.Contains(source, "Soundmadeseen");
         StringAssert.Contains(source, "Unmixr");
         StringAssert.Contains(source, "vidBoard");
