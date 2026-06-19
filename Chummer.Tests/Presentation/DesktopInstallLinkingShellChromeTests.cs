@@ -181,14 +181,18 @@ public sealed class DesktopInstallLinkingShellChromeTests
         string preferenceSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.PreferenceState.cs"));
         string localizationSource = File.ReadAllText(FindPath("Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
 
-        StringAssert.Contains(installWindowSource, "InstallLinkAliceFeatureToggle");
+        StringAssert.Contains(installWindowSource, "InstallLinkGuidedToolsVisibleOption");
+        StringAssert.Contains(installWindowSource, "InstallLinkGuidedToolsHiddenOption");
+        StringAssert.Contains(installWindowSource, "InstallLinkFeatureVisibility");
         StringAssert.Contains(installWindowSource, "CreateAlicePreferencePanel");
         StringAssert.Contains(installWindowSource, "ApplyAliceFeaturePreference");
         StringAssert.Contains(installWindowSource, "DisableAiFeatures");
         StringAssert.Contains(installWindowSource, "DesktopPreferenceRuntime.SaveState");
         StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
-        StringAssert.Contains(localizationSource, "desktop.install_link.preference.checkbox");
-        StringAssert.Contains(localizationSource, "Show Alice and dossier features");
+        StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
+        StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
+        StringAssert.Contains(localizationSource, "Show Alice, dossiers, and guided help");
+        StringAssert.Contains(localizationSource, "Hide Alice, dossiers, and guided help");
         StringAssert.Contains(localizationSource, "desktop.install_link.status.alice_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
     }

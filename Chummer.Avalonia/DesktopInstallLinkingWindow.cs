@@ -33,7 +33,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
     private readonly TextBlock _alicePreferenceStatusText;
-    private readonly CheckBox _aliceFeaturesCheckBox;
+    private readonly RadioButton _guidedToolsRadioButton;
+    private readonly RadioButton _quietToolsRadioButton;
     private readonly TextBlock _moreToolsHeading;
     private readonly WrapPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
@@ -199,24 +200,52 @@ internal sealed class DesktopInstallLinkingWindow : Window
             Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
             TextWrapping = TextWrapping.Wrap
         };
-        _aliceFeaturesCheckBox = new CheckBox
+        _guidedToolsRadioButton = new RadioButton
         {
-            Name = "InstallLinkAliceFeatureToggle",
-            Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.checkbox", _language),
-            IsChecked = !_preferences.DisableAiFeatures,
-            HorizontalAlignment = HorizontalAlignment.Left
+            Name = "InstallLinkGuidedToolsVisibleOption",
+            GroupName = "InstallLinkFeatureVisibility",
+            Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.visible_choice", _language),
+            IsChecked = !_preferences.DisableAiFeatures
         };
         ToolTip.SetTip(
-            _aliceFeaturesCheckBox,
+            _guidedToolsRadioButton,
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
         AutomationProperties.SetName(
-            _aliceFeaturesCheckBox,
-            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.checkbox", _language));
+            _guidedToolsRadioButton,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.visible_choice", _language));
         AutomationProperties.SetHelpText(
-            _aliceFeaturesCheckBox,
+            _guidedToolsRadioButton,
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
-        _aliceFeaturesCheckBox.IsCheckedChanged += (_, _) =>
-            ApplyAliceFeaturePreference(disableAiFeatures: _aliceFeaturesCheckBox.IsChecked != true);
+        _guidedToolsRadioButton.IsCheckedChanged += (_, _) =>
+        {
+            if (_guidedToolsRadioButton.IsChecked == true)
+            {
+                ApplyAliceFeaturePreference(disableAiFeatures: false);
+            }
+        };
+        _quietToolsRadioButton = new RadioButton
+        {
+            Name = "InstallLinkGuidedToolsHiddenOption",
+            GroupName = "InstallLinkFeatureVisibility",
+            Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.hidden_choice", _language),
+            IsChecked = _preferences.DisableAiFeatures
+        };
+        ToolTip.SetTip(
+            _quietToolsRadioButton,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
+        AutomationProperties.SetName(
+            _quietToolsRadioButton,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.hidden_choice", _language));
+        AutomationProperties.SetHelpText(
+            _quietToolsRadioButton,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
+        _quietToolsRadioButton.IsCheckedChanged += (_, _) =>
+        {
+            if (_quietToolsRadioButton.IsChecked == true)
+            {
+                ApplyAliceFeaturePreference(disableAiFeatures: true);
+            }
+        };
         _moreToolsHeading = new TextBlock
         {
             Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.more_tools", _language),
@@ -607,7 +636,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
                         Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
                         TextWrapping = TextWrapping.Wrap
                     },
-                    _aliceFeaturesCheckBox,
+                    new StackPanel
+                    {
+                        Spacing = 4,
+                        Children =
+                        {
+                            _guidedToolsRadioButton,
+                            _quietToolsRadioButton
+                        }
+                    },
                     _alicePreferenceStatusText
                 }
             });
@@ -931,6 +968,15 @@ internal sealed class DesktopInstallLinkingWindow : Window
         DesktopPreferenceRuntime.SaveState(_state.HeadId, nextPreferences);
         DesktopPreferenceStateRuntime.SetCurrent(nextPreferences);
         _alicePreferenceStatusText.Text = BuildAlicePreferenceStatus(nextPreferences, _language);
+        if (_guidedToolsRadioButton.IsChecked != !disableAiFeatures)
+        {
+            _guidedToolsRadioButton.IsChecked = !disableAiFeatures;
+        }
+
+        if (_quietToolsRadioButton.IsChecked != disableAiFeatures)
+        {
+            _quietToolsRadioButton.IsChecked = disableAiFeatures;
+        }
 
         if (Owner is MainWindow ownerWindow)
         {
