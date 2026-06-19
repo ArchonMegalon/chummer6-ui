@@ -292,14 +292,30 @@ public sealed class DesktopThemeManagerTests
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        int wizardStart = desktopDialogSource.IndexOf("private Control CreateLegacyOriginWizardPane", StringComparison.Ordinal);
+        int buildStart = desktopDialogSource.IndexOf("private Control CreateLegacyOriginBuildPane", StringComparison.Ordinal);
+        int summaryStart = desktopDialogSource.IndexOf("private static Control CreateOriginSummaryStrip", StringComparison.Ordinal);
+        int nextMethodStart = desktopDialogSource.IndexOf("private Control CreateLegacyPriorityWorkflowPane", StringComparison.Ordinal);
+        Assert.IsTrue(wizardStart >= 0 && buildStart > wizardStart, "Origin wizard source must be discoverable for the theme gate.");
+        Assert.IsTrue(summaryStart > buildStart && nextMethodStart > summaryStart, "Origin summary strip source must be discoverable for the theme gate.");
+        string originSurfaceSource = desktopDialogSource[wizardStart..nextMethodStart];
 
         StringAssert.Contains(desktopDialogSource, "CreateLegacyOriginWizardPane(fields)");
         StringAssert.Contains(desktopDialogSource, "CreateLegacyOriginBuildPane(fields)");
         StringAssert.Contains(desktopDialogSource, "CreateOriginSummaryStrip(");
+        StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-panel\" }");
+        StringAssert.Contains(originSurfaceSource, "Classes = { \"shell-kicker\" }");
+        StringAssert.Contains(originSurfaceSource, "Foreground = ResolveThemeBrush(\"ChummerShellForegroundBrush\", \"#111827\")");
         StringAssert.Contains(desktopDialogSource, "newCharacterOriginGmConstraintPreset");
         StringAssert.Contains(desktopDialogSource, "build plan");
         StringAssert.Contains(desktopDialogSource, "\"Story Preview\"");
         StringAssert.Contains(desktopDialogSource, "\"Origin Story\"");
+        Assert.IsFalse(originSurfaceSource.Contains("Color.Parse", StringComparison.Ordinal));
+        Assert.IsFalse(originSurfaceSource.Contains("Brushes.White", StringComparison.Ordinal));
+        Assert.IsFalse(originSurfaceSource.Contains("Brushes.Black", StringComparison.Ordinal));
+        Assert.IsFalse(originSurfaceSource.Contains("new SolidColorBrush", StringComparison.Ordinal));
+        Assert.IsFalse(originSurfaceSource.Contains("Background = Brushes", StringComparison.Ordinal));
+        Assert.IsFalse(originSurfaceSource.Contains("Foreground = Brushes", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("newCharacterOriginGmConstraintPreset\", \"GM Constraint\", \"none\", \"none\"", StringComparison.Ordinal));
         Assert.IsFalse(desktopDialogSource.Contains("build lane", StringComparison.OrdinalIgnoreCase));
         Assert.IsFalse(desktopDialogSource.Contains("\"ALICE Handoff\"", StringComparison.Ordinal));
