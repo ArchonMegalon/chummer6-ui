@@ -46,6 +46,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly bool _loginVideoPreview;
     private bool _allowGuestClose;
     private bool _automaticHandoffStarted;
+    private bool _browserFallbackVisible;
     private string? _lastLoginUrl;
 
     public DesktopInstallLinkingWindow(DesktopInstallLinkingStartupContext context, bool loginVideoPreview = false)
@@ -300,7 +301,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
             else if (_loginVideoPreview)
             {
-                SetStatus("Login video preview. The browser will not open unless you press the login button.");
+                SetStatus("Login video preview. The browser will not open unless you press the claim button.");
                 UpdateMatrixHandoffState("Login video preview");
             }
             else if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
@@ -757,6 +758,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 out string? failureReason);
             if (opened)
             {
+                _browserFallbackVisible = false;
                 SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
                 StartClaimPolling("Waiting for browser callback");
             }
@@ -764,12 +766,12 @@ internal sealed class DesktopInstallLinkingWindow : Window
             {
                 _state = DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId);
                 await ShowManualBrowserFallbackAsync(loginUrl, failureReason).ConfigureAwait(true);
-                UpdateMatrixHandoffState("Manual linking ready");
+                UpdateMatrixHandoffState("Browser fallback ready");
             }
         }
         catch (Exception ex)
         {
-            UpdateMatrixHandoffState("Manual linking ready");
+            UpdateMatrixHandoffState("Browser fallback ready");
             SetStatus(ex.Message);
         }
     }
@@ -812,7 +814,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
             if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
-                UpdateMatrixHandoffState("Browser sign-in pending");
+                UpdateMatrixHandoffState("Browser claim pending");
             }
         }
         catch (OperationCanceledException)
@@ -938,6 +940,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
         if (opened)
         {
+            _browserFallbackVisible = false;
             SetStatus(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.opened_account", _language));
             if (!DesktopInstallLinkingRuntime.IsClaimed(_state))
             {
@@ -999,7 +1002,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
     {
         bool claimed = DesktopInstallLinkingRuntime.IsClaimed(_state);
         _linkStateText.Text = FormatClaimStatus(_state, _language);
-        UpdateMatrixHandoffState(claimed ? "Grant accepted" : "Waiting for account link");
+        UpdateMatrixHandoffState(claimed ? "Grant accepted" : "Waiting for account claim");
         RefreshMatrixIdentityOverlay();
         _followThroughButton.Content = claimed
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_work", _language)
@@ -1008,7 +1011,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
             ? DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_account", _language)
             : DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _language);
         _followThroughButton.IsVisible = claimed;
-        _copyLoginUrlButton.IsVisible = !claimed;
+        _copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;
         _exitButton.IsVisible = !claimed;
         if (_loginVideoPreview)
         {
@@ -1020,9 +1023,9 @@ internal sealed class DesktopInstallLinkingWindow : Window
         RefreshButtonTip(_copyLoginUrlButton);
         RefreshButtonTip(_exitButton);
 
-        _claimCodeHintText.IsVisible = !claimed;
-        _claimCodeLabelText.IsVisible = !claimed;
-        _claimCodeEntryRow.IsVisible = !claimed;
+        _claimCodeHintText.IsVisible = !claimed && _browserFallbackVisible;
+        _claimCodeLabelText.IsVisible = !claimed && _browserFallbackVisible;
+        _claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;
         _moreToolsHeading.IsVisible = claimed;
         _moreToolsPanel.IsVisible = claimed;
     }
@@ -1085,15 +1088,16 @@ internal sealed class DesktopInstallLinkingWindow : Window
 
     private void ShowManualBrowserFallback(string loginUrl, string? failureReason)
     {
+        _browserFallbackVisible = true;
         _lastLoginUrl = loginUrl;
         string headline = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.status.manual_login_url", _language);
         string detail = string.IsNullOrWhiteSpace(failureReason)
-            ? "Copy or open the link below, sign in, then return here. The local callback will finish automatically when this desktop can receive it."
-            : $"Copy or open the link below, sign in, then return here. Host detail: {failureReason.Trim()}";
+            ? "Copy or open the link below, claim this copy, then return here. The local callback will finish automatically when this desktop can receive it."
+            : $"Copy or open the link below, claim this copy, then return here. Host detail: {failureReason.Trim()}";
         _claimCodeHintText.Text = $"{headline}\n{detail}\n{loginUrl}";
         _claimCodeHintText.IsVisible = true;
         ToolTip.SetTip(_claimCodeHintText, loginUrl);
-        UpdateMatrixHandoffState("Manual browser fallback ready");
+        UpdateMatrixHandoffState("Browser fallback ready");
         RefreshSummary();
         RefreshActionState();
     }

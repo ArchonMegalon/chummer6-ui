@@ -2,28 +2,44 @@
   "site_title": "Chummer6 Flagship Table Pulse",
   "site_summary": "Live-table pressure, player follow-up, and GM-approved world fallout for Chummer6.",
   "editorial_posture": {
-    "opening": "Chummer6 should feel useful before it feels large. This guide explains the live-table and living-world layer from the player and GM point of view: what you can open, what changes at the table, and what still stays under human authority.",
+    "opening": "Start with the person at the table, not the system diagram. Chummer6 is strongest when a player can build a runner, understand the choices, give that runner a past, and then watch the campaign remember the consequences without stealing authority from the GM.",
     "source_note": "This guide follows the Chummer6 design canon and the public-guide source set. Treat it as a product guide, not as a rules engine or an unbounded release promise."
   },
   "public_videos": [
     {
+      "title": "Chummer6 flagship promo",
+      "url": "https://chummer.run/media/promo/chummer6-flagship-promo.mp4",
+      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/promo/chummer6-flagship-promo.mp4",
+      "caption_url": "https://chummer.run/media/promo/chummer6-flagship-promo.vtt",
+      "note": "Quick overview with narration."
+    },
+    {
       "title": "TABLE PULSE 90-second deep dive",
       "url": "https://chummer.run/media/horizons/table-pulse-90s-deepdive.mp4",
+      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/horizons/table-pulse-90s-deepdive.mp4",
       "caption_url": "https://chummer.run/media/horizons/table-pulse-90s-deepdive.vtt",
-      "note": "MP4 with AAC audio."
+      "note": "Deep dive with narration."
     },
     {
       "title": "ALICE 90-second deep dive",
       "url": "https://chummer.run/media/horizons/alice-90s-deepdive.mp4",
+      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/horizons/alice-90s-deepdive.mp4",
       "caption_url": "https://chummer.run/media/horizons/alice-90s-deepdive.vtt",
-      "note": "MP4 with AAC audio."
+      "note": "Deep dive with narration."
+    },
+    {
+      "title": "Chummer6 product threads promo",
+      "url": "https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.mp4",
+      "local_path": "/docker/chummercomplete/chummer.run-services/Chummer.Run.Api/wwwroot/media/promo/all-horizons-90s-magicfit-promo.mp4",
+      "caption_url": "https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.vtt",
+      "note": "Product-thread overview with updated narration."
     }
   ],
   "overview": {
-    "title": "Table Pulse Flagship Showcase",
+    "title": "Chummer6 At The Table",
     "purpose": "Explain the Chummer6 live-play and living-world stack in plain product language for players, GMs, and curious visitors.",
     "one_line_pitch": "Chummer6 turns live table pressure, between-session faction motion, and public-safe world fallout into one governed play loop where the GM stays in charge and every meaningful action leaves a receipt.",
-    "delivery_posture": "Some of this is live, and some is the target shape. The guide names the experience without pretending every surface is available on every public build today.",
+    "delivery_posture": "Use this as the presentation story for the workbench plus campaign layer. Some surfaces are live and some are target shape; the guide keeps that boundary visible without making the reader decode internal release evidence.",
     "system_truths": [
       "the GM remains final authority",
       "all external reactions are receipt-backed",
@@ -68,9 +84,9 @@
         ]
       },
       {
-        "name": "Player-Facing Action Surface",
+        "name": "Player-Facing Action Layer",
         "items": [
-          "Signal Deck",
+          "sharp player action cards",
           "stronger Passport framing",
           "faction role paths",
           "opposition clocks",
@@ -80,8 +96,8 @@
     ],
     "surfaces": [
       {
-        "name": "Signal Deck",
-        "descriptor": "the fast player-facing action board",
+        "name": "Player Action Cards",
+        "descriptor": "the quick player-facing response surface",
         "feels": [
           "urgent",
           "tactical",
@@ -161,10 +177,10 @@
         "description": "If policy and consent allow it, the pulse packet becomes player-facing or faction-facing delivery.",
         "items": [
           "inbox event",
-          "Signal Deck prompt",
+          "player action card",
           "rumor item",
           "standing-order update",
-          "remote reaction mini-game prompt"
+          "remote reaction mini-game card"
         ]
       },
       {
@@ -191,7 +207,7 @@
     "wow_effect": {
       "comes_from": [
         "seeing live pressure become playable",
-        "watching a Signal Deck prompt cascade into faction consequences",
+        "watching a player action card cascade into faction consequences",
         "seeing Passport identity, role path, and city pressure connect",
         "watching a remote reaction mini-game end in a newsroom or public-safe city fallout beat"
       ],
@@ -204,7 +220,7 @@
     },
     "hero_moment": [
       "a run spikes heat and the GM approves a bounded pulse packet",
-      "a player receives a Signal Deck card with one sharp risky choice and one safer choice",
+      "a player receives an action card with one sharp risky choice and one safer choice",
       "the choice resolves into Passport movement, faction pressure, and a receipt trail",
       "the city later reflects that action through rumor, newsroom fallout, or public-safe consequence"
     ],
@@ -217,11 +233,85 @@
       "BeHuman and Answerly stay adapter layers"
     ],
     "flagship_bar": [
-      "Signal Deck, Passport, and GM cockpit all exist as coherent product surfaces.",
+      "player action cards, Passport, and GM cockpit all exist as coherent product surfaces.",
       "Remote reaction mini-games are real moments a player can understand and answer.",
       "Inbox, rumor, order, and fallout lanes are receipt-backed.",
       "Public-safe projection stays bounded by GM authority.",
       "The system still feels fast, legible, and exciting for players."
+    ]
+  },
+  "product_taxonomy": {
+    "title": "What Belongs Where",
+    "summary": "Chummer6 should read like one product with a strong core and a few ambitious expansion bets. If a user needs it to build, understand, run, remember, or return to a campaign, it belongs in the product story. The future shelf is only for the larger bets that still need distance from today’s download.",
+    "base_features": [
+      {
+        "name": "Workbench",
+        "description": "the dense character-building surface, inspectors, source detail, compare views, and release packaging that make Chummer feel credible to existing users first."
+      },
+      {
+        "name": "ALICE",
+        "description": "the in-product build mentor and rules explainer; it is a normal workbench feature, not a separate future promise."
+      },
+      {
+        "name": "Origin Dossier",
+        "description": "the origin-and-life-behind-the-stats feature; it belongs beside ALICE as an emotional entry into the runner, not as a distant idea shelf."
+      },
+      {
+        "name": "NEXUS-PAN",
+        "description": "the continuity and recovery feature for shared state, reconnects, and device drift; it should feel like reliability, not a future brand."
+      },
+      {
+        "name": "Ready for Tonight",
+        "description": "the practical return-to-play surface that helps a GM or player know what is ready before a session."
+      },
+      {
+        "name": "Runner Passport",
+        "description": "the runner identity and continuity surface that follows the character from build into campaign life."
+      },
+      {
+        "name": "Knowledge Fabric",
+        "description": "the source-aware rules explanation layer that makes values, legality, and tradeoffs traceable."
+      },
+      {
+        "name": "Table Pulse and GM Cockpit",
+        "description": "campaign-operation features for heat, reaction cards, approvals, and aftermath; they should be presented as the campaign layer, not as a random new brand."
+      }
+    ],
+    "future_horizons": [
+      {
+        "name": "Karma Forge",
+        "description": "governed house-rule and package evolution; it remains a Horizon because it changes how tables extend the rules."
+      },
+      {
+        "name": "Black Ledger",
+        "description": "living city, faction motion, public-safe news, and world-tick projection; it is the biggest campaign expansion bet."
+      },
+      {
+        "name": "Runbook Press and Creator OS",
+        "description": "campaign publishing and creator output; together they are one publish/share expansion, not two competing shelves."
+      },
+      {
+        "name": "Community Hub and Jackpoint",
+        "description": "community, open-run, dossier, and recap collaboration; together they are the social/campaign-memory expansion."
+      },
+      {
+        "name": "Runsite, Ghostwire, and Anarchy",
+        "description": "specialized play modes for spatial prep, replay/forensics, and rules-light sessions; useful, but not first-minute product identity."
+      }
+    ],
+    "throw_out": [
+      {
+        "name": "Onramp",
+        "reason": "Onramp is starter help. Keep it inside the first-session path instead of promoting it as a separate product bet."
+      },
+      {
+        "name": "Quicksilver as a headline Horizon",
+        "reason": "Quicksilver is navigation and command-deck polish. It should support the product, not compete with the product story."
+      },
+      {
+        "name": "Local Co-Processor as a public promise",
+        "reason": "Local acceleration is infrastructure. Keep it in technical docs until a user-facing need makes it worth naming."
+      }
     ]
   },
   "minigames": {
@@ -231,7 +321,7 @@
     "families": [
       {
         "name": "Intercept",
-        "description": "The player receives a short intelligence or courier prompt and chooses how aggressively to intercept, forward, or suppress it.",
+        "description": "The player receives a short intelligence or courier card and chooses how aggressively to intercept, forward, or suppress it.",
         "payoff": [
           "rumor gain",
           "heat shift",
@@ -240,7 +330,7 @@
       },
       {
         "name": "Cover Story",
-        "description": "The player gets a social or public-facing cleanup prompt and must pick a cover approach.",
+        "description": "The player gets a social or public-facing cleanup card and must pick a cover approach.",
         "payoff": [
           "public fallout softening",
           "reputation lane protection",
@@ -249,7 +339,7 @@
       },
       {
         "name": "Scramble",
-        "description": "The player gets a time-sensitive logistics or support prompt.",
+        "description": "The player gets a time-sensitive logistics or support card.",
         "payoff": [
           "small resource preservation",
           "standing-order reinforcement",
@@ -258,7 +348,7 @@
       },
       {
         "name": "Temptation",
-        "description": "The player gets a morally gray opportunity prompt.",
+        "description": "The player gets a morally gray opportunity card.",
         "payoff": [
           "faction favor",
           "pressure increase",
@@ -309,13 +399,13 @@
           "whether the GM must still approve fallout"
         ]
       },
-      "signal_deck": [
+      "player_action_cards": [
         "a live card",
         "visible pressure and countdown",
         "one strong dramatic choice and one safer choice"
       ],
       "gm_cockpit": [
-        "prompt source",
+          "card source",
         "recipient reasoning",
         "chosen response",
         "proposed consequence",
@@ -323,7 +413,7 @@
       ]
     },
     "wow_pattern": [
-      "a player gets a tight dramatic prompt",
+      "a player gets a tight dramatic card",
       "the choice feels sharp and immediate",
       "the result lands in Passport or faction pressure",
       "the city later reflects that move through rumor or newsroom fallout"
@@ -333,9 +423,9 @@
       "a generic push notification",
       "a random mini-quiz disconnected from world state"
     ],
-    "example_loop": "After a high-heat extraction, a player receives a Scramble mini-game through Signal Deck. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.",
+    "example_loop": "After a high-heat extraction, a player receives a Scramble mini-game as a short action card. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.",
     "flagship_bar": [
-      "the prompt is dramatic in under one screen",
+      "the card is dramatic in under one screen",
       "the choice is meaningful but bounded",
       "the consequence is receipt-backed",
       "the result can feed Passport, rumor, faction, or newsroom lanes",
@@ -344,7 +434,7 @@
   },
   "user_first_story": {
     "title": "User-First Entry Arc",
-    "summary": "The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, Signal Deck, and the living-world stack.",
+    "summary": "The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, player action cards, and the living-world stack.",
     "beats": [
       "A player starts from Origin Dossier instead of facing a cold chargen sheet.",
       "Approved canon freezes a stable narrative spine before downstream media regenerates.",
@@ -360,7 +450,7 @@
   },
   "origin_dossier_spotlight": {
     "title": "Origin Dossier And ALICE",
-    "summary": "Origin Dossier is the premium narrative-first lane for turning runner identity into approved canon, derivative dossier media, and later ALICE follow-up context without letting story text silently mutate build truth.",
+    "summary": "Origin Dossier should now read as a flagship base feature: a player enters Chummer as a runner with causes, debts, people, scars, secrets, and unfinished consequences. ALICE keeps that story connected to rules explanation without letting prose silently mutate build truth.",
     "must_show": [
       "origin draft and canon approval",
       "blank-state start and finished-runner additive entry points",
@@ -390,7 +480,7 @@
       "pulse policy and heat thresholds",
       "recipient reasoning, quiet-hours, mute, and opt-out posture",
       "GM allowances and gimmicks as explicit advisory context",
-      "mini-game prompt source, chosen response, and proposed consequence",
+      "mini-game card source, chosen response, and proposed consequence",
       "public-safe release controls before any newsroom or public map projection",
       "receipt trail, override reason, and what remains manual review"
     ],
@@ -417,6 +507,12 @@
       "status": "Shipped native desktop workbench with build help, rules coach, and origin-first chargen handoff.",
       "reader_why": "This is the closest user-first entry into Chummer’s broader living-world stack.",
       "connection": "Origin Dossier creates approved canon; ALICE later uses that canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation."
+    },
+    {
+      "name": "Origin Dossier",
+      "status": "Presentation-critical base feature for origin canon, dossier media, narration, and ALICE handoff.",
+      "reader_why": "It gives a casual visitor the immediate wow: this is not only a rules editor, it can make the life behind the stats matter.",
+      "connection": "The approved origin becomes the narrative spine that ALICE, Runner Passport, and campaign follow-through can reference without inventing new truth."
     }
   ],
   "visual_gallery": [

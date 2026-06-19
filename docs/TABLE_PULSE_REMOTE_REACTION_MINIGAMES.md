@@ -29,7 +29,7 @@ They are not:
 
 ### Intercept
 
-The player receives a short intelligence or courier prompt and chooses how aggressively to intercept, forward, or suppress it.
+The player receives a short intelligence or courier card and chooses how aggressively to intercept, forward, or suppress it.
 
 Payoff:
 
@@ -39,7 +39,7 @@ Payoff:
 
 ### Cover Story
 
-The player gets a social or public-facing cleanup prompt and must pick a cover approach.
+The player gets a social or public-facing cleanup card and must pick a cover approach.
 
 Payoff:
 
@@ -49,7 +49,7 @@ Payoff:
 
 ### Scramble
 
-The player gets a time-sensitive logistics or support prompt.
+The player gets a time-sensitive logistics or support card.
 
 Payoff:
 
@@ -59,7 +59,7 @@ Payoff:
 
 ### Temptation
 
-The player gets a morally gray opportunity prompt.
+The player gets a morally gray opportunity card.
 
 Payoff:
 
@@ -104,7 +104,7 @@ They cannot:
 
 ### On Mobile / PWA
 
-A phone prompt should feel:
+A phone card should feel:
 
 - immediate
 - sharp
@@ -117,7 +117,7 @@ A player should see:
 - how strong the consequence is
 - whether the GM must still approve fallout
 
-### In Signal Deck
+### In Player Action Cards
 
 The mini-game should appear as:
 
@@ -129,7 +129,7 @@ The mini-game should appear as:
 
 The GM should see:
 
-- prompt source
+- card source
 - recipient reasoning
 - chosen response
 - proposed consequence
@@ -139,7 +139,7 @@ The GM should see:
 
 A good one feels like this:
 
-1. a player gets a tight dramatic prompt
+1. a player gets a tight dramatic card
 2. the choice feels sharp and immediate
 3. the result lands in Passport or faction pressure
 4. the city later reflects that move through rumor or newsroom fallout
@@ -154,13 +154,13 @@ What to avoid:
 
 ## Example Loop
 
-After a high-heat extraction, a player receives a Scramble mini-game through Signal Deck. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.
+After a high-heat extraction, a player receives a Scramble mini-game as a short action card. They choose to burn a favor to reroute a courier instead of going dark. That choice creates a receipt, nudges a faction pressure lane, preserves one standing-order asset, and later lets the newsroom surface show a subtle public-safe consequence instead of exposing the whole private session.
 
 ## What Good Looks Like
 
 Call it ready only when:
 
-1. the prompt is dramatic in under one screen
+1. the card is dramatic in under one screen
 2. the choice is meaningful but bounded
 3. the consequence is receipt-backed
 4. the result can feed Passport, rumor, faction, or newsroom lanes

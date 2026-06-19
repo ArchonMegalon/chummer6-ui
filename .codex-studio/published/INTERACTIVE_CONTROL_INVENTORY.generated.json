@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T20:00:28.940607Z",
+  "generatedAt": "2026-06-19T04:35:14.759103Z",
   "contract_name": "chummer6-ui.interactive_control_inventory",
   "status": "pass",
   "summary": "Standalone interactive controls and main-window interaction routes are inventoried, executable, and fail-closing.",
@@ -59,7 +59,13 @@
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
-      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true,
+      "Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards": true,
+      "Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches": true,
+      "Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions": true,
+      "Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback": true,
+      "Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions": true,
+      "Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow": true
     },
     "blazorKeyboardTests": {
       "SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation": true
@@ -262,7 +268,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (6s 182ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 6s 366ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (5s 821ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 6s 000ms"
       },
       "mainWindowInteractionInventory": {
         "command": [
@@ -273,13 +279,13 @@
           "--no-build",
           "--no-restore",
           "--filter",
-          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks|Name~Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards|Name~Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches|Name~Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions|Name~Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback|Name~Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions|Name~Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow",
           "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (5s 759ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 5s 951ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+12/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (9s 010ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 9s 193ms"
       },
       "blazorKeyboardInventory": {
         "command": [
@@ -296,7 +302,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (642ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 818ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (689ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 871ms"
       },
       "desktopShortcutInventory": {
         "command": [
@@ -313,7 +319,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (443ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 615ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (453ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 632ms"
       }
     },
     "missingFiles": [],
@@ -354,7 +360,7 @@
         "--no-build",
         "--no-restore",
         "--filter",
-        "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+        "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks|Name~Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards|Name~Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches|Name~Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions|Name~Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback|Name~Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions|Name~Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow",
         "--verbosity",
         "minimal"
       ],
@@ -411,8 +417,8 @@
       "-p:NuGetAudit=false"
     ],
     "restoreExitCode": 0,
-    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Core/Chummer.Core.csproj (in 139 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Chummer.Avalonia.csproj (in 69 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Api/Chummer.Api.csproj (in 6 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/Chummer.Hub.Web.csproj (in 5 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 14 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 0.9 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj (in 46 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj (in 8 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 8 ms).",
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:39.64",
+    "restoreOutputTail": "  Determining projects to restore...\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/Chummer.Avalonia.csproj (in 174 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Api/Chummer.Api.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Play.Contracts/Chummer.Play.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/Chummer.Infrastructure.Browser.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Core/Chummer.Core.csproj (in 21 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/Chummer.Rulesets.Hosting.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/Chummer.Infrastructure.csproj (in 14 ms).\n  Restored /docker/chummercomplete/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/Chummer.Rulesets.Sr6.csproj (in 7 ms).\n  Restored /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Tests/Chummer.Tests.csproj (in 49 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/Chummer.Rulesets.Sr5.csproj (in 8 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/Chummer.Rulesets.Sr4.csproj (in 9 ms).\n  Restored /docker/fleet/repos/chummer-media-factory/src/Chummer.Media.Contracts/Chummer.Media.Contracts.csproj (in 1 ms).\n  Restored /docker/chummercomplete/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj (in 2 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Presentation/Chummer.Presentation.csproj (in 3 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/Chummer.Hub.Web.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/Chummer.Desktop.Runtime.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj (in 4 ms).\n  Restored /docker/chummercomplete/chummer-core-engine/Chummer.Application/Chummer.Application.csproj (in 7 ms).",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:30.58",
     "fullInteractiveControlInventory": "pass",
     "mainWindowInteractionInventory": "pass",
     "failureCount": 0,
@@ -453,7 +459,13 @@
       "Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters": true,
       "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load": true,
       "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
-      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true
+      "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks": true,
+      "Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards": true,
+      "Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches": true,
+      "Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions": true,
+      "Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback": true,
+      "Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions": true,
+      "Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow": true
     }
   },
   "keyboardAndTooltipReview": {
@@ -575,7 +587,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+11/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (6s 182ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 6s 366ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+9/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (5s 821ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 6s 000ms"
       },
       "mainWindowInteractionInventory": {
         "command": [
@@ -586,13 +598,13 @@
           "--no-build",
           "--no-restore",
           "--filter",
-          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+          "Name~File_menu_new_character_creates_runtime_workspace|Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive|Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks|Name~Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards|Name~Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches|Name~Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions|Name~Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback|Name~Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions|Name~Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow",
           "--verbosity",
           "minimal"
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (5s 759ms)\nTest run summary: Passed!\n  total: 6\n  failed: 0\n  succeeded: 6\n  skipped: 0\n  duration: 5s 951ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64)(2s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64)(5s)\n[+12/x0/?0] Chummer.Tests.dll (net10.0|x64)(8s)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (9s 010ms)\nTest run summary: Passed!\n  total: 12\n  failed: 0\n  succeeded: 12\n  skipped: 0\n  duration: 9s 193ms"
       },
       "blazorKeyboardInventory": {
         "command": [
@@ -609,7 +621,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (642ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 818ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (689ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 871ms"
       },
       "desktopShortcutInventory": {
         "command": [
@@ -626,7 +638,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (443ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 615ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (453ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 632ms"
       }
     }
   }

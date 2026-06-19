@@ -176,8 +176,34 @@ public class MigrationComplianceTests
 
         StringAssert.Contains(portalScriptText, "RUN_PORTAL_PLAYWRIGHT=\"1\"");
         StringAssert.Contains(portalScriptText, "PLAYWRIGHT_SOFT_FAIL=\"0\"");
+        StringAssert.Contains(portalScriptText, "CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME");
         StringAssert.Contains(portalScriptText, "portal route probe is mandatory for local release proof");
         StringAssert.Contains(portalScriptText, "\"status\": \"passed\" if route_probe_executed else \"failed\"");
+        StringAssert.Contains(portalScriptText, "\"runtime_required\": runtime_required.lower() in {\"1\", \"true\"}");
+        Assert.IsFalse(portalScriptText.Contains("contract_only", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Portal_e2e_fails_fast_when_runtime_probe_is_disabled_for_release_proof()
+    {
+        string repoRoot = Path.GetDirectoryName(FindPath("WORKLIST.md"))
+            ?? throw new DirectoryNotFoundException("Could not resolve repository root.");
+
+        (int exitCode, string output) = RunProcess(
+            GetBashExecutable(),
+            "scripts/e2e-portal.sh",
+            repoRoot,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["CHUMMER_PORTAL_PLAYWRIGHT"] = "0",
+                ["CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME"] = "1",
+                ["CHUMMER_PORTAL_BASE_URL"] = "http://127.0.0.1:9",
+            });
+
+        Assert.AreEqual(2, exitCode);
+        StringAssert.Contains(output, "portal route probe is mandatory for local release proof");
+        Assert.IsFalse(output.Contains("docker compose", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(output.Contains("Timed out waiting", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]
@@ -1685,10 +1711,14 @@ public class MigrationComplianceTests
     {
         string apiProgramPath = FindPath("Chummer.Api", "Program.cs");
         string apiProgramText = File.ReadAllText(apiProgramPath);
+        string apiDockerfilePath = FindPath("Chummer.Api", "Dockerfile");
+        string apiDockerfileText = File.ReadAllText(apiDockerfilePath);
         string serviceRegistrationPath = FindPath("Chummer.Infrastructure", "DependencyInjection", "ServiceCollectionExtensions.cs");
         string serviceRegistrationText = File.ReadAllText(serviceRegistrationPath);
 
         StringAssert.Contains(apiProgramText, "requireContentBundle: true");
+        StringAssert.Contains(apiDockerfileText, "COPY --from=build /src/chummer-presentation/Chummer/data ./data");
+        StringAssert.Contains(apiDockerfileText, "COPY --from=build /src/chummer-presentation/Chummer/lang ./lang");
         StringAssert.Contains(serviceRegistrationText, "CHUMMER_REQUIRE_CONTENT_BUNDLE");
         StringAssert.Contains(serviceRegistrationText, "ValidateContentBundle");
         StringAssert.Contains(serviceRegistrationText, "lifemodules.xml");
@@ -3003,6 +3033,10 @@ public class MigrationComplianceTests
         string migrationLoopText = File.ReadAllText(migrationLoopPath);
         string playwrightScriptPath = FindPath("scripts", "e2e-ui-playwright.cjs");
         string playwrightScriptText = File.ReadAllText(playwrightScriptPath);
+        string blazorDockerfilePath = FindPath("Chummer.Blazor", "Dockerfile");
+        string blazorDockerfileText = File.ReadAllText(blazorDockerfilePath);
+        string dockerComposePath = FindPath("docker-compose.yml");
+        string dockerComposeText = File.ReadAllText(dockerComposePath);
 
         StringAssert.Contains(uiE2eText, "CHUMMER_UI_PLAYWRIGHT");
         StringAssert.Contains(uiE2eText, "CHUMMER_E2E_PLAYWRIGHT_SOFT_FAIL");
@@ -3020,8 +3054,25 @@ public class MigrationComplianceTests
         StringAssert.Contains(playwrightScriptText, "select build method");
         StringAssert.Contains(playwrightScriptText, "select metatype priority");
         StringAssert.Contains(playwrightScriptText, "Playwright Runner");
+        StringAssert.Contains(playwrightScriptText, "SR4 BP Troll Decker");
+        StringAssert.Contains(playwrightScriptText, "WireTusk");
+        StringAssert.Contains(playwrightScriptText, "Troll");
+        StringAssert.Contains(playwrightScriptText, "tab-qualities.qualities");
+        StringAssert.Contains(playwrightScriptText, "quality_add");
+        StringAssert.Contains(playwrightScriptText, "countBodyOccurrences");
+        StringAssert.Contains(playwrightScriptText, "resultMarker: 'First Impression'");
+        StringAssert.Contains(playwrightScriptText, "cyberware_add");
+        StringAssert.Contains(playwrightScriptText, "adept_power_add");
+        StringAssert.Contains(playwrightScriptText, "complex_form_add");
+        StringAssert.Contains(playwrightScriptText, "expectPremiumDialogPosture");
         StringAssert.Contains(playwrightScriptText, "#summaryName");
         StringAssert.Contains(playwrightScriptText, "playwright UI flow completed");
+
+        StringAssert.Contains(dockerComposeText, "dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile");
+        StringAssert.Contains(blazorDockerfileText, "COPY . .");
+        StringAssert.Contains(blazorDockerfileText, "WORKDIR /src/chummer-presentation");
+        StringAssert.Contains(blazorDockerfileText, "RUN dotnet restore Chummer.Blazor/Chummer.Blazor.csproj");
+        StringAssert.Contains(blazorDockerfileText, "RUN dotnet publish Chummer.Blazor/Chummer.Blazor.csproj -c Release -o /app/publish --no-restore");
     }
 
     [TestMethod]
@@ -3044,7 +3095,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(portalScriptText, "PORTAL_LOCAL_PROOF_PATH");
         StringAssert.Contains(portalScriptText, "\"contract_name\": \"chummer6-ui.local_release_proof\"");
         StringAssert.Contains(portalScriptText, "\"proof_routes\": [");
+        StringAssert.Contains(portalScriptText, "\"status\": \"passed\" if route_probe_executed else \"failed\"");
+        StringAssert.Contains(portalScriptText, "\"runtime_required\": runtime_required.lower() in {\"1\", \"true\"}");
         StringAssert.Contains(portalScriptText, "\"route_probe_executed\": route_probe_executed");
+        Assert.IsFalse(portalScriptText.Contains("contract-only local release proof", StringComparison.Ordinal));
+        Assert.IsFalse(portalScriptText.Contains("contract_only", StringComparison.Ordinal));
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks");
         StringAssert.Contains(portalRouteProbeText, "requiredLandingLinks.every(link => text.includes(link))");
         StringAssert.Contains(portalRouteProbeText, "'/downloads'");
@@ -3291,6 +3346,7 @@ public class MigrationComplianceTests
         StringAssert.Contains(deepLinkText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
         Assert.IsFalse(homeText.Contains("class=\"desktop-shell", StringComparison.Ordinal));
         Assert.IsFalse(homeText.Contains("panel-grid", StringComparison.Ordinal));
+        StringAssert.Contains(showcaseText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
     }
 
     [TestMethod]

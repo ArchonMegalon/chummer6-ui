@@ -12,7 +12,7 @@
             <div class="mini-grid">
                 <label>
                     Interruption budget
-                    <input type="range" min="0" max="100" step="5" value="@InterruptionBudget" @oninput="OnBudgetInput" />
+                    <input type="range" aria-label="Interruption budget" min="0" max="100" step="5" value="@InterruptionBudget" @oninput="OnBudgetInput" />
                     <span>@InterruptionBudget · @GetBudgetLabel(InterruptionBudget)</span>
                 </label>
             </div>

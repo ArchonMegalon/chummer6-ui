@@ -245,7 +245,9 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "SR5 Characters");
         StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · main editor");
         StringAssert.Contains(cut.Markup, "Character Summary");
+        Assert.AreEqual("tab-info", cut.Find("button[data-nav-tab='tab-info']").Id);
         Assert.AreEqual("Validate & Rebind", cut.Find(".section-actions .action-button").TextContent.Trim());
+        Assert.AreEqual("tab-info.validate", cut.Find(".section-actions .action-button").GetAttribute("data-workspace-action"));
 
         cut.Find(".navigator .command-button").Click();
         cut.Find(".navigator .mini-btn").Click();
@@ -556,6 +558,35 @@ public sealed class BlazorShellComponentTests
         Assert.HasCount(1, sectionCut.FindAll(".section-table tbody tr"));
         StringAssert.Contains(sectionCut.Markup, "Pistols");
         Assert.IsFalse(sectionCut.Markup.Contains("{\"skills\":1}", StringComparison.Ordinal), "The default section pane must not dump raw JSON payloads into the visible workbench.");
+    }
+
+    [TestMethod]
+    public void SectionPane_renders_quality_quick_action_and_invokes_ui_control()
+    {
+        using var context = new BunitContext();
+
+        CharacterWorkspaceId workspaceId = new("ws-quality");
+        OpenWorkspaceState openWorkspace = new(workspaceId, "Quality Runner", "QR", DateTimeOffset.UtcNow, RulesetDefaults.Sr4);
+        string? invokedControlId = null;
+        CharacterOverviewState state = CharacterOverviewState.Empty with
+        {
+            WorkspaceId = workspaceId,
+            OpenWorkspaces = [openWorkspace],
+            ActiveSectionId = "qualities",
+            ActiveSectionJson = "{\"qualities\":[]}",
+            ActiveSectionRows = [new SectionRowState("qualities", "No entries")]
+        };
+
+        IRenderedComponent<SectionPane> cut = context.Render<SectionPane>(parameters => parameters
+            .Add(component => component.State, state)
+            .Add(component => component.ExecuteUiControlRequested, (Action<string>)(controlId => invokedControlId = controlId)));
+
+        AngleSharp.Dom.IElement addQuality = cut.Find("button[data-section-quick-action='quality_add']");
+        Assert.AreEqual("Add Quality", addQuality.TextContent.Trim());
+
+        addQuality.Click();
+
+        Assert.AreEqual("quality_add", invokedControlId);
     }
 
     [TestMethod]
@@ -1357,7 +1388,7 @@ public sealed class BlazorShellComponentTests
         cut.Find("[data-generated-asset-tab='asset-3']").Click();
         cut.WaitForAssertion(() =>
         {
-            StringAssert.Contains(cut.Markup, "Route-video viewer");
+            StringAssert.Contains(cut.Markup, "Video preview");
             Assert.HasCount(2, cut.FindAll("[data-generated-asset-video-card]"));
             StringAssert.Contains(cut.Markup, "Sixth World News Card");
         });
@@ -1716,7 +1747,7 @@ public sealed class BlazorShellComponentTests
         cut.Find("[data-generated-asset-tab='asset-news-01']").Click();
         cut.WaitForAssertion(() =>
         {
-            StringAssert.Contains(cut.Markup, "Route-video viewer");
+            StringAssert.Contains(cut.Markup, "Video preview");
             Assert.HasCount(2, cut.FindAll("[data-generated-asset-video-card]"));
             StringAssert.Contains(cut.Markup, "Sixth World News Card");
         });
@@ -1823,13 +1854,13 @@ public sealed class BlazorShellComponentTests
         IElement closeButton = cut.Find("#dialogClose");
 
         Assert.IsTrue(readonlyToken.HasAttribute("readonly"));
-        Assert.AreEqual("Name: enter name", nameInput.GetAttribute("title"));
+        Assert.IsTrue(string.IsNullOrEmpty(nameInput.GetAttribute("title")));
         Assert.AreEqual("Name", nameInput.GetAttribute("aria-label"));
         StringAssert.Contains(nameInput.GetAttribute("aria-description"), "Editable text field");
-        Assert.AreEqual("Notes: enter notes", notesInput.GetAttribute("title"));
+        Assert.IsTrue(string.IsNullOrEmpty(notesInput.GetAttribute("title")));
         Assert.AreEqual("Notes", notesInput.GetAttribute("aria-label"));
         StringAssert.Contains(notesInput.GetAttribute("aria-description"), "Editable multi-line text field");
-        Assert.AreEqual("House Rules", checkbox.GetAttribute("title"));
+        Assert.IsTrue(string.IsNullOrEmpty(checkbox.GetAttribute("title")));
         Assert.AreEqual("House Rules", checkbox.GetAttribute("aria-label"));
         StringAssert.Contains(checkbox.GetAttribute("aria-description"), "Editable checkbox");
         Assert.AreEqual("Save", saveButton.GetAttribute("title"));

@@ -38,6 +38,12 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(scriptText, "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load");
         StringAssert.Contains(scriptText, "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end");
         StringAssert.Contains(scriptText, "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks");
+        StringAssert.Contains(scriptText, "Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards");
+        StringAssert.Contains(scriptText, "Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches");
+        StringAssert.Contains(scriptText, "Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions");
+        StringAssert.Contains(scriptText, "Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback");
+        StringAssert.Contains(scriptText, "Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions");
+        StringAssert.Contains(scriptText, "Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow");
         StringAssert.Contains(scriptText, "does not preserve the expected empty-or-four codex root labels posture");
         StringAssert.Contains(scriptText, "reports no codex root labels without the expected empty-workspace marker");
         StringAssert.Contains(scriptText, "\"Workspace: none (open: 0, n/a)\"");
@@ -118,6 +124,12 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(receiptText, "\"Workspace_strip_quick_start_hides_after_runtime_backed_runner_load\": true");
         StringAssert.Contains(receiptText, "\"Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end\": true");
         StringAssert.Contains(receiptText, "\"Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks\": true");
+        StringAssert.Contains(receiptText, "\"Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards\": true");
+        StringAssert.Contains(receiptText, "\"Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches\": true");
+        StringAssert.Contains(receiptText, "\"Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions\": true");
+        StringAssert.Contains(receiptText, "\"Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback\": true");
+        StringAssert.Contains(receiptText, "\"Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions\": true");
+        StringAssert.Contains(receiptText, "\"Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow\": true");
         StringAssert.Contains(receiptText, "Name~Standalone_toolstrip_buttons_raise_expected_events");
         StringAssert.Contains(receiptText, "Name~Menu_click_surfaces_visible_command_choices_in_shell_using_runtime_backed_presenters");
         StringAssert.Contains(receiptText, "Name~Keyboard_shortcuts_resolve_to_the_same_shell_commands");
@@ -128,6 +140,9 @@ public sealed class InteractiveControlInventoryComplianceTests
         StringAssert.Contains(receiptText, "Name~Settings_click_opens_interactive_inline_dialog_and_window_stays_responsive");
         StringAssert.Contains(receiptText, "Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load");
         StringAssert.Contains(receiptText, "Name~Load_demo_runner_button_restores_workspace_using_runtime_backed_presenters");
+        StringAssert.Contains(receiptText, "Name~Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards");
+        StringAssert.Contains(receiptText, "Name~Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback");
+        StringAssert.Contains(receiptText, "Name~Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow");
         StringAssert.Contains(receiptText, "\"routeFamilies\": [");
         StringAssert.Contains(receiptText, "\"rulesetLanes\": [");
         StringAssert.Contains(receiptText, "\"section-attributes-editor\"");

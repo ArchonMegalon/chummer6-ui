@@ -140,6 +140,8 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         "tab-magician",
         "tab-combat",
         "tab-gear",
+        "tab-cyberware",
+        "tab-adept",
         "tab-contacts",
         "tab-rules",
         "tab-notes"
@@ -159,9 +161,11 @@ public sealed class CatalogOnlyRulesetShellCatalogResolverTests
         new("tab-info", ["tab-info.summary", "tab-info.validate", "tab-info.profile", "tab-info.rules", "tab-info.attributes"]),
         new("tab-skills", ["tab-skills.skills"]),
         new("tab-qualities", ["tab-qualities.qualities"]),
-        new("tab-magician", ["tab-magician.spells"]),
-        new("tab-combat", ["tab-combat.weapons"]),
-        new("tab-gear", ["tab-gear.inventory"]),
+        new("tab-magician", ["tab-magician.spells", "tab-magician.spirits", "tab-magician.critterpowers"]),
+        new("tab-combat", ["tab-combat.weapons", "tab-combat.armors"]),
+        new("tab-gear", ["tab-gear.inventory", "tab-gear.drugs", "tab-gear.vehicles"]),
+        new("tab-cyberware", ["tab-cyberware.cyberwares"]),
+        new("tab-adept", ["tab-adept.powers", "tab-adept.complexforms", "tab-adept.aiprograms", "tab-adept.metamagics", "tab-adept.initiationgrades"]),
         new("tab-contacts", ["tab-contacts.contacts"]),
         new("tab-rules", ["tab-rules.rules"]),
         new("tab-notes", ["tab-notes.metadata"])

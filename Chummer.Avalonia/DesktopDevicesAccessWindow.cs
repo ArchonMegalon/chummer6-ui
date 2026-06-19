@@ -402,24 +402,12 @@ internal sealed class DesktopDevicesAccessWindow : Window
         ];
 
     private IReadOnlyList<Button> CreateClaimsActions()
-    {
-        List<Button> actions =
+        =>
         [
+            CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.login_website", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.open_downloads", _preferences.Language), OpenDownloadsAsync),
             CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.copy_install_id", _preferences.Language), CopyInstallIdAsync)
         ];
-
-        if (LatestPendingClaim is not null || !string.IsNullOrWhiteSpace(_installState.LastClaimCode))
-        {
-            actions.Insert(0, CreateButton(S("desktop.devices.button.use_latest_claim"), OpenLatestInstallHandoffAsync, isPrimary: true));
-        }
-        else
-        {
-            actions.Insert(0, CreateButton(DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.button.link_copy", _preferences.Language), OpenInstallLinkingAsync, isPrimary: true));
-        }
-
-        return actions;
-    }
 
     private IReadOnlyList<Button> CreateAccessActions()
         =>

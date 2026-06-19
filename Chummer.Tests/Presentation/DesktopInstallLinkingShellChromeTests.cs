@@ -21,7 +21,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
             DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", DesktopLocalizationCatalog.DefaultLanguage),
             CreateInstallState(status: "guest"));
 
-        Assert.AreEqual("Link this copy", title);
+        Assert.AreEqual("Claim your copy", title);
     }
 
     [TestMethod]
@@ -83,14 +83,14 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
-    public void Windows_install_link_gate_copy_stays_fail_closed_until_user_links_in_browser()
+    public void Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online()
     {
         string formPath = FindPath("Chummer", "Forms", "DesktopInstallLinkingGateForm.cs");
         string formText = File.ReadAllText(formPath);
 
-        StringAssert.Contains(formText, "I'm not linked. Please link and log in on the website.");
-        StringAssert.Contains(formText, "Log in on the website");
-        StringAssert.Contains(formText, "This install is not linked to a Chummer account yet.");
+        StringAssert.Contains(formText, "This copy is not claimed yet.");
+        StringAssert.Contains(formText, "Claim your copy");
+        StringAssert.Contains(formText, "This downloaded copy is not linked to a Chummer account yet.");
         Assert.IsFalse(
             formText.Contains("dashboard", StringComparison.OrdinalIgnoreCase),
             "The unlinked Windows gate must not suggest that the desktop continues into dashboard or workbench content before linking.");
@@ -170,6 +170,12 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(text, "out string? failureReason");
         StringAssert.Contains(text, "ShowManualBrowserFallbackAsync(loginUrl, failureReason)");
         StringAssert.Contains(text, "desktop.install_link.button.copy_login_url");
+        StringAssert.Contains(text, "private bool _browserFallbackVisible;");
+        StringAssert.Contains(text, "_copyLoginUrlButton.IsVisible = !claimed && _browserFallbackVisible;");
+        StringAssert.Contains(text, "_claimCodeEntryRow.IsVisible = !claimed && _browserFallbackVisible;");
+        Assert.IsFalse(
+            text.Contains("_claimCodeEntryRow.IsVisible = !claimed;", StringComparison.Ordinal),
+            "Fallback claim-code controls must not be visible during the normal browser claim path.");
         StringAssert.Contains(text, "PollForClaimedInstallAsync");
         StringAssert.Contains(text, "DesktopInstallLinkingRuntime.LoadOrCreateState(_state.HeadId)");
     }
@@ -192,11 +198,15 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.visible_choice");
         StringAssert.Contains(localizationSource, "desktop.install_link.preference.hidden_choice");
         StringAssert.Contains(localizationSource, "Use assisted features");
-        StringAssert.Contains(localizationSource, "Keep the interface manual");
+        StringAssert.Contains(localizationSource, "Hide assisted features");
+        Assert.IsFalse(
+            localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
+            "The first-run preference should describe the user-visible result, not internal manual mode.");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
         StringAssert.Contains(localizationSource, "Account and Devices");
         StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
-        StringAssert.Contains(localizationSource, "desktop.devices.button.use_latest_claim");
+        StringAssert.Contains(localizationSource, "Claim your copy");
+        StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "desktop.install_link.button.login_website");
         StringAssert.Contains(File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs")), "DevicesAccessGuidedToolsHiddenOption");
         StringAssert.Contains(localizationSource, "desktop.install_link.status.guided_tools_hidden");
         StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
@@ -220,7 +230,7 @@ public sealed class DesktopInstallLinkingShellChromeTests
         StringAssert.Contains(installWindowSource, "PromptReason: \"desktop_help_login_video\"");
         StringAssert.Contains(installWindowSource, "loginVideoPreview: true");
         StringAssert.Contains(installWindowSource, "_allowGuestClose = loginVideoPreview;");
-        StringAssert.Contains(installWindowSource, "The browser will not open unless you press the login button.");
+        StringAssert.Contains(installWindowSource, "The browser will not open unless you press the claim button.");
         StringAssert.Contains(installWindowSource, "_exitButton.Content = \"Close\";");
     }
 

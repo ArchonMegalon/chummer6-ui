@@ -32,12 +32,10 @@
                 }
                 @foreach (DesktopDialogField field in dialog.Fields.Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal)))
                 {
-                    <label class="dialog-field classic-dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))"
-                           title="@field.ToolTip">
+                    <label class="dialog-field classic-dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))">
                         @if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
                         {
                             <input type="checkbox"
-                                   title="@field.ToolTip"
                                    aria-label="@field.AccessibleName"
                                    aria-description="@field.HelpText"
                                    checked="@IsDialogCheckboxChecked(field)"
@@ -51,7 +49,6 @@
                             @if (field.IsReadOnly && !string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Default, StringComparison.Ordinal))
                             {
                                 <div class="@BuildDialogVisualClass(field)"
-                                     title="@field.ToolTip"
                                      aria-label="@field.AccessibleName"
                                      aria-description="@field.HelpText">
                                     @if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tabs, StringComparison.Ordinal))
@@ -107,7 +104,6 @@
                             else
                             {
                                 <textarea class="@BuildDialogInputClass(field)"
-                                          title="@field.ToolTip"
                                           aria-label="@field.AccessibleName"
                                           aria-description="@field.HelpText"
                                           value="@field.Value"
@@ -120,7 +116,6 @@
                         {
                             <span class="dialog-label">@field.Label</span>
                             <input class="@BuildDialogInputClass(field)"
-                                   title="@field.ToolTip"
                                    aria-label="@field.AccessibleName"
                                    aria-description="@field.HelpText"
                                    type="@field.InputType"

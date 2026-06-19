@@ -43,8 +43,8 @@ public static class RulesetUiDirectiveCatalog
         WorkspaceFollowThroughLabel: "Open character details",
         NextActionPrefix: "Next step",
         DefaultSectionSummary: "Select or restore a grounded ruleset before you trust rules, build, or export depth.",
-        BuildLabSectionSummary: "Build stays generic until a grounded ruleset drives creation, browsing, and runtime compatibility.",
-        RulesSectionSummary: "Rules and validation stay generic until a grounded ruleset restores the matching runtime and capability diagnostics.",
+        BuildLabSectionSummary: "Choose a ruleset to unlock the matching builder, browser, and compatibility checks.",
+        RulesSectionSummary: "Choose a ruleset to load the matching rules checks and diagnostics.",
         UngroundedHomeSummary: "the first restored character still needs a real runtime fingerprint before build, explain, and export depth are trustworthy.",
         PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but the rules-aware surface still needs grounded section state before it is trustworthy.",
         GroundedHomeSummary: "shared-shell posture only; restore a grounded ruleset before claiming per-ruleset completion.",
@@ -406,9 +406,19 @@ public static class RulesetUiDirectiveCatalog
 
     public static bool IsLoadedRunnerVisibleNavigationTab(string? tabId)
     {
-        string? normalizedTabId = RulesetDefaults.NormalizeOptional(tabId);
+        string? normalizedTabId = NormalizeShellId(tabId);
         return normalizedTabId is not null
             && !CatalogOnlyLoadedRunnerTabIds.Contains(normalizedTabId);
+    }
+
+    private static string? NormalizeShellId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim().ToLowerInvariant();
     }
 
     public static string FormatWorkspaceActionLabel(string? rulesetId, string? actionId, string? targetId, string fallbackLabel)

@@ -42,6 +42,12 @@ MAIN_WINDOW_TEST_MARKERS = [
     "Workspace_strip_quick_start_hides_after_runtime_backed_runner_load",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
     "Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks",
+    "Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards",
+    "Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches",
+    "Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions",
+    "Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback",
+    "Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions",
+    "Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow",
 ]
 
 BLAZOR_TEST_MARKERS = [
@@ -76,6 +82,12 @@ MAIN_WINDOW_FILTER = (
     "|Name~Workspace_strip_quick_start_hides_after_runtime_backed_runner_load"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
     "|Name~Runtime_backed_ruleset_switch_preserves_sr4_sr5_and_sr6_codex_landmarks"
+    "|Name~Horizons_shell_entry_opens_native_hub_with_filterable_runtime_backed_cards"
+    "|Name~Horizons_hub_launches_native_karma_forge_alice_run_control_and_black_ledger_workbenches"
+    "|Name~Horizons_core_native_workbenches_surface_runtime_backed_detail_interactions"
+    "|Name~Horizons_hub_launches_remaining_native_workbenches_without_browser_only_fallback"
+    "|Name~Horizons_remaining_native_workbenches_surface_runtime_backed_detail_interactions"
+    "|Name~Alice_supports_blank_state_build_help_and_gm_steered_origin_dossier_flow"
 )
 
 BLAZOR_KEYBOARD_FILTER = "Name~SectionPane_renders_browse_projection_with_saved_filters_and_keyboard_navigation"

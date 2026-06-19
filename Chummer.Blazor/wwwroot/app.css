@@ -66,6 +66,7 @@ button {
     color: #111111;
     border-radius: 0;
     cursor: pointer;
+    min-height: 24px;
     padding: 0.15rem 0.45rem;
 }
 
@@ -103,13 +104,13 @@ button:disabled {
     padding: 0;
     border-radius: 0;
     box-shadow: none;
-    min-height: 22px;
+    min-height: 26px;
 }
 
 .menu-bar.classic-menu-bar {
     background: linear-gradient(180deg, #e9e6dd 0%, #d4d0c8 100%);
     border-color: var(--ui-kit-shell-border-strong);
-    min-height: 21px;
+    min-height: 26px;
 }
 
 .menu-btn {
@@ -117,13 +118,13 @@ button:disabled {
     border-right: 1px solid transparent;
     background: transparent;
     border-radius: 0;
-    min-height: 20px;
-    padding: 0.05rem 0.4rem;
+    min-height: 24px;
+    padding: 0.15rem 0.45rem;
 }
 
 .menu-btn.classic-menu-button {
-    min-height: 19px;
-    padding: 0.05rem 0.45rem;
+    min-height: 24px;
+    padding: 0.15rem 0.5rem;
 }
 
 .menu-btn.active {
@@ -172,7 +173,7 @@ button:disabled {
     padding: 0.05rem 0.15rem;
     border-radius: 0;
     box-shadow: none;
-    min-height: 22px;
+    min-height: 28px;
 }
 
 .tool-strip.classic-tool-strip {
@@ -190,15 +191,15 @@ button:disabled {
 }
 
 .tool-btn {
-    min-height: 20px;
-    padding: 0.05rem 0.35rem;
+    min-height: 24px;
+    padding: 0.12rem 0.42rem;
     border-radius: 0;
 }
 
 .tool-btn.classic-tool-button {
-    min-height: 20px;
+    min-height: 24px;
     margin-right: 0.12rem;
-    padding: 0.05rem 0.38rem;
+    padding: 0.12rem 0.45rem;
 }
 
 .tool-btn.selected {
@@ -210,7 +211,7 @@ button:disabled {
     background: var(--ui-kit-shell-surface-muted);
     border: 1px solid var(--ui-kit-shell-border);
     padding: 0.05rem 0.15rem;
-    min-height: 22px;
+    min-height: 28px;
     display: flex;
     align-items: center;
     gap: 0.1rem;
@@ -222,7 +223,8 @@ button:disabled {
     border: 1px solid var(--ui-kit-shell-border-strong);
     background: var(--ui-kit-button-surface);
     border-radius: 0;
-    padding: 0.05rem 0.35rem;
+    min-height: 24px;
+    padding: 0.12rem 0.4rem;
 }
 
 .mdi-doc-wrap {
@@ -235,7 +237,9 @@ button:disabled {
     border: 1px solid var(--ui-kit-shell-border-strong);
     background: var(--ui-kit-button-surface);
     border-radius: 0;
-    padding: 0.05rem 0.25rem;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0.12rem 0.25rem;
     font-size: 0.75rem;
 }
 
@@ -1045,6 +1049,7 @@ button:disabled {
     border: 1px solid var(--ui-kit-shell-border-strong);
     border-radius: 0;
     background: #fff;
+    min-height: 24px;
     padding: 0.22rem 0.25rem;
 }
 
@@ -1095,6 +1100,13 @@ button:disabled {
     gap: 0.3rem;
 }
 
+.section-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin: 0.35rem 0 0.5rem;
+}
+
 .controls .mini-grid {
     display: grid;
 }
@@ -1107,6 +1119,11 @@ button:disabled {
     text-decoration: none;
 }
 
+.mini-btn.primary {
+    background: var(--ui-kit-shell-surface-emphasis);
+    border-color: var(--ui-kit-focus-ring);
+}
+
 .button:focus-visible,
 .mini-btn:focus-visible,
 .browse-result-button:focus-visible,
@@ -1117,6 +1134,16 @@ textarea:focus-visible {
     outline: 2px solid var(--ui-kit-focus-ring);
     outline-offset: 2px;
     box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18);
+}
+
+input[type="range"] {
+    min-height: 24px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .summary-grid {
@@ -1145,6 +1172,7 @@ textarea:focus-visible {
     border: 1px solid var(--ui-kit-shell-border-strong);
     border-radius: 0;
     background: #fff;
+    min-height: 24px;
     padding: 0.22rem 0.25rem;
 }
 
@@ -1612,9 +1640,9 @@ textarea:focus-visible {
 }
 
 .dialog-close {
-    min-height: 20px;
+    min-height: 24px;
     min-width: 24px;
-    padding: 0.05rem 0.35rem;
+    padding: 0.12rem 0.35rem;
 }
 
 .dialog-note {
@@ -1632,7 +1660,14 @@ textarea:focus-visible {
 
 .dialog-field--checkbox {
     grid-template-columns: auto 1fr;
-    gap: 0.25rem;
+    column-gap: 0.55rem;
+    row-gap: 0.25rem;
+    align-items: center;
+}
+
+.dialog-field--checkbox input[type="checkbox"],
+.dialog-field--checkbox input[type="radio"] {
+    margin: 0;
 }
 
 .dialog-field--full {
@@ -1642,6 +1677,17 @@ textarea:focus-visible {
 .dialog-field--left,
 .dialog-field--right {
     grid-column: span 1;
+}
+
+.dialog-field--list,
+.dialog-field--tree,
+.dialog-field--grid,
+.dialog-field--detail,
+.dialog-field--summary,
+.dialog-field--snippet,
+.dialog-field--image,
+.dialog-field--tabs {
+    grid-column: 1 / -1;
 }
 
 .dialog-label {
@@ -1668,6 +1714,12 @@ textarea:focus-visible {
 
 .dialog-input {
     min-width: 0;
+}
+
+.dialog-visual {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
 }
 
 .dialog-input--list,
@@ -1723,13 +1775,15 @@ textarea:focus-visible {
 .dialog-grid {
     display: grid;
     gap: 0.25rem;
+    min-width: 0;
 }
 
 .dialog-grid-row {
     display: grid;
-    grid-template-columns: 10rem minmax(0, 1fr);
+    grid-template-columns: minmax(7rem, 0.36fr) minmax(0, 1fr);
     gap: 0.35rem 0.55rem;
     align-items: start;
+    min-width: 0;
 }
 
 .dialog-grid-key {
@@ -1738,6 +1792,7 @@ textarea:focus-visible {
 
 .dialog-grid-value {
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .dialog-snippet {

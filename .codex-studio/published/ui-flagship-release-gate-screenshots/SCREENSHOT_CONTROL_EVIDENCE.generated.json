@@ -1,5 +1,5 @@
-﻿{
-  "generatedAt": "2026-06-19T01:30:51.0834960Z",
+{
+  "generatedAt": "2026-06-19T07:19:11.5454739Z",
   "authority": {
     "visualBaseline": "Chummer5a",
     "releaseAuthorityPlatform": "windows",
@@ -147,10 +147,9 @@
         "56-horizon-anarchy-light.png",
         "57-horizon-ghostwire-light.png",
         "58-horizon-ready-for-tonight-light.png",
-        "59-horizon-onramp-light.png",
         "60-horizon-knowledge-fabric-light.png"
       ],
-      "screenshotCount": 20
+      "screenshotCount": 19
     }
   ],
   "entries": [
@@ -242,7 +241,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -897,7 +896,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -950,10 +949,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:43Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -1017,7 +1016,7 @@
         "Grouped by ruleset",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 01:30:43Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -1120,7 +1119,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -1793,7 +1792,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -1846,10 +1845,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:43Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -1914,7 +1913,7 @@
         "Menu \u0027file\u0027 opened.",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 01:30:43Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -2048,7 +2047,7 @@
           "Text": "Character: none",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -2928,7 +2927,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -3017,10 +3016,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:43Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -3102,7 +3101,7 @@
         "ClassicPortLineItem { Label = Status, Detail = No global settings are currently loaded. }",
         "Character: none",
         "Service: online",
-        "Time: 2026-06-19 01:30:43Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -3223,7 +3222,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -4553,7 +4552,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -4606,10 +4605,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -4733,7 +4732,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -4857,7 +4856,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -6106,7 +6105,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -6159,10 +6158,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -6262,7 +6261,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -6388,7 +6387,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -7628,7 +7627,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -7681,10 +7680,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -7783,7 +7782,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -7907,7 +7906,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -9147,7 +9146,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -9200,10 +9199,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -9302,7 +9301,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -9426,7 +9425,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -10666,7 +10665,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -10719,10 +10718,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -10821,7 +10820,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -10945,7 +10944,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -12185,7 +12184,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -12238,10 +12237,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -12340,7 +12339,7 @@
         "Add Vehicle",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -12466,7 +12465,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -13706,7 +13705,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -13759,10 +13758,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -13860,7 +13859,7 @@
         "Add Contact",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -13986,7 +13985,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -15226,7 +15225,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -15279,10 +15278,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -15381,7 +15380,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -15505,7 +15504,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -16745,7 +16744,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -16798,10 +16797,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:08Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -16899,7 +16898,7 @@
         "Add Spell",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -17023,7 +17022,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -18263,7 +18262,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -18316,10 +18315,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:08Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -18418,7 +18417,7 @@
         "Add Program",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -18542,7 +18541,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 315,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -19782,7 +19781,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 361,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -19835,10 +19834,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:47Z",
-          "X": 468,
+          "Text": "Time: 2026-06-19 07:19:08Z",
+          "X": 469,
           "Y": 766,
-          "Width": 150,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -19937,7 +19936,7 @@
         "Add Initiation",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:47Z",
+        "Time: 2026-06-19 07:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -20171,7 +20170,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -22032,7 +22031,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -22085,10 +22084,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:48Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:08Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -22180,7 +22179,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:48Z",
+        "Time: 2026-06-19 07:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -22412,7 +22411,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -24273,7 +24272,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -24326,10 +24325,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:48Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:08Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -24421,7 +24420,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:48Z",
+        "Time: 2026-06-19 07:19:08Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -24653,7 +24652,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -26514,7 +26513,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -26567,10 +26566,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:48Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:09Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -26662,7 +26661,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:48Z",
+        "Time: 2026-06-19 07:19:09Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -26896,7 +26895,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -28775,7 +28774,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -28828,10 +28827,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:48Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:09Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -28924,7 +28923,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:48Z",
+        "Time: 2026-06-19 07:19:09Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -29059,7 +29058,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -30407,7 +30406,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -30460,10 +30459,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -30588,7 +30587,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -30722,7 +30721,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -31971,7 +31970,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -32024,10 +32023,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -32127,7 +32126,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -32253,7 +32252,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -33502,7 +33501,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -33555,10 +33554,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -33658,7 +33657,7 @@
         "Add Skill",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -33782,7 +33781,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -35031,7 +35030,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -35084,10 +35083,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -35187,7 +35186,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -35311,7 +35310,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -36560,7 +36559,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -36613,10 +36612,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -36716,7 +36715,7 @@
         "Add Quality",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -36847,7 +36846,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -38186,7 +38185,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -38239,10 +38238,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -38350,7 +38349,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -38486,7 +38485,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -39825,7 +39824,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -39878,10 +39877,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -39989,7 +39988,7 @@
         "Review Bounded Follow-up",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -40118,7 +40117,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -41358,7 +41357,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -41411,10 +41410,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:05Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -41513,7 +41512,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:05Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -41637,7 +41636,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -42877,7 +42876,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -42930,10 +42929,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -43032,7 +43031,7 @@
         "Add Weapon",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -43156,7 +43155,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -44396,7 +44395,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -44449,10 +44448,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -44551,7 +44550,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -44675,7 +44674,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -45915,7 +45914,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -45968,10 +45967,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -46070,7 +46069,7 @@
         "Add Armor",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -46194,7 +46193,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -47434,7 +47433,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -47487,10 +47486,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:45Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -47589,7 +47588,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:45Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -47713,7 +47712,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -48953,7 +48952,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -49006,10 +49005,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -49107,7 +49106,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -49231,7 +49230,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -50471,7 +50470,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -50524,10 +50523,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -50625,7 +50624,7 @@
         "Add Adept Power",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -50749,7 +50748,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -51998,7 +51997,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -52051,10 +52050,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:06Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -52154,7 +52153,7 @@
         "Add Complex Form",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:06Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -52275,7 +52274,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -53479,7 +53478,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -53532,10 +53531,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -53633,7 +53632,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -53752,7 +53751,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -54956,7 +54955,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -55009,10 +55008,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -55110,7 +55109,7 @@
         "Ready for a flagship shell smoke pass",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -55233,7 +55232,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 315,
           "Height": 15
         },
         {
@@ -56563,7 +56562,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 361,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -56616,10 +56615,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:44Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:04Z",
+          "X": 468,
           "Y": 766,
-          "Width": 151,
+          "Width": 150,
           "Height": 14
         },
         {
@@ -56743,7 +56742,7 @@
         "Add Cyberware",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:44Z",
+        "Time: 2026-06-19 07:19:04Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -56867,7 +56866,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -58107,7 +58106,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -58160,10 +58159,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:46Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:07Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -58262,7 +58261,7 @@
         "Add Entry",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:46Z",
+        "Time: 2026-06-19 07:19:07Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [],
@@ -58498,7 +58497,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -60377,7 +60376,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -60430,10 +60429,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:48Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:09Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -60526,7 +60525,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:48Z",
+        "Time: 2026-06-19 07:19:09Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -60770,7 +60769,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -62649,7 +62648,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -62702,10 +62701,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:49Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:09Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -62798,7 +62797,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:49Z",
+        "Time: 2026-06-19 07:19:09Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -63042,7 +63041,7 @@
           "Text": "Character: loaded",
           "X": 25,
           "Y": 765,
-          "Width": 314,
+          "Width": 316,
           "Height": 15
         },
         {
@@ -64921,7 +64920,7 @@
           "Name": "ServiceStateText",
           "ControlType": "TextBlock",
           "Text": "Service: online",
-          "X": 360,
+          "X": 362,
           "Y": 766,
           "Width": 77,
           "Height": 14
@@ -64974,10 +64973,10 @@
         {
           "Name": "TimeStateText",
           "ControlType": "TextBlock",
-          "Text": "Time: 2026-06-19 01:30:49Z",
-          "X": 467,
+          "Text": "Time: 2026-06-19 07:19:09Z",
+          "X": 469,
           "Y": 766,
-          "Width": 151,
+          "Width": 149,
           "Height": 14
         },
         {
@@ -65070,7 +65069,7 @@
         "REA",
         "Character: loaded",
         "Service: online",
-        "Time: 2026-06-19 01:30:49Z",
+        "Time: 2026-06-19 07:19:09Z",
         "Ruleset: Shadowrun 5 .chum5 | Workflows: 0 defs / 0 surfaces | Prefs: 100%/classic/en-us"
       ],
       "visibleMenuCommandIds": [
@@ -65098,7 +65097,7 @@
     {
       "screenshot": "41-horizons-hub-light.png",
       "theme": "Light",
-      "dialogTitle": "Horizons",
+      "dialogTitle": "Workbenches",
       "dialogMessage": "",
       "dialogFieldLabels": [],
       "dialogFieldIds": [],
@@ -65139,7 +65138,6 @@
         "HorizonsOpenWorkbench_knowledge_fabric",
         "HorizonsOpenWorkbench_local_co_processor",
         "HorizonsOpenWorkbench_nexus_pan",
-        "HorizonsOpenWorkbench_onramp",
         "HorizonsOpenWorkbench_quicksilver",
         "HorizonsOpenWorkbench_ready_for_tonight",
         "HorizonsOpenWorkbench_run_control",
@@ -65158,7 +65156,6 @@
         "HorizonsPrimaryRoute_knowledge_fabric",
         "HorizonsPrimaryRoute_local_co_processor",
         "HorizonsPrimaryRoute_nexus_pan",
-        "HorizonsPrimaryRoute_onramp",
         "HorizonsPrimaryRoute_quicksilver",
         "HorizonsPrimaryRoute_ready_for_tonight",
         "HorizonsPrimaryRoute_run_control",
@@ -65177,7 +65174,6 @@
         "HorizonsSecondaryRoute_knowledge_fabric",
         "HorizonsSecondaryRoute_local_co_processor",
         "HorizonsSecondaryRoute_nexus_pan",
-        "HorizonsSecondaryRoute_onramp",
         "HorizonsSecondaryRoute_quicksilver",
         "HorizonsSecondaryRoute_ready_for_tonight",
         "HorizonsSecondaryRoute_run_control",
@@ -65195,7 +65191,6 @@
         "HorizonsTertiaryRoute_community_hub",
         "HorizonsTertiaryRoute_ghostwire",
         "HorizonsTertiaryRoute_knowledge_fabric",
-        "HorizonsTertiaryRoute_onramp",
         "HorizonsTertiaryRoute_ready_for_tonight",
         "HorizonsTertiaryRoute_table_pulse",
         "PART_BorderElement",
@@ -65249,7 +65244,7 @@
           "X": 16,
           "Y": 207,
           "Width": 888,
-          "Height": 2932
+          "Height": 2792
         },
         {
           "Name": "HorizonsCreatePackage_karma_forge",
@@ -65263,7 +65258,7 @@
         {
           "Name": "HorizonsFilterStatusText",
           "ControlType": "TextBlock",
-          "Text": "Showing 19 shipped horizon lane(s). Native workbenches stay first whenever the client has a governed desktop surface.",
+          "Text": "Showing 18 product area(s). Native workbenches stay first whenever the client has a governed desktop surface.",
           "X": 16,
           "Y": 177,
           "Width": 888,
@@ -65301,7 +65296,7 @@
           "ControlType": "Button",
           "Text": "Open Ghostwire",
           "X": 302,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 122,
           "Height": 32
         },
@@ -65310,7 +65305,7 @@
           "ControlType": "Button",
           "Text": "Open Knowledge Fabric",
           "X": 340,
-          "Y": 1016,
+          "Y": 876,
           "Width": 169,
           "Height": 32
         },
@@ -65319,7 +65314,7 @@
           "ControlType": "Button",
           "Text": "Open publication desk",
           "X": 164,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 160,
           "Height": 32
         },
@@ -65328,7 +65323,7 @@
           "ControlType": "Button",
           "Text": "Open publication desk",
           "X": 164,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 160,
           "Height": 32
         },
@@ -65337,7 +65332,7 @@
           "ControlType": "Button",
           "Text": "Open Table Pulse",
           "X": 164,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 130,
           "Height": 32
         },
@@ -65346,7 +65341,7 @@
           "ControlType": "Button",
           "Text": "Open Table Pulse",
           "X": 164,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 130,
           "Height": 32
         },
@@ -65355,7 +65350,7 @@
           "ControlType": "Button",
           "Text": "Open Ready for Tonight",
           "X": 164,
-          "Y": 1016,
+          "Y": 876,
           "Width": 168,
           "Height": 32
         },
@@ -65364,7 +65359,7 @@
           "ControlType": "Button",
           "Text": "Open workspace desk",
           "X": 332,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 159,
           "Height": 32
         },
@@ -65382,7 +65377,7 @@
           "ControlType": "Button",
           "Text": "Open workspace desk",
           "X": 302,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 159,
           "Height": 32
         },
@@ -65391,7 +65386,7 @@
           "ControlType": "Button",
           "Text": "Open workspace desk",
           "X": 332,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 159,
           "Height": 32
         },
@@ -65409,7 +65404,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1016,
+          "Y": 876,
           "Width": 127,
           "Height": 32
         },
@@ -65418,7 +65413,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2174,
+          "Y": 2034,
           "Width": 127,
           "Height": 32
         },
@@ -65427,7 +65422,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 127,
           "Height": 32
         },
@@ -65436,7 +65431,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 127,
           "Height": 32
         },
@@ -65445,7 +65440,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 127,
           "Height": 32
         },
@@ -65454,7 +65449,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 127,
           "Height": 32
         },
@@ -65463,7 +65458,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 127,
           "Height": 32
         },
@@ -65481,7 +65476,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 127,
           "Height": 32
         },
@@ -65490,7 +65485,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1436,
+          "Y": 1296,
           "Width": 127,
           "Height": 32
         },
@@ -65504,20 +65499,11 @@
           "Height": 32
         },
         {
-          "Name": "HorizonsOpenWorkbench_onramp",
-          "ControlType": "Button",
-          "Text": "Open workbench",
-          "X": 29,
-          "Y": 838,
-          "Width": 127,
-          "Height": 32
-        },
-        {
           "Name": "HorizonsOpenWorkbench_quicksilver",
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1296,
+          "Y": 1156,
           "Width": 127,
           "Height": 32
         },
@@ -65535,7 +65521,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 127,
           "Height": 32
         },
@@ -65544,7 +65530,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 127,
           "Height": 32
         },
@@ -65553,7 +65539,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 2772,
+          "Y": 2632,
           "Width": 127,
           "Height": 32
         },
@@ -65562,7 +65548,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1614,
+          "Y": 1474,
           "Width": 127,
           "Height": 32
         },
@@ -65571,7 +65557,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 29,
-          "Y": 1894,
+          "Y": 1754,
           "Width": 127,
           "Height": 32
         },
@@ -65589,7 +65575,7 @@
           "ControlType": "Button",
           "Text": "Open ALICE",
           "X": 517,
-          "Y": 1016,
+          "Y": 876,
           "Width": 120,
           "Height": 32
         },
@@ -65598,7 +65584,7 @@
           "ControlType": "Button",
           "Text": "Open Anarchy",
           "X": 164,
-          "Y": 2174,
+          "Y": 2034,
           "Width": 120,
           "Height": 32
         },
@@ -65607,7 +65593,7 @@
           "ControlType": "Button",
           "Text": "Open Ledger",
           "X": 432,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 120,
           "Height": 32
         },
@@ -65616,7 +65602,7 @@
           "ControlType": "Button",
           "Text": "Open Community",
           "X": 164,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 129,
           "Height": 32
         },
@@ -65625,7 +65611,7 @@
           "ControlType": "Button",
           "Text": "Open public Creator OS",
           "X": 499,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 168,
           "Height": 32
         },
@@ -65634,7 +65620,7 @@
           "ControlType": "Button",
           "Text": "Open Ghostwire",
           "X": 164,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 122,
           "Height": 32
         },
@@ -65643,7 +65629,7 @@
           "ControlType": "Button",
           "Text": "Open Jackpoint",
           "X": 164,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 120,
           "Height": 32
         },
@@ -65652,7 +65638,7 @@
           "ControlType": "Button",
           "Text": "Open Rules",
           "X": 164,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 120,
           "Height": 32
         },
@@ -65661,7 +65647,7 @@
           "ControlType": "Button",
           "Text": "Open Local Co-Processor",
           "X": 164,
-          "Y": 1436,
+          "Y": 1296,
           "Width": 180,
           "Height": 32
         },
@@ -65675,20 +65661,11 @@
           "Height": 32
         },
         {
-          "Name": "HorizonsPrimaryRoute_onramp",
-          "ControlType": "Button",
-          "Text": "Open Onramp",
-          "X": 164,
-          "Y": 838,
-          "Width": 120,
-          "Height": 32
-        },
-        {
           "Name": "HorizonsPrimaryRoute_quicksilver",
           "ControlType": "Button",
           "Text": "Open Quicksilver",
           "X": 164,
-          "Y": 1296,
+          "Y": 1156,
           "Width": 126,
           "Height": 32
         },
@@ -65706,7 +65683,7 @@
           "ControlType": "Button",
           "Text": "Open Run Control",
           "X": 469,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 131,
           "Height": 32
         },
@@ -65715,7 +65692,7 @@
           "ControlType": "Button",
           "Text": "Open public Runbook",
           "X": 499,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 154,
           "Height": 32
         },
@@ -65724,7 +65701,7 @@
           "ControlType": "Button",
           "Text": "Open Passport",
           "X": 164,
-          "Y": 2772,
+          "Y": 2632,
           "Width": 120,
           "Height": 32
         },
@@ -65733,7 +65710,7 @@
           "ControlType": "Button",
           "Text": "Open Runsite",
           "X": 164,
-          "Y": 1614,
+          "Y": 1474,
           "Width": 120,
           "Height": 32
         },
@@ -65742,7 +65719,7 @@
           "ControlType": "Button",
           "Text": "Open Table Pulse",
           "X": 164,
-          "Y": 1894,
+          "Y": 1754,
           "Width": 130,
           "Height": 32
         },
@@ -65760,7 +65737,7 @@
           "ControlType": "Button",
           "Text": "Open workbench",
           "X": 645,
-          "Y": 1016,
+          "Y": 876,
           "Width": 127,
           "Height": 32
         },
@@ -65769,7 +65746,7 @@
           "ControlType": "Button",
           "Text": "Open play shell",
           "X": 292,
-          "Y": 2174,
+          "Y": 2034,
           "Width": 120,
           "Height": 32
         },
@@ -65778,7 +65755,7 @@
           "ControlType": "Button",
           "Text": "Open map",
           "X": 560,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 120,
           "Height": 32
         },
@@ -65787,7 +65764,7 @@
           "ControlType": "Button",
           "Text": "Open board",
           "X": 301,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 120,
           "Height": 32
         },
@@ -65796,7 +65773,7 @@
           "ControlType": "Button",
           "Text": "Open creator account rail",
           "X": 675,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 178,
           "Height": 32
         },
@@ -65805,7 +65782,7 @@
           "ControlType": "Button",
           "Text": "After action",
           "X": 294,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 120,
           "Height": 32
         },
@@ -65814,7 +65791,7 @@
           "ControlType": "Button",
           "Text": "Open desk",
           "X": 292,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 120,
           "Height": 32
         },
@@ -65823,7 +65800,7 @@
           "ControlType": "Button",
           "Text": "Open receipts",
           "X": 292,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 120,
           "Height": 32
         },
@@ -65832,7 +65809,7 @@
           "ControlType": "Button",
           "Text": "Open desk",
           "X": 352,
-          "Y": 1436,
+          "Y": 1296,
           "Width": 120,
           "Height": 32
         },
@@ -65846,20 +65823,11 @@
           "Height": 32
         },
         {
-          "Name": "HorizonsSecondaryRoute_onramp",
-          "ControlType": "Button",
-          "Text": "Open starter desk",
-          "X": 292,
-          "Y": 838,
-          "Width": 134,
-          "Height": 32
-        },
-        {
           "Name": "HorizonsSecondaryRoute_quicksilver",
           "ControlType": "Button",
           "Text": "Open deck",
           "X": 298,
-          "Y": 1296,
+          "Y": 1156,
           "Width": 120,
           "Height": 32
         },
@@ -65877,7 +65845,7 @@
           "ControlType": "Button",
           "Text": "Open desk",
           "X": 608,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 120,
           "Height": 32
         },
@@ -65886,7 +65854,7 @@
           "ControlType": "Button",
           "Text": "Open public creator rail",
           "X": 661,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 166,
           "Height": 32
         },
@@ -65895,7 +65863,7 @@
           "ControlType": "Button",
           "Text": "Open desk",
           "X": 292,
-          "Y": 2772,
+          "Y": 2632,
           "Width": 120,
           "Height": 32
         },
@@ -65904,7 +65872,7 @@
           "ControlType": "Button",
           "Text": "Open runsites",
           "X": 292,
-          "Y": 1614,
+          "Y": 1474,
           "Width": 120,
           "Height": 32
         },
@@ -65913,7 +65881,7 @@
           "ControlType": "Button",
           "Text": "Live heat",
           "X": 302,
-          "Y": 1894,
+          "Y": 1754,
           "Width": 120,
           "Height": 32
         },
@@ -65931,7 +65899,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 879,
-          "Y": 905,
+          "Y": 765,
           "Width": 25,
           "Height": 20
         },
@@ -65940,7 +65908,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 879,
-          "Y": 1503,
+          "Y": 1363,
           "Width": 25,
           "Height": 20
         },
@@ -65949,7 +65917,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 879,
-          "Y": 2381,
+          "Y": 2241,
           "Width": 25,
           "Height": 20
         },
@@ -65967,7 +65935,7 @@
           "ControlType": "Border",
           "Text": "",
           "X": 879,
-          "Y": 2839,
+          "Y": 2699,
           "Width": 25,
           "Height": 20
         },
@@ -65976,7 +65944,7 @@
           "ControlType": "Button",
           "Text": "Open ledger lane",
           "X": 420,
-          "Y": 2174,
+          "Y": 2034,
           "Width": 127,
           "Height": 32
         },
@@ -65985,7 +65953,7 @@
           "ControlType": "Button",
           "Text": "Validation",
           "X": 688,
-          "Y": 2034,
+          "Y": 1894,
           "Width": 120,
           "Height": 32
         },
@@ -65994,7 +65962,7 @@
           "ControlType": "Button",
           "Text": "Open run venue",
           "X": 429,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 120,
           "Height": 32
         },
@@ -66003,7 +65971,7 @@
           "ControlType": "Button",
           "Text": "Consequence chain",
           "X": 422,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 144,
           "Height": 32
         },
@@ -66012,17 +65980,8 @@
           "ControlType": "Button",
           "Text": "Open Edition Studio",
           "X": 420,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 144,
-          "Height": 32
-        },
-        {
-          "Name": "HorizonsTertiaryRoute_onramp",
-          "ControlType": "Button",
-          "Text": "Open mobile rail",
-          "X": 434,
-          "Y": 838,
-          "Width": 122,
           "Height": 32
         },
         {
@@ -66039,7 +65998,7 @@
           "ControlType": "Button",
           "Text": "Aftermath",
           "X": 430,
-          "Y": 1894,
+          "Y": 1754,
           "Width": 120,
           "Height": 32
         },
@@ -66228,7 +66187,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 838,
+          "Y": 876,
           "Width": 127,
           "Height": 32
         },
@@ -66237,43 +66196,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 838,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 292,
-          "Y": 838,
-          "Width": 134,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 434,
-          "Y": 838,
-          "Width": 122,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 1016,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 164,
-          "Y": 1016,
+          "Y": 876,
           "Width": 168,
           "Height": 32
         },
@@ -66282,7 +66205,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 340,
-          "Y": 1016,
+          "Y": 876,
           "Width": 169,
           "Height": 32
         },
@@ -66291,7 +66214,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 517,
-          "Y": 1016,
+          "Y": 876,
           "Width": 120,
           "Height": 32
         },
@@ -66300,6 +66223,15 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 645,
+          "Y": 876,
+          "Width": 127,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 29,
           "Y": 1016,
           "Width": 127,
           "Height": 32
@@ -66308,17 +66240,8 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 29,
-          "Y": 1156,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
           "X": 164,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 120,
           "Height": 32
         },
@@ -66327,7 +66250,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 292,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 120,
           "Height": 32
         },
@@ -66336,7 +66259,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 420,
-          "Y": 1156,
+          "Y": 1016,
           "Width": 144,
           "Height": 32
         },
@@ -66345,7 +66268,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 1296,
+          "Y": 1156,
           "Width": 127,
           "Height": 32
         },
@@ -66354,7 +66277,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 1296,
+          "Y": 1156,
           "Width": 126,
           "Height": 32
         },
@@ -66363,6 +66286,33 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 298,
+          "Y": 1156,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 29,
+          "Y": 1296,
+          "Width": 127,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 164,
+          "Y": 1296,
+          "Width": 180,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 352,
           "Y": 1296,
           "Width": 120,
           "Height": 32
@@ -66372,7 +66322,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 1436,
+          "Y": 1474,
           "Width": 127,
           "Height": 32
         },
@@ -66381,34 +66331,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 1436,
-          "Width": 180,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 352,
-          "Y": 1436,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 1614,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 164,
-          "Y": 1614,
+          "Y": 1474,
           "Width": 120,
           "Height": 32
         },
@@ -66417,7 +66340,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 292,
-          "Y": 1614,
+          "Y": 1474,
           "Width": 120,
           "Height": 32
         },
@@ -66426,7 +66349,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 127,
           "Height": 32
         },
@@ -66435,7 +66358,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 130,
           "Height": 32
         },
@@ -66444,7 +66367,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 302,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 159,
           "Height": 32
         },
@@ -66453,7 +66376,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 469,
-          "Y": 1754,
+          "Y": 1614,
           "Width": 131,
           "Height": 32
         },
@@ -66462,6 +66385,42 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 608,
+          "Y": 1614,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 29,
+          "Y": 1754,
+          "Width": 127,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 164,
+          "Y": 1754,
+          "Width": 130,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 302,
+          "Y": 1754,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 430,
           "Y": 1754,
           "Width": 120,
           "Height": 32
@@ -66490,6 +66449,15 @@
           "Text": "",
           "X": 302,
           "Y": 1894,
+          "Width": 122,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 432,
+          "Y": 1894,
           "Width": 120,
           "Height": 32
         },
@@ -66497,7 +66465,16 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 430,
+          "X": 560,
+          "Y": 1894,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 688,
           "Y": 1894,
           "Width": 120,
           "Height": 32
@@ -66517,60 +66494,6 @@
           "Text": "",
           "X": 164,
           "Y": 2034,
-          "Width": 130,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 302,
-          "Y": 2034,
-          "Width": 122,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 432,
-          "Y": 2034,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 560,
-          "Y": 2034,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 688,
-          "Y": 2034,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 2174,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 164,
-          "Y": 2174,
           "Width": 120,
           "Height": 32
         },
@@ -66579,7 +66502,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 292,
-          "Y": 2174,
+          "Y": 2034,
           "Width": 120,
           "Height": 32
         },
@@ -66588,6 +66511,15 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 420,
+          "Y": 2034,
+          "Width": 127,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 29,
           "Y": 2174,
           "Width": 127,
           "Height": 32
@@ -66596,17 +66528,8 @@
           "Name": "PART_ContentPresenter",
           "ControlType": "ContentPresenter",
           "Text": "",
-          "X": 29,
-          "Y": 2314,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
           "X": 164,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 122,
           "Height": 32
         },
@@ -66615,7 +66538,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 294,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 120,
           "Height": 32
         },
@@ -66624,7 +66547,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 422,
-          "Y": 2314,
+          "Y": 2174,
           "Width": 144,
           "Height": 32
         },
@@ -66633,7 +66556,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 127,
           "Height": 32
         },
@@ -66642,7 +66565,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 120,
           "Height": 32
         },
@@ -66651,7 +66574,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 292,
-          "Y": 2492,
+          "Y": 2352,
           "Width": 120,
           "Height": 32
         },
@@ -66660,7 +66583,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 127,
           "Height": 32
         },
@@ -66669,7 +66592,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 129,
           "Height": 32
         },
@@ -66678,7 +66601,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 301,
-          "Y": 2632,
+          "Y": 2492,
           "Width": 120,
           "Height": 32
         },
@@ -66687,6 +66610,33 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 429,
+          "Y": 2492,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 29,
+          "Y": 2632,
+          "Width": 127,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 164,
+          "Y": 2632,
+          "Width": 120,
+          "Height": 32
+        },
+        {
+          "Name": "PART_ContentPresenter",
+          "ControlType": "ContentPresenter",
+          "Text": "",
+          "X": 292,
           "Y": 2632,
           "Width": 120,
           "Height": 32
@@ -66696,7 +66646,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 2772,
+          "Y": 2810,
           "Width": 127,
           "Height": 32
         },
@@ -66705,34 +66655,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 2772,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 292,
-          "Y": 2772,
-          "Width": 120,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 2950,
-          "Width": 127,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 164,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 160,
           "Height": 32
         },
@@ -66741,7 +66664,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 332,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 159,
           "Height": 32
         },
@@ -66750,7 +66673,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 499,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 154,
           "Height": 32
         },
@@ -66759,7 +66682,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 661,
-          "Y": 2950,
+          "Y": 2810,
           "Width": 166,
           "Height": 32
         },
@@ -66768,7 +66691,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 29,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 127,
           "Height": 32
         },
@@ -66777,7 +66700,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 164,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 160,
           "Height": 32
         },
@@ -66786,7 +66709,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 332,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 159,
           "Height": 32
         },
@@ -66795,7 +66718,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 499,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 168,
           "Height": 32
         },
@@ -66804,7 +66727,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 675,
-          "Y": 3090,
+          "Y": 2950,
           "Width": 178,
           "Height": 32
         },
@@ -66813,7 +66736,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 641,
-          "Y": 3153,
+          "Y": 3013,
           "Width": 133,
           "Height": 32
         },
@@ -66822,7 +66745,7 @@
           "ControlType": "ContentPresenter",
           "Text": "",
           "X": 784,
-          "Y": 3153,
+          "Y": 3013,
           "Width": 120,
           "Height": 32
         },
@@ -66876,9 +66799,9 @@
           "ControlType": "RepeatButton",
           "Text": "",
           "X": 904,
-          "Y": 154,
+          "Y": 160,
           "Width": 16,
-          "Height": 511
+          "Height": 505
         },
         {
           "Name": "PART_Popup",
@@ -66928,7 +66851,7 @@
         {
           "Name": "PART_Watermark",
           "ControlType": "TextBlock",
-          "Text": "Filter horizons",
+          "Text": "Filter product areas",
           "X": 25,
           "Y": 138,
           "Width": 870,
@@ -66963,11 +66886,11 @@
         }
       ],
       "visibleTextSamples": [
-        "Horizons",
-        "Open shipped horizon lanes from one desktop hub. Use native workbenches first, then fall through to the signed-in or public web lane only when that lane is actually the right target.",
+        "Workbenches",
+        "Open Chummer product areas from one desktop hub. Use native workbenches first, then fall through to the signed-in or public web lane only when that lane is actually the right target.",
         "Native-first mode. Signed-in campaign context is not available in this desktop session, so posture summaries stay conservative.",
-        "Filter horizons",
-        "Showing 19 shipped horizon lane(s). Native workbenches stay first whenever the client has a governed desktop surface.",
+        "Filter product areas",
+        "Showing 18 product area(s). Native workbenches stay first whenever the client has a governed desktop surface.",
         "Build and rules",
         "4",
         "Karma Forge",
@@ -66979,7 +66902,7 @@
         "Create package",
         "My packages",
         "First session and participation",
-        "3",
+        "2",
         "NEXUS-PAN",
         "Keep continuity, workspace recovery, and devices/access on adjacent native rails before widening into public continuity routes.",
         "Access and continuity: Campaigns 0 | Workspaces 0",
@@ -66993,11 +66916,6 @@
         "Open Ready",
         "Open return lane",
         "Open mobile rail",
-        "Onramp",
-        "Open the guided starter lane, starter workspace handoff, and mobile participation bridge from the same desktop shelf.",
-        "Starter lane: Workspaces 0 | Campaigns 0",
-        "Open Onramp",
-        "Open starter desk",
         "ALICE",
         "Keep build mentor, rules explain, and first-session follow-through on native desks before widening into browser handoff rails.",
         "Build handoffs: Handoffs 0 | Rules 0",
@@ -67051,14 +66969,19 @@
         "Open play shell",
         "Open ledger lane",
         "Ghostwire",
-        "Open replay and after-action follow-through directly from the horizon shelf.",
+        "Open replay and after-action follow-through directly from the workbench hub.",
         "Replay and after-action: Runs 0 | Workspaces 0",
         "After action",
         "Consequence chain",
         "Community and identity",
+        "3",
         "Jackpoint",
         "Open dossiers, publication benches, and signed-in briefing routes.",
-        "Briefings and dossiers: Publications 0 | Dossiers 0"
+        "Briefings and dossiers: Publications 0 | Dossiers 0",
+        "Open Jackpoint",
+        "Community Hub",
+        "Open the open-run network, signed-in community board, and moderated operator rail.",
+        "Groups and operators: Operations 0 | Campaigns 0"
       ],
       "visibleMenuCommandIds": [],
       "visibleTabLabels": [],
@@ -72314,182 +72237,6 @@
         "Open Onramp",
         "Open mobile rail",
         "Open public Ready for Tonight",
-        "Close"
-      ],
-      "visibleMenuCommandIds": [],
-      "visibleTabLabels": [],
-      "visibleSectionQuickActionIds": [],
-      "selectedListRowTexts": [],
-      "previewText": "",
-      "rightShellVisible": false,
-      "rightShellWidth": 0,
-      "inlineCommandSurfaceVisible": false,
-      "dialogWindowVisible": false
-    },
-    {
-      "screenshot": "59-horizon-onramp-light.png",
-      "theme": "Light",
-      "dialogTitle": "Onramp",
-      "dialogMessage": "",
-      "dialogFieldLabels": [],
-      "dialogFieldIds": [],
-      "dialogFieldControlIds": [],
-      "dialogFieldInputValues": [],
-      "dialogActionIds": [],
-      "dialogActionControlIds": [],
-      "visibleNamedControlIds": [
-        "OnrampBadgeRuns",
-        "OnrampBadgeWorkspaces",
-        "OnrampDetailText",
-        "PART_ContentPresenter",
-        "PART_TransparencyFallback"
-      ],
-      "visibleNamedControls": [
-        {
-          "Name": "OnrampBadgeRuns",
-          "ControlType": "Border",
-          "Text": "",
-          "X": 147,
-          "Y": 164,
-          "Width": 64,
-          "Height": 24
-        },
-        {
-          "Name": "OnrampBadgeWorkspaces",
-          "ControlType": "Border",
-          "Text": "",
-          "X": 29,
-          "Y": 164,
-          "Width": 110,
-          "Height": 24
-        },
-        {
-          "Name": "OnrampDetailText",
-          "ControlType": "TextBlock",
-          "Text": "Starter lane: guide the first playable session without pretending Onramp auto-builds the whole runner.",
-          "X": 29,
-          "Y": 392,
-          "Width": 882,
-          "Height": 16
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 0,
-          "Y": 0,
-          "Width": 940,
-          "Height": 680
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ScrollContentPresenter",
-          "Text": "",
-          "X": 0,
-          "Y": 0,
-          "Width": 940,
-          "Height": 680
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 264,
-          "Width": 195,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 232,
-          "Y": 264,
-          "Width": 149,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 389,
-          "Y": 264,
-          "Width": 132,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 29,
-          "Y": 416,
-          "Width": 149,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 186,
-          "Y": 416,
-          "Width": 168,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 362,
-          "Y": 416,
-          "Width": 159,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 633,
-          "Y": 483,
-          "Width": 149,
-          "Height": 32
-        },
-        {
-          "Name": "PART_ContentPresenter",
-          "ControlType": "ContentPresenter",
-          "Text": "",
-          "X": 792,
-          "Y": 483,
-          "Width": 132,
-          "Height": 32
-        },
-        {
-          "Name": "PART_TransparencyFallback",
-          "ControlType": "Border",
-          "Text": "",
-          "X": 0,
-          "Y": 0,
-          "Width": 940,
-          "Height": 680
-        }
-      ],
-      "visibleTextSamples": [
-        "Onramp",
-        "Onramp keeps the starter lane, recovery lane, and no-desktop participation bridges visible on first-party rails instead of pretending everyone begins on the full desktop workbench.",
-        "Starter lane",
-        "Keep the starter workspace, first-session posture, and next safe action visible before escalating into the full desktop shell.",
-        "Workspaces: 0",
-        "Runs: 0",
-        "Starter workspaces: 0. Runs: 0.",
-        "No starter workspace is currently pinned.",
-        "Starter, recovery, and first playable session cues appear here after the next governed starter sync.",
-        "Open signed-in starter desk",
-        "Open public Onramp",
-        "Open mobile rail",
-        "Recovery and participation",
-        "Onramp should bridge starter, recovery, and no-desktop participation instead of acting like a one-shot onboarding page.",
-        "Starter lane: guide the first playable session without pretending Onramp auto-builds the whole runner.",
-        "Open Ready for Tonight",
-        "Open mobile and PWA",
         "Close"
       ],
       "visibleMenuCommandIds": [],

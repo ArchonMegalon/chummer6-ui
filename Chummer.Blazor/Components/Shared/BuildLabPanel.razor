@@ -26,7 +26,7 @@
         {
             <label class="field">
                 <span>@field.Label</span>
-                <input value="@field.Value" readonly placeholder="@field.Placeholder" />
+                <input aria-label="@field.Label" value="@field.Value" readonly placeholder="@field.Placeholder" />
                 @if (!string.IsNullOrWhiteSpace(field.HelpText))
                 {
                     <span class="note">@field.HelpText</span>

@@ -1,23 +1,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy only the UI project and shared repo build props needed for package restore.
-COPY chummer-presentation/global.json chummer-presentation/
-COPY chummer-presentation/Directory.Build.props chummer-presentation/
-COPY chummer-presentation/Directory.Build.targets chummer-presentation/
-COPY chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj chummer-presentation/Chummer.Blazor/
+COPY . .
 
-# Restore dependencies
-RUN dotnet restore chummer-presentation/Chummer.Blazor/Chummer.Blazor.csproj
+WORKDIR /src/chummer-presentation
+RUN dotnet restore Chummer.Blazor/Chummer.Blazor.csproj
+RUN dotnet publish Chummer.Blazor/Chummer.Blazor.csproj -c Release -o /app/publish --no-restore
 
-# Copy the actual code
-COPY chummer-presentation/Chummer.Blazor/ chummer-presentation/Chummer.Blazor/
-
-# Publish
-WORKDIR /src/chummer-presentation/Chummer.Blazor
-RUN dotnet publish -c Release -o /app/publish
-
-# Build the final runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .

@@ -134,7 +134,12 @@ public partial class App : global::Avalonia.Application
             configured = Environment.GetEnvironmentVariable("CHUMMER_WEB_BASE_URL");
         }
 
-        string baseUrl = string.IsNullOrWhiteSpace(configured) ? "https://chummer.run/" : configured.Trim();
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return DesktopPublicPortalRuntime.ResolvePublicPortalBaseAddress();
+        }
+
+        string baseUrl = configured.Trim();
         if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out Uri? baseAddress))
         {
             throw new InvalidOperationException(

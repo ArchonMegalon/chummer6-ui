@@ -40,6 +40,7 @@ public sealed class DesktopShellRulesetCatalogTests
         StringAssert.Contains(homeText, "@page \"/\"");
         StringAssert.Contains(homeText, "Desktop shell route anchor");
         StringAssert.Contains(showcaseText, "@page \"/showcase\"");
+        StringAssert.Contains(showcaseText, "@layout Chummer.Blazor.Components.Layout.NoLayout");
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
         Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
         StringAssert.Contains(legacyText, "@page \"/legacy-console\"");
@@ -95,7 +96,8 @@ public sealed class DesktopShellRulesetCatalogTests
             Assert.IsFalse(cut.Markup.Contains("data-testid=\"desktop-flagship-marquee\"", StringComparison.Ordinal));
             Assert.AreEqual(0, cut.FindAll(".workbench-summary-copy").Count, "Desktop shell must keep the header tab-only in the compact single-runner posture.");
             Assert.AreEqual(0, cut.FindAll(".workbench-runtime-summary").Count, "Desktop shell must not burn header width on runtime copy in the compact single-runner posture.");
-            Assert.IsFalse(cut.Markup.Contains(expectedDossiers, StringComparison.Ordinal), "Single-runner posture must not surface workspace dossiers on first paint.");
+            Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Single-runner posture must keep navigation and edit actions visible.");
+            StringAssert.Contains(cut.Markup, expectedDossiers);
             Assert.AreEqual(0, cut.FindAll(".right-pane").Count, "The desktop shell must not mount the removed right-side frame.");
             Assert.IsFalse(cut.Markup.Contains(expectedImportHeading, StringComparison.Ordinal), "Import heading belonged to the removed right rail.");
             Assert.IsFalse(cut.Markup.Contains(expectedResultHeading, StringComparison.Ordinal), "Result heading belonged to the removed right rail.");
@@ -315,7 +317,7 @@ public sealed class DesktopShellRulesetCatalogTests
     }
 
     [TestMethod]
-    public void DesktopShell_hides_workspace_left_pane_for_single_runner_posture()
+    public void DesktopShell_renders_workspace_left_pane_for_single_runner_posture()
     {
         using var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -353,10 +355,10 @@ public sealed class DesktopShellRulesetCatalogTests
 
         cut.WaitForAssertion(() =>
         {
-            Assert.AreEqual(0, cut.FindAll(".left-pane").Count, "Single-runner posture must not render the workspace left pane.");
+            Assert.AreEqual(1, cut.FindAll(".left-pane").Count, "Single-runner posture must render the workspace left pane so section actions remain discoverable.");
             Assert.AreEqual(0, cut.FindAll(".mdi-strip").Count, "Single-runner posture must not render MDI workspace chrome.");
-            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--without-left-pane");
-            Assert.IsFalse(cut.Markup.Contains("SR5 Characters", StringComparison.Ordinal), "Single-runner posture must not spend first-paint copy on workspace headings.");
+            StringAssert.Contains(cut.Find(".workspace-layout").ClassName, "workspace-layout--with-left-pane");
+            StringAssert.Contains(cut.Markup, "SR5 Characters");
         });
     }
 

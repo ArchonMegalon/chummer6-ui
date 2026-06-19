@@ -621,6 +621,9 @@ def load_payload() -> dict[str, Any]:
         payload = envelope
     payload = _prefer_browseract_refresh_payload(payload, browseract_payload)
     if _payload_is_stale_cache(payload):
+        container_payload = _container_global_refresh_payload()
+        if container_payload is not None:
+            return container_payload
         container_probe_payload = _container_probe_refresh_payload()
         if container_probe_payload is not None:
             return container_probe_payload

@@ -48,7 +48,7 @@ namespace Chummer.Forms
                 Font = new Font(Font, FontStyle.Bold),
                 Padding = new Padding(16, 14, 16, 2),
                 Height = 52,
-                Text = "I'm not linked. Please link and log in on the website."
+                Text = "This copy is not claimed yet."
             };
 
             Label objInfo = new()
@@ -62,7 +62,7 @@ namespace Chummer.Forms
 
             Button objLinkButton = new()
             {
-                Text = "Log in on the website",
+                Text = "Claim your copy",
                 AutoSize = true,
                 Anchor = AnchorStyles.None
             };
@@ -100,8 +100,8 @@ namespace Chummer.Forms
 
         private static string BuildMessage(DesktopInstallLinkingStartupContext startupContext)
         {
-            string strMessage = "This install is not linked to a Chummer account yet. " +
-                                "Please continue by opening your browser and signing in.";
+            string strMessage = "This downloaded copy is not linked to a Chummer account yet. " +
+                                "Claim it online so recovery, updates, and support stay attached to this install.";
             if (!string.IsNullOrWhiteSpace(startupContext.PromptReason))
                 strMessage += Environment.NewLine + Environment.NewLine + "Status: " + startupContext.PromptReason;
             if (!string.IsNullOrWhiteSpace(startupContext.ClaimResult?.Message))
@@ -117,7 +117,7 @@ namespace Chummer.Forms
             else
                 MessageBox.Show(
                     this,
-                    "We could not open the website login page. Please check your network connection and browser settings.",
+                    "We could not open the claim page. Please check your network connection and browser settings.",
                     Text,
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);

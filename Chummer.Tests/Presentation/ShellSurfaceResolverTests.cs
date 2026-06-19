@@ -260,6 +260,60 @@ public sealed class ShellSurfaceResolverTests
     }
 
     [TestMethod]
+    public void Resolve_falls_back_to_catalog_navigation_when_shell_state_tabs_are_empty()
+    {
+        var createTab = new NavigationTabDefinition("tab-create", "Create", "build-lab", "character", true, true, "sr4");
+        var infoTab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, "sr4");
+        var qualitiesTab = new NavigationTabDefinition("tab-qualities", "Qualities", "qualities", "character", true, true, "sr4");
+        var rulesTab = new NavigationTabDefinition("tab-rules", "Rules", "rules", "character", true, true, "sr4");
+        var shellWorkspaceId = new Chummer.Contracts.Workspaces.CharacterWorkspaceId("ws-sr4");
+        var shellState = ShellState.Empty with
+        {
+            ActiveRulesetId = "sr4",
+            ActiveWorkspaceId = shellWorkspaceId,
+            OpenWorkspaces =
+            [
+                new ShellWorkspaceState(
+                    Id: shellWorkspaceId,
+                    Name: "SR4 Runner",
+                    Alias: "SR4",
+                    LastOpenedUtc: DateTimeOffset.UtcNow,
+                    RulesetId: "sr4",
+                    HasSavedWorkspace: true)
+            ],
+            NavigationTabs = [],
+            ActiveTabId = "tab-create"
+        };
+
+        var qualitiesAction = new WorkspaceSurfaceActionDefinition(
+            Id: "tab-qualities.qualities",
+            Label: "Qualities",
+            TabId: qualitiesTab.Id,
+            Kind: WorkspaceSurfaceActionKind.Section,
+            TargetId: "qualities",
+            RequiresOpenCharacter: false,
+            EnabledByDefault: true,
+            RulesetId: "sr4");
+        var catalogResolver = new StubShellCatalogResolver(
+            [qualitiesAction],
+            [createTab, infoTab, qualitiesTab, rulesTab]);
+        var resolver = new ShellSurfaceResolver(
+            catalogResolver,
+            new StubAvailabilityEvaluator(
+                commandEnabled: true,
+                tabEnabled: true,
+                actionEnabled: true));
+
+        ShellSurfaceState surface = resolver.Resolve(CharacterOverviewState.Empty, shellState);
+
+        CollectionAssert.AreEqual(
+            new[] { "tab-info", "tab-qualities" },
+            surface.NavigationTabs.Select(tab => tab.Id).ToArray());
+        Assert.AreEqual("tab-info", surface.ActiveTabId);
+        Assert.AreEqual("tab-info", catalogResolver.LastWorkspaceActionTabId);
+    }
+
+    [TestMethod]
     public void Resolve_prefers_overview_active_workspace_ruleset_when_shell_active_ruleset_lags()
     {
         var infoTab = new NavigationTabDefinition("tab-info", "Info", "profile", "character", true, true, "sr6");
@@ -328,11 +382,14 @@ public sealed class ShellSurfaceResolverTests
     private sealed class StubShellCatalogResolver : IRulesetShellCatalogResolver
     {
         private readonly IReadOnlyList<WorkspaceSurfaceActionDefinition> _workspaceActions;
+        private readonly IReadOnlyList<NavigationTabDefinition> _navigationTabs;
 
         public StubShellCatalogResolver(
-            IReadOnlyList<WorkspaceSurfaceActionDefinition> workspaceActions)
+            IReadOnlyList<WorkspaceSurfaceActionDefinition> workspaceActions,
+            IReadOnlyList<NavigationTabDefinition>? navigationTabs = null)
         {
             _workspaceActions = workspaceActions;
+            _navigationTabs = navigationTabs ?? [];
         }
 
         public string? LastWorkspaceActionTabId { get; private set; }
@@ -340,7 +397,7 @@ public sealed class ShellSurfaceResolverTests
 
         public IReadOnlyList<AppCommandDefinition> ResolveCommands(string? rulesetId) => [];
 
-        public IReadOnlyList<NavigationTabDefinition> ResolveNavigationTabs(string? rulesetId) => [];
+        public IReadOnlyList<NavigationTabDefinition> ResolveNavigationTabs(string? rulesetId) => _navigationTabs;
 
         public IReadOnlyList<WorkflowDefinition> ResolveWorkflowDefinitions(string? rulesetId) => [];
 

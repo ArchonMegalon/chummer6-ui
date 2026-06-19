@@ -741,7 +741,7 @@ namespace Chummer
 
             DesktopInstallLinkingRuntime.MarkPromptDismissed(objRefreshedContext.State.HeadId);
 
-            string strStatusMessage = "Please complete the website login and restart Chummer to continue.";
+            string strStatusMessage = "Please claim this copy online, then restart Chummer to continue.";
             if (!string.IsNullOrWhiteSpace(objRefreshedContext.ClaimResult?.Message))
                 strStatusMessage = objRefreshedContext.ClaimResult.Message + Environment.NewLine + Environment.NewLine + strStatusMessage;
             if (!string.IsNullOrWhiteSpace(objRefreshedContext.PromptReason))

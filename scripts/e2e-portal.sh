@@ -8,6 +8,7 @@ PORTAL_BASE_URL="${CHUMMER_PORTAL_BASE_URL:-http://127.0.0.1:${CHUMMER_PUBLIC_ED
 PORTAL_LOCAL_PROOF_PATH="${CHUMMER_PORTAL_LOCAL_PROOF_PATH:-.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
 NEXT90_M113_RECEIPT_PATH="${CHUMMER_NEXT90_M113_RECEIPT_PATH:-.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 PORTAL_SKIP_EDGE_REBUILD="${CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD:-0}"
+PORTAL_RUNTIME_REQUIRED="${CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME:-1}"
 if [[ -n "${CHUMMER_PORTAL_PLAYWRIGHT:-}" ]]; then
   RUN_PORTAL_PLAYWRIGHT="$CHUMMER_PORTAL_PLAYWRIGHT"
 elif [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -45,6 +46,12 @@ wait_for_portal_url() {
 
 if [[ -n "$CHUMMER_API_KEY" ]]; then
   export CHUMMER_API_KEY
+fi
+
+if [[ "$RUN_PORTAL_PLAYWRIGHT" != "1" ]] \
+  && [[ "$PORTAL_RUNTIME_REQUIRED" == "1" || "$PORTAL_RUNTIME_REQUIRED" == "true" || "$PORTAL_RUNTIME_REQUIRED" == "TRUE" ]]; then
+  echo "portal route probe is mandatory for local release proof; set CHUMMER_PORTAL_E2E_REQUIRE_RUNTIME=0 only for docs-only inspection." >&2
+  exit 2
 fi
 
 if [[ "$PORTAL_SKIP_EDGE_REBUILD" == "1" || "$PORTAL_SKIP_EDGE_REBUILD" == "true" || "$PORTAL_SKIP_EDGE_REBUILD" == "TRUE" ]]; then
@@ -109,18 +116,17 @@ if [[ "$RUN_PORTAL_PLAYWRIGHT" == "1" ]]; then
   fi
   rm -f "$route_probe_log"
 else
-  echo "portal route probe is mandatory for local release proof; set CHUMMER_PORTAL_PLAYWRIGHT=1 or remove the disable override." >&2
-  exit 1
+  echo "portal route probe skipped; emitting failed non-release local proof"
 fi
 
 mkdir -p "$(dirname "$PORTAL_LOCAL_PROOF_PATH")"
-python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" <<'PY'
+python3 - "$PORTAL_LOCAL_PROOF_PATH" "$PORTAL_BASE_URL" "$PORTAL_PLAYWRIGHT_TIMEOUT_SECONDS" "$RUN_PORTAL_PLAYWRIGHT" "$PORTAL_EDGE_COMPOSE_FILE" "$PORTAL_SKIP_EDGE_REBUILD" "$NEXT90_M113_RECEIPT_PATH" "$PORTAL_RUNTIME_REQUIRED" <<'PY'
 import datetime as dt
 import json
 import sys
 from pathlib import Path
 
-out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path = sys.argv[1:]
+out_path, base_url, timeout_seconds, run_portal_playwright, compose_file, skip_edge_rebuild, next90_m113_receipt_path, runtime_required = sys.argv[1:]
 route_probe_executed = run_portal_playwright == "1"
 receipt_path = Path(next90_m113_receipt_path)
 receipt_status = "missing"
@@ -143,6 +149,7 @@ payload = {
     "compose_file": compose_file,
     "playwright_timeout_seconds": int(timeout_seconds),
     "edge_rebuild_skipped": skip_edge_rebuild.lower() in {"1", "true"},
+    "runtime_required": runtime_required.lower() in {"1", "true"},
     "route_probe_executed": route_probe_executed,
     "journeys_passed": [
         "install_claim_restore_continue",
@@ -159,13 +166,9 @@ payload = {
         "/downloads/install/avalonia-linux-x64-installer",
         "/home/access",
         "/home/work",
-        "/account/access",
         "/account/work",
         "/account/support",
         "/contact",
-        "/downloads",
-        "/downloads/install/avalonia-osx-arm64-installer",
-        "/downloads/install/avalonia-win-x64-installer",
     ],
     "receipts": [
         {

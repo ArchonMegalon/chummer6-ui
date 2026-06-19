@@ -2548,6 +2548,16 @@ public class RulesetSeamContractsTests
         Assert.IsTrue(sr5Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
         Assert.IsTrue(sr4Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
         Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-create.intake", StringComparison.Ordinal) && string.Equals(action.TargetId, "build-lab", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Tabs.Any(tab => string.Equals(tab.Id, "tab-qualities", StringComparison.Ordinal) && string.Equals(tab.SectionId, "qualities", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Actions.Any(action => string.Equals(action.Id, "tab-qualities.qualities", StringComparison.Ordinal) && string.Equals(action.TargetId, "qualities", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Tabs.Any(tab => string.Equals(tab.Id, "tab-cyberware", StringComparison.Ordinal) && string.Equals(tab.SectionId, "cyberwares", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Actions.Any(action => string.Equals(action.Id, "tab-cyberware.cyberwares", StringComparison.Ordinal) && string.Equals(action.TargetId, "cyberwares", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Tabs.Any(tab => string.Equals(tab.Id, "tab-adept", StringComparison.Ordinal) && string.Equals(tab.SectionId, "powers", StringComparison.Ordinal)));
+        Assert.IsTrue(sr4Actions.Any(action => string.Equals(action.Id, "tab-adept.complexforms", StringComparison.Ordinal) && string.Equals(action.TargetId, "complexforms", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-cyberware", StringComparison.Ordinal) && string.Equals(tab.SectionId, "cyberwares", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-cyberware.cyberwares", StringComparison.Ordinal) && string.Equals(action.TargetId, "cyberwares", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Tabs.Any(tab => string.Equals(tab.Id, "tab-adept", StringComparison.Ordinal) && string.Equals(tab.SectionId, "powers", StringComparison.Ordinal)));
+        Assert.IsTrue(sr6Actions.Any(action => string.Equals(action.Id, "tab-adept.complexforms", StringComparison.Ordinal) && string.Equals(action.TargetId, "complexforms", StringComparison.Ordinal)));
 
         Assert.IsTrue(sr5Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr5.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));
         Assert.IsTrue(sr4Surfaces.Any(surface => string.Equals(surface.SurfaceId, "sr4.career.section", StringComparison.Ordinal) && surface.ActionIds.Contains("tab-create.intake")));

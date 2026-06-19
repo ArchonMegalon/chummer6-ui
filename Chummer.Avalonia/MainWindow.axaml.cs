@@ -58,7 +58,9 @@ public partial class MainWindow : Window
             commandAvailabilityEvaluator,
             shellSurfaceResolver,
             coachSidecarClient,
-            new DesktopAnalyticsClient(App.Services?.GetService<HttpClient>() ?? new HttpClient { BaseAddress = new Uri("https://chummer.run/") }),
+            new DesktopAnalyticsClient(
+                App.Services?.GetService<HttpClient>()
+                ?? new HttpClient { BaseAddress = DesktopPublicPortalRuntime.ResolvePublicPortalBaseAddress() }),
             adapter)
     {
     }

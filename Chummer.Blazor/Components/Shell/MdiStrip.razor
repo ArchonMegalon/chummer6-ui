@@ -23,6 +23,7 @@
                 </button>
                 <button class="mdi-close"
                         title="Close workspace"
+                        aria-label="Close workspace"
                         disabled="@IsBusy"
                         @onclick="() => CloseWorkspaceAsync(workspace.Id.Value)">
                     x

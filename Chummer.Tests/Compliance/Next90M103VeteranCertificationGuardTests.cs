@@ -497,6 +497,13 @@ public sealed class Next90M103VeteranCertificationGuardTests
         }
         string screenshotControlEvidencePath = evidence.GetProperty("screenshotControlEvidencePath").GetString() ?? string.Empty;
         StringAssert.StartsWith(screenshotControlEvidencePath, repoRoot, StringComparison.Ordinal);
+        byte[] screenshotControlEvidenceBytes = File.ReadAllBytes(screenshotControlEvidencePath);
+        Assert.IsFalse(
+            screenshotControlEvidenceBytes.Length >= 3
+                && screenshotControlEvidenceBytes[0] == 0xEF
+                && screenshotControlEvidenceBytes[1] == 0xBB
+                && screenshotControlEvidenceBytes[2] == 0xBF,
+            "SCREENSHOT_CONTROL_EVIDENCE.generated.json must be plain UTF-8 without a BOM so standard JSON tooling can parse it.");
         JsonElement screenshotControlEvidence = evidence.GetProperty("screenshotControlEvidence");
         Assert.AreEqual(40, screenshotControlEvidence.GetArrayLength(), "M103 screenshot control evidence must cover the current required screenshot and workflow evidence set.");
         JsonElement screenshotControlEvidenceChecks = evidence.GetProperty("screenshotControlEvidenceChecks");

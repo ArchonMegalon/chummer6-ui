@@ -1205,9 +1205,10 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(source, "new ScrollViewer");
         RequireContains(source, "includeHeading: true");
         RequireContains(source, "desktop.devices.button.reload");
-        RequireContains(source, "desktop.devices.button.use_latest_claim");
+        RequireContains(source, "desktop.install_link.button.login_website");
         RequireContains(source, "desktop.dialog.action.close");
         RequireDoesNotContain(source, "desktop.install_link.button.open_work");
+        RequireDoesNotContain(source, "desktop.devices.button.use_latest_claim");
         RequireDoesNotContain(source, "Use latest claim code");
 
         string appSource = ReadSource("Chummer.Avalonia/App.axaml.cs");

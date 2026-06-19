@@ -59,7 +59,7 @@ public static class DesktopHomeSupportProjector
                 CaseId: null,
                 Summary: installClaimed
                     ? "No tracked support cases are attached to this linked install right now, so closure and fix notices stay quiet until a real install, update, or campaign issue needs one case."
-                    : "No tracked support cases are attached yet, and install-aware closure will stay generic until this desktop copy is linked to an account-backed install.",
+                    : "No tracked support cases are attached yet. Link this copy to enable install-specific fixes and notices.",
                 NextSafeAction: installClaimed
                     ? "Keep the install-aware support lane quiet until a real install, update, or campaign issue needs one tracked case."
                     : "Link this copy before you rely on install-specific support closure or fix notices.",

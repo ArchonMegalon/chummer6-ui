@@ -22,14 +22,14 @@
 
     @if (Assets.Count == 0)
     {
-        <p class="hint">No generated assets are ready for review.</p>
+        <p class="hint">No media items are ready for review.</p>
     }
     else
     {
         <div class="stack">
             <section class="panel trace-card" data-generated-asset-rail>
-                <header class="trace-section-title">Generated Assets</header>
-                <div class="button-row compact" role="tablist" aria-label="Generated assets">
+                <header class="trace-section-title">Media drafts</header>
+                <div class="button-row compact" role="tablist" aria-label="Media drafts">
                     @foreach (GeneratedAssetProjection asset in Assets)
                     {
                         bool isSelected = string.Equals(asset.AssetId, SelectedAsset?.AssetId, StringComparison.Ordinal);
@@ -271,7 +271,7 @@
                                     <article class="panel trace-card" data-generated-asset-video-viewer>
                                         <header class="coach-card-header">
                                             <div>
-                                                <strong>Route-video viewer</strong>
+                                                <strong>Video preview</strong>
                                                 <p class="meta">@SelectedAsset.PreviewUri</p>
                                             </div>
                                             <div class="button-row compact">
@@ -405,7 +405,7 @@
                     }
 
                     <section data-generated-asset-actions>
-                        <header class="trace-section-title">Operational Actions</header>
+                        <header class="trace-section-title">Actions</header>
                         @if (IsStaleDispatchState(SelectedAsset.ReviewState))
                         {
                             <p class="error" role="status" aria-live="polite" data-generated-asset-stale-banner>
@@ -489,7 +489,7 @@
                             <header class="trace-section-title">Portrait Forge</header>
                             <div class="gm-board-fact-grid" data-generated-portrait-forge-selection>
                                 <div data-generated-portrait-forge-seed>
-                                    <span class="trace-section-title">Prompt seed</span>
+                                    <span class="trace-section-title">Brief</span>
                                     <span>@GetMetadataValue(SelectedAsset, "portraitPromptSeed", "n/a")</span>
                                 </div>
                                 <div data-generated-portrait-forge-style>
@@ -559,7 +559,7 @@
 
 @code {
     [Parameter]
-    public string Title { get; set; } = "Generated Asset Viewer";
+    public string Title { get; set; } = "Media Review";
 
     [Parameter]
     public string Summary { get; set; } = "Review generated portraits, dossiers, recaps, and reveal media through one reusable approval frame.";

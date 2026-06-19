@@ -1,5 +1,6 @@
 @namespace Chummer.Blazor.Components.Pages
 @page "/showcase"
+@layout Chummer.Blazor.Components.Layout.NoLayout
 @using Chummer.Contracts.Characters
 @using Chummer.Campaign.Contracts
 @using Chummer.Contracts.Content
@@ -20,10 +21,10 @@
         <ContactNetworkPanel Graph="_contactGraph" />
         <NpcPersonaStudioPanel Projection="_npcPersonaStudio" />
         <CreatorPublicationPanel Publication="_creatorPublication" />
-        <section class="panel flagship-media-showcase" aria-label="Flagship artifact samples">
+        <section class="panel flagship-media-showcase" aria-label="Media samples">
             <header class="flagship-media-showcase-header">
-                <h2>Flagship artifact samples</h2>
-                <p>Local Chummer-owned media samples keep the public and desktop surfaces grounded in inspectable release art instead of provider placeholders.</p>
+                <h2>Media samples</h2>
+                <p>First-party artwork for the desktop, help, and release surfaces.</p>
             </header>
             <div class="flagship-media-showcase-grid">
                 @foreach (ArtifactMediaSample sample in ArtifactMediaSamples)
@@ -79,12 +80,12 @@
             "medscan_diagnostic",
             "/media/chummer6/horizons-index.png",
             "Medscan diagnostic",
-            "Dense route and horizon scan sample used to keep future-facing explain surfaces readable."),
+            "Dense route and maintenance scan sample used to keep compact support surfaces readable."),
         new(
             "forge_review_ar",
             "/media/chummer6/karma-forge.png",
             "Forge review AR",
-            "Review-oriented artifact sample that keeps the build-and-publish lane grounded in first-party media.")
+            "Build-and-publish scene treatment for first-party media review.")
     ];
 
     private BuildLabConceptIntakeProjection _buildLabProjection = new(
@@ -981,7 +982,7 @@
             ],
             Metadata:
             [
-                new GeneratedAssetMetadataField("provenance", "Source", "Prompt seed: cyberpunk noir portrait, cinematic lighting"),
+                new GeneratedAssetMetadataField("provenance", "Source", "Cyberpunk noir portrait, cinematic lighting"),
                 new GeneratedAssetMetadataField("trace", "Why this draft", "Prepared for a fast player reveal lane with no builder-only chrome.", true),
                 new GeneratedAssetMetadataField("share", "Attach target", "Contact dossier / player reveal shelf"),
                 new GeneratedAssetMetadataField("portraitPromptSeed", "Prompt Seed", "cyberpunk noir portrait, cinematic lighting"),

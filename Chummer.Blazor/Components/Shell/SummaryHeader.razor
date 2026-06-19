@@ -5,15 +5,15 @@
 <section class="desktop-summary panel">
     <h2>@BuildSummaryHeading()</h2>
     <div class="summary-grid">
-        <label>Name <input id="summaryName" value="@(State.Profile?.Name ?? string.Empty)" readonly /></label>
-        <label>Alias <input id="summaryAlias" value="@(State.Profile?.Alias ?? string.Empty)" readonly /></label>
-        <label>Metatype <input id="summaryMetatype" value="@(State.Profile?.Metatype ?? string.Empty)" readonly /></label>
-        <label>Build <input id="summaryBuildMethod" value="@(State.Build?.BuildMethod ?? string.Empty)" readonly /></label>
-        <label>Karma <input id="summaryKarma" value="@(State.Progress?.Karma.ToString() ?? "0")" readonly /></label>
-        <label>Street Cred <input id="summaryStreetCred" value="@(State.Progress?.StreetCred.ToString() ?? "0")" readonly /></label>
+        <label>Name <input id="summaryName" aria-label="Name" value="@(State.Profile?.Name ?? string.Empty)" readonly /></label>
+        <label>Alias <input id="summaryAlias" aria-label="Alias" value="@(State.Profile?.Alias ?? string.Empty)" readonly /></label>
+        <label>Metatype <input id="summaryMetatype" aria-label="Metatype" value="@(State.Profile?.Metatype ?? string.Empty)" readonly /></label>
+        <label>Build <input id="summaryBuildMethod" aria-label="Build method" value="@(State.Build?.BuildMethod ?? string.Empty)" readonly /></label>
+        <label>Karma <input id="summaryKarma" aria-label="Karma" value="@(State.Progress?.Karma.ToString() ?? "0")" readonly /></label>
+        <label>Street Cred <input id="summaryStreetCred" aria-label="Street Cred" value="@(State.Progress?.StreetCred.ToString() ?? "0")" readonly /></label>
         <label class="wide">
             Runtime
-            <input id="summaryRuntime" value="@RuntimeSummary" readonly />
+            <input id="summaryRuntime" aria-label="Runtime" value="@RuntimeSummary" readonly />
             <button id="summaryRuntimeInspect"
                     type="button"
                     disabled="@(!CanInspectRuntime || State.IsBusy)"

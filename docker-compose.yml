@@ -27,8 +27,8 @@ services:
   chummer-blazor:
     image: chummer-blazor:local
     build:
-      context: .
-      dockerfile: Chummer.Blazor/Dockerfile
+      context: ..
+      dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile
     depends_on:
       - chummer-api
     environment:
@@ -41,8 +41,8 @@ services:
   chummer-blazor-portal:
     image: chummer-blazor:local
     build:
-      context: .
-      dockerfile: Chummer.Blazor/Dockerfile
+      context: ..
+      dockerfile: chummer-presentation/Chummer.Blazor/Dockerfile
     depends_on:
       - chummer-api
     profiles: ["portal"]

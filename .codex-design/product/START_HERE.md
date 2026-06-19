@@ -1,32 +1,45 @@
 # Start here
 
-If you are new, rusty, or just coming back, do not read everything first. Open one page and do the next action.
+Chummer6 is easiest to understand from the table outward.
 
-## Start now
+You start with a runner. The desktop helps you build that runner without hiding the math. ALICE can explain choices and tradeoffs. Origin Dossier can turn the person behind the sheet into approved story canon. From there, the campaign layer can remember what happened, show the GM what needs a call, and let the world answer only where the table allows it.
 
-You likely want [Onramp](ONRAMP.md) first. It gets you from “I need help” to “I’m in a useful table state” with minimal friction.
+If you are presenting the project today, use this path.
 
-## I want to try it now
+## First minute
 
-If your goal is a working build, jump to [Download](DOWNLOAD.md).
+Open the desktop workbench and show the build surface first. A returning Chummer user should immediately see that the sheet, rules detail, source choices, and dense workbench rhythm still matter.
 
-## I need to know what is live today
+Then open ALICE. The point is not that it chats; the point is that it explains build choices in the same workbench where the character lives.
 
-If you want the truth on what you can use right now, start with [Status](STATUS.md).
+Then open Origin Dossier. This is the emotional hook: a runner is not only stats. The dossier turns formative events into contacts, debts, enemies, beliefs, scars, secrets, and unresolved consequences.
 
-## I want to understand what this version is
+## Next five minutes
 
-If you want one page that explains how this edition is different, open [What Chummer6 Is](WHAT_CHUMMER6_IS.md).
+Show the campaign layer only after the core workbench feels credible. Table Pulse, Runner Passport, the GM cockpit, and the living newsroom are strongest when the viewer already trusts that Chummer still respects rules and GM authority.
 
-## I want the campaign layer
+Use `docs/TABLE_PULSE_FLAGSHIP_SHOWCASE.md` for that story. It links the rendered videos that currently have verified AAC audio tracks.
 
-When the core build flow is steady, continue to [Worlds and future work](HORIZONS/README.md).
+## Product areas, not horizon sprawl
 
-## I am blocked
+Use normal product language first.
 
-If installation, updates, or sign-in stops you, open [Help](HELP.md).
+Base features are the things a user can understand as part of Chummer6 itself: Workbench, ALICE, Origin Dossier, Ready for Tonight, Runner Passport, Knowledge Fabric, Table Pulse, and GM Cockpit.
 
-## I want to report an issue or help improve the project
+Horizons are only the bigger expansion bets that still need distance from today’s download: Karma Forge, NEXUS-PAN, Black Ledger, the publish/share lane, the community/campaign-memory lane, and specialized play modes such as Runsite, Ghostwire, and Anarchy.
 
-For concrete feedback, use [Contact](CONTACT.md).
-If you want to contribute directly, use [How can I help?](HOW_CAN_I_HELP.md).
+Keep Onramp inside the first-session path. It is starter help, not a separate product bet.
+
+## What to say if someone asks what is live
+
+Say it plainly: the desktop workbench and release packaging are the presentable lane; the wider living-world system is a governed product direction with bounded surfaces, receipts, and GM approval gates. Do not sell it as autonomous simulation.
+
+## Where to go deeper
+
+For release posture, use `docs/WORKBENCH_RELEASE_SIGNOFF.md`.
+
+For desktop packaging and download behavior, use `docs/DESKTOP_RELEASE_PIPELINE.md`.
+
+For compatibility boundaries, use `docs/COMPATIBILITY_CARGO.md`.
+
+For the product vision behind the campaign layer, use `.codex-design/product/VISION.md`.

@@ -54,8 +54,13 @@ public sealed class ShellSurfaceResolver : IShellSurfaceResolver
             ]);
         string? activeTabId = shellState.ActiveTabId;
         bool hasOpenWorkspace = activeWorkspaceId is not null || openWorkspaces.Count > 0;
+        IReadOnlyList<NavigationTabDefinition> sourceNavigationTabs = shellState.NavigationTabs.Count > 0
+            ? shellState.NavigationTabs
+            : string.IsNullOrWhiteSpace(activeRulesetId)
+                ? []
+                : _catalogResolver.ResolveNavigationTabs(activeRulesetId);
         IReadOnlyList<NavigationTabDefinition> navigationTabs = FilterPresentedNavigationTabs(
-            shellState.NavigationTabs,
+            sourceNavigationTabs,
             hasOpenWorkspace);
         activeTabId = ResolvePresentedActiveTabId(activeTabId, navigationTabs, hasOpenWorkspace);
 

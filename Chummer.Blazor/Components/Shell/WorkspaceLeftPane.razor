@@ -26,6 +26,8 @@
                     }
                     <button class="tab-btn @(ActiveTabId == tab.Id ? "active" : string.Empty)"
                             id="@tab.Id"
+                            data-nav-tab="@tab.Id"
+                            aria-label="@FormatNavigationTabLabel(tab)"
                             disabled="@(!enabled || State.IsBusy)"
                             @onclick="() => SelectTabRequested.InvokeAsync(tab.Id)">
                         @FormatNavigationTabLabel(tab)
@@ -45,6 +47,8 @@
                             Context="action"
                             ItemSize="40">
                     <button class="action-button @(State.ActiveActionId == action.Id ? "selected" : string.Empty)"
+                            data-workspace-action="@action.Id"
+                            aria-label="@FormatWorkspaceActionLabel(action)"
                             disabled="@State.IsBusy"
                             @onclick="() => ExecuteWorkspaceActionRequested.InvokeAsync(action)">
                         @FormatWorkspaceActionLabel(action)

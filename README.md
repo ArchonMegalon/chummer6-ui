@@ -2,61 +2,43 @@
 
 Workbench, browser, and desktop UX for Chummer6.
 
-## What this repo is
+Open it when you want to build a runner, understand the tradeoffs on the sheet, keep a table moving, or carry a character into the wider campaign layer without losing the rules underneath. The desktop is intentionally practical: dense where veteran users need speed, calmer where a new player needs a next step, and honest about what is live versus what is still a preview.
 
-`chummer6-ui` owns the big-screen side of Chummer:
+## What is here
 
-- builders, inspectors, and compare views
-- moderation and admin UX
-- browser and desktop workbench flows
-- shared presentation seams that stay on the workbench side
+This repository owns the desktop and browser workbench: the builder shell, inspectors, compare views, ALICE, Origin Dossier, download packaging, and the shared presentation seams that make Chummer6 feel like a real application instead of a collection of experiments.
 
-## What this repo is not
+The play/mobile shell, hosted campaign services, and release-channel authority live in adjacent Chummer repos. This repo can link to those surfaces, but it does not pretend to own their truth.
 
-This repo does not own:
+The product story should start with normal product areas. Workbench, ALICE, Origin Dossier, Ready for Tonight, Runner Passport, Knowledge Fabric, Table Pulse, and GM Cockpit are not a pile of speculative “Horizons”; they are the base shape a user should understand. Reserve Horizon language for the larger expansion bets that still need a clear future boundary.
 
-- the dedicated play/mobile shell
-- hosted orchestration
-- render-only media execution
-- copied shared contracts
+## Ownership boundaries
 
-The shipped play/mobile heads now live outside this repo in `chummer6-mobile`, and shared UI-kit primitives belong in `Chummer.Ui.Kit`.
+The shipped play/mobile heads now live outside this repo in `chummer6-mobile`; the dedicated play/mobile shell is not owned here. after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`. This repo's role in session/coach flows is limited to shared UI-kit primitives through `Chummer.Ui.Kit`, workbench-side coach sidecars and portal/proxy expectations explicit, and portal/proxy expectations for external `/session` and `/coach` hosts.
 
-Legacy head policy: `Chummer` and `Chummer.Web` are oracle/parity assets only.
-Net-new user-facing behavior belongs in the shared seam and active heads; legacy changes must be limited to regression-oracle maintenance, parity extraction, or compatibility verification.
-Legacy hub policy: `ChummerHub` and `ChummerHub.Client` are archived compatibility assets only.
-They are not part of the active solution, public runtime, or future ChummerHub product path; all public-edge and hub work belongs behind `Chummer.Portal`.
+Hosted orchestration, rule pack publication, build kit registry, NPC vault, runtime locks, hub catalog, hub review, and protected publication surfaces stay behind their owner-backed service seams. Presentation code may consume those seams; it must not re-own hosted orchestration.
 
-## Current mission
+release-channel publication truth now lives downstream in `chummer6-hub-registry`; desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured.
 
-The work here is purification:
+Legacy head policy: `Chummer` and `Chummer.Web` are oracle/parity assets only. Net-new user-facing behavior belongs in the shared seam and active heads; legacy changes must be limited to regression-oracle maintenance, parity extraction, or compatibility verification.
 
-- keep only workbench/browser/desktop ownership
-- consume shared packages instead of rebuilding them locally
-- finish accessibility and deployment signoff without pretending the split is already done
-- keep workbench-side coach sidecars and portal/proxy expectations explicit
+Legacy hub policy: `ChummerHub` and `ChummerHub.Client` are archived compatibility assets only. They are not part of the active solution, public runtime, or future ChummerHub product path; all public-edge and hub work belongs behind `Chummer.Portal`.
 
-Current honesty clause:
+## Start here
 
-- the workbench/browser/desktop lane is ready enough to ship the current early-access desktop scope
-- the release lane now emits Windows installer and portable `.exe` outputs plus portable bundles, alongside macOS `.dmg` and Linux `.deb` preview installers, instead of loose files
-- release-channel publication truth now lives downstream in `chummer6-hub-registry`; this repo emits the desktop bundle and installer recipe, not the promoted channel head
-- desktop heads can consume the canonical registry manifest for self-update when `CHUMMER_DESKTOP_UPDATE_MANIFEST` is configured
-- every packaged desktop head now has a startup-smoke gate and emits a bounded release-regression packet before promotion if the smoke start fails
-- scheduled nightly publication and `main`-push publication now use the same `Desktop Downloads Matrix` workflow so the downloads shelf advances through one canonical path
-- explicit release evidence lives in `docs/WORKBENCH_RELEASE_SIGNOFF.md`
-- legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth
-- after the `chummer-play` split, presentation ownership for session/coach flows is limited to shared UI-kit primitives consumed by `chummer-play` through `Chummer.Ui.Kit`, workbench-side coach sidecars, and portal/proxy expectations for external `/session` and `/coach` hosts
+For a quick orientation, read `.codex-design/product/START_HERE.md`.
 
-## Go deeper
+For the current release posture, read `docs/WORKBENCH_RELEASE_SIGNOFF.md`.
 
-Legacy root `chummer-presentation.design*.md` files remain only as compatibility aliases. Use `.codex-design/*` as the live canon.
+legacy compatibility cargo is explicitly isolated in `docs/COMPATIBILITY_CARGO.md` instead of being treated as active boundary truth.
 
-- `.codex-design/repo/IMPLEMENTATION_SCOPE.md`
-- `.codex-design/review/REVIEW_CONTEXT.md`
-- `docs/DESKTOP_RELEASE_PIPELINE.md`
-- `docs/WORKBENCH_RELEASE_SIGNOFF.md`
-- `docs/COMPATIBILITY_CARGO.md`
+For the larger campaign-layer showcase, read `docs/TABLE_PULSE_FLAGSHIP_SHOWCASE.md`.
+
+## Today’s shape
+
+The early-access desktop lane is strong enough to present as a focused workbench: Windows installer and portable outputs, macOS and Linux preview installers, startup-smoke coverage, and a clear split between active desktop work and legacy compatibility cargo.
+
+Legacy `Chummer` and `Chummer.Web` code remains useful as parity and regression reference. New user-facing desktop behavior should land in the active workbench heads and shared presentation seams, not in legacy compatibility surfaces.
 
 ## Verification
 

@@ -1,6 +1,6 @@
-# Table Pulse Flagship Showcase
+# Chummer6 At The Table
 
-Chummer6 should feel useful before it feels large. This guide explains the live-table and living-world layer from the player and GM point of view: what you can open, what changes at the table, and what still stays under human authority.
+Start with the person at the table, not the system diagram. Chummer6 is strongest when a player can build a runner, understand the choices, give that runner a past, and then watch the campaign remember the consequences without stealing authority from the GM.
 
 ## In One Sentence
 
@@ -8,7 +8,18 @@ Chummer6 turns live table pressure, between-session faction motion, and public-s
 
 ## Where It Fits
 
-Some of this is live, and some is the target shape. The guide names the experience without pretending every surface is available on every public build today.
+Use this as the presentation story for the workbench plus campaign layer. Some surfaces are live and some are target shape; the guide keeps that boundary visible without making the reader decode internal release evidence.
+
+## What Belongs Where
+
+Chummer6 should read like one product with a strong core and a few ambitious expansion bets. If a user needs it to build, understand, run, remember, or return to a campaign, it belongs in the product story. The future shelf is only for the larger bets that still need distance from today’s download.
+
+The core product story is the builder plus the things that make that builder feel alive at a table: Workbench, ALICE, Origin Dossier, NEXUS-PAN, Ready for Tonight, Runner Passport, Knowledge Fabric, Table Pulse and GM Cockpit.
+
+The future shelf is smaller on purpose: Karma Forge, Black Ledger, Runbook Press and Creator OS, Community Hub and Jackpoint, Runsite, Ghostwire, and Anarchy. These are bigger bets, not the first thing a visitor has to understand.
+
+A few labels should stay quiet: Onramp, Quicksilver as a headline Horizon, Local Co-Processor as a public promise. They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.
+
 
 ## Why You Would Open This
 
@@ -31,7 +42,7 @@ The best version reads as one connected play loop, not as separate modules:
 2. **Living World Engagement**: inbox, rumor market, standing orders, Runner Passport.
 3. **Remote Reaction And Opt-Out Safety**: quiet hours, suppression record, consent defaults, remote mini-games.
 4. **Pulse Director Control Surface**: GM cockpit, pressure economy, after-action projection, review suggestions.
-5. **Player-Facing Action Surface**: Signal Deck, stronger Passport framing, faction role paths, opposition clocks, living newsroom framing.
+5. **Player-Facing Action Layer**: sharp player action cards, stronger Passport framing, faction role paths, opposition clocks, living newsroom framing.
 
 ## Product Scenes
 
@@ -50,13 +61,15 @@ Origin Dossier and ALICE bring a user-first lane into the stack: approved canon,
 
 ## Watch The Scenes
 
-- [TABLE PULSE 90-second deep dive](https://chummer.run/media/horizons/table-pulse-90s-deepdive.mp4) - MP4 with AAC audio. [Captions](https://chummer.run/media/horizons/table-pulse-90s-deepdive.vtt).
-- [ALICE 90-second deep dive](https://chummer.run/media/horizons/alice-90s-deepdive.mp4) - MP4 with AAC audio. [Captions](https://chummer.run/media/horizons/alice-90s-deepdive.vtt).
+- [Chummer6 flagship promo](https://chummer.run/media/promo/chummer6-flagship-promo.mp4) - Quick overview with narration. [Captions](https://chummer.run/media/promo/chummer6-flagship-promo.vtt).
+- [TABLE PULSE 90-second deep dive](https://chummer.run/media/horizons/table-pulse-90s-deepdive.mp4) - Deep dive with narration. [Captions](https://chummer.run/media/horizons/table-pulse-90s-deepdive.vtt).
+- [ALICE 90-second deep dive](https://chummer.run/media/horizons/alice-90s-deepdive.mp4) - Deep dive with narration. [Captions](https://chummer.run/media/horizons/alice-90s-deepdive.vtt).
+- [Chummer6 product threads promo](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.mp4) - Product-thread overview with updated narration. [Captions](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.vtt).
 
 
 ## User-First Entry Arc
 
-The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, Signal Deck, and the living-world stack.
+The flagship story no longer starts only with table heat. A player can begin with a grounded origin dossier, approve canon, let ALICE use that canon as bounded build-help context, and then carry that identity into Passport, player action cards, and the living-world stack.
 
 1. A player starts from Origin Dossier instead of facing a cold chargen sheet.
 2. Approved canon freezes a stable narrative spine before downstream media regenerates.
@@ -72,7 +85,7 @@ What stays trustworthy:
 
 ## Origin Dossier And ALICE
 
-Origin Dossier is the premium narrative-first lane for turning runner identity into approved canon, derivative dossier media, and later ALICE follow-up context without letting story text silently mutate build truth.
+Origin Dossier should now read as a flagship base feature: a player enters Chummer as a runner with causes, debts, people, scars, secrets, and unfinished consequences. ALICE keeps that story connected to rules explanation without letting prose silently mutate build truth.
 
 What the player gets:
 
@@ -107,7 +120,7 @@ What the GM can trust:
 - pulse policy and heat thresholds
 - recipient reasoning, quiet-hours, mute, and opt-out posture
 - GM allowances and gimmicks as explicit advisory context
-- mini-game prompt source, chosen response, and proposed consequence
+- mini-game card source, chosen response, and proposed consequence
 - public-safe release controls before any newsroom or public map projection
 - receipt trail, override reason, and what remains manual review
 
@@ -133,9 +146,9 @@ It does not mean:
 
 ## Hero Surfaces
 
-### Signal Deck
+### Player Action Cards
 
-Signal Deck is the fast player-facing action board.
+Player Action Cards is the quick player-facing response surface.
 
 How it should feel:
 
@@ -224,10 +237,10 @@ A session event raises heat and creates a bounded pulse packet with typed contex
 If policy and consent allow it, the pulse packet becomes player-facing or faction-facing delivery.
 
 - inbox event
-- Signal Deck prompt
+- player action card
 - rumor item
 - standing-order update
-- remote reaction mini-game prompt
+- remote reaction mini-game card
 
 ### 3. Response
 
@@ -254,7 +267,7 @@ A visitor should be able to picture an action board, not an admin form.
 The effect comes from:
 
 - seeing live pressure become playable
-- watching a Signal Deck prompt cascade into faction consequences
+- watching a player action card cascade into faction consequences
 - seeing Passport identity, role path, and city pressure connect
 - watching a remote reaction mini-game end in a newsroom or public-safe city fallout beat
 
@@ -270,7 +283,7 @@ What would make it feel cheap:
 The flagship version should let a reader immediately picture the best-case loop:
 
 1. a run spikes heat and the GM approves a bounded pulse packet
-2. a player receives a Signal Deck card with one sharp risky choice and one safer choice
+2. a player receives an action card with one sharp risky choice and one safer choice
 3. the choice resolves into Passport movement, faction pressure, and a receipt trail
 4. the city later reflects that action through rumor, newsroom fallout, or public-safe consequence
 
@@ -287,7 +300,7 @@ The flagship version should let a reader immediately picture the best-case loop:
 
 Call the stack ready only when all of the following are true:
 
-1. Signal Deck, Passport, and GM cockpit all exist as coherent product surfaces.
+1. player action cards, Passport, and GM cockpit all exist as coherent product surfaces.
 2. Remote reaction mini-games are real moments a player can understand and answer.
 3. Inbox, rumor, order, and fallout lanes are receipt-backed.
 4. Public-safe projection stays bounded by GM authority.
@@ -302,6 +315,14 @@ Current status: Shipped native desktop workbench with build help, rules coach, a
 Why a reader should care: This is the closest user-first entry into Chummer’s broader living-world stack.
 
 Connection here: Origin Dossier creates approved canon; ALICE later uses that canon as bounded follow-up context for build help, rules coaching, and GM-steered explanation.
+
+### Origin Dossier
+
+Current status: Presentation-critical base feature for origin canon, dossier media, narration, and ALICE handoff.
+
+Why a reader should care: It gives a casual visitor the immediate wow: this is not only a rules editor, it can make the life behind the stats matter.
+
+Connection here: The approved origin becomes the narrative spine that ALICE, Runner Passport, and campaign follow-through can reference without inventing new truth.
 
 ## Where This Comes From
 

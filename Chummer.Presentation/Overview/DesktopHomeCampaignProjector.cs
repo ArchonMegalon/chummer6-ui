@@ -41,7 +41,7 @@ public static class DesktopHomeCampaignProjector
                 Watchouts:
                 [
                     "Campaign return remains guest-only until an account-backed restore packet lands on this install.",
-                    "Support and fix notices stay generic until the claimed install, channel, and current campaign workspace line up."
+                    "Support and fix notices become install-specific after the linked install, channel, and current campaign workspace line up."
                 ]);
         }
 

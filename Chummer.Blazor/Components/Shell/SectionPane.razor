@@ -1,8 +1,10 @@
 @namespace Chummer.Blazor.Components.Shell
 @using Microsoft.AspNetCore.Components.Web
 @using Chummer.Contracts.Presentation
+@using Chummer.Contracts.Rulesets
 @using Chummer.Desktop.Runtime
 @using Chummer.Presentation.Overview
+@using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.UiKit
 @using System.Text.Json.Nodes
 
@@ -117,13 +119,14 @@
                         <span>@field.Label@(field.Required ? " *" : string.Empty)</span>
                         @if (string.Equals(field.Kind, BuildLabFieldKinds.Multiline, StringComparison.Ordinal))
                         {
-                            <textarea readonly="@field.ReadOnly"
+                            <textarea aria-label="@field.Label"
+                                      readonly="@field.ReadOnly"
                                       placeholder="@field.Placeholder">@field.Value</textarea>
                         }
                         else if (string.Equals(field.Kind, BuildLabFieldKinds.SingleSelect, StringComparison.Ordinal)
                             || string.Equals(field.Kind, BuildLabFieldKinds.MultiSelect, StringComparison.Ordinal))
                         {
-                            <select disabled="@field.ReadOnly">
+                            <select aria-label="@field.Label" disabled="@field.ReadOnly">
                                 @if (field.Options is not null)
                                 {
                                     @foreach (BuildLabFieldOption option in field.Options)
@@ -135,7 +138,7 @@
                         }
                         else
                         {
-                            <input value="@field.Value" readonly="@field.ReadOnly" placeholder="@field.Placeholder" />
+                            <input aria-label="@field.Label" value="@field.Value" readonly="@field.ReadOnly" placeholder="@field.Placeholder" />
                         }
                         @if (!string.IsNullOrWhiteSpace(field.HelpText))
                         {
@@ -728,6 +731,23 @@
             </section>
         }
 
+        @if (HasSectionQuickActions())
+        {
+            <section class="section-quick-actions" data-section-quick-actions>
+                @foreach (SectionQuickActionDefinition quickAction in BuildSectionQuickActions())
+                {
+                    <button type="button"
+                            class="mini-btn @(quickAction.IsPrimary ? "primary" : string.Empty)"
+                            data-section-quick-action="@quickAction.ControlId"
+                            aria-label="@quickAction.Label"
+                            disabled="@State.IsBusy"
+                            @onclick="() => ExecuteUiControlRequested.InvokeAsync(quickAction.ControlId)">
+                        @quickAction.Label
+                    </button>
+                }
+            </section>
+        }
+
         <table class="section-table">
             <thead>
                 <tr><th>Entry</th><th>Detail</th></tr>
@@ -755,6 +775,9 @@
 
     [Parameter]
     public EventCallback<string> ExecuteCommandRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ExecuteUiControlRequested { get; set; }
 
     [Parameter]
     public EventCallback<string> LoadWorkspaceRequested { get; set; }
@@ -1173,6 +1196,22 @@
             _ => FormatSectionName(sectionId)
         };
     }
+
+    private IReadOnlyList<SectionQuickActionDefinition> BuildSectionQuickActions()
+    {
+        if (string.IsNullOrWhiteSpace(State.ActiveSectionId))
+            return Array.Empty<SectionQuickActionDefinition>();
+
+        string? rulesetId = RulesetDefaults.NormalizeOptional(State.Rules?.GameEdition)
+            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces
+                .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, State.WorkspaceId?.Value, StringComparison.Ordinal))
+                ?.RulesetId)
+            ?? RulesetDefaults.NormalizeOptional(State.OpenWorkspaces.FirstOrDefault()?.RulesetId);
+        return SectionQuickActionCatalog.ForSection(rulesetId, State.ActiveSectionId);
+    }
+
+    private bool HasSectionQuickActions()
+        => BuildSectionQuickActions().Count > 0;
 
     private string BuildClassicSheetHeading()
     {

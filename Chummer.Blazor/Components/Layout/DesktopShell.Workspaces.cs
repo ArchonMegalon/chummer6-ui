@@ -121,6 +121,14 @@ public partial class DesktopShell
         await _bridge.ExecuteWorkspaceActionAsync(action, CancellationToken.None);
     }
 
+    private async Task HandleUiControlAsync(string controlId)
+    {
+        if (_bridge is null || string.IsNullOrWhiteSpace(controlId))
+            return;
+
+        await _bridge.HandleUiControlAsync(controlId, CancellationToken.None);
+    }
+
     private void SyncMetadataDraftFromState()
     {
         MetadataName = State.Profile?.Name ?? MetadataName;

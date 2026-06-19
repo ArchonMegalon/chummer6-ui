@@ -107,6 +107,7 @@ else
             <SectionPane State="@State"
                          IsCommandEnabled="@IsCommandEnabled"
                          ExecuteCommandRequested="@ExecuteCommandAsync"
+                         ExecuteUiControlRequested="@HandleUiControlAsync"
                          LoadWorkspaceRequested="@(workspaceId => LoadWorkspaceAsync(workspaceId))" />
         </main>
 

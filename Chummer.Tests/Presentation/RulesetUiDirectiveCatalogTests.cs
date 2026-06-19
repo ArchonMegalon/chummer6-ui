@@ -197,6 +197,21 @@ public sealed class RulesetUiDirectiveCatalogTests
     }
 
     [TestMethod]
+    public void LoadedRunnerTabFilter_keeps_edit_tabs_visible_and_hides_catalog_only_tabs()
+    {
+        Assert.IsFalse(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-create"));
+        Assert.IsFalse(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-rules"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-info"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-attributes"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-skills"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-qualities"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-gear"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-cyberware"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-adept"));
+        Assert.IsTrue(RulesetUiDirectiveCatalog.IsLoadedRunnerVisibleNavigationTab("tab-contacts"));
+    }
+
+    [TestMethod]
     public void FormatDialogNotice_applies_ruleset_specific_dialog_prefixes()
     {
         Assert.AreEqual(

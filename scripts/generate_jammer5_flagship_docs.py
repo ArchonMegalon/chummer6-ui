@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -35,7 +36,10 @@ def video_lines(items: list[dict[str, Any]]) -> list[str]:
     for item in items:
         title = str(item.get("title") or "").strip()
         url = str(item.get("url") or "").strip()
-        note = str(item.get("note") or "MP4 with AAC audio.").strip()
+        local_path_text = str(item.get("local_path") or "").strip()
+        if local_path_text and not video_has_audio(Path(local_path_text)):
+            continue
+        note = str(item.get("note") or "Video with narration.").strip()
         caption_url = str(item.get("caption_url") or "").strip()
         if not title or not url:
             continue
@@ -46,6 +50,34 @@ def video_lines(items: list[dict[str, Any]]) -> list[str]:
             line += f" [Captions]({caption_url})."
         rendered.append(line)
     return rendered
+
+
+def video_has_audio(path: Path) -> bool:
+    if not path.is_file():
+        return False
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-select_streams",
+                "a",
+                "-show_entries",
+                "stream=codec_name",
+                "-of",
+                "csv=p=0",
+                str(path),
+            ],
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=15,
+        )
+    except Exception:
+        return False
+    return bool(result.stdout.strip())
 
 
 def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
@@ -73,6 +105,7 @@ def sync_visual_gallery(spec: dict[str, Any]) -> list[dict[str, str]]:
 def render_showcase(spec: dict[str, Any]) -> str:
     overview = spec["overview"]
     editorial = dict(spec.get("editorial_posture") or {})
+    taxonomy = dict(spec.get("product_taxonomy") or {})
     user_first = dict(spec.get("user_first_story") or {})
     origin = dict(spec.get("origin_dossier_spotlight") or {})
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
@@ -96,6 +129,47 @@ def render_showcase(spec: dict[str, Any]) -> str:
         "",
         overview["delivery_posture"],
         "",
+    ]
+    if taxonomy:
+        base_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("base_features") or [])]
+        future_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("future_horizons") or [])]
+        quiet_names = [str(dict(item).get("name") or "").strip() for item in list(taxonomy.get("throw_out") or [])]
+        base_names = [name for name in base_names if name]
+        future_names = [name for name in future_names if name]
+        quiet_names = [name for name in quiet_names if name]
+        lines.extend(
+            [
+                f"## {taxonomy['title']}",
+                "",
+                str(taxonomy.get("summary") or "").strip(),
+                "",
+                "The core product story is the builder plus the things that make that builder feel alive at a table: "
+                + ", ".join(base_names)
+                + ".",
+                "",
+            ]
+        )
+        if future_names:
+            lines.extend(
+                [
+                    "The future shelf is smaller on purpose: "
+                    + ", ".join(future_names)
+                    + ". These are bigger bets, not the first thing a visitor has to understand.",
+                    "",
+                ]
+            )
+        if taxonomy.get("throw_out"):
+            lines.extend(
+                [
+                    "A few labels should stay quiet: "
+                    + ", ".join(quiet_names)
+                    + ". They are starter help, navigation polish, or infrastructure, so the app should absorb them instead of selling them as separate ideas.",
+                    "",
+                ]
+            )
+        lines.append("")
+    lines.extend(
+        [
         "## Why You Would Open This",
         "",
         "Table Pulse is the live pressure-and-response system for Chummer6.",
@@ -110,7 +184,8 @@ def render_showcase(spec: dict[str, Any]) -> str:
         "",
         "The best version reads as one connected play loop, not as separate modules:",
         "",
-    ]
+        ]
+    )
     for index, layer in enumerate(overview["layers"], start=1):
         joined = ", ".join(layer["items"])
         lines.append(f"{index}. **{layer['name']}**: {joined}.")
@@ -344,7 +419,7 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             "### On Mobile / PWA",
             "",
-            "A phone prompt should feel:",
+            "A phone card should feel:",
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["feel"]),
             "",
@@ -352,11 +427,11 @@ def render_minigames(spec: dict[str, Any]) -> str:
             "",
             *bullet_lines(mg["surface_requirements"]["mobile_pwa"]["must_show"]),
             "",
-            "### In Signal Deck",
+            "### In Player Action Cards",
             "",
             "The mini-game should appear as:",
             "",
-            *bullet_lines(mg["surface_requirements"]["signal_deck"]),
+            *bullet_lines(mg["surface_requirements"]["player_action_cards"]),
             "",
             "### In GM Cockpit",
             "",
@@ -398,6 +473,7 @@ def render_index_section(spec: dict[str, Any]) -> str:
         if isinstance(item, dict)
     ]
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
+    taxonomy = dict(spec.get("product_taxonomy") or {})
     videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     gallery_lines: list[str] = []
     if visual_gallery:
@@ -439,6 +515,7 @@ def render_index_section(spec: dict[str, Any]) -> str:
             "</ul>",
             "",
             "<p>Use these notes when you want the larger table picture: player action cards, runner identity, GM steering, public-safe fallout, Origin Dossier, ALICE, and short reaction moments that keep the city moving without taking authority away from the GM.</p>",
+            f"<p><strong>{taxonomy.get('title', 'Product taxonomy')}</strong>: {taxonomy.get('summary', 'Base features and future expansion bets are separated so the public story stays readable.')}</p>",
             *gallery_lines,
             *video_html,
             "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
