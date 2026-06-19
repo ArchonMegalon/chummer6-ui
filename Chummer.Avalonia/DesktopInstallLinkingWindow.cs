@@ -15,6 +15,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
 {
     private DesktopInstallLinkingState _state;
     private readonly DesktopUpdateClientStatus _updateStatus;
+    private DesktopPreferenceState _preferences;
     private readonly string _language;
     private readonly TextBlock _summaryText;
     private readonly TextBlock _linkStateText;
@@ -31,6 +32,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
     private readonly TextBlock _claimCodeLabelText;
     private readonly TextBox _claimCodeTextBox;
     private readonly StackPanel _claimCodeEntryRow;
+    private readonly TextBlock _alicePreferenceStatusText;
+    private readonly CheckBox _aliceFeaturesCheckBox;
     private readonly TextBlock _moreToolsHeading;
     private readonly WrapPanel _moreToolsPanel;
     private readonly Button _followThroughButton;
@@ -52,7 +55,8 @@ internal sealed class DesktopInstallLinkingWindow : Window
         _loginVideoPreview = loginVideoPreview;
         _allowGuestClose = loginVideoPreview;
         _updateStatus = DesktopUpdateRuntime.GetCurrentStatus(context.State.HeadId);
-        _language = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId).Language;
+        _preferences = DesktopPreferenceRuntime.LoadOrCreateState(context.State.HeadId);
+        _language = _preferences.Language;
         Title = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language);
         Width = 880;
         Height = 540;
@@ -189,6 +193,30 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 _redeemClaimCodeButton
             }
         };
+        _alicePreferenceStatusText = new TextBlock
+        {
+            Text = BuildAlicePreferenceStatus(_preferences, _language),
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+            TextWrapping = TextWrapping.Wrap
+        };
+        _aliceFeaturesCheckBox = new CheckBox
+        {
+            Name = "InstallLinkAliceFeatureToggle",
+            Content = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.checkbox", _language),
+            IsChecked = !_preferences.DisableAiFeatures,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+        ToolTip.SetTip(
+            _aliceFeaturesCheckBox,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
+        AutomationProperties.SetName(
+            _aliceFeaturesCheckBox,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.checkbox", _language));
+        AutomationProperties.SetHelpText(
+            _aliceFeaturesCheckBox,
+            DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.tip", _language));
+        _aliceFeaturesCheckBox.IsCheckedChanged += (_, _) =>
+            ApplyAliceFeaturePreference(disableAiFeatures: _aliceFeaturesCheckBox.IsChecked != true);
         _moreToolsHeading = new TextBlock
         {
             Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.more_tools", _language),
@@ -533,6 +561,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                 },
                 _linkStateText,
                 _statusText,
+                CreateAlicePreferencePanel(),
                 DesktopShellTheme.CreateUtilityPanel(
                     new StackPanel
                     {
@@ -558,6 +587,30 @@ internal sealed class DesktopInstallLinkingWindow : Window
             }
         };
     }
+
+    private Control CreateAlicePreferencePanel()
+        => DesktopShellTheme.CreateUtilityPanel(
+            new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.title", _language),
+                        FontWeight = FontWeight.SemiBold,
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    new TextBlock
+                    {
+                        Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.preference.summary", _language),
+                        Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMutedForegroundBrush", "#334155"),
+                        TextWrapping = TextWrapping.Wrap
+                    },
+                    _aliceFeaturesCheckBox,
+                    _alicePreferenceStatusText
+                }
+            });
 
     private static Control CreateMatrixSignalRail()
         => new Grid
@@ -870,6 +923,27 @@ internal sealed class DesktopInstallLinkingWindow : Window
         return Task.CompletedTask;
     }
 
+    private void ApplyAliceFeaturePreference(bool disableAiFeatures)
+    {
+        DesktopPreferenceState nextPreferences = DesktopPreferenceStateRuntime.Normalize(
+            _preferences with { DisableAiFeatures = disableAiFeatures });
+        _preferences = nextPreferences;
+        DesktopPreferenceRuntime.SaveState(_state.HeadId, nextPreferences);
+        DesktopPreferenceStateRuntime.SetCurrent(nextPreferences);
+        _alicePreferenceStatusText.Text = BuildAlicePreferenceStatus(nextPreferences, _language);
+
+        if (Owner is MainWindow ownerWindow)
+        {
+            ownerWindow.ApplyExternalPreferenceState(nextPreferences);
+        }
+
+        SetStatus(DesktopLocalizationCatalog.GetRequiredString(
+            disableAiFeatures
+                ? "desktop.install_link.status.alice_hidden"
+                : "desktop.install_link.status.alice_visible",
+            _language));
+    }
+
     private void RefreshSummary()
     {
         _summaryText.Text = BuildSummary(_state, _updateStatus, _language);
@@ -984,6 +1058,17 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             ToolTip.SetTip(button, text);
         }
+    }
+
+    internal static string BuildAlicePreferenceStatus(DesktopPreferenceState preferences, string language)
+    {
+        ArgumentNullException.ThrowIfNull(preferences);
+
+        return DesktopLocalizationCatalog.GetRequiredString(
+            preferences.DisableAiFeatures
+                ? "desktop.install_link.preference.off"
+                : "desktop.install_link.preference.on",
+            language);
     }
 
     private void UpdateMatrixHandoffState(string message)

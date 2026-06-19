@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private readonly MainWindowTransientStateCoordinator _transientStateCoordinator;
     private readonly MainWindowControls _controls;
     private DesktopPreferenceState _persistedPreferences;
+    private bool _preferPersistedPreferencesOnNextRefresh;
     private DesktopInstallLinkingState _installLinkingState;
 
     public MainWindow()

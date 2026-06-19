@@ -175,6 +175,25 @@ public sealed class DesktopInstallLinkingShellChromeTests
     }
 
     [TestMethod]
+    public void Install_link_window_contains_first_run_alice_visibility_choice()
+    {
+        string installWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
+        string preferenceSource = File.ReadAllText(FindPath("Chummer.Avalonia", "MainWindow.PreferenceState.cs"));
+        string localizationSource = File.ReadAllText(FindPath("Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+
+        StringAssert.Contains(installWindowSource, "InstallLinkAliceFeatureToggle");
+        StringAssert.Contains(installWindowSource, "CreateAlicePreferencePanel");
+        StringAssert.Contains(installWindowSource, "ApplyAliceFeaturePreference");
+        StringAssert.Contains(installWindowSource, "DisableAiFeatures");
+        StringAssert.Contains(installWindowSource, "DesktopPreferenceRuntime.SaveState");
+        StringAssert.Contains(installWindowSource, "ApplyExternalPreferenceState(nextPreferences)");
+        StringAssert.Contains(localizationSource, "desktop.install_link.preference.checkbox");
+        StringAssert.Contains(localizationSource, "Show Alice and dossier features");
+        StringAssert.Contains(localizationSource, "desktop.install_link.status.alice_hidden");
+        StringAssert.Contains(preferenceSource, "_preferPersistedPreferencesOnNextRefresh");
+    }
+
+    [TestMethod]
     public void Help_menu_login_video_preview_reuses_matrix_uplink_without_forcing_browser_or_exit()
     {
         string installWindowSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"));
