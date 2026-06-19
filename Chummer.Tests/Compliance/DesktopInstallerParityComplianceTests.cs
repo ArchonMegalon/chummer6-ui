@@ -52,6 +52,23 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(selectionHandlersText.Contains("LegacyReportBugUrl", StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    public void Windows_desktop_installer_splash_uses_compact_non_clipping_layout()
+    {
+        string repoRoot = FindRepoRoot();
+        string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");
+        string installerProgramText = File.ReadAllText(installerProgramPath);
+
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(640, 280);");
+        StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 18F");
+        StringAssert.Contains(installerProgramText, "Shortcuts and first launch are prepared automatically.");
+        StringAssert.Contains(installerProgramText, "AutoEllipsis = true");
+        StringAssert.Contains(installerProgramText, "_progressTrack.ClientSize.Width");
+        Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 24F", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("Unpacking the desktop, wiring shortcuts, and preparing first launch.", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("ProgressTrackWidth", StringComparison.Ordinal));
+    }
+
     private static string FindRepoRoot()
     {
         DirectoryInfo? current = new(AppContext.BaseDirectory);

@@ -1657,16 +1657,16 @@ internal static class Program
 
     private sealed class InstallSplashForm : Form
     {
-        private const int ProgressTrackWidth = 624;
         private readonly Label _statusLabel;
         private readonly Label _elapsedLabel;
+        private readonly Panel _progressTrack;
         private readonly Panel _progressFill;
         private readonly Label _progressValueLabel;
 
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(744, 336);
+            ClientSize = new Size(640, 280);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -1687,21 +1687,21 @@ internal static class Program
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(28, 28, 28, 24),
+                Padding = new Padding(24, 24, 24, 22),
                 BackColor = Color.FromArgb(14, 19, 28)
             };
 
             Panel glyphTile = new()
             {
-                Size = new Size(84, 84),
+                Size = new Size(64, 64),
                 Location = new Point(0, 0),
                 BackColor = Color.FromArgb(22, 28, 40)
             };
 
             PictureBox appGlyph = new()
             {
-                Size = new Size(60, 60),
-                Location = new Point(12, 12),
+                Size = new Size(46, 46),
+                Location = new Point(9, 9),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.Transparent
             };
@@ -1718,11 +1718,11 @@ internal static class Program
             Label eyebrowLabel = new()
             {
                 AutoSize = false,
-                Text = "WINDOWS INSTALLER",
-                Font = new Font("Segoe UI Semibold", 8.5F, FontStyle.Bold, GraphicsUnit.Point),
+                Text = "INSTALLER",
+                Font = new Font("Segoe UI Semibold", 8F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(116, 223, 193),
                 Dock = DockStyle.Top,
-                Height = 18,
+                Height = 16,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 4)
             };
@@ -1731,22 +1731,23 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = displayName,
-                Font = new Font("Segoe UI Semibold", 24F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 18F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 48,
+                Height = 36,
                 TextAlign = ContentAlignment.BottomLeft,
-                Margin = new Padding(0, 0, 0, 4)
+                Margin = new Padding(0, 0, 0, 4),
+                AutoEllipsis = true
             };
 
             Label copyLabel = new()
             {
                 AutoSize = false,
-                Text = "Unpacking the desktop, wiring shortcuts, and preparing first launch.",
-                Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point),
+                Text = "Shortcuts and first launch are prepared automatically.",
+                Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 42,
+                Height = 30,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 16)
             };
@@ -1755,21 +1756,21 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = "Preparing installer",
-                Font = new Font("Segoe UI Semibold", 11F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 9.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 28,
+                Height = 24,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 0, 0, 10)
+                Margin = new Padding(0, 0, 0, 8),
+                AutoEllipsis = true
             };
 
-            Panel progressTrack = new()
+            _progressTrack = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 12,
+                Height = 10,
                 BackColor = Color.FromArgb(33, 42, 58),
-                Margin = new Padding(0, 0, 0, 14),
-                Width = ProgressTrackWidth
+                Margin = new Padding(0, 0, 0, 12)
             };
 
             _progressFill = new Panel
@@ -1778,12 +1779,12 @@ internal static class Program
                 Width = 0,
                 BackColor = Color.FromArgb(57, 196, 156)
             };
-            progressTrack.Controls.Add(_progressFill);
+            _progressTrack.Controls.Add(_progressFill);
 
             Panel progressMetaRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 22,
+                Height = 20,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -1794,8 +1795,8 @@ internal static class Program
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Left,
-                Width = 160,
-                Height = 22,
+                Width = 140,
+                Height = 20,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
@@ -1806,8 +1807,8 @@ internal static class Program
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Right,
-                Width = 120,
-                Height = 22,
+                Width = 92,
+                Height = 20,
                 TextAlign = ContentAlignment.MiddleRight
             };
 
@@ -1821,14 +1822,14 @@ internal static class Program
                 Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
-                Height = 22,
+                Height = 20,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
             Panel textColumn = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(22, 4, 0, 0)
+                Padding = new Padding(18, 0, 0, 0)
             };
             textColumn.Controls.Add(copyLabel);
             textColumn.Controls.Add(titleLabel);
@@ -1837,7 +1838,7 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 92
+                Height = 72
             };
             heroRow.Controls.Add(textColumn);
             heroRow.Controls.Add(glyphTile);
@@ -1849,7 +1850,7 @@ internal static class Program
             };
 
             body.Controls.Add(hintLabel);
-            body.Controls.Add(progressTrack);
+            body.Controls.Add(_progressTrack);
             body.Controls.Add(progressMetaRow);
             body.Controls.Add(_statusLabel);
             body.Controls.Add(heroRow);
@@ -1883,13 +1884,15 @@ internal static class Program
                 int boundedTotal = Math.Max(1, total.Value);
                 int boundedCompleted = Math.Max(0, Math.Min(completed ?? 0, boundedTotal));
                 int percent = (int)Math.Round((double)boundedCompleted / boundedTotal * 100d, MidpointRounding.AwayFromZero);
-                _progressFill.Width = Math.Max(10, (int)Math.Round(ProgressTrackWidth * percent / 100d, MidpointRounding.AwayFromZero));
+                int trackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
+                _progressFill.Width = Math.Max(8, (int)Math.Round(trackWidth * percent / 100d, MidpointRounding.AwayFromZero));
                 _progressValueLabel.Text = $"{percent}%";
                 return;
             }
 
             int pulse = 96 + Math.Abs((int)(Environment.TickCount64 % 180) - 90) * 2;
-            _progressFill.Width = pulse;
+            int pulsingTrackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
+            _progressFill.Width = Math.Min(pulsingTrackWidth, pulse);
             _progressValueLabel.Text = "Preparing…";
         }
     }
