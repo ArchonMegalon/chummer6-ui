@@ -277,6 +277,50 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Avalonia_shell_brush_references_are_defined_in_both_theme_dictionaries()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string avaloniaRoot = Path.Combine(repoRoot, "Chummer.Avalonia");
+        string appTheme = File.ReadAllText(Path.Combine(avaloniaRoot, "App.axaml"));
+        Regex shellBrushRegex = new(@"ChummerShell[A-Za-z0-9]+Brush", RegexOptions.Compiled);
+        Regex resourceKeyRegex = new(@"x:Key=""(?<key>ChummerShell[A-Za-z0-9]+Brush)""", RegexOptions.Compiled);
+
+        HashSet<string> lightKeys = ExtractThemeKeys(appTheme, "Light", resourceKeyRegex);
+        HashSet<string> darkKeys = ExtractThemeKeys(appTheme, "Dark", resourceKeyRegex);
+        string[] lightOnly = lightKeys.Except(darkKeys, StringComparer.Ordinal).OrderBy(static key => key, StringComparer.Ordinal).ToArray();
+        string[] darkOnly = darkKeys.Except(lightKeys, StringComparer.Ordinal).OrderBy(static key => key, StringComparer.Ordinal).ToArray();
+
+        Assert.AreEqual(0, lightOnly.Length, "Light-only shell brushes must be mirrored in the dark dictionary: " + string.Join(", ", lightOnly));
+        Assert.AreEqual(0, darkOnly.Length, "Dark-only shell brushes must be mirrored in the light dictionary: " + string.Join(", ", darkOnly));
+
+        HashSet<string> definedKeys = lightKeys.Intersect(darkKeys, StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+        List<string> missingReferences = [];
+        foreach (string path in Directory.EnumerateFiles(avaloniaRoot, "*.*", SearchOption.AllDirectories)
+                     .Where(static path => path.EndsWith(".axaml", StringComparison.Ordinal) || path.EndsWith(".cs", StringComparison.Ordinal))
+                     .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                     .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        {
+            string source = File.ReadAllText(path);
+            foreach (string key in shellBrushRegex.Matches(source).Select(static match => match.Value).Distinct(StringComparer.Ordinal))
+            {
+                if (!definedKeys.Contains(key))
+                {
+                    missingReferences.Add($"{Path.GetRelativePath(repoRoot, path)} -> {key}");
+                }
+            }
+        }
+
+        string classicHost = File.ReadAllText(Path.Combine(avaloniaRoot, "Controls", "ClassicFormPortHostControl.axaml"));
+        StringAssert.Contains(classicHost, "ChummerShellWindowBackgroundBrush");
+        Assert.IsFalse(classicHost.Contains("ChummerShellPanelBackgroundBrush", StringComparison.Ordinal));
+        Assert.AreEqual(
+            0,
+            missingReferences.Count,
+            "Every ChummerShell brush reference must resolve in both theme dictionaries. Missing: "
+            + string.Join(", ", missingReferences.OrderBy(static item => item, StringComparer.Ordinal)));
+    }
+
+    [TestMethod]
     public void Home_and_horizons_shell_surfaces_route_sections_and_buttons_through_shared_shell_theme_helpers()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -638,5 +682,18 @@ public sealed class DesktopThemeManagerTests
         {
             yield return (match.Groups["type"].Value, match.Groups["name"].Value);
         }
+    }
+
+    private static HashSet<string> ExtractThemeKeys(string appTheme, string themeName, Regex resourceKeyRegex)
+    {
+        string marker = $"<ResourceDictionary x:Key=\"{themeName}\">";
+        int start = appTheme.IndexOf(marker, StringComparison.Ordinal);
+        Assert.IsTrue(start >= 0, $"{themeName} theme dictionary must exist.");
+        int end = appTheme.IndexOf("</ResourceDictionary>", start, StringComparison.Ordinal);
+        Assert.IsTrue(end > start, $"{themeName} theme dictionary must close.");
+        string themeSource = appTheme[start..end];
+        return resourceKeyRegex.Matches(themeSource)
+            .Select(static match => match.Groups["key"].Value)
+            .ToHashSet(StringComparer.Ordinal);
     }
 }

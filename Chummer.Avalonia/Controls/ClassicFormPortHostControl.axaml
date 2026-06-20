@@ -3,7 +3,7 @@
              x:Class="Chummer.Avalonia.Controls.ClassicFormPortHostControl">
   <Border x:Name="RootBorder"
           Padding="8"
-          Background="{DynamicResource ChummerShellPanelBackgroundBrush}">
+          Background="{DynamicResource ChummerShellWindowBackgroundBrush}">
     <Grid RowDefinitions="Auto,*"
           RowSpacing="6">
       <TextBlock x:Name="PortTitleText"
