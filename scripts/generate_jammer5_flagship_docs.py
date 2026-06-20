@@ -109,6 +109,8 @@ def render_showcase(spec: dict[str, Any]) -> str:
     user_first = dict(spec.get("user_first_story") or {})
     origin = dict(spec.get("origin_dossier_spotlight") or {})
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
+    release_posture = dict(spec.get("release_and_support_posture") or {})
+    media_posture = dict(spec.get("media_posture") or {})
     related_surfaces = [
         dict(item)
         for item in list(spec.get("related_surfaces") or [])
@@ -205,6 +207,44 @@ def render_showcase(spec: dict[str, Any]) -> str:
     rendered_videos = video_lines(videos)
     if rendered_videos:
         lines.extend(["", "## Watch The Scenes", "", *rendered_videos, ""])
+    if media_posture:
+        lines.extend(
+            [
+                f"## {media_posture['title']}",
+                "",
+                str(media_posture.get("summary") or "").strip(),
+                "",
+                "What stays visible:",
+                "",
+                *bullet_lines(list(media_posture.get("must_do") or [])),
+                "",
+                "What stays out of the pitch:",
+                "",
+                *bullet_lines(list(media_posture.get("must_not_do") or [])),
+                "",
+            ]
+        )
+    if release_posture:
+        lines.extend(
+            [
+                f"## {release_posture['title']}",
+                "",
+                str(release_posture.get("summary") or "").strip(),
+                "",
+                "What a user should be able to rely on:",
+                "",
+                *bullet_lines(list(release_posture.get("user_promises") or [])),
+                "",
+                "Keep these as maintenance lanes:",
+                "",
+                *bullet_lines(list(release_posture.get("maintenance_lanes") or [])),
+                "",
+                "Do not present them as:",
+                "",
+                *bullet_lines(list(release_posture.get("must_not_present_as") or [])),
+                "",
+            ]
+        )
     if user_first:
         lines.extend(
             [
@@ -474,6 +514,8 @@ def render_index_section(spec: dict[str, Any]) -> str:
     ]
     gm_cockpit = dict(spec.get("gm_cockpit_spotlight") or {})
     taxonomy = dict(spec.get("product_taxonomy") or {})
+    release_posture = dict(spec.get("release_and_support_posture") or {})
+    media_posture = dict(spec.get("media_posture") or {})
     videos = [dict(item) for item in list(spec.get("public_videos") or []) if isinstance(item, dict)]
     gallery_lines: list[str] = []
     if visual_gallery:
@@ -518,6 +560,8 @@ def render_index_section(spec: dict[str, Any]) -> str:
             f"<p><strong>{taxonomy.get('title', 'Product taxonomy')}</strong>: {taxonomy.get('summary', 'Base features and future expansion bets are separated so the public story stays readable.')}</p>",
             *gallery_lines,
             *video_html,
+            f"<p><strong>{media_posture.get('title', 'Video and narration')}</strong>: {media_posture.get('summary', 'Linked media should be authored, captioned, and grounded in product truth.')}</p>",
+            f"<p><strong>{release_posture.get('title', 'Downloads and support')}</strong>: {release_posture.get('summary', 'Distribution and support stay quiet, reliable, and separate from product horizons.')}</p>",
             "<p><strong>Origin dossier and ALICE</strong> are now part of this public explanation layer because the flagship story no longer starts only with table heat.</p>",
             f"<p><strong>{gm_cockpit.get('title', 'GM Cockpit')}</strong> keeps GM steering, allowances, mini-game adjudication, and public-safe fallout on one calm control surface.</p>",
             *surface_lines,

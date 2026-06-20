@@ -66,6 +66,52 @@ Origin Dossier and ALICE bring a user-first lane into the stack: approved canon,
 - [ALICE 90-second deep dive](https://chummer.run/media/horizons/alice-90s-deepdive.mp4) - Deep dive with narration. [Captions](https://chummer.run/media/horizons/alice-90s-deepdive.vtt).
 - [Chummer6 product threads promo](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.mp4) - Product-thread overview with updated narration. [Captions](https://chummer.run/media/promo/all-horizons-90s-magicfit-promo.vtt).
 
+## Video And Narration
+
+Videos should feel authored and cinematic, but they still explain the product rather than performing as evidence. Only narrated, captioned clips belong in this reader-facing list.
+
+What stays visible:
+
+- use clear voice direction and cinematic narration for public scenes
+- keep captions beside every linked video
+- treat origin, ALICE, Table Pulse, and product-thread videos as explanation surfaces
+- keep production labels out of the reader-facing story
+
+What stays out of the pitch:
+
+- claim a video has narration when the local file has no audio stream
+- turn captions, logs, or production labels into the product pitch
+- let a rendered scene become rules or release truth
+
+## Downloads And Support Should Feel Boring
+
+Release, updater, Arch/CachyOS packaging, account claiming, and instant help are maintenance lanes. They should make the product feel dependable without becoming another branded surface a new visitor has to decode.
+
+What a user should be able to rely on:
+
+- Windows and Linux are the primary public desktop lanes.
+- Arch and CachyOS users get an AUR-compatible source sidecar for the same Linux build.
+- Stable and nightly remain visibly separate, with a predictable morning publish cadence when a build is needed.
+- A downloaded copy can be claimed online; account linking should feel like claiming your copy, not like a detour through a website.
+- Instant help starts with short text, optional show-me video, and guided repair before escalation.
+
+Keep these as maintenance lanes:
+
+- download catalog
+- AUR sidecar
+- auto-updater
+- install-link callback
+- account claim
+- instant support video library
+- EA channel messaging
+
+Do not present them as:
+
+- a Horizon
+- an internal audit trail
+- a release ceremony
+- an automation showcase
+
 
 ## User-First Entry Arc
 

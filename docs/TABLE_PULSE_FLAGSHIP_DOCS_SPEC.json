@@ -35,6 +35,47 @@
       "note": "Product-thread overview with updated narration."
     }
   ],
+  "release_and_support_posture": {
+    "title": "Downloads And Support Should Feel Boring",
+    "summary": "Release, updater, Arch/CachyOS packaging, account claiming, and instant help are maintenance lanes. They should make the product feel dependable without becoming another branded surface a new visitor has to decode.",
+    "user_promises": [
+      "Windows and Linux are the primary public desktop lanes.",
+      "Arch and CachyOS users get an AUR-compatible source sidecar for the same Linux build.",
+      "Stable and nightly remain visibly separate, with a predictable morning publish cadence when a build is needed.",
+      "A downloaded copy can be claimed online; account linking should feel like claiming your copy, not like a detour through a website.",
+      "Instant help starts with short text, optional show-me video, and guided repair before escalation."
+    ],
+    "maintenance_lanes": [
+      "download catalog",
+      "AUR sidecar",
+      "auto-updater",
+      "install-link callback",
+      "account claim",
+      "instant support video library",
+      "EA channel messaging"
+    ],
+    "must_not_present_as": [
+      "a Horizon",
+      "an internal audit trail",
+      "a release ceremony",
+      "an automation showcase"
+    ]
+  },
+  "media_posture": {
+    "title": "Video And Narration",
+    "summary": "Videos should feel authored and cinematic, but they still explain the product rather than performing as evidence. Only narrated, captioned clips belong in this reader-facing list.",
+    "must_do": [
+      "use clear voice direction and cinematic narration for public scenes",
+      "keep captions beside every linked video",
+      "treat origin, ALICE, Table Pulse, and product-thread videos as explanation surfaces",
+      "keep production labels out of the reader-facing story"
+    ],
+    "must_not_do": [
+      "claim a video has narration when the local file has no audio stream",
+      "turn captions, logs, or production labels into the product pitch",
+      "let a rendered scene become rules or release truth"
+    ]
+  },
   "overview": {
     "title": "Chummer6 At The Table",
     "purpose": "Explain the Chummer6 live-play and living-world stack in plain product language for players, GMs, and curious visitors.",
