@@ -569,7 +569,7 @@ internal sealed class DesktopHorizonsWindow : Window
         Button button = new()
         {
             Name = name,
-            Content = label,
+            Content = PlayerFacingCopyHumanizer.Clean(label),
             MinWidth = 120,
             Padding = new Thickness(10, 6),
             HorizontalAlignment = HorizontalAlignment.Left

@@ -152,7 +152,7 @@ internal static class DesktopHorizonWindowScaffold
     {
         Button button = new()
         {
-            Content = label,
+            Content = PlayerFacingCopyHumanizer.Clean(label),
             MinWidth = 132,
             Padding = new Thickness(10, 6),
             HorizontalAlignment = HorizontalAlignment.Left
@@ -181,7 +181,7 @@ internal static class DesktopHorizonWindowScaffold
 
     public static Button CreateAsyncButton(Window owner, string label, Func<Task> action, bool closeWindow = false, bool isPrimary = false)
     {
-        string resolvedLabel = ResolveCloseActionLabel(label, closeWindow);
+        string resolvedLabel = PlayerFacingCopyHumanizer.Clean(ResolveCloseActionLabel(label, closeWindow));
         Button button = new()
         {
             Content = resolvedLabel,
