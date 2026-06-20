@@ -505,7 +505,7 @@ public partial class SectionHostControl : UserControl
         Grid stepper = new()
         {
             Name = name,
-            ColumnDefinitions = new ColumnDefinitions("24,8,*,8,24"),
+            ColumnDefinitions = new ColumnDefinitions("24,10,*,10,24"),
             MinHeight = 26,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
@@ -523,7 +523,7 @@ public partial class SectionHostControl : UserControl
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
             MinWidth = 56,
-            Margin = new Thickness(4d, 0d)
+            Margin = new Thickness(8d, 0d)
         };
         ToolTip.SetTip(valueText, accessibleName);
         global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");

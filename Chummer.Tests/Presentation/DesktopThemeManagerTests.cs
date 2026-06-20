@@ -852,9 +852,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} karma adjustment\"");
         StringAssert.Contains(sectionHostSource, "static next => next.ToString(CultureInfo.InvariantCulture)");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
-        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"24,8,*,8,24\")");
+        StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"24,10,*,10,24\")");
         StringAssert.Contains(sectionHostSource, "MinWidth = 56");
-        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(4d, 0d)");
+        StringAssert.Contains(sectionHostSource, "Margin = new Thickness(8d, 0d)");
         Assert.IsFalse(sectionHostSource.Contains("$\"Base {next}\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"Karma 0\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("$\"Karma +{next}\"", StringComparison.Ordinal));
