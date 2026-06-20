@@ -1271,6 +1271,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string archetype = string.Equals(normalizedArchetypeIntent, "auto", StringComparison.Ordinal)
             ? inferredArchetype
             : normalizedArchetypeIntent;
+        if (requiresMagicalActivity && !OriginArchetypeSatisfiesMagicalActivity(archetype))
+        {
+            archetype = "mage";
+        }
+
         string inferredBuildMethod = string.Equals(normalizedRulesetId, RulesetDefaults.Sr4, StringComparison.Ordinal)
             ? string.Equals(archetype, "street_sam", StringComparison.Ordinal) || string.Equals(archetype, "rigger", StringComparison.Ordinal) ? "BP" : "Karma"
             : string.Equals(archetype, "decker", StringComparison.Ordinal)
@@ -1363,6 +1368,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
 
     private static string NormalizeOriginToken(string? value, string fallback)
         => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim().ToLowerInvariant();
+
+    private static bool OriginArchetypeSatisfiesMagicalActivity(string archetype)
+        => string.Equals(archetype, "mage", StringComparison.Ordinal)
+           || string.Equals(archetype, "adept", StringComparison.Ordinal);
 
     private static string NormalizeOriginBuildPreference(string? value)
     {

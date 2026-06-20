@@ -697,6 +697,104 @@ public class DialogCoordinatorTests
     }
 
     [TestMethod]
+    public async Task CoordinateAsync_origin_dossier_mouse_first_path_steers_story_before_alice_build()
+    {
+        DialogCoordinator coordinator = new();
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = new DesktopDialogState(
+                Id: "dialog.new_character",
+                Title: "New Character",
+                Message: null,
+                Fields:
+                [
+                    new DesktopDialogField("newCharacterName", "Name", "Grit", "New Character"),
+                    new DesktopDialogField("newCharacterAlias", "Alias", "Vault", "Runner"),
+                    new DesktopDialogField("newCharacterRulesetId", "Ruleset", RulesetDefaults.Sr4, RulesetDefaults.Sr5)
+                ],
+                Actions:
+                [
+                    new DesktopDialogAction("start_from_origin", "Start Origin Dossier", true)
+                ])
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("start_from_origin", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_wizard", published.ActiveDialog?.Id);
+        CollectionAssert.AreEqual(
+            new[]
+            {
+                "newCharacterOriginMetatypePreference",
+                "newCharacterOriginArchetypeIntent",
+                "newCharacterOriginSummary"
+            },
+            published.ActiveDialog!.Fields
+                .Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal))
+                .Select(field => field.Id)
+                .ToArray(),
+            "The first Origin Dossier step must stay simple enough for mouse-only use.");
+
+        published = published with
+        {
+            ActiveDialog = published.ActiveDialog with
+            {
+                Fields = published.ActiveDialog.Fields
+                    .Select(field => field.Id switch
+                    {
+                        "newCharacterOriginMetatypePreference" => field with { Value = "troll" },
+                        "newCharacterOriginArchetypeIntent" => field with { Value = "decker" },
+                        "newCharacterOriginBuildPreference" => field with { Value = "BP" },
+                        "newCharacterOriginGmConstraintPreset" => field with { Value = "illegal_addiction" },
+                        "newCharacterOriginGmRequirements" => field with { Value = "Must be magically active; must have Intelligence 2+; must be addicted to an illegal drug." },
+                        _ => field
+                    })
+                    .ToArray()
+            }
+        };
+
+        context = context with
+        {
+            State = published,
+            GetState = () => published
+        };
+
+        await coordinator.CoordinateAsync("generate_fitting_build", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character.origin_build", published.ActiveDialog?.Id);
+        string buildLogic = DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginBuildLogic") ?? string.Empty;
+        string storyNotes = DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterOriginImplications") ?? string.Empty;
+        StringAssert.Contains(buildLogic, "Build Method | BP");
+        StringAssert.Contains(buildLogic, "Likely Archetype | Mage");
+        StringAssert.Contains(buildLogic, "Likely Metatype | Troll");
+        StringAssert.Contains(buildLogic, "GM Requirements | Must carry an Addiction quality tied to an illegal drug.");
+        StringAssert.Contains(storyNotes, "Alice Seed | approved origin story");
+        StringAssert.Contains(storyNotes, "Sheet Changes | none yet");
+
+        context = context with
+        {
+            State = published,
+            GetState = () => published
+        };
+
+        await coordinator.CoordinateAsync("open_origin_guided_chargen", context, CancellationToken.None);
+
+        Assert.IsTrue(
+            string.Equals("dialog.new_character.priority_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal)
+            || string.Equals("dialog.new_character.karma_workflow", published.ActiveDialog?.Id, StringComparison.Ordinal));
+        Assert.AreEqual(RulesetDefaults.Sr4, DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowRulesetId"));
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowBuildMethod"));
+        Assert.AreEqual("Grit", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterWorkflowName"));
+        StringAssert.Contains(published.Notice ?? string.Empty, "Origin story translated into a guided build plan.");
+    }
+
+    [TestMethod]
     public async Task CoordinateAsync_complete_new_character_workflow_imports_workspace_and_closes_dialog_on_success()
     {
         DialogCoordinator coordinator = new();

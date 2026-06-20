@@ -179,7 +179,7 @@ jobs:
     - name: Build with compatibility package plane
       shell: bash
       env:
-        CHUMMER_PACKAGE_PLANE_SERIALIZE: 1
+        CHUMMER_PACKAGE_PLANE_SERIALIZE: 0
       run: |
         set -euo pipefail
         echo "Run, Build Application using compatibility package plane"
