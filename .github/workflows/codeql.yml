@@ -179,10 +179,11 @@ jobs:
     - name: Build with compatibility package plane
       shell: bash
       env:
-        CHUMMER_PACKAGE_PLANE_SERIALIZE: 0
+        CHUMMER_PACKAGE_PLANE_SERIALIZE: 1
       run: |
         set -euo pipefail
         echo "Run, Build Application using compatibility package plane"
+        mkdir -p "$RUNNER_TEMP/chummer-codeql-build"
         projects=(
           "Chummer/Chummer.csproj"
           "Chummer.Avalonia/Chummer.Avalonia.csproj"
@@ -195,7 +196,17 @@ jobs:
         )
 
         for project in "${projects[@]}"; do
-          bash scripts/ai/with-package-plane.sh build "$project" -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false
+          safe_name="${project//\//_}"
+          safe_name="${safe_name//./_}"
+          log_path="$RUNNER_TEMP/chummer-codeql-build/${safe_name}.log"
+          echo "::group::Build $project"
+          if ! bash scripts/ai/with-package-plane.sh build "$project" -c Release --nologo -p:UseChummerEngineContractsLocalFeed=false 2>&1 | tee "$log_path"; then
+            echo "::endgroup::"
+            echo "::error title=CodeQL compatibility build failed::$project failed. Build log follows."
+            cat "$log_path"
+            exit 1
+          fi
+          echo "::endgroup::"
         done
 
     - name: Perform CodeQL Analysis
