@@ -96,10 +96,11 @@ DESKTOP_WORKFLOW_EXECUTION_GATE_PATH="${CHUMMER_DESKTOP_WORKFLOW_EXECUTION_GATE_
 UI_WORKFLOW_PARITY_PATH="${CHUMMER_UI_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json}"
 SR4_WORKFLOW_PARITY_PATH="${CHUMMER_SR4_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR4_DESKTOP_WORKFLOW_PARITY.generated.json}"
 SR6_WORKFLOW_PARITY_PATH="${CHUMMER_SR6_WORKFLOW_PARITY_PATH:-$REPO_ROOT/.codex-studio/published/SR6_DESKTOP_WORKFLOW_PARITY.generated.json}"
+WINDOWS_INSTALLER_VISUAL_PROOF_PATH="${CHUMMER_WINDOWS_INSTALLER_VISUAL_PROOF_PATH:-$REPO_ROOT/.codex-studio/published/WINDOWS_INSTALLER_VISUAL_PROOF.generated.json}"
 
 mkdir -p "$(dirname "$PROOF_PATH")"
 
-python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
+python3 - "$PROOF_PATH" "$RELEASE_CHANNEL_PATH" "$WINDOWS_INSTALLER_PATH" "$WINDOWS_LOCAL_DESKTOP_FILES_ROOT" "$UI_LOCAL_RELEASE_PROOF_PATH" "$UI_FLAGSHIP_RELEASE_GATE_PATH" "$DESKTOP_WORKFLOW_EXECUTION_GATE_PATH" "$UI_WORKFLOW_PARITY_PATH" "$SR4_WORKFLOW_PARITY_PATH" "$SR6_WORKFLOW_PARITY_PATH" "$WINDOWS_INSTALLER_VISUAL_PROOF_PATH" "$REPO_ROOT" "$HUB_REGISTRY_ROOT" "$APP_KEY" "$RID" <<'PY'
 from __future__ import annotations
 
 import hashlib
@@ -419,6 +420,81 @@ def workflow_parity_is_external_only(path: Path, expected_contract: str, upstrea
     return all(external_marker in reason for reason in filtered_reasons)
 
 
+def status_is_passing(value: Any) -> bool:
+    return normalize_token(value) in {"pass", "passed", "ready"}
+
+
+def collect_installer_visual_screenshots(payload: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    raw = payload.get("screenshots")
+    rows: List[Dict[str, Any]] = []
+    if isinstance(raw, list):
+        rows.extend(item for item in raw if isinstance(item, dict))
+    elif isinstance(raw, dict):
+        for role, value in raw.items():
+            if isinstance(value, dict):
+                row = dict(value)
+                row.setdefault("role", role)
+                rows.append(row)
+
+    captured = payload.get("capturedScreenshots")
+    if isinstance(captured, list):
+        rows.extend(item for item in captured if isinstance(item, dict))
+    elif isinstance(captured, dict):
+        for role, value in captured.items():
+            if isinstance(value, dict):
+                row = dict(value)
+                row.setdefault("role", role)
+                rows.append(row)
+
+    result: Dict[str, Dict[str, Any]] = {}
+    for row in rows:
+        role = normalize_token(
+            row.get("role")
+            or row.get("surface")
+            or row.get("stage")
+            or row.get("name")
+        )
+        if role in {"splash", "installer_splash", "welcome"}:
+            result["splash"] = row
+        elif role in {"progress", "installer_progress", "installing"}:
+            result["progress"] = row
+        elif role in {"completion", "complete", "finished", "installer_completion"}:
+            result["completion"] = row
+    return result
+
+
+def screenshot_digest(row: Dict[str, Any]) -> str:
+    return normalize_token(
+        row.get("sha256")
+        or row.get("imageSha256")
+        or row.get("screenshotSha256")
+        or row.get("digest")
+    )
+
+
+def screenshot_path(row: Dict[str, Any]) -> str:
+    return str(
+        row.get("path")
+        or row.get("imagePath")
+        or row.get("screenshotPath")
+        or row.get("file")
+        or ""
+    ).strip()
+
+
+def nested_status(payload: Dict[str, Any], *keys: str) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, dict):
+            status = normalize_token(value.get("status"))
+            if status:
+                return status
+        status = normalize_token(value)
+        if status:
+            return status
+    return ""
+
+
 proof_path = Path(sys.argv[1])
 release_channel_path = Path(sys.argv[2])
 installer_path = Path(sys.argv[3])
@@ -430,11 +506,12 @@ desktop_workflow_execution_gate_path = Path(sys.argv[7])
 ui_workflow_parity_path = Path(sys.argv[8])
 sr4_workflow_parity_path = Path(sys.argv[9])
 sr6_workflow_parity_path = Path(sys.argv[10])
-repo_root = Path(sys.argv[11])
-hub_registry_root_arg = str(sys.argv[12] or "").strip()
+windows_installer_visual_proof_path = Path(sys.argv[11])
+repo_root = Path(sys.argv[12])
+hub_registry_root_arg = str(sys.argv[13] or "").strip()
 hub_registry_root = Path(hub_registry_root_arg).resolve() if hub_registry_root_arg else None
-expected_head_override = normalize_token(sys.argv[13])
-expected_rid_override = normalize_token(sys.argv[14])
+expected_head_override = normalize_token(sys.argv[14])
+expected_rid_override = normalize_token(sys.argv[15])
 host_os_name = platform.system().strip()
 host_os_normalized = normalize_token(host_os_name)
 host_supports_windows_smoke = bool(os.name == "nt" or shutil.which("cygpath"))
@@ -450,6 +527,7 @@ evidence: Dict[str, Any] = {
     "ui_workflow_parity_path": str(ui_workflow_parity_path),
     "sr4_workflow_parity_path": str(sr4_workflow_parity_path),
     "sr6_workflow_parity_path": str(sr6_workflow_parity_path),
+    "windows_installer_visual_proof_path": str(windows_installer_visual_proof_path),
     "host_operating_system": host_os_name,
     "host_operating_system_normalized": host_os_normalized,
     "host_supports_windows_startup_smoke": host_supports_windows_smoke,
@@ -561,6 +639,7 @@ installer_path = next((path for path in installer_candidates if path.is_file()),
 installer_exists = installer_path.is_file()
 installer_size = installer_path.stat().st_size if installer_exists else 0
 installer_sha = sha256_file(installer_path) if installer_exists else ""
+expected_installer_digest = f"sha256:{installer_sha}" if installer_sha else ""
 evidence["windows_installer_path"] = str(installer_path)
 evidence["windows_installer_candidate_paths"] = [str(path) for path in installer_candidates]
 evidence["installer_exists"] = installer_exists
@@ -628,6 +707,131 @@ if installer_exists and not (payload_marker_present or appended_payload_marker_p
     reasons.append("Published Windows installer is missing a recognizable desktop payload marker.")
 if installer_exists and not sample_marker_present:
     reasons.append("Published Windows installer is missing the bundled sample-character marker.")
+
+visual_proof_payload = load_json(windows_installer_visual_proof_path)
+visual_proof_contract = str(
+    visual_proof_payload.get("contract_name")
+    or visual_proof_payload.get("contractName")
+    or ""
+).strip()
+visual_proof_status = normalize_token(visual_proof_payload.get("status"))
+visual_proof_head = normalize_token(visual_proof_payload.get("headId") or visual_proof_payload.get("head"))
+visual_proof_rid = normalize_token(visual_proof_payload.get("rid"))
+visual_proof_version = str(
+    visual_proof_payload.get("version")
+    or visual_proof_payload.get("releaseVersion")
+    or ""
+).strip()
+visual_proof_digest = normalize_token(
+    visual_proof_payload.get("artifactDigest")
+    or visual_proof_payload.get("installerDigest")
+    or visual_proof_payload.get("installerSha256")
+)
+if visual_proof_digest and not visual_proof_digest.startswith("sha256:"):
+    visual_proof_digest = f"sha256:{visual_proof_digest}"
+visual_screenshots = collect_installer_visual_screenshots(visual_proof_payload)
+visual_screenshot_digests = {
+    role: screenshot_digest(row)
+    for role, row in visual_screenshots.items()
+}
+visual_screenshot_paths = {
+    role: screenshot_path(row)
+    for role, row in visual_screenshots.items()
+}
+visual_required_roles = ["splash", "progress", "completion"]
+visual_missing_roles = [
+    role for role in visual_required_roles if role not in visual_screenshots
+]
+visual_roles_missing_digests = [
+    role for role in visual_required_roles if role in visual_screenshots and not visual_screenshot_digests.get(role)
+]
+visual_unique_digest_count = len(
+    {digest for digest in visual_screenshot_digests.values() if digest}
+)
+visual_readability_status = nested_status(
+    visual_proof_payload,
+    "readabilityReview",
+    "textReadabilityReview",
+    "readability",
+)
+visual_contrast_status = nested_status(
+    visual_proof_payload,
+    "contrastReview",
+    "contrast",
+)
+visual_clipping_status = nested_status(
+    visual_proof_payload,
+    "clippingReview",
+    "clipping",
+)
+evidence["windows_installer_visual_proof_found"] = windows_installer_visual_proof_path.is_file()
+evidence["windows_installer_visual_proof_contract"] = visual_proof_contract
+evidence["windows_installer_visual_proof_status"] = visual_proof_status
+evidence["windows_installer_visual_proof_head"] = visual_proof_head
+evidence["windows_installer_visual_proof_rid"] = visual_proof_rid
+evidence["windows_installer_visual_proof_version"] = visual_proof_version
+evidence["windows_installer_visual_proof_artifact_digest"] = visual_proof_digest
+evidence["windows_installer_visual_required_roles"] = visual_required_roles
+evidence["windows_installer_visual_screenshot_paths"] = visual_screenshot_paths
+evidence["windows_installer_visual_screenshot_digests"] = visual_screenshot_digests
+evidence["windows_installer_visual_missing_roles"] = visual_missing_roles
+evidence["windows_installer_visual_roles_missing_digests"] = visual_roles_missing_digests
+evidence["windows_installer_visual_unique_digest_count"] = visual_unique_digest_count
+evidence["windows_installer_visual_readability_status"] = visual_readability_status
+evidence["windows_installer_visual_contrast_status"] = visual_contrast_status
+evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
+
+if not windows_installer_visual_proof_path.is_file():
+    reasons.append(
+        "Windows installer visual proof is missing; capture splash, progress, and completion screenshots on a Windows host."
+    )
+elif visual_proof_contract != "chummer6-ui.windows_installer_visual_proof":
+    reasons.append("Windows installer visual proof contract is not chummer6-ui.windows_installer_visual_proof.")
+elif not status_is_passing(visual_proof_status):
+    reasons.append("Windows installer visual proof status is not passing.")
+if windows_installer_visual_proof_path.is_file() and visual_proof_head and visual_proof_head != expected_head:
+    reasons.append(f"Windows installer visual proof head does not match promoted head {expected_head}.")
+if windows_installer_visual_proof_path.is_file() and visual_proof_rid and visual_proof_rid != expected_rid:
+    reasons.append(f"Windows installer visual proof rid does not match promoted RID {expected_rid}.")
+if (
+    windows_installer_visual_proof_path.is_file()
+    and release_channel_version
+    and visual_proof_version
+    and visual_proof_version != release_channel_version
+):
+    reasons.append("Windows installer visual proof version does not match release channel.")
+if (
+    windows_installer_visual_proof_path.is_file()
+    and expected_installer_digest
+    and visual_proof_digest != expected_installer_digest
+):
+    reasons.append("Windows installer visual proof artifactDigest does not match promoted installer bytes.")
+if windows_installer_visual_proof_path.is_file() and visual_missing_roles:
+    reasons.append(
+        "Windows installer visual proof is missing required screenshot roles: "
+        + ", ".join(visual_missing_roles)
+        + "."
+    )
+if windows_installer_visual_proof_path.is_file() and visual_roles_missing_digests:
+    reasons.append(
+        "Windows installer visual proof screenshots are missing image digests for: "
+        + ", ".join(visual_roles_missing_digests)
+        + "."
+    )
+if (
+    windows_installer_visual_proof_path.is_file()
+    and not visual_missing_roles
+    and not visual_roles_missing_digests
+    and visual_unique_digest_count < len(visual_required_roles)
+):
+    reasons.append("Windows installer visual proof screenshots are not distinct across splash, progress, and completion.")
+for review_name, review_status in (
+    ("readability", visual_readability_status),
+    ("contrast", visual_contrast_status),
+    ("clipping", visual_clipping_status),
+):
+    if windows_installer_visual_proof_path.is_file() and not status_is_passing(review_status):
+        reasons.append(f"Windows installer visual proof {review_name} review is not passing.")
 
 startup_smoke_receipt_override = os.environ.get("CHUMMER_WINDOWS_STARTUP_SMOKE_RECEIPT_PATH", "").strip()
 if startup_smoke_receipt_override:
@@ -722,7 +926,6 @@ if (
 
 startup_smoke_digest = normalize_token(startup_smoke_payload.get("artifactDigest"))
 evidence["startup_smoke_artifact_digest"] = startup_smoke_digest
-expected_installer_digest = f"sha256:{installer_sha}" if installer_sha else ""
 evidence["expected_startup_smoke_artifact_digest"] = expected_installer_digest
 if startup_smoke_receipt_path.is_file() and installer_exists and expected_installer_digest and startup_smoke_digest != expected_installer_digest:
     reasons.append("Windows startup smoke receipt artifactDigest does not match promoted installer bytes.")
