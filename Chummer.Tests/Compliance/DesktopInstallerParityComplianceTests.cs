@@ -59,14 +59,15 @@ public sealed class DesktopInstallerParityComplianceTests
         string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");
         string installerProgramText = File.ReadAllText(installerProgramPath);
 
-        StringAssert.Contains(installerProgramText, "ClientSize = new Size(760, 340);");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(760, 340);");
-        StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 12F");
-        StringAssert.Contains(installerProgramText, "ClientSize = new Size(760, 360),");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(760, 360),");
-        StringAssert.Contains(installerProgramText, "Height = 72,");
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(840, 400);");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(840, 400);");
+        StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 11.5F");
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(840, 430),");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(840, 430),");
+        StringAssert.Contains(installerProgramText, "Height = 76,");
         StringAssert.Contains(installerProgramText, "Use only when support asks.");
-        StringAssert.Contains(installerProgramText, "MaximumSize = new Size(220, 42),");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(172, 42),");
+        StringAssert.Contains(installerProgramText, "Padding = new Padding(14, 0, 14, 2),");
         StringAssert.Contains(installerProgramText, "UseMnemonic = false");
         StringAssert.Contains(installerProgramText, "WrapContents = false");
         StringAssert.Contains(installerProgramText, "Shortcuts and first launch are prepared automatically.");
@@ -75,17 +76,22 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "return $\"Installed to ...{Path.DirectorySeparatorChar}{compactTail}\";");
         StringAssert.Contains(installerProgramText, ".TakeLast(3)");
         StringAssert.Contains(installerProgramText, "_progressTrack.ClientSize.Width");
+        StringAssert.Contains(installerProgramText, "Preparing copy claim");
+        StringAssert.Contains(installerProgramText, "body.Controls.Add(hintLabel);");
+        StringAssert.Contains(installerProgramText, "body.Controls.Add(heroRow);");
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(640, 300),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(640, 280);", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(600, 260),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(600, 250);", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(520, 206);", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("MaximumSize = new Size(220, 42),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 24F", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 13.5F", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains(
             "Height = 52,\n            TextAlign = ContentAlignment.TopLeft",
             StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Install folder:\\n", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("Preparing first-run sign-in", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("$\"Installed to {targetDir}\"", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("$\"Launch {primaryName}\"", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("$\"Launch {secondaryName}\"", StringComparison.Ordinal));

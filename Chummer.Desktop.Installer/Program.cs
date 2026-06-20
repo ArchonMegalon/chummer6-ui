@@ -170,7 +170,7 @@ internal static class Program
 
         if (!string.IsNullOrWhiteSpace(claimCode))
         {
-            progress?.Report(new InstallProgressUpdate("Preparing first-run sign-in"));
+            progress?.Report(new InstallProgressUpdate("Preparing copy claim"));
             StagePendingClaimCode(metadata, claimCode);
         }
 
@@ -1208,8 +1208,8 @@ internal static class Program
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(760, 360),
-            MinimumSize = new Size(760, 360),
+            ClientSize = new Size(840, 430),
+            MinimumSize = new Size(840, 430),
             MinimizeBox = false,
             MaximizeBox = false,
             ShowInTaskbar = false,
@@ -1222,11 +1222,11 @@ internal static class Program
         Label titleLabel = new()
         {
             AutoSize = false,
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Regular, GraphicsUnit.Point),
             ForeColor = Color.FromArgb(18, 24, 36),
             Text = headline,
             Dock = DockStyle.Top,
-            Height = 52,
+            Height = 58,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 6, 16, 0),
             AutoEllipsis = true
@@ -1239,7 +1239,7 @@ internal static class Program
             ForeColor = Color.FromArgb(55, 65, 84),
             Text = pathText,
             Dock = DockStyle.Top,
-            Height = 72,
+            Height = 76,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 0, 20, 0),
             AutoEllipsis = true,
@@ -1254,7 +1254,7 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.PrimaryFootnote,
             Dock = DockStyle.Top,
-            Height = 32,
+            Height = 34,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 0, 16, 0),
             AutoEllipsis = true
@@ -1267,7 +1267,7 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.SecondaryFootnote,
             Dock = DockStyle.Top,
-            Height = 32,
+            Height = 34,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 0, 16, 0),
             AutoEllipsis = true
@@ -1277,8 +1277,8 @@ internal static class Program
         {
             Dock = DockStyle.Bottom,
             FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 0, 20, 20),
-            Height = 64,
+            Padding = new Padding(0, 0, 20, 24),
+            Height = 78,
             WrapContents = false
         };
 
@@ -1286,11 +1286,11 @@ internal static class Program
         {
             Text = options.PrimaryButtonText,
             AutoSize = true,
-            MinimumSize = new Size(150, 36),
-            MaximumSize = new Size(220, 42),
+            MinimumSize = new Size(172, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Yes,
             Margin = new Padding(8, 0, 0, 0),
+            Padding = new Padding(14, 0, 14, 2),
             AutoEllipsis = true
         };
         primaryButton.Click += (_, _) =>
@@ -1302,11 +1302,11 @@ internal static class Program
         {
             Text = options.SecondaryButtonText,
             AutoSize = true,
-            MinimumSize = new Size(150, 36),
-            MaximumSize = new Size(220, 42),
+            MinimumSize = new Size(172, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.No,
             Margin = new Padding(8, 0, 0, 0),
+            Padding = new Padding(14, 0, 14, 2),
             AutoEllipsis = true
         };
         secondaryButton.Click += (_, _) =>
@@ -1318,11 +1318,11 @@ internal static class Program
         {
             Text = options.CancelButtonText ?? "Cancel",
             AutoSize = true,
-            MinimumSize = new Size(150, 36),
-            MaximumSize = new Size(220, 42),
+            MinimumSize = new Size(172, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Cancel,
             Margin = new Padding(8, 0, 0, 0),
+            Padding = new Padding(14, 0, 14, 2),
             Visible = options.CancelButtonText is not null,
             AutoEllipsis = true
         };
@@ -1339,7 +1339,7 @@ internal static class Program
         {
             Dock = DockStyle.Fill,
             BackColor = Color.FromArgb(239, 244, 252),
-            Padding = new Padding(0, 16, 0, 0)
+            Padding = new Padding(0, 20, 0, 0)
         };
 
         content.Controls.Add(secondaryNoteLabel);
@@ -1359,8 +1359,8 @@ internal static class Program
             secondaryNoteLabel.Text = options.SecondaryFootnote ?? string.Empty;
             noteLabel.Text = options.PrimaryFootnote;
             secondaryNoteLabel.Visible = false;
-            content.Padding = new Padding(0, 16, 0, 16);
-            actions.Padding = new Padding(0, 0, 20, 20);
+            content.Padding = new Padding(0, 20, 0, 20);
+            actions.Padding = new Padding(0, 0, 20, 24);
         }
 
         if (!string.IsNullOrWhiteSpace(options.PrimaryFootnote))
@@ -1891,8 +1891,8 @@ internal static class Program
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(760, 340);
-            MinimumSize = new Size(760, 340);
+            ClientSize = new Size(840, 400);
+            MinimumSize = new Size(840, 400);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -1903,6 +1903,7 @@ internal static class Program
             BackColor = Color.FromArgb(9, 13, 20);
             ForeColor = Color.White;
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point);
+            DoubleBuffered = true;
 
             Panel accentBar = new()
             {
@@ -1958,10 +1959,10 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = displayName,
-                Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 11.5F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 40,
+                Height = 44,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2),
                 AutoEllipsis = true,
@@ -1975,7 +1976,7 @@ internal static class Program
                 Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 34,
+                Height = 38,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 10),
                 AutoEllipsis = true,
@@ -1989,7 +1990,7 @@ internal static class Program
                 Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 30,
+                Height = 42,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 8),
                 AutoEllipsis = true,
@@ -1999,7 +2000,7 @@ internal static class Program
             _progressTrack = new Panel
             {
                 Dock = DockStyle.Top,
-                Height = 10,
+                Height = 12,
                 BackColor = Color.FromArgb(33, 42, 58),
                 Margin = new Padding(0, 0, 0, 8)
             };
@@ -2015,7 +2016,7 @@ internal static class Program
             Panel progressMetaRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 22,
+                Height = 24,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -2070,7 +2071,7 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 108
+                Height = 112
             };
             heroRow.Controls.Add(textColumn);
             heroRow.Controls.Add(glyphTile);
@@ -2081,11 +2082,11 @@ internal static class Program
                 Padding = new Padding(0)
             };
 
-            body.Controls.Add(heroRow);
-            body.Controls.Add(_statusLabel);
-            body.Controls.Add(progressMetaRow);
-            body.Controls.Add(_progressTrack);
             body.Controls.Add(hintLabel);
+            body.Controls.Add(_progressTrack);
+            body.Controls.Add(progressMetaRow);
+            body.Controls.Add(_statusLabel);
+            body.Controls.Add(heroRow);
             surface.Controls.Add(body);
             Controls.Add(surface);
             Controls.Add(accentBar);
