@@ -358,6 +358,82 @@ public sealed class WorkflowParityGateTests
         }
     }
 
+    [TestMethod]
+    public async Task Runtime_backed_origin_dossier_story_first_flow_materializes_gm_constraints_before_sr4_bp_build()
+    {
+        DesktopDialogState dialog = CreateCommandDialog("new_character", RulesetDefaults.Sr4);
+        WorkflowHarness harness = CreateHarness(RulesetDefaults.Sr4, dialog, "tab-info", "profile");
+
+        harness.UpdateDialogField("newCharacterRulesetId", RulesetDefaults.Sr4);
+        harness.UpdateDialogField("newCharacterBuildMethod", "BP");
+        await harness.ActAsync("start_from_origin");
+
+        Assert.IsNotNull(harness.State.ActiveDialog, "Start Origin Dossier must open the story-first wizard.");
+        DesktopDialogState originWizard = harness.State.ActiveDialog!;
+        Assert.AreEqual("dialog.new_character.origin_wizard", originWizard.Id);
+        Assert.AreEqual("Origin Dossier", originWizard.Title);
+        StringAssert.Contains(originWizard.Message, "Create the story first.");
+        AssertDialogParity(RulesetDefaults.Sr4, "new_character_origin", WorkflowShape.Choice, originWizard);
+        AssertExactVisibleSelectField(
+            originWizard,
+            "newCharacterOriginMetatypePreference",
+            "auto",
+            ("auto", "Fit the story"),
+            ("human", "Human"),
+            ("elf", "Elf"),
+            ("dwarf", "Dwarf"),
+            ("ork", "Ork"),
+            ("troll", "Troll"));
+        AssertExactVisibleSelectField(
+            originWizard,
+            "newCharacterOriginArchetypeIntent",
+            "decker",
+            ("decker", "Decker"),
+            ("street_sam", "Street Samurai"),
+            ("mage", "Mage"),
+            ("adept", "Adept"),
+            ("face", "Face"),
+            ("rigger", "Rigger"),
+            ("technomancer", "Technomancer"),
+            ("auto", "Let ALICE infer"));
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, originWizard.Fields.Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)).LayoutSlot);
+        Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, originWizard.Fields.Single(field => string.Equals(field.Id, "newCharacterOriginGmConstraintPreset", StringComparison.Ordinal)).LayoutSlot);
+        Assert.IsTrue(originWizard.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).IsPrimary);
+
+        harness.UpdateDialogField("newCharacterOriginMetatypePreference", "troll");
+        harness.UpdateDialogField("newCharacterOriginArchetypeIntent", "decker");
+        harness.UpdateDialogField("newCharacterOriginBuildPreference", "BP");
+        harness.UpdateDialogField("newCharacterOriginGmConstraintPreset", "illegal_addiction");
+        harness.UpdateDialogField("newCharacterOriginGmRequirements", "Must be addicted to an illegal drug. Must have Intelligence 2+.");
+
+        originWizard = harness.State.ActiveDialog!;
+        Assert.AreEqual("Troll", DesktopDialogFieldValueParser.GetValue(originWizard, "newCharacterOriginMetatype"));
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(originWizard, "newCharacterOriginBuildMethod"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originWizard, "newCharacterOriginQualityFocus") ?? string.Empty, "Addiction");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originWizard, "newCharacterOriginGmRequirementSummary") ?? string.Empty, "illegal drug");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originWizard, "newCharacterOriginGmRequirementSummary") ?? string.Empty, "Intelligence 2+");
+
+        await harness.ActAsync("generate_fitting_build");
+
+        Assert.IsNotNull(harness.State.ActiveDialog, "Build story must open the origin story review before mechanics.");
+        DesktopDialogState originBuild = harness.State.ActiveDialog!;
+        Assert.AreEqual("dialog.new_character.origin_build", originBuild.Id);
+        StringAssert.Contains(originBuild.Message, "Review the story first.");
+        Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginAliceSeedSource"));
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterWorkflowBuildMethod"));
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginBuildLogic") ?? string.Empty, "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginBuildLogic") ?? string.Empty, "Addiction");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginImplications") ?? string.Empty, "Sheet Changes | none yet");
+
+        await harness.ActAsync("open_origin_guided_chargen");
+
+        Assert.IsNotNull(harness.State.ActiveDialog, "Origin review must hand off to a normal guided character workflow.");
+        DesktopDialogState continuation = harness.State.ActiveDialog!;
+        Assert.AreEqual("dialog.new_character.karma_workflow", continuation.Id);
+        Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(continuation, "newCharacterWorkflowBuildMethod"));
+        StringAssert.Contains(harness.State.Notice ?? string.Empty, "Origin story translated into a guided build plan.");
+    }
+
     private static async Task AssertNewCharacterRecursiveParityAsync(string rulesetId, string buildMethod)
     {
         DesktopDialogState dialog = CreateCommandDialog("new_character", rulesetId);
@@ -972,6 +1048,25 @@ public sealed class WorkflowParityGateTests
                 ("simple", "Simple"),
                 ("standard", "Standard"),
                 ("deep", "Deep")),
+
+            ("dialog.new_character.origin_wizard", "newCharacterOriginMetatypePreference", _) => Create(
+                DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginMetatypePreference") ?? "auto",
+                ("auto", "Fit the story"),
+                ("human", "Human"),
+                ("elf", "Elf"),
+                ("dwarf", "Dwarf"),
+                ("ork", "Ork"),
+                ("troll", "Troll")),
+            ("dialog.new_character.origin_wizard", "newCharacterOriginArchetypeIntent", _) => Create(
+                DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginArchetypeIntent") ?? "decker",
+                ("decker", "Decker"),
+                ("street_sam", "Street Samurai"),
+                ("mage", "Mage"),
+                ("adept", "Adept"),
+                ("face", "Face"),
+                ("rigger", "Rigger"),
+                ("technomancer", "Technomancer"),
+                ("auto", "Let ALICE infer")),
 
             ("dialog.global_settings", "globalLanguage", _)
                 or ("dialog.global_settings", "globalSheetLanguage", _) => Create(

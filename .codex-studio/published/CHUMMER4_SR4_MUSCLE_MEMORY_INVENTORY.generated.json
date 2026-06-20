@@ -285310,7 +285310,7 @@
       },
       {
         "fieldId": "globalDisableAiFeatures",
-        "expectedLabel": "Hide AI features",
+        "expectedLabel": "Hide helper buttons",
         "expectedInputType": "checkbox",
         "expectedVisualKind": "default",
         "expectedLayoutSlot": "right",
