@@ -278,8 +278,8 @@ internal static class Program
                     TryDeleteDirectory(targetDir, progress, "Removing previous install");
                 }
 
-                Directory.CreateDirectory(targetDir);
-                CopyDirectory(tempExtractDir, targetDir, progress);
+                Directory.CreateDirectory(Path.GetDirectoryName(targetDir)!);
+                MoveOrCopyDirectory(tempExtractDir, targetDir, progress);
                 return targetDir;
             }
 
@@ -292,8 +292,8 @@ internal static class Program
                 TryDeleteDirectory(targetDir, progress, "Removing previous install");
             }
 
-            Directory.CreateDirectory(targetDir);
-            CopyDirectory(payloadRoot, targetDir, progress);
+            Directory.CreateDirectory(Path.GetDirectoryName(targetDir)!);
+            MoveOrCopyDirectory(payloadRoot, targetDir, progress);
             return targetDir;
         }
         finally
@@ -989,6 +989,24 @@ internal static class Program
 
             copiedFiles++;
             progress?.Report(new InstallProgressUpdate("Copying application files", copiedFiles, files.Length));
+        }
+    }
+
+    private static void MoveOrCopyDirectory(
+        string sourceDir,
+        string targetDir,
+        IProgress<InstallProgressUpdate>? progress = null)
+    {
+        progress?.Report(new InstallProgressUpdate("Installing application files", 0, 1));
+        try
+        {
+            Directory.Move(sourceDir, targetDir);
+            progress?.Report(new InstallProgressUpdate("Installing application files", 1, 1));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        {
+            Directory.CreateDirectory(targetDir);
+            CopyDirectory(sourceDir, targetDir, progress);
         }
     }
 

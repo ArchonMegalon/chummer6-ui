@@ -33,6 +33,10 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "shortcutThread.SetApartmentState(ApartmentState.STA);");
         StringAssert.Contains(installerProgramText, "shortcutThread.Join(TimeSpan.FromSeconds(15))");
         StringAssert.Contains(installerProgramText, "CreateShortcutCore(shortcutPath, targetPath, description);");
+        StringAssert.Contains(installerProgramText, "MoveOrCopyDirectory(tempExtractDir, targetDir, progress);");
+        StringAssert.Contains(installerProgramText, "MoveOrCopyDirectory(payloadRoot, targetDir, progress);");
+        StringAssert.Contains(installerProgramText, "Directory.Move(sourceDir, targetDir);");
+        StringAssert.Contains(installerProgramText, "Installing application files");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"AvaloniaDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"BlazorDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Debug.WriteLine($\"Chummer installer could not prune legacy install directory");
