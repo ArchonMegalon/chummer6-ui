@@ -55,15 +55,6 @@ jobs:
       actions: read
       contents: read
       security-events: write
-    defaults:
-      run:
-        working-directory: r
-    env:
-      CHUMMER_LOCAL_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-core-engine/Chummer.Contracts/Chummer.Contracts.csproj
-      CHUMMER_LOCAL_CAMPAIGN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Campaign.Contracts/Chummer.Campaign.Contracts.csproj
-      CHUMMER_LOCAL_RUN_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer.run-services/Chummer.Run.Contracts/Chummer.Run.Contracts.csproj
-      CHUMMER_LOCAL_HUB_REGISTRY_CONTRACTS_PROJECT: ${{ github.workspace }}/chummer-hub-registry/Chummer.Hub.Registry.Contracts/Chummer.Hub.Registry.Contracts.csproj
-      CHUMMER_LOCAL_UI_KIT_PROJECT: ${{ github.workspace }}/chummer-ui-kit/src/Chummer.Ui.Kit/Chummer.Ui.Kit.csproj
 
     strategy:
       fail-fast: false
@@ -77,79 +68,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
-      with:
-        path: r
-
-    - name: Enable Windows long paths for compatibility checkouts
-      if: ${{ runner.os == 'Windows' }}
-      shell: powershell
-      run: |
-        git config --system core.longpaths true
-
-    - name: Checkout core-engine compatibility tree
-      uses: actions/checkout@v6
-      with:
-        repository: ArchonMegalon/chummer6-core
-        ref: fleet/core
-        path: c
-
-    - name: Checkout run-services compatibility tree
-      uses: actions/checkout@v6
-      with:
-        repository: ArchonMegalon/chummer6-hub
-        ref: main
-        path: h
-
-    - name: Checkout hub-registry compatibility tree
-      uses: actions/checkout@v6
-      with:
-        repository: ArchonMegalon/chummer6-hub-registry
-        ref: fleet/hub-registry
-        path: g
-
-    - name: Checkout ui-kit compatibility tree
-      uses: actions/checkout@v6
-      with:
-        repository: ArchonMegalon/chummer6-ui-kit
-        ref: fleet/ui-kit
-        path: u
-
-    - name: Checkout media-factory compatibility tree
-      uses: actions/checkout@v6
-      with:
-        repository: ArchonMegalon/chummer6-media-factory
-        ref: fleet/media-factory
-        path: m
-
-    - name: Prepare compatibility tree aliases (Windows)
-      if: ${{ runner.os == 'Windows' }}
-      shell: powershell
-      run: |
-        $compatRoot = Split-Path -Parent $env:GITHUB_WORKSPACE
-        New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-core-engine" -Target "${env:GITHUB_WORKSPACE}\\c" | Out-Null
-        New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer.run-services" -Target "${env:GITHUB_WORKSPACE}\\h" | Out-Null
-        New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-hub-registry" -Target "${env:GITHUB_WORKSPACE}\\g" | Out-Null
-        New-Item -ItemType Junction -Path "${env:GITHUB_WORKSPACE}\\chummer-ui-kit" -Target "${env:GITHUB_WORKSPACE}\\u" | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $compatRoot "fleet\\repos") -Force | Out-Null
-        New-Item -ItemType Junction -Path (Join-Path $compatRoot "fleet\\repos\\chummer-media-factory") -Target "${env:GITHUB_WORKSPACE}\\m" | Out-Null
-
-    - name: Prepare compatibility tree aliases (POSIX)
-      if: ${{ runner.os != 'Windows' }}
-      shell: bash
-      run: |
-        set -euo pipefail
-        compat_root="$(cd "$GITHUB_WORKSPACE/.." && pwd)"
-        ln -sfn "$GITHUB_WORKSPACE/c" "$GITHUB_WORKSPACE/chummer-core-engine"
-        ln -sfn "$GITHUB_WORKSPACE/h" "$GITHUB_WORKSPACE/chummer.run-services"
-        ln -sfn "$GITHUB_WORKSPACE/g" "$GITHUB_WORKSPACE/chummer-hub-registry"
-        ln -sfn "$GITHUB_WORKSPACE/u" "$GITHUB_WORKSPACE/chummer-ui-kit"
-        mkdir -p "$compat_root/fleet/repos"
-        ln -sfn "$GITHUB_WORKSPACE/m" "$compat_root/fleet/repos/chummer-media-factory"
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: '10.0.x'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -157,7 +75,6 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: none
-        source-root: r
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
