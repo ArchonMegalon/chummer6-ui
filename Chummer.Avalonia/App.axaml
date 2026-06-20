@@ -426,6 +426,18 @@
     <Style Selector="ComboBox /template/ ContentPresenter">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
+    <Style Selector="ComboBox /template/ TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox:pointerover /template/ ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox:focus /template/ ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ComboBox:disabled /template/ ContentPresenter">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />
+    </Style>
     <Style Selector="ComboBoxItem:selected TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>

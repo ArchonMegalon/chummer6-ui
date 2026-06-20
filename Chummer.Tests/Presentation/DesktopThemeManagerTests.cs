@@ -588,6 +588,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
