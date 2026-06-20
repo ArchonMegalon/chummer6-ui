@@ -306,7 +306,7 @@ public partial class SectionHostControl : UserControl
         Grid grid = new()
         {
             Name = $"AttributeParityRow_{ShortAttributeLabel(row.AttributeName)}",
-            ColumnDefinitions = new ColumnDefinitions("*,82,82,72,110"),
+            ColumnDefinitions = new ColumnDefinitions("*,104,116,72,118"),
             ColumnSpacing = 8,
             Margin = new Thickness(0d, 0d, 0d, 1d)
         };
@@ -357,6 +357,7 @@ public partial class SectionHostControl : UserControl
             0,
             Math.Max(0, row.PriorityMaximum),
             row.BaseUnlocked,
+            static next => $"Base {next}",
             next =>
             {
                 baseValue = next;
@@ -380,6 +381,7 @@ public partial class SectionHostControl : UserControl
             0,
             Math.Max(0, row.KarmaMaximum),
             enabled: true,
+            static next => next == 0 ? "Karma 0" : $"Karma +{next}",
             next =>
             {
                 karmaValue = next;
@@ -492,6 +494,7 @@ public partial class SectionHostControl : UserControl
         int minimum,
         int maximum,
         bool enabled,
+        Func<int, string> valueFormatter,
         Action<int> valueChanged,
         out Action<int> setValue)
     {
@@ -513,13 +516,13 @@ public partial class SectionHostControl : UserControl
         Button decrement = CreateAttributeStepperButton("-", $"{name}_Decrease", enabled, foreground, surface, border, $"Decrease {accessibleName}");
         TextBlock valueText = new()
         {
-            Text = current.ToString(CultureInfo.InvariantCulture),
+            Text = valueFormatter(current),
             Foreground = foreground,
             FontWeight = FontWeight.SemiBold,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            MinWidth = 28
+            MinWidth = 52
         };
         ToolTip.SetTip(valueText, accessibleName);
         global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");
@@ -535,7 +538,8 @@ public partial class SectionHostControl : UserControl
         void ApplyValue(int next, bool emit)
         {
             int clamped = Math.Clamp(next, minimum, maximum);
-            if (clamped == current && string.Equals(valueText.Text, clamped.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+            string formatted = valueFormatter(clamped);
+            if (clamped == current && string.Equals(valueText.Text, formatted, StringComparison.Ordinal))
             {
                 decrement.IsEnabled = enabled && current > minimum;
                 increment.IsEnabled = enabled && current < maximum;
@@ -543,7 +547,7 @@ public partial class SectionHostControl : UserControl
             }
 
             current = clamped;
-            valueText.Text = current.ToString(CultureInfo.InvariantCulture);
+            valueText.Text = formatted;
             decrement.IsEnabled = enabled && current > minimum;
             increment.IsEnabled = enabled && current < maximum;
             if (emit)

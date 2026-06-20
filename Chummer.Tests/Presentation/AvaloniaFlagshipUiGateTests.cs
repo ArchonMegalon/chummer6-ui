@@ -4412,6 +4412,12 @@ public sealed class AvaloniaFlagshipUiGateTests
             Assert.IsTrue(baseEditor.IsVisible, "Character creation parity requires a visible base stepper editor.");
             Assert.IsTrue(karmaEditor.IsVisible, "Character creation parity requires a visible karma stepper editor.");
             Assert.IsTrue(baseIncreaseButton.IsVisible, "Character creation parity requires visible stepper controls.");
+            Assert.IsTrue(
+                baseEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Base 3", StringComparison.Ordinal)),
+                "The base attribute editor must render a self-describing value, not a bare hidden-looking number.");
+            Assert.IsTrue(
+                karmaEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Karma +1", StringComparison.Ordinal)),
+                "The karma attribute editor must render a self-describing value, not a second anonymous up/down number column.");
             // Legacy-equivalent chrome gate marker: The section preview header must not invent Review chrome that Chummer5A never had.
             Assert.IsNull(reviewExpander, "Character creation parity must not fall back to the review expander.");
             Assert.IsFalse(reviewPanel.IsVisible, "Character creation parity must not fall back to a profile review panel.");
@@ -4421,6 +4427,9 @@ public sealed class AvaloniaFlagshipUiGateTests
             Thread.Sleep(300);
             PumpStandaloneUi();
 
+            Assert.IsTrue(
+                baseEditor.GetVisualDescendants().OfType<TextBlock>().Any(text => string.Equals(text.Text, "Base 4", StringComparison.Ordinal)),
+                "The base value label must update inline after a mouse click so the user never has to infer the current value from the spinner chrome.");
             Assert.IsTrue(
                 edits.Any(edit =>
                     string.Equals(edit.AttributeName, "Body", StringComparison.Ordinal)

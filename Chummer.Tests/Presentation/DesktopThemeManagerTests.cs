@@ -641,9 +641,10 @@ public sealed class DesktopThemeManagerTests
 
         StringAssert.Contains(sectionHostMarkup, "Text=\"Attribute\" Classes=\"shell-section-title\"");
         StringAssert.Contains(sectionHostMarkup, "Text=\"Base\" Classes=\"shell-caption\"");
-        StringAssert.Contains(sectionHostMarkup, "Text=\"Karma\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "Text=\"Karma bump\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "Text=\"Total\" Classes=\"shell-caption\"");
         StringAssert.Contains(sectionHostMarkup, "Text=\"Limits\" Classes=\"shell-caption\"");
+        StringAssert.Contains(sectionHostMarkup, "ColumnDefinitions=\"*,104,116,72,118\"");
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Val (Aug)\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostMarkup.Contains("Text=\"Points\" Classes=\"shell-caption\" HorizontalAlignment=\"Right\" IsVisible=\"False\"", StringComparison.Ordinal));
 
@@ -653,9 +654,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(sectionHostSource, "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"");
         StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} base allocation\"");
         StringAssert.Contains(sectionHostSource, "$\"{row.DisplayName} karma adjustment\"");
+        StringAssert.Contains(sectionHostSource, "static next => $\"Base {next}\"");
+        StringAssert.Contains(sectionHostSource, "static next => next == 0 ? \"Karma 0\" : $\"Karma +{next}\"");
         StringAssert.Contains(sectionHostSource, "AutomationProperties.SetName(stepper, accessibleName)");
         StringAssert.Contains(sectionHostSource, "ColumnDefinitions = new ColumnDefinitions(\"24,*,24\")");
-        StringAssert.Contains(sectionHostSource, "MinWidth = 28");
+        StringAssert.Contains(sectionHostSource, "MinWidth = 52");
         Assert.IsFalse(sectionHostSource.Contains("Text = label", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"B\"", StringComparison.Ordinal));
         Assert.IsFalse(sectionHostSource.Contains("\"K\"", StringComparison.Ordinal));
