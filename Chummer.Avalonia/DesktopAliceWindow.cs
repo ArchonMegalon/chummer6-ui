@@ -421,7 +421,7 @@ internal sealed class DesktopAliceWindow : Window
                         ItemWidth = double.NaN,
                         Children =
                         {
-                            CreateFieldColumn("Metatype", originMetatypeCombo),
+                            CreateFieldColumn("Race / metatype", originMetatypeCombo),
                             CreateFieldColumn("Archetype", originArchetypeCombo)
                         }
                     },
@@ -610,20 +610,20 @@ internal sealed class DesktopAliceWindow : Window
                 {
                     if (string.IsNullOrWhiteSpace(_originBundle.DossierPdfPath))
                     {
-                        actionRow.Children.Add(CreateButton("Render dossier PDF", RenderOriginDossierPdfAsync, isPrimary: true, name: "AliceOriginRenderDossierPdfButton"));
+                        actionRow.Children.Add(CreateButton("Build book", RenderOriginDossierPdfAsync, isPrimary: true, name: "AliceOriginRenderDossierPdfButton"));
                     }
                     else
                     {
-                        actionRow.Children.Add(CreateButton("Open dossier PDF", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"));
+                        actionRow.Children.Add(CreateButton("Open book", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"));
                     }
                     actionRow.Children.Add(CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.CanonMarkdownPath), name: "AliceOriginOpenCanonStoryButton"));
-                    actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open book handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"));
                     actionRow.Children.Add(CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(_originBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
                     actionRow.Children.Add(CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"));
                     actionRow.Children.Add(CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"));
-                    actionRow.Children.Add(CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open alternate voice script", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
-                    actionRow.Children.Add(CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
+                    actionRow.Children.Add(CreateButton("Open main voice notes", () => !string.IsNullOrWhiteSpace(_originBundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(_originBundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
+                    actionRow.Children.Add(CreateButton("Open audiobook request", () => !string.IsNullOrWhiteSpace(_originBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(_originBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"));
                     actionRow.Children.Add(CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"));
                     actionRow.Children.Add(CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
                     actionRow.Children.Add(CreateButton("Render dossier video now", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
@@ -664,7 +664,7 @@ internal sealed class DesktopAliceWindow : Window
                     }
                     if (!string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath))
                     {
-                        actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
+                        actionRow.Children.Add(CreateButton("Open book handoff", () => DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
                     }
                     actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, name: "AliceOriginApproveCanonButton"));
                     actionRow.Children.Add(CreateButton("Rewrite story", RewriteOriginDraftAsync, name: "AliceOriginRegenerateButton"));
@@ -752,17 +752,17 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Origin story approved.",
-                $"{bundle.Canon.Summary} The dossier PDF is ready; use the story as Alice's seed for later build guidance.",
+                $"{bundle.Canon.Summary} The book is ready; use the story as Alice's seed for later build guidance.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
+                CreateButton("Open book", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
                 CreateButton("Open story", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.CanonMarkdownPath), name: "AliceOriginOpenCanonStoryButton"),
-                CreateButton("Open FlipLink handoff", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"),
+                CreateButton("Open book handoff", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.FlipLinkPacketPath), name: "AliceOriginOpenFlipLinkPacketButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"),
                 CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
                 CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
-                CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
-                CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
-                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Create audiobook script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
+                CreateButton("Create alternate voice", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
+                CreateButton("Prepare audiobook", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
                 CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"));
             return Task.CompletedTask;
         }
@@ -771,18 +771,18 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Create an origin draft before rendering the dossier PDF.";
+                statusText.Text = "Create an origin draft before building the book.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginDossierPdf(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "Dossier PDF ready.",
-                $"PDF: {Path.GetFileName(bundle.DossierPdfPath)}. MarkupGo file: {Path.GetFileName(bundle.MarkupGoPacketPath)}.",
+                "Book ready.",
+                $"Book: {Path.GetFileName(bundle.DossierPdfPath)}. Source file: {Path.GetFileName(bundle.MarkupGoPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open dossier PDF", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
-                CreateButton("Open MarkupGo packet", () => !string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MarkupGoPacketPath), name: "AliceOriginOpenMarkupGoPacketButton"),
+                CreateButton("Open book", () => !string.IsNullOrWhiteSpace(bundle.DossierPdfPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.DossierPdfPath), isPrimary: true, name: "AliceOriginOpenDossierPdfButton"),
+                CreateButton("Open book source", () => !string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MarkupGoPacketPath), name: "AliceOriginOpenMarkupGoPacketButton"),
                 CreateButton("Create portraits", RenderOriginPortraitSetAsync, name: "AliceOriginGeneratePortraitSetButton"),
                 CreateButton("Create scenes", RenderOriginSceneSetAsync, name: "AliceOriginGenerateSceneSetButton"),
                 CreateButton("Create dossier video", RenderOriginDossierVideoAsync, name: "AliceOriginGenerateDossierVideoButton"),
@@ -844,13 +844,13 @@ internal sealed class DesktopAliceWindow : Window
             OriginDossierBundle bundle = EnsureSoundmadeseenNarrationPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "Default voice script ready.",
-                $"Script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Soundmadeseen file: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
+                "Audiobook script ready.",
+                $"Script: {Path.GetFileName(bundle.SoundmadeseenScriptPath)}. Voice notes: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
-                CreateButton("Open default voice script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
-                CreateButton("Create alternate voice script", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
-                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Open voice notes", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), isPrimary: true, name: "AliceOriginOpenNarrationPacketButton"),
+                CreateButton("Open audiobook script", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenScriptPath), name: "AliceOriginOpenNarrationScriptButton"),
+                CreateButton("Create alternate voice", RenderOriginAlternateAudiobookPacketAsync, name: "AliceOriginGenerateAlternateAudiobookPacketButton"),
+                CreateButton("Prepare audiobook", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -866,13 +866,13 @@ internal sealed class DesktopAliceWindow : Window
             OriginDossierBundle bundle = EnsureUnmixrNarrationPacket(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "Alternate voice script ready.",
-                $"Script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Unmixr file: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
+                "Alternate voice ready.",
+                $"Script: {Path.GetFileName(bundle.UnmixrScriptPath)}. Voice notes: {Path.GetFileName(bundle.UnmixrPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
-                CreateButton("Open alternate voice script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
-                CreateButton("Create default voice script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
-                CreateButton("Prepare render request", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
+                CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), isPrimary: true, name: "AliceOriginOpenAlternateNarrationPacketButton"),
+                CreateButton("Open alternate script", () => !string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrScriptPath), name: "AliceOriginOpenAlternateNarrationScriptButton"),
+                CreateButton("Create audiobook script", RenderOriginAudiobookPacketAsync, name: "AliceOriginGenerateAudiobookPacketButton"),
+                CreateButton("Prepare audiobook", RenderOriginMediaFactoryRequestAsync, name: "AliceOriginGenerateMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(bundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
             return Task.CompletedTask;
         }
@@ -881,21 +881,21 @@ internal sealed class DesktopAliceWindow : Window
         {
             if (_originDraft is null || _originPacket is null)
             {
-                statusText.Text = "Create an origin draft before preparing the audiobook render request.";
+                statusText.Text = "Create an origin draft before preparing the audiobook.";
                 return Task.CompletedTask;
             }
 
             OriginDossierBundle bundle = EnsureOriginMediaFactoryNarrationRequest(EnsureOriginDossierBundle());
             _originBundle = bundle;
             ShowOriginBundleState(
-                "Audiobook render request ready.",
+                "Audiobook request ready.",
                 $"Request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}. Notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}.",
                 BuildOriginBundleEvidence(bundle),
-                CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
-                CreateButton("Open render notes", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
+                CreateButton("Open audiobook request", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRequestPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open audiobook notes", () => !string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.MediaFactoryNarrationRunbookPath), name: "AliceOriginOpenMediaFactoryNarrationRunbookButton"),
                 CreateButton("Render audiobook now", RenderOriginAudiobookNowAsync, name: "AliceOriginRenderAudiobookNowButton"),
-                CreateButton("Open default voice packet", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
-                CreateButton("Open alternate voice packet", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
+                CreateButton("Open main voice notes", () => !string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.SoundmadeseenPacketPath), name: "AliceOriginOpenNarrationPacketButton"),
+                CreateButton("Open alternate voice notes", () => !string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.UnmixrPacketPath), name: "AliceOriginOpenAlternateNarrationPacketButton"));
             return Task.CompletedTask;
         }
 
@@ -911,11 +911,11 @@ internal sealed class DesktopAliceWindow : Window
             _originBundle = bundle;
             ShowOriginBundleState(
                 "Dossier video plan ready.",
-                $"Dossier video ready. Poster: {Path.GetFileName(bundle.VideoPosterPath)}. Packet: {Path.GetFileName(bundle.VidBoardPacketPath)}.",
+                $"Dossier video ready. Poster: {Path.GetFileName(bundle.VideoPosterPath)}. Plan: {Path.GetFileName(bundle.VidBoardPacketPath)}.",
                 BuildOriginBundleEvidence(bundle),
                 CreateButton("Open video poster", () => !string.IsNullOrWhiteSpace(bundle.VideoPosterPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoPosterPath), isPrimary: true, name: "AliceOriginOpenVideoPosterButton"),
                 CreateButton("Open storyboard", () => !string.IsNullOrWhiteSpace(bundle.VideoStoryboardPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VideoStoryboardPath), name: "AliceOriginOpenVideoStoryboardButton"),
-                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"),
+                CreateButton("Open video plan", () => !string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(bundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"),
                 CreateButton("Render dossier video now", RenderOriginDossierVideoNowAsync, name: "AliceOriginRenderDossierVideoNowButton"));
             return Task.CompletedTask;
         }
@@ -965,7 +965,7 @@ internal sealed class DesktopAliceWindow : Window
                 $"Audio log: {Path.GetFileName(receiptPath)}. Default and alternate voice paths were prepared for review.",
                 BuildOriginBundleEvidence(updatedBundle),
                 CreateButton("Open audiobook log", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), isPrimary: true, name: "AliceOriginOpenMediaFactoryNarrationReceiptButton"),
-                CreateButton("Open render request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
+                CreateButton("Open audiobook request", () => !string.IsNullOrWhiteSpace(updatedBundle.MediaFactoryNarrationRequestPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.MediaFactoryNarrationRequestPath), name: "AliceOriginOpenMediaFactoryNarrationRequestButton"),
                 CreateButton("Open bundle folder", () => DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.BundleDirectory), name: "AliceOriginOpenBundleFolderButton"));
         }
 
@@ -991,7 +991,7 @@ internal sealed class DesktopAliceWindow : Window
                 BuildOriginBundleEvidence(updatedBundle),
                 CreateButton("Open rendered video", () => DesktopCrashRuntime.TryOpenPathInShell(renderedVideoPath), isPrimary: true, name: "AliceOriginOpenRenderedVideoButton"),
                 CreateButton("Open video log", () => DesktopCrashRuntime.TryOpenPathInShell(receiptPath), name: "AliceOriginOpenMediaFactoryVideoReceiptButton"),
-                CreateButton("Open vidBoard packet", () => !string.IsNullOrWhiteSpace(updatedBundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
+                CreateButton("Open video plan", () => !string.IsNullOrWhiteSpace(updatedBundle.VidBoardPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(updatedBundle.VidBoardPacketPath), name: "AliceOriginOpenVidBoardPacketButton"));
         }
 
         async Task AskAsync()
@@ -1032,7 +1032,7 @@ internal sealed class DesktopAliceWindow : Window
                 string[] originActionTitles =
                 [
                     "Open story",
-                    "Open FlipLink handoff",
+                    "Open book handoff",
                     "Approve story",
                     "Rewrite story"
                 ];
@@ -1044,7 +1044,7 @@ internal sealed class DesktopAliceWindow : Window
                     originActionTitles));
                 RefreshConversationFeed();
                 actionRow.Children.Add(CreateButton("Open story", () => !string.IsNullOrWhiteSpace(_originDraftMarkdownPath) && DesktopCrashRuntime.TryOpenPathInShell(_originDraftMarkdownPath), isPrimary: true, name: "AliceOriginOpenDraftStoryButton"));
-                actionRow.Children.Add(CreateButton("Open FlipLink handoff", () => !string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
+                actionRow.Children.Add(CreateButton("Open book handoff", () => !string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath) && DesktopCrashRuntime.TryOpenPathInShell(_originDraftFlipLinkPacketPath), name: "AliceOriginOpenDraftFlipLinkPacketButton"));
                 actionRow.Children.Add(CreateButton("Approve story", ApproveOriginCanonAsync, name: "AliceOriginApproveCanonButton"));
                 actionRow.Children.Add(CreateButton("Rewrite story", RewriteOriginDraftAsync, name: "AliceOriginRegenerateButton"));
                 promptBox.Text = string.Empty;
@@ -2333,7 +2333,7 @@ internal sealed class DesktopAliceWindow : Window
         }
         if (!string.IsNullOrWhiteSpace(_originDraftFlipLinkPacketPath))
         {
-            lines.Add($"FlipLink handoff: {Path.GetFileName(_originDraftFlipLinkPacketPath)}");
+            lines.Add($"Book handoff: {Path.GetFileName(_originDraftFlipLinkPacketPath)}");
         }
 
         return HumanLines(lines);
@@ -3142,11 +3142,11 @@ internal sealed class DesktopAliceWindow : Window
         [
             $"Dossier folder: {bundle.BundleDirectory}",
             $"Story: {Path.GetFileName(bundle.CanonMarkdownPath)}",
-            $"FlipLink handoff: {Path.GetFileName(bundle.FlipLinkPacketPath)}",
+            $"Book handoff: {Path.GetFileName(bundle.FlipLinkPacketPath)}",
             $"Story data: {Path.GetFileName(bundle.CanonJsonPath)}",
-            "Document: MarkupGo",
-            "Default voice: Soundmadeseen",
-            "Alternate voice: Unmixr"
+            "Document: book",
+            "Default voice: main",
+            "Alternate voice: alternate"
         ];
 
         if (!string.IsNullOrWhiteSpace(bundle.GmAllowanceNotes))
@@ -3156,12 +3156,12 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.DossierPdfPath))
         {
-            lines.Add($"PDF: {Path.GetFileName(bundle.DossierPdfPath)}");
+            lines.Add($"Book: {Path.GetFileName(bundle.DossierPdfPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MarkupGoPacketPath))
         {
-            lines.Add($"MarkupGo file: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
+            lines.Add($"Book source: {Path.GetFileName(bundle.MarkupGoPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.PortraitSetJsonPath))
@@ -3201,7 +3201,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.SoundmadeseenPacketPath))
         {
-            lines.Add($"Soundmadeseen file: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
+            lines.Add($"Main voice notes: {Path.GetFileName(bundle.SoundmadeseenPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.UnmixrScriptPath))
@@ -3211,17 +3211,17 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.UnmixrPacketPath))
         {
-            lines.Add($"Unmixr file: {Path.GetFileName(bundle.UnmixrPacketPath)}");
+            lines.Add($"Alternate voice notes: {Path.GetFileName(bundle.UnmixrPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRequestPath))
         {
-            lines.Add($"Render request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}");
+            lines.Add($"Audiobook request: {Path.GetFileName(bundle.MediaFactoryNarrationRequestPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationRunbookPath))
         {
-            lines.Add($"Render notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
+            lines.Add($"Audiobook notes: {Path.GetFileName(bundle.MediaFactoryNarrationRunbookPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.MediaFactoryNarrationReceiptPath))
@@ -3236,7 +3236,7 @@ internal sealed class DesktopAliceWindow : Window
 
         if (!string.IsNullOrWhiteSpace(bundle.VidBoardPacketPath))
         {
-            lines.Add($"vidBoard file: {Path.GetFileName(bundle.VidBoardPacketPath)}");
+            lines.Add($"Video plan: {Path.GetFileName(bundle.VidBoardPacketPath)}");
         }
 
         if (!string.IsNullOrWhiteSpace(bundle.VideoPosterPath))
