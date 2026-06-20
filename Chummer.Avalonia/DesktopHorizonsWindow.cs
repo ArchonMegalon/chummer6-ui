@@ -118,7 +118,7 @@ internal sealed class DesktopHorizonsWindow : Window
         ArgumentException.ThrowIfNullOrWhiteSpace(headId);
 
         DesktopPreferenceState preferences = DesktopPreferenceRuntime.LoadOrCreateState(headId);
-        AccountCampaignSummary? campaignSummary = await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop workbenches require an IChummerClient instance.").ConfigureAwait(true);
+        AccountCampaignSummary? campaignSummary = await DesktopHorizonWindowScaffold.TryReadAccountCampaignSummaryAsync("Desktop tools require an IChummerClient instance.").ConfigureAwait(true);
         DesktopHorizonsWindow dialog = new(headId, preferences, campaignSummary);
         LastOpenedWindowForTesting = dialog;
         dialog.Closed += static (_, _) => LastOpenedWindowForTesting = null;
@@ -266,7 +266,7 @@ internal sealed class DesktopHorizonsWindow : Window
             CreateLeadPanel(
                 BuildCompactPosture("Packages", $"Handoffs {_campaignSummary?.BuildLabHandoffs.Count ?? 0} | Publications {_campaignSummary?.CreatorPublications.Count ?? 0}"),
                 targetCombo),
-            CreateButton("Open workbench", () => DesktopKarmaForgeWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_karma_forge"),
+            CreateButton("Open", () => DesktopKarmaForgeWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_karma_forge"),
             CreateButton("Open selected", () =>
             {
                 if (targetCombo.SelectedItem is DesktopHorizonRouteOption selected)
@@ -327,7 +327,7 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton("Open workbench", openNative, isPrimary: true, name: $"HorizonsOpenWorkbench_{entry.Id}"),
+            CreateButton("Open", openNative, isPrimary: true, name: $"HorizonsOpenWorkbench_{entry.Id}"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: $"HorizonsPrimaryRoute_{entry.Id}")
         ];
 
@@ -385,7 +385,7 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton("Open workbench", () => DesktopAliceWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_alice"),
+            CreateButton("Open", () => DesktopAliceWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_alice"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_alice")
         ];
 
@@ -408,7 +408,7 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton("Open workbench", () => DesktopRunControlWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_run_control"),
+            CreateButton("Open", () => DesktopRunControlWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_run_control"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_run_control")
         ];
 
@@ -431,7 +431,7 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         List<Button> actions =
         [
-            CreateButton("Open workbench", () => DesktopBlackLedgerWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_black_ledger"),
+            CreateButton("Open", () => DesktopBlackLedgerWindow.ShowAsync(this, _headId), isPrimary: true, name: "HorizonsOpenWorkbench_black_ledger"),
             CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref), name: "HorizonsPrimaryRoute_black_ledger")
         ];
 
@@ -488,7 +488,7 @@ internal sealed class DesktopHorizonsWindow : Window
     {
         if (string.IsNullOrWhiteSpace(query))
         {
-            return $"Showing {filteredEntries.Count} product area(s). Native workbenches stay first whenever the client has a governed desktop surface.";
+            return $"Showing {filteredEntries.Count} product area(s). Native tools stay first whenever the client has a desktop surface.";
         }
 
         return $"Filter '{query}' matched {filteredEntries.Count} product area(s).";

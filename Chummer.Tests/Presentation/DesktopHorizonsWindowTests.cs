@@ -59,9 +59,9 @@ public sealed class DesktopHorizonsWindowTests
         string dialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
         StringAssert.Contains(dialogSource, "DesktopPreferenceRuntime.LoadOrCreateState(\"avalonia\")");
         StringAssert.Contains(dialogSource, "OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForHorizon(item.Id, preferences)");
-        StringAssert.Contains(dialogSource, "Desktop Workbench Integrations");
-        StringAssert.Contains(dialogSource, "first-party workbenches");
-        StringAssert.Contains(dialogSource, "CreateLegacyFieldGroup(\"Workbenches\", content)");
+        StringAssert.Contains(dialogSource, "Desktop Tools");
+        StringAssert.Contains(dialogSource, "main Chummer tools");
+        StringAssert.Contains(dialogSource, "CreateLegacyFieldGroup(\"Tools\", content)");
         Assert.IsFalse(dialogSource.Contains("Desktop Horizon Integrations", StringComparison.Ordinal));
         Assert.IsFalse(dialogSource.Contains("horizon lanes", StringComparison.Ordinal));
         Assert.IsFalse(dialogSource.Contains("CreateLegacyFieldGroup(\"Horizons\"", StringComparison.Ordinal));
@@ -76,11 +76,63 @@ public sealed class DesktopHorizonsWindowTests
         Assert.IsFalse(toolStripSource.Contains("SetButtonLabel(\"HorizonsButton\", DesktopLocalizationCatalog.GetRequiredString(\"desktop.shell.tool.horizons\", DesktopLocalizationCatalog.GetCurrentLanguage()), \"Horizons\")", StringComparison.Ordinal));
 
         string localizationSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopLocalizationCatalog.cs"));
+        StringAssert.Contains(localizationSource, "[\"desktop.shell.tool.horizons\"] = \"Tools\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.horizons.title\"] = \"Tools\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.horizons.heading\"] = \"Tools\"");
         StringAssert.Contains(localizationSource, "[\"desktop.horizons.button.open_public_index\"] = \"Open roadmap\"");
         StringAssert.Contains(localizationSource, "[\"desktop.home.button.open_horizons_public\"] = \"Open roadmap\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.shell.tool.horizons\"] = \"Werkzeuge\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.horizons.title\"] = \"Werkzeuge\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.horizons.button.open_public_index\"] = \"Roadmap öffnen\"");
         StringAssert.Contains(localizationSource, "localized[\"desktop.home.button.open_horizons_public\"] = \"Roadmap öffnen\"");
         Assert.IsFalse(localizationSource.Contains("Open product areas", StringComparison.Ordinal));
         Assert.IsFalse(localizationSource.Contains("Open public index", StringComparison.Ordinal));
+    }
+
+    [TestMethod]
+    public void Desktop_tools_surfaces_do_not_expose_workbench_or_horizon_maintenance_copy()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string[] sourceFiles =
+        [
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicToolStrip.axaml"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "CharacterCreateClassicPort.axaml.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopHorizonsWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopKarmaForgeWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopJackpointWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopTablePulseWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopQuicksilverWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopOnrampWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopRunbookPressWindow.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DialogCoordinator.cs"),
+            Path.Combine(repoRoot, "Chummer.Presentation", "Overview", "DesktopDialogFactory.cs")
+        ];
+
+        string[] forbiddenVisiblePhrases =
+        [
+            "Open workbench",
+            "Open Workbench",
+            "Open campaign workbench",
+            "Open ALICE workbench",
+            "Workbenches",
+            "workbenches",
+            "desktop workbench",
+            "roster workbench",
+            "current workbench",
+            "runner workbench",
+            "creator workbench",
+            "Native workbenches"
+        ];
+
+        foreach (string path in sourceFiles)
+        {
+            string source = File.ReadAllText(path);
+            foreach (string phrase in forbiddenVisiblePhrases)
+            {
+                Assert.IsFalse(
+                    source.Contains(phrase, StringComparison.Ordinal),
+                    $"{Path.GetRelativePath(repoRoot, path)} must not expose '{phrase}' in user-facing copy.");
+            }
+        }
     }
 }

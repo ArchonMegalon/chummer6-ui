@@ -755,13 +755,13 @@ public partial class DesktopDialogWindow : Window
 
         content.Children.Add(new TextBlock
         {
-            Text = "Desktop Workbench Integrations",
+            Text = "Desktop Tools",
             FontWeight = FontWeight.SemiBold,
             TextWrapping = TextWrapping.Wrap
         });
         content.Children.Add(new TextBlock
         {
-            Text = "Open the current first-party workbenches from desktop settings. Karma Forge includes package browsing, tracked packages, and direct create-package intake.",
+            Text = "Open the main Chummer tools from desktop settings. Karma Forge includes package browsing, tracked packages, and direct create-package intake.",
             TextWrapping = TextWrapping.Wrap
         });
 
@@ -774,7 +774,7 @@ public partial class DesktopDialogWindow : Window
             content.Children.Add(CreateHorizonWorkbenchRow(entry));
         }
 
-        return CreateLegacyFieldGroup("Workbenches", content);
+        return CreateLegacyFieldGroup("Tools", content);
     }
 
     private Control CreateKarmaForgeWorkbenchRow()
@@ -795,7 +795,7 @@ public partial class DesktopDialogWindow : Window
         ApplyShellComboBoxTheme(targetCombo);
 
         Button openSelectedButton = CreateHorizonRouteButton(
-            "Open workbench",
+            "Open",
             () => DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, "avalonia"));
 
         Button openSelectedRouteButton = CreateHorizonRouteButton(
@@ -830,7 +830,7 @@ public partial class DesktopDialogWindow : Window
     {
         List<Control> actions =
         [
-            CreateHorizonRouteButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, "avalonia", entry)),
+            CreateHorizonRouteButton("Open", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, "avalonia", entry)),
             CreateHorizonRouteButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref))
         ];
 

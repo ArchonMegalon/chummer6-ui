@@ -71,8 +71,8 @@
         <Button x:Name="HorizonsButton"
                 MinWidth="90"
                 Padding="10,4"
-                Content="Workbenches"
-                ToolTip.Tip="Open Workbenches"
+                Content="Tools"
+                ToolTip.Tip="Open Tools"
                 Click="HorizonsButton_OnClick" />
         <Button x:Name="CampaignWorkspaceButton"
                 IsVisible="False"

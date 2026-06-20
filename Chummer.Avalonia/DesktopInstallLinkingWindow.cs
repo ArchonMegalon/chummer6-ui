@@ -90,7 +90,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
         {
             Text = "Awaiting account handoff",
             FontWeight = FontWeight.SemiBold,
-            Foreground = Brushes.White,
+            Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC"),
             TextWrapping = TextWrapping.Wrap
         };
 
@@ -413,7 +413,7 @@ internal sealed class DesktopInstallLinkingWindow : Window
                     Text = DesktopLocalizationCatalog.GetRequiredString("desktop.install_link.title", _language),
                     FontSize = 28,
                     FontWeight = FontWeight.Bold,
-                    Foreground = Brushes.White,
+                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC"),
                     TextWrapping = TextWrapping.Wrap
                 }
             }

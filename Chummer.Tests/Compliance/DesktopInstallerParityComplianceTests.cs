@@ -80,10 +80,12 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Name = \"ChummerInstallerProgressDialog\";");
         StringAssert.Contains(installerProgramText, "AccessibleName = $\"{displayName} installer progress\";");
         StringAssert.Contains(installerProgramText, "TimeSpan minimumProgressDisplay = TimeSpan.FromMilliseconds(1200);");
-        StringAssert.Contains(installerProgramText, "ClientSize = new Size(760, 340),");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(760, 340),");
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(840, 400),");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(840, 400),");
         StringAssert.Contains(installerProgramText, "Name = \"ChummerInstallerCompletionDialog\",");
         StringAssert.Contains(installerProgramText, "AccessibleName = $\"{displayName} install complete\",");
+        StringAssert.Contains(installerProgramText, "Text = $\"{displayName} Installer - Install Complete\",");
+        StringAssert.Contains(installerProgramText, "ShowInTaskbar = true,");
         StringAssert.Contains(installerProgramText, "RowCount = 5");
         StringAssert.Contains(installerProgramText, "Height = 34,");
         StringAssert.Contains(installerProgramText, "Use only when support asks.");

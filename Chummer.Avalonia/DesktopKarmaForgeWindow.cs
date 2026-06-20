@@ -147,7 +147,7 @@ internal sealed class DesktopKarmaForgeWindow : Window
 
         if (showGuidedTools)
         {
-            actions.Insert(0, CreateButton("Open ALICE workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "KarmaForgeOpenAliceWorkbenchButton"));
+            actions.Insert(0, CreateButton("Open character help", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/alice"), isPrimary: true, name: "KarmaForgeOpenAliceWorkbenchButton"));
             actions.Add(CreateButton("Open public ALICE", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/alice"), name: "KarmaForgeOpenPublicAliceButton"));
         }
 

@@ -1172,7 +1172,7 @@ internal sealed class DesktopHomeWindow : Window
         stack.Children.Add(CreateHorizonQuickLaunchRow(
             "Karma Forge",
             "Packages, tracked package shelf, and direct package intake from desktop.",
-            CreateButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId), isPrimary: true),
+            CreateButton("Open", () => DesktopHorizonWorkbenchLauncher.OpenKarmaForgeAsync(this, _installState.HeadId), isPrimary: true),
             CreateButton("Browse packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/packages")),
             CreateButton("Create package", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/participate/karma-forge#karma-forge-intake")),
             CreateButton("My packages", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/packages"))));
@@ -1183,7 +1183,7 @@ internal sealed class DesktopHomeWindow : Window
         {
             List<Button> buttons =
             [
-                CreateButton("Open workbench", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry), isPrimary: true),
+                CreateButton("Open", () => DesktopHorizonWorkbenchLauncher.OpenAsync(this, _installState.HeadId, entry), isPrimary: true),
                 CreateButton(entry.PrimaryAction.Label, () => DesktopInstallLinkingRuntime.TryOpenRelativePortal(entry.PrimaryAction.RelativeHref))
             ];
 

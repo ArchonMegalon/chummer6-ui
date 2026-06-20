@@ -1336,20 +1336,20 @@ internal static class Program
     {
         using Form prompt = new()
         {
-            Text = $"{displayName} Install Complete",
+            Text = $"{displayName} Installer - Install Complete",
             Name = "ChummerInstallerCompletionDialog",
             AccessibleName = $"{displayName} install complete",
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(760, 340),
-            MinimumSize = new Size(760, 340),
+            ClientSize = new Size(840, 400),
+            MinimumSize = new Size(840, 400),
             MinimizeBox = false,
             MaximizeBox = false,
-            ShowInTaskbar = false,
+            ShowInTaskbar = true,
             TopMost = true,
             ShowIcon = false,
-            BackColor = Color.FromArgb(248, 250, 252),
+            BackColor = Color.FromArgb(9, 13, 20),
             AutoScaleMode = AutoScaleMode.Dpi
         };
 
@@ -1364,7 +1364,7 @@ internal static class Program
         {
             AutoSize = false,
             Font = new Font("Segoe UI Semibold", 7F, FontStyle.Bold, GraphicsUnit.Point),
-            ForeColor = Color.FromArgb(18, 126, 96),
+            ForeColor = Color.FromArgb(116, 223, 193),
             Text = "INSTALLED",
             Dock = DockStyle.Fill,
             Height = 18,
@@ -1376,8 +1376,8 @@ internal static class Program
         Label titleLabel = new()
         {
             AutoSize = false,
-            Font = new Font("Segoe UI Semibold", 13F, FontStyle.Regular, GraphicsUnit.Point),
-            ForeColor = Color.FromArgb(18, 24, 36),
+            Font = new Font("Segoe UI Semibold", 11.5F, FontStyle.Bold, GraphicsUnit.Point),
+            ForeColor = Color.White,
             Text = headline,
             Dock = DockStyle.Fill,
             Height = 46,
@@ -1391,7 +1391,7 @@ internal static class Program
         {
             AutoSize = false,
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
-            ForeColor = Color.FromArgb(55, 65, 84),
+            ForeColor = Color.FromArgb(205, 213, 226),
             Text = pathText,
             Dock = DockStyle.Fill,
             Height = 34,
@@ -1410,7 +1410,7 @@ internal static class Program
         {
             AutoSize = false,
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
-            ForeColor = Color.FromArgb(90, 102, 124),
+            ForeColor = Color.FromArgb(156, 169, 190),
             Text = noteText,
             Dock = DockStyle.Fill,
             Height = 30,
@@ -1439,9 +1439,13 @@ internal static class Program
             DialogResult = DialogResult.Yes,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
+            BackColor = Color.FromArgb(57, 196, 156),
+            ForeColor = Color.FromArgb(8, 13, 20),
+            FlatStyle = FlatStyle.Flat,
             AutoEllipsis = true,
             UseMnemonic = false
         };
+        primaryButton.FlatAppearance.BorderSize = 0;
         primaryButton.Click += (_, _) =>
         {
             prompt.DialogResult = DialogResult.Yes;
@@ -1457,9 +1461,13 @@ internal static class Program
             DialogResult = DialogResult.No,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
+            BackColor = Color.FromArgb(24, 31, 44),
+            ForeColor = Color.FromArgb(224, 231, 242),
+            FlatStyle = FlatStyle.Flat,
             AutoEllipsis = true,
             UseMnemonic = false
         };
+        secondaryButton.FlatAppearance.BorderColor = Color.FromArgb(55, 66, 84);
         secondaryButton.Click += (_, _) =>
         {
             prompt.DialogResult = DialogResult.No;
@@ -1475,10 +1483,14 @@ internal static class Program
             DialogResult = DialogResult.Cancel,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
+            BackColor = Color.FromArgb(24, 31, 44),
+            ForeColor = Color.FromArgb(224, 231, 242),
+            FlatStyle = FlatStyle.Flat,
             Visible = options.CancelButtonText is not null,
             AutoEllipsis = true,
             UseMnemonic = false
         };
+        cancelButton.FlatAppearance.BorderColor = Color.FromArgb(55, 66, 84);
         cancelButton.Click += (_, _) =>
         {
             prompt.DialogResult = DialogResult.Cancel;
@@ -1491,8 +1503,8 @@ internal static class Program
         TableLayoutPanel content = new()
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(248, 250, 252),
-            Padding = new Padding(28, 24, 28, 22),
+            BackColor = Color.FromArgb(14, 19, 28),
+            Padding = new Padding(32, 24, 32, 24),
             ColumnCount = 1,
             RowCount = 5
         };

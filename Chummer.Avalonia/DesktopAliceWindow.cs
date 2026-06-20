@@ -3596,7 +3596,7 @@ internal sealed class DesktopAliceWindow : Window
                                 Text = candidate.Title,
                                 FontSize = 34,
                                 FontWeight = FontWeight.Bold,
-                                Foreground = Brushes.White
+                                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC")
                             },
                             new TextBlock
                             {
@@ -3632,7 +3632,7 @@ internal sealed class DesktopAliceWindow : Window
                                     Text = bundle.Canon.Prose,
                                     TextWrapping = TextWrapping.Wrap,
                                     FontSize = 20,
-                                    Foreground = Brushes.White
+                                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC")
                                 },
                                 new TextBlock
                                 {
@@ -3668,7 +3668,7 @@ internal sealed class DesktopAliceWindow : Window
                                 {
                                     Text = $"{bundle.Packet.Alias} · {bundle.Packet.ArchetypeHint}",
                                     FontSize = 18,
-                                    Foreground = Brushes.White,
+                                    Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC"),
                                     TextWrapping = TextWrapping.Wrap
                                 },
                                 new TextBlock
@@ -3691,7 +3691,7 @@ internal sealed class DesktopAliceWindow : Window
         Bitmap sceneBitmap = new(scenePath);
         return new Border
         {
-            Background = Brushes.Black,
+            Background = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaBackdropBrush", "#020617"),
             Child = new Grid
             {
                 Children =
@@ -3732,7 +3732,7 @@ internal sealed class DesktopAliceWindow : Window
                                 Text = bundle.Packet.Alias,
                                 FontSize = 42,
                                 FontWeight = FontWeight.Bold,
-                                Foreground = Brushes.White
+                                Foreground = DesktopShellTheme.ResolveThemeBrush("ChummerShellMediaOverlayForegroundBrush", "#F8FAFC")
                             },
                             new TextBlock
                             {

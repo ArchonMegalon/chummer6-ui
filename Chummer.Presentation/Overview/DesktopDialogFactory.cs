@@ -355,7 +355,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.new_window",
                 "New Window",
                 "Open a second shell instance from your platform runtime.",
-                BuildWindowUtilityFields("Open New Window", "A second shell stays bound to the desktop host instead of taking over the current workbench."),
+                BuildWindowUtilityFields("Open New Window", "A second shell stays bound to the desktop host instead of taking over the current view."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "close_window" => new DesktopDialogState(
                 "dialog.close_window",
@@ -367,13 +367,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.wiki",
                 "Wiki",
                 "https://github.com/ArchonMegalon/Chummer6/wiki/",
-                BuildExternalLinkFields("Chummer Wiki", "https://github.com/ArchonMegalon/Chummer6/wiki/", "Use the legacy wiki as an external reference without displacing the current workbench."),
+                BuildExternalLinkFields("Chummer Wiki", "https://github.com/ArchonMegalon/Chummer6/wiki/", "Use the legacy wiki as an external reference without displacing the current view."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "discord" => new DesktopDialogState(
                 "dialog.discord",
                 "Discord",
                 "https://discord.gg/mJB7st9",
-                BuildExternalLinkFields("Community Discord", "https://discord.gg/mJB7st9", "Community chat opens in the browser instead of replacing the desktop workbench."),
+                BuildExternalLinkFields("Community Discord", "https://discord.gg/mJB7st9", "Community chat opens in the browser instead of replacing the desktop view."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "show_login_video" => new DesktopDialogState(
                 "dialog.show_login_video",
@@ -391,7 +391,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "dialog.dumpshock",
                 "Issue Tracker",
                 "https://github.com/ArchonMegalon/Chummer6/issues/",
-                BuildExternalLinkFields("Issue Tracker", "https://github.com/ArchonMegalon/Chummer6/issues/", "The Chummer6 issue tracker opens externally and stays outside the desktop workbench."),
+                BuildExternalLinkFields("Issue Tracker", "https://github.com/ArchonMegalon/Chummer6/issues/", "The Chummer6 issue tracker opens externally and stays outside the desktop view."),
                 [new DesktopDialogAction("close", "Close", true)]),
             "print_character" => new DesktopDialogState(
                 "dialog.print_character",
@@ -4972,7 +4972,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string recoveryCommands =
             "Check parent section totals" + Environment.NewLine +
             "Re-open the same picker family" + Environment.NewLine +
-            "Return to the current workbench tab";
+            "Return to the current tab";
 
         return
         [
@@ -5352,7 +5352,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogField("uiSourceBook", "Book", "Core Rulebook", "Core Rulebook", IsReadOnly: true),
             new DesktopDialogField("uiSourcePage", "Page", "424", "424", IsReadOnly: true),
             new DesktopDialogField("uiSourceDetails", "Source Details", sourceDetails, sourceDetails, IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Grid, LayoutSlot: DesktopDialogFieldLayoutSlots.Right),
-            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the runner workbench off screen.", "Source references stay compact and copyable without pushing the runner workbench off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
+            new DesktopDialogField("uiSourceNotes", "Notes", "Source references stay compact and copyable without pushing the runner view off screen.", "Source references stay compact and copyable without pushing the runner view off screen.", IsReadOnly: true, IsMultiline: true, VisualKind: DesktopDialogFieldVisualKinds.Snippet)
         ];
     }
 

@@ -154,7 +154,7 @@ internal sealed class DesktopJackpointWindow : Window
             "Keep the signed-in briefings and dossier posture visible without hunting through multiple browser routes.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open account desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/jackpoint"), isPrimary: HasDossierContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public Jackpoint", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/jackpoint")));
     }
 }

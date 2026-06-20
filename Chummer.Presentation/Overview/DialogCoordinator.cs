@@ -254,7 +254,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
                     OpenCharacterRosterFolder(dialog, context);
                     return;
                 case "open_portrait":
-                    PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster workbench.");
+                    PublishCharacterRosterCommandNotice(dialog, context, "rosterPortraitPath", "No portrait slot is currently matched.", portraitPath => $"Portrait slot '{Path.GetFileName(portraitPath)}' surfaced in the roster view.");
                     return;
             }
         }
@@ -2114,7 +2114,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
             .FirstOrDefault(workspace => string.Equals(workspace.Id.Value, runnerId, StringComparison.Ordinal));
         if (selectedRunner is null)
         {
-            PublishCharacterRosterDialog(context, $"Selected roster runner '{runnerId}' is not available in the current workbench session.");
+            PublishCharacterRosterDialog(context, $"Selected roster runner '{runnerId}' is not available in the current roster session.");
             return;
         }
 
@@ -2150,7 +2150,7 @@ public sealed class DialogCoordinator : IDialogCoordinator
 
         if (matchedRunner is null)
         {
-            PublishCharacterRosterDialog(context, $"Watch file '{selectedWatchFile}' surfaced in the roster workbench.");
+            PublishCharacterRosterDialog(context, $"Watch file '{selectedWatchFile}' surfaced in the roster view.");
             return;
         }
 

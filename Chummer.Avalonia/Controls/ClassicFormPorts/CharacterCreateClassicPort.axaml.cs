@@ -41,7 +41,7 @@ public partial class CharacterCreateClassicPort : ClassicFormPortSurfaceControl
         _ = snapshot;
         if (_noticeText is not null)
         {
-            SetLeadNotice(_noticeText, state.Notice, "Classic chargen is routing through the legacy-first creation workbench.");
+            SetLeadNotice(_noticeText, state.Notice, "Classic chargen is routing through the legacy-first creation flow.");
         }
 
         SetActiveTab(_tabs, state.ActiveTabId, "Priorities", "Attributes", "Skills", "Gear", "Spells", "Final");

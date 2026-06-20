@@ -32,7 +32,7 @@ internal sealed class DesktopRunbookPressWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Runbook Press",
-            "Runbook Press keeps campaign books, module assembly, and creator follow-through on a dedicated native desk instead of aliasing the broader creator workbench.",
+            "Runbook Press keeps campaign books, module assembly, and creator follow-through on a dedicated native desk instead of aliasing the broader creator area.",
             CreatePublicationCard(),
             CreateCampaignBookCard(),
             CreateDetailCard(),

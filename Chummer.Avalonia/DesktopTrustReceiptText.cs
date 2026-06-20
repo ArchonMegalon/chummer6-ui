@@ -96,7 +96,7 @@ internal static class DesktopTrustReceiptText
         DesktopHomeSupportProjection supportProjection,
         DesktopSupportCaseDetails? supportCase = null)
     {
-        string line = $"After: target version {Normalize(updateStatus.LastManifestVersion, "unknown")}; recommended action {Normalize(updateStatus.RecommendedAction, "review support posture")}; proof {Normalize(updateStatus.ProofStatus, "proof status not published locally")}; rollout {Normalize(updateStatus.RolloutState, "rollout state not published locally")}.";
+        string line = $"After: target version {Normalize(updateStatus.LastManifestVersion, "unknown")}; recommended action {Normalize(updateStatus.RecommendedAction, "review support status")}; release check {Normalize(updateStatus.ProofStatus, "release check not published locally")}; rollout {Normalize(updateStatus.RolloutState, "rollout state not published locally")}.";
         return AppendSupportContext(line, supportProjection, supportCase);
     }
 
@@ -110,7 +110,7 @@ internal static class DesktopTrustReceiptText
                 DesktopTrustReceiptComposer.BuildDiagnosticsSections(installState, updateStatus),
                 "Grounded support explain receipt",
                 "Support diagnostics explain receipt:")
-            ?? $"Explain receipt: installed {installState.HeadId}/{installState.ApplicationVersion} remains the before state while support reviews the next safe action.";
+            ?? $"Support note: installed {installState.HeadId}/{installState.ApplicationVersion} remains the before state while support reviews the next safe action.";
         return AppendSupportContext(line, supportProjection, supportCase);
     }
 
@@ -119,7 +119,7 @@ internal static class DesktopTrustReceiptText
         DesktopHomeSupportProjection supportProjection,
         DesktopSupportCaseDetails? supportCase = null)
     {
-        string line = $"Support handoff receipt: support can cite support/{installState.InstallationId}/{installState.HeadId}/{installState.ChannelId} with before/after tuple, blocker, proof, rollout, and supportability without changing local install state.";
+        string line = $"Support handoff record: support can cite support/{installState.InstallationId}/{installState.HeadId}/{installState.ChannelId} with before/after details, blocker, release check, rollout, and supportability without changing local install state.";
         return AppendSupportContext(line, supportProjection, supportCase);
     }
 

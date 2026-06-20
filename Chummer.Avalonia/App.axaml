@@ -36,6 +36,8 @@
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#111111" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#2C5FB8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#020617" />
           <SolidColorBrush x:Key="TextControlBackground" Color="#FFFFFF" />
           <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#FFFFFF" />
           <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FFFFFF" />
@@ -125,6 +127,8 @@
           <SolidColorBrush x:Key="ChummerShellInputForegroundBrush" Color="#F8FAFC" />
           <SolidColorBrush x:Key="ChummerShellSelectionBrush" Color="#1D4ED8" />
           <SolidColorBrush x:Key="ChummerShellSelectionForegroundBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellMediaOverlayForegroundBrush" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="ChummerShellMediaBackdropBrush" Color="#020617" />
           <SolidColorBrush x:Key="TextControlBackground" Color="#162031" />
           <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#162031" />
           <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#162031" />

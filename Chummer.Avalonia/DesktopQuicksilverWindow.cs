@@ -30,8 +30,8 @@ internal sealed class DesktopQuicksilverWindow : Window
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Quicksilver",
             AreGuidedToolsVisible()
-                ? "Quicksilver is the native command deck for the account context: rules answers, build handoffs, publications, and workbenches stay one move away."
-                : "Quicksilver is the native command deck for the account context: rules answers, publications, and workbenches stay one move away.",
+                ? "Quicksilver is the native command deck for the account context: rules answers, build handoffs, publications, and tools stay one move away."
+                : "Quicksilver is the native command deck for the account context: rules answers, publications, and tools stay one move away.",
             CreateCommandDeckCard(),
             CreateJumpTargetsCard(),
             new StackPanel

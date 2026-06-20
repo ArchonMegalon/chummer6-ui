@@ -152,7 +152,7 @@ internal sealed class DesktopTablePulseWindow : Window
             "Move from live pressure into aftermath closure without losing the signed-in work rail.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open aftermath", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/work#aftermath-packages"), isPrimary: HasAftermathContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign workbench", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open campaign", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/runsites")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/table-pulse")));
     }
 }

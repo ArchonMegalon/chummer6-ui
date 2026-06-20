@@ -556,6 +556,26 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Desktop_media_and_install_link_surfaces_use_named_theme_brushes_instead_of_raw_white_black()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string[] themedMediaSources =
+        [
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopAliceWindow.cs")),
+            File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopInstallLinkingWindow.cs"))
+        ];
+
+        foreach (string source in themedMediaSources)
+        {
+            StringAssert.Contains(source, "ChummerShellMediaOverlayForegroundBrush");
+            Assert.IsFalse(source.Contains("Brushes.White", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("Brushes.Black", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("Background = Brushes", StringComparison.Ordinal));
+            Assert.IsFalse(source.Contains("Foreground = Brushes", StringComparison.Ordinal));
+        }
+    }
+
+    [TestMethod]
     public void New_character_dialog_keeps_options_inline_and_uses_player_facing_copy()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

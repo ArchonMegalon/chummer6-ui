@@ -26,7 +26,7 @@ internal sealed class DesktopOnrampWindow : Window
 
         Content = DesktopHorizonWindowScaffold.CreateScroller(
             "Onramp",
-            "Onramp keeps the starter lane, recovery lane, and no-desktop participation bridges visible on first-party rails instead of pretending everyone begins on the full desktop workbench.",
+            "Onramp keeps the starter path, recovery path, and no-desktop participation bridges visible in Chummer instead of pretending everyone begins in the full desktop app.",
             CreateStarterCard(),
             CreateRecoveryCard(),
             new StackPanel
