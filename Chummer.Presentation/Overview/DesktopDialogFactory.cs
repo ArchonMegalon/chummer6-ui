@@ -114,7 +114,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             "new_character_origin" => BuildNewCharacterOriginWizardDialog(
                 rulesetId,
                 profile?.Name ?? "New Character",
-                string.IsNullOrWhiteSpace(profile?.Alias) ? "Runner" : profile!.Alias),
+                string.IsNullOrWhiteSpace(profile?.Alias) ? "Runner" : profile!.Alias,
+                preferences),
             "print_setup" => new DesktopDialogState(
                 "dialog.print_setup",
                 "Print Setup",
@@ -567,7 +568,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new("auto", "Let ALICE infer")
         ];
 
-    private static DesktopDialogFieldOption[] BuildOriginMetatypeOptions()
+    private static DesktopDialogFieldOption[] BuildOriginMetatypeOptions(DesktopPreferenceState preferences)
         => FilterAiRestrictedCharacterOptionsForPreferences(
             [
                 new("auto", "Fit the story"),
@@ -577,7 +578,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new("ork", "Ork"),
                 new("troll", "Troll")
             ],
-            DesktopPreferenceStateRuntime.Current).ToArray();
+            preferences).ToArray();
 
     private static DesktopDialogFieldOption[] BuildOriginBuildPreferenceOptions(string? rulesetId)
     {
@@ -642,6 +643,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     houseRulesValue,
                     houseRulesValue,
                     InputType: "checkbox",
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
+                    "newCharacterDisableAiFeatures",
+                    "Disable Helper Features",
+                    preferences.DisableAiFeatures ? "true" : "false",
+                    preferences.DisableAiFeatures ? "true" : "false",
+                    IsReadOnly: true,
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
             [
@@ -655,6 +663,13 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string? rulesetId,
         string? name,
         string? alias)
+        => BuildNewCharacterOriginWizardDialog(rulesetId, name, alias, DesktopPreferenceStateRuntime.Current);
+
+    internal static DesktopDialogState BuildNewCharacterOriginWizardDialog(
+        string? rulesetId,
+        string? name,
+        string? alias,
+        DesktopPreferenceState preferences)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
@@ -694,13 +709,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot = DesktopDialogFieldLayoutSlots.Hidden
                 },
                 new DesktopDialogField(
+                    "newCharacterDisableAiFeatures",
+                    "Disable Helper Features",
+                    preferences.DisableAiFeatures ? "true" : "false",
+                    preferences.DisableAiFeatures ? "true" : "false",
+                    IsReadOnly: true,
+                    LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden),
+                new DesktopDialogField(
                     "newCharacterOriginMetatypePreference",
                     "Race / Metatype",
                     "auto",
                     "auto",
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Left,
-                    Options: BuildOriginMetatypeOptions()),
+                    Options: BuildOriginMetatypeOptions(preferences)),
                 new DesktopDialogField(
                     "newCharacterOriginArchetypeIntent",
                     "Archetype",
@@ -985,12 +1007,27 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool houseRulesEnabled,
         string name,
         string alias)
+        => BuildNewCharacterContinuationDialog(
+            rulesetId,
+            buildMethod,
+            houseRulesEnabled,
+            name,
+            alias,
+            DesktopPreferenceStateRuntime.Current);
+
+    internal static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string? rulesetId,
+        string? buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        DesktopPreferenceState preferences)
     {
         string normalizedRulesetId = RulesetDefaults.NormalizeOptional(rulesetId) ?? RulesetDefaults.Sr5;
         string resolvedBuildMethod = ResolvePreferredBuildMethod(normalizedRulesetId, buildMethod);
         return UsesPriorityWorkflow(resolvedBuildMethod)
-            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias)
-            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias);
+            ? BuildNewCharacterPriorityWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias, preferences)
+            : BuildNewCharacterKarmaWorkflowDialog(normalizedRulesetId, resolvedBuildMethod, houseRulesEnabled, name, alias, preferences);
     }
 
     private static DesktopDialogState BuildNewCharacterPriorityWorkflowDialog(
@@ -998,7 +1035,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string buildMethod,
         bool houseRulesEnabled,
         string name,
-        string alias)
+        string alias,
+        DesktopPreferenceState preferences)
     {
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
@@ -1018,7 +1056,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             possessionBased: false,
             possessionMethod: string.Empty,
             force: 1,
-            lastChangedFieldId: string.Empty);
+            lastChangedFieldId: string.Empty,
+            preferences);
         string houseRulesValue = houseRulesEnabled ? "true" : "false";
         string summary = BuildNewCharacterPriorityWorkflowSummary(
             rulesetId,
@@ -1043,6 +1082,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
                     "Metatype Filter",
@@ -1169,10 +1209,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         string buildMethod,
         bool houseRulesEnabled,
         string name,
-        string alias)
+        string alias,
+        DesktopPreferenceState preferences)
     {
         string category = "Standard";
         string metatype = ResolveDefaultMetatype(category);
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
+        if (!metatypeOptions.Any(option => string.Equals(option.Value, metatype, StringComparison.Ordinal)))
+        {
+            metatype = metatypeOptions.FirstOrDefault()?.Value ?? metatype;
+        }
         string houseRulesValue = houseRulesEnabled ? "true" : "false";
         string summary = BuildNewCharacterKarmaWorkflowSummary(
             rulesetId,
@@ -1191,6 +1237,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowName", "Workflow Name", string.IsNullOrWhiteSpace(name) ? "New Character" : name.Trim()),
                 BuildNewCharacterContextField("newCharacterWorkflowAlias", "Workflow Alias", string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim()),
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", houseRulesValue),
+                BuildNewCharacterContextField("newCharacterDisableAiFeatures", "Disable Helper Features", preferences.DisableAiFeatures ? "true" : "false"),
                 new DesktopDialogField(
                     "newCharacterMetatypeCategory",
                     "Metatype Filter",
@@ -1206,7 +1253,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     metatype,
                     InputType: "select",
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right,
-                    Options: BuildMetatypeOptions(category)),
+                    Options: metatypeOptions),
                 new DesktopDialogField(
                     "newCharacterKarmaWorkflowSummary",
                     "Workflow Summary",
@@ -1437,7 +1484,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new DesktopDialogFieldOption("Show All", "All available")
         };
 
-    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category)
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildMetatypeOptions(string? category, DesktopPreferenceState? preferences = null)
     {
         string normalizedCategory = string.IsNullOrWhiteSpace(category) ? "Standard" : category.Trim();
         IReadOnlyList<DesktopDialogFieldOption> options = normalizedCategory switch
@@ -1467,7 +1514,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 new DesktopDialogFieldOption("Troll", "Troll")
             ]
         };
-        return FilterAiRestrictedCharacterOptionsForPreferences(options, DesktopPreferenceStateRuntime.Current);
+        return FilterAiRestrictedCharacterOptionsForPreferences(options, preferences ?? DesktopPreferenceStateRuntime.Current);
     }
 
     internal static IReadOnlyList<DesktopDialogFieldOption> FilterAiRestrictedCharacterOptionsForPreferences(
@@ -1479,10 +1526,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 && !OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption(option.Label, preferences))
             .ToArray();
 
-    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityMetatypeOptions(string? category, string heritagePriority)
+    private static IReadOnlyList<DesktopDialogFieldOption> BuildPriorityMetatypeOptions(string? category, string heritagePriority, DesktopPreferenceState? preferences = null)
     {
         int heritageRank = ResolvePriorityHeritageRank(heritagePriority);
-        return BuildMetatypeOptions(category)
+        return BuildMetatypeOptions(category, preferences ?? DesktopPreferenceStateRuntime.Current)
             .Where(option => heritageRank >= ResolveMinimumHeritageRank(option.Value))
             .ToArray();
     }
@@ -1553,8 +1600,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
     private static string ResolveDefaultMetatype(string? category)
         => string.Equals(category, "Metahuman", StringComparison.Ordinal) ? "Elf" : "Human";
 
-    private static string ResolveDefaultPriorityMetatype(string? category, string heritagePriority)
-        => BuildPriorityMetatypeOptions(category, heritagePriority)
+    private static string ResolveDefaultPriorityMetatype(string? category, string heritagePriority, DesktopPreferenceState? preferences = null)
+        => BuildPriorityMetatypeOptions(category, heritagePriority, preferences ?? DesktopPreferenceStateRuntime.Current)
             .FirstOrDefault()?.Value
             ?? ResolveDefaultMetatype(category);
 
@@ -1600,17 +1647,18 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         bool possessionBased,
         string possessionMethod,
         int force,
-        string lastChangedFieldId)
+        string lastChangedFieldId,
+        DesktopPreferenceState preferences)
     {
         string normalizedCategory = BuildMetatypeCategoryOptions()
             .Select(option => option.Value)
             .FirstOrDefault(option => string.Equals(option, category, StringComparison.Ordinal))
             ?? "Standard";
         string normalizedHeritagePriority = NormalizePriorityLetter(heritagePriority, "D");
-        DesktopDialogFieldOption[] metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, normalizedHeritagePriority).ToArray();
+        DesktopDialogFieldOption[] metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, normalizedHeritagePriority, preferences).ToArray();
         if (metatypeOptions.Length == 0)
         {
-            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E").ToArray();
+            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E", preferences).ToArray();
         }
         string resolvedMetatype = ResolvePriorityMetatypeSelection(
             metatype,
@@ -1627,10 +1675,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
         ReconcilePriorityLetters(buildMethod, lastChangedFieldId, priorities);
 
-        metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, priorities["newCharacterPriorityHeritage"]).ToArray();
+        metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, priorities["newCharacterPriorityHeritage"], preferences).ToArray();
         if (metatypeOptions.Length == 0)
         {
-            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E").ToArray();
+            metatypeOptions = BuildPriorityMetatypeOptions(normalizedCategory, "E", preferences).ToArray();
         }
         resolvedMetatype = ResolvePriorityMetatypeSelection(
             resolvedMetatype,
@@ -2478,10 +2526,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return dialog.Id switch
         {
             DesktopAliceAssistant.DialogId => dialog,
-            "dialog.new_character" => RebuildNewCharacterDialog(dialog),
-            NewCharacterOriginWizardDialogId => RebuildNewCharacterOriginWizardDialog(dialog),
-            NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog),
-            NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog),
+            "dialog.new_character" => RebuildNewCharacterDialog(dialog, fallback),
+            NewCharacterOriginWizardDialogId => RebuildNewCharacterOriginWizardDialog(dialog, fallback),
+            NewCharacterPriorityWorkflowDialogId => RebuildNewCharacterPriorityWorkflowDialog(dialog, fallback),
+            NewCharacterKarmaWorkflowDialogId => RebuildNewCharacterKarmaWorkflowDialog(dialog, fallback),
             "dialog.dice_roller" => RebuildDiceRollerDialog(dialog),
             "dialog.character_roster" => RebuildCharacterRosterDialog(dialog, fallback),
             "dialog.master_index" => RebuildMasterIndexDialog(dialog),
@@ -2498,13 +2546,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
     }
 
-    private static DesktopDialogState RebuildNewCharacterDialog(DesktopDialogState dialog)
+    private static DesktopDialogState RebuildNewCharacterDialog(DesktopDialogState dialog, DesktopPreferenceState fallback)
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(
                 DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
             ?? RulesetDefaults.Sr5;
         string preferredBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPreferredBuildMethod") ?? string.Empty;
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterHouseRulesEnabled", false);
+        DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
         DesktopDialogFieldOption[] buildMethodOptions = BuildBuildMethodOptions(rulesetId).ToArray();
         string currentBuildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod") ?? string.Empty;
         string resolvedBuildMethod = buildMethodOptions.Any(option => string.Equals(option.Value, currentBuildMethod, StringComparison.Ordinal))
@@ -2526,6 +2575,11 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     Placeholder = resolvedBuildMethod,
                     Options = buildMethodOptions
                 },
+                "newCharacterDisableAiFeatures" => field with
+                {
+                    Value = preferences.DisableAiFeatures ? "true" : "false",
+                    Placeholder = preferences.DisableAiFeatures ? "true" : "false"
+                },
                 _ => field
             })
             .ToArray();
@@ -2537,11 +2591,25 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         };
     }
 
-    private static DesktopDialogState RebuildNewCharacterOriginWizardDialog(DesktopDialogState dialog)
+    private static DesktopPreferenceState BuildNewCharacterDialogPreferences(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
+        => DesktopPreferenceStateRuntime.Normalize(fallback with
+        {
+            DisableAiFeatures = DesktopDialogFieldValueParser.ParseBool(
+                dialog,
+                "newCharacterDisableAiFeatures",
+                fallback.DisableAiFeatures)
+        });
+
+    private static DesktopDialogState RebuildNewCharacterOriginWizardDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
     {
         string rulesetId = RulesetDefaults.NormalizeOptional(
                 DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId"))
             ?? RulesetDefaults.Sr5;
+        DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
         OriginBuildRecommendation recommendation = ResolveOriginBuildRecommendation(
             rulesetId,
             DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginArchetypeIntent"),
@@ -2569,6 +2637,10 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 "newCharacterOriginBuildPreference" => field with
                 {
                     Options = BuildOriginBuildPreferenceOptions(rulesetId)
+                },
+                "newCharacterOriginMetatypePreference" => field with
+                {
+                    Options = BuildOriginMetatypeOptions(preferences)
                 },
                 "newCharacterOriginGmConstraintPreset" => field with
                 {
@@ -2621,11 +2693,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return dialog with { Fields = updatedFields };
     }
 
-    private static DesktopDialogState RebuildNewCharacterPriorityWorkflowDialog(DesktopDialogState dialog)
+    private static DesktopDialogState RebuildNewCharacterPriorityWorkflowDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
     {
         string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
         string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Priority";
         string lastChangedFieldId = DesktopDialogFieldValueParser.GetValue(dialog, NewCharacterPriorityLastChangedFieldId) ?? string.Empty;
+        DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
         PriorityWorkflowResolution resolution = ResolvePriorityWorkflowResolution(
             rulesetId,
             buildMethod,
@@ -2644,7 +2719,8 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             possessionBased: false,
             possessionMethod: string.Empty,
             force: 1,
-            lastChangedFieldId: lastChangedFieldId);
+            lastChangedFieldId: lastChangedFieldId,
+            preferences);
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
         string summary = BuildNewCharacterPriorityWorkflowSummary(
             rulesetId,
@@ -2756,13 +2832,16 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
         return dialog with { Fields = updatedFields };
     }
 
-    private static DesktopDialogState RebuildNewCharacterKarmaWorkflowDialog(DesktopDialogState dialog)
+    private static DesktopDialogState RebuildNewCharacterKarmaWorkflowDialog(
+        DesktopDialogState dialog,
+        DesktopPreferenceState fallback)
     {
         string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowRulesetId") ?? RulesetDefaults.Sr5;
         string buildMethod = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterWorkflowBuildMethod") ?? "Karma";
         bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
         string category = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatypeCategory") ?? "Standard";
-        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category).ToArray();
+        DesktopPreferenceState preferences = BuildNewCharacterDialogPreferences(dialog, fallback);
+        DesktopDialogFieldOption[] metatypeOptions = BuildMetatypeOptions(category, preferences).ToArray();
         string currentMetatype = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterMetatype") ?? ResolveDefaultMetatype(category);
         string metatype = metatypeOptions.Any(option => string.Equals(option.Value, currentMetatype, StringComparison.Ordinal))
             ? currentMetatype

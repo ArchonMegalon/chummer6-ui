@@ -2302,9 +2302,11 @@ public class DialogCoordinatorTests
         string name,
         string alias)
     {
-        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
-            "BuildNewCharacterContinuationDialog",
-            BindingFlags.Static | BindingFlags.NonPublic)
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 5)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
         return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])

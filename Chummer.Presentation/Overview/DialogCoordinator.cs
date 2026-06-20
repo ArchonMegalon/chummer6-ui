@@ -97,7 +97,11 @@ public sealed class DialogCoordinator : IDialogCoordinator
             string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias") ?? "Runner";
             context.Publish(context.State with
             {
-                ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(rulesetId, name, alias),
+                ActiveDialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(
+                    rulesetId,
+                    name,
+                    alias,
+                    context.State.Preferences),
                 Error = null
             });
             return;
@@ -124,7 +128,13 @@ public sealed class DialogCoordinator : IDialogCoordinator
             bool houseRulesEnabled = DesktopDialogFieldValueParser.ParseBool(dialog, "newCharacterWorkflowHouseRulesEnabled", false);
             context.Publish(context.State with
             {
-                ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(rulesetId, buildMethod, houseRulesEnabled, name, alias),
+                ActiveDialog = DesktopDialogFactory.BuildNewCharacterContinuationDialog(
+                    rulesetId,
+                    buildMethod,
+                    houseRulesEnabled,
+                    name,
+                    alias,
+                    context.State.Preferences),
                 Error = null,
                 Notice = "Origin story translated into a guided build plan."
             });
@@ -1088,7 +1098,8 @@ public sealed class DialogCoordinator : IDialogCoordinator
             buildMethod,
             houseRulesEnabled,
             name,
-            alias);
+            alias,
+            context.State.Preferences);
         context.Publish(context.State with
         {
             ActiveDialog = nextDialog,

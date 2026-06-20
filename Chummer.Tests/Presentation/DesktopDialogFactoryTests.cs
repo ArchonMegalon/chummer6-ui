@@ -1771,7 +1771,8 @@ public class DesktopDialogFactoryTests
         DesktopPreferenceState preferences = DesktopPreferenceState.Default with
         {
             CharacterPriority = "Karma",
-            HouseRulesEnabled = true
+            HouseRulesEnabled = true,
+            DisableAiFeatures = true
         };
 
         DesktopDialogState dialog = factory.CreateCommandDialog(
@@ -1785,6 +1786,7 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterBuildMethod"));
         Assert.AreEqual("Karma", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterPreferredBuildMethod"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterDisableAiFeatures"));
         StringAssert.Contains(dialog.Message ?? string.Empty, "House rules are enabled");
     }
 
@@ -1914,6 +1916,24 @@ public class DesktopDialogFactoryTests
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterOriginWizardDialog_carries_ai_disabled_preference()
+    {
+        DesktopDialogState dialog = DesktopDialogFactory.BuildNewCharacterOriginWizardDialog(
+            RulesetDefaults.Sr5,
+            "Nova",
+            "Cipher",
+            DesktopPreferenceState.Default with { DisableAiFeatures = true });
+
+        DesktopDialogField metatypeField = dialog.Fields.Single(field =>
+            string.Equals(field.Id, "newCharacterOriginMetatypePreference", StringComparison.Ordinal));
+
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterDisableAiFeatures"));
+        Assert.IsFalse(metatypeField.Options!.Any(option =>
+            option.Value.Contains("ai", StringComparison.OrdinalIgnoreCase)
+            || option.Label.Contains("ai", StringComparison.OrdinalIgnoreCase)));
     }
 
     [TestMethod]
@@ -2230,6 +2250,30 @@ public class DesktopDialogFactoryTests
                 "Critter Powers"
             },
             enabledOptions);
+    }
+
+    [TestMethod]
+    public void BuildNewCharacterContinuationDialog_carries_ai_disabled_preference_through_workflows()
+    {
+        DesktopPreferenceState preferences = DesktopPreferenceState.Default with { DisableAiFeatures = true };
+
+        DesktopDialogState priorityDialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr5,
+            "Priority",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher",
+            preferences);
+        DesktopDialogState karmaDialog = BuildNewCharacterContinuationDialog(
+            RulesetDefaults.Sr4,
+            "Karma",
+            houseRulesEnabled: false,
+            name: "Nova",
+            alias: "Cipher",
+            preferences);
+
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(priorityDialog, "newCharacterDisableAiFeatures"));
+        Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(karmaDialog, "newCharacterDisableAiFeatures"));
     }
 
     [TestMethod]
@@ -2918,12 +2962,33 @@ public class DesktopDialogFactoryTests
         string name,
         string alias)
     {
-        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
-            "BuildNewCharacterContinuationDialog",
-            BindingFlags.Static | BindingFlags.NonPublic)
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 5)
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
 
         return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias])
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
+    }
+
+    private static DesktopDialogState BuildNewCharacterContinuationDialog(
+        string rulesetId,
+        string buildMethod,
+        bool houseRulesEnabled,
+        string name,
+        string alias,
+        DesktopPreferenceState preferences)
+    {
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 6)
+            ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog was not found.");
+
+        return (DesktopDialogState)(method.Invoke(null, [rulesetId, buildMethod, houseRulesEnabled, name, alias, preferences])
             ?? throw new InvalidOperationException("BuildNewCharacterContinuationDialog returned null."));
     }
 
