@@ -26,6 +26,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(source, "public static Color EnsureReadableForeground(Color objForeColor, Color objBackColor)");
         StringAssert.Contains(source, "GetContrastRatio(objForeColor, objBackColor) >= 4.5d");
         StringAssert.Contains(source, "GetRelativeLuminance(Color objColor)");
+        StringAssert.Contains(source, "return GetRelativeLuminance(objBackColor) > 0.5d");
+        StringAssert.Contains(source, "? Color.Black");
+        StringAssert.Contains(source, ": Color.White;");
         StringAssert.Contains(source, "x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);");
         StringAssert.Contains(source, "objForeColor = EnsureReadableForeground(objForeColor, objBackColor);");
         StringAssert.Contains(source, "objForeColor = EnsureReadableForeground(objForeColor, objBackColor, blnLightMode);");
