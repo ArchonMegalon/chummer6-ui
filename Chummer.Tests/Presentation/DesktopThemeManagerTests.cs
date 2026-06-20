@@ -590,12 +590,19 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellInputBackgroundBrush}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellInputForegroundBrush}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
         StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#FFFFFF\");");
         StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#111111\");");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
+        StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus\">");
@@ -615,12 +622,12 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
-    public void Desktop_comboboxes_textboxes_and_numeric_inputs_are_explicitly_bound_to_shell_theme_helpers()
+    public void Desktop_lists_comboboxes_textboxes_and_numeric_inputs_are_explicitly_bound_to_shell_theme_helpers()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string avaloniaRoot = Path.Combine(repoRoot, "Chummer.Avalonia");
-        Regex typedCreation = new(@"(?<type>ComboBox|TextBox|NumericUpDown)\s+(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new(?:\s+(ComboBox|TextBox|NumericUpDown))?\b", RegexOptions.Compiled);
-        Regex assignedCreation = new(@"(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new\s+(?<type>ComboBox|TextBox|NumericUpDown)\b", RegexOptions.Compiled);
+        Regex typedCreation = new(@"(?<type>ListBox|ComboBox|TextBox|NumericUpDown)\s+(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new(?:\s+(ListBox|ComboBox|TextBox|NumericUpDown))?\b", RegexOptions.Compiled);
+        Regex assignedCreation = new(@"(?<name>[_A-Za-z][_A-Za-z0-9]*)\s*=\s*new\s+(?<type>ListBox|ComboBox|TextBox|NumericUpDown)\b", RegexOptions.Compiled);
         List<string> unthemedControls = [];
 
         foreach (string path in Directory.EnumerateFiles(avaloniaRoot, "*.cs", SearchOption.AllDirectories)
@@ -634,6 +641,8 @@ public sealed class DesktopThemeManagerTests
                     string lookahead = string.Join('\n', lines.Skip(index).Take(45));
                     bool themed = string.Equals(creation.Type, "ComboBox", StringComparison.Ordinal)
                         ? lookahead.Contains($"ApplyShellComboBoxTheme({creation.Name}", StringComparison.Ordinal)
+                        : string.Equals(creation.Type, "ListBox", StringComparison.Ordinal)
+                            ? lookahead.Contains($"ApplyShellListBoxTheme({creation.Name}", StringComparison.Ordinal)
                         : string.Equals(creation.Type, "NumericUpDown", StringComparison.Ordinal)
                             ? lookahead.Contains($"ApplyShellNumericUpDownTheme({creation.Name}", StringComparison.Ordinal)
                             : lookahead.Contains($"ApplyShellTextInputTheme({creation.Name}", StringComparison.Ordinal)
@@ -651,7 +660,7 @@ public sealed class DesktopThemeManagerTests
         Assert.AreEqual(
             0,
             unthemedControls.Count,
-            "Every Avalonia desktop ComboBox/TextBox/NumericUpDown must opt into the shell theme helper near creation so KDE/dark-mode cannot produce white-on-white controls. Missing: "
+            "Every Avalonia desktop ListBox/ComboBox/TextBox/NumericUpDown must opt into the shell theme helper near creation so KDE/dark-mode cannot produce white-on-white controls. Missing: "
             + string.Join(", ", unthemedControls));
     }
 
