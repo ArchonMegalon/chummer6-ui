@@ -736,11 +736,15 @@ public sealed class DesktopThemeManagerTests
         }
 
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ComboBoxItemBackgroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ComboBoxItemForegroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock.shell-option-meta\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ TextBlock\">");
@@ -753,8 +757,12 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-label\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-meta\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource TextControlBackground}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource TextControlForeground}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
@@ -766,6 +774,29 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown /template/ TextBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover /template/ TextBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus /template/ TextBox\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:disabled /template/ TextBox\">");
+        AssertSelectorAfter(
+            appTheme,
+            "<Style Selector=\"ListBoxItem:pointerover TextBlock.shell-option-label\">",
+            "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-label\">",
+            "Selected list rows must keep selected foreground even when hovered.");
+        AssertSelectorAfter(
+            appTheme,
+            "<Style Selector=\"ListBoxItem:pointerover TextBlock.shell-option-meta\">",
+            "<Style Selector=\"ListBoxItem:selected:pointerover TextBlock.shell-option-meta\">",
+            "Selected list metadata must keep selected foreground even when hovered.");
+        AssertSelectorAfter(
+            appTheme,
+            "<Style Selector=\"ComboBoxItem:pointerover TextBlock.shell-option-label\">",
+            "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock.shell-option-label\">",
+            "Selected combo rows must keep selected foreground even when hovered.");
+        AssertSelectorAfter(
+            appTheme,
+            "<Style Selector=\"ComboBoxItem:pointerover TextBlock.shell-option-meta\">",
+            "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock.shell-option-meta\">",
+            "Selected combo metadata must keep selected foreground even when hovered.");
         StringAssert.Contains(shellTheme, "ApplyShellNumericUpDownTheme(NumericUpDown numericUpDown)");
         StringAssert.Contains(desktopDialogSource, "DesktopShellTheme.ApplyShellNumericUpDownTheme(numericUpDown);");
 
@@ -778,6 +809,16 @@ public sealed class DesktopThemeManagerTests
         Assert.IsFalse(appTheme.Contains(
             "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">\n      <Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellSelectionForegroundBrush}\" />",
             StringComparison.Ordinal));
+    }
+
+    private static void AssertSelectorAfter(string source, string earlierSelector, string laterSelector, string message)
+    {
+        int earlierIndex = source.IndexOf(earlierSelector, StringComparison.Ordinal);
+        int laterIndex = source.IndexOf(laterSelector, StringComparison.Ordinal);
+
+        Assert.IsTrue(earlierIndex >= 0, $"Missing selector: {earlierSelector}");
+        Assert.IsTrue(laterIndex >= 0, $"Missing selector: {laterSelector}");
+        Assert.IsTrue(laterIndex > earlierIndex, message);
     }
 
     [TestMethod]

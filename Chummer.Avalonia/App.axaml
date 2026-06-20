@@ -457,6 +457,11 @@
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
     </Style>
+    <Style Selector="ListBoxItem:selected:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
     <Style Selector="ListBoxItem TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
     </Style>
@@ -477,6 +482,15 @@
     </Style>
     <Style Selector="ListBoxItem:pointerover TextBlock.shell-option-meta">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover TextBlock.shell-option-meta">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="ComboBox">
       <Setter Property="MinHeight" Value="30" />
@@ -535,6 +549,10 @@
       <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ComboBoxItemBackgroundSelected}" />
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
     <Style Selector="ComboBoxItem TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForeground}" />
     </Style>
@@ -585,6 +603,18 @@
     </Style>
     <Style Selector="ComboBoxItem:pointerover TextBlock.shell-option-meta">
       <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundPointerOver}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover TextBlock.shell-caption">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover TextBlock.shell-option-label">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover TextBlock.shell-option-meta">
+      <Setter Property="Foreground" Value="{DynamicResource ComboBoxItemForegroundSelected}" />
     </Style>
     <Style Selector="TextBox">
       <Setter Property="MinHeight" Value="30" />
@@ -672,6 +702,27 @@
     <Style Selector="NumericUpDown /template/ TextBox">
       <Setter Property="Background" Value="{DynamicResource TextControlBackground}" />
       <Setter Property="Foreground" Value="{DynamicResource TextControlForeground}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource TextControlCaretBrush}" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
+    </Style>
+    <Style Selector="NumericUpDown:pointerover /template/ TextBox">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundPointerOver}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource TextControlCaretBrush}" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
+    </Style>
+    <Style Selector="NumericUpDown:focus /template/ TextBox">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundFocused}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
+      <Setter Property="CaretBrush" Value="{DynamicResource TextControlCaretBrush}" />
+      <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
+    </Style>
+    <Style Selector="NumericUpDown:disabled /template/ TextBox">
+      <Setter Property="Background" Value="{DynamicResource TextControlBackgroundDisabled}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundDisabled}" />
       <Setter Property="CaretBrush" Value="{DynamicResource TextControlCaretBrush}" />
       <Setter Property="SelectionBrush" Value="{DynamicResource ChummerShellSelectionBrush}" />
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource TextControlSelectionForeground}" />
