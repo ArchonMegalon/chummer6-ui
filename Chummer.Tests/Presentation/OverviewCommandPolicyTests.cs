@@ -72,6 +72,9 @@ public class OverviewCommandPolicyTests
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("A.I. - 6 Depth", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Metasapient A.I.", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("4e A.I.s", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("AIs", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("AIs - 6 Depth", quiet));
+        Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Metasapient AIs", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("AI Companion", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("ai_companion", quiet));
         Assert.IsTrue(OverviewCommandPolicy.IsBlockedByAiFeaturePreferenceForCharacterOrCompanionOption("Artificial_Intelligence", quiet));

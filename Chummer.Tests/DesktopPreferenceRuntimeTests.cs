@@ -104,6 +104,9 @@ public sealed class DesktopPreferenceRuntimeTests
             Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "A.I. - 6 Depth"));
             Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Metasapient A.I."));
             Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "4e A.I.s"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "AIs"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "AIs - 6 Depth"));
+            Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Metasapient AIs"));
             Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "E-Ghost"));
             Assert.IsTrue(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "Xenosapient"));
             Assert.IsFalse(DesktopAiFeaturePreferenceFilter.ShouldHideCharacterOrCompanionOption(true, "New Critter"));

@@ -74,6 +74,7 @@ public static class OverviewCommandPolicy
     private static readonly HashSet<string> NormalizedAiFeatureCharacterOrCompanionOptionIds = new(StringComparer.Ordinal)
     {
         "ai",
+        "ais",
         "a i",
         "a i s",
         "artificial intelligence",
@@ -147,6 +148,7 @@ public static class OverviewCommandPolicy
 
         string padded = $" {normalized} ";
         return padded.Contains(" ai ", StringComparison.Ordinal)
+            || padded.Contains(" ais ", StringComparison.Ordinal)
             || padded.Contains(" a i ", StringComparison.Ordinal)
             || normalized.Contains("artificial intelligence", StringComparison.Ordinal)
             || normalized.Contains("e ghost", StringComparison.Ordinal)
