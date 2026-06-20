@@ -1134,32 +1134,59 @@ internal static class Program
     {
         if (metadata.InstalledHeads.Count > 1)
         {
-            string primaryName = metadata.InstalledHeads[0].DisplayName;
-            string secondaryName = metadata.InstalledHeads[1].DisplayName;
             return PromptForInstalledHeadLaunchWithButtons(
                 metadata.DisplayName,
-                $"{metadata.DisplayName} has been installed successfully.",
-                $"Install folder:\n{targetDir}",
+                "Chummer is installed.",
+                BuildInstalledPathText(targetDir),
                 (
-                    $"Launch {primaryName}",
-                    $"Launch {secondaryName}",
-                    "Finish",
-                    $"Primary: {primaryName}",
-                    $"Secondary: {secondaryName}",
-                    "Skip launch"));
+                    "Open Chummer",
+                    "Open Blazor Desktop",
+                    "Close",
+                    "Recommended desktop app.",
+                    "Use only when support asks.",
+                    "Close installer"));
         }
 
         return PromptForInstalledHeadLaunchWithButtons(
             metadata.DisplayName,
-            $"{metadata.DisplayName} has been installed successfully.",
-            $"Install folder:\n{targetDir}",
+            "Chummer is installed.",
+            BuildInstalledPathText(targetDir),
             (
-                "Launch now",
-                "Skip",
-                null,
                 "Open Chummer",
-                "Finish",
+                "Close",
+                null,
+                "Ready to use.",
+                "Close installer.",
                 null));
+    }
+
+    private static string BuildInstalledPathText(string targetDir)
+    {
+        if (string.IsNullOrWhiteSpace(targetDir))
+        {
+            return "Installed.";
+        }
+
+        string fullPath;
+        try
+        {
+            fullPath = Path.GetFullPath(targetDir.Trim());
+        }
+        catch
+        {
+            fullPath = targetDir.Trim();
+        }
+
+        string[] parts = fullPath
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length <= 3)
+        {
+            return $"Installed to {fullPath}";
+        }
+
+        string compactTail = string.Join(Path.DirectorySeparatorChar, parts.TakeLast(3));
+        return $"Installed to ...{Path.DirectorySeparatorChar}{compactTail}";
     }
 
     private static DialogResult PromptForInstalledHeadLaunchWithButtons(
@@ -1181,7 +1208,8 @@ internal static class Program
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(520, 206),
+            ClientSize = new Size(760, 360),
+            MinimumSize = new Size(760, 360),
             MinimizeBox = false,
             MaximizeBox = false,
             ShowInTaskbar = false,
@@ -1198,9 +1226,9 @@ internal static class Program
             ForeColor = Color.FromArgb(18, 24, 36),
             Text = headline,
             Dock = DockStyle.Top,
-            Height = 34,
+            Height = 52,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(18, 4, 12, 0),
+            Padding = new Padding(20, 6, 16, 0),
             AutoEllipsis = true
         };
 
@@ -1211,11 +1239,12 @@ internal static class Program
             ForeColor = Color.FromArgb(55, 65, 84),
             Text = pathText,
             Dock = DockStyle.Top,
-            Height = 52,
-            TextAlign = ContentAlignment.TopLeft,
-            Padding = new Padding(18, 0, 12, 0),
+            Height = 72,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(20, 0, 20, 0),
             AutoEllipsis = true,
-            MaximumSize = new Size(0, 0)
+            MaximumSize = new Size(0, 0),
+            UseMnemonic = false
         };
 
         Label noteLabel = new()
@@ -1225,9 +1254,9 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.PrimaryFootnote,
             Dock = DockStyle.Top,
-            Height = 26,
+            Height = 32,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(18, 0, 12, 0),
+            Padding = new Padding(20, 0, 16, 0),
             AutoEllipsis = true
         };
 
@@ -1238,9 +1267,9 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.SecondaryFootnote,
             Dock = DockStyle.Top,
-            Height = 22,
+            Height = 32,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(18, 0, 12, 0),
+            Padding = new Padding(20, 0, 16, 0),
             AutoEllipsis = true
         };
 
@@ -1248,18 +1277,21 @@ internal static class Program
         {
             Dock = DockStyle.Bottom,
             FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 0, 12, 12),
-            AutoSize = true
+            Padding = new Padding(0, 0, 20, 20),
+            Height = 64,
+            WrapContents = false
         };
 
         Button primaryButton = new()
         {
             Text = options.PrimaryButtonText,
             AutoSize = true,
-            MinimumSize = new Size(96, 30),
+            MinimumSize = new Size(150, 36),
+            MaximumSize = new Size(220, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Yes,
-            Margin = new Padding(8, 0, 0, 0)
+            Margin = new Padding(8, 0, 0, 0),
+            AutoEllipsis = true
         };
         primaryButton.Click += (_, _) =>
         {
@@ -1270,10 +1302,12 @@ internal static class Program
         {
             Text = options.SecondaryButtonText,
             AutoSize = true,
-            MinimumSize = new Size(96, 30),
+            MinimumSize = new Size(150, 36),
+            MaximumSize = new Size(220, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.No,
-            Margin = new Padding(8, 0, 0, 0)
+            Margin = new Padding(8, 0, 0, 0),
+            AutoEllipsis = true
         };
         secondaryButton.Click += (_, _) =>
         {
@@ -1284,11 +1318,13 @@ internal static class Program
         {
             Text = options.CancelButtonText ?? "Cancel",
             AutoSize = true,
-            MinimumSize = new Size(96, 30),
+            MinimumSize = new Size(150, 36),
+            MaximumSize = new Size(220, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Cancel,
             Margin = new Padding(8, 0, 0, 0),
-            Visible = options.CancelButtonText is not null
+            Visible = options.CancelButtonText is not null,
+            AutoEllipsis = true
         };
         cancelButton.Click += (_, _) =>
         {
@@ -1303,7 +1339,7 @@ internal static class Program
         {
             Dock = DockStyle.Fill,
             BackColor = Color.FromArgb(239, 244, 252),
-            Padding = new Padding(0, 10, 0, 0)
+            Padding = new Padding(0, 16, 0, 0)
         };
 
         content.Controls.Add(secondaryNoteLabel);
@@ -1323,8 +1359,8 @@ internal static class Program
             secondaryNoteLabel.Text = options.SecondaryFootnote ?? string.Empty;
             noteLabel.Text = options.PrimaryFootnote;
             secondaryNoteLabel.Visible = false;
-            content.Padding = new Padding(0, 10, 0, 8);
-            actions.Padding = new Padding(0, 0, 12, 12);
+            content.Padding = new Padding(0, 16, 0, 16);
+            actions.Padding = new Padding(0, 0, 20, 20);
         }
 
         if (!string.IsNullOrWhiteSpace(options.PrimaryFootnote))
@@ -1332,8 +1368,8 @@ internal static class Program
             noteLabel.Visible = true;
         }
 
-        noteLabel.Padding = new Padding(18, 2, 12, 0);
-        secondaryNoteLabel.Padding = new Padding(18, 2, 12, 0);
+        noteLabel.Padding = new Padding(20, 2, 16, 0);
+        secondaryNoteLabel.Padding = new Padding(20, 2, 16, 0);
 
         DialogResult result = prompt.ShowDialog();
         return result;
@@ -1855,7 +1891,8 @@ internal static class Program
         public InstallSplashForm(string displayName)
         {
             AutoScaleMode = AutoScaleMode.Dpi;
-            ClientSize = new Size(600, 250);
+            ClientSize = new Size(760, 340);
+            MinimumSize = new Size(760, 340);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -1877,21 +1914,21 @@ internal static class Program
             Panel surface = new()
             {
                 Dock = DockStyle.Fill,
-                Padding = new Padding(20, 16, 20, 16),
+                Padding = new Padding(32, 24, 32, 24),
                 BackColor = Color.FromArgb(14, 19, 28)
             };
 
             Panel glyphTile = new()
             {
-                Size = new Size(50, 50),
+                Size = new Size(56, 56),
                 Location = new Point(0, 0),
                 BackColor = Color.FromArgb(22, 28, 40)
             };
 
             PictureBox appGlyph = new()
             {
-                Size = new Size(38, 38),
-                Location = new Point(6, 6),
+                Size = new Size(42, 42),
+                Location = new Point(7, 7),
                 SizeMode = PictureBoxSizeMode.Zoom,
                 BackColor = Color.Transparent
             };
@@ -1921,13 +1958,14 @@ internal static class Program
             {
                 AutoSize = false,
                 Text = displayName,
-                Font = new Font("Segoe UI Semibold", 13.5F, FontStyle.Bold, GraphicsUnit.Point),
+                Font = new Font("Segoe UI Semibold", 12F, FontStyle.Bold, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 34,
+                Height = 40,
                 TextAlign = ContentAlignment.BottomLeft,
                 Margin = new Padding(0, 0, 0, 2),
-                AutoEllipsis = true
+                AutoEllipsis = true,
+                UseMnemonic = false
             };
 
             Label copyLabel = new()
@@ -1937,9 +1975,11 @@ internal static class Program
                 Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(207, 216, 230),
                 Dock = DockStyle.Top,
-                Height = 24,
+                Height = 34,
                 TextAlign = ContentAlignment.MiddleLeft,
-                Margin = new Padding(0, 0, 0, 10)
+                Margin = new Padding(0, 0, 0, 10),
+                AutoEllipsis = true,
+                UseMnemonic = false
             };
 
             _statusLabel = new Label
@@ -1949,10 +1989,11 @@ internal static class Program
                 Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.White,
                 Dock = DockStyle.Top,
-                Height = 22,
+                Height = 30,
                 TextAlign = ContentAlignment.MiddleLeft,
                 Margin = new Padding(0, 0, 0, 8),
-                AutoEllipsis = true
+                AutoEllipsis = true,
+                UseMnemonic = false
             };
 
             _progressTrack = new Panel
@@ -1974,7 +2015,7 @@ internal static class Program
             Panel progressMetaRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 18,
+                Height = 22,
                 Margin = new Padding(0, 0, 0, 8)
             };
 
@@ -1985,8 +2026,8 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Left,
-                Width = 128,
-                Height = 18,
+                Width = 160,
+                Height = 22,
                 TextAlign = ContentAlignment.MiddleLeft
             };
 
@@ -1997,8 +2038,8 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(178, 190, 208),
                 Dock = DockStyle.Right,
-                Width = 72,
-                Height = 18,
+                Width = 96,
+                Height = 22,
                 TextAlign = ContentAlignment.MiddleRight
             };
 
@@ -2012,8 +2053,9 @@ internal static class Program
                 Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,
-                Height = 16,
-                TextAlign = ContentAlignment.MiddleLeft
+                Height = 22,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true
             };
 
             Panel textColumn = new()
@@ -2028,7 +2070,7 @@ internal static class Program
             Panel heroRow = new()
             {
                 Dock = DockStyle.Top,
-                Height = 86
+                Height = 108
             };
             heroRow.Controls.Add(textColumn);
             heroRow.Controls.Add(glyphTile);
