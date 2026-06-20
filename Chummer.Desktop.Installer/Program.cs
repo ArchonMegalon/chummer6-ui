@@ -126,6 +126,14 @@ internal static class Program
             }
 
             splash.ApplyElapsed(installStopwatch.Elapsed);
+            TimeSpan minimumProgressDisplay = TimeSpan.FromMilliseconds(1200);
+            while (installStopwatch.Elapsed < minimumProgressDisplay)
+            {
+                splash.ApplyElapsed(installStopwatch.Elapsed);
+                Application.DoEvents();
+                Thread.Sleep(15);
+            }
+
             Application.DoEvents();
         }
         finally
@@ -1205,30 +1213,52 @@ internal static class Program
         using Form prompt = new()
         {
             Text = $"{displayName} Install Complete",
+            Name = "ChummerInstallerCompletionDialog",
+            AccessibleName = $"{displayName} install complete",
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(900, 460),
-            MinimumSize = new Size(900, 460),
+            ClientSize = new Size(760, 340),
+            MinimumSize = new Size(760, 340),
             MinimizeBox = false,
             MaximizeBox = false,
             ShowInTaskbar = false,
             TopMost = true,
             ShowIcon = false,
-            BackColor = Color.FromArgb(241, 245, 250),
+            BackColor = Color.FromArgb(248, 250, 252),
             AutoScaleMode = AutoScaleMode.Dpi
+        };
+
+        Panel accentBar = new()
+        {
+            Dock = DockStyle.Top,
+            Height = 3,
+            BackColor = Color.FromArgb(57, 196, 156)
+        };
+
+        Label stateLabel = new()
+        {
+            AutoSize = false,
+            Font = new Font("Segoe UI Semibold", 7F, FontStyle.Bold, GraphicsUnit.Point),
+            ForeColor = Color.FromArgb(18, 126, 96),
+            Text = "INSTALLED",
+            Dock = DockStyle.Fill,
+            Height = 18,
+            TextAlign = ContentAlignment.BottomLeft,
+            AutoEllipsis = false,
+            UseMnemonic = false
         };
 
         Label titleLabel = new()
         {
             AutoSize = false,
-            Font = new Font("Segoe UI Semibold", 10.5F, FontStyle.Regular, GraphicsUnit.Point),
+            Font = new Font("Segoe UI Semibold", 13F, FontStyle.Regular, GraphicsUnit.Point),
             ForeColor = Color.FromArgb(18, 24, 36),
             Text = headline,
-            Dock = DockStyle.Top,
-            Height = 56,
+            Dock = DockStyle.Fill,
+            Height = 46,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(20, 6, 16, 0),
+            Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = false,
             UseMnemonic = false
         };
@@ -1239,62 +1269,54 @@ internal static class Program
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             ForeColor = Color.FromArgb(55, 65, 84),
             Text = pathText,
-            Dock = DockStyle.Top,
-            Height = 88,
+            Dock = DockStyle.Fill,
+            Height = 34,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(20, 0, 28, 0),
+            Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = false,
             MaximumSize = new Size(0, 0),
             UseMnemonic = false
         };
+
+        string noteText = options.CancelButtonText is null
+            ? options.PrimaryFootnote
+            : $"{options.PrimaryFootnote} {options.SecondaryFootnote}".Trim();
 
         Label noteLabel = new()
         {
             AutoSize = false,
             Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
             ForeColor = Color.FromArgb(90, 102, 124),
-            Text = options.PrimaryFootnote,
-            Dock = DockStyle.Top,
+            Text = noteText,
+            Dock = DockStyle.Fill,
             Height = 30,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(20, 0, 16, 0),
-            AutoEllipsis = false,
-            UseMnemonic = false
-        };
-
-        Label secondaryNoteLabel = new()
-        {
-            AutoSize = false,
-            Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
-            ForeColor = Color.FromArgb(90, 102, 124),
-            Text = options.SecondaryFootnote,
-            Dock = DockStyle.Top,
-            Height = 30,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(20, 0, 16, 0),
+            Padding = new Padding(0, 0, 0, 0),
             AutoEllipsis = false,
             UseMnemonic = false
         };
 
         FlowLayoutPanel actions = new()
         {
-            Dock = DockStyle.Bottom,
+            Dock = DockStyle.Fill,
             FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(0, 0, 20, 24),
-            Height = 78,
+            Padding = new Padding(0, 18, 0, 0),
+            Height = 68,
             WrapContents = false
         };
 
         Button primaryButton = new()
         {
             Text = options.PrimaryButtonText,
-            AutoSize = true,
-            MinimumSize = new Size(172, 42),
+            AutoSize = false,
+            Size = new Size(176, 42),
+            MinimumSize = new Size(176, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Yes,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
-            AutoEllipsis = true
+            AutoEllipsis = true,
+            UseMnemonic = false
         };
         primaryButton.Click += (_, _) =>
         {
@@ -1304,13 +1326,15 @@ internal static class Program
         Button secondaryButton = new()
         {
             Text = options.SecondaryButtonText,
-            AutoSize = true,
-            MinimumSize = new Size(172, 42),
+            AutoSize = false,
+            Size = new Size(176, 42),
+            MinimumSize = new Size(176, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.No,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
-            AutoEllipsis = true
+            AutoEllipsis = true,
+            UseMnemonic = false
         };
         secondaryButton.Click += (_, _) =>
         {
@@ -1320,14 +1344,16 @@ internal static class Program
         Button cancelButton = new()
         {
             Text = options.CancelButtonText ?? "Cancel",
-            AutoSize = true,
-            MinimumSize = new Size(172, 42),
+            AutoSize = false,
+            Size = new Size(176, 42),
+            MinimumSize = new Size(176, 42),
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             DialogResult = DialogResult.Cancel,
             Margin = new Padding(8, 0, 0, 0),
             Padding = new Padding(14, 0, 14, 2),
             Visible = options.CancelButtonText is not null,
-            AutoEllipsis = true
+            AutoEllipsis = true,
+            UseMnemonic = false
         };
         cancelButton.Click += (_, _) =>
         {
@@ -1338,41 +1364,36 @@ internal static class Program
         actions.Controls.Add(secondaryButton);
         actions.Controls.Add(primaryButton);
 
-        Panel content = new()
+        TableLayoutPanel content = new()
         {
             Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(239, 244, 252),
-            Padding = new Padding(0, 20, 0, 0)
+            BackColor = Color.FromArgb(248, 250, 252),
+            Padding = new Padding(28, 24, 28, 22),
+            ColumnCount = 1,
+            RowCount = 5
         };
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 52));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+        content.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        content.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
 
-        content.Controls.Add(secondaryNoteLabel);
-        content.Controls.Add(noteLabel);
-        content.Controls.Add(pathLabel);
-        content.Controls.Add(titleLabel);
-
-        content.Controls.Add(actions);
+        content.Controls.Add(stateLabel, 0, 0);
+        content.Controls.Add(titleLabel, 0, 1);
+        content.Controls.Add(pathLabel, 0, 2);
+        content.Controls.Add(noteLabel, 0, 3);
+        content.Controls.Add(actions, 0, 4);
 
         prompt.Controls.Add(content);
+        prompt.Controls.Add(accentBar);
         prompt.AcceptButton = primaryButton;
         prompt.CancelButton = options.CancelButtonText is null ? secondaryButton : cancelButton;
         prompt.StartPosition = FormStartPosition.CenterScreen;
-
-        if (options.CancelButtonText is null)
-        {
-            secondaryNoteLabel.Text = options.SecondaryFootnote ?? string.Empty;
-            noteLabel.Text = options.PrimaryFootnote;
-            secondaryNoteLabel.Visible = false;
-            content.Padding = new Padding(0, 20, 0, 20);
-            actions.Padding = new Padding(0, 0, 20, 24);
-        }
 
         if (!string.IsNullOrWhiteSpace(options.PrimaryFootnote))
         {
             noteLabel.Visible = true;
         }
-
-        noteLabel.Padding = new Padding(20, 2, 16, 0);
-        secondaryNoteLabel.Padding = new Padding(20, 2, 16, 0);
 
         DialogResult result = prompt.ShowDialog();
         return result;
@@ -1902,7 +1923,9 @@ internal static class Program
             ControlBox = false;
             ShowIcon = false;
             StartPosition = FormStartPosition.CenterScreen;
-            Text = $"{displayName} Installer";
+            Text = $"{displayName} Installer - Installing";
+            Name = "ChummerInstallerProgressDialog";
+            AccessibleName = $"{displayName} installer progress";
             BackColor = Color.FromArgb(9, 13, 20);
             ForeColor = Color.White;
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point);
