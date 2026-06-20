@@ -180,7 +180,7 @@ internal sealed class DesktopDevicesAccessWindow : Window
         try
         {
             IChummerClient client = (IChummerClient)(App.Services?.GetService(typeof(IChummerClient))
-                ?? throw new InvalidOperationException("Desktop devices and access requires an IChummerClient instance."));
+                ?? throw new InvalidOperationException("Desktop copy account view requires an IChummerClient instance."));
             Task<DesktopInstallLinkingSummaryProjection> installLinkingTask = client.GetDesktopInstallLinkingSummaryAsync(CancellationToken.None);
             Task<AccountCampaignSummary?> campaignSummaryTask = client.GetAccountCampaignSummaryAsync(CancellationToken.None);
             await Task.WhenAll(installLinkingTask, campaignSummaryTask).ConfigureAwait(false);

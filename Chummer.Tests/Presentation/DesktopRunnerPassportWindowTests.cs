@@ -19,5 +19,9 @@ public sealed class DesktopRunnerPassportWindowTests
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/passport\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/passport\")");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/account/access#desktop\")");
+        StringAssert.Contains(source, "\"Open Your Copy\"");
+        Assert.IsFalse(source.Contains("Open devices & access", System.StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("Device and access", System.StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("device/access", System.StringComparison.Ordinal));
     }
 }

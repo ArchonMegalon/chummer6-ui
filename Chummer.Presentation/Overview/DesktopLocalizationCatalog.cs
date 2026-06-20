@@ -262,7 +262,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.intro.guest"] = "Claim this copy to keep account, recovery, and support information attached to this machine.",
         ["desktop.devices.intro.pending"] = "A claim link is ready. Open it when you are ready.",
         ["desktop.devices.intro.claimed_single"] = "This install is linked.",
-        ["desktop.devices.intro.claimed_multi"] = "This install is linked with other devices on your account.",
+        ["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.",
         ["desktop.devices.status.current"] = "Account state loaded.",
         ["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.",
         ["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.",
@@ -272,7 +272,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.devices.context.current_grant"] = "Access grant: {0} until {1} UTC.",
         ["desktop.devices.context.current_unlinked"] = "This install is not linked yet.",
         ["desktop.devices.context.claimed_none"] = "No linked installs are attached to this account yet.",
-        ["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})",
+        ["desktop.devices.context.claimed_device"] = "Copy: {0} · {1} on {2}/{3} ({4})",
         ["desktop.devices.context.claimed_restore"] = "Restore: {0}",
         ["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.",
         ["desktop.devices.context.claims_none"] = "No pending claim links or recent downloads are visible right now.",
@@ -360,7 +360,7 @@ public static class DesktopLocalizationCatalog
         ["desktop.support_case.context.attachment"] = "Attachment: {0} | {1} | uploaded {2} UTC",
         ["desktop.support_case.follow_through.current"] = "Desktop follow-through is current enough to continue without leaving the flagship client.",
         ["desktop.support_case.follow_through.attention"] = "Follow-through is still needed on this same tracked case before closure is honest.",
-        ["desktop.support_case.follow_through.link_install"] = "Next safe action: open Devices and access and relink or reclaim the affected install before you trust fix closure here.",
+        ["desktop.support_case.follow_through.link_install"] = "Next safe action: open Your Copy and reclaim the affected install before you trust fix closure here.",
         ["desktop.support_case.follow_through.update_install"] = "Next safe action: open Update status and bring this linked install onto the reporter-ready release before you verify the fix.",
         ["desktop.support_case.follow_through.verify"] = "This linked install is already carrying the reporter-ready fix posture. Use the signed-in support lane to record final confirmation without losing case continuity.",
         ["desktop.crash.title"] = "Crash recovery",
@@ -824,7 +824,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.guest"] = "Claimen Sie diese Kopie, damit Konto, Wiederherstellung und Support an diesen Rechner gebunden bleiben.";
             localized["desktop.devices.intro.pending"] = "Ein Claim-Link ist bereit. Öffnen Sie ihn, wenn Sie bereit sind.";
             localized["desktop.devices.intro.claimed_single"] = "Diese Installation ist verknupft.";
-            localized["desktop.devices.intro.claimed_multi"] = "Diese Installation ist zusammen mit weiteren Geraten in Ihrem Konto verknupft.";
+            localized["desktop.devices.intro.claimed_multi"] = "Diese Installation ist zusammen mit weiteren Kopien in Ihrem Konto verknupft.";
             localized["desktop.devices.status.current"] = "Kontostand geladen.";
             localized["desktop.devices.status.refresh_failed"] = "Aktualisierung fehlgeschlagen. Der zuletzt geladene Stand bleibt sichtbar.";
             localized["desktop.devices.status.claim_code_copied"] = "Der aktuelle Claim-Link wurde in Chummer geöffnet.";
@@ -834,7 +834,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.current_grant"] = "Zugriffsgrant: {0} bis {1} UTC.";
             localized["desktop.devices.context.current_unlinked"] = "Diese Installation ist noch nicht verknupft.";
             localized["desktop.devices.context.claimed_none"] = "Noch keine verknupften Installationen sind diesem Konto zugeordnet.";
-            localized["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})";
+            localized["desktop.devices.context.claimed_device"] = "Kopie: {0} · {1} on {2}/{3} ({4})";
             localized["desktop.devices.context.claimed_restore"] = "Restore: {0}";
             localized["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.";
             localized["desktop.devices.context.claims_none"] = "Aktuell sind keine offenen Claim-Links oder neuen Downloads sichtbar.";
@@ -966,7 +966,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_campaign_followthrough"] = "Ouvrir le suivi de campagne";
             localized["desktop.home.button.open_campaign_primer"] = "Ouvrir le guide de campagne";
             localized["desktop.home.button.open_mission_briefing"] = "Ouvrir le briefing de mission";
-            localized["desktop.home.button.open_devices_access"] = "Ouvrir appareils et acces";
+            localized["desktop.home.button.open_devices_access"] = "Votre copie";
             localized["desktop.home.button.open_current_workspace"] = "Ouvrir l'espace de travail actuel";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Ouvrir l'espace de campagne actuel";
             localized["desktop.home.button.open_my_artifacts"] = "Ouvrir mes artefacts";
@@ -1251,7 +1251,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.guest"] = "Claim this copy to keep account, recovery, and support information attached to this machine.";
             localized["desktop.devices.intro.pending"] = "A claim link is ready. Open it when you are ready.";
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
-            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other devices on your account.";
+            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
             localized["desktop.devices.status.current"] = "Account state loaded.";
             localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
@@ -1261,7 +1261,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.current_grant"] = "Access grant: {0} until {1} UTC.";
             localized["desktop.devices.context.current_unlinked"] = "This install is not linked yet.";
             localized["desktop.devices.context.claimed_none"] = "No linked installs are attached to this account yet.";
-            localized["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})";
+            localized["desktop.devices.context.claimed_device"] = "Copy: {0} · {1} on {2}/{3} ({4})";
             localized["desktop.devices.context.claimed_restore"] = "Restore: {0}";
             localized["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.";
             localized["desktop.devices.context.claims_none"] = "No pending claim links or recent downloads are visible right now.";
@@ -1393,7 +1393,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_campaign_followthrough"] = "キャンペーン追跡を開く";
             localized["desktop.home.button.open_campaign_primer"] = "キャンペーンプライマーを開く";
             localized["desktop.home.button.open_mission_briefing"] = "ミッションブリーフィングを開く";
-            localized["desktop.home.button.open_devices_access"] = "デバイスとアクセスを開く";
+            localized["desktop.home.button.open_devices_access"] = "Your Copy";
             localized["desktop.home.button.open_current_workspace"] = "現在のワークスペースを開く";
             localized["desktop.home.button.open_current_campaign_workspace"] = "現在のキャンペーンワークスペースを開く";
             localized["desktop.home.button.open_my_artifacts"] = "自分のアーティファクトを開く";
@@ -1678,17 +1678,17 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.guest"] = "Claim this copy to keep account, recovery, and support information attached to this machine.";
             localized["desktop.devices.intro.pending"] = "A claim link is ready. Open it when you are ready.";
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
-            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other devices on your account.";
-            localized["desktop.devices.status.current"] = "Devices and access status: current account view loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Devices and access status: refresh failed, so the last good projection is still shown.";
+            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
+            localized["desktop.devices.status.current"] = "Account state loaded.";
+            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";
             localized["desktop.devices.context.current_account_match"] = "Account record: {0} on {1}/{2}, refreshed {3} UTC.";
             localized["desktop.devices.context.current_grant"] = "Active grant: {0} until {1} UTC.";
-            localized["desktop.devices.context.current_unlinked"] = "No signed-in account record for this installation is visible yet.";
-            localized["desktop.devices.context.claimed_none"] = "No claimed installs are attached to the signed-in restore packet yet.";
-            localized["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})";
+            localized["desktop.devices.context.current_unlinked"] = "This install is not linked yet.";
+            localized["desktop.devices.context.claimed_none"] = "No linked copies are attached to this account yet.";
+            localized["desktop.devices.context.claimed_device"] = "Copy: {0} · {1} on {2}/{3} ({4})";
             localized["desktop.devices.context.claimed_restore"] = "Restore: {0}";
             localized["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.";
             localized["desktop.devices.context.claims_none"] = "No pending claim links or recent downloads are visible right now.";
@@ -1698,7 +1698,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_receipt"] = "Recent download: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
             localized["desktop.devices.context.access_guest"] = "Link this install before using account recovery or support history.";
             localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
-            localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
+            localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
             localized["desktop.dialog.action.close"] = "Close";
@@ -1820,7 +1820,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_campaign_followthrough"] = "Abrir acompanhamento da campanha";
             localized["desktop.home.button.open_campaign_primer"] = "Abrir introducao da campanha";
             localized["desktop.home.button.open_mission_briefing"] = "Abrir briefing da missao";
-            localized["desktop.home.button.open_devices_access"] = "Abrir dispositivos e acesso";
+            localized["desktop.home.button.open_devices_access"] = "Sua copia";
             localized["desktop.home.button.open_current_workspace"] = "Abrir workspace atual";
             localized["desktop.home.button.open_current_campaign_workspace"] = "Abrir workspace atual da campanha";
             localized["desktop.home.button.open_my_artifacts"] = "Abrir meus artefatos";
@@ -2105,17 +2105,17 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.guest"] = "Claim this copy to keep account, recovery, and support information attached to this machine.";
             localized["desktop.devices.intro.pending"] = "A claim link is ready. Open it when you are ready.";
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
-            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other devices on your account.";
-            localized["desktop.devices.status.current"] = "Devices and access status: current account view loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Devices and access status: refresh failed, so the last good projection is still shown.";
+            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
+            localized["desktop.devices.status.current"] = "Account state loaded.";
+            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";
             localized["desktop.devices.context.current_account_match"] = "Account record: {0} on {1}/{2}, refreshed {3} UTC.";
             localized["desktop.devices.context.current_grant"] = "Active grant: {0} until {1} UTC.";
-            localized["desktop.devices.context.current_unlinked"] = "No signed-in account record for this installation is visible yet.";
-            localized["desktop.devices.context.claimed_none"] = "No claimed installs are attached to the signed-in restore packet yet.";
-            localized["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})";
+            localized["desktop.devices.context.current_unlinked"] = "This install is not linked yet.";
+            localized["desktop.devices.context.claimed_none"] = "No linked copies are attached to this account yet.";
+            localized["desktop.devices.context.claimed_device"] = "Copy: {0} · {1} on {2}/{3} ({4})";
             localized["desktop.devices.context.claimed_restore"] = "Restore: {0}";
             localized["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.";
             localized["desktop.devices.context.claims_none"] = "No pending claim links or recent downloads are visible right now.";
@@ -2123,9 +2123,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent claim: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
-            localized["desktop.devices.context.access_guest"] = "Next safe action: link this copy before you expect linked devices, access grants, or tracked fix follow-through to stay attached.";
-            localized["desktop.devices.context.access_claimed"] = "Next safe action: keep devices, support, update, and work follow-through grounded to this claimed install instead of bouncing out to a generic account shelf.";
-            localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
+            localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
+            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
             localized["desktop.dialog.action.close"] = "Close";
@@ -2247,7 +2247,7 @@ public static class DesktopLocalizationCatalog
             localized["desktop.home.button.open_campaign_followthrough"] = "打开战役跟进";
             localized["desktop.home.button.open_campaign_primer"] = "打开战役导览";
             localized["desktop.home.button.open_mission_briefing"] = "打开任务简报";
-            localized["desktop.home.button.open_devices_access"] = "打开设备与访问";
+            localized["desktop.home.button.open_devices_access"] = "Your Copy";
             localized["desktop.home.button.open_current_workspace"] = "打开当前工作区";
             localized["desktop.home.button.open_current_campaign_workspace"] = "打开当前战役工作区";
             localized["desktop.home.button.open_my_artifacts"] = "打开我的工件";
@@ -2532,17 +2532,17 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.intro.guest"] = "Claim this copy to keep account, recovery, and support information attached to this machine.";
             localized["desktop.devices.intro.pending"] = "A claim link is ready. Open it when you are ready.";
             localized["desktop.devices.intro.claimed_single"] = "This install is linked.";
-            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other devices on your account.";
-            localized["desktop.devices.status.current"] = "Devices and access status: current account view loaded.";
-            localized["desktop.devices.status.refresh_failed"] = "Devices and access status: refresh failed, so the last good projection is still shown.";
+            localized["desktop.devices.intro.claimed_multi"] = "This install is linked with other copies on your account.";
+            localized["desktop.devices.status.current"] = "Account state loaded.";
+            localized["desktop.devices.status.refresh_failed"] = "Refresh failed. The last loaded state is still shown.";
             localized["desktop.devices.status.claim_code_copied"] = "Opened the current claim link inside Chummer.";
             localized["desktop.devices.status.no_claim_code"] = "No claim link is visible for this account right now.";
             localized["desktop.devices.context.current_local"] = "Local install state is loaded directly from this desktop copy.";
             localized["desktop.devices.context.current_account_match"] = "Account record: {0} on {1}/{2}, refreshed {3} UTC.";
             localized["desktop.devices.context.current_grant"] = "Active grant: {0} until {1} UTC.";
-            localized["desktop.devices.context.current_unlinked"] = "No signed-in account record for this installation is visible yet.";
-            localized["desktop.devices.context.claimed_none"] = "No claimed installs are attached to the signed-in restore packet yet.";
-            localized["desktop.devices.context.claimed_device"] = "Device: {0} · {1} on {2}/{3} ({4})";
+            localized["desktop.devices.context.current_unlinked"] = "This install is not linked yet.";
+            localized["desktop.devices.context.claimed_none"] = "No linked copies are attached to this account yet.";
+            localized["desktop.devices.context.claimed_device"] = "Copy: {0} · {1} on {2}/{3} ({4})";
             localized["desktop.devices.context.claimed_restore"] = "Restore: {0}";
             localized["desktop.devices.context.claimed_fallback"] = "Linked copy: {0} · {1} {2} on {3}/{4}.";
             localized["desktop.devices.context.claims_none"] = "No pending claim links or recent downloads are visible right now.";
@@ -2550,9 +2550,9 @@ public static class DesktopLocalizationCatalog
             localized["desktop.devices.context.claims_pending_install"] = "Claim this copy is already bound to install {1} until {2} UTC.";
             localized["desktop.devices.context.claims_local_last"] = "A previous claim attempt is saved locally on this install.";
             localized["desktop.devices.context.claims_receipt"] = "Recent claim: {0} · {1} {2} on {3}/{4}, issued {5} UTC.";
-            localized["desktop.devices.context.access_guest"] = "Next safe action: link this copy before you expect linked devices, access grants, or tracked fix follow-through to stay attached.";
-            localized["desktop.devices.context.access_claimed"] = "Next safe action: keep devices, support, update, and work follow-through grounded to this claimed install instead of bouncing out to a generic account shelf.";
-            localized["desktop.devices.context.access_no_grants"] = "No active installation grants are visible for this signed-in account yet.";
+            localized["desktop.devices.context.access_guest"] = "Claim this copy before using recovery or support history.";
+            localized["desktop.devices.context.access_claimed"] = "Support, updates, and workspace recovery are attached to this linked install.";
+            localized["desktop.devices.context.access_no_grants"] = "No active access grants are visible for this account yet.";
             localized["desktop.devices.context.access_grant"] = "Grant {0} for {1} stays {2} until {3} UTC.";
 
             localized["desktop.dialog.action.close"] = "Close";

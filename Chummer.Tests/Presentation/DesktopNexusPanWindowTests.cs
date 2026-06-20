@@ -21,6 +21,10 @@ public sealed class DesktopNexusPanWindowTests
         StringAssert.Contains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopRunControlWindow.ShowAsync(this, _headId)");
         StringAssert.Contains(source, "DesktopDevicesAccessWindow.ShowAsync(this, _headId)");
+        StringAssert.Contains(source, "\"Open Your Copy\"");
         StringAssert.Contains(source, "DesktopInstallLinkingRuntime.TryOpenRelativePortal(\"/play/continuity\")");
+        Assert.IsFalse(source.Contains("Open devices & access", System.StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("Devices and access", System.StringComparison.Ordinal));
+        Assert.IsFalse(source.Contains("devices-and-access", System.StringComparison.Ordinal));
     }
 }

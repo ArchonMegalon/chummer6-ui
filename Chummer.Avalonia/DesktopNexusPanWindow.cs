@@ -84,17 +84,17 @@ internal sealed class DesktopNexusPanWindow : Window
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeCampaigns", "Campaigns", (_campaignSummary?.Campaigns.Count ?? 0).ToString())),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.LatestContinuity?.Summary ?? "No governed continuity capsule is currently pinned."),
                 DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.ReturnSummary ?? "Open the continuity lane to reconnect the next return-safe state."),
-                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? "Use the access desk if the current device needs relinking before the next return.")
+                DesktopHorizonWindowScaffold.CreateDetailText(leadWorkspace?.NextSafeAction ?? "Claim this copy again if it needs to reconnect before the next return.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Continuity posture",
-            "Keep the current continuity and return-safe state visible before widening into account devices or browser-only recovery flows.",
+            "Keep the current continuity and return-safe state visible before opening account recovery.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)));
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Your Copy", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)));
     }
 
     private Control CreateAccessCard()
@@ -107,16 +107,16 @@ internal sealed class DesktopNexusPanWindow : Window
                 DesktopHorizonWindowScaffold.CreateBadgeStrip(
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeRuns", "Runs", (_campaignSummary?.Runs.Count ?? 0).ToString()),
                     DesktopHorizonWindowScaffold.CreateMetricBadge("NexusPanBadgeContext", "Context", _campaignSummary is null ? "guest" : "account")),
-                DesktopHorizonWindowScaffold.CreateDetailText("Devices, grants, and signed-in access still need deliberate follow-through. NEXUS-PAN keeps that route one move away instead of burying it behind support chrome."),
-                DesktopHorizonWindowScaffold.CreateDetailText("If the current desktop loses account posture, reopen devices and access before assuming continuity is intact.")
+                DesktopHorizonWindowScaffold.CreateDetailText("Your copy, grants, and account access stay one move away instead of disappearing into support chrome."),
+                DesktopHorizonWindowScaffold.CreateDetailText("If this desktop loses account posture, reopen Your Copy before assuming continuity is intact.")
             }
         };
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Devices and access",
-            "NEXUS-PAN keeps the devices-and-access rail attached to continuity instead of treating it like a separate support shelf.",
+            "Your Copy",
+            "NEXUS-PAN keeps account continuity attached to this install instead of treating it like a separate support shelf.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: HasAccessContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Your Copy", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId), isPrimary: HasAccessContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open support", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/support")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public continuity", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/play/continuity")));
     }
@@ -180,8 +180,8 @@ internal sealed class DesktopNexusPanWindow : Window
                 selectedWorkspaceTitleText.Text = "No selected workspace";
                 detailText.Text = mode switch
                 {
-                    "Access" => "Access posture: reconnect devices and grants before assuming the current continuity lane is usable across heads.",
-                    "Recovery" => "Recovery posture: reopen devices and access first when the current desktop loses account or continuity context.",
+                    "Access" => "Access posture: claim this copy before assuming continuity is available across installs.",
+                    "Recovery" => "Recovery posture: reopen Your Copy first when this desktop loses account or continuity context.",
                     _ => "Continuity posture: no governed continuity capsule is currently pinned."
                 };
                 selectedWorkspaceFollowUpText.Text = "Open or recover a workspace to populate the native continuity desk.";
@@ -252,10 +252,10 @@ internal sealed class DesktopNexusPanWindow : Window
 
         return DesktopHorizonWindowScaffold.CreateCard(
             "Detail modes",
-            "NEXUS-PAN should show continuity, access, and recovery posture without forcing the user to infer which lane matters.",
+            "NEXUS-PAN should show continuity, access, and recovery posture without forcing the user to decode the account model.",
             details,
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open workspace desk", () => DesktopCampaignWorkspaceWindow.ShowAsync(this, _headId), isPrimary: HasContinuityContext),
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Your Copy", () => DesktopDevicesAccessWindow.ShowAsync(this, _headId)),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open run control", () => DesktopRunControlWindow.ShowAsync(this, _headId)));
     }
 }

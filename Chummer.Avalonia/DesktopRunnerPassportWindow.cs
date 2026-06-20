@@ -137,10 +137,10 @@ internal sealed class DesktopRunnerPassportWindow : Window
         }
 
         return DesktopHorizonWindowScaffold.CreateCard(
-            "Device and access follow-through",
-            "Runner Passport is stronger when the device/access lane is one move away instead of hidden behind browser chrome.",
+            "Copy and account",
+            "Runner Passport works best when this install is clearly linked to the account that can recover it.",
             details,
-            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open devices & access", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/access#desktop"), isPrimary: HasIdentityContext),
+            DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open Your Copy", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/access#desktop"), isPrimary: HasIdentityContext),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open passport desk", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/account/passport")),
             DesktopHorizonWindowScaffold.CreateAsyncButton(this, "Open public route", static () => DesktopInstallLinkingRuntime.TryOpenRelativePortal("/passport")));
     }
