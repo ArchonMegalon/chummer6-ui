@@ -29,6 +29,10 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "\"Open Chummer\"");
         StringAssert.Contains(installerProgramText, "\"Open Blazor Desktop\"");
         StringAssert.Contains(installerProgramText, "foreach (InstalledHeadMetadata head in metadata.InstalledHeads)");
+        StringAssert.Contains(installerProgramText, "Thread.CurrentThread.GetApartmentState() == ApartmentState.STA");
+        StringAssert.Contains(installerProgramText, "shortcutThread.SetApartmentState(ApartmentState.STA);");
+        StringAssert.Contains(installerProgramText, "shortcutThread.Join(TimeSpan.FromSeconds(15))");
+        StringAssert.Contains(installerProgramText, "CreateShortcutCore(shortcutPath, targetPath, description);");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"AvaloniaDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"BlazorDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Debug.WriteLine($\"Chummer installer could not prune legacy install directory");

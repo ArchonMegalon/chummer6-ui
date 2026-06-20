@@ -1646,6 +1646,42 @@ internal static class Program
 
     private static void CreateShortcut(string shortcutPath, string targetPath, string description)
     {
+        if (Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+        {
+            CreateShortcutCore(shortcutPath, targetPath, description);
+            return;
+        }
+
+        Exception? shortcutError = null;
+        Thread shortcutThread = new(() =>
+        {
+            try
+            {
+                CreateShortcutCore(shortcutPath, targetPath, description);
+            }
+            catch (Exception ex)
+            {
+                shortcutError = ex;
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "Chummer shortcut creation"
+        };
+        shortcutThread.SetApartmentState(ApartmentState.STA);
+        shortcutThread.Start();
+        if (!shortcutThread.Join(TimeSpan.FromSeconds(15)))
+        {
+            throw new TimeoutException($"Timed out while creating shortcut '{shortcutPath}'.");
+        }
+        if (shortcutError is not null)
+        {
+            throw new InvalidOperationException($"Could not create shortcut '{shortcutPath}'.", shortcutError);
+        }
+    }
+
+    private static void CreateShortcutCore(string shortcutPath, string targetPath, string description)
+    {
         Directory.CreateDirectory(Path.GetDirectoryName(shortcutPath)!);
         Type shellType = Type.GetTypeFromProgID("WScript.Shell")
             ?? throw new InvalidOperationException("WScript.Shell is unavailable on this Windows installation.");
