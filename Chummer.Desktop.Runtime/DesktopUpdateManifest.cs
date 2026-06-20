@@ -234,7 +234,7 @@ public static class DesktopUpdateManifestParser
         }
 
         return new DesktopUpdateChannelManifest(
-            ChannelId: GetOptionalString(root, "channelId") ?? GetOptionalString(root, "channel") ?? "preview",
+            ChannelId: GetOptionalString(root, "channelId") ?? GetOptionalString(root, "channel") ?? string.Empty,
             Version: GetOptionalString(root, "version") ?? string.Empty,
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
@@ -293,7 +293,7 @@ public static class DesktopUpdateManifestParser
         }
 
         return new DesktopUpdateChannelManifest(
-            ChannelId: GetOptionalString(root, "channel") ?? GetOptionalString(root, "channelId") ?? "preview",
+            ChannelId: GetOptionalString(root, "channel") ?? GetOptionalString(root, "channelId") ?? string.Empty,
             Version: GetOptionalString(root, "version") ?? string.Empty,
             Status: GetOptionalString(root, "status") ?? "published",
             PublishedAt: GetOptionalDateTimeOffset(root, "publishedAt"),
@@ -343,7 +343,7 @@ public static class DesktopUpdateManifestParser
             refs.Add(new DesktopUpdateDesktopSurfaceRef(
                 RegistryId: registryId,
                 ArtifactId: artifactId,
-                ChannelId: GetOptionalString(element, "channelId") ?? "preview",
+                ChannelId: GetOptionalString(element, "channelId") ?? string.Empty,
                 ReleaseVersion: GetOptionalString(element, "releaseVersion") ?? string.Empty,
                 TupleId: GetOptionalString(element, "tupleId") ?? string.Empty,
                 HeadId: headId,

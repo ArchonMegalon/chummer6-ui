@@ -663,6 +663,70 @@ public sealed class DesktopUpdateRuntimeTests
     }
 
     [TestMethod]
+    public async Task CheckAndScheduleStartupUpdateAsync_missing_manifest_channel_preserves_installed_channel()
+    {
+        string releaseVersion = ResolveCurrentRuntimeReleaseProperty("Version");
+        string manifestPath = Path.Combine(Path.GetTempPath(), $"desktop-update-manifest-no-channel-{Guid.NewGuid():N}.json");
+        File.WriteAllText(
+            manifestPath,
+            $$"""
+            {
+              "version": "{{releaseVersion}}",
+              "status": "published",
+              "publishedAt": "{{DateTimeOffset.UtcNow:O}}",
+              "artifacts": []
+            }
+            """);
+
+        using TestStateRootScope stateRootScope = new();
+        using TestProcessPathOverrideScope processPathScope = TestProcessPathOverrideScope.CreatePackagedLike();
+        using TestEnvironmentScope envScope = new(new Dictionary<string, string?>()
+        {
+            [ManifestEnvironmentVariable] = manifestPath,
+            [UpdateEnabledEnvironmentVariable] = "true",
+            [UpdateAutoApplyEnvironmentVariable] = "true",
+            [StateRootEnvironmentVariable] = stateRootScope.Root
+        });
+
+        try
+        {
+            string statePath = stateRootScope.StatePathForHead("avalonia");
+            Directory.CreateDirectory(Path.GetDirectoryName(statePath)!);
+            File.WriteAllText(
+                statePath,
+                $$"""
+                {
+                  "HeadId": "avalonia",
+                  "Platform": "{{DesktopUpdatePlatformIdentity.Current().Platform}}",
+                  "Arch": "{{DesktopUpdatePlatformIdentity.Current().Arch}}",
+                  "InstalledVersion": "{{releaseVersion}}",
+                  "ChannelId": "stable",
+                  "LastCheckedAt": "2026-06-18T06:00:00Z",
+                  "LastManifestVersion": "{{releaseVersion}}",
+                  "LastManifestPublishedAt": "2026-06-18T06:15:00Z",
+                  "LastError": null
+                }
+                """);
+
+            DesktopUpdateStartupResult result = await DesktopUpdateRuntime.CheckAndScheduleStartupUpdateAsync(
+                "avalonia",
+                [],
+                CancellationToken.None).ConfigureAwait(false);
+
+            Assert.AreEqual("already_current", result.Reason);
+            using JsonDocument state = JsonDocument.Parse(File.ReadAllText(statePath));
+            Assert.AreEqual("stable", GetStringProperty(state.RootElement, "channelId"));
+        }
+        finally
+        {
+            if (File.Exists(manifestPath))
+            {
+                File.Delete(manifestPath);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task CheckAndScheduleStartupUpdateAsync_completed_pending_update_clears_stage_artifacts()
     {
         string releaseVersion = ResolveCurrentRuntimeReleaseProperty("Version");
