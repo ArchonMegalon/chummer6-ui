@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T20:01:37.058990Z",
+  "generatedAt": "2026-06-20T21:40:44.967989Z",
   "contract_name": "chummer6-ui.chummer5a_legacy_ui_element_parity",
   "status": "pass",
   "summary": "Every extracted Chummer5a designer, runtime, and dynamically created interactive UI element has an individual live Chummer6 command/control/action counterpart disposition and executable proof coverage.",
@@ -25,9 +25,9 @@
       "b14Script": "scripts/ai/milestones/b14-flagship-ui-release-gate.sh"
     },
     "legacyDesignerEventHookCount": 1755,
-    "legacyRuntimeEventHookCount": 339,
+    "legacyRuntimeEventHookCount": 343,
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 98,
+    "currentDynamicInteractiveElementCount": 106,
     "currentNamedAxamlInteractiveElementCount": 103,
     "legacyBehaviorFamilyCounts": {
       "add_create": 13,
@@ -49,7 +49,7 @@
       "magic_matrix": 44,
       "notes": 60,
       "qualities": 3,
-      "search_filter_category": 421,
+      "search_filter_category": 425,
       "selection_dialog": 3,
       "session_dashboard": 25,
       "settings_character": 173,
@@ -87,10 +87,10 @@
     },
     "currentInventoryCounts": {
       "command": 42,
-      "action": 16,
+      "action": 24,
       "ui": 47,
       "dialog-action": 26,
-      "current-dynamic": 9,
+      "current-dynamic": 11,
       "current-named": 77
     },
     "familyReviews": {
@@ -475,7 +475,7 @@
         "status": "pass"
       },
       "search_filter_category": {
-        "legacyEventCount": 421,
+        "legacyEventCount": 425,
         "legacyDynamicElementCount": 61,
         "mappedCurrentIds": [
           "ui:gear_add",
@@ -691,7 +691,8 @@
       "Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head": true,
       "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces": true,
       "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches": true,
-      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true
+      "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end": true,
+      "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online": true
     },
     "wiredIntoStandardVerify": true,
     "b14ConsumesReceipt": true,
@@ -700,7 +701,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.51\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64) - Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (9s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (55ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (10ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 10s 402ms"
+      "outputTail": "  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.14\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (12s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (15s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 16s 034ms"
     },
     "missingFiles": [],
     "legacyEventSamples": [
@@ -724,7 +725,7 @@
       },
       {
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 119,
+        "line": 137,
         "control": "nudKarma",
         "event": "ValueChanged",
         "handler": "nudKarma_ValueChanged",
@@ -733,7 +734,7 @@
       },
       {
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 133,
+        "line": 151,
         "control": "nudBase",
         "event": "ValueChanged",
         "handler": "nudBase_ValueChanged",
@@ -1068,15 +1069,15 @@
     "legacyDynamicElementSamples": [
       {
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 108,
+        "line": 126,
         "type": "NumericUpDownEx",
-        "context": "_64); cmdBurnEdge.Click += cmdBurnEdge_Click; flpRight.Controls.Add(cmdBurnEdge); } } else { nudKarma = new NumericUpDownEx { Anchor = AnchorStyles.Right, AutoSize = true, InterceptMouseWheel = GlobalSettings.InterceptMode, Marg",
+        "context": "Margin = new Padding(3, 0, 3, 1), Name = \"lblKarma\", Text = LanguageManager.GetString(\"String_Karma\", token: objMyToken).TrimEnd(':') }; nudKarma = new NumericUpDownEx { Anchor = AnchorStyles.Right, AutoSize = true, InterceptMouseWheel = GlobalSettings.InterceptMode, Marg",
         "family": "tools_utilities",
         "kind": "dynamic-element"
       },
       {
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 122,
+        "line": 140,
         "type": "NumericUpDownEx",
         "context": "nudKarma.ValueChanged += nudKarma_ValueChanged; _tmrKarmaChangeTimer = new Timer { Interval = 250 }; _tmrKarmaChangeTimer.Tick += KarmaChangeTimer_Tick; nudBase = new NumericUpDownEx { Anchor = AnchorStyles.Right, AutoSize = true, InterceptMouseWheel = GlobalSettings.InterceptMode, Marg",
         "family": "tools_utilities",
@@ -1237,47 +1238,47 @@
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 305,
+        "line": 317,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 514,
+        "line": 526,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 729,
+        "line": 570,
+        "type": "ListBox"
+      },
+      {
+        "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
+        "line": 866,
         "type": "CheckBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 802,
+        "line": 939,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 850,
+        "line": 983,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/CommandDialogPaneControl.axaml.cs",
-        "line": 953,
+        "line": 1086,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 336,
-        "type": "NumericUpDown"
+        "line": 576,
+        "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 349,
-        "type": "NumericUpDown"
-      },
-      {
-        "source": "Chummer.Avalonia/Controls/SectionHostControl.axaml.cs",
-        "line": 1254,
+        "line": 1367,
         "type": "Button"
       },
       {
@@ -1291,94 +1292,94 @@
         "type": "Button"
       },
       {
-        "source": "Chummer.Avalonia/DesktopAboutWindow.cs",
-        "line": 103,
-        "type": "TextBox"
-      },
-      {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 198,
+        "line": 210,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 237,
+        "line": 249,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 246,
+        "line": 258,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 264,
+        "line": 279,
         "type": "TextBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 274,
+        "line": 292,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 284,
+        "line": 302,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 294,
+        "line": 312,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 304,
+        "line": 322,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 380,
+        "line": 332,
+        "type": "ComboBox"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
+        "line": 349,
+        "type": "Expander"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
+        "line": 381,
+        "type": "Expander"
+      },
+      {
+        "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
+        "line": 457,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1171,
+        "line": 1277,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1180,
+        "line": 1286,
         "type": "ListBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1334,
+        "line": 1440,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1343,
+        "line": 1449,
         "type": "ComboBox"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1711,
+        "line": 1849,
         "type": "Button"
       },
       {
         "source": "Chummer.Avalonia/DesktopAliceWindow.cs",
-        "line": 1747,
+        "line": 1885,
         "type": "Button"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopAnarchyWindow.cs",
-        "line": 100,
-        "type": "ComboBox"
-      },
-      {
-        "source": "Chummer.Avalonia/DesktopBlackLedgerWindow.cs",
-        "line": 153,
-        "type": "ComboBox"
       }
     ],
     "currentNamedAxamlElementSamples": [
@@ -1533,7 +1534,7 @@
         "name": "RuleEnvironmentStudioButton"
       }
     ],
-    "legacyElementDispositionCount": 2859,
+    "legacyElementDispositionCount": 2863,
     "legacyElementDispositionSamples": [
       {
         "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:84:runtime-event:cmdImproveATT.Click->cmdImproveATT_Click",
@@ -1600,9 +1601,9 @@
         "status": "pass"
       },
       {
-        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:119:runtime-event:nudKarma.ValueChanged->nudKarma_ValueChanged",
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:137:runtime-event:nudKarma.ValueChanged->nudKarma_ValueChanged",
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 119,
+        "line": 137,
         "kind": "runtime-event",
         "control": "nudKarma",
         "event": "ValueChanged",
@@ -1632,9 +1633,9 @@
         "status": "pass"
       },
       {
-        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:133:runtime-event:nudBase.ValueChanged->nudBase_ValueChanged",
+        "legacyElementId": "Chummer/Controls/Attributes/AttributeControl.cs:151:runtime-event:nudBase.ValueChanged->nudBase_ValueChanged",
         "source": "Chummer/Controls/Attributes/AttributeControl.cs",
-        "line": 133,
+        "line": 151,
         "kind": "runtime-event",
         "control": "nudBase",
         "event": "ValueChanged",
@@ -3811,11 +3812,11 @@
       "-f",
       "net10.0",
       "--filter",
-      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+      "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
       "-v",
       "minimal"
     ],
-    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "testFilter": "Name~ExecuteCommandAsync_all_catalog_commands_are_handled|Name~HandleUiControlAsync_all_catalog_controls_are_non_generic|Name~CreateUiControlDialog_all_catalog_controls_surface_named_fields_and_actions|Name~CreateCommandDialog_all_factory_mapped_commands_surface_named_fields_and_actions|Name~RebuildDynamicDialog_all_rebuildable_dialogs_preserve_named_fields_and_actions|Name~Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections|Name~Avalonia_and_Blazor_workspace_action_summary_matches|Name~Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts|Name~File_menu_new_character_creates_runtime_workspace|Name~File_menu_new_character_completes_into_visible_runtime_workspace|Name~Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome|Name~Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
     "testAssemblyPath": "/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll",
     "reusedExistingTestBuild": true,
     "buildCommand": [],
@@ -3860,7 +3861,7 @@
     "status": "pass",
     "summary": "Legacy designer, runtime handler, and dynamic interactive element extraction is classified.",
     "designerEventHookCount": 1755,
-    "runtimeEventHookCount": 339,
+    "runtimeEventHookCount": 343,
     "dynamicInteractiveElementCount": 765,
     "unclassifiedLegacyEvents": [],
     "unclassifiedLegacyDynamicElements": []
@@ -4250,7 +4251,7 @@
         "status": "pass"
       },
       "search_filter_category": {
-        "legacyEventCount": 421,
+        "legacyEventCount": 425,
         "legacyDynamicElementCount": 61,
         "mappedCurrentIds": [
           "ui:gear_add",
@@ -4455,7 +4456,7 @@
   "legacyElementDispositionReview": {
     "status": "pass",
     "summary": "Every extracted Chummer5a UI event hook and dynamic interactive element has an individual Chummer6 counterpart disposition.",
-    "legacyElementDispositionCount": 2859,
+    "legacyElementDispositionCount": 2863,
     "missingLegacyElementDispositionCount": 0,
     "familyFallbackLegacyElementDispositionCount": 0,
     "missingLegacyElementDispositions": []
@@ -4464,7 +4465,7 @@
     "status": "pass",
     "summary": "Dynamically created legacy and current interactive elements are included in the parity evidence.",
     "legacyDynamicInteractiveElementCount": 765,
-    "currentDynamicInteractiveElementCount": 98,
+    "currentDynamicInteractiveElementCount": 106,
     "currentNamedAxamlInteractiveElementCount": 103
   },
   "verifyWiringReview": {
@@ -4490,7 +4491,7 @@
     "testResult": {
       "exitCode": 0,
       "noMatches": false,
-      "outputTail": "  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.51\n[+2/x0/?0] Chummer.Tests.dll (net10.0|x64) - Desktop_surface_commands_open_settings_master_index_and_roster_from_visible_chrome (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (9s)\nskipped Avalonia_and_Blazor_workspace_action_summary_matches (55ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (0ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nskipped Avalonia_and_Blazor_dialog_and_import_commands_expose_matching_dialog_contracts (10ms)\n  Initialization method Chummer.Tests.Presentation.DualHeadAcceptanceTests.ResetWorkspaceCatalogAsync threw exception. Assert.Inconclusive failed. Chummer API runtime socket error at http://chummer-api:8080/: Resource temporarily unavailable.\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 15\n  failed: 0\n  succeeded: 12\n  skipped: 3\n  duration: 10s 402ms"
+      "outputTail": "  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Ui.Kit -> /docker/chummercomplete/chummer-ui-kit/src/Chummer.Ui.Kit/bin/Debug/net10.0/Chummer.Ui.Kit.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Contracts -> /docker/chummercomplete/chummer-core-engine/Chummer.Contracts/bin/Debug/net10.0/Chummer.Engine.Contracts.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Presentation -> /docker/chummercomplete/chummer-presentation/Chummer.Presentation/bin/Debug/net10.0/Chummer.Presentation.dll\n  Chummer.Application -> /docker/chummercomplete/chummer-core-engine/Chummer.Application/bin/Debug/net10.0/Chummer.Application.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Infrastructure -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure/bin/Debug/net10.0/Chummer.Infrastructure.dll\n  Chummer.Rulesets.Hosting -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Hosting/bin/Debug/net10.0/Chummer.Rulesets.Hosting.dll\n  Chummer.Rulesets.Sr5 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr5/bin/Debug/net10.0/Chummer.Rulesets.Sr5.dll\n  Chummer.Rulesets.Sr6 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr6/bin/Debug/net10.0/Chummer.Rulesets.Sr6.dll\n  Chummer.Rulesets.Sr4 -> /docker/chummercomplete/chummer-core-engine/Chummer.Rulesets.Sr4/bin/Debug/net10.0/Chummer.Rulesets.Sr4.dll\n  Chummer.Avalonia -> /docker/chummercomplete/chummer-presentation/Chummer.Avalonia/bin/Debug/net10.0/Chummer.Avalonia.dll\n  Chummer.Api -> /docker/chummercomplete/chummer-presentation/Chummer.Api/bin/Debug/net10.0/Chummer.Api.dll\n  Chummer.Desktop.Runtime -> /docker/chummercomplete/chummer-presentation/Chummer.Desktop.Runtime/bin/Debug/net10.0/Chummer.Desktop.Runtime.dll\n  Chummer.Blazor -> /docker/chummercomplete/chummer-presentation/Chummer.Blazor/bin/Debug/net10.0/Chummer.Blazor.dll\n  Chummer.Core -> /docker/chummercomplete/chummer-core-engine/Chummer.Core/bin/Debug/net10.0/Chummer.Core.dll\n  Chummer.Hub.Web -> /docker/chummercomplete/chummer-presentation/Chummer.Hub.Web/bin/Debug/net10.0/Chummer.Hub.Web.dll\n  Chummer.Infrastructure.Browser -> /docker/chummercomplete/chummer-core-engine/Chummer.Infrastructure.Browser/bin/Debug/net10.0/Chummer.Infrastructure.Browser.dll\n  Chummer.Tests -> /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.14\n[+1/x0/?0] Chummer.Tests.dll (net10.0|x64) - File_menu_new_character_completes_into_visible_runtime_workspace (3s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (6s)\n[+3/x0/?0] Chummer.Tests.dll (net10.0|x64) - Veteran_first_minute_flow_keeps_menu_toolstrip_settings_import_master_index_and_roster_reachable_on_promoted_head (9s)\n[+6/x0/?0] Chummer.Tests.dll (net10.0|x64) - Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches (12s)\n[+14/x0/?0] Chummer.Tests.dll (net10.0|x64) - Avalonia_and_Blazor_all_workspace_section_actions_render_matching_sections (15s)\nTest run summary: Passed! - /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n  total: 16\n  failed: 0\n  succeeded: 16\n  skipped: 0\n  duration: 16s 034ms"
     }
   }
 }

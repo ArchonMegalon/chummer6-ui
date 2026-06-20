@@ -9,9 +9,17 @@ queue_path="${CHUMMER_NEXT90_QUEUE_PATH:-/docker/fleet/.codex-studio/published/N
 design_queue_path="${CHUMMER_NEXT90_DESIGN_QUEUE_PATH:-/docker/chummercomplete/chummer-design/products/chummer/NEXT_90_DAY_QUEUE_STAGING.generated.yaml}"
 receipt_path="${CHUMMER_NEXT90_M113_UI_RECEIPT_PATH:-$repo_root/.codex-studio/published/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json}"
 local_release_proof_path="${CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH:-$repo_root/.codex-studio/published/UI_LOCAL_RELEASE_PROOF.generated.json}"
+reuse_local_release_proof="${CHUMMER_NEXT90_M113_REUSE_LOCAL_RELEASE_PROOF:-0}"
 
 mkdir -p "$(dirname "$receipt_path")"
-CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=1 CHUMMER_PORTAL_PLAYWRIGHT=1 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
+if [[ "$reuse_local_release_proof" == "1" || "$reuse_local_release_proof" == "true" || "$reuse_local_release_proof" == "TRUE" ]]; then
+  if [[ ! -f "$local_release_proof_path" ]]; then
+    echo "M113 local release proof reuse requested, but $local_release_proof_path does not exist." >&2
+    exit 2
+  fi
+else
+  CHUMMER_PORTAL_E2E_SKIP_EDGE_REBUILD=1 CHUMMER_PORTAL_PLAYWRIGHT=1 CHUMMER_PORTAL_LOCAL_PROOF_PATH="$local_release_proof_path" CHUMMER_NEXT90_M113_RECEIPT_PATH="$receipt_path" bash "$repo_root/scripts/e2e-portal.sh" >/dev/null
+fi
 
 python3 - "$registry_path" "$queue_path" "$design_queue_path" "$receipt_path" "$local_release_proof_path" "$repo_root" <<'PY'
 from __future__ import annotations

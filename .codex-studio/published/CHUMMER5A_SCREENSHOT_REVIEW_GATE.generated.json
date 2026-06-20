@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-19T00:53:27.981912Z",
+  "generatedAt": "2026-06-20T21:54:37.263292Z",
   "contractName": "chummer6-ui.chummer5a_screenshot_review_gate",
   "channelId": "public_stable",
   "channel": "public_stable",
-  "releaseVersion": "run-20260619-024645",
-  "version": "run-20260619-024645",
+  "releaseVersion": "run-258",
+  "version": "run-258",
   "status": "pass",
   "summary": "Chummer5a screenshot-based compare review is mandatory and passing for dense builder, master index, roster, settings, translator, XML editor, and Hero Lab import routes.",
   "reasons": [],
@@ -32,7 +32,7 @@
     "reasons": [],
     "receiptStatuses": {
       "visualFamiliarityGate": "pass",
-      "flagshipGate": "pass"
+      "flagshipGate": "fail"
     },
     "skipFlagshipGateDependency": false,
     "flagshipGateRouteLocalOnly": false,
@@ -290,12 +290,12 @@
     "supportingReceipts": {
       "visualFamiliarityGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/DESKTOP_VISUAL_FAMILIARITY_EXIT_GATE.generated.json",
       "flagshipGate": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/UI_FLAGSHIP_RELEASE_GATE.generated.json",
-      "releaseChannel": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json"
+      "releaseChannel": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json"
     },
     "screenshotDirectory": "/docker/chummercomplete/chummer6-ui/.codex-studio/published/ui-flagship-release-gate-screenshots",
-    "releaseChannelPath": "/docker/chummercomplete/chummer-hub-registry/.codex-studio/published/RELEASE_CHANNEL.generated.json",
+    "releaseChannelPath": "/docker/chummercomplete/chummer6-ui/.tmp/verify-release-channel/RELEASE_CHANNEL.generated.json",
     "releaseChannelChannelId": "public_stable",
-    "releaseChannelVersion": "run-20260619-024645",
+    "releaseChannelVersion": "run-258",
     "requiredVisualReviewKeys": [
       "flagshipGateReview",
       "headProofReview",

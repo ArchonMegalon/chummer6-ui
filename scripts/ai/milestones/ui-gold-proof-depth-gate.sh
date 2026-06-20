@@ -96,8 +96,8 @@ else:
 public_targets.update(
     {
         "generated_at_utc": now,
-        "provider": "Playwright public UI frame integrity + live public recrawl",
-        "status": "captured_and_reviewed",
+        "provider": "Pixefy",
+        "status": "ready_for_pixefy_capture",
         "capture_evidence": {
             "public_ui_frame_integrity": "/docker/chummercomplete/chummer.run-services/tests/public/ui-frame-integrity.spec.ts",
             "live_public_web_recrawl": "/docker/chummercomplete/chummer.run-services/.codex-studio/published/LIVE_PUBLIC_WEB_RECRAWL.generated.json",

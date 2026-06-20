@@ -1,8 +1,8 @@
 {
   "contract_name": "chummer6-ui.next90_m144_startup_smoke_and_executable_gate",
-  "generated_at": "2026-06-19T07:19:39Z",
-  "status": "pass",
-  "summary": "Cross-platform startup-smoke and executable-gate proof is current for the promoted flagship bytes.",
+  "generated_at": "2026-06-20T22:05:06Z",
+  "status": "fail",
+  "summary": "Cross-platform startup-smoke and executable-gate proof is still blocked for the promoted flagship bytes.",
   "title": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",
   "task": "Capture fresh Windows, Linux, and macOS startup-smoke and executable-gate proof for the currently promoted flagship bytes.",
   "packageId": "next90-m144-ui-capture-fresh-windows-linux-and-macos-startup-smoke-and-executable-gate-p",
@@ -23,7 +23,7 @@
     "path": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/RELEASE_CHANNEL.generated.json",
     "present": true,
     "channelId": "public_stable",
-    "version": "run-20260619-024645",
+    "version": "run-258",
     "requiredDesktopPlatformHeadRidTuples": [
       "avalonia:linux-x64:linux",
       "avalonia:win-x64:windows"
@@ -32,8 +32,8 @@
   "aggregateExecutableGate": {
     "path": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/DESKTOP_EXECUTABLE_EXIT_GATE.generated.json",
     "present": true,
-    "status": "pass",
-    "localBlockingFindingsCount": 0
+    "status": "fail",
+    "localBlockingFindingsCount": 1
   },
   "crossPlatformTupleGoals": [
     "avalonia:linux-x64:linux",
@@ -49,25 +49,25 @@
       "releaseChannelArtifactPresent": true,
       "localArtifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-linux-x64-installer.deb",
       "localArtifactPresent": true,
-      "localArtifactDigest": "sha256:be408b033d348efdf7cc52ddc72704d244dca15f95c262a76fad290382d50613",
+      "localArtifactDigest": "sha256:0d2fbf54d4e02bf4f95405fd7bbdbf3bce6650508ecbba30633eeeaccd2befe3",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-linux-x64.receipt.json",
       "startupSmokeReceiptPresent": true,
       "startupSmokeReceiptSource": "direct",
       "startupSmokeStatus": "pass",
       "startupSmokeAcceptedAsIncompatibleHostSkip": false,
-      "startupSmokeVersion": "run-20260619-024645",
+      "startupSmokeVersion": "run-258",
       "startupSmokeVersionMatchesReleaseChannel": true,
       "startupSmokeChannelId": "public_stable",
       "startupSmokeChannelMatchesReleaseChannel": true,
       "startupSmokeReadyCheckpoint": "pre_ui_event_loop",
       "startupSmokeReadyCheckpointMatches": true,
-      "startupSmokeTimestamp": "2026-06-19T00:49:02.1553919+00:00",
-      "startupSmokeArtifactDigest": "sha256:be408b033d348efdf7cc52ddc72704d244dca15f95c262a76fad290382d50613",
+      "startupSmokeTimestamp": "2026-06-19T23:35:41.4207527+00:00",
+      "startupSmokeArtifactDigest": "sha256:0d2fbf54d4e02bf4f95405fd7bbdbf3bce6650508ecbba30633eeeaccd2befe3",
       "startupSmokeArtifactDigestMatchesLocalArtifact": true,
       "executableGatePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_LINUX_DESKTOP_EXIT_GATE.generated.json",
       "executableGatePresent": true,
       "executableGateStatus": "passed",
-      "executableGateVersion": "run-20260619-024645",
+      "executableGateVersion": "run-258",
       "executableGateVersionMatchesReleaseChannel": true,
       "executableGateChannelId": "public_stable",
       "executableGateChannelMatchesReleaseChannel": true,
@@ -82,34 +82,49 @@
       "releaseChannelArtifactPresent": true,
       "localArtifactPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/files/chummer-avalonia-win-x64-installer.exe",
       "localArtifactPresent": true,
-      "localArtifactDigest": "sha256:6700cb3db1c10a00f89f71dadd5a92e78177a956dc174528b6bdaf1f5d98c9bf",
+      "localArtifactDigest": "sha256:c41d17cea200060b0940f37f18eea6b0bd407c447cd9cd62a8e140e965bc6a51",
       "startupSmokeReceiptPath": "/docker/chummercomplete/chummer-presentation/Docker/Downloads/startup-smoke/startup-smoke-avalonia-win-x64.receipt.json",
       "startupSmokeReceiptPresent": true,
       "startupSmokeReceiptSource": "direct",
       "startupSmokeStatus": "skipped",
       "startupSmokeAcceptedAsIncompatibleHostSkip": true,
-      "startupSmokeVersion": "run-20260619-024645",
+      "startupSmokeVersion": "run-258",
       "startupSmokeVersionMatchesReleaseChannel": true,
       "startupSmokeChannelId": "public_stable",
       "startupSmokeChannelMatchesReleaseChannel": true,
       "startupSmokeReadyCheckpoint": "",
       "startupSmokeReadyCheckpointMatches": true,
-      "startupSmokeTimestamp": "2026-06-19T00:49:02.848618+00:00",
-      "startupSmokeArtifactDigest": "sha256:6700cb3db1c10a00f89f71dadd5a92e78177a956dc174528b6bdaf1f5d98c9bf",
+      "startupSmokeTimestamp": "2026-06-19T23:35:42.145877+00:00",
+      "startupSmokeArtifactDigest": "sha256:c41d17cea200060b0940f37f18eea6b0bd407c447cd9cd62a8e140e965bc6a51",
       "startupSmokeArtifactDigestMatchesLocalArtifact": true,
       "executableGatePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json",
       "executableGatePresent": true,
-      "executableGateStatus": "passed",
-      "executableGateVersion": "run-20260619-024645",
+      "executableGateStatus": "failed",
+      "executableGateVersion": "run-258",
       "executableGateVersionMatchesReleaseChannel": true,
       "executableGateChannelId": "public_stable",
       "executableGateChannelMatchesReleaseChannel": true,
-      "blockingFindings": []
+      "blockingFindings": [
+        "avalonia:win-x64:windows executable gate status is failed instead of pass.",
+        "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
+      ]
     }
   ],
-  "blockingFindings": [],
-  "blocking_findings": [],
-  "reasons": [],
-  "blockingFindingsCount": 0,
-  "blocking_findings_count": 0
+  "blockingFindings": [
+    "avalonia:win-x64:windows executable gate status is failed instead of pass.",
+    "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Aggregate executable gate status is fail instead of pass."
+  ],
+  "blocking_findings": [
+    "avalonia:win-x64:windows executable gate status is failed instead of pass.",
+    "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Aggregate executable gate status is fail instead of pass."
+  ],
+  "reasons": [
+    "avalonia:win-x64:windows executable gate status is failed instead of pass.",
+    "avalonia:win-x64:windows executable gate reason: Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.",
+    "Aggregate executable gate status is fail instead of pass."
+  ],
+  "blockingFindingsCount": 3,
+  "blocking_findings_count": 3
 }

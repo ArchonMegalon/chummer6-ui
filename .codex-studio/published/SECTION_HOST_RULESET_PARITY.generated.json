@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T20:00:09.367272Z",
+  "generatedAt": "2026-06-20T21:39:15.908404Z",
   "contract_name": "chummer6-ui.section_host_ruleset_parity",
   "status": "pass",
   "summary": "Section-host quick actions and ruleset-conditioned shell subflows are inventoried, projected, and fail-closing.",
@@ -102,6 +102,8 @@
       "tab-magician",
       "tab-combat",
       "tab-gear",
+      "tab-cyberware",
+      "tab-adept",
       "tab-contacts",
       "tab-rules",
       "tab-notes"
@@ -115,9 +117,17 @@
       "tab-skills.skills",
       "tab-qualities.qualities",
       "tab-magician.spells",
+      "tab-magician.spirits",
+      "tab-magician.critterpowers",
       "tab-combat.weapons",
+      "tab-combat.armors",
       "tab-gear.inventory",
+      "tab-gear.drugs",
+      "tab-gear.vehicles",
+      "tab-cyberware.cyberwares",
       "tab-adept.powers",
+      "tab-adept.complexforms",
+      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
       "tab-contacts.contacts",
@@ -139,16 +149,26 @@
         "tab-qualities.qualities"
       ],
       "tab-magician": [
-        "tab-magician.spells"
+        "tab-magician.spells",
+        "tab-magician.spirits",
+        "tab-magician.critterpowers"
       ],
       "tab-combat": [
-        "tab-combat.weapons"
+        "tab-combat.weapons",
+        "tab-combat.armors"
       ],
       "tab-gear": [
-        "tab-gear.inventory"
+        "tab-gear.inventory",
+        "tab-gear.drugs",
+        "tab-gear.vehicles"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares"
       ],
       "tab-adept": [
         "tab-adept.powers",
+        "tab-adept.complexforms",
+        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
@@ -198,8 +218,8 @@
         "marker": "AttributeEditRequested",
         "found": true
       },
-      "numeric_updown_editor": {
-        "marker": "NumericUpDown",
+      "compact_stepper_editor": {
+        "marker": "CreateAttributeValueStepper(",
         "found": true
       },
       "review_expander_hidden": {
@@ -207,19 +227,23 @@
         "found": true
       },
       "named_base_editor": {
-        "marker": "Name = $\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"",
+        "marker": "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"",
         "found": true
       },
       "named_karma_editor": {
-        "marker": "Name = $\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"",
+        "marker": "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"",
         "found": true
       },
-      "base_editor_valuechanged": {
-        "marker": "baseEditor.ValueChanged += (_, _) =>",
+      "base_stepper_delayed_commit": {
+        "marker": "_ = ScheduleCommitAsync(\"base\", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);",
         "found": true
       },
-      "karma_editor_valuechanged": {
-        "marker": "karmaEditor.ValueChanged += (_, _) =>",
+      "karma_stepper_delayed_commit": {
+        "marker": "_ = ScheduleCommitAsync(\"karma\", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);",
+        "found": true
+      },
+      "value_margin_before_buttons": {
+        "marker": "Margin = new Thickness(8d, 0d)",
         "found": true
       },
       "delayed_commit": {
@@ -240,11 +264,13 @@
         "SectionActionTabStrip_OnSelectionChanged(": true,
         "_suppressSectionActionSelectionChanged": true
       },
-      "numeric_updown_editors": {
-        "NumericUpDown baseEditor = new()": true,
-        "NumericUpDown karmaEditor = new()": true,
-        "baseEditor.ValueChanged += (_, _) =>": true,
-        "karmaEditor.ValueChanged += (_, _) =>": true
+      "compact_attribute_steppers": {
+        "CreateAttributeValueStepper(": true,
+        "Button decrement = CreateAttributeStepperButton": true,
+        "Button increment = CreateAttributeStepperButton": true,
+        "decrement.Click += (_, _) => ApplyValue(current - 1, emit: true);": true,
+        "increment.Click += (_, _) => ApplyValue(current + 1, emit: true);": true,
+        "Margin = new Thickness(8d, 0d)": true
       },
       "quick_action_buttons": {
         "CreateQuickActionButton(": true,
@@ -362,11 +388,13 @@
       "tab-magician",
       "tab-combat",
       "tab-gear",
+      "tab-cyberware",
+      "tab-adept",
       "tab-contacts",
       "tab-rules",
       "tab-notes"
     ],
-    "tabCount": 10,
+    "tabCount": 12,
     "workspaceActionIdsFound": [
       "tab-info.summary",
       "tab-info.validate",
@@ -376,16 +404,24 @@
       "tab-skills.skills",
       "tab-qualities.qualities",
       "tab-magician.spells",
+      "tab-magician.spirits",
+      "tab-magician.critterpowers",
       "tab-combat.weapons",
+      "tab-combat.armors",
       "tab-gear.inventory",
+      "tab-gear.drugs",
+      "tab-gear.vehicles",
+      "tab-cyberware.cyberwares",
       "tab-adept.powers",
+      "tab-adept.complexforms",
+      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
       "tab-contacts.contacts",
       "tab-rules.rules",
       "tab-notes.metadata"
     ],
-    "workspaceActionCount": 16,
+    "workspaceActionCount": 24,
     "actionsByTabFound": {
       "tab-info": [
         "tab-info.summary",
@@ -401,16 +437,26 @@
         "tab-qualities.qualities"
       ],
       "tab-magician": [
-        "tab-magician.spells"
+        "tab-magician.spells",
+        "tab-magician.spirits",
+        "tab-magician.critterpowers"
       ],
       "tab-combat": [
-        "tab-combat.weapons"
+        "tab-combat.weapons",
+        "tab-combat.armors"
       ],
       "tab-gear": [
-        "tab-gear.inventory"
+        "tab-gear.inventory",
+        "tab-gear.drugs",
+        "tab-gear.vehicles"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares"
       ],
       "tab-adept": [
         "tab-adept.powers",
+        "tab-adept.complexforms",
+        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
@@ -595,7 +641,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (490ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 679ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (460ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 616ms"
       },
       {
         "command": [
@@ -612,7 +658,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 672ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (465ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 618ms"
       },
       {
         "command": [
@@ -629,7 +675,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (488ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 668ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (471ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 636ms"
       },
       {
         "command": [
@@ -646,7 +692,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 668ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (463ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 626ms"
       },
       {
         "command": [
@@ -663,7 +709,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (497ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 680ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (465ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 638ms"
       },
       {
         "command": [
@@ -680,7 +726,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (483ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 660ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (517ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 686ms"
       },
       {
         "command": [
@@ -697,7 +743,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (496ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 701ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (478ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 644ms"
       },
       {
         "command": [
@@ -714,7 +760,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (457ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 639ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (458ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 616ms"
       },
       {
         "command": [
@@ -731,7 +777,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (485ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 659ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (473ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 631ms"
       },
       {
         "command": [
@@ -748,7 +794,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (468ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 650ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (464ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 626ms"
       },
       {
         "command": [
@@ -765,7 +811,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 481ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 649ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 367ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 528ms"
       }
     ],
     "buildCommand": [
@@ -779,7 +825,7 @@
       "--ignore-failed-sources",
       "-p:NuGetAudit=false"
     ],
-    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:05.24",
+    "buildOutputTail": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\nTime Elapsed 00:00:04.03",
     "retryBuildCommand": [],
     "failureCount": 0,
     "reasonCount": 0
@@ -901,6 +947,8 @@
       "tab-magician",
       "tab-combat",
       "tab-gear",
+      "tab-cyberware",
+      "tab-adept",
       "tab-contacts",
       "tab-rules",
       "tab-notes"
@@ -914,9 +962,17 @@
       "tab-skills.skills",
       "tab-qualities.qualities",
       "tab-magician.spells",
+      "tab-magician.spirits",
+      "tab-magician.critterpowers",
       "tab-combat.weapons",
+      "tab-combat.armors",
       "tab-gear.inventory",
+      "tab-gear.drugs",
+      "tab-gear.vehicles",
+      "tab-cyberware.cyberwares",
       "tab-adept.powers",
+      "tab-adept.complexforms",
+      "tab-adept.aiprograms",
       "tab-adept.metamagics",
       "tab-adept.initiationgrades",
       "tab-contacts.contacts",
@@ -938,16 +994,26 @@
         "tab-qualities.qualities"
       ],
       "tab-magician": [
-        "tab-magician.spells"
+        "tab-magician.spells",
+        "tab-magician.spirits",
+        "tab-magician.critterpowers"
       ],
       "tab-combat": [
-        "tab-combat.weapons"
+        "tab-combat.weapons",
+        "tab-combat.armors"
       ],
       "tab-gear": [
-        "tab-gear.inventory"
+        "tab-gear.inventory",
+        "tab-gear.drugs",
+        "tab-gear.vehicles"
+      ],
+      "tab-cyberware": [
+        "tab-cyberware.cyberwares"
       ],
       "tab-adept": [
         "tab-adept.powers",
+        "tab-adept.complexforms",
+        "tab-adept.aiprograms",
         "tab-adept.metamagics",
         "tab-adept.initiationgrades"
       ],
@@ -1026,8 +1092,8 @@
         "marker": "AttributeEditRequested",
         "found": true
       },
-      "numeric_updown_editor": {
-        "marker": "NumericUpDown",
+      "compact_stepper_editor": {
+        "marker": "CreateAttributeValueStepper(",
         "found": true
       },
       "review_expander_hidden": {
@@ -1035,19 +1101,23 @@
         "found": true
       },
       "named_base_editor": {
-        "marker": "Name = $\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"",
+        "marker": "$\"AttributeBaseEditor_{ShortAttributeLabel(row.AttributeName)}\"",
         "found": true
       },
       "named_karma_editor": {
-        "marker": "Name = $\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"",
+        "marker": "$\"AttributeKarmaEditor_{ShortAttributeLabel(row.AttributeName)}\"",
         "found": true
       },
-      "base_editor_valuechanged": {
-        "marker": "baseEditor.ValueChanged += (_, _) =>",
+      "base_stepper_delayed_commit": {
+        "marker": "_ = ScheduleCommitAsync(\"base\", row.BaseValue, () => pendingBaseValue, baseCommitCancellation.Token);",
         "found": true
       },
-      "karma_editor_valuechanged": {
-        "marker": "karmaEditor.ValueChanged += (_, _) =>",
+      "karma_stepper_delayed_commit": {
+        "marker": "_ = ScheduleCommitAsync(\"karma\", row.KarmaValue, () => pendingKarmaValue, karmaCommitCancellation.Token);",
+        "found": true
+      },
+      "value_margin_before_buttons": {
+        "marker": "Margin = new Thickness(8d, 0d)",
         "found": true
       },
       "delayed_commit": {
@@ -1073,11 +1143,13 @@
         "SectionActionTabStrip_OnSelectionChanged(": true,
         "_suppressSectionActionSelectionChanged": true
       },
-      "numeric_updown_editors": {
-        "NumericUpDown baseEditor = new()": true,
-        "NumericUpDown karmaEditor = new()": true,
-        "baseEditor.ValueChanged += (_, _) =>": true,
-        "karmaEditor.ValueChanged += (_, _) =>": true
+      "compact_attribute_steppers": {
+        "CreateAttributeValueStepper(": true,
+        "Button decrement = CreateAttributeStepperButton": true,
+        "Button increment = CreateAttributeStepperButton": true,
+        "decrement.Click += (_, _) => ApplyValue(current - 1, emit: true);": true,
+        "increment.Click += (_, _) => ApplyValue(current + 1, emit: true);": true,
+        "Margin = new Thickness(8d, 0d)": true
       },
       "quick_action_buttons": {
         "CreateQuickActionButton(": true,
@@ -1125,7 +1197,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (490ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 679ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (460ms)\nTest run summary: Passed!\n  total: 2\n  failed: 0\n  succeeded: 2\n  skipped: 0\n  duration: 616ms"
       },
       {
         "command": [
@@ -1142,7 +1214,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 672ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (465ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 618ms"
       },
       {
         "command": [
@@ -1159,7 +1231,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (488ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 668ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (471ms)\nTest run summary: Passed!\n  total: 3\n  failed: 0\n  succeeded: 3\n  skipped: 0\n  duration: 636ms"
       },
       {
         "command": [
@@ -1176,7 +1248,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (474ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 668ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (463ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 626ms"
       },
       {
         "command": [
@@ -1193,7 +1265,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (497ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 680ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (465ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 638ms"
       },
       {
         "command": [
@@ -1210,7 +1282,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (483ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 660ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (517ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 686ms"
       },
       {
         "command": [
@@ -1227,7 +1299,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (496ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 701ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (478ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 644ms"
       },
       {
         "command": [
@@ -1244,7 +1316,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (457ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 639ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (458ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 616ms"
       },
       {
         "command": [
@@ -1261,7 +1333,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (485ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 659ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (473ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 631ms"
       },
       {
         "command": [
@@ -1278,7 +1350,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (468ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 650ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (464ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 626ms"
       },
       {
         "command": [
@@ -1295,7 +1367,7 @@
         ],
         "exitCode": 0,
         "noMatches": false,
-        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 481ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 649ms"
+        "outputTail": "Running tests from /docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64)\n/docker/chummercomplete/chummer-presentation/Chummer.Tests/bin/Debug/Chummer.Tests.dll (net10.0|x64) passed (1s 367ms)\nTest run summary: Passed!\n  total: 1\n  failed: 0\n  succeeded: 1\n  skipped: 0\n  duration: 1s 528ms"
       }
     ]
   }

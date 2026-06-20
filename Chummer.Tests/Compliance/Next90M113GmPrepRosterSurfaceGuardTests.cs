@@ -42,6 +42,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         StringAssert.Contains(scriptText, "EXPECTED_DIRECT_PROOF_COMMAND = \"bash scripts/ai/milestones/next90-m113-ui-gm-prep-roster-surface-check.sh\"");
         StringAssert.Contains(scriptText, "EXPECTED_TARGETED_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Chummer.Tests.csproj --filter \"FullyQualifiedName~Next90M113GmPrepRosterSurfaceGuardTests\" --no-restore'");
         StringAssert.Contains(scriptText, "EXPECTED_PRESENTATION_TEST_COMMAND = 'dotnet test --project Chummer.Tests/Presentation/Chummer.Presentation.Signoff.Tests.csproj --filter \"FullyQualifiedName~AccessibilitySignoffSmokeTests\" --no-restore'");
+        StringAssert.Contains(scriptText, "CHUMMER_NEXT90_M113_REUSE_LOCAL_RELEASE_PROOF");
         StringAssert.Contains(scriptText, "\"Chummer.Avalonia/DesktopCampaignWorkspaceWindow.cs\": [");
         StringAssert.Contains(scriptText, "\"ShowGmPrepAsync\"");
         StringAssert.Contains(scriptText, "\"ShowRosterMovementAsync\"");
@@ -195,12 +196,14 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         try
         {
             string receiptPath = Path.Combine(tempDirectory, "NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json");
+            string localReleaseProofPath = Path.Combine(tempDirectory, "UI_LOCAL_RELEASE_PROOF.generated.json");
             string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m113-ui-gm-prep-roster-surface-check.sh");
+            WriteLocalReleaseProof(localReleaseProofPath, receiptPath);
 
-            RunProofScript(repoRoot, scriptPath, receiptPath);
+            RunProofScript(repoRoot, scriptPath, receiptPath, localReleaseProofPath);
             string firstGeneratedAt = ReadGeneratedAt(receiptPath);
 
-            RunProofScript(repoRoot, scriptPath, receiptPath);
+            RunProofScript(repoRoot, scriptPath, receiptPath, localReleaseProofPath);
             string secondGeneratedAt = ReadGeneratedAt(receiptPath);
 
             Assert.AreEqual(firstGeneratedAt, secondGeneratedAt);
@@ -253,7 +256,7 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         return values.ToArray();
     }
 
-    private static void RunProofScript(string repoRoot, string scriptPath, string receiptPath)
+    private static void RunProofScript(string repoRoot, string scriptPath, string receiptPath, string localReleaseProofPath)
     {
         ProcessStartInfo startInfo = new("bash", scriptPath)
         {
@@ -262,6 +265,8 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
             RedirectStandardOutput = true
         };
         startInfo.Environment["CHUMMER_NEXT90_M113_UI_RECEIPT_PATH"] = receiptPath;
+        startInfo.Environment["CHUMMER_UI_LOCAL_RELEASE_PROOF_PATH"] = localReleaseProofPath;
+        startInfo.Environment["CHUMMER_NEXT90_M113_REUSE_LOCAL_RELEASE_PROOF"] = "1";
 
         using Process process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Failed to start the M113 proof script.");
@@ -280,5 +285,39 @@ public sealed class Next90M113GmPrepRosterSurfaceGuardTests
         using JsonDocument document = JsonDocument.Parse(File.ReadAllText(receiptPath));
         return document.RootElement.GetProperty("generatedAt").GetString()
             ?? throw new AssertFailedException("Receipt missing generatedAt.");
+    }
+
+    private static void WriteLocalReleaseProof(string path, string receiptPath)
+    {
+        var payload = new Dictionary<string, object?>
+        {
+            ["contract_name"] = "chummer6-ui.local_release_proof",
+            ["generated_at"] = "2026-06-20T00:00:00Z",
+            ["status"] = "passed",
+            ["route_probe_executed"] = true,
+            ["desktop_workspace_routes"] = new[]
+            {
+                "gm_prep_packets:desktop",
+                "roster_movement:desktop",
+            },
+            ["receipts"] = new object[]
+            {
+                new Dictionary<string, object?>
+                {
+                    ["path"] = receiptPath,
+                    ["package_id"] = "next90-m113-ui-gm-prep-roster-surface",
+                    ["status"] = "pass",
+                    ["surface_routes"] = new[]
+                    {
+                        "gm_prep_packets:desktop",
+                        "roster_movement:desktop",
+                    },
+                },
+            },
+        };
+
+        File.WriteAllText(
+            path,
+            JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }) + Environment.NewLine);
     }
 }

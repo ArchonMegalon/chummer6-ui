@@ -125,7 +125,7 @@ STANDALONE_SOURCE_MARKERS = {
         "LoadDemoRunnerQuickActionButton",
     ],
     "workspace_strip_codebehind": [
-        "QuickStartContainer.IsVisible = isVisible;",
+        "QuickStartContainer.IsVisible = showSampleAction || showOriginDossierAction;",
         "LoadDemoRunnerRequested?.Invoke(this, EventArgs.Empty);",
     ],
     "summary_header_axaml": [
@@ -438,7 +438,13 @@ expected_route_ids = {
         "family": "section",
         "visibleCommandId": None,
         "openMenuId": None,
-        "controlType": "NumericUpDown",
+        "controlType": "Button",
+        "controlNames": [
+            "AttributeBaseEditor_BOD_Decrease",
+            "AttributeBaseEditor_BOD_Increase",
+            "AttributeKarmaEditor_BOD_Decrease",
+            "AttributeKarmaEditor_BOD_Increase",
+        ],
     },
     "dialog-priority-workflow-priority": {
         "family": "dialog",
@@ -483,6 +489,11 @@ def flatten_inventory(node: dict[str, Any]) -> list[dict[str, Any]]:
 def route_has_control_type(route: dict[str, Any], control_type: str) -> bool:
     inventory = route.get("inventory") or {}
     return any(str(node.get("controlType") or "") == control_type for node in flatten_inventory(inventory))
+
+
+def route_has_control_name(route: dict[str, Any], control_name: str) -> bool:
+    inventory = route.get("inventory") or {}
+    return any(str(node.get("name") or "") == control_name for node in flatten_inventory(inventory))
 
 
 
@@ -738,6 +749,7 @@ else:
         expected_command_id = str(expectation.get("visibleCommandId") or "")
         expected_open_menu_id = str(expectation.get("openMenuId") or "")
         expected_control_type = str(expectation.get("controlType") or "")
+        expected_control_names = [str(value) for value in expectation.get("controlNames") or []]
         if str(route.get("routeFamily") or "") != expected_family:
             add_failure(
                 f"Interactive runtime route '{route_id}' drifted from expected family '{expected_family}'.",
@@ -758,6 +770,12 @@ else:
                 f"Interactive runtime route '{route_id}' is missing expected control type '{expected_control_type}' in its recursive inventory.",
                 shared_failures,
             )
+        for expected_control_name in expected_control_names:
+            if not route_has_control_name(route, expected_control_name):
+                add_failure(
+                    f"Interactive runtime route '{route_id}' is missing expected control '{expected_control_name}' in its recursive inventory.",
+                    shared_failures,
+                )
 
     for ruleset_id in expected_ruleset_lanes:
         route = route_map.get(f"ruleset-{ruleset_id}-codex-tree")

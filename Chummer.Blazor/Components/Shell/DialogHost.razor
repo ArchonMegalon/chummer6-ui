@@ -32,7 +32,8 @@
                 }
                 @foreach (DesktopDialogField field in dialog.Fields.Where(field => !string.Equals(field.LayoutSlot, DesktopDialogFieldLayoutSlots.Hidden, StringComparison.Ordinal)))
                 {
-                    <label class="dialog-field classic-dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))">
+                    <label class="dialog-field classic-dialog-field @(string.Equals(field.InputType, "checkbox", StringComparison.Ordinal) ? "dialog-field--checkbox" : string.Empty) @(BuildDialogFieldLayoutClass(field)) @(BuildDialogFieldVisualClass(field))"
+                           title="@field.ToolTip">
                         @if (string.Equals(field.InputType, "checkbox", StringComparison.Ordinal))
                         {
                             <input type="checkbox"

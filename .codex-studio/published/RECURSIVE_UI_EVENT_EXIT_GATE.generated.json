@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T20:01:26Z",
+  "generatedAt": "2026-06-20T21:40:35Z",
   "contract_name": "chummer6-ui.recursive_ui_event_exit_gate",
   "status": "pass",
   "summary": "Recursive UI event exit gate verifies route recursion, screenshot proof, and Chummer5a parity landmarks.",
@@ -11,7 +11,7 @@
     "screenshotEvidencePath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
     "workflowParityPath": "/docker/chummercomplete/chummer-presentation/.codex-studio/published/CHUMMER5A_DESKTOP_WORKFLOW_PARITY.generated.json",
     "routeCount": 14,
-    "workflowFamilyCount": 10,
+    "workflowFamilyCount": 11,
     "branchChecks": {
       "dialog-global-settings": {
         "screenshots_present": true,

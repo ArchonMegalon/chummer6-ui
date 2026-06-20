@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-18T19:58:38.147721Z",
+  "generatedAt": "2026-06-20T21:38:12.077305Z",
   "contract_name": "chummer6-ui.chummer5a_layout_hard_gate",
   "status": "pass",
   "summary": "Chummer5a shell-layout parity is wired as a hard release gate.",

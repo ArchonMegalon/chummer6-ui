@@ -153,6 +153,7 @@ PROOF_TEST_MARKERS = [
     "Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces",
     "Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches",
     "Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end",
+    "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online",
 ]
 
 PROOF_FILTER = (
@@ -171,6 +172,7 @@ PROOF_FILTER = (
     "|Name~Recursive_runtime_control_inventory_records_widget_classes_tooltips_and_dense_editor_surfaces"
     "|Name~Interactive_runtime_route_inventory_receipt_captures_recursive_shell_dialog_popup_and_ruleset_branches"
     "|Name~Loaded_runner_main_window_routes_navigation_palette_dialog_and_quick_action_surfaces_end_to_end"
+    "|Name~Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online"
 )
 
 PARITY_FAMILIES: dict[str, dict[str, list[str]]] = {
@@ -387,7 +389,7 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["editglobalsettings"], ["command:global_settings"]),
     (["editcharactersettings"], ["command:character_settings"]),
     (["editnotes", "rtfeditor"], ["ui:open_notes", "action:tab-notes.metadata"]),
-    (["desktopinstalllinkinggateform"], ["Windows_install_link_gate_copy_stays_fail_closed_until_user_links_in_browser"]),
+    (["desktopinstalllinkinggateform"], ["current-dynamic:Button", "Windows_install_link_gate_copy_stays_fail_closed_until_user_claims_online"]),
     (["masterindex"], ["command:master_index"]),
     (["characterroster"], ["command:character_roster"]),
     (["diceroller", "initiativeroller"], ["command:dice_roller"]),
@@ -407,7 +409,7 @@ SOURCE_COUNTERPART_RULES: list[tuple[list[str], list[str]]] = [
     (["frmmetatype"], ["command:new_character", "action:tab-info.profile", "action:tab-info.attributes", "dialog-action:ok", "dialog-action:cancel"]),
     (["frmoptions"], ["command:global_settings", "command:character_settings", "dialog-action:ok", "dialog-action:cancel"]),
     (["frmselectbp"], ["command:new_character", "action:tab-info.attributes", "dialog-action:ok", "dialog-action:cancel"]),
-    (["frmselectitem"], ["ui:create_entry", "dialog-action:ok", "dialog-action:cancel"]),
+    (["selectitem", "frmselectitem"], ["ui:gear_add", "ui:combat_add_weapon", "ui:combat_add_armor", "ui:skill_add", "ui:create_entry", "dialog-action:ok", "dialog-action:cancel"]),
     (["frmselectnexus"], ["ui:gear_add", "ui:matrix_program_add", "dialog-action:ok", "dialog-action:cancel"]),
     (["frmselectnumber"], ["command:dice_roller", "ui:create_entry", "dialog-action:ok", "dialog-action:cancel"]),
     (["frmselectpackskit"], ["ui:gear_add", "dialog-action:ok", "dialog-action:cancel"]),

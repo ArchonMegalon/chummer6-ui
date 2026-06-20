@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -100,21 +101,29 @@ def main() -> int:
     portal_mirror_dir = repo_root / ".codex-studio" / "published" / "portal"
     portal_mirror_dir.mkdir(parents=True, exist_ok=True)
     materializer_path = Path(resolved_registry_root) / "scripts" / "materialize_public_release_channel.py"
+    mirror_command = [
+        "python3",
+        str(materializer_path),
+        "--manifest",
+        str(output_path),
+        "--downloads-dir",
+        str(repo_root / "Docker" / "Downloads" / "files"),
+        "--startup-smoke-dir",
+        str(repo_root / "Docker" / "Downloads" / "startup-smoke"),
+        "--output",
+        str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
+        "--compat-output",
+        str(portal_mirror_dir / "releases.json"),
+    ]
+    if os.environ.get("CHUMMER_VERIFIED_RELEASE_MIRROR_REFILTER_STARTUP_SMOKE", "0").strip().lower() not in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        mirror_command.append("--skip-startup-smoke-filter")
     subprocess.run(
-        [
-            "python3",
-            str(materializer_path),
-            "--manifest",
-            str(output_path),
-            "--downloads-dir",
-            str(repo_root / "Docker" / "Downloads" / "files"),
-            "--startup-smoke-dir",
-            str(repo_root / "Docker" / "Downloads" / "startup-smoke"),
-            "--output",
-            str(portal_mirror_dir / "RELEASE_CHANNEL.generated.json"),
-            "--compat-output",
-            str(portal_mirror_dir / "releases.json"),
-        ],
+        mirror_command,
         check=True,
         stdout=subprocess.DEVNULL,
     )

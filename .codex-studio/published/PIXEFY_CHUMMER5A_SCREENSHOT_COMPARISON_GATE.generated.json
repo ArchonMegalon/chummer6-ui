@@ -1,11 +1,11 @@
 {
   "contract_name": "chummer6-ui.pixefy_chummer5a_screenshot_comparison_gate",
-  "generated_at": "2026-06-09T07:18:16.388765Z",
-  "status": "pass",
+  "generated_at": "2026-06-20T21:55:18.617492Z",
+  "status": "fail",
   "provider": "Pixefy",
   "comparison_baseline": "Chummer5a screenshot/contact-sheet receipts",
   "screenshot_directory": ".codex-studio/published/ui-flagship-release-gate-screenshots",
-  "screenshot_count": 40,
+  "screenshot_count": 59,
   "required_screenshots": [
     "01-initial-shell-light.png",
     "02-menu-open-light.png",
@@ -64,5 +64,9 @@
     "screenshot_control_evidence": ".codex-studio/published/ui-flagship-release-gate-screenshots/SCREENSHOT_CONTROL_EVIDENCE.generated.json",
     "human_parity_screenshot_matrix": ".codex-studio/published/CHUMMER5A_HUMAN_PARITY_SCREENSHOT_MATRIX.generated.json"
   },
-  "reasons": []
+  "reasons": [
+    "UI_FLAGSHIP_RELEASE_GATE.generated.json is not passing.",
+    "UI_WINDOWS_DESKTOP_EXIT_GATE.generated.json is not passing.",
+    "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json is not passing."
+  ]
 }

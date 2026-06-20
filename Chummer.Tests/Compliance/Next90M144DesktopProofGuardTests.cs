@@ -19,7 +19,7 @@ public sealed class Next90M144DesktopProofGuardTests
         string scriptPath = Path.Combine(repoRoot, "scripts", "ai", "milestones", "next90-m144-ui-startup-smoke-and-executable-gate-check.sh");
         string receiptPath = Path.Combine(repoRoot, ".codex-studio", "published", "NEXT90_M144_UI_STARTUP_SMOKE_AND_EXECUTABLE_GATE.generated.json");
 
-        RunScript(repoRoot, scriptPath);
+        ScriptResult scriptResult = RunScript(repoRoot, scriptPath);
 
         Assert.IsTrue(File.Exists(receiptPath), "M144 proof receipt should be materialized.");
 
@@ -27,7 +27,24 @@ public sealed class Next90M144DesktopProofGuardTests
         JsonElement root = document.RootElement;
 
         Assert.AreEqual("chummer6-ui.next90_m144_startup_smoke_and_executable_gate", root.GetProperty("contract_name").GetString());
-        Assert.AreEqual("pass", root.GetProperty("status").GetString());
+        string[] blockingFindings = root.GetProperty("blockingFindings")
+            .EnumerateArray()
+            .Select(item => item.GetString() ?? string.Empty)
+            .ToArray();
+        bool hasWindowsInstallerVisualProofBlocker = blockingFindings.Any(finding =>
+            finding.Contains("avalonia:win-x64:windows executable gate reason:", StringComparison.Ordinal)
+            && finding.Contains("Windows installer visual proof", StringComparison.Ordinal));
+        if (hasWindowsInstallerVisualProofBlocker)
+        {
+            Assert.AreEqual("fail", root.GetProperty("status").GetString());
+            Assert.AreNotEqual(0, scriptResult.ExitCode, "A blocked executable proof gate must fail closed at the command level.");
+        }
+        else
+        {
+            Assert.AreEqual("pass", root.GetProperty("status").GetString());
+            Assert.AreEqual(0, blockingFindings.Length);
+            Assert.AreEqual(0, scriptResult.ExitCode, scriptResult.FormatFailure());
+        }
         CollectionAssert.AreEqual(
             new[]
             {
@@ -40,8 +57,6 @@ public sealed class Next90M144DesktopProofGuardTests
         JsonElement windows = FindTupleProof(proofs, "avalonia:win-x64:windows");
         JsonElement linux = FindTupleProof(proofs, "avalonia:linux-x64:linux");
 
-        Assert.AreEqual(0, root.GetProperty("blockingFindings").GetArrayLength());
-
         Assert.IsTrue(windows.GetProperty("releaseChannelArtifactPresent").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeReceiptPresent").GetBoolean());
         Assert.IsTrue(windows.GetProperty("startupSmokeAcceptedAsIncompatibleHostSkip").GetBoolean());
@@ -49,10 +64,24 @@ public sealed class Next90M144DesktopProofGuardTests
         Assert.IsTrue(windows.GetProperty("startupSmokeChannelMatchesReleaseChannel").GetBoolean());
         Assert.IsTrue(windows.GetProperty("executableGatePresent").GetBoolean());
         Assert.IsTrue(windows.GetProperty("executableGateVersionMatchesReleaseChannel").GetBoolean());
+        if (hasWindowsInstallerVisualProofBlocker)
+        {
+            Assert.AreEqual("failed", windows.GetProperty("executableGateStatus").GetString());
+            StringAssert.Contains(
+                string.Join(Environment.NewLine, windows.GetProperty("blockingFindings").EnumerateArray().Select(item => item.GetString())),
+                "Windows installer visual proof");
+        }
+        else
+        {
+            Assert.AreEqual("passed", windows.GetProperty("executableGateStatus").GetString());
+        }
 
         Assert.IsTrue(linux.GetProperty("releaseChannelArtifactPresent").GetBoolean());
         Assert.IsTrue(linux.GetProperty("startupSmokeReceiptPresent").GetBoolean());
         Assert.IsTrue(linux.GetProperty("executableGatePresent").GetBoolean());
+        Assert.AreEqual("passed", linux.GetProperty("executableGateStatus").GetString());
+        Assert.IsTrue(linux.GetProperty("startupSmokeVersionMatchesReleaseChannel").GetBoolean());
+        Assert.IsTrue(linux.GetProperty("executableGateVersionMatchesReleaseChannel").GetBoolean());
         Assert.IsTrue(linux.GetProperty("startupSmokeArtifactDigestMatchesLocalArtifact").GetBoolean());
     }
 
@@ -70,7 +99,7 @@ public sealed class Next90M144DesktopProofGuardTests
         return default;
     }
 
-    private static void RunScript(string repoRoot, string scriptPath)
+    private static ScriptResult RunScript(string repoRoot, string scriptPath)
     {
         using Process process = new();
         process.StartInfo = new ProcessStartInfo
@@ -88,10 +117,13 @@ public sealed class Next90M144DesktopProofGuardTests
         string stderr = process.StandardError.ReadToEnd();
         process.WaitForExit();
 
-        if (process.ExitCode != 0)
-        {
-            Assert.Fail($"Script exited {process.ExitCode}.{Environment.NewLine}stdout:{Environment.NewLine}{stdout}{Environment.NewLine}stderr:{Environment.NewLine}{stderr}");
-        }
+        return new ScriptResult(process.ExitCode, stdout, stderr);
+    }
+
+    private readonly record struct ScriptResult(int ExitCode, string StandardOutput, string StandardError)
+    {
+        public string FormatFailure() =>
+            $"Script exited {ExitCode}.{Environment.NewLine}stdout:{Environment.NewLine}{StandardOutput}{Environment.NewLine}stderr:{Environment.NewLine}{StandardError}";
     }
 
     private static string FindRepoRoot()

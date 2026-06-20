@@ -897,7 +897,7 @@ public sealed class AvaloniaFlagshipUiGateTests
             blazorShellText.IndexOf("\"open_character\"", StringComparison.Ordinal),
             "Blazor desktop shell must keep new before open in the preferred toolstrip order.");
         StringAssert.Contains(blazorShellText, "private bool ShowLeftPane =>");
-        StringAssert.Contains(blazorShellText, "_shellSurfaceState.OpenWorkspaces.Count > 0");
+        StringAssert.Contains(blazorShellText, "_shellSurfaceState.OpenWorkspaces.Count > 1");
         StringAssert.Contains(shellCatalogText, "[\"file\", \"edit\", \"special\", \"tools\", \"windows\", \"help\"]");
         StringAssert.Contains(shellCatalogText, "Command(\"edit\", \"command.edit\", \"menu\", false)");
         StringAssert.Contains(shellCatalogText, "Command(\"special\", \"command.special\", \"menu\", false)");
@@ -4171,9 +4171,9 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
-    public void Runtime_backed_shell_keeps_single_workspace_edit_rail_visible()
+    public void Runtime_backed_shell_keeps_single_workspace_edit_rail_collapsed()
     {
-        new DesktopShellRulesetCatalogTests().DesktopShell_renders_workspace_left_pane_for_single_runner_posture();
+        new DesktopShellRulesetCatalogTests().DesktopShell_hides_workspace_left_pane_for_single_runner_posture();
     }
 
     [TestMethod]

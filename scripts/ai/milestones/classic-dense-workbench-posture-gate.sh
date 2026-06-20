@@ -148,7 +148,7 @@ for forbidden in ["dashboard", "mainframe", "control center"]:
 
 required_tests = [
     "Desktop_shell_preserves_classic_dense_center_first_workbench_posture",
-    "Runtime_backed_shell_hides_workspace_tree_until_multiple_workspaces_exist",
+    "Runtime_backed_shell_keeps_single_workspace_edit_rail_collapsed",
     "Runtime_backed_toolstrip_preserves_flat_classic_toolbar_posture",
     "Runtime_backed_shell_avoids_modern_dashboard_copy_that_breaks_chummer5a_orientation",
     "Character_creation_preserves_familiar_dense_builder_rhythm",

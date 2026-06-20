@@ -456,7 +456,7 @@ def collect_installer_visual_screenshots(payload: Dict[str, Any]) -> Dict[str, D
         )
         if role in {"splash", "installer_splash", "welcome"}:
             result["splash"] = row
-        elif role in {"progress", "installer_progress", "installing"}:
+        elif role in {"progress", "installer_progress", "install-progress", "installing"}:
             result["progress"] = row
         elif role in {"completion", "complete", "finished", "installer_completion"}:
             result["completion"] = row
@@ -738,7 +738,7 @@ visual_screenshot_paths = {
     role: screenshot_path(row)
     for role, row in visual_screenshots.items()
 }
-visual_required_roles = ["splash", "progress", "completion"]
+visual_required_roles = ["progress", "completion"]
 visual_missing_roles = [
     role for role in visual_required_roles if role not in visual_screenshots
 ]
@@ -783,7 +783,7 @@ evidence["windows_installer_visual_clipping_status"] = visual_clipping_status
 
 if not windows_installer_visual_proof_path.is_file():
     reasons.append(
-        "Windows installer visual proof is missing; capture splash, progress, and completion screenshots on a Windows host."
+        "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host."
     )
 elif visual_proof_contract != "chummer6-ui.windows_installer_visual_proof":
     reasons.append("Windows installer visual proof contract is not chummer6-ui.windows_installer_visual_proof.")
@@ -824,7 +824,7 @@ if (
     and not visual_roles_missing_digests
     and visual_unique_digest_count < len(visual_required_roles)
 ):
-    reasons.append("Windows installer visual proof screenshots are not distinct across splash, progress, and completion.")
+    reasons.append("Windows installer visual proof screenshots are not distinct across progress and completion.")
 for review_name, review_status in (
     ("readability", visual_readability_status),
     ("contrast", visual_contrast_status),

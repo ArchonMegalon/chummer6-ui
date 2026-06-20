@@ -5545,11 +5545,11 @@ public class MigrationComplianceTests
         StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_proof_found");
         StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_required_roles");
         StringAssert.Contains(windowsGateScriptText, "windows_installer_visual_unique_digest_count");
-        StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof is missing; capture splash, progress, and completion screenshots on a Windows host.");
+        StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof is missing; capture progress and completion screenshots on a Windows host.");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof contract is not chummer6-ui.windows_installer_visual_proof.");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof artifactDigest does not match promoted installer bytes.");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof is missing required screenshot roles:");
-        StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof screenshots are not distinct across splash, progress, and completion.");
+        StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof screenshots are not distinct across progress and completion.");
         StringAssert.Contains(windowsGateScriptText, "Windows installer visual proof {review_name} review is not passing.");
         StringAssert.Contains(windowsGateScriptText, "def startup_smoke_stale_age_is_acceptable(");
         StringAssert.Contains(windowsGateScriptText, "if host_supports_windows_smoke:");

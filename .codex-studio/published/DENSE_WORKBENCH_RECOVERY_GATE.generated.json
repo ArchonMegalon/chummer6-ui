@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-12T18:54:09.902203Z",
+  "generatedAt": "2026-06-20T22:00:15.125674Z",
   "contractName": "chummer6-ui.dense_workbench_recovery_gate",
   "status": "pass",
   "summary": "Dense workbench recovery frontier is closed by executable budget, accessibility, and screenshot-backed familiarity proof.",
@@ -19,16 +19,16 @@
   ],
   "budgetEvidence": {
     "fluentDensityStyle": "Compact",
-    "buttonMinHeight": "22",
+    "buttonMinHeight": "32",
     "textBoxPadding": [
-      3,
-      2
+      8,
+      4
     ],
     "cardPadding": [
       2,
       2
     ],
-    "sectionTitleFontSize": "11",
+    "sectionTitleFontSize": "12",
     "toolstripItemHeight": null,
     "sectionRowsListMinHeight": 132,
     "sectionRowsListMaxHeight": 360,

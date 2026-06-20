@@ -1,6 +1,6 @@
 {
   "contract_name": "chummer6-ui.localization_release_gate",
-  "generated_at": "2026-06-18T20:04:47Z",
+  "generated_at": "2026-06-20T21:44:10Z",
   "status": "pass",
   "shipping_locales": [
     "en-us",
@@ -10,7 +10,7 @@
     "pt-br",
     "zh-cn"
   ],
-  "default_key_count": 403,
+  "default_key_count": 420,
   "release_seed_keys": [
     "desktop.shell.menu.file",
     "desktop.shell.tool.update_status",
@@ -31,15 +31,15 @@
       "  failed: 0",
       "  succeeded: 1",
       "  skipped: 0",
-      "  duration: 180ms"
+      "  duration: 278ms"
     ]
   },
   "locale_summary": [
     {
       "locale": "en-us",
-      "override_count": 403,
-      "minimum_override_count": 403,
-      "default_key_count": 403,
+      "override_count": 420,
+      "minimum_override_count": 420,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -47,9 +47,9 @@
     },
     {
       "locale": "de-de",
-      "override_count": 403,
+      "override_count": 420,
       "minimum_override_count": 40,
-      "default_key_count": 403,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -57,9 +57,9 @@
     },
     {
       "locale": "fr-fr",
-      "override_count": 403,
+      "override_count": 420,
       "minimum_override_count": 40,
-      "default_key_count": 403,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -67,9 +67,9 @@
     },
     {
       "locale": "ja-jp",
-      "override_count": 403,
+      "override_count": 420,
       "minimum_override_count": 40,
-      "default_key_count": 403,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -77,9 +77,9 @@
     },
     {
       "locale": "pt-br",
-      "override_count": 403,
+      "override_count": 420,
       "minimum_override_count": 40,
-      "default_key_count": 403,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -87,9 +87,9 @@
     },
     {
       "locale": "zh-cn",
-      "override_count": 403,
+      "override_count": 420,
       "minimum_override_count": 40,
-      "default_key_count": 403,
+      "default_key_count": 420,
       "untranslated_key_count": 0,
       "missing_release_seed_keys": [],
       "legacy_xml_present": true,
@@ -99,12 +99,13 @@
   "legacy_language_root": "/docker/chummercomplete/chummer-presentation/Chummer/lang",
   "local_release_proof": {
     "contract_name": "chummer6-ui.local_release_proof",
-    "generated_at": "2026-06-18T12:17:38Z",
+    "generated_at": "2026-06-19T07:19:35Z",
     "status": "passed",
     "base_url": "http://127.0.0.1:8091",
     "compose_file": "/docker/chummercomplete/chummer.run-services/docker-compose.public-edge.yml",
     "playwright_timeout_seconds": 240,
     "edge_rebuild_skipped": true,
+    "runtime_required": true,
     "route_probe_executed": true,
     "journeys_passed": [
       "install_claim_restore_continue",
@@ -121,17 +122,13 @@
       "/downloads/install/avalonia-linux-x64-installer",
       "/home/access",
       "/home/work",
-      "/account/access",
       "/account/work",
       "/account/support",
-      "/contact",
-      "/downloads",
-      "/downloads/install/avalonia-osx-arm64-installer",
-      "/downloads/install/avalonia-win-x64-installer"
+      "/contact"
     ],
     "receipts": [
       {
-        "path": "/tmp/m113-proof-e4e0cef6dbc3407289df0bccfcb5874e/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
+        "path": "/tmp/m113-proof-1362c16b176042d3a3557533cea5eace/NEXT90_M113_UI_GM_PREP_ROSTER_SURFACE.generated.json",
         "package_id": "next90-m113-ui-gm-prep-roster-surface",
         "status": "pass",
         "surface_routes": [
@@ -370,8 +367,8 @@
     },
     "install_update_support": {
       "status": "pass",
-      "matched_default_key_count": 234,
-      "required_key_count": 234,
+      "matched_default_key_count": 251,
+      "required_key_count": 251,
       "required_keys": [
         "desktop.crash.button.copy_summary",
         "desktop.crash.button.keep_local_only",
@@ -406,6 +403,8 @@
         "desktop.crash.status.unable_open_path",
         "desktop.crash.title",
         "desktop.devices.button.copy_claim_code",
+        "desktop.devices.button.reload",
+        "desktop.devices.button.use_latest_claim",
         "desktop.devices.context.access_claimed",
         "desktop.devices.context.access_grant",
         "desktop.devices.context.access_guest",
@@ -429,9 +428,14 @@
         "desktop.devices.intro.guest",
         "desktop.devices.intro.pending",
         "desktop.devices.section.claimed",
+        "desktop.devices.section.claimed_description",
         "desktop.devices.section.claims",
+        "desktop.devices.section.claims_description",
         "desktop.devices.section.current",
+        "desktop.devices.section.current_description",
         "desktop.devices.section.follow_through",
+        "desktop.devices.section.follow_through_description",
+        "desktop.devices.section.interface",
         "desktop.devices.status.claim_code_copied",
         "desktop.devices.status.current",
         "desktop.devices.status.no_claim_code",
@@ -454,9 +458,19 @@
         "desktop.install_link.heading",
         "desktop.install_link.more_tools",
         "desktop.install_link.next_step",
+        "desktop.install_link.preference.checkbox",
+        "desktop.install_link.preference.hidden_choice",
+        "desktop.install_link.preference.off",
+        "desktop.install_link.preference.on",
+        "desktop.install_link.preference.summary",
+        "desktop.install_link.preference.tip",
+        "desktop.install_link.preference.title",
+        "desktop.install_link.preference.visible_choice",
         "desktop.install_link.shipping_locales",
         "desktop.install_link.status.claim_code_required",
         "desktop.install_link.status.clipboard_unavailable",
+        "desktop.install_link.status.guided_tools_hidden",
+        "desktop.install_link.status.guided_tools_visible",
         "desktop.install_link.status.install_id_copied",
         "desktop.install_link.status.linking",
         "desktop.install_link.status.login_url_copied",

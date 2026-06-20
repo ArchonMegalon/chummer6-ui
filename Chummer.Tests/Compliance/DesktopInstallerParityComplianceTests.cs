@@ -67,7 +67,7 @@ public sealed class DesktopInstallerParityComplianceTests
     }
 
     [TestMethod]
-    public void Windows_desktop_installer_splash_uses_compact_non_clipping_layout()
+    public void Windows_desktop_installer_progress_and_completion_use_compact_non_clipping_layout()
     {
         string repoRoot = FindRepoRoot();
         string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");

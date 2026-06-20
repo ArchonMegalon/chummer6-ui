@@ -384,6 +384,12 @@ for spec in platform_specs:
     else:
         if gate_status not in PASS_STATUSES:
             row_blockers.append(f"{tuple_id} executable gate status is {gate_status or 'missing'} instead of pass.")
+            gate_reasons = gate_payload.get("reasons")
+            if isinstance(gate_reasons, list):
+                for gate_reason in gate_reasons:
+                    normalized_reason = str(gate_reason or "").strip()
+                    if normalized_reason:
+                        row_blockers.append(f"{tuple_id} executable gate reason: {normalized_reason}")
         if release_version and gate_version and gate_version != release_version:
             row_blockers.append(
                 f"{tuple_id} executable gate version {gate_version} does not match release channel version {release_version}."
@@ -498,3 +504,22 @@ payload = {
 
 receipt_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
+
+status="$(python3 - "$receipt_path" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+payload = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
+print(str(payload.get("status") or "").strip().lower())
+PY
+)"
+
+if [[ "$status" != "pass" ]]; then
+  echo "[M144] FAIL: cross-platform startup-smoke and executable-gate proof is blocked; see $receipt_path"
+  exit 1
+fi
+
+echo "[M144] PASS: cross-platform startup-smoke and executable-gate proof is current."
