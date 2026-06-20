@@ -844,6 +844,58 @@ public sealed class DesktopThemeManagerTests
             StringComparison.Ordinal));
     }
 
+    [TestMethod]
+    public void Avalonia_shell_control_resource_pairs_have_readable_contrast()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
+        (string Foreground, string Background, double MinimumRatio)[] requiredPairs =
+        [
+            ("TextControlForeground", "TextControlBackground", 4.5d),
+            ("TextControlForegroundPointerOver", "TextControlBackgroundPointerOver", 4.5d),
+            ("TextControlForegroundFocused", "TextControlBackgroundFocused", 4.5d),
+            ("TextControlForegroundDisabled", "TextControlBackgroundDisabled", 4.5d),
+            ("TextControlPlaceholderForeground", "TextControlBackground", 4.5d),
+            ("TextControlPlaceholderForegroundPointerOver", "TextControlBackgroundPointerOver", 4.5d),
+            ("TextControlPlaceholderForegroundFocused", "TextControlBackgroundFocused", 4.5d),
+            ("TextControlPlaceholderForegroundDisabled", "TextControlBackgroundDisabled", 4.5d),
+            ("TextControlSelectionForeground", "ChummerShellSelectionBrush", 4.5d),
+            ("ComboBoxForeground", "ComboBoxBackground", 4.5d),
+            ("ComboBoxForegroundPointerOver", "ComboBoxBackgroundPointerOver", 4.5d),
+            ("ComboBoxForegroundPressed", "ComboBoxBackgroundPressed", 4.5d),
+            ("ComboBoxForegroundDisabled", "ComboBoxBackgroundDisabled", 4.5d),
+            ("ComboBoxItemForeground", "ComboBoxItemBackground", 4.5d),
+            ("ComboBoxItemForegroundPointerOver", "ComboBoxItemBackgroundPointerOver", 4.5d),
+            ("ComboBoxItemForegroundPressed", "ComboBoxItemBackgroundPressed", 4.5d),
+            ("ComboBoxItemForegroundSelected", "ComboBoxItemBackgroundSelected", 4.5d),
+            ("ComboBoxItemForegroundDisabled", "ComboBoxItemBackgroundDisabled", 4.5d),
+            ("FlyoutPresenterForeground", "FlyoutPresenterBackground", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellWindowBackgroundBrush", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellSurfaceBrush", 4.5d),
+            ("ChummerShellForegroundBrush", "ChummerShellSurfaceAltBrush", 4.5d),
+            ("ChummerShellMutedForegroundBrush", "ChummerShellWindowBackgroundBrush", 4.5d),
+            ("ChummerShellTextMutedBrush", "ChummerShellSurfaceBrush", 4.5d),
+            ("ChummerShellSelectionForegroundBrush", "ChummerShellSelectionBrush", 4.5d),
+            ("ChummerShellAccentButtonForegroundBrush", "ChummerShellAccentButtonBrush", 4.5d)
+        ];
+
+        foreach (string themeName in new[] { "Light", "Dark" })
+        {
+            Dictionary<string, string> themeColors = ExtractThemeColors(appTheme, themeName);
+            foreach ((string foregroundKey, string backgroundKey, double minimumRatio) in requiredPairs)
+            {
+                Assert.IsTrue(themeColors.TryGetValue(foregroundKey, out string? foreground), $"{themeName} theme is missing {foregroundKey}.");
+                Assert.IsTrue(themeColors.TryGetValue(backgroundKey, out string? background), $"{themeName} theme is missing {backgroundKey}.");
+
+                double contrastRatio = GetContrastRatio(foreground, background);
+                Assert.IsTrue(
+                    contrastRatio >= minimumRatio,
+                    $"{themeName} {foregroundKey}/{backgroundKey} contrast is {contrastRatio:0.00}; expected at least {minimumRatio:0.0}. "
+                    + $"Foreground {foreground}, background {background}.");
+            }
+        }
+    }
+
     private static void AssertSelectorAfter(string source, string earlierSelector, string laterSelector, string message)
     {
         int earlierIndex = source.IndexOf(earlierSelector, StringComparison.Ordinal);
@@ -930,6 +982,62 @@ public sealed class DesktopThemeManagerTests
         {
             yield return (match.Groups["type"].Value, match.Groups["name"].Value);
         }
+    }
+
+    private static Dictionary<string, string> ExtractThemeColors(string appTheme, string themeName)
+    {
+        Regex resourceColorRegex = new(@"x:Key=""(?<key>[^""]+)""\s+Color=""(?<color>#[0-9A-Fa-f]{6,8})""", RegexOptions.Compiled);
+        string marker = $"<ResourceDictionary x:Key=\"{themeName}\">";
+        int start = appTheme.IndexOf(marker, StringComparison.Ordinal);
+        Assert.IsTrue(start >= 0, $"{themeName} theme dictionary must exist.");
+        int end = appTheme.IndexOf("</ResourceDictionary>", start, StringComparison.Ordinal);
+        Assert.IsTrue(end > start, $"{themeName} theme dictionary must close.");
+        string themeSource = appTheme[start..end];
+        return resourceColorRegex.Matches(themeSource)
+            .ToDictionary(
+                static match => match.Groups["key"].Value,
+                static match => match.Groups["color"].Value,
+                StringComparer.Ordinal);
+    }
+
+    private static double GetContrastRatio(string foregroundHex, string backgroundHex)
+    {
+        double foregroundLuminance = GetRelativeLuminance(foregroundHex);
+        double backgroundLuminance = GetRelativeLuminance(backgroundHex);
+        double lighter = Math.Max(foregroundLuminance, backgroundLuminance);
+        double darker = Math.Min(foregroundLuminance, backgroundLuminance);
+        return (lighter + 0.05d) / (darker + 0.05d);
+    }
+
+    private static double GetRelativeLuminance(string hexColor)
+    {
+        (int red, int green, int blue) = ParseRgb(hexColor);
+        return 0.2126d * ConvertChannel(red)
+               + 0.7152d * ConvertChannel(green)
+               + 0.0722d * ConvertChannel(blue);
+
+        static double ConvertChannel(int channel)
+        {
+            double normalized = channel / 255.0d;
+            return normalized <= 0.03928d
+                ? normalized / 12.92d
+                : Math.Pow((normalized + 0.055d) / 1.055d, 2.4d);
+        }
+    }
+
+    private static (int Red, int Green, int Blue) ParseRgb(string hexColor)
+    {
+        string normalized = hexColor.TrimStart('#');
+        if (normalized.Length == 8)
+        {
+            normalized = normalized[2..];
+        }
+
+        Assert.AreEqual(6, normalized.Length, $"Expected #RRGGBB or #AARRGGBB color, got {hexColor}.");
+        return (
+            Convert.ToInt32(normalized[0..2], 16),
+            Convert.ToInt32(normalized[2..4], 16),
+            Convert.ToInt32(normalized[4..6], 16));
     }
 
     private static HashSet<string> ExtractThemeKeys(string appTheme, string themeName, Regex resourceKeyRegex)

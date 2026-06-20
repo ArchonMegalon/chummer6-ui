@@ -55,7 +55,7 @@
           <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#64748B" />
           <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#64748B" />
           <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#64748B" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#94A3B8" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#475569" />
           <SolidColorBrush x:Key="ComboBoxBackground" Color="#FBFCFE" />
           <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#F5F8FC" />
           <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#EEF3F8" />
@@ -146,7 +146,7 @@
           <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#CBD5E1" />
           <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#CBD5E1" />
           <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#CBD5E1" />
-          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#64748B" />
+          <SolidColorBrush x:Key="TextControlPlaceholderForegroundDisabled" Color="#94A3B8" />
           <SolidColorBrush x:Key="ComboBoxBackground" Color="#111827" />
           <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#223149" />
           <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#0F172A" />
