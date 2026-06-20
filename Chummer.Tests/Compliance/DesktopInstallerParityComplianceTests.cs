@@ -91,11 +91,11 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "CompletePrompt(DialogResult.Cancel);");
         StringAssert.Contains(installerProgramText, "prompt.FormClosing += (_, _) =>");
         StringAssert.Contains(installerProgramText, "TraceInstaller(\"showing completion prompt title=\" + prompt.Text);");
-        StringAssert.Contains(installerProgramText, "prompt.Show();");
+        StringAssert.Contains(installerProgramText, "prompt.Shown += (_, _) =>");
         StringAssert.Contains(installerProgramText, "prompt.Activate();");
         StringAssert.Contains(installerProgramText, "prompt.BringToFront();");
-        StringAssert.Contains(installerProgramText, "while (!prompt.IsDisposed && prompt.Visible)");
-        StringAssert.Contains(installerProgramText, "TraceInstaller(\"completion prompt result=\" + prompt.DialogResult);");
+        StringAssert.Contains(installerProgramText, "DialogResult result = prompt.ShowDialog();");
+        StringAssert.Contains(installerProgramText, "TraceInstaller(\"completion prompt result=\" + result);");
         StringAssert.Contains(installerProgramText, "ShowInTaskbar = true,");
         StringAssert.Contains(installerProgramText, "RowCount = 5");
         StringAssert.Contains(installerProgramText, "Height = 32,");
@@ -112,6 +112,9 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, ".TakeLast(3)");
         StringAssert.Contains(installerProgramText, "_progressTrack.ClientSize.Width");
         StringAssert.Contains(installerProgramText, "Preparing copy claim");
+        StringAssert.Contains(installerProgramText, "BuildProgressDisplayStage(update.Stage)");
+        StringAssert.Contains(installerProgramText, "return \"Extracting application files\";");
+        StringAssert.Contains(installerProgramText, "return \"Copying application files\";");
         StringAssert.Contains(installerProgramText, "body.Controls.Add(hintLabel);");
         StringAssert.Contains(installerProgramText, "body.Controls.Add(heroRow);");
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(640, 300),", StringComparison.Ordinal));
@@ -141,7 +144,8 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("Unpacking the desktop, wiring shortcuts, and preparing first launch.", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ProgressTrackWidth", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("This usually takes less than a minute.", StringComparison.Ordinal));
-        Assert.IsFalse(installerProgramText.Contains("DialogResult result = prompt.ShowDialog();", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("prompt.Show();", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("while (!prompt.IsDisposed && prompt.Visible)", StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()

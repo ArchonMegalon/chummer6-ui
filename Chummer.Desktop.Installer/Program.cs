@@ -1544,18 +1544,16 @@ internal static class Program
             noteLabel.Visible = true;
         }
 
-        TraceInstaller("showing completion prompt title=" + prompt.Text);
-        prompt.Show();
-        prompt.Activate();
-        prompt.BringToFront();
-        while (!prompt.IsDisposed && prompt.Visible)
+        prompt.Shown += (_, _) =>
         {
-            Application.DoEvents();
-            Thread.Sleep(50);
-        }
+            prompt.Activate();
+            prompt.BringToFront();
+        };
 
-        TraceInstaller("completion prompt result=" + prompt.DialogResult);
-        return prompt.DialogResult == DialogResult.None ? DialogResult.Cancel : prompt.DialogResult;
+        TraceInstaller("showing completion prompt title=" + prompt.Text);
+        DialogResult result = prompt.ShowDialog();
+        TraceInstaller("completion prompt result=" + result);
+        return result == DialogResult.None ? DialogResult.Cancel : result;
     }
 
     private static void LaunchInstalledApp(
@@ -2325,7 +2323,7 @@ internal static class Program
         {
             int? total = update.Total is > 0 ? update.Total : null;
             int? completed = update.Completed;
-            string statusText = update.Stage;
+            string statusText = BuildProgressDisplayStage(update.Stage);
             if (total.HasValue && completed.HasValue)
             {
                 statusText = $"{statusText} ({Math.Min(completed.Value, total.Value)}/{total.Value})";
@@ -2348,6 +2346,23 @@ internal static class Program
             int pulsingTrackWidth = Math.Max(1, _progressTrack.ClientSize.Width);
             _progressFill.Width = Math.Min(pulsingTrackWidth, pulse);
             _progressValueLabel.Text = "Preparing…";
+        }
+
+        private static string BuildProgressDisplayStage(string stage)
+        {
+            if (stage.StartsWith("Extracting ", StringComparison.OrdinalIgnoreCase)
+                && stage.Contains(" MB of ", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Extracting application files";
+            }
+
+            if (stage.StartsWith("Copying ", StringComparison.OrdinalIgnoreCase)
+                && stage.Contains(" MB of ", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Copying application files";
+            }
+
+            return stage;
         }
     }
 }
