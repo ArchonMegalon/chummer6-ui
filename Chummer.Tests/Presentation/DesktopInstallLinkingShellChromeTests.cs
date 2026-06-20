@@ -203,12 +203,13 @@ public sealed class DesktopInstallLinkingShellChromeTests
             localizationSource.Contains("Keep the interface manual", StringComparison.Ordinal),
             "The first-run preference should describe the user-visible result, not internal manual mode.");
         StringAssert.Contains(localizationSource, "desktop.devices.section.interface");
-        StringAssert.Contains(localizationSource, "Account and Devices");
+        StringAssert.Contains(localizationSource, "Your Copy");
         StringAssert.Contains(localizationSource, "desktop.devices.section.current_description");
-        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claimed\"] = \"Linked devices\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claimed\"] = \"Linked copies\"");
         StringAssert.Contains(localizationSource, "[\"desktop.devices.section.follow_through\"] = \"Support and recovery\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claims_description\"] = \"Claim links and recent downloads for this copy.\"");
-        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Refresh account status\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.section.claims_description\"] = \"Available claim links for this copy.\"");
+        StringAssert.Contains(localizationSource, "[\"desktop.devices.button.reload\"] = \"Check status\"");
+        StringAssert.Contains(localizationSource, "Deine Kopie");
         Assert.IsFalse(
             localizationSource.Contains("[\"desktop.devices.button.reload\"] = \"Check again\"", StringComparison.Ordinal),
             "Devices and Access should say what is being refreshed instead of using a vague button label.");
