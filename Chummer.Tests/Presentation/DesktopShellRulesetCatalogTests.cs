@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Bunit;
@@ -44,6 +45,73 @@ public sealed class DesktopShellRulesetCatalogTests
         Assert.IsFalse(legacyText.Contains("@page \"/\"", StringComparison.Ordinal));
         Assert.IsFalse(legacyText.Contains("@page \"/blazor\"", StringComparison.Ordinal));
         StringAssert.Contains(legacyText, "@page \"/legacy-console\"");
+    }
+
+    [DataTestMethod]
+    [DataRow(RulesetDefaults.Sr4)]
+    [DataRow(RulesetDefaults.Sr5)]
+    [DataRow(RulesetDefaults.Sr6)]
+    public void Ruleset_user_facing_copy_does_not_leak_internal_process_language(string rulesetId)
+    {
+        string[] samples =
+        [
+            RulesetUiDirectiveCatalog.BuildComplianceRulesetSummary(rulesetId, null),
+            RulesetUiDirectiveCatalog.BuildHomeSpotlight(rulesetId),
+            RulesetUiDirectiveCatalog.BuildWorkspaceStripTitle(rulesetId, "workspace-1", hasSavedWorkspace: true),
+            RulesetUiDirectiveCatalog.BuildImportHint(rulesetId),
+            RulesetUiDirectiveCatalog.BuildResultPostureHint(rulesetId),
+            RulesetUiDirectiveCatalog.BuildResultReadyNotice(rulesetId),
+            RulesetUiDirectiveCatalog.FormatNavigationTabLabel(rulesetId, "tab-rules", "Rules & Validation"),
+            RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(rulesetId, "tab-info.validate", null, "Validate"),
+            RulesetUiDirectiveCatalog.FormatWorkspaceActionLabel(rulesetId, "tab-info.rules", null, "Rules & Provider"),
+            RulesetUiDirectiveCatalog.BuildSectionNotice(rulesetId, "rules", "tab-info.validate", null),
+            RulesetUiDirectiveCatalog.BuildUngroundedRulePosture(rulesetId),
+            RulesetUiDirectiveCatalog.BuildPinnedRuntimeRulePosture(rulesetId, "runtime-fingerprint"),
+            RulesetUiDirectiveCatalog.BuildGroundedRulePosture(rulesetId, rulesetId, "default", null, "runtime-fingerprint", "linked"),
+            RulesetUiDirectiveCatalog.FormatDialogNotice(rulesetId, "Validation proof is pending."),
+            RulesetUiDirectiveCatalog.FormatWorkflowSurfaceLabel(rulesetId, "tab-info.validate", "Validation")
+        ];
+
+        samples = samples
+            .Concat(RulesetUiDirectiveCatalog.BuildBuildExplainWatchouts(rulesetId))
+            .ToArray();
+
+        string[] blockedFragments =
+        [
+            "proof",
+            "evidence",
+            "truth",
+            "provider",
+            "artifact",
+            "posture",
+            "lane",
+            "rail",
+            "validation",
+            "verification",
+            "audit",
+            "generated"
+        ];
+
+        foreach (string sample in samples)
+        {
+            foreach (string blockedFragment in blockedFragments)
+            {
+                Assert.IsFalse(
+                    ContainsBlockedTerm(sample, blockedFragment),
+                    $"Ruleset copy for {rulesetId} leaked '{blockedFragment}' in '{sample}'.");
+            }
+        }
+    }
+
+    private static bool ContainsBlockedTerm(string value, string blockedFragment)
+    {
+        if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(blockedFragment))
+        {
+            return false;
+        }
+
+        string pattern = $@"(?<![\p{{L}}\p{{N}}]){Regex.Escape(blockedFragment)}(?![\p{{L}}\p{{N}}])";
+        return Regex.IsMatch(value, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
     [DataTestMethod]

@@ -138,11 +138,11 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId ?? activeRuntime?.RulesetId);
         string runtimeQualifier = BuildRuntimeQualifier(directive, activeRuntime);
-        return $"{directive.RulesetId} ({directive.PostureLabel}; {directive.FileExtension}; {runtimeQualifier})";
+        return Clean($"{directive.RulesetId} ({directive.PostureLabel}; {directive.FileExtension}; {runtimeQualifier})");
     }
 
     public static string BuildHomeSpotlight(string? rulesetId)
-        => Resolve(rulesetId).HomeSpotlight;
+        => Clean(Resolve(rulesetId).HomeSpotlight);
 
     public static string BuildSummaryHeading(string? rulesetId)
     {
@@ -208,7 +208,7 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId);
         string saveState = hasSavedWorkspace ? "saved" : "unsaved";
-        return $"{directive.DisplayName} {directive.PostureLabel} workspace {workspaceId} is {saveState}.";
+        return Clean($"{directive.DisplayName} {directive.PostureLabel} workspace {workspaceId} is {saveState}.");
     }
 
     public static string BuildNavigationTabsHeading(string? rulesetId)
@@ -274,8 +274,8 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId);
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Primary format: .chum4 with parity-safe XML fallback.",
-            RulesetDefaults.Sr5 => "Primary format: .chum5 with XML fallback for governed restores.",
+            RulesetDefaults.Sr4 => "Primary format: .chum4 with XML fallback.",
+            RulesetDefaults.Sr5 => "Primary format: .chum5 with XML fallback for restores.",
             RulesetDefaults.Sr6 => "Primary format: .chum6 with preview-safe XML fallback.",
             _ => "Accept native ruleset files or raw XML when the active ruleset is still unresolved."
         };
@@ -356,25 +356,25 @@ public static class RulesetUiDirectiveCatalog
     public static string BuildResultPostureHint(string? rulesetId)
     {
         RulesetUiDirective directive = Resolve(rulesetId);
-        return directive.RulesetId switch
+        return Clean(directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "Shadowrun 4 stays in import-tools mode; keep codec and parity evidence explicit.",
-            RulesetDefaults.Sr5 => "Shadowrun 5 stays on the main desktop editor; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "Shadowrun 6 stays in setup-tools mode; keep starter-kit and runtime honesty explicit.",
-            _ => "Shared shell posture is still unresolved; keep runtime and ruleset evidence explicit."
-        };
+            RulesetDefaults.Sr4 => "Shadowrun 4 starts with import tools and character review.",
+            RulesetDefaults.Sr5 => "Shadowrun 5 uses the main desktop editor.",
+            RulesetDefaults.Sr6 => "Shadowrun 6 starts with guided setup tools.",
+            _ => "Choose a ruleset before relying on rules or export details."
+        });
     }
 
     public static string BuildResultReadyNotice(string? rulesetId)
     {
         RulesetUiDirective directive = Resolve(rulesetId);
-        return directive.RulesetId switch
+        return Clean(directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 => "SR4 import tools are ready; keep import and parity evidence explicit.",
-            RulesetDefaults.Sr5 => "SR5 editor is ready; keep provider truth and .chum5 continuity explicit.",
-            RulesetDefaults.Sr6 => "SR6 setup tools are ready; keep runtime honesty explicit.",
+            RulesetDefaults.Sr4 => "SR4 import tools are ready.",
+            RulesetDefaults.Sr5 => "SR5 editor is ready.",
+            RulesetDefaults.Sr6 => "SR6 setup tools are ready.",
             _ => "Ready."
-        };
+        });
     }
 
     public static string FormatNavigationTabLabel(string? rulesetId, string? tabId, string fallbackLabel)
@@ -392,7 +392,7 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-create", StringComparison.Ordinal) => "Character",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Runner",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear & Ware",
-            RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules & Validation",
+            RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-calendar", StringComparison.Ordinal) => "Career Log",
             RulesetDefaults.Sr5 when string.Equals(normalizedTabId, "tab-improvements", StringComparison.Ordinal) => "Career Track",
 
@@ -400,7 +400,7 @@ public static class RulesetUiDirectiveCatalog
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-info", StringComparison.Ordinal) => "Character",
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-gear", StringComparison.Ordinal) => "Gear",
             RulesetDefaults.Sr6 when string.Equals(normalizedTabId, "tab-rules", StringComparison.Ordinal) => "Rules",
-            _ => fallbackLabel
+            _ => Clean(fallbackLabel)
         };
     }
 
@@ -431,26 +431,26 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Import",
             RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
-            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Parity Check",
+            RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Character Review",
             RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-info.metadata", StringComparison.Ordinal) => "Edit Metadata",
             RulesetDefaults.Sr4 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr4 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
 
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Create Character",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
-            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Validate & Rebind",
-            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.rules", StringComparison.Ordinal) => "Rules & Provider",
+            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Review Character",
+            RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.build", StringComparison.Ordinal) => "Build Plan",
             RulesetDefaults.Sr5 when string.Equals(normalizedActionId, "tab-info.progress", StringComparison.Ordinal) => "Career Track",
             RulesetDefaults.Sr5 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
 
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-create.intake", StringComparison.Ordinal) => "Create Character",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.summary", StringComparison.Ordinal) => "Character Summary",
-            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Safety Check",
+            RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.validate", StringComparison.Ordinal) => "Review Character",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-info.profile", StringComparison.Ordinal) => "Character Card",
             RulesetDefaults.Sr6 when string.Equals(normalizedActionId, "tab-rules.rules", StringComparison.Ordinal) => "Rules",
             RulesetDefaults.Sr6 when string.Equals(normalizedTargetId, "inventory", StringComparison.Ordinal) => "Gear",
-            _ => fallbackLabel
+            _ => Clean(fallbackLabel)
         };
     }
 
@@ -463,19 +463,19 @@ public static class RulesetUiDirectiveCatalog
         RulesetUiDirective directive = Resolve(rulesetId ?? activeRuntime?.RulesetId);
         string runtimeQualifier = BuildRuntimeQualifier(directive, activeRuntime);
         string sectionSummary = ResolveSectionSummary(directive, sectionId, actionId);
-        return $"Ruleset posture: {directive.DisplayName} is in {directive.PostureLabel} mode. {sectionSummary} Runtime posture: {runtimeQualifier}.";
+        return Clean($"{directive.DisplayName}: {sectionSummary} Runtime: {runtimeQualifier}.");
     }
 
     public static string BuildUngroundedRulePosture(string? rulesetId)
     {
         RulesetUiDirective directive = Resolve(rulesetId);
-        return $"Rule posture: {directive.DisplayName} · {directive.PostureLabel} · {directive.FileExtension} · {directive.UngroundedHomeSummary}";
+        return Clean($"{directive.DisplayName} · {directive.FileExtension} · {directive.UngroundedHomeSummary}");
     }
 
     public static string BuildPinnedRuntimeRulePosture(string? rulesetId, string runtimeFingerprint)
     {
         RulesetUiDirective directive = Resolve(rulesetId);
-        return $"Rule posture: {directive.DisplayName} · {directive.PostureLabel} · {directive.FileExtension} · {directive.PinnedRuntimeHomeSummary} · fingerprint {runtimeFingerprint}.";
+        return Clean($"{directive.DisplayName} · {directive.FileExtension} · {directive.PinnedRuntimeHomeSummary} · fingerprint {runtimeFingerprint}.");
     }
 
     public static string BuildGroundedRulePosture(
@@ -488,13 +488,13 @@ public static class RulesetUiDirectiveCatalog
     {
         RulesetUiDirective directive = Resolve(rulesetId ?? gameEdition);
         string resolvedSettings = string.IsNullOrWhiteSpace(settings) ? "default rules profile" : settings;
-        string resolvedGameplayMode = string.IsNullOrWhiteSpace(gameplayMode) ? "default gameplay posture" : gameplayMode;
-        return $"Rule posture: {directive.DisplayName} · {directive.PostureLabel} · {resolvedSettings} · {resolvedGameplayMode} · {directive.FileExtension} · {directive.GroundedHomeSummary} · fingerprint {runtimeFingerprint} · install {installState}.";
+        string resolvedGameplayMode = string.IsNullOrWhiteSpace(gameplayMode) ? "default gameplay settings" : gameplayMode;
+        return Clean($"{directive.DisplayName} · {resolvedSettings} · {resolvedGameplayMode} · {directive.FileExtension} · {directive.GroundedHomeSummary} · fingerprint {runtimeFingerprint} · install {installState}.");
     }
 
     public static IReadOnlyList<string> BuildBuildExplainWatchouts(string? rulesetId)
     {
-        return Resolve(rulesetId).BuildExplainWatchouts;
+        return PlayerFacingCopyHumanizer.CleanLines(Resolve(rulesetId).BuildExplainWatchouts);
     }
 
     public static string BuildWorkspaceResumeSummary(
@@ -508,7 +508,7 @@ public static class RulesetUiDirectiveCatalog
         string metatype = string.IsNullOrWhiteSpace(summary.Metatype) ? "metatype unresolved" : summary.Metatype;
         string buildMethod = string.IsNullOrWhiteSpace(summary.BuildMethod) ? "build method unresolved" : summary.BuildMethod;
         string updatedAt = lastUpdatedUtc.ToUniversalTime().ToString("yyyy-MM-dd HH:mm");
-        return $"{directive.DisplayName} resume: {name}{alias} · {metatype} · {buildMethod} · {directive.ResumeLaneSummary} Updated {updatedAt} UTC.";
+        return Clean($"{directive.DisplayName} resume: {name}{alias} · {metatype} · {buildMethod} · {directive.ResumeLaneSummary} Updated {updatedAt} UTC.");
     }
 
     public static string BuildWorkspaceNavigatorLabel(string? rulesetId, string? name, string? alias, bool hasSavedWorkspace)
@@ -517,7 +517,7 @@ public static class RulesetUiDirectiveCatalog
         string resolvedName = string.IsNullOrWhiteSpace(name) ? "Unnamed runner" : name;
         string resolvedAlias = string.IsNullOrWhiteSpace(alias) ? string.Empty : $" ({alias})";
         string saveState = hasSavedWorkspace ? "saved" : "unsaved";
-        return $"{resolvedName}{resolvedAlias} · {directive.DisplayName} · {directive.PostureLabel} · {saveState}";
+        return Clean($"{resolvedName}{resolvedAlias} · {directive.DisplayName} · {directive.PostureLabel} · {saveState}");
     }
 
     public static string BuildOpenWorkspaceActionLabel(string? rulesetId, string fallbackLabel)
@@ -553,10 +553,10 @@ public static class RulesetUiDirectiveCatalog
 
         return Resolve(rulesetId).RulesetId switch
         {
-            RulesetDefaults.Sr4 => $"SR4 import tools: {notice}",
-            RulesetDefaults.Sr5 => $"SR5 editor: {notice}",
-            RulesetDefaults.Sr6 => $"SR6 setup tools: {notice}",
-            _ => notice
+            RulesetDefaults.Sr4 => Clean($"SR4 import tools: {notice}"),
+            RulesetDefaults.Sr5 => Clean($"SR5 editor: {notice}"),
+            RulesetDefaults.Sr6 => Clean($"SR6 setup tools: {notice}"),
+            _ => Clean(notice)
         };
     }
 
@@ -564,7 +564,7 @@ public static class RulesetUiDirectiveCatalog
     {
         if (HasRulesetSpecificLabel(fallbackLabel))
         {
-            return fallbackLabel;
+            return Clean(fallbackLabel);
         }
 
         string normalizedActionId = RulesetDefaults.NormalizeOptional(actionId) ?? string.Empty;
@@ -572,15 +572,15 @@ public static class RulesetUiDirectiveCatalog
 
         return directive.RulesetId switch
         {
-            RulesetDefaults.Sr4 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Parity Check",
+            RulesetDefaults.Sr4 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Character Review",
             RulesetDefaults.Sr4 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
 
-            RulesetDefaults.Sr5 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Validation",
+            RulesetDefaults.Sr5 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Review",
             RulesetDefaults.Sr5 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
 
-            RulesetDefaults.Sr6 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Validation",
+            RulesetDefaults.Sr6 when normalizedActionId.Contains("validate", StringComparison.Ordinal) => "Review",
             RulesetDefaults.Sr6 when normalizedActionId.Contains("summary", StringComparison.Ordinal) => "Character Summary",
-            _ => fallbackLabel
+            _ => Clean(fallbackLabel)
         };
     }
 
@@ -616,8 +616,8 @@ public static class RulesetUiDirectiveCatalog
                 ? "preview runtime attention required"
                 : "import-tools runtime remains parity-gated",
             RulesetDefaults.Sr5 => hasWarnings
-                ? "runtime/provider attention required"
-                : "provider truth remains explicit",
+                ? "runtime attention required"
+                : "runtime service is available",
             RulesetDefaults.Sr6 => hasWarnings
                 ? "runtime warnings remain active"
                 : "setup-tools runtime honesty remains visible",
@@ -626,6 +626,9 @@ public static class RulesetUiDirectiveCatalog
                 : "ruleset still unresolved"
         };
     }
+
+    private static string Clean(string value)
+        => PlayerFacingCopyHumanizer.Clean(value);
 
     private static bool HasRulesetSpecificLabel(string? label)
     {

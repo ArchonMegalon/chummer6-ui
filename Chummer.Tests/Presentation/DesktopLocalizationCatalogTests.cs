@@ -1,5 +1,6 @@
 using Chummer.Presentation.Overview;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Text.RegularExpressions;
 
 namespace Chummer.Tests.Presentation;
 
@@ -214,9 +215,17 @@ public class DesktopLocalizationCatalogTests
             "proof",
             "evidence",
             "truth",
+            "provider",
+            "artifact",
+            "posture",
+            "lane",
+            "rail",
             "verification",
+            "validation",
+            "audit",
             "smoke",
             "synthetic",
+            "generated",
             "Beleg",
             "Wahrheit",
             "Verifikation"
@@ -230,10 +239,21 @@ public class DesktopLocalizationCatalogTests
                 foreach (string blockedFragment in blockedFragments)
                 {
                     Assert.IsFalse(
-                        localizedValue.Contains(blockedFragment, StringComparison.OrdinalIgnoreCase),
+                        ContainsBlockedTerm(localizedValue, blockedFragment),
                         $"Expected minimal human-facing copy for {key} / {languageCode}, but found '{blockedFragment}' in '{localizedValue}'.");
                 }
             }
         }
+    }
+
+    private static bool ContainsBlockedTerm(string value, string blockedFragment)
+    {
+        if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(blockedFragment))
+        {
+            return false;
+        }
+
+        string pattern = $@"(?<![\p{{L}}\p{{N}}]){Regex.Escape(blockedFragment)}(?![\p{{L}}\p{{N}}])";
+        return Regex.IsMatch(value, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 }

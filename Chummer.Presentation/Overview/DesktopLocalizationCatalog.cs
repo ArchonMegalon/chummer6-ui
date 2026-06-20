@@ -2649,12 +2649,13 @@ public static class DesktopLocalizationCatalog
         string normalizedLanguage = NormalizeOrDefault(languageCode);
         if (TryGetLocalizedValue(normalizedLanguage, key, out string? value))
         {
-            return value!;
+            return PlayerFacingCopyHumanizer.Clean(value);
         }
 
         if (TryGetLocalizedValue(DefaultLanguage, key, out value))
         {
-            return normalizedLanguage == DefaultLanguage ? value! : string.Concat(value!, EnglishFallbackMarker, "[", normalizedLanguage, "]");
+            string cleaned = PlayerFacingCopyHumanizer.Clean(value);
+            return normalizedLanguage == DefaultLanguage ? cleaned : string.Concat(cleaned, EnglishFallbackMarker, "[", normalizedLanguage, "]");
         }
 
         throw new KeyNotFoundException($"desktop_localization_key_missing:{key}");
@@ -2674,7 +2675,7 @@ public static class DesktopLocalizationCatalog
     }
 
     public static string GetRequiredFormattedString(string key, string? languageCode, params object[] values)
-        => string.Format(GetRequiredString(key, languageCode), values);
+        => PlayerFacingCopyHumanizer.Clean(string.Format(GetRequiredString(key, languageCode), values));
 
     public static IReadOnlyList<string> RequiredTrustSurfaceKeys()
         => DefaultTrustSurfaceStrings.Keys.OrderBy(static key => key, StringComparer.Ordinal).ToArray();
