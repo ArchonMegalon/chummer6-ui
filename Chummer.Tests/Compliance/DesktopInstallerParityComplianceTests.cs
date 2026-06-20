@@ -113,6 +113,8 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "_progressTrack.ClientSize.Width");
         StringAssert.Contains(installerProgramText, "Preparing copy claim");
         StringAssert.Contains(installerProgramText, "BuildProgressDisplayStage(update.Stage)");
+        StringAssert.Contains(installerProgramText, "ShouldShowInlineCount(total.Value)");
+        StringAssert.Contains(installerProgramText, "return total < ProgressUnitScale || total % ProgressUnitScale != 0;");
         StringAssert.Contains(installerProgramText, "return \"Extracting application files\";");
         StringAssert.Contains(installerProgramText, "return \"Copying application files\";");
         StringAssert.Contains(installerProgramText, "body.Controls.Add(hintLabel);");
@@ -146,6 +148,9 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("This usually takes less than a minute.", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("prompt.Show();", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("while (!prompt.IsDisposed && prompt.Visible)", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains(
+            "if (total.HasValue && completed.HasValue)\n            {",
+            StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()

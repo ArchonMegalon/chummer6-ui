@@ -2324,7 +2324,7 @@ internal static class Program
             int? total = update.Total is > 0 ? update.Total : null;
             int? completed = update.Completed;
             string statusText = BuildProgressDisplayStage(update.Stage);
-            if (total.HasValue && completed.HasValue)
+            if (total.HasValue && completed.HasValue && ShouldShowInlineCount(total.Value))
             {
                 statusText = $"{statusText} ({Math.Min(completed.Value, total.Value)}/{total.Value})";
             }
@@ -2363,6 +2363,16 @@ internal static class Program
             }
 
             return stage;
+        }
+
+        private static bool ShouldShowInlineCount(int total)
+        {
+            if (total <= 0)
+            {
+                return false;
+            }
+
+            return total < ProgressUnitScale || total % ProgressUnitScale != 0;
         }
     }
 }
