@@ -1353,6 +1353,12 @@ internal static class Program
             AutoScaleMode = AutoScaleMode.Dpi
         };
 
+        void CompletePrompt(DialogResult result)
+        {
+            prompt.DialogResult = result;
+            prompt.Close();
+        }
+
         Panel accentBar = new()
         {
             Dock = DockStyle.Top,
@@ -1448,7 +1454,7 @@ internal static class Program
         primaryButton.FlatAppearance.BorderSize = 0;
         primaryButton.Click += (_, _) =>
         {
-            prompt.DialogResult = DialogResult.Yes;
+            CompletePrompt(DialogResult.Yes);
         };
 
         Button secondaryButton = new()
@@ -1470,7 +1476,7 @@ internal static class Program
         secondaryButton.FlatAppearance.BorderColor = Color.FromArgb(55, 66, 84);
         secondaryButton.Click += (_, _) =>
         {
-            prompt.DialogResult = DialogResult.No;
+            CompletePrompt(DialogResult.No);
         };
 
         Button cancelButton = new()
@@ -1493,7 +1499,7 @@ internal static class Program
         cancelButton.FlatAppearance.BorderColor = Color.FromArgb(55, 66, 84);
         cancelButton.Click += (_, _) =>
         {
-            prompt.DialogResult = DialogResult.Cancel;
+            CompletePrompt(DialogResult.Cancel);
         };
 
         actions.Controls.Add(cancelButton);
@@ -1525,14 +1531,31 @@ internal static class Program
         prompt.AcceptButton = primaryButton;
         prompt.CancelButton = options.CancelButtonText is null ? secondaryButton : cancelButton;
         prompt.StartPosition = FormStartPosition.CenterScreen;
+        prompt.FormClosing += (_, _) =>
+        {
+            if (prompt.DialogResult == DialogResult.None)
+            {
+                prompt.DialogResult = DialogResult.Cancel;
+            }
+        };
 
         if (!string.IsNullOrWhiteSpace(options.PrimaryFootnote))
         {
             noteLabel.Visible = true;
         }
 
-        DialogResult result = prompt.ShowDialog();
-        return result;
+        TraceInstaller("showing completion prompt title=" + prompt.Text);
+        prompt.Show();
+        prompt.Activate();
+        prompt.BringToFront();
+        while (!prompt.IsDisposed && prompt.Visible)
+        {
+            Application.DoEvents();
+            Thread.Sleep(50);
+        }
+
+        TraceInstaller("completion prompt result=" + prompt.DialogResult);
+        return prompt.DialogResult == DialogResult.None ? DialogResult.Cancel : prompt.DialogResult;
     }
 
     private static void LaunchInstalledApp(

@@ -85,6 +85,17 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "Name = \"ChummerInstallerCompletionDialog\",");
         StringAssert.Contains(installerProgramText, "AccessibleName = $\"{displayName} install complete\",");
         StringAssert.Contains(installerProgramText, "Text = $\"{displayName} Installer - Install Complete\",");
+        StringAssert.Contains(installerProgramText, "void CompletePrompt(DialogResult result)");
+        StringAssert.Contains(installerProgramText, "CompletePrompt(DialogResult.Yes);");
+        StringAssert.Contains(installerProgramText, "CompletePrompt(DialogResult.No);");
+        StringAssert.Contains(installerProgramText, "CompletePrompt(DialogResult.Cancel);");
+        StringAssert.Contains(installerProgramText, "prompt.FormClosing += (_, _) =>");
+        StringAssert.Contains(installerProgramText, "TraceInstaller(\"showing completion prompt title=\" + prompt.Text);");
+        StringAssert.Contains(installerProgramText, "prompt.Show();");
+        StringAssert.Contains(installerProgramText, "prompt.Activate();");
+        StringAssert.Contains(installerProgramText, "prompt.BringToFront();");
+        StringAssert.Contains(installerProgramText, "while (!prompt.IsDisposed && prompt.Visible)");
+        StringAssert.Contains(installerProgramText, "TraceInstaller(\"completion prompt result=\" + prompt.DialogResult);");
         StringAssert.Contains(installerProgramText, "ShowInTaskbar = true,");
         StringAssert.Contains(installerProgramText, "RowCount = 5");
         StringAssert.Contains(installerProgramText, "Height = 34,");
@@ -126,6 +137,7 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("Unpacking the desktop, wiring shortcuts, and preparing first launch.", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ProgressTrackWidth", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("This usually takes less than a minute.", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("DialogResult result = prompt.ShowDialog();", StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()
