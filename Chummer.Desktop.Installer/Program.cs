@@ -25,6 +25,7 @@ internal static class Program
     private const string PendingClaimCodeFileName = "pending-claim-code.txt";
     private const string ChummerIconFileName = "chummer.ico";
     private const string ChummerProtocolScheme = "chummer";
+    private const string InstallerTraceFileName = "chummer-desktop-installer-progress.log";
 
     [STAThread]
     private static int Main(string[] args)
@@ -56,6 +57,8 @@ internal static class Program
 
         try
         {
+            ResetInstallerTrace();
+            TraceInstaller($"start args={FormatTraceArguments(args)}");
             InstallerMetadata metadata = InstallerMetadata.Load();
             string? payloadPathOverride = ResolvePayloadPathOverride(args);
             string? claimCode = ResolveClaimCode(args);
@@ -77,6 +80,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
+            TraceInstaller("failed " + ex);
             if (smokeInstall)
             {
                 Console.Error.WriteLine(ex.ToString());
@@ -105,7 +109,11 @@ internal static class Program
         splash.Show();
         Application.DoEvents();
 
-        IProgress<InstallProgressUpdate> progress = new Progress<InstallProgressUpdate>(splash.ApplyProgress);
+        IProgress<InstallProgressUpdate> progress = new Progress<InstallProgressUpdate>(update =>
+        {
+            TraceProgress(update);
+            splash.ApplyProgress(update);
+        });
         progress.Report(new InstallProgressUpdate("Preparing installer"));
 
         Stopwatch installStopwatch = Stopwatch.StartNew();
@@ -202,7 +210,77 @@ internal static class Program
         progress?.Report(new InstallProgressUpdate("Registering Chummer link handler"));
         RegisterUrlProtocol(metadata);
         progress?.Report(new InstallProgressUpdate("Install complete"));
+        TraceInstaller("install complete target=" + targetDir);
         return targetDir;
+    }
+
+    private static string InstallerTracePath
+        => Path.Combine(Path.GetTempPath(), InstallerTraceFileName);
+
+    private static void ResetInstallerTrace()
+    {
+        try
+        {
+            File.WriteAllText(
+                InstallerTracePath,
+                $"# Chummer installer trace {DateTimeOffset.UtcNow:O}{Environment.NewLine}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Chummer installer could not reset trace: {ex.Message}");
+        }
+    }
+
+    private static void TraceInstaller(string message)
+    {
+        try
+        {
+            File.AppendAllText(
+                InstallerTracePath,
+                $"{DateTimeOffset.UtcNow:O} {message}{Environment.NewLine}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Chummer installer trace failed: {ex.Message}");
+        }
+    }
+
+    private static string FormatTraceArguments(IReadOnlyList<string> args)
+    {
+        string[] redacted = new string[args.Count];
+        bool redactNext = false;
+        for (int i = 0; i < args.Count; i++)
+        {
+            string value = args[i];
+            if (redactNext)
+            {
+                redacted[i] = "<redacted>";
+                redactNext = false;
+                continue;
+            }
+
+            if (string.Equals(value, ClaimCodeSwitch, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, InstallLinkCallbackSwitch, StringComparison.OrdinalIgnoreCase))
+            {
+                redacted[i] = value;
+                redactNext = true;
+                continue;
+            }
+
+            redacted[i] = value.StartsWith("chummer://", StringComparison.OrdinalIgnoreCase)
+                || value.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase)
+                    ? "<redacted>"
+                    : value;
+        }
+
+        return string.Join(' ', redacted);
+    }
+
+    private static void TraceProgress(InstallProgressUpdate update)
+    {
+        string completed = update.Completed?.ToString() ?? "";
+        string total = update.Total?.ToString() ?? "";
+        TraceInstaller($"progress stage=\"{update.Stage}\" completed={completed} total={total}");
     }
 
     private static int Uninstall(InstallerMetadata metadata)
@@ -308,26 +386,15 @@ internal static class Program
         IProgress<InstallProgressUpdate>? progress)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
-        string payloadZipPath = Path.Combine(tempExtractDir, "payload.zip");
 
         progress?.Report(new InstallProgressUpdate("Opening bundled desktop payload"));
         using Stream payload = OpenPayloadStream(assembly, payloadPathOverride);
+        Stream archivePayload = PreparePayloadArchiveStream(payload, tempExtractDir, progress);
+        bool leaveArchivePayloadOpen = ReferenceEquals(archivePayload, payload);
 
-        progress?.Report(new InstallProgressUpdate("Caching packaged files"));
-        using (FileStream zipFile = File.Create(payloadZipPath))
+        using (ZipArchive archive = new(archivePayload, ZipArchiveMode.Read, leaveArchivePayloadOpen))
         {
-            CopyStreamWithProgress(
-                payload,
-                zipFile,
-                TryGetStreamLength(payload),
-                bytesCopied => progress?.Report(new InstallProgressUpdate(
-                    $"Caching packaged files ({FormatBytes(bytesCopied)} copied)",
-                    ToProgressUnits(bytesCopied, TryGetStreamLength(payload)),
-                    ProgressUnitScale)));
-        }
-
-        using (ZipArchive archive = ZipFile.OpenRead(payloadZipPath))
-        {
+            TraceInstaller($"extract archive entries={archive.Entries.Count}");
             string extractRoot = EnsureTrailingDirectorySeparator(Path.GetFullPath(tempExtractDir));
             ZipArchiveEntry[] fileEntries = archive.Entries
                 .Where(static entry => !string.IsNullOrWhiteSpace(entry.Name))
@@ -379,7 +446,44 @@ internal static class Program
             }
         }
 
-        File.Delete(payloadZipPath);
+        TraceInstaller("extract payload complete");
+    }
+
+    private static Stream PreparePayloadArchiveStream(
+        Stream payload,
+        string tempExtractDir,
+        IProgress<InstallProgressUpdate>? progress)
+    {
+        long? payloadLength = TryGetStreamLength(payload);
+        TraceInstaller($"payload stream canSeek={payload.CanSeek} length={payloadLength?.ToString() ?? "unknown"}");
+        if (payload.CanSeek)
+        {
+            payload.Position = 0;
+            progress?.Report(new InstallProgressUpdate("Reading packaged files"));
+            return payload;
+        }
+
+        string payloadZipPath = Path.Combine(tempExtractDir, "payload.zip");
+        progress?.Report(new InstallProgressUpdate("Caching packaged files"));
+        FileStream zipFile = File.Create(payloadZipPath);
+        try
+        {
+            CopyStreamWithProgress(
+                payload,
+                zipFile,
+                payloadLength,
+                bytesCopied => progress?.Report(new InstallProgressUpdate(
+                    $"Caching packaged files ({FormatBytes(bytesCopied)} copied)",
+                    ToProgressUnits(bytesCopied, payloadLength),
+                    ProgressUnitScale)));
+            zipFile.Position = 0;
+            return zipFile;
+        }
+        catch
+        {
+            zipFile.Dispose();
+            throw;
+        }
     }
 
     private static Stream OpenPayloadStream(Assembly assembly, string? payloadPathOverride = null)
@@ -564,6 +668,7 @@ internal static class Program
             CopyExactBytes(executable, extractedPayload, payloadLength);
             extractedPayload.Position = 0;
             payloadStream = extractedPayload;
+            TraceInstaller($"opened appended payload length={payloadLength}");
             return true;
         }
         catch (Exception ex)
@@ -1092,6 +1197,7 @@ internal static class Program
         }
 
         reportCopiedBytes?.Invoke(copied);
+        TraceInstaller($"copy stream complete bytes={copied} total={totalBytes?.ToString() ?? "unknown"}");
     }
 
     private static void CopyExactBytes(Stream source, Stream destination, long bytesToCopy)
@@ -2130,7 +2236,7 @@ internal static class Program
             Label hintLabel = new()
             {
                 AutoSize = false,
-                Text = "This usually takes less than a minute.",
+                Text = "This may take a few minutes on slower systems.",
                 Font = new Font("Segoe UI", 7.75F, FontStyle.Regular, GraphicsUnit.Point),
                 ForeColor = Color.FromArgb(146, 160, 180),
                 Dock = DockStyle.Top,

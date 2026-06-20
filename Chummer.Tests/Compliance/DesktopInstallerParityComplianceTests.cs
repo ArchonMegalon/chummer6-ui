@@ -37,6 +37,12 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "MoveOrCopyDirectory(payloadRoot, targetDir, progress);");
         StringAssert.Contains(installerProgramText, "Directory.Move(sourceDir, targetDir);");
         StringAssert.Contains(installerProgramText, "Installing application files");
+        StringAssert.Contains(installerProgramText, "PreparePayloadArchiveStream(payload, tempExtractDir, progress);");
+        StringAssert.Contains(installerProgramText, "payload.CanSeek");
+        StringAssert.Contains(installerProgramText, "Reading packaged files");
+        StringAssert.Contains(installerProgramText, "InstallerTraceFileName = \"chummer-desktop-installer-progress.log\"");
+        StringAssert.Contains(installerProgramText, "TraceProgress(update);");
+        StringAssert.Contains(installerProgramText, "FormatTraceArguments(args)");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"AvaloniaDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Path.Combine(InstallRoot, $\"BlazorDesktop-{ridSuffix}\")");
         StringAssert.Contains(installerProgramText, "Debug.WriteLine($\"Chummer installer could not prune legacy install directory");
@@ -86,6 +92,7 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "UseMnemonic = false");
         StringAssert.Contains(installerProgramText, "WrapContents = false");
         StringAssert.Contains(installerProgramText, "Shortcuts and first launch are prepared automatically.");
+        StringAssert.Contains(installerProgramText, "This may take a few minutes on slower systems.");
         StringAssert.Contains(installerProgramText, "AutoEllipsis = false");
         StringAssert.Contains(installerProgramText, "BuildInstalledPathText(targetDir)");
         StringAssert.Contains(installerProgramText, "return $\"Installed to ...{Path.DirectorySeparatorChar}{compactTail}\";");
@@ -116,6 +123,7 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("$\"Launch {secondaryName}\"", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Unpacking the desktop, wiring shortcuts, and preparing first launch.", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ProgressTrackWidth", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("This usually takes less than a minute.", StringComparison.Ordinal));
     }
 
     private static string FindRepoRoot()
