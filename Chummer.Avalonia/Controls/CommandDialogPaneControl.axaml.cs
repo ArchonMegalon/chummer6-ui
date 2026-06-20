@@ -213,7 +213,7 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel leftColumn = new() { Spacing = 10 };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(ResolveSelectionNavigationTitle(navigationField), CreateFieldControl(navigationField), 112));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(ResolveSelectionNavigationTitle(navigationField), CreateSelectionCategoryTreePanel(navigationField, fields), 112));
         }
 
         if (candidateField is not null)
@@ -559,6 +559,45 @@ public partial class CommandDialogPaneControl : UserControl
         return shell;
     }
 
+    private Control CreateSelectionCategoryTreePanel(
+        DialogFieldDisplayItem categoryTreeField,
+        IReadOnlyList<DialogFieldDisplayItem> allFields)
+    {
+        IReadOnlyList<SelectionCandidateItem> items = ParseSelectionTreeBranchItems(categoryTreeField.Value);
+        string? categoryFieldId = ResolveSelectionCategoryFieldId(categoryTreeField, allFields);
+        string? selectedName = ResolveSelectionCategoryValue(categoryTreeField, allFields, categoryFieldId);
+
+        ListBox listBox = new()
+        {
+            Name = DesktopDialogAccessibility.BuildFieldInputName(categoryTreeField.Id),
+            ItemsSource = items,
+            MinHeight = 112
+        };
+        DesktopShellTheme.ApplyShellListBoxTheme(listBox);
+        listBox.ItemTemplate = new FuncDataTemplate<SelectionCandidateItem>((item, _) => BuildClassicSelectionCandidateRow(item));
+        listBox.SelectionChanged += (_, _) =>
+        {
+            if (_suppressDialogUpdates || categoryFieldId is null || listBox.SelectedItem is not SelectionCandidateItem selectedItem)
+            {
+                return;
+            }
+
+            DialogFieldValueChanged?.Invoke(this, new DialogFieldValueChangedEventArgs(categoryFieldId, selectedItem.Value));
+        };
+
+        SelectionCandidateItem? selectedItem = items.FirstOrDefault(item =>
+            string.Equals(item.Value, selectedName, StringComparison.OrdinalIgnoreCase))
+            ?? items.FirstOrDefault(static item => item.IsSelected)
+            ?? items.FirstOrDefault();
+        if (selectedItem is not null)
+        {
+            listBox.SelectedItem = selectedItem;
+        }
+
+        ApplyAccessibility(listBox, categoryTreeField.AccessibleName, categoryTreeField.ToolTip, categoryTreeField.HelpText);
+        return listBox;
+    }
+
     private static Control CreateClassicSelectionSectionHeader(string label, int count)
     {
         Grid header = new()
@@ -648,6 +687,56 @@ public partial class CommandDialogPaneControl : UserControl
         return items;
     }
 
+    private static IReadOnlyList<SelectionCandidateItem> ParseSelectionTreeBranchItems(string rawValue)
+    {
+        (int Level, string Value, bool IsSelected)[] nodes = rawValue
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+            .Select(ParseSelectionTreeNode)
+            .Where(static node => node is not null)
+            .Select(static node => node!.Value)
+            .ToArray();
+
+        if (nodes.Length == 0)
+        {
+            return Array.Empty<SelectionCandidateItem>();
+        }
+
+        int leafLevel = nodes.Max(static node => node.Level);
+        return nodes
+            .Where(node => node.Level == leafLevel)
+            .Select(node => new SelectionCandidateItem(node.Value, node.Value, node.IsSelected))
+            .ToArray();
+    }
+
+    private static (int Level, string Value, bool IsSelected)? ParseSelectionTreeNode(string line)
+    {
+        string trimmed = line.Trim();
+        if (trimmed.StartsWith("[", StringComparison.Ordinal) && trimmed.EndsWith("]", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        string valueLine = line.TrimEnd();
+        int branchIndex = valueLine.IndexOf('├');
+        if (branchIndex < 0)
+        {
+            branchIndex = valueLine.IndexOf('└');
+        }
+
+        if (branchIndex < 0)
+        {
+            return null;
+        }
+
+        bool isSelected = valueLine.Contains('>', StringComparison.Ordinal);
+        string value = valueLine[(branchIndex + 2)..]
+            .Replace(">", string.Empty, StringComparison.Ordinal)
+            .Trim();
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : (branchIndex, value, isSelected);
+    }
+
     private static string ExtractSelectionCandidateName(string displayText)
     {
         int separatorIndex = displayText.IndexOf(" · ", StringComparison.Ordinal);
@@ -707,6 +796,47 @@ public partial class CommandDialogPaneControl : UserControl
                 && !field.Id.Contains("Sections", StringComparison.Ordinal)
                 && !field.Id.Contains("Show", StringComparison.Ordinal)
                 && !field.Id.Contains("Hide", StringComparison.Ordinal))?.Id;
+    }
+
+    private static string? ResolveSelectionCategoryFieldId(
+        DialogFieldDisplayItem categoryTreeField,
+        IReadOnlyList<DialogFieldDisplayItem> allFields)
+    {
+        string prefix = categoryTreeField.Id.EndsWith("CategoryTree", StringComparison.Ordinal)
+            ? categoryTreeField.Id[..^"CategoryTree".Length]
+            : categoryTreeField.Id;
+        string[] preferredSuffixes =
+        [
+            "Category",
+            "Type",
+            "Family",
+            "Track"
+        ];
+
+        foreach (string suffix in preferredSuffixes)
+        {
+            string preferredId = prefix + suffix;
+            if (allFields.Any(field => string.Equals(field.Id, preferredId, StringComparison.Ordinal) && !field.IsReadOnly))
+            {
+                return preferredId;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ResolveSelectionCategoryValue(
+        DialogFieldDisplayItem categoryTreeField,
+        IReadOnlyList<DialogFieldDisplayItem> allFields,
+        string? categoryFieldId)
+    {
+        string prefix = categoryTreeField.Id.EndsWith("CategoryTree", StringComparison.Ordinal)
+            ? categoryTreeField.Id[..^"CategoryTree".Length]
+            : categoryTreeField.Id;
+        DialogFieldDisplayItem? selectedBranchField = allFields.FirstOrDefault(field =>
+            string.Equals(field.Id, prefix + "SelectedBranch", StringComparison.Ordinal));
+        return selectedBranchField?.Value
+            ?? allFields.FirstOrDefault(field => string.Equals(field.Id, categoryFieldId, StringComparison.Ordinal))?.Value;
     }
 
     private static double ResolveSelectionPanelMinHeight(DialogFieldDisplayItem field)

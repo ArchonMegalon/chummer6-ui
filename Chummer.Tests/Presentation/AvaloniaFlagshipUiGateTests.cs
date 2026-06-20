@@ -3096,6 +3096,126 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_command_dialog_pane_add_quality_category_tree_changes_type_filter()
+    {
+        WithStandaloneControl<CommandDialogPaneControl>(control =>
+        {
+            DesktopDialogState dialog = new DesktopDialogFactory().CreateUiControlDialog("quality_add", DesktopPreferenceState.Default);
+            List<string> updatedFields = [];
+            control.DialogFieldValueChanged += (_, args) => updatedFields.Add($"{args.FieldId}={args.Value}");
+
+            control.SetState(new CommandDialogPaneState(
+                Commands: [],
+                SelectedCommandId: null,
+                ActiveDialogId: dialog.Id,
+                DialogTitle: dialog.Title,
+                DialogMessage: dialog.Message,
+                DialogTrustReceipt: null,
+                Fields: dialog.Fields.Select(ToDisplayField).ToArray(),
+                Actions: dialog.Actions.Select(ToDisplayAction).ToArray()));
+            PumpStandaloneUi();
+
+            ListBox categoryTree = FindDescendant<ListBox>(control, DesktopDialogAccessibility.BuildFieldInputName("uiQualityCategoryTree"));
+            Assert.IsTrue(categoryTree.IsVisible, "Add Quality category navigation must be a real selectable list.");
+            Assert.IsNull(FindDescendantOrDefault<TextBox>(control, DesktopDialogAccessibility.BuildFieldInputName("uiQualityCategoryTree")));
+
+            object negativeCategory = EnumerateListBoxItems(categoryTree)
+                .First(item => item.ToString()?.Contains("Negative", StringComparison.OrdinalIgnoreCase) == true);
+            categoryTree.SelectedItem = negativeCategory;
+            PumpStandaloneUi();
+
+            CollectionAssert.Contains(updatedFields, "uiQualityType=Negative");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_add_quality_dialog_renders_category_navigation_as_selectable_list()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = new DesktopDialogFactory().CreateUiControlDialog("quality_add", DesktopPreferenceState.Default);
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            ListBox categoryTree = FindDescendant<ListBox>(window, DesktopDialogAccessibility.BuildFieldInputName("uiQualityCategoryTree"));
+            Assert.IsTrue(categoryTree.IsVisible, "Add Quality popup must expose category navigation as a selectable list.");
+            string[] categoryTexts = EnumerateListBoxItemTexts(categoryTree);
+            Assert.IsTrue(
+                categoryTexts.Any(static text => text.Contains("Positive", StringComparison.OrdinalIgnoreCase)),
+                "Add Quality category navigation must include the positive quality branch.");
+            Assert.IsTrue(
+                categoryTexts.Any(static text => text.Contains("Negative", StringComparison.OrdinalIgnoreCase)),
+                "Add Quality category navigation must include the negative quality branch.");
+            Assert.IsNull(FindDescendantOrDefault<TextBox>(window, DesktopDialogAccessibility.BuildFieldInputName("uiQualityCategoryTree")));
+            StringAssert.Contains(categoryTree.SelectedItem?.ToString() ?? string.Empty, "Positive");
+        });
+    }
+
+    [TestMethod]
+    public void Standalone_add_dialog_category_trees_render_as_selectable_lists_for_every_selection_surface()
+    {
+        string[] addDialogIds =
+        [
+            "cyberware_add",
+            "drug_add",
+            "gear_add",
+            "magic_add",
+            "spell_add",
+            "adept_power_add",
+            "complex_form_add",
+            "initiation_add",
+            "spirit_add",
+            "critter_power_add",
+            "matrix_program_add",
+            "skill_add",
+            "combat_add_weapon",
+            "combat_add_armor",
+            "vehicle_add",
+            "vehicle_mod_add",
+            "quality_add"
+        ];
+
+        WithStandaloneControl<CommandDialogPaneControl>(control =>
+        {
+            DesktopDialogFactory factory = new();
+            foreach (string addDialogId in addDialogIds)
+            {
+                DesktopDialogState dialog = factory.CreateUiControlDialog(addDialogId, DesktopPreferenceState.Default);
+                DesktopDialogField[] categoryTreeFields = dialog.Fields
+                    .Where(static field =>
+                        field.Id.EndsWith("CategoryTree", StringComparison.Ordinal)
+                        && string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Tree, StringComparison.Ordinal))
+                    .ToArray();
+
+                Assert.IsTrue(categoryTreeFields.Length > 0, $"{addDialogId} should expose a category tree contract.");
+                control.SetState(new CommandDialogPaneState(
+                    Commands: [],
+                    SelectedCommandId: null,
+                    ActiveDialogId: dialog.Id,
+                    DialogTitle: dialog.Title,
+                    DialogMessage: dialog.Message,
+                    DialogTrustReceipt: null,
+                    Fields: dialog.Fields.Select(ToDisplayField).ToArray(),
+                    Actions: dialog.Actions.Select(ToDisplayAction).ToArray()));
+                PumpStandaloneUi();
+
+                foreach (DesktopDialogField categoryTreeField in categoryTreeFields)
+                {
+                    string inputName = DesktopDialogAccessibility.BuildFieldInputName(categoryTreeField.Id);
+                    ListBox categoryTree = FindDescendant<ListBox>(control, inputName);
+                    string context = $"{addDialogId}/{categoryTreeField.Id}";
+                    Assert.IsTrue(categoryTree.IsVisible, $"{context} must render category navigation as a visible selectable list.");
+                    Assert.IsNull(FindDescendantOrDefault<TextBox>(control, inputName), $"{context} must not fall back to a readonly textbox.");
+
+                    string[] categoryTexts = EnumerateListBoxItemTexts(categoryTree);
+                    Assert.IsTrue(categoryTexts.Length > 0, $"{context} must expose selectable category rows.");
+                    Assert.IsFalse(categoryTexts.Any(static text => text.StartsWith("[", StringComparison.Ordinal)), $"{context} must not expose the root label as a selectable category.");
+                }
+            }
+        });
+    }
+
+    [TestMethod]
     public void Standalone_section_host_launches_build_lab_compare_and_blocker_explain_companion()
     {
         WithStandaloneControl<SectionHostControl>(control =>
@@ -6737,6 +6857,30 @@ public sealed class AvaloniaFlagshipUiGateTests
             }
         }
     }
+
+    private static DialogFieldDisplayItem ToDisplayField(DesktopDialogField field)
+        => new(
+            field.Id,
+            field.Label,
+            field.Value,
+            field.Placeholder,
+            field.IsMultiline,
+            field.IsReadOnly,
+            field.InputType,
+            field.Options?.Select(static option => new DialogFieldOptionDisplayItem(option.Value, option.Label)).ToArray(),
+            field.VisualKind,
+            field.LayoutSlot);
+
+    private static DialogActionDisplayItem ToDisplayAction(DesktopDialogAction action)
+        => new(action.Id, action.Label, action.IsPrimary);
+
+    private static string[] EnumerateListBoxItemTexts(ListBox listBox)
+        => EnumerateListBoxItems(listBox)
+            .Select(static item => item.ToString() ?? string.Empty)
+            .ToArray();
+
+    private static IEnumerable<object> EnumerateListBoxItems(ListBox listBox)
+        => ((IEnumerable?)listBox.ItemsSource)?.Cast<object>() ?? listBox.Items.OfType<object>();
 
     private static Color ResolveSolidColor(IBrush? brush, Control control, string propertyName, string context)
     {
