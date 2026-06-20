@@ -15,20 +15,36 @@ public static class PlayerFacingCopyHumanizer
         ("source-backed", "current"),
         ("first-party", "local"),
         ("media-factory", "render"),
+        ("deterministic providers", "rules services"),
         ("provider bindings", "service links"),
         ("provider binding", "service link"),
+        ("providers", "services"),
         ("provider", "service"),
+        ("proofs", "details"),
         ("proof", "details"),
+        ("receipts", "records"),
         ("receipt", "record"),
+        ("artifacts", "items"),
+        ("artifact", "item"),
         ("operator voice", "default voice"),
         ("operator reading", "dossier reading"),
         ("operator shaped", "runner shaped"),
         ("operator", "user"),
         ("grounded", "current"),
         ("governed", "reviewed"),
+        ("validation checks", "review"),
+        ("verification checks", "confirmation"),
+        ("audit verdict", "review decision"),
+        ("validation", "review"),
+        ("verification", "confirmation"),
+        ("audit", "review"),
+        ("verdict", "decision"),
+        ("posture", "status"),
+        ("checks", "reviews"),
         ("canonical", "selected"),
         ("canon", "story"),
         ("handoff", "next step"),
+        ("registry", "app record"),
         ("rails", "paths"),
         ("rail", "path"),
         ("lanes", "paths"),
@@ -48,7 +64,7 @@ public static class PlayerFacingCopyHumanizer
         string cleaned = value.Trim();
         foreach ((string from, string to) in PhraseReplacements)
         {
-            cleaned = cleaned.Replace(from, to, StringComparison.OrdinalIgnoreCase);
+            cleaned = ReplaceWholePhrase(cleaned, from, to);
         }
 
         cleaned = Regex.Replace(cleaned, @"\bALICE\b", "Alice", RegexOptions.CultureInvariant);
@@ -57,6 +73,12 @@ public static class PlayerFacingCopyHumanizer
         cleaned = Regex.Replace(cleaned, @" ?([,.;:])", "$1", RegexOptions.CultureInvariant);
         cleaned = Regex.Replace(cleaned, @"\s+\n", "\n", RegexOptions.CultureInvariant);
         return cleaned.Trim();
+    }
+
+    private static string ReplaceWholePhrase(string value, string from, string to)
+    {
+        string pattern = $@"(?<!\w){Regex.Escape(from)}(?!\w)";
+        return Regex.Replace(value, pattern, to, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 
     public static string[] CleanLines(IEnumerable<string> values)

@@ -812,7 +812,8 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(projection.NextSafeAction, "Open downloads");
         RequireContains(string.Join("\n", projection.Highlights), "Stage: Released");
         RequireContains(string.Join("\n", projection.Highlights), "Release progress:");
-        RequireContains(string.Join("\n", projection.Highlights), "Verification:");
+        RequireContains(string.Join("\n", projection.Highlights), "Confirmation:");
+        RequireDoesNotContain(string.Join("\n", projection.Highlights), "Verification:");
         RequireContains(string.Join("\n", projection.Highlights), "Fixed release: preview 0.6.3-smoke");
         RequireContains(string.Join("\n", projection.Highlights), "Affected install:");
         RequireContains(string.Join("\n", projection.Highlights), "Follow-up:");
@@ -1396,7 +1397,8 @@ public sealed class AccessibilitySignoffSmokeTests
         string projectorSource = ReadSource("Chummer.Presentation/Overview/DesktopHomeSupportProjector.cs");
         RequireContains(projectorSource, "Tracked case:");
         RequireContains(projectorSource, "Release progress:");
-        RequireContains(projectorSource, "Verification:");
+        RequireContains(projectorSource, "Confirmation:");
+        RequireContains(projectorSource, "Humanize(new DesktopHomeSupportProjection");
         RequireContains(projectorSource, "Affected install:");
         RequireContains(projectorSource, "InstallReadinessSummary");
         RequireContains(projectorSource, "NeedsInstallUpdate");
@@ -2239,9 +2241,13 @@ public sealed class AccessibilitySignoffSmokeTests
 
     private static void RequireDoesNotContain(string source, string unexpected)
     {
-        if (source.Contains(unexpected, StringComparison.Ordinal))
+        int index = source.IndexOf(unexpected, StringComparison.Ordinal);
+        if (index >= 0)
         {
-            throw new InvalidOperationException($"Expected not to find '{unexpected}' in smoke target source.");
+            int start = Math.Max(0, index - 90);
+            int length = Math.Min(source.Length - start, unexpected.Length + 180);
+            string snippet = source.Substring(start, length).ReplaceLineEndings(" ");
+            throw new InvalidOperationException($"Expected not to find '{unexpected}' in smoke target source. Nearby text: {snippet}");
         }
     }
 

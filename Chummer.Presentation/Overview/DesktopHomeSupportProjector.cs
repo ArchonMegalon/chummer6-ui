@@ -55,7 +55,7 @@ public static class DesktopHomeSupportProjector
     {
         if (digests is null || digests.Count == 0)
         {
-            return new DesktopHomeSupportProjection(
+            return Humanize(new DesktopHomeSupportProjection(
                 CaseId: null,
                 Summary: installClaimed
                     ? "No tracked support cases are attached to this linked install right now, so closure and fix notices stay quiet until a real install, update, or campaign issue needs one case."
@@ -83,9 +83,9 @@ public static class DesktopHomeSupportProjector
                 Highlights:
                 [
                     installClaimed
-                        ? "Support posture: the linked install can open tracked cases directly when a real issue appears."
-                        : "Support posture: claim this copy before support can attach fixes and notices to it."
-                ]);
+                        ? "Support status: the linked install can open tracked cases directly when a real issue appears."
+                        : "Support status: claim this copy before support can attach fixes and notices to it."
+                ]));
         }
 
         DesktopHomeSupportDigest lead = digests[0];
@@ -96,7 +96,7 @@ public static class DesktopHomeSupportProjector
             $"Release progress: {lead.ReleaseProgressSummary}",
             $"Fix availability: {BuildFixAvailabilitySummary(lead)}",
             $"Current caution: {BuildCurrentCaution(lead)}",
-            $"Verification: {lead.VerificationSummary}",
+            $"Confirmation: {lead.VerificationSummary}",
             $"Updated: {lead.UpdatedLabel}"
         ];
 
@@ -120,7 +120,7 @@ public static class DesktopHomeSupportProjector
             highlights.Add($"Follow-up: {lead.FollowUpLaneSummary}");
         }
 
-        return new DesktopHomeSupportProjection(
+        return Humanize(new DesktopHomeSupportProjection(
             CaseId: lead.CaseId,
             Summary: $"Tracked case: {lead.Title}. {lead.Summary}",
             NextSafeAction: lead.NextSafeAction,
@@ -141,8 +141,25 @@ public static class DesktopHomeSupportProjector
             FixReadyOnLinkedInstall: lead.FixReadyOnLinkedInstall,
             NeedsInstallUpdate: lead.NeedsInstallUpdate,
             NeedsLinkedInstall: lead.NeedsLinkedInstall,
-            Highlights: highlights);
+            Highlights: highlights));
     }
+
+    private static DesktopHomeSupportProjection Humanize(DesktopHomeSupportProjection projection)
+        => projection with
+        {
+            Summary = PlayerFacingCopyHumanizer.Clean(projection.Summary),
+            NextSafeAction = PlayerFacingCopyHumanizer.Clean(projection.NextSafeAction),
+            InstallReadinessSummary = PlayerFacingCopyHumanizer.Clean(projection.InstallReadinessSummary),
+            StatusLabel = PlayerFacingCopyHumanizer.Clean(projection.StatusLabel),
+            StageLabel = PlayerFacingCopyHumanizer.Clean(projection.StageLabel),
+            UpdatedLabel = PlayerFacingCopyHumanizer.Clean(projection.UpdatedLabel),
+            FixedReleaseLabel = PlayerFacingCopyHumanizer.Clean(projection.FixedReleaseLabel),
+            AffectedInstallSummary = PlayerFacingCopyHumanizer.Clean(projection.AffectedInstallSummary),
+            FollowUpLaneSummary = PlayerFacingCopyHumanizer.Clean(projection.FollowUpLaneSummary),
+            ReleaseProgressSummary = PlayerFacingCopyHumanizer.Clean(projection.ReleaseProgressSummary),
+            VerificationSummary = PlayerFacingCopyHumanizer.Clean(projection.VerificationSummary),
+            Highlights = PlayerFacingCopyHumanizer.CleanLines(projection.Highlights)
+        };
 
     private static string BuildFixAvailabilitySummary(DesktopHomeSupportDigest lead)
         => !string.IsNullOrWhiteSpace(lead.FixedReleaseLabel)
