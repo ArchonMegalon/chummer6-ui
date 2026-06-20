@@ -608,7 +608,9 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Origin dossier must make the generated story the first review artifact.");
             Assert.IsNotNull(
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenDraftFlipLinkPacketButton"),
-                "Origin dossier must write a FlipLink handoff for draft story review.");
+                "Origin dossier must create a book preview for draft story review.");
+            WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
+            AssertOriginDossierActionTitlesStayHuman(actionRow, "draft origin dossier");
             Assert.IsNull(
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginGeneratePortraitSetButton"),
                 "Origin dossier must not show production actions before story approval.");
@@ -628,10 +630,10 @@ public sealed class AvaloniaFlagshipUiGateTests
                 "Approved origin dossier must keep the story as the first-class artifact.");
             Assert.IsNotNull(
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenFlipLinkPacketButton"),
-                "Approved origin dossier must expose the FlipLink handoff after approval.");
+                "Approved origin dossier must expose the book preview after approval.");
             Button openDossierPdfButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton");
             Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book artifact.");
-            WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
+            AssertOriginDossierActionTitlesStayHuman(actionRow, "approved origin dossier");
             string firstVisibleAction = actionRow.Children
                 .OfType<Button>()
                 .Where(static button => button.IsVisible)
@@ -6694,6 +6696,45 @@ public sealed class AvaloniaFlagshipUiGateTests
             Color background = ResolveSolidColor(backgroundBrush, control, "background", context);
             string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
             AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover text");
+        }
+    }
+
+    private static void AssertOriginDossierActionTitlesStayHuman(WrapPanel actionRow, string context)
+    {
+        string[] visibleActionTitles = actionRow.Children
+            .OfType<Button>()
+            .Where(static button => button.IsVisible)
+            .Select(static button => button.Content?.ToString() ?? string.Empty)
+            .Where(static title => !string.IsNullOrWhiteSpace(title))
+            .ToArray();
+
+        Assert.IsTrue(visibleActionTitles.Length > 0, $"{context} must expose at least one visible action.");
+
+        string[] internalTerms =
+        [
+            "handoff",
+            "request",
+            "render",
+            "log",
+            "packet",
+            "receipt",
+            "provider",
+            "media-factory",
+            "FlipLink",
+            "MarkupGo",
+            "Soundmadeseen",
+            "Unmixr",
+            "vidBoard"
+        ];
+
+        foreach (string title in visibleActionTitles)
+        {
+            foreach (string term in internalTerms)
+            {
+                Assert.IsFalse(
+                    title.Contains(term, StringComparison.OrdinalIgnoreCase),
+                    $"{context} visible action '{title}' must not expose internal workflow term '{term}'.");
+            }
         }
     }
 
