@@ -928,11 +928,12 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             $"Build | {recommendation.BuildSummary}{Environment.NewLine}" +
             $"GM Requirements | {recommendation.GmRequirementSummary}{Environment.NewLine}" +
             "Sheet Changes | none yet; review the path before applying mechanics";
+        string bookPreview = BuildOriginBookPreview(alias, recommendation);
 
         return new DesktopDialogState(
             NewCharacterOriginBuildDialogId,
             "Origin Dossier",
-            "Review the story first. Continue to guided build only when the story and GM constraints look right.",
+            "Read the origin first. Character creation starts after this screen.",
             [
                 BuildNewCharacterContextField("newCharacterWorkflowRulesetId", "Workflow Ruleset", rulesetId),
                 BuildNewCharacterContextField("newCharacterWorkflowBuildMethod", "Workflow Build Method", recommendation.BuildMethod),
@@ -941,6 +942,14 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                 BuildNewCharacterContextField("newCharacterWorkflowHouseRulesEnabled", "Workflow House Rules", "false"),
                 BuildNewCharacterContextField("newCharacterOriginSummary", "Origin Summary", recommendation.OriginSummary),
                 BuildNewCharacterContextField("newCharacterOriginAliceSeedSource", "Alice Seed Source", "approved_origin_story"),
+                new DesktopDialogField(
+                    "newCharacterOriginBookPreview",
+                    "Book Preview",
+                    bookPreview,
+                    bookPreview,
+                    IsReadOnly: true,
+                    IsMultiline: true,
+                    VisualKind: DesktopDialogFieldVisualKinds.Book),
                 new DesktopDialogField(
                     "newCharacterOriginStory",
                     "Origin Dossier",
@@ -969,9 +978,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Right)
             ],
             [
-                new DesktopDialogAction("open_origin_guided_chargen", "Continue to guided build", true),
+                new DesktopDialogAction("open_origin_guided_chargen", "Start character creation", true),
                 new DesktopDialogAction("cancel", "Cancel")
             ]);
+    }
+
+    private static string BuildOriginBookPreview(string alias, OriginBuildRecommendation recommendation)
+    {
+        string runnerName = string.IsNullOrWhiteSpace(alias) ? "Runner" : alias.Trim();
+        return PlayerFacingCopyHumanizer.Clean(
+            $"{runnerName}: Origin Dossier{Environment.NewLine}{Environment.NewLine}" +
+            $"{recommendation.OriginSummary}{Environment.NewLine}{Environment.NewLine}" +
+            $"The shape of the build is visible in the fiction: {recommendation.BuildSummary}{Environment.NewLine}{Environment.NewLine}" +
+            $"At the table, the story keeps these constraints in view: {recommendation.GmRequirementSummary}{Environment.NewLine}{Environment.NewLine}" +
+            "When this origin feels right, start character creation. Alice can use the story as context later; no numbers are written to the sheet from this preview alone.");
     }
 
     private static DesktopDialogField CreateBuildMethodField(string fieldId, string? rulesetId, string? preferredBuildMethod = null)

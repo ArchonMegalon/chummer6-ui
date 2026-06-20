@@ -56,6 +56,7 @@ public static class DesktopDialogFieldVisualKinds
     public const string Snippet = "snippet";
     public const string Tabs = "tabs";
     public const string Image = "image";
+    public const string Book = "book";
 }
 
 public static class DesktopDialogFieldLayoutSlots

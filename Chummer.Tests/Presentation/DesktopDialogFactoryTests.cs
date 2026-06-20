@@ -1912,11 +1912,13 @@ public class DesktopDialogFactoryTests
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "BP");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Mage");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBuildLogic"), "Troll");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "Cipher: Origin Dossier");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginBookPreview"), "When this origin feels right, start character creation.");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Alice Seed");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "approved origin story");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Addiction quality");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterOriginImplications"), "Intelligence 2+");
-        Assert.AreEqual("Continue to guided build", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
+        Assert.AreEqual("Start character creation", dialog.Actions.Single(action => string.Equals(action.Id, "open_origin_guided_chargen", StringComparison.Ordinal)).Label);
         CollectionAssert.AreEqual(
             new[] { "open_origin_guided_chargen", "cancel" },
             dialog.Actions.Select(action => action.Id).ToArray());

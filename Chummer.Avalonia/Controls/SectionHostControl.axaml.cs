@@ -357,7 +357,7 @@ public partial class SectionHostControl : UserControl
             0,
             Math.Max(0, row.PriorityMaximum),
             row.BaseUnlocked,
-            static next => $"Base {next}",
+            static next => next.ToString(CultureInfo.InvariantCulture),
             next =>
             {
                 baseValue = next;
@@ -381,7 +381,7 @@ public partial class SectionHostControl : UserControl
             0,
             Math.Max(0, row.KarmaMaximum),
             enabled: true,
-            static next => next == 0 ? "Karma 0" : $"Karma +{next}",
+            static next => next.ToString(CultureInfo.InvariantCulture),
             next =>
             {
                 karmaValue = next;
@@ -505,7 +505,7 @@ public partial class SectionHostControl : UserControl
         Grid stepper = new()
         {
             Name = name,
-            ColumnDefinitions = new ColumnDefinitions("24,*,24"),
+            ColumnDefinitions = new ColumnDefinitions("24,8,*,8,24"),
             MinHeight = 26,
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Stretch
         };
@@ -522,15 +522,16 @@ public partial class SectionHostControl : UserControl
             HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
             VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center,
-            MinWidth = 52
+            MinWidth = 56,
+            Margin = new Thickness(4d, 0d)
         };
         ToolTip.SetTip(valueText, accessibleName);
         global::Avalonia.Automation.AutomationProperties.SetName(valueText, $"{accessibleName} value");
         Button increment = CreateAttributeStepperButton("+", $"{name}_Increase", enabled, foreground, surface, border, $"Increase {accessibleName}");
 
         Grid.SetColumn(decrement, 0);
-        Grid.SetColumn(valueText, 1);
-        Grid.SetColumn(increment, 2);
+        Grid.SetColumn(valueText, 2);
+        Grid.SetColumn(increment, 4);
         stepper.Children.Add(decrement);
         stepper.Children.Add(valueText);
         stepper.Children.Add(increment);

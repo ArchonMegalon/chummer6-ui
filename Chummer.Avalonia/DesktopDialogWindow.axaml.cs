@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Interactivity;
 using Avalonia.Input;
@@ -1331,6 +1332,7 @@ public partial class DesktopDialogWindow : Window
 
     private Control CreateLegacyOriginBuildPane(IReadOnlyList<DesktopDialogField> fields)
     {
+        DesktopDialogField bookField = FindRequiredField(fields, "newCharacterOriginBookPreview");
         DesktopDialogField storyField = FindRequiredField(fields, "newCharacterOriginStory");
         DesktopDialogField buildLogicField = FindRequiredField(fields, "newCharacterOriginBuildLogic");
         DesktopDialogField implicationsField = FindRequiredField(fields, "newCharacterOriginImplications");
@@ -1356,15 +1358,19 @@ public partial class DesktopDialogWindow : Window
             ColumnSpacing = 12
         };
         reviewGrid.Children.Add(CreateLegacySummaryCard(
-            "Origin Story",
-            "This story can seed later suggestions without mutating a finished sheet.",
-            CreateFieldControl(storyField)));
+            "Book Preview",
+            "Read this first. Character creation starts after the story feels right.",
+            CreateFieldControl(bookField)));
 
         StackPanel right = new()
         {
             Spacing = 10,
             Children =
             {
+                CreateLegacySummaryCard(
+                    "Story",
+                    "Alice can use this text later; it does not change the sheet by itself.",
+                    CreateFieldControl(storyField)),
                 CreateLegacySummaryCard(
                     "Build Translation",
                     "The handoff translates the story into a normal guided character-creation path.",
@@ -2568,6 +2574,10 @@ public partial class DesktopDialogWindow : Window
             {
                 visualControl = CreateImagePlaceholderPanel(field.Value);
             }
+            else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Book, StringComparison.Ordinal))
+            {
+                visualControl = CreateBookPreviewPanel(field.Value);
+            }
             else if (string.Equals(field.VisualKind, DesktopDialogFieldVisualKinds.Grid, StringComparison.Ordinal))
             {
                 visualControl = CreateGridPanel(field.Value);
@@ -2866,6 +2876,52 @@ public partial class DesktopDialogWindow : Window
             {
                 Text = value,
                 TextWrapping = TextWrapping.Wrap
+            }
+        };
+    }
+
+    private static Control CreateBookPreviewPanel(string value)
+    {
+        string[] paragraphs = value
+            .Split([Environment.NewLine + Environment.NewLine], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string title = paragraphs.FirstOrDefault() ?? "Origin Dossier";
+        string[] bodyParagraphs = paragraphs.Skip(1).DefaultIfEmpty(value).ToArray();
+
+        StackPanel book = new()
+        {
+            Spacing = 10
+        };
+        book.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 18,
+            FontWeight = FontWeight.SemiBold,
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        foreach (string paragraph in bodyParagraphs)
+        {
+            book.Children.Add(new TextBlock
+            {
+                Text = paragraph,
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 20
+            });
+        }
+
+        return new Border
+        {
+            BorderThickness = new Thickness(1),
+            BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF"),
+            Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE"),
+            Padding = new Thickness(18, 14),
+            MinHeight = 300,
+            Child = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                MaxHeight = 420,
+                Content = book
             }
         };
     }

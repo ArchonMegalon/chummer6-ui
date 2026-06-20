@@ -418,7 +418,8 @@ public sealed class WorkflowParityGateTests
         Assert.IsNotNull(harness.State.ActiveDialog, "Build story must open the origin story review before mechanics.");
         DesktopDialogState originBuild = harness.State.ActiveDialog!;
         Assert.AreEqual("dialog.new_character.origin_build", originBuild.Id);
-        StringAssert.Contains(originBuild.Message, "Review the story first.");
+        StringAssert.Contains(originBuild.Message, "Read the origin first.");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginBookPreview") ?? string.Empty, "Origin Dossier");
         Assert.AreEqual("approved_origin_story", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginAliceSeedSource"));
         Assert.AreEqual("BP", DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterWorkflowBuildMethod"));
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(originBuild, "newCharacterOriginBuildLogic") ?? string.Empty, "Troll");
