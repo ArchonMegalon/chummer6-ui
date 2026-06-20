@@ -86,6 +86,9 @@ internal static class DesktopShellTheme
             numericUpDown.Classes.Add("shell-numeric");
         }
 
+        numericUpDown.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
+        numericUpDown.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
+        numericUpDown.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
         numericUpDown.MinHeight = Math.Max(numericUpDown.MinHeight, 30d);
     }
 

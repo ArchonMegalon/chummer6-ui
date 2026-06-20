@@ -791,7 +791,15 @@ public sealed class DesktopThemeManagerTests
             "FlyoutPresenterForeground",
             "FlyoutPresenterBorderBrush",
             "MenuFlyoutPresenterBackground",
-            "MenuFlyoutPresenterBorderBrush"
+            "MenuFlyoutPresenterForeground",
+            "MenuFlyoutPresenterBorderBrush",
+            "MenuItemBackground",
+            "MenuItemBackgroundPointerOver",
+            "MenuItemBackgroundSelected",
+            "MenuItemForeground",
+            "MenuItemForegroundPointerOver",
+            "MenuItemForegroundSelected",
+            "MenuItemForegroundDisabled"
         ];
 
         foreach (string resourceKey in fluentControlResourceKeys)
@@ -833,6 +841,15 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource TextControlBackground}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource TextControlForeground}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"FlyoutPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuFlyoutPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ContextMenu\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem:selected TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
         StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
         StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
@@ -844,6 +861,9 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:pointerover /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:focus /template/ TextBox\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown:disabled /template/ TextBox\">");
+        StringAssert.Contains(shellTheme, "numericUpDown.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "numericUpDown.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "numericUpDown.BorderBrush = ResolveThemeBrush(\"TextControlBorderBrush\", \"#B5C0CF\");");
         AssertSelectorAfter(
             appTheme,
             "<Style Selector=\"ListBoxItem:pointerover TextBlock.shell-option-label\">",
@@ -904,6 +924,11 @@ public sealed class DesktopThemeManagerTests
             ("ComboBoxItemForegroundSelected", "ComboBoxItemBackgroundSelected", 4.5d),
             ("ComboBoxItemForegroundDisabled", "ComboBoxItemBackgroundDisabled", 4.5d),
             ("FlyoutPresenterForeground", "FlyoutPresenterBackground", 4.5d),
+            ("MenuFlyoutPresenterForeground", "MenuFlyoutPresenterBackground", 4.5d),
+            ("MenuItemForeground", "MenuItemBackground", 4.5d),
+            ("MenuItemForegroundPointerOver", "MenuItemBackgroundPointerOver", 4.5d),
+            ("MenuItemForegroundSelected", "MenuItemBackgroundSelected", 4.5d),
+            ("MenuItemForegroundDisabled", "MenuItemBackground", 4.5d),
             ("ChummerShellForegroundBrush", "ChummerShellWindowBackgroundBrush", 4.5d),
             ("ChummerShellForegroundBrush", "ChummerShellSurfaceBrush", 4.5d),
             ("ChummerShellForegroundBrush", "ChummerShellSurfaceAltBrush", 4.5d),

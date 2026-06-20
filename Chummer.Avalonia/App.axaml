@@ -88,7 +88,15 @@
           <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#111827" />
           <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#B5C0CF" />
           <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterForeground" Color="#111827" />
           <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#B5C0CF" />
+          <SolidColorBrush x:Key="MenuItemBackground" Color="#FBFCFE" />
+          <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#F5F8FC" />
+          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#2C5FB8" />
+          <SolidColorBrush x:Key="MenuItemForeground" Color="#111827" />
+          <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#111827" />
+          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#475569" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#173A6C" />
@@ -179,7 +187,15 @@
           <SolidColorBrush x:Key="FlyoutPresenterForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="FlyoutPresenterBorderBrush" Color="#334155" />
           <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#111827" />
+          <SolidColorBrush x:Key="MenuFlyoutPresenterForeground" Color="#E5E7EB" />
           <SolidColorBrush x:Key="MenuFlyoutPresenterBorderBrush" Color="#334155" />
+          <SolidColorBrush x:Key="MenuItemBackground" Color="#111827" />
+          <SolidColorBrush x:Key="MenuItemBackgroundPointerOver" Color="#223149" />
+          <SolidColorBrush x:Key="MenuItemBackgroundSelected" Color="#1D4ED8" />
+          <SolidColorBrush x:Key="MenuItemForeground" Color="#E5E7EB" />
+          <SolidColorBrush x:Key="MenuItemForegroundPointerOver" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="MenuItemForegroundSelected" Color="#F8FAFC" />
+          <SolidColorBrush x:Key="MenuItemForegroundDisabled" Color="#94A3B8" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonBrush" Color="#1C4A2D" />
           <SolidColorBrush x:Key="ChummerShellAccentButtonForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="ChummerShellInfoBrush" Color="#60A5FA" />
@@ -345,6 +361,21 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
+    <Style Selector="FlyoutPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlyoutPresenterBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource FlyoutPresenterForeground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource FlyoutPresenterBorderBrush}" />
+    </Style>
+    <Style Selector="MenuFlyoutPresenter">
+      <Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource MenuFlyoutPresenterForeground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    </Style>
+    <Style Selector="ContextMenu">
+      <Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource MenuFlyoutPresenterForeground}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    </Style>
     <Style Selector="Menu.classic-menu">
       <Setter Property="Background" Value="{DynamicResource ChummerShellMenuBarBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
@@ -357,7 +388,31 @@
       <Setter Property="Margin" Value="0" />
     </Style>
     <Style Selector="MenuItem">
-      <Setter Property="Foreground" Value="{DynamicResource ChummerShellForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource MenuItemBackground}" />
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForeground}" />
+    </Style>
+    <Style Selector="MenuItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource MenuItemBackgroundPointerOver}" />
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundPointerOver}" />
+    </Style>
+    <Style Selector="MenuItem:selected">
+      <Setter Property="Background" Value="{DynamicResource MenuItemBackgroundSelected}" />
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundSelected}" />
+    </Style>
+    <Style Selector="MenuItem:disabled">
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundDisabled}" />
+    </Style>
+    <Style Selector="MenuItem TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForeground}" />
+    </Style>
+    <Style Selector="MenuItem:pointerover TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundPointerOver}" />
+    </Style>
+    <Style Selector="MenuItem:selected TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundSelected}" />
+    </Style>
+    <Style Selector="MenuItem:disabled TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource MenuItemForegroundDisabled}" />
     </Style>
     <Style Selector="MenuItem.menu-root">
       <Setter Property="Padding" Value="14,6" />
@@ -378,6 +433,9 @@
       <Setter Property="Background" Value="{DynamicResource ChummerShellActiveMenuBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChummerShellActiveMenuBorderBrush}" />
+    </Style>
+    <Style Selector="MenuItem.menu-root.active-menu TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource ChummerShellSelectionForegroundBrush}" />
     </Style>
     <Style Selector="MenuItem.menu-root:disabled">
       <Setter Property="Foreground" Value="{DynamicResource ChummerShellMutedForegroundBrush}" />

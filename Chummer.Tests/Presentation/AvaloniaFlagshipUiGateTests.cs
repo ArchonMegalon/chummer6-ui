@@ -4188,6 +4188,13 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"NumericUpDown\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"FlyoutPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuFlyoutPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ContextMenu\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:pointerover TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem:selected TextBlock\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuItem.menu-root.active-menu TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
 
         Assert.AreEqual("#1C4A2D", ToHex(light["ChummerShellActiveMenuBorderBrush"]));
@@ -4204,6 +4211,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         AssertContrastAtLeast(light["ChummerShellForegroundBrush"], light["ChummerShellSurfaceBrush"], 12d, "light shell foreground on surface");
         AssertContrastAtLeast(light["ChummerShellMutedForegroundBrush"], light["ChummerShellSurfaceBrush"], 7d, "light shell muted foreground on surface");
         AssertContrastAtLeast(light["ChummerShellTextMutedBrush"], light["ChummerShellSelectionPanelBrush"], 7d, "light selection muted text on panel");
+        AssertContrastAtLeast(light["TextControlForeground"], light["TextControlBackground"], 12d, "light text input foreground");
+        AssertContrastAtLeast(light["ComboBoxForeground"], light["ComboBoxBackground"], 12d, "light combo foreground");
+        AssertContrastAtLeast(light["MenuFlyoutPresenterForeground"], light["MenuFlyoutPresenterBackground"], 12d, "light menu flyout foreground");
+        AssertContrastAtLeast(light["MenuItemForeground"], light["MenuItemBackground"], 12d, "light menu item foreground");
+        AssertContrastAtLeast(light["MenuItemForegroundPointerOver"], light["MenuItemBackgroundPointerOver"], 12d, "light menu item hover foreground");
+        AssertContrastAtLeast(light["MenuItemForegroundSelected"], light["MenuItemBackgroundSelected"], 5d, "light menu item selected foreground");
         AssertContrastAtLeast(light["ChummerShellAccentButtonForegroundBrush"], light["ChummerShellAccentButtonBrush"], 7d, "light accent button text");
         AssertContrastAtLeast(light["ChummerShellWarningBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light warning tone on surface");
         AssertContrastAtLeast(light["ChummerShellDangerBrush"], light["ChummerShellSurfaceBrush"], 4.5d, "light danger tone on surface");
@@ -4211,6 +4224,12 @@ public sealed class AvaloniaFlagshipUiGateTests
         AssertContrastAtLeast(dark["ChummerShellForegroundBrush"], dark["ChummerShellSurfaceBrush"], 12d, "dark shell foreground on surface");
         AssertContrastAtLeast(dark["ChummerShellMutedForegroundBrush"], dark["ChummerShellSurfaceBrush"], 7d, "dark shell muted foreground on surface");
         AssertContrastAtLeast(dark["ChummerShellTextMutedBrush"], dark["ChummerShellSelectionPanelBrush"], 5d, "dark selection muted text on panel");
+        AssertContrastAtLeast(dark["TextControlForeground"], dark["TextControlBackground"], 12d, "dark text input foreground");
+        AssertContrastAtLeast(dark["ComboBoxForeground"], dark["ComboBoxBackground"], 12d, "dark combo foreground");
+        AssertContrastAtLeast(dark["MenuFlyoutPresenterForeground"], dark["MenuFlyoutPresenterBackground"], 12d, "dark menu flyout foreground");
+        AssertContrastAtLeast(dark["MenuItemForeground"], dark["MenuItemBackground"], 12d, "dark menu item foreground");
+        AssertContrastAtLeast(dark["MenuItemForegroundPointerOver"], dark["MenuItemBackgroundPointerOver"], 9d, "dark menu item hover foreground");
+        AssertContrastAtLeast(dark["MenuItemForegroundSelected"], dark["MenuItemBackgroundSelected"], 5d, "dark menu item selected foreground");
         AssertContrastAtLeast(dark["ChummerShellAccentButtonForegroundBrush"], dark["ChummerShellAccentButtonBrush"], 7d, "dark accent button text");
         AssertContrastAtLeast(dark["ChummerShellWarningBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark warning tone on surface");
         AssertContrastAtLeast(dark["ChummerShellDangerBrush"], dark["ChummerShellSurfaceBrush"], 4.5d, "dark danger tone on surface");
