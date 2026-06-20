@@ -73,15 +73,15 @@ public sealed class DesktopInstallerParityComplianceTests
         string installerProgramPath = Path.Combine(repoRoot, "Chummer.Desktop.Installer", "Program.cs");
         string installerProgramText = File.ReadAllText(installerProgramPath);
 
-        StringAssert.Contains(installerProgramText, "ClientSize = new Size(840, 400);");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(840, 400);");
-        StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 11.5F");
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(860, 420);");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(860, 420);");
+        StringAssert.Contains(installerProgramText, "Font = new Font(\"Segoe UI Semibold\", 10F");
         StringAssert.Contains(installerProgramText, "Text = $\"{displayName} Installer - Installing\";");
         StringAssert.Contains(installerProgramText, "Name = \"ChummerInstallerProgressDialog\";");
         StringAssert.Contains(installerProgramText, "AccessibleName = $\"{displayName} installer progress\";");
         StringAssert.Contains(installerProgramText, "TimeSpan minimumProgressDisplay = TimeSpan.FromMilliseconds(1200);");
-        StringAssert.Contains(installerProgramText, "ClientSize = new Size(840, 400),");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(840, 400),");
+        StringAssert.Contains(installerProgramText, "ClientSize = new Size(860, 420),");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(860, 420),");
         StringAssert.Contains(installerProgramText, "Name = \"ChummerInstallerCompletionDialog\",");
         StringAssert.Contains(installerProgramText, "AccessibleName = $\"{displayName} install complete\",");
         StringAssert.Contains(installerProgramText, "Text = $\"{displayName} Installer - Install Complete\",");
@@ -98,15 +98,15 @@ public sealed class DesktopInstallerParityComplianceTests
         StringAssert.Contains(installerProgramText, "TraceInstaller(\"completion prompt result=\" + prompt.DialogResult);");
         StringAssert.Contains(installerProgramText, "ShowInTaskbar = true,");
         StringAssert.Contains(installerProgramText, "RowCount = 5");
-        StringAssert.Contains(installerProgramText, "Height = 34,");
+        StringAssert.Contains(installerProgramText, "Height = 32,");
         StringAssert.Contains(installerProgramText, "Use only when support asks.");
-        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(176, 42),");
+        StringAssert.Contains(installerProgramText, "MinimumSize = new Size(164, 38),");
         StringAssert.Contains(installerProgramText, "Padding = new Padding(14, 0, 14, 2),");
         StringAssert.Contains(installerProgramText, "UseMnemonic = false");
         StringAssert.Contains(installerProgramText, "WrapContents = false");
         StringAssert.Contains(installerProgramText, "Shortcuts and first launch are prepared automatically.");
         StringAssert.Contains(installerProgramText, "This may take a few minutes on slower systems.");
-        StringAssert.Contains(installerProgramText, "AutoEllipsis = false");
+        StringAssert.Contains(installerProgramText, "AutoEllipsis = true");
         StringAssert.Contains(installerProgramText, "BuildInstalledPathText(targetDir)");
         StringAssert.Contains(installerProgramText, "return $\"Installed to ...{Path.DirectorySeparatorChar}{compactTail}\";");
         StringAssert.Contains(installerProgramText, ".TakeLast(3)");
@@ -123,9 +123,13 @@ public sealed class DesktopInstallerParityComplianceTests
         Assert.IsFalse(installerProgramText.Contains("MinimumSize = new Size(900, 460),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(840, 430),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("MinimumSize = new Size(840, 430),", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("ClientSize = new Size(840, 400)", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("MinimumSize = new Size(840, 400)", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("MaximumSize = new Size(220, 42),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 24F", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 13.5F", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("Font = new Font(\"Segoe UI Semibold\", 11.5F", StringComparison.Ordinal));
+        Assert.IsFalse(installerProgramText.Contains("MinimumSize = new Size(176, 42),", StringComparison.Ordinal));
         Assert.IsFalse(installerProgramText.Contains(
             "Height = 52,\n            TextAlign = ContentAlignment.TopLeft",
             StringComparison.Ordinal));
