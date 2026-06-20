@@ -213,7 +213,7 @@ public partial class CommandDialogPaneControl : UserControl
         StackPanel leftColumn = new() { Spacing = 10 };
         if (navigationField is not null)
         {
-            leftColumn.Children.Add(CreateSelectionSurfaceCard(navigationField.Label, CreateFieldControl(navigationField), 112));
+            leftColumn.Children.Add(CreateSelectionSurfaceCard(ResolveSelectionNavigationTitle(navigationField), CreateFieldControl(navigationField), 112));
         }
 
         if (candidateField is not null)
@@ -250,6 +250,18 @@ public partial class CommandDialogPaneControl : UserControl
         }
 
         return shell;
+    }
+
+    private static string ResolveSelectionNavigationTitle(DialogFieldDisplayItem field)
+    {
+        if (!string.Equals(field.Label, "Navigation", StringComparison.Ordinal))
+        {
+            return field.Label;
+        }
+
+        return field.Id.Contains("CategoryTree", StringComparison.Ordinal)
+            ? "Categories"
+            : "Current selection";
     }
 
     private bool TryBuildLegacyGlobalSettingsFields(IReadOnlyList<DialogFieldDisplayItem> fields)

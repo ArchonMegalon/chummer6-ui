@@ -678,12 +678,18 @@ public sealed class DesktopThemeManagerTests
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string commandDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "CommandDialogPaneControl.axaml.cs"));
 
         StringAssert.Contains(desktopDialogSource, "ResolveSelectionNavigationTitle(navigationField)");
         StringAssert.Contains(desktopDialogSource, "private static string ResolveSelectionNavigationTitle(DesktopDialogField field)");
+        StringAssert.Contains(commandDialogSource, "ResolveSelectionNavigationTitle(navigationField)");
+        StringAssert.Contains(commandDialogSource, "private static string ResolveSelectionNavigationTitle(DialogFieldDisplayItem field)");
         StringAssert.Contains(desktopDialogSource, "? \"Categories\"");
         StringAssert.Contains(desktopDialogSource, ": \"Current selection\"");
+        StringAssert.Contains(commandDialogSource, "? \"Categories\"");
+        StringAssert.Contains(commandDialogSource, ": \"Current selection\"");
         Assert.IsFalse(desktopDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
+        Assert.IsFalse(commandDialogSource.Contains("CreateSelectionSurfaceCard(navigationField.Label", StringComparison.Ordinal));
     }
 
     private static IEnumerable<(string Type, string Name)> FindControlCreations(
