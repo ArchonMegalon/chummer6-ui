@@ -1136,7 +1136,7 @@ internal static class Program
         {
             return PromptForInstalledHeadLaunchWithButtons(
                 metadata.DisplayName,
-                "Chummer is installed.",
+                "Chummer is ready.",
                 BuildInstalledPathText(targetDir),
                 (
                     "Open Chummer",
@@ -1149,7 +1149,7 @@ internal static class Program
 
         return PromptForInstalledHeadLaunchWithButtons(
             metadata.DisplayName,
-            "Chummer is installed.",
+            "Chummer is ready.",
             BuildInstalledPathText(targetDir),
             (
                 "Open Chummer",
@@ -1208,8 +1208,8 @@ internal static class Program
             Font = new Font("Segoe UI", 8F, FontStyle.Regular, GraphicsUnit.Point),
             FormBorderStyle = FormBorderStyle.FixedDialog,
             StartPosition = FormStartPosition.CenterScreen,
-            ClientSize = new Size(840, 430),
-            MinimumSize = new Size(840, 430),
+            ClientSize = new Size(900, 460),
+            MinimumSize = new Size(900, 460),
             MinimizeBox = false,
             MaximizeBox = false,
             ShowInTaskbar = false,
@@ -1226,10 +1226,11 @@ internal static class Program
             ForeColor = Color.FromArgb(18, 24, 36),
             Text = headline,
             Dock = DockStyle.Top,
-            Height = 58,
+            Height = 56,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 6, 16, 0),
-            AutoEllipsis = true
+            AutoEllipsis = false,
+            UseMnemonic = false
         };
 
         Label pathLabel = new()
@@ -1239,10 +1240,10 @@ internal static class Program
             ForeColor = Color.FromArgb(55, 65, 84),
             Text = pathText,
             Dock = DockStyle.Top,
-            Height = 76,
+            Height = 88,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(20, 0, 20, 0),
-            AutoEllipsis = true,
+            Padding = new Padding(20, 0, 28, 0),
+            AutoEllipsis = false,
             MaximumSize = new Size(0, 0),
             UseMnemonic = false
         };
@@ -1254,10 +1255,11 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.PrimaryFootnote,
             Dock = DockStyle.Top,
-            Height = 34,
+            Height = 30,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 0, 16, 0),
-            AutoEllipsis = true
+            AutoEllipsis = false,
+            UseMnemonic = false
         };
 
         Label secondaryNoteLabel = new()
@@ -1267,10 +1269,11 @@ internal static class Program
             ForeColor = Color.FromArgb(90, 102, 124),
             Text = options.SecondaryFootnote,
             Dock = DockStyle.Top,
-            Height = 34,
+            Height = 30,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(20, 0, 16, 0),
-            AutoEllipsis = true
+            AutoEllipsis = false,
+            UseMnemonic = false
         };
 
         FlowLayoutPanel actions = new()

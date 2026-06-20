@@ -8880,9 +8880,11 @@ public sealed class AvaloniaFlagshipUiGateTests
 
     private static DesktopDialogState BuildPriorityWorkflowDialogForTesting(string buildMethod)
     {
-        MethodInfo method = typeof(DesktopDialogFactory).GetMethod(
-            "BuildNewCharacterContinuationDialog",
-            BindingFlags.Static | BindingFlags.NonPublic)
+        MethodInfo method = typeof(DesktopDialogFactory)
+            .GetMethods(BindingFlags.Static | BindingFlags.NonPublic)
+            .Single(candidate =>
+                string.Equals(candidate.Name, "BuildNewCharacterContinuationDialog", StringComparison.Ordinal)
+                && candidate.GetParameters().Length == 5)
             ?? throw new AssertFailedException("BuildNewCharacterContinuationDialog reflection entry point was not found.");
 
         return (DesktopDialogState)(method.Invoke(null, [RulesetDefaults.Sr5, buildMethod, true, "Nova", "Cipher"])

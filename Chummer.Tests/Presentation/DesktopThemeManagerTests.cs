@@ -585,6 +585,62 @@ public sealed class DesktopThemeManagerTests
         string shellTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
         string classicPortSurface = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "Controls", "ClassicFormPorts", "ClassicFormPortSurfaceControl.cs"));
         string desktopDialogSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopDialogWindow.axaml.cs"));
+        string[] fluentControlResourceKeys =
+        [
+            "TextControlBackground",
+            "TextControlBackgroundPointerOver",
+            "TextControlBackgroundFocused",
+            "TextControlBackgroundDisabled",
+            "TextControlForeground",
+            "TextControlForegroundPointerOver",
+            "TextControlForegroundFocused",
+            "TextControlForegroundDisabled",
+            "TextControlBorderBrush",
+            "TextControlBorderBrushPointerOver",
+            "TextControlBorderBrushFocused",
+            "TextControlBorderBrushDisabled",
+            "TextControlPlaceholderForeground",
+            "TextControlPlaceholderForegroundPointerOver",
+            "TextControlPlaceholderForegroundFocused",
+            "TextControlPlaceholderForegroundDisabled",
+            "ComboBoxBackground",
+            "ComboBoxBackgroundPointerOver",
+            "ComboBoxBackgroundPressed",
+            "ComboBoxBackgroundDisabled",
+            "ComboBoxForeground",
+            "ComboBoxForegroundPointerOver",
+            "ComboBoxForegroundPressed",
+            "ComboBoxForegroundDisabled",
+            "ComboBoxBorderBrush",
+            "ComboBoxBorderBrushPointerOver",
+            "ComboBoxBorderBrushPressed",
+            "ComboBoxBorderBrushDisabled",
+            "ComboBoxDropDownBackground",
+            "ComboBoxDropDownBorderBrush",
+            "ComboBoxItemBackground",
+            "ComboBoxItemBackgroundPointerOver",
+            "ComboBoxItemBackgroundPressed",
+            "ComboBoxItemBackgroundSelected",
+            "ComboBoxItemBackgroundDisabled",
+            "ComboBoxItemForeground",
+            "ComboBoxItemForegroundPointerOver",
+            "ComboBoxItemForegroundPressed",
+            "ComboBoxItemForegroundSelected",
+            "ComboBoxItemForegroundDisabled",
+            "FlyoutPresenterBackground",
+            "FlyoutPresenterForeground",
+            "FlyoutPresenterBorderBrush",
+            "MenuFlyoutPresenterBackground",
+            "MenuFlyoutPresenterBorderBrush"
+        ];
+
+        foreach (string resourceKey in fluentControlResourceKeys)
+        {
+            Assert.AreEqual(
+                2,
+                Regex.Matches(appTheme, $"x:Key=\"{Regex.Escape(resourceKey)}\"").Count,
+                $"{resourceKey} must be defined once for Light and once for Dark so Fluent template parts cannot inherit OS colors.");
+        }
 
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSelectionInsetBrush}\" />");

@@ -204,4 +204,36 @@ public class DesktopLocalizationCatalogTests
             }
         }
     }
+
+    [TestMethod]
+    public void Primary_desktop_copy_stays_human_facing_without_internal_release_or_support_jargon()
+    {
+        string[] primaryLanguages = [DesktopLocalizationCatalog.DefaultLanguage, "de-de"];
+        string[] blockedFragments =
+        [
+            "proof",
+            "evidence",
+            "truth",
+            "verification",
+            "smoke",
+            "synthetic",
+            "Beleg",
+            "Wahrheit",
+            "Verifikation"
+        ];
+
+        foreach (string languageCode in primaryLanguages)
+        {
+            foreach (string key in DesktopLocalizationCatalog.RequiredTrustSurfaceKeys())
+            {
+                string localizedValue = DesktopLocalizationCatalog.GetRequiredString(key, languageCode);
+                foreach (string blockedFragment in blockedFragments)
+                {
+                    Assert.IsFalse(
+                        localizedValue.Contains(blockedFragment, StringComparison.OrdinalIgnoreCase),
+                        $"Expected minimal human-facing copy for {key} / {languageCode}, but found '{blockedFragment}' in '{localizedValue}'.");
+                }
+            }
+        }
+    }
 }
