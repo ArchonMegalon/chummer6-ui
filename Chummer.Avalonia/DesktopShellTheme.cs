@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Chummer.Presentation;
 using Chummer.Presentation.Overview;
 
 namespace Chummer.Avalonia;
@@ -135,14 +136,15 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(body);
 
-        ToolTip.SetTip(body, title);
+        string visibleTitle = PlayerFacingCopyHumanizer.Clean(title);
+        ToolTip.SetTip(body, visibleTitle);
 
         StackPanel content = new() { Spacing = spacing };
         if (includeHeading)
         {
             content.Children.Add(new TextBlock
             {
-                Text = title,
+                Text = visibleTitle,
                 FontWeight = FontWeight.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             });
@@ -204,7 +206,7 @@ internal static class DesktopShellTheme
     {
         ArgumentNullException.ThrowIfNull(action);
 
-        string resolvedLabel = ResolveCloseActionLabel(label, closeWindow);
+        string resolvedLabel = PlayerFacingCopyHumanizer.Clean(ResolveCloseActionLabel(label, closeWindow));
         Button button = new()
         {
             Content = resolvedLabel,

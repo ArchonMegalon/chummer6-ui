@@ -6,6 +6,18 @@ public static class PlayerFacingCopyHumanizer
 {
     private static readonly (string From, string To)[] PhraseReplacements =
     [
+        ("Public Proof Shelf", "Public Files"),
+        ("Proof Shelf", "Files"),
+        ("My Artifact Shelf", "My Files"),
+        ("Creator Artifact Shelf", "Creator Files"),
+        ("Campaign Artifact Shelf", "Campaign Files"),
+        ("artifact shelf", "files"),
+        ("Rule Environment Studio", "Rules Setup"),
+        ("Rule-environment studio", "Rules setup"),
+        ("rule-environment", "rules setup"),
+        ("Before-after diffs", "Changes"),
+        ("Explain receipts", "Explanations"),
+        ("Explain receipt", "Explanation"),
         ("Unmixr AI", "Unmixr"),
         ("AI narration", "alternate narration"),
         ("AI coach route", "assistant service"),
@@ -32,11 +44,12 @@ public static class PlayerFacingCopyHumanizer
         ("proofs", "details"),
         ("proof", "details"),
         ("truth", "status"),
+        ("diffs", "changes"),
+        ("diff", "change"),
         ("receipts", "records"),
         ("receipt", "record"),
         ("artifacts", "items"),
         ("artifact", "item"),
-        ("artifact shelf", "item shelf"),
         ("operator voice", "default voice"),
         ("operator reading", "dossier reading"),
         ("operator shaped", "runner shaped"),
@@ -65,6 +78,7 @@ public static class PlayerFacingCopyHumanizer
         ("bundle root", "dossier folder"),
         ("preview-backed", "previewed"),
         ("generated", "created"),
+        ("claim the install", "claim this copy"),
     ];
 
     public static string Clean(string? value)

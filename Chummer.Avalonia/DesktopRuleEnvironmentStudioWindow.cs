@@ -31,7 +31,7 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         _portabilityActivity = portabilityActivity;
         _projection = projection;
 
-        Title = "Rule Environment Studio";
+        Title = "Rules Setup";
         Width = 860;
         Height = 660;
         MinWidth = 720;
@@ -48,9 +48,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                     Spacing = 10,
                     Children =
                     {
-                        CreateSection("Amend-package lifecycle", BuildLifecycleBody()),
-                        CreateSection("Before-after diffs", BuildDiffBody()),
-                        CreateSection("Explain receipts", BuildReceiptBody()),
+                        CreateSection("Rules package changes", BuildLifecycleBody()),
+                        CreateSection("Changes", BuildDiffBody()),
+                        CreateSection("Notes", BuildReceiptBody()),
                         CreateActionRow(CreatePrimaryActions(owner)),
                         new StackPanel
                         {
@@ -113,9 +113,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
     {
         string? rulesetId = workspaces.FirstOrDefault()?.RulesetId;
         string effectiveRulesetId = rulesetId ?? "unresolved";
-        string lifecycleSummary = "Rule-environment studio is waiting for a workspace before it can bind amendment packages to a concrete ruleset.";
-        string diffSummary = "No before-after workspace diff is available yet.";
-        string receiptSummary = "Explain receipts will attach after the active runtime and build path can be read.";
+        string lifecycleSummary = "Rules setup is waiting for a workspace before it can match packages to a concrete ruleset.";
+        string diffSummary = "No workspace change summary is available yet.";
+        string receiptSummary = "Explanations will appear after the active runtime and build path can be read.";
         ActiveRuntimeStatusProjection? activeRuntime = null;
         RuntimeInspectorProjection? runtimeInspector = null;
         IReadOnlyList<DesktopBuildPathSuggestion> suggestions = [];
@@ -170,13 +170,13 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
                 Task<CharacterBuildSection> buildTask = client.GetBuildAsync(leadWorkspace.Id, CancellationToken.None);
                 Task<CharacterRulesSection> rulesTask = client.GetRulesAsync(leadWorkspace.Id, CancellationToken.None);
                 await Task.WhenAll(buildTask, rulesTask).ConfigureAwait(false);
-                lifecycleSummary = $"Rule-environment studio is grounded on {leadWorkspace.Summary.Name} with {buildTask.Result.BuildMethod} build posture.";
-                diffSummary = $"Before-after diffs compare {rulesTask.Result.GameEdition} rules with {preview?.RuntimeCompatibilitySummary ?? "the current runtime fingerprint"}.";
-                receiptSummary = $"Explain receipts bind {activeRuntime?.RuntimeFingerprint ?? leadWorkspace.RulesetId} to {preview?.SupportClosureSummary ?? "workspace support reuse"}.";
+                lifecycleSummary = $"Rules setup is using {leadWorkspace.Summary.Name} with the {buildTask.Result.BuildMethod} build method.";
+                diffSummary = $"Changes compare {rulesTask.Result.GameEdition} rules with {preview?.RuntimeCompatibilitySummary ?? "the current runtime"}.";
+                receiptSummary = $"Explanations connect {activeRuntime?.RuntimeFingerprint ?? leadWorkspace.RulesetId} to {preview?.SupportClosureSummary ?? "workspace support reuse"}.";
             }
             catch
             {
-                lifecycleSummary = $"Rule-environment studio loaded {leadWorkspace.Summary.Name}, but build and rules sections need refresh before amendment.";
+                lifecycleSummary = $"Rules setup loaded {leadWorkspace.Summary.Name}, but build and rules sections need a refresh before package changes.";
             }
         }
 
@@ -201,9 +201,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         => string.Join(
             "\n",
             [
-                "Rule-environment studio",
+                "Rules setup",
                 $"Ruleset: {_projection.RulesetId}",
-                $"Amend-package lifecycle: {_projection.LifecycleSummary}",
+                $"Package changes: {_projection.LifecycleSummary}",
                 _projection.RuntimeSummary,
                 _projection.SuggestionSummary
             ]);
@@ -212,12 +212,12 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         => string.Join(
             "\n",
             [
-                $"Before-after diffs: {_projection.DiffSummary}",
+                $"Changes: {_projection.DiffSummary}",
                 _portabilityActivity is null
-                    ? "No recent portable import/export receipt is attached."
+                    ? "No recent portable import or export record is attached."
                     : $"Import environment before: {DesktopTrustReceiptText.BuildImportDiffBefore(_portabilityActivity.Receipt)}",
                 _portabilityActivity is null
-                    ? "No after-state receipt is attached."
+                    ? "No after-state record is attached."
                     : $"Import environment after: {DesktopTrustReceiptText.BuildImportDiffAfter(_portabilityActivity.Receipt)}"
             ]);
 
@@ -228,8 +228,8 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
             return string.Join(
                 "\n",
                 [
-                    $"Explain receipts: {_projection.ReceiptSummary}",
-                    "Rule environment: no recent import receipt is attached.",
+                    $"Explanations: {_projection.ReceiptSummary}",
+                    "Rules setup: no recent import record is attached.",
                     "Support reuse: support can reuse runtime, build-path, and workspace summaries after the next portable import/export."
                 ]);
         }
@@ -238,9 +238,9 @@ internal sealed class DesktopRuleEnvironmentStudioWindow : Window
         return string.Join(
             "\n",
             [
-                $"Explain receipts: {_projection.ReceiptSummary}",
-                $"Rule environment: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
-                "Explain receipt: " + DesktopTrustReceiptText.BuildImportExplainReceipt(receipt),
+                $"Explanations: {_projection.ReceiptSummary}",
+                $"Rules setup: {DesktopTrustReceiptText.BuildImportRuleEnvironment(receipt)}",
+                "Explanation: " + DesktopTrustReceiptText.BuildImportExplainReceipt(receipt),
                 $"Support reuse: {DesktopTrustReceiptText.BuildImportSupportReuse(receipt)}"
             ]);
     }

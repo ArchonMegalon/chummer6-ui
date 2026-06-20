@@ -679,8 +679,7 @@ public sealed class AccessibilitySignoffSmokeTests
 
         DesktopHomeBuildExplainProjection projection = DesktopHomeBuildExplainProjector.Create([workspace], build, rules, campaignSummary, activeRuntime, runtimeInspector, buildPathCandidates);
         RequireContains(projection.NextSafeAction, "rebind the active profile");
-        RequireContains(projection.RulesetSpotlight, "home cockpit");
-        RequireContains(projection.RulesetSpotlight, "home");
+        RequireContains(projection.RulesetSpotlight, "SR6 opens to guided setup");
         RequireContains(projection.ExplainFocus, "Explain focus:");
         RequireContains(projection.ExplainFocus, "Build path focus: Edge Runner Starter");
         RequireContains(projection.ExplainFocus, "Campaign next step:");
@@ -690,7 +689,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireNotEmpty(projection.RulePosture, nameof(projection.RulePosture));
         if (projection.CompatibilityReceipts.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility records for the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should surface explicit compatibility records for the flagship home surface.");
         }
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Compatibility record:");
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "profile rebind");
@@ -708,7 +707,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireContains(string.Join("\n", projection.CompatibilityReceipts), "Publication record:");
         if (projection.BuildPathComparisons.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should compare multiple grounded build paths in the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should compare multiple build paths in the flagship home surface.");
         }
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Edge Runner Starter");
         RequireContains(string.Join("\n", projection.BuildPathComparisons), "Build path compare: Street Sam Starter");
@@ -718,7 +717,7 @@ public sealed class AccessibilitySignoffSmokeTests
         RequireNoPlayerFacingMachineryTerms(projection);
         if (projection.Watchouts.Count < 2)
         {
-            throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home cockpit.");
+            throw new InvalidOperationException("Desktop build/explain projection should surface multiple watchouts for the flagship home surface.");
         }
         RequireContains(string.Join("\n", projection.Watchouts), "campaign confirmation click");
     }
@@ -741,8 +740,8 @@ public sealed class AccessibilitySignoffSmokeTests
                     Preview: null)
             ]);
         RequireContains(projection.NextSafeAction, "Create or import the first dossier");
-        RequireContains(projection.RulesetSpotlight, "SR5 home cockpit");
-        RequireContains(projection.ExplainFocus, "Claim the install");
+        RequireContains(projection.RulesetSpotlight, "SR5 opens to the main character editor");
+        RequireContains(projection.ExplainFocus, "claim this copy");
         RequireContains(projection.RuntimeHealthSummary, "no active runtime profile");
         RequireContains(projection.ReturnTarget, "No workspace return target");
         RequireContains(projection.RulePosture, "Shadowrun 5");
@@ -1096,12 +1095,17 @@ public sealed class AccessibilitySignoffSmokeTests
     {
         string source = ReadSource("Chummer.Avalonia/DesktopRuleEnvironmentStudioWindow.cs");
         RequireContains(source, "public static async Task ShowAsync(Window owner, string headId, WorkspacePortabilityActivity? portabilityActivity = null)");
-        RequireContains(source, "Title = \"Rule Environment Studio\"");
-        RequireContains(source, "\"Rule Environment Studio\"");
-        RequireContains(source, "\"Amend-package lifecycle\"");
-        RequireContains(source, "\"Before-after diffs\"");
-        RequireContains(source, "\"Explain receipts\"");
-        RequireContains(source, "\"Explain receipt: \"");
+        RequireContains(source, "Title = \"Rules Setup\"");
+        RequireContains(source, "\"Rules setup\"");
+        RequireContains(source, "\"Rules package changes\"");
+        RequireContains(source, "\"Changes\"");
+        RequireContains(source, "\"Notes\"");
+        RequireContains(source, "\"Explanation: \"");
+        RequireDoesNotContain(source, "\"Rule Environment Studio\"");
+        RequireDoesNotContain(source, "\"Amend-package lifecycle\"");
+        RequireDoesNotContain(source, "\"Before-after diffs\"");
+        RequireDoesNotContain(source, "\"Explain receipts\"");
+        RequireDoesNotContain(source, "\"Explain receipt: \"");
         RequireContains(source, "DesktopHomeWindow.ShowAsync(owner, _installState.HeadId)");
         RequireContains(source, "DesktopSupportWindow.ShowAsync(owner, _installState.HeadId)");
         RequireContains(source, "DesktopCampaignWorkspaceWindow.ShowAsync(owner, _installState.HeadId)");
