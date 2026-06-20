@@ -46,12 +46,17 @@ internal static class DesktopShellTheme
     public static void ApplyShellTextInputTheme(TextBox textBox)
     {
         ArgumentNullException.ThrowIfNull(textBox);
-        textBox.Background = ResolveThemeBrush("ChummerShellInputBackgroundBrush", "#FFFFFF");
-        textBox.Foreground = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#111111");
-        textBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
-        textBox.CaretBrush = ResolveThemeBrush("ChummerShellInputForegroundBrush", "#111111");
+        if (!textBox.Classes.Contains("shell-input"))
+        {
+            textBox.Classes.Add("shell-input");
+        }
+
+        textBox.Background = ResolveThemeBrush("TextControlBackground", "#FFFFFF");
+        textBox.Foreground = ResolveThemeBrush("TextControlForeground", "#111111");
+        textBox.BorderBrush = ResolveThemeBrush("TextControlBorderBrush", "#B5C0CF");
+        textBox.CaretBrush = ResolveThemeBrush("TextControlCaretBrush", "#111111");
         textBox.SelectionBrush = ResolveThemeBrush("ChummerShellSelectionBrush", "#2C5FB8");
-        textBox.SelectionForegroundBrush = ResolveThemeBrush("ChummerShellSelectionForegroundBrush", "#FFFFFF");
+        textBox.SelectionForegroundBrush = ResolveThemeBrush("TextControlSelectionForeground", "#FFFFFF");
         textBox.MinHeight = Math.Max(textBox.MinHeight, 30d);
         textBox.Padding = new Thickness(8, 4);
         ToolTip.SetTip(textBox, null);
@@ -60,9 +65,14 @@ internal static class DesktopShellTheme
     public static void ApplyShellComboBoxTheme(ComboBox comboBox)
     {
         ArgumentNullException.ThrowIfNull(comboBox);
-        comboBox.Background = ResolveThemeBrush("ChummerShellSurfaceBrush", "#FBFCFE");
-        comboBox.Foreground = ResolveThemeBrush("ChummerShellForegroundBrush", "#111827");
-        comboBox.BorderBrush = ResolveThemeBrush("ChummerShellBorderBrush", "#B5C0CF");
+        if (!comboBox.Classes.Contains("shell-combo"))
+        {
+            comboBox.Classes.Add("shell-combo");
+        }
+
+        comboBox.Background = ResolveThemeBrush("ComboBoxBackground", "#FBFCFE");
+        comboBox.Foreground = ResolveThemeBrush("ComboBoxForeground", "#111827");
+        comboBox.BorderBrush = ResolveThemeBrush("ComboBoxBorderBrush", "#B5C0CF");
         comboBox.MinHeight = Math.Max(comboBox.MinHeight, 30d);
         comboBox.Padding = new Thickness(8, 4);
     }

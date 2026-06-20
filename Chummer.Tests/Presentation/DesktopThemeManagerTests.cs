@@ -265,6 +265,73 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Desktop_text_inputs_and_combo_boxes_have_explicit_shell_readability_states()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string appTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "App.axaml"));
+        string shellTheme = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopShellTheme.cs"));
+
+        Assert.AreEqual(
+            1,
+            Regex.Matches(appTheme, "<Style Selector=\"TextBox\">").Count,
+            "TextBox must have one canonical base style so hover/focus fixes are not split across duplicate selectors.");
+        StringAssert.Contains(shellTheme, "textBox.Classes.Add(\"shell-input\");");
+        StringAssert.Contains(shellTheme, "comboBox.Classes.Add(\"shell-combo\");");
+        StringAssert.Contains(shellTheme, "ResolveThemeBrush(\"ComboBoxBackground\", \"#FBFCFE\")");
+        StringAssert.Contains(shellTheme, "ResolveThemeBrush(\"ComboBoxForeground\", \"#111827\")");
+        StringAssert.Contains(shellTheme, "ResolveThemeBrush(\"ComboBoxBorderBrush\", \"#B5C0CF\")");
+
+        foreach (string selector in new[]
+                 {
+                     "<Style Selector=\"TextBox.shell-input\">",
+                     "<Style Selector=\"TextBox.shell-input:pointerover\">",
+                     "<Style Selector=\"TextBox.shell-input:focus\">",
+                     "<Style Selector=\"TextBox.shell-input:disabled\">",
+                     "<Style Selector=\"ComboBox.shell-combo\">",
+                     "<Style Selector=\"ComboBox.shell-combo:pointerover\">",
+                     "<Style Selector=\"ComboBox.shell-combo:focus\">",
+                     "<Style Selector=\"ComboBox.shell-combo:disabled\">",
+                     "<Style Selector=\"ComboBox:pointerover /template/ TextBlock\">",
+                     "<Style Selector=\"ComboBox:focus /template/ TextBlock\">",
+                     "<Style Selector=\"ComboBox:disabled /template/ TextBlock\">",
+                     "<Style Selector=\"TextBox:pointerover /template/ TextBlock\">",
+                     "<Style Selector=\"TextBox:focus /template/ TextBlock\">",
+                     "<Style Selector=\"TextBox:disabled /template/ TextBlock\">"
+                 })
+        {
+            StringAssert.Contains(appTheme, selector);
+        }
+
+        foreach (string resource in new[]
+                 {
+                     "TextControlCaretBrush",
+                     "TextControlSelectionForeground",
+                     "TextControlBackgroundPointerOver",
+                     "TextControlForegroundPointerOver",
+                     "TextControlBorderBrushFocused",
+                     "ComboBoxBackgroundPointerOver",
+                     "ComboBoxForegroundPointerOver",
+                     "ComboBoxBorderBrushPressed",
+                     "ComboBoxDropDownGlyphForegroundPointerOver",
+                     "ComboBoxItemBackgroundSelected",
+                     "ComboBoxItemForegroundSelected"
+                 })
+        {
+            Assert.AreEqual(
+                2,
+                Regex.Matches(appTheme, $"x:Key=\"{resource}\"").Count,
+                $"{resource} must be defined for both light and dark dictionaries.");
+        }
+
+        StringAssert.Contains(appTheme, "<SolidColorBrush x:Key=\"ComboBoxItemBackgroundSelected\" Color=\"#2C5FB8\" />");
+        StringAssert.Contains(appTheme, "<SolidColorBrush x:Key=\"ComboBoxItemForegroundSelected\" Color=\"#FFFFFF\" />");
+        StringAssert.Contains(appTheme, "<SolidColorBrush x:Key=\"ComboBoxItemBackgroundSelected\" Color=\"#1D4ED8\" />");
+        StringAssert.Contains(appTheme, "<SolidColorBrush x:Key=\"ComboBoxItemForegroundSelected\" Color=\"#F8FAFC\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ComboBoxItemBackgroundSelected}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ComboBoxItemForegroundSelected}\" />");
+    }
+
+    [TestMethod]
     public void Avalonia_shell_uses_app_owned_theme_by_default_instead_of_partial_os_dark_mode()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
@@ -595,6 +662,8 @@ public sealed class DesktopThemeManagerTests
             "TextControlForegroundPointerOver",
             "TextControlForegroundFocused",
             "TextControlForegroundDisabled",
+            "TextControlCaretBrush",
+            "TextControlSelectionForeground",
             "TextControlBorderBrush",
             "TextControlBorderBrushPointerOver",
             "TextControlBorderBrushFocused",
@@ -611,6 +680,10 @@ public sealed class DesktopThemeManagerTests
             "ComboBoxForegroundPointerOver",
             "ComboBoxForegroundPressed",
             "ComboBoxForegroundDisabled",
+            "ComboBoxDropDownGlyphForeground",
+            "ComboBoxDropDownGlyphForegroundPointerOver",
+            "ComboBoxDropDownGlyphForegroundPressed",
+            "ComboBoxDropDownGlyphForegroundDisabled",
             "ComboBoxBorderBrush",
             "ComboBoxBorderBrushPointerOver",
             "ComboBoxBorderBrushPressed",
@@ -643,7 +716,8 @@ public sealed class DesktopThemeManagerTests
         }
 
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected\">");
-        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellSelectionInsetBrush}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ComboBoxItemBackgroundSelected}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ComboBoxItemForegroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");
@@ -661,11 +735,11 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected TextBlock\">");
-        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource ChummerShellInputBackgroundBrush}\" />");
-        StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ChummerShellInputForegroundBrush}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource TextControlBackground}\" />");
+        StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource TextControlForeground}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
-        StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"ChummerShellInputBackgroundBrush\", \"#FFFFFF\");");
-        StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"ChummerShellInputForegroundBrush\", \"#111111\");");
+        StringAssert.Contains(shellTheme, "textBox.Background = ResolveThemeBrush(\"TextControlBackground\", \"#FFFFFF\");");
+        StringAssert.Contains(shellTheme, "textBox.Foreground = ResolveThemeBrush(\"TextControlForeground\", \"#111111\");");
         StringAssert.Contains(classicPortSurface, "DesktopShellTheme.ApplyShellComboBoxTheme(comboBox);");
         StringAssert.Contains(shellTheme, "ApplyShellListBoxTheme(ListBox listBox)");
         StringAssert.Contains(appTheme, "<Style Selector=\"NumericUpDown\">");
