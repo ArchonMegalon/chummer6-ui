@@ -630,14 +630,14 @@ public sealed class AvaloniaFlagshipUiGateTests
                 harness.FindControlInWindowOrDefault<Button>(aliceWindow, "AliceOriginOpenFlipLinkPacketButton"),
                 "Approved origin dossier must expose the FlipLink handoff after approval.");
             Button openDossierPdfButton = harness.FindControlInWindow<Button>(aliceWindow, "AliceOriginOpenDossierPdfButton");
-            Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book/PDF artifact.");
+            Assert.IsTrue(openDossierPdfButton.IsVisible, "Approved origin dossier must immediately expose the book artifact.");
             WrapPanel actionRow = harness.FindControlInWindow<WrapPanel>(aliceWindow, "AliceAssistantActionRow");
             string firstVisibleAction = actionRow.Children
                 .OfType<Button>()
                 .Where(static button => button.IsVisible)
                 .Select(static button => button.Content?.ToString() ?? string.Empty)
                 .FirstOrDefault() ?? string.Empty;
-            Assert.AreEqual("Open dossier PDF", firstVisibleAction, "The approved origin dossier must be book-first before portrait, voice, or video actions.");
+            Assert.AreEqual("Open book", firstVisibleAction, "The approved origin dossier must be book-first before portrait, voice, or video actions.");
 
             harness.WaitUntil(
                 () => Directory.Exists(bundleRoot)
@@ -4185,9 +4185,11 @@ public sealed class AvaloniaFlagshipUiGateTests
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBox /template/ TextPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox\">");
+        StringAssert.Contains(appAxamlText, "<Style Selector=\"TextBox /template/ TextPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"NumericUpDown\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"FlyoutPresenter\">");
         StringAssert.Contains(appAxamlText, "<Style Selector=\"MenuFlyoutPresenter\">");

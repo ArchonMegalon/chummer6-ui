@@ -596,13 +596,13 @@ public sealed class DesktopThemeManagerTests
         Assert.IsTrue(approveStart >= 0 && renderPdfStart > approveStart, "Approve-origin source must be discoverable.");
         string approveSource = aliceSource[approveStart..renderPdfStart];
 
-        int openPdfIndex = approveSource.IndexOf("\"Open dossier PDF\"", StringComparison.Ordinal);
+        int openBookIndex = approveSource.IndexOf("\"Open book\"", StringComparison.Ordinal);
         int openStoryIndex = approveSource.IndexOf("\"Open story\"", StringComparison.Ordinal);
         int portraitIndex = approveSource.IndexOf("\"Create portraits\"", StringComparison.Ordinal);
-        int voiceIndex = approveSource.IndexOf("\"Create default voice script\"", StringComparison.Ordinal);
+        int voiceIndex = approveSource.IndexOf("\"Create audiobook script\"", StringComparison.Ordinal);
         int videoIndex = approveSource.IndexOf("\"Create dossier video\"", StringComparison.Ordinal);
-        Assert.IsTrue(openPdfIndex >= 0, "Approved Origin Dossier must expose the book/PDF action.");
-        Assert.IsTrue(openStoryIndex > openPdfIndex, "Story must stay adjacent to the book/PDF action.");
+        Assert.IsTrue(openBookIndex >= 0, "Approved Origin Dossier must expose the book action.");
+        Assert.IsTrue(openStoryIndex > openBookIndex, "Story must stay adjacent to the book action.");
         Assert.IsTrue(portraitIndex > openStoryIndex, "Portraits should not outrank the story/book.");
         Assert.IsTrue(voiceIndex > portraitIndex, "Audiobook scripts should follow the story/book and portrait preparation.");
         Assert.IsTrue(videoIndex > voiceIndex, "Video should follow the book, story, and voice-script preparation.");
@@ -823,9 +823,13 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:pointerover /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:focus /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBox:disabled /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ListBox\">");
@@ -841,6 +845,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Setter Property=\"Background\" Value=\"{DynamicResource TextControlBackground}\" />");
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource TextControlForeground}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox /template/ TextPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:pointerover /template/ TextPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:focus /template/ TextPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"TextBox:disabled /template/ TextPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"FlyoutPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"MenuFlyoutPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ContextMenu\">");
