@@ -984,6 +984,13 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(appTheme, "<Setter Property=\"Foreground\" Value=\"{DynamicResource ComboBoxItemForegroundSelected}\" />");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:pointerover /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected /template/ ContentPresenter\">");
+        StringAssert.Contains(appTheme, "<Style Selector=\"ListBoxItem:selected:pointerover /template/ ContentPresenter\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected:pointerover TextBlock.shell-option-label\">");
         StringAssert.Contains(appTheme, "<Style Selector=\"ComboBoxItem:selected TextBlock.shell-option-meta\">");

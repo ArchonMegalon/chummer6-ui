@@ -3360,6 +3360,22 @@ public sealed class AvaloniaFlagshipUiGateTests
     }
 
     [TestMethod]
+    public void Standalone_priority_workflow_dialog_keeps_input_controls_readable_before_hover()
+    {
+        WithStandaloneDialogWindow(window =>
+        {
+            DesktopDialogState dialog = BuildPriorityWorkflowDialogForTesting("Priority");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalent", "B");
+            dialog = RebuildPriorityWorkflowDialogField(dialog, "newCharacterPriorityTalentChoice", "Magician");
+
+            window.BindDialog(dialog);
+            PumpStandaloneUi();
+
+            AssertVisibleInputControlContrast(window, "SR priority workflow dialog");
+        });
+    }
+
+    [TestMethod]
     public void Runtime_priority_workflow_heritage_change_refreshes_visible_metatype_list_and_repairs_invalid_selection()
     {
         WithRuntimeHarness(harness =>
@@ -6643,6 +6659,47 @@ public sealed class AvaloniaFlagshipUiGateTests
     {
         double ratio = ContrastRatio(foreground, background);
         Assert.IsTrue(ratio >= minimum, $"Expected {context} contrast to be at least {minimum:0.0}, but was {ratio:0.00}.");
+    }
+
+    private static void AssertVisibleInputControlContrast(Control root, string context)
+    {
+        Control[] inputControls = root.GetVisualDescendants()
+            .OfType<Control>()
+            .Where(static control => control.IsVisible)
+            .Where(static control => control is ComboBox or ListBox or TextBox or NumericUpDown)
+            .ToArray();
+
+        Assert.IsTrue(
+            inputControls.Length >= 8,
+            $"{context} should expose enough themed input controls for a meaningful non-hover readability check.");
+
+        foreach (Control control in inputControls)
+        {
+            (IBrush? foregroundBrush, IBrush? backgroundBrush) = control switch
+            {
+                ComboBox comboBox => (comboBox.Foreground, comboBox.Background),
+                ListBox listBox => (listBox.Foreground, listBox.Background),
+                TextBox textBox => (textBox.Foreground, textBox.Background),
+                NumericUpDown numericUpDown => (numericUpDown.Foreground, numericUpDown.Background),
+                _ => (null, null)
+            };
+
+            Color foreground = ResolveSolidColor(foregroundBrush, control, "foreground", context);
+            Color background = ResolveSolidColor(backgroundBrush, control, "background", context);
+            string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
+            AssertContrastAtLeast(foreground, background, 4.5d, $"{context} {controlName} non-hover text");
+        }
+    }
+
+    private static Color ResolveSolidColor(IBrush? brush, Control control, string propertyName, string context)
+    {
+        if (brush is ISolidColorBrush solidColorBrush)
+        {
+            return solidColorBrush.Color;
+        }
+
+        string controlName = string.IsNullOrWhiteSpace(control.Name) ? control.GetType().Name : control.Name!;
+        throw new AssertFailedException($"{context} {controlName} {propertyName} must resolve to a solid shell brush.");
     }
 
     private static double ContrastRatio(Color foreground, Color background)
