@@ -154,11 +154,19 @@ public abstract class ClassicFormPortSurfaceControl : UserControl
 
     protected ClassicFormPortActionCommands CreateCommandSet(TextBlock? noticeText)
         => new(
-            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Add")),
-            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Edit")),
-            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Delete")),
-            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Search")),
-            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Commit")));
+            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Add"), _ => CanRouteCommand("Add")),
+            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Edit"), _ => CanRouteCommand("Edit")),
+            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Delete"), _ => CanRouteCommand("Delete")),
+            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Search"), _ => CanRouteCommand("Search")),
+            new ClassicFormPortCommand(_ => ReportCommand(noticeText, "Commit"), _ => CanRouteCommand("Commit")));
+
+    private bool CanRouteCommand(string verb)
+    {
+        ClassicFormPortState? state = CurrentState;
+        return state is not null
+            && (state.QuickActions.Any(action => action.Label.Contains(verb, StringComparison.OrdinalIgnoreCase))
+                || state.SectionActions.Any(action => action.Label.Contains(verb, StringComparison.OrdinalIgnoreCase)));
+    }
 
     private void ReportCommand(TextBlock? noticeText, string verb)
     {

@@ -96,6 +96,18 @@ public sealed class ClassicFormPortDesktopGuardTests
         Assert.IsFalse(bridgeText.Contains("CreateFromSectionRows", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("CreateFromRows(IReadOnlyList<SectionRowDisplayItem> rows)", StringComparison.Ordinal));
         Assert.IsFalse(bridgeText.Contains("IReadOnlyList<ClassicPortLineItem>", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("_canExecute = canExecute ?? (static _ => true)", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("catch\n        {\n            return null;", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("return entries.Take", StringComparison.Ordinal));
+        Assert.IsFalse(bridgeText.Contains("maxCount:", StringComparison.Ordinal));
+        StringAssert.Contains(bridgeText, "classicPortParseError");
+        StringAssert.Contains(bridgeText, "ParseError($\"Preview data could not be read:");
+        StringAssert.Contains(bridgeText, "_canExecute = canExecute ?? (static _ => false)");
+        StringAssert.Contains(classicSurfaceText, "CanRouteCommand(\"Add\")");
+        StringAssert.Contains(classicSurfaceText, "CanRouteCommand(\"Edit\")");
+        StringAssert.Contains(classicSurfaceText, "CanRouteCommand(\"Delete\")");
+        StringAssert.Contains(classicSurfaceText, "CanRouteCommand(\"Search\")");
+        StringAssert.Contains(classicSurfaceText, "CanRouteCommand(\"Commit\")");
         Assert.IsFalse(classicSurfaceText.Contains("IsEnabled = false", StringComparison.Ordinal));
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCareerClassicPort.axaml", "CharacterCareerClassicPort.axaml.cs");
         AssertRuntimePortUsesDenseClassicControls(repoRoot, "CharacterCreateClassicPort.axaml", "CharacterCreateClassicPort.axaml.cs");

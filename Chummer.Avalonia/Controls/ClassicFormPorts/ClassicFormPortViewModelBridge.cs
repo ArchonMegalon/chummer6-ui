@@ -167,7 +167,7 @@ public sealed class ClassicFormPortCommand : ICommand
     public ClassicFormPortCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
     {
         _execute = execute;
-        _canExecute = canExecute ?? (static _ => true);
+        _canExecute = canExecute ?? (static _ => false);
     }
 
     public event EventHandler? CanExecuteChanged;
@@ -264,13 +264,20 @@ internal static class ClassicFormPortPreviewReader
 
         try
         {
-            return JsonNode.Parse(previewJson) as JsonObject;
+            return JsonNode.Parse(previewJson) as JsonObject
+                ?? ParseError("Preview data was not an object.");
         }
-        catch
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
         {
-            return null;
+            return ParseError($"Preview data could not be read: {ex.Message}");
         }
     }
+
+    private static JsonObject ParseError(string message)
+        => new()
+        {
+            ["classicPortParseError"] = message
+        };
 
     public static IReadOnlyList<CareerSnapshotEntry> ReadCareerSnapshot(JsonObject? root)
     {
@@ -287,9 +294,11 @@ internal static class ClassicFormPortPreviewReader
         Append(entries, "Karma", ReadScalar(root, "karma"));
         Append(entries, "Nuyen", ReadScalar(root, "nuyen"));
 
+        Append(entries, "Data issue", ReadString(root, "classicPortParseError"));
+
         return entries.Count == 0
             ? [new CareerSnapshotEntry("Classic surface", "No active character data")]
-            : entries.Take(10).ToArray();
+            : entries.ToArray();
     }
 
     public static IReadOnlyList<AdvancementEntry> ReadAdvancement(JsonObject? root)
@@ -306,36 +315,36 @@ internal static class ClassicFormPortPreviewReader
         Append(entries, "Initiative", ReadString(combat, "initiative"));
         Append(entries, "Armor", ReadScalar(combat, "armor"));
 
-        return entries.Take(12).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<GearEntry> ReadGear(JsonObject? root)
-        => ReadLabelValueEntries(root, "gear", "gear", "name", "label", maxCount: 12, fallbackKeys: ["cyberware", "bioware", "augmentation"]);
+        => ReadLabelValueEntries(root, "gear", "gear", "name", "label", fallbackKeys: ["cyberware", "bioware", "augmentation"]);
 
     public static IReadOnlyList<ArmorEntry> ReadArmor(JsonObject? root)
-        => ReadLabelValueEntries(root, "armor", "armor", "name", "label", maxCount: 12)
+        => ReadLabelValueEntries(root, "armor", "armor", "name", "label")
             .Select(static item => new ArmorEntry(item.Label, item.Value))
             .ToArray();
 
     public static IReadOnlyList<WeaponEntry> ReadWeapons(JsonObject? root)
-        => ReadLabelValueEntries(root, "weapons", "weapon", "name", "label", maxCount: 12)
+        => ReadLabelValueEntries(root, "weapons", "weapon", "name", "label")
             .Select(static item => new WeaponEntry(item.Label, item.Value))
             .ToArray();
 
     public static IReadOnlyList<ContactEntry> ReadContacts(JsonObject? root)
-        => ReadLabelValueEntries(root, "contacts", "contact", "name", "label", maxCount: 12)
+        => ReadLabelValueEntries(root, "contacts", "contact", "name", "label")
             .Select(static item => new ContactEntry(item.Label, item.Value))
             .ToArray();
 
     public static IReadOnlyList<NoteEntry> ReadNotes(JsonObject? root, string sectionId)
     {
-        List<NoteEntry> entries = ReadLabelValueEntries(root, "notes", "note", "name", "label", maxCount: 12)
+        List<NoteEntry> entries = ReadLabelValueEntries(root, "notes", "note", "name", "label")
             .Select(static item => new NoteEntry(item.Label, item.Value))
             .ToList();
 
         if (entries.Count == 0)
         {
-            foreach (string value in ReadStringArray(root, "rows").Take(6))
+            foreach (string value in ReadStringArray(root, "rows"))
             {
                 entries.Add(new NoteEntry(FormatSectionLabel(sectionId), value));
             }
@@ -354,7 +363,7 @@ internal static class ClassicFormPortPreviewReader
 
         if (entries.Count == 0 && IsCreateSection(sectionId))
         {
-            foreach (string value in ReadStringArray(root, "rows").Take(6))
+            foreach (string value in ReadStringArray(root, "rows"))
             {
                 entries.Add(new PriorityChoice("Workflow", value));
             }
@@ -371,7 +380,7 @@ internal static class ClassicFormPortPreviewReader
         Append(entries, "Metatype", ReadString(root, "metatype"));
         Append(entries, "Priority", ReadString(root, "priority"));
 
-        return entries.Count > 0 ? entries : priorityFacts.Take(4).ToArray();
+        return entries.Count > 0 ? entries : priorityFacts.ToArray();
     }
 
     public static IReadOnlyList<AttributeEntry> ReadAttributes(JsonObject? root)
@@ -404,16 +413,16 @@ internal static class ClassicFormPortPreviewReader
             }
         }
 
-        return entries.Take(20).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<SkillEntry> ReadSkills(JsonObject? root)
-        => ReadLabelValueEntries(root, "skills", "skill", "name", "label", maxCount: 20)
+        => ReadLabelValueEntries(root, "skills", "skill", "name", "label")
             .Select(static item => new SkillEntry(item.Label, item.Value))
             .ToArray();
 
     public static IReadOnlyList<SpellEntry> ReadSpells(JsonObject? root)
-        => ReadLabelValueEntries(root, "spells", "spell", "name", "label", maxCount: 10)
+        => ReadLabelValueEntries(root, "spells", "spell", "name", "label")
             .Select(static item => new SpellEntry(item.Label, item.Value))
             .ToArray();
 
@@ -431,10 +440,10 @@ internal static class ClassicFormPortPreviewReader
 
         if (entries.Count == 0 && IsGearSection(sectionId))
         {
-            entries.AddRange(ReadStringArray(root, "rows").Take(8).Select(value => new GearEntry("Selection", value)));
+            entries.AddRange(ReadStringArray(root, "rows").Select(value => new GearEntry("Selection", value)));
         }
 
-        return entries.Take(15).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<CareerSnapshotEntry> ReadFinalSummary(
@@ -459,7 +468,7 @@ internal static class ClassicFormPortPreviewReader
             }
         }
 
-        return entries.Take(6).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<GearCategoryEntry> ReadGearCategories(
@@ -476,10 +485,10 @@ internal static class ClassicFormPortPreviewReader
 
         if (entries.Count == 0 && IsGearSection(sectionId))
         {
-            entries.AddRange(ReadStringArray(root, "rows").Take(10).Select(value => new GearCategoryEntry("Category", value)));
+            entries.AddRange(ReadStringArray(root, "rows").Select(value => new GearCategoryEntry("Category", value)));
         }
 
-        return entries.Take(18).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<GearFilterEntry> ReadFilters(JsonObject? root, string sectionId)
@@ -500,10 +509,10 @@ internal static class ClassicFormPortPreviewReader
 
         if (entries.Count == 0 && IsGearSection(sectionId))
         {
-            entries.AddRange(ReadStringArray(root, "rows").Take(4).Select(value => new GearFilterEntry("Filter", value)));
+            entries.AddRange(ReadStringArray(root, "rows").Select(value => new GearFilterEntry("Filter", value)));
         }
 
-        return entries.Take(8).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<GearDetailEntry> ReadGearDetails(
@@ -524,21 +533,21 @@ internal static class ClassicFormPortPreviewReader
             IEnumerable<string> sourceItems = gear.Select(static item => item.Value)
                 .Concat(armor.Select(static item => item.Value))
                 .Concat(weapons.Select(static item => item.Value));
-            entries.AddRange(sourceItems.Take(8).Select(value => new GearDetailEntry("Detail", value)));
+            entries.AddRange(sourceItems.Select(value => new GearDetailEntry("Detail", value)));
         }
 
         if (entries.Count == 0 && IsGearSection(sectionId))
         {
-            entries.AddRange(ReadStringArray(root, "rows").Take(8).Select(value => new GearDetailEntry("Detail", value)));
+            entries.AddRange(ReadStringArray(root, "rows").Select(value => new GearDetailEntry("Detail", value)));
         }
 
-        return entries.Take(16).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<BrowseEntry> ReadIndexRows(JsonObject? root, string sectionId)
     {
         List<BrowseEntry> entries = [];
-        foreach (string value in ReadStringArray(root, "rows").Take(12))
+        foreach (string value in ReadStringArray(root, "rows"))
         {
             entries.Add(new BrowseEntry(FormatSectionLabel(sectionId), value));
         }
@@ -555,7 +564,7 @@ internal static class ClassicFormPortPreviewReader
             entries.Add(new BrowseEntry("Ruleset", rulesetValue));
         }
 
-        return entries.Take(12).ToArray();
+        return entries.ToArray();
     }
 
     public static IReadOnlyList<SettingEntry> ReadSettings(JsonObject? root, string sectionId)
@@ -575,10 +584,10 @@ internal static class ClassicFormPortPreviewReader
 
         if (entries.Count == 0 && IsSettingsSection(sectionId))
         {
-            entries.AddRange(ReadStringArray(root, "rows").Take(12).Select(value => new SettingEntry("Setting", value)));
+            entries.AddRange(ReadStringArray(root, "rows").Select(value => new SettingEntry("Setting", value)));
         }
 
-        return entries.Take(32).ToArray();
+        return entries.ToArray();
     }
 
     private static IReadOnlyList<GearEntry> ReadLabelValueEntries(
@@ -587,7 +596,6 @@ internal static class ClassicFormPortPreviewReader
         string singularLabel,
         string preferredNameProperty,
         string fallbackNameProperty,
-        int maxCount,
         params IReadOnlyList<string> fallbackKeys)
     {
         List<GearEntry> entries = [];
@@ -616,7 +624,7 @@ internal static class ClassicFormPortPreviewReader
             }
         }
 
-        return Deduplicate(entries).Take(maxCount).ToArray();
+        return Deduplicate(entries);
     }
 
     private static GearEntry? EntryFromNode(JsonNode? node, string singularLabel, string preferredNameProperty, string fallbackNameProperty)
