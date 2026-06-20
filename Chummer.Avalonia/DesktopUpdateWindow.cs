@@ -425,12 +425,12 @@ internal sealed class DesktopUpdateWindow : Window
                 "#DEE8F6"),
             "update_available" => (
                 "Update available",
-                "A newer published build is available for this desktop. Check now or let the release lane move this install forward.",
+                "A newer published build is available for this desktop. Check now or let the release path move this install forward.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             "attention_required" => (
                 "Needs attention",
-                "Update posture, proof posture, or rollout posture needs review before this install is treated as current.",
+                "Update, release, or rollout status needs review before this install is treated as current.",
                 "ChummerShellSelectionPanelBrush",
                 "#F8FAFC"),
             "disabled" => (
@@ -440,7 +440,7 @@ internal sealed class DesktopUpdateWindow : Window
                 "#F8FAFC"),
             _ => (
                 "Current build",
-                "This install currently matches the latest known release truth for its configured update lane.",
+                "This install currently matches the latest known release for its configured update path.",
                 "ChummerShellSurfaceAltBrush",
                 "#F2F5FA")
         };

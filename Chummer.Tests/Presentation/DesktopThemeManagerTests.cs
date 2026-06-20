@@ -508,6 +508,37 @@ public sealed class DesktopThemeManagerTests
     }
 
     [TestMethod]
+    public void Support_and_update_windows_do_not_leak_internal_release_jargon()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string updateSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopUpdateWindow.cs"));
+        string supportCaseSource = File.ReadAllText(Path.Combine(repoRoot, "Chummer.Avalonia", "DesktopSupportCaseWindow.cs"));
+        string combined = updateSource + "\n" + supportCaseSource;
+
+        foreach (string forbidden in new[]
+                 {
+                     "release lane",
+                     "support lane",
+                     "proof posture",
+                     "release truth",
+                     "verification:",
+                     "VerificationSummary: \"Use the signed-in support lane",
+                 })
+        {
+            Assert.IsFalse(
+                combined.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
+                $"Visible desktop copy must not contain '{forbidden}'.");
+        }
+
+        StringAssert.Contains(updateSource, "release path move this install forward");
+        StringAssert.Contains(updateSource, "Update, release, or rollout status needs review");
+        StringAssert.Contains(updateSource, "configured update path");
+        StringAssert.Contains(supportCaseSource, "reporter-ready release path");
+        StringAssert.Contains(supportCaseSource, "signed-in support");
+        StringAssert.Contains(supportCaseSource, "Confirmation:");
+    }
+
+    [TestMethod]
     public void Origin_dossier_dialogs_use_specialized_shell_surfaces_instead_of_generic_field_sheet()
     {
         string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();

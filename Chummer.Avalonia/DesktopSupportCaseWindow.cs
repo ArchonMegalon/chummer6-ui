@@ -240,9 +240,9 @@ internal sealed class DesktopSupportCaseWindow : Window
             UpdatedLabel: FormatDisplayTime(now),
             FixedReleaseLabel: "preview smoke",
             AffectedInstallSummary: "This preview case stays attached to the linked avalonia desktop copy.",
-            FollowUpLaneSummary: "Follow-up stays grounded to the signed-in support lane when the live account surface is reachable again.",
-            ReleaseProgressSummary: "The preview fix already reached the reporter-ready release lane for this desktop path.",
-            VerificationSummary: "Use the signed-in support lane to record final fix confirmation once the live account surface is available again.",
+            FollowUpLaneSummary: "Follow-up stays attached to signed-in support when the account page is reachable again.",
+            ReleaseProgressSummary: "The preview fix already reached the reporter-ready release path for this desktop.",
+            VerificationSummary: "Use signed-in support to record final fix confirmation once the account page is available again.",
             HasTrackedCase: true,
             NeedsAttention: true,
             FixReadyOnLinkedInstall: true,
@@ -251,10 +251,10 @@ internal sealed class DesktopSupportCaseWindow : Window
             Highlights:
             [
                 "Stage: Released (Released)",
-                "Closure: The preview fix already reached the reporter-ready release lane for this desktop path.",
-                "Release progress: The preview fix already reached the reporter-ready release lane for this desktop path.",
-                "Fix availability: preview smoke is the tracked fix target for this desktop support lane.",
-                "Verification: Use the signed-in support lane to record final fix confirmation once the live account surface is available again.",
+                "Closure: The preview fix already reached the reporter-ready release path for this desktop.",
+                "Release progress: The preview fix already reached the reporter-ready release path for this desktop.",
+                "Fix availability: preview smoke is the tracked fix target for this desktop support path.",
+                "Confirmation: Use signed-in support to record final fix confirmation once the account page is available again.",
                 $"Updated: {FormatDisplayTime(now)}"
             ]);
     }
