@@ -3690,6 +3690,16 @@ public class MigrationComplianceTests
         StringAssert.Contains(workflowText, "needs.release-window.outputs.publish_allowed == 'true' && github.ref_name == 'main'");
         StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.deploy_portal_downloads)");
         StringAssert.Contains(workflowText, "github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.publish_github_release)");
+        StringAssert.Contains(workflowText, "for artifact in dist/chummer-*-installer.exe dist/chummer-*-installer.deb; do");
+        StringAssert.Contains(workflowText, "-name 'chummer-*.zip'");
+        StringAssert.Contains(workflowText, "-name 'chummer-*.tar.gz'");
+        StringAssert.Contains(workflowText, "-name 'chummer-*-installer.dmg'");
+        Assert.IsFalse(
+            workflowText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.exe", StringComparison.Ordinal),
+            "Public download bundles must not stage portable Windows launchers.");
+        Assert.IsFalse(
+            workflowText.Contains("for artifact in dist/chummer-*-installer.exe dist/chummer-*.zip", StringComparison.Ordinal),
+            "Public download bundles must not stage portable archives.");
 
         StringAssert.Contains(runbookText, "Pushes do not publish the downloads shelf.");
         StringAssert.Contains(runbookText, "only publishes during the 08:00 Europe/Vienna release window");
