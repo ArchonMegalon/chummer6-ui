@@ -120,6 +120,8 @@ namespace Chummer
                 objForeColor = ForeColor;
             }
 
+            objForeColor = ColorManager.EnsureReadableForeground(objForeColor, objBackColor);
+
             using (SolidBrush objBackBrush = new SolidBrush(objBackColor))
             using (SolidBrush objForeBrush = new SolidBrush(objForeColor))
             {

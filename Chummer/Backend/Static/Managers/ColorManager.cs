@@ -452,6 +452,58 @@ namespace Chummer
             return FromHsva(fltHue, fltBrightness, fltSaturation, objColor.A);
         }
 
+        public static Color EnsureReadableForeground(Color objForeColor, Color objBackColor)
+        {
+            return EnsureReadableForeground(objForeColor, objBackColor, IsLightMode);
+        }
+
+        private static Color EnsureReadableForeground(Color objForeColor, Color objBackColor, bool blnLightMode)
+        {
+            if (HasReadableContrast(objForeColor, objBackColor))
+                return objForeColor;
+
+            Color objModeTextColor = blnLightMode ? WindowTextLight : WindowTextDark;
+            if (HasReadableContrast(objModeTextColor, objBackColor))
+                return objModeTextColor;
+
+            Color objControlTextColor = blnLightMode ? ControlTextLight : ControlTextDark;
+            if (HasReadableContrast(objControlTextColor, objBackColor))
+                return objControlTextColor;
+
+            return GetRelativeLuminance(objBackColor) > 0.5d
+                ? Color.Black
+                : Color.White;
+        }
+
+        private static bool HasReadableContrast(Color objForeColor, Color objBackColor)
+        {
+            return GetContrastRatio(objForeColor, objBackColor) >= 4.5d;
+        }
+
+        private static double GetContrastRatio(Color objColorA, Color objColorB)
+        {
+            double dblLuminanceA = GetRelativeLuminance(objColorA);
+            double dblLuminanceB = GetRelativeLuminance(objColorB);
+            double dblLighter = Math.Max(dblLuminanceA, dblLuminanceB);
+            double dblDarker = Math.Min(dblLuminanceA, dblLuminanceB);
+            return (dblLighter + 0.05d) / (dblDarker + 0.05d);
+        }
+
+        private static double GetRelativeLuminance(Color objColor)
+        {
+            static double ConvertChannel(byte bytChannel)
+            {
+                double dblChannel = bytChannel / 255.0d;
+                return dblChannel <= 0.03928d
+                    ? dblChannel / 12.92d
+                    : Math.Pow((dblChannel + 0.055d) / 1.055d, 2.4d);
+            }
+
+            return 0.2126d * ConvertChannel(objColor.R)
+                   + 0.7152d * ConvertChannel(objColor.G)
+                   + 0.0722d * ConvertChannel(objColor.B);
+        }
+
         private static void ApplyColorsRecursively(Control objControl, bool blnLightMode, CancellationToken token = default)
         {
             void EnsureThemedListDraw(Control control)
@@ -513,6 +565,8 @@ namespace Chummer
                         x.ForeColor = WindowTextDark;
                         x.BackColor = WindowDark;
                     }
+
+                    x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                 }, token);
             }
 
@@ -633,6 +687,9 @@ namespace Chummer
                             x.BackColor = ControlDark;
                         else
                             x.BackColor = WindowDark;
+
+                        if (x.ForeColor != ErrorColor)
+                            x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                     }, token);
                     break;
 
@@ -718,6 +775,8 @@ namespace Chummer
                             x.ForeColor = WindowTextDark;
                             x.BackColor = WindowDark;
                         }
+
+                        x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                     }, token);
                     break;
                 case ComboBox _:
@@ -925,6 +984,8 @@ namespace Chummer
                 objBackColor = objControl.BackColor;
                 objForeColor = objControl.ForeColor;
             }
+
+            objForeColor = EnsureReadableForeground(objForeColor, objBackColor);
 
             using (SolidBrush objBackBrush = new SolidBrush(objBackColor))
             {
@@ -1190,6 +1251,9 @@ namespace Chummer
                                 x.BackColor = ControlDark;
                             else
                                 x.BackColor = WindowDark;
+
+                            if (x.ForeColor != ErrorColor)
+                                x.ForeColor = EnsureReadableForeground(x.ForeColor, x.BackColor, blnLightMode);
                         }, token).ConfigureAwait(false);
                         break;
                     }
@@ -1289,6 +1353,7 @@ namespace Chummer
                             objForeColor = WindowTextDark;
                             objBackColor = WindowDark;
                         }
+                        objForeColor = EnsureReadableForeground(objForeColor, objBackColor, blnLightMode);
                         await objControl.DoThreadSafeAsync(x =>
                         {
                             x.ForeColor = objForeColor;
