@@ -50,7 +50,8 @@ public sealed class DesktopTrustPanelFactoryTests
         Assert.AreEqual(AiRouteTypes.Build, context.RouteType);
         Assert.AreEqual(RulesetDefaults.Sr5, context.RulesetId);
         StringAssert.Contains(context.Message ?? string.Empty, "Open Character explanation");
-        StringAssert.Contains(context.Message ?? string.Empty, "Import rule-environment record");
+        StringAssert.Contains(context.Message ?? string.Empty, "Import rules setup record");
+        Assert.IsFalse((context.Message ?? string.Empty).Contains("rule-environment", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod]

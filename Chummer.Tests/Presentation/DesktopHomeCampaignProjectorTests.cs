@@ -15,19 +15,19 @@ public sealed class DesktopHomeCampaignProjectorTests
     {
         DesktopHomeCampaignServerPlane projection = CreateServerPlaneDto().ToProjection();
 
-        Assert.AreEqual("Campaign adoption stays attached to the same claimed desktop lane.", projection.AdoptionSummary);
+        Assert.AreEqual("Campaign adoption stays attached to this desktop.", projection.AdoptionSummary);
         Assert.AreEqual("playable_with_review because one aftermath note still needs approval.", projection.AdoptionConfidenceSummary);
         Assert.AreEqual("Ghostwire upgrade (47k / 149k nuyen); Apex fixer follow-up", projection.GoalPinSummary);
         Assert.AreEqual("ResolutionReport closeout is approved and ready to publish the player-safe recap.", projection.ResolutionReportSummary);
-        Assert.AreEqual("BLACK LEDGER consequence keeps the consequence receipt and recap publication on the same governed chain.", projection.BlackLedgerSummary);
-        Assert.AreEqual("BLACK LEDGER proof receipt binds adoption, resolution, and recap proof together.", projection.BlackLedgerProofSummary);
+        Assert.AreEqual("BLACK LEDGER consequence keeps the consequence record and recap publication on the same reviewed chain.", projection.BlackLedgerSummary);
+        Assert.AreEqual("BLACK LEDGER details record binds adoption, resolution, and recap details together.", projection.BlackLedgerProofSummary);
 
-        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Campaign adoption: Campaign adoption stays attached to the same claimed desktop lane.");
-        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Adoption proof: Adoption receipt adopt-001 keeps the remaining cleanup trail visible.");
+        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Campaign adoption: Campaign adoption stays attached to this desktop.");
+        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Adoption details: Adoption record adopt-001 keeps the remaining cleanup trail visible.");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer follow-up");
         CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "ResolutionReport closeout: ResolutionReport closeout is approved and ready to publish the player-safe recap.");
-        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence receipt and recap publication on the same governed chain.");
-        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER proof: BLACK LEDGER proof receipt binds adoption, resolution, and recap proof together.");
+        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence record and recap publication on the same reviewed chain.");
+        CollectionAssert.Contains((System.Collections.ICollection)projection.ReadinessHighlights, "BLACK LEDGER details: BLACK LEDGER details record binds adoption, resolution, and recap details together.");
     }
 
     [TestMethod]
@@ -61,13 +61,13 @@ public sealed class DesktopHomeCampaignProjectorTests
         DesktopHomeCampaignProjection projection = DesktopHomeCampaignProjector.Create(summary, serverPlane: serverPlane);
         string highlights = string.Join("\n", projection.ReadinessHighlights);
 
-        StringAssert.Contains(highlights, "Campaign adoption: Campaign adoption stays attached to the same claimed desktop lane.");
+        StringAssert.Contains(highlights, "Campaign adoption: Campaign adoption stays attached to this desktop.");
         StringAssert.Contains(highlights, "Adoption confidence: playable_with_review because one aftermath note still needs approval.");
-        StringAssert.Contains(highlights, "Adoption proof: Adoption receipt adopt-001 keeps the remaining cleanup trail visible.");
+        StringAssert.Contains(highlights, "Adoption details: Adoption record adopt-001 keeps the remaining cleanup trail visible.");
         StringAssert.Contains(highlights, "Goal pins: Ghostwire upgrade (47k / 149k nuyen); Apex fixer follow-up");
         StringAssert.Contains(highlights, "ResolutionReport closeout: ResolutionReport closeout is approved and ready to publish the player-safe recap.");
-        StringAssert.Contains(highlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence receipt and recap publication on the same governed chain.");
-        StringAssert.Contains(highlights, "BLACK LEDGER proof: BLACK LEDGER proof receipt binds adoption, resolution, and recap proof together.");
+        StringAssert.Contains(highlights, "BLACK LEDGER consequence: BLACK LEDGER consequence keeps the consequence record and recap publication on the same reviewed chain.");
+        StringAssert.Contains(highlights, "BLACK LEDGER details: BLACK LEDGER details record binds adoption, resolution, and recap details together.");
     }
 
     private static DesktopHomeCampaignServerPlaneDto CreateServerPlaneDto()

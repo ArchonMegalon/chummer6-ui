@@ -246,7 +246,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(cut.Markup, "Ares Runner (AR) · Shadowrun 5 · main editor");
         StringAssert.Contains(cut.Markup, "Character Summary");
         Assert.AreEqual("tab-info", cut.Find("button[data-nav-tab='tab-info']").Id);
-        Assert.AreEqual("Validate & Rebind", cut.Find(".section-actions .action-button").TextContent.Trim());
+        Assert.AreEqual("Review Character", cut.Find(".section-actions .action-button").TextContent.Trim());
         Assert.AreEqual("tab-info.validate", cut.Find(".section-actions .action-button").GetAttribute("data-workspace-action"));
 
         cut.Find(".navigator .command-button").Click();
@@ -451,22 +451,26 @@ public sealed class BlazorShellComponentTests
                     ]))));
 
         StringAssert.Contains(cut.Markup, "Import SR4 Character File");
-        StringAssert.Contains(cut.Markup, "Primary format: .chum4 with parity-safe XML fallback.");
+        StringAssert.Contains(cut.Markup, "Primary format: .chum4 with XML fallback.");
         StringAssert.Contains(cut.Markup, "(no SR4 character file selected)");
         StringAssert.Contains(cut.Markup, "SR4 Oracle Debug Import");
-        StringAssert.Contains(cut.Markup, "Import receipt");
-        StringAssert.Contains(cut.Markup, "Import landed with a governed receipt.");
-        StringAssert.Contains(cut.Markup, "Rule environment");
+        StringAssert.Contains(cut.Markup, "Import review");
+        StringAssert.Contains(cut.Markup, "Import setup");
+        StringAssert.Contains(cut.Markup, "Import landed with a reviewed record.");
+        StringAssert.Contains(cut.Markup, "Rules setup");
         StringAssert.Contains(cut.Markup, "chummer.portable-dossier.v1; compatible-with-warnings; inspect-only; payload abcdef1234567890.");
         StringAssert.Contains(cut.Markup, "Imported Runner Blue into sr4 with a bounded source toggle change.");
         StringAssert.Contains(cut.Markup, "Before");
         StringAssert.Contains(cut.Markup, "After");
-        StringAssert.Contains(cut.Markup, "Explain receipt");
+        StringAssert.Contains(cut.Markup, "Explanation");
+        StringAssert.Contains(cut.Markup, "Source");
         StringAssert.Contains(cut.Markup, "Payload hash abcdef123456 entered workspace ws-import.");
-        StringAssert.Contains(cut.Markup, "Support reuse");
-        StringAssert.Contains(cut.Markup, "Review the before-after environment diff before campaign handoff.");
-        StringAssert.Contains(cut.Markup, "Support can cite payload abcdef1234567890 with compatible-with-warnings compatibility.");
+        StringAssert.Contains(cut.Markup, "Support note");
+        StringAssert.Contains(cut.Markup, "Review the before-after environment change before campaign next step.");
+        StringAssert.Contains(cut.Markup, "Support can use payload abcdef1234567890 with compatible-with-warnings compatibility.");
         StringAssert.Contains(cut.Markup, "Street Magic source toggle changed during import.");
+        Assert.IsFalse(cut.Markup.Contains("explain receipt", StringComparison.OrdinalIgnoreCase));
+        Assert.IsFalse(cut.Markup.Contains("environment diff", StringComparison.OrdinalIgnoreCase));
         Assert.IsNotNull(cut.Find("[data-import-explain-receipt]"));
         Assert.AreEqual(".chum4,.chum5,.chum6,.xml,text/xml,application/xml", cut.Find("input[type='file']").GetAttribute("accept"));
         Assert.AreEqual("Import SR4 Raw XML", cut.Find("details button").TextContent.Trim());
@@ -489,7 +493,7 @@ public sealed class BlazorShellComponentTests
         StringAssert.Contains(commandCut.Markup, "SR6 Setup Tools");
         StringAssert.Contains(commandCut.Markup, "No SR6 setup tools are currently available.");
         StringAssert.Contains(resultCut.Markup, "SR5 Editor Result");
-        StringAssert.Contains(resultCut.Markup, "Shadowrun 5 stays on the main desktop editor");
+        StringAssert.Contains(resultCut.Markup, "Shadowrun 5 uses the main desktop editor");
         StringAssert.Contains(resultCut.Markup, "SR5 editor is ready");
     }
 

@@ -1,5 +1,6 @@
 @namespace Chummer.Blazor.Components.Shell
 @using Chummer.Desktop.Runtime
+@using Chummer.Presentation
 @using Chummer.Presentation.Rulesets
 @using Chummer.Presentation.Overview
 @using Microsoft.AspNetCore.Components.Forms
@@ -12,8 +13,8 @@
                disabled="@IsBusy" />
     <p class="hint">File: @(ImportedFileName ?? BuildImportFilePlaceholder())</p>
     <aside class="trust-receipt" data-import-trust-receipt>
-        <strong>Import explain receipt and environment diff</strong>
-        <p class="hint">Import rule-environment receipt</p>
+        <strong>Import review</strong>
+        <p class="hint">Import setup</p>
         @foreach (ImportTrustReceiptSection receiptSection in BuildImportTrustReceiptSections())
         {
             <section class="trust-receipt-section" data-import-trust-section="@NormalizeReceiptToken(receiptSection.Title)">
@@ -35,25 +36,25 @@
     {
         <section class="coach-card" data-import-explain-receipt>
             <div class="coach-card-header">
-                <h3>Import receipt</h3>
+                <h3>Import review</h3>
                 <span class="badge">@activity.Receipt.CompatibilityState</span>
             </div>
             <dl class="facts compact">
-                <div><dt>Receipt</dt><dd>@activity.Receipt.ReceiptSummary</dd></div>
-                <div><dt>Rule environment</dt><dd>@DialogTrustReceiptText.BuildImportRuleEnvironment(activity.Receipt)</dd></div>
+                <div><dt>Status</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.ReceiptSummary)</dd></div>
+                <div><dt>Rules setup</dt><dd>@DialogTrustReceiptText.BuildImportRuleEnvironment(activity.Receipt)</dd></div>
                 <div><dt>Before</dt><dd>@DialogTrustReceiptText.BuildImportDiffBefore(activity.Receipt)</dd></div>
                 <div><dt>After</dt><dd>@DialogTrustReceiptText.BuildImportDiffAfter(activity.Receipt)</dd></div>
-                <div><dt>Explain receipt</dt><dd>@DialogTrustReceiptText.BuildImportExplainReceipt(activity.Receipt)</dd></div>
-                <div><dt>Provenance</dt><dd>@activity.Receipt.ProvenanceSummary</dd></div>
-                <div><dt>Next safe action</dt><dd>@activity.Receipt.NextSafeAction</dd></div>
-                <div><dt>Support reuse</dt><dd>@DialogTrustReceiptText.BuildImportSupportReuse(activity.Receipt)</dd></div>
+                <div><dt>Explanation</dt><dd>@DialogTrustReceiptText.BuildImportExplainReceipt(activity.Receipt)</dd></div>
+                <div><dt>Source</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.ProvenanceSummary)</dd></div>
+                <div><dt>Next step</dt><dd>@PlayerFacingCopyHumanizer.Clean(activity.Receipt.NextSafeAction)</dd></div>
+                <div><dt>Support note</dt><dd>@DialogTrustReceiptText.BuildImportSupportReuse(activity.Receipt)</dd></div>
             </dl>
             @if (activity.Receipt.Notes.Count > 0)
             {
                 <ul class="browse-detail-lines">
                     @foreach (var note in activity.Receipt.Notes.Take(3))
                     {
-                        <li><strong>@note.Severity:</strong> @note.Summary</li>
+                        <li><strong>@note.Severity:</strong> @PlayerFacingCopyHumanizer.Clean(note.Summary)</li>
                     }
                 </ul>
             }
@@ -155,8 +156,16 @@
                 .Select(static section => new ImportTrustReceiptSection(section.Title, section.Lines))
                 .ToArray();
 
-        return EnsureCanonicalImportTrustReceiptSections(sections);
+        return CleanImportTrustReceiptSections(EnsureCanonicalImportTrustReceiptSections(sections));
     }
+
+    private static IReadOnlyList<ImportTrustReceiptSection> CleanImportTrustReceiptSections(
+        IReadOnlyList<ImportTrustReceiptSection> sections)
+        => sections
+            .Select(static section => new ImportTrustReceiptSection(
+                PlayerFacingCopyHumanizer.Clean(section.Title),
+                PlayerFacingCopyHumanizer.CleanLines(section.Lines)))
+            .ToArray();
 
     private static IReadOnlyList<ImportTrustReceiptSection> EnsureCanonicalImportTrustReceiptSections(
         IReadOnlyList<ImportTrustReceiptSection> sections)

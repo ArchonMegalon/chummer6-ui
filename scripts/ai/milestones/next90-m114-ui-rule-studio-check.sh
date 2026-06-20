@@ -103,7 +103,7 @@ SOURCE_MARKERS = {
     "Chummer.Tests/Presentation/AccessibilitySignoffSmokeTests.cs": [
         "DesktopHomeWindow.ShowAsync(this, \\\"avalonia\\\")",
         "DesktopRuleEnvironmentStudioWindow.ShowAsync(this, _installState.HeadId, _portabilityActivity)",
-        "Import explain receipt:",
+        "Import explanation:",
     ],
 }
 
