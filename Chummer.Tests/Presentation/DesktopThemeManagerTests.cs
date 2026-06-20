@@ -20,6 +20,10 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(source, "case ComboBox comboBox when comboBox is not ElasticComboBox:");
         StringAssert.Contains(source, "comboBox.DrawMode = DrawMode.OwnerDrawFixed;");
         StringAssert.Contains(source, "comboBox.DrawItem += handler;");
+        StringAssert.Contains(source, "case ListBox _:");
+        StringAssert.Contains(source, "case ComboBox _:");
+        StringAssert.Contains(source, "EnsureThemedListDraw(objControl);");
+        StringAssert.Contains(source, "await objControl.DoThreadSafeAsync(x => EnsureThemedListDraw(x), token).ConfigureAwait(false);");
         StringAssert.Contains(source, "objControl is ComboBox comboBox");
         StringAssert.Contains(source, "comboBox.DropDownStyle != ComboBoxStyle.DropDownList");
         StringAssert.Contains(source, "return;");
@@ -118,6 +122,43 @@ public sealed class DesktopThemeManagerTests
             0,
             unthemedDialogs.Length,
             "Every Add/Select/Create dialog must opt into theming. Missing: " + string.Join(", ", unthemedDialogs));
+    }
+
+    [TestMethod]
+    public void Add_select_and_create_designer_files_do_not_pin_input_colors_against_the_shell_theme()
+    {
+        string repoRoot = TestContextLocator.ResolveChummerPresentationRepoRoot();
+        string formsRoot = Path.Combine(repoRoot, "Chummer", "Forms");
+        Regex pinnedInputColorRegex = new(
+            @"\.(BackColor|ForeColor)\s*=\s*(System\.Drawing\.Color\.(White|Black|WhiteSmoke)|SystemColors\.(Window|WindowText|Control|ControlText|Highlight|HighlightText)|Color\.(White|Black|WhiteSmoke))",
+            RegexOptions.Compiled);
+
+        string[] pinnedDesignerColors = Directory
+            .EnumerateFiles(formsRoot, "*.Designer.cs", SearchOption.AllDirectories)
+            .Where(static path =>
+            {
+                string fileName = Path.GetFileName(path);
+                return fileName.StartsWith("Add", StringComparison.Ordinal)
+                    || fileName.StartsWith("Create", StringComparison.Ordinal)
+                    || fileName.StartsWith("Select", StringComparison.Ordinal);
+            })
+            .SelectMany(path =>
+            {
+                string relativePath = Path.GetRelativePath(repoRoot, path);
+                return File.ReadLines(path)
+                    .Select((line, index) => new { line, index })
+                    .Where(item => pinnedInputColorRegex.IsMatch(item.line))
+                    .Select(item => $"{relativePath}:{item.index + 1}: {item.line.Trim()}");
+            })
+            .OrderBy(static item => item, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.AreEqual(
+            0,
+            pinnedDesignerColors.Length,
+            "Add/Select/Create dialogs must not pin white, black, or system input colors in designers. "
+            + "Let ColorManager own textbox/combobox/readability state. Offenders: "
+            + string.Join(", ", pinnedDesignerColors));
     }
 
     [TestMethod]

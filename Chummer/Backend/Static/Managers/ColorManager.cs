@@ -504,42 +504,42 @@ namespace Chummer
                    + 0.0722d * ConvertChannel(objColor.B);
         }
 
-        private static void ApplyColorsRecursively(Control objControl, bool blnLightMode, CancellationToken token = default)
+        private static void EnsureThemedListDraw(Control control)
         {
-            void EnsureThemedListDraw(Control control)
-            {
-                if (control == null || s_ThemedDrawRegistrations.TryGetValue(control, out _))
-                    return;
+            if (control == null || s_ThemedDrawRegistrations.TryGetValue(control, out _))
+                return;
 
-                switch (control)
+            switch (control)
+            {
+                case CheckedListBox checkedListBox:
                 {
-                    case CheckedListBox checkedListBox:
-                    {
-                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(checkedListBox, e);
-                        checkedListBox.DrawMode = DrawMode.OwnerDrawFixed;
-                        checkedListBox.DrawItem += handler;
-                        s_ThemedDrawRegistrations.Add(checkedListBox, new ThemedDrawRegistration { DrawItemHandler = handler });
-                        break;
-                    }
-                    case ListBox listBox:
-                    {
-                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(listBox, e);
-                        listBox.DrawMode = DrawMode.OwnerDrawFixed;
-                        listBox.DrawItem += handler;
-                        s_ThemedDrawRegistrations.Add(listBox, new ThemedDrawRegistration { DrawItemHandler = handler });
-                        break;
-                    }
-                    case ComboBox comboBox when comboBox is not ElasticComboBox:
-                    {
-                        DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(comboBox, e);
-                        comboBox.DrawMode = DrawMode.OwnerDrawFixed;
-                        comboBox.DrawItem += handler;
-                        s_ThemedDrawRegistrations.Add(comboBox, new ThemedDrawRegistration { DrawItemHandler = handler });
-                        break;
-                    }
+                    DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(checkedListBox, e);
+                    checkedListBox.DrawMode = DrawMode.OwnerDrawFixed;
+                    checkedListBox.DrawItem += handler;
+                    s_ThemedDrawRegistrations.Add(checkedListBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                    break;
+                }
+                case ListBox listBox:
+                {
+                    DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(listBox, e);
+                    listBox.DrawMode = DrawMode.OwnerDrawFixed;
+                    listBox.DrawItem += handler;
+                    s_ThemedDrawRegistrations.Add(listBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                    break;
+                }
+                case ComboBox comboBox when comboBox is not ElasticComboBox:
+                {
+                    DrawItemEventHandler handler = (_, e) => DrawThemedListControlItem(comboBox, e);
+                    comboBox.DrawMode = DrawMode.OwnerDrawFixed;
+                    comboBox.DrawItem += handler;
+                    s_ThemedDrawRegistrations.Add(comboBox, new ThemedDrawRegistration { DrawItemHandler = handler });
+                    break;
                 }
             }
+        }
 
+        private static void ApplyColorsRecursively(Control objControl, bool blnLightMode, CancellationToken token = default)
+        {
             void ApplyButtonStyle()
             {
                 // Buttons look weird if colored based on anything other than the default color scheme in dark mode
@@ -1341,6 +1341,7 @@ namespace Chummer
                 case ComboBox _:
                 case TableCell _:
                     {
+                        await objControl.DoThreadSafeAsync(x => EnsureThemedListDraw(x), token).ConfigureAwait(false);
                         Color objForeColor;
                         Color objBackColor;
                         if (blnLightMode)
