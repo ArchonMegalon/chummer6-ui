@@ -92,6 +92,15 @@ public sealed class DialogCoordinator : IDialogCoordinator
         if (string.Equals(dialog.Id, "dialog.new_character", StringComparison.Ordinal)
             && string.Equals(actionId, "start_from_origin", StringComparison.Ordinal))
         {
+            if (context.State.Preferences.DisableAiFeatures)
+            {
+                context.Publish(context.State with
+                {
+                    Error = "Helper features are disabled."
+                });
+                return;
+            }
+
             string rulesetId = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterRulesetId") ?? RulesetDefaults.Sr5;
             string name = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterName") ?? "New Character";
             string alias = DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterAlias") ?? "Runner";

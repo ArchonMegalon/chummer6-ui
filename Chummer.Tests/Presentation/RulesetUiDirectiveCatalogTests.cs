@@ -41,10 +41,10 @@ public sealed class RulesetUiDirectiveCatalogTests
         StringAssert.Contains(sr4, ".chum4");
         StringAssert.Contains(sr5, "main editor");
         StringAssert.Contains(sr5, ".chum5");
-        StringAssert.Contains(sr5, "runtime/provider attention required");
+        StringAssert.Contains(sr5, "runtime attention required");
         StringAssert.Contains(sr6, "setup tools");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "setup-tools runtime honesty remains visible");
+        StringAssert.Contains(sr6, "setup runtime is available");
     }
 
     [TestMethod]
@@ -65,10 +65,10 @@ public sealed class RulesetUiDirectiveCatalogTests
                 WarningCount: 1));
 
         StringAssert.Contains(sr4Rules, "Shadowrun 4");
-        StringAssert.Contains(sr4Rules, "parity-gated");
+        StringAssert.Contains(sr4Rules, "limited");
         StringAssert.Contains(sr5BuildLab, "main desktop editor");
         StringAssert.Contains(sr5BuildLab, "campaign return");
-        StringAssert.Contains(sr6Rules, "setup-gated");
+        StringAssert.Contains(sr6Rules, "guided");
         StringAssert.Contains(sr6Rules, "runtime warnings remain active");
     }
 
@@ -86,11 +86,11 @@ public sealed class RulesetUiDirectiveCatalogTests
             installState: ArtifactInstallStates.Installed);
 
         StringAssert.Contains(sr4, ".chum4");
-        StringAssert.Contains(sr4, "import tools");
+        StringAssert.Contains(sr4, "import details");
         StringAssert.Contains(sr5, ".chum5");
-        StringAssert.Contains(sr5, "main editor");
+        StringAssert.Contains(sr5, "runtime status is loaded");
         StringAssert.Contains(sr6, ".chum6");
-        StringAssert.Contains(sr6, "setup tools");
+        StringAssert.Contains(sr6, "curated setup");
         StringAssert.Contains(sr6, "Seattle Nights");
     }
 
@@ -181,18 +181,18 @@ public sealed class RulesetUiDirectiveCatalogTests
         Assert.AreEqual("SR4 Import Tools", sr4Commands);
         Assert.AreEqual("No SR6 setup tools are currently available.", sr6CommandHint);
         Assert.AreEqual("SR5 Editor Result", sr5Result);
-        StringAssert.Contains(sr5ResultHint, ".chum5");
+        StringAssert.Contains(sr5ResultHint, "main desktop editor");
         StringAssert.Contains(sr4Ready, "import");
         Assert.AreEqual("Import", sr4Create);
         Assert.AreEqual("Runner", sr5Info);
         Assert.AreEqual("Rules", sr6Rules);
-        Assert.AreEqual("Parity Check", sr4Validate);
+        Assert.AreEqual("Character Review", sr4Validate);
         Assert.AreEqual("Build Plan", sr5Build);
         Assert.AreEqual("Gear", sr6Inventory);
         StringAssert.Contains(sr5Workspace, "Shadowrun 5");
         StringAssert.Contains(sr5Workspace, "main editor");
         StringAssert.Contains(sr5Workspace, "saved");
-        Assert.AreEqual("Validation", sr6Workflow);
+        Assert.AreEqual("Review", sr6Workflow);
         Assert.AreEqual("SR6 Matrix Action", preservedWorkflow);
     }
 

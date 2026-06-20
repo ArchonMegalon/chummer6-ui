@@ -594,7 +594,7 @@ public sealed class DesktopThemeManagerTests
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Metahuman\", \"Metahumans only\")");
         StringAssert.Contains(factorySource, "new DesktopDialogFieldOption(\"Show All\", \"All available\")");
         StringAssert.Contains(factorySource, "\"Remaining Karma | tracked when the character opens\"");
-        StringAssert.Contains(factorySource, "new DesktopDialogAction(\"start_from_origin\", \"Start Origin Dossier\")");
+        StringAssert.Contains(factorySource, "\"start_from_origin\", \"Start Origin Dossier\"");
         Assert.IsFalse(newCharacterPaneSource.Contains("ExecuteCommandAsync(\"character_settings\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("\"Metatype Category\"", StringComparison.Ordinal));
         Assert.IsFalse(factorySource.Contains("legacy metatype continuation", StringComparison.OrdinalIgnoreCase));

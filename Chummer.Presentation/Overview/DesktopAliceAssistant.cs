@@ -495,9 +495,9 @@ internal static class DesktopAliceAssistant
             $"Complexity | {complexity}{FormatGmRequirementLine(gmRequirements)}";
         string warningList = legality switch
         {
-            "anything" => "Review availability and legality before applying. ALICE is not overriding table policy.",
+            "anything" => "Review availability and legality before applying. Alice is not overriding table policy.",
             "standard" => "Review table-specific legality and campaign overlays before applying.",
-            _ => "Strict legality posture selected. ALICE stayed on safer defaults where possible."
+            _ => "Strict legality posture selected. Alice stayed on safer defaults where possible."
         };
         warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         if (IsPreviewRuleset(rulesetId))
@@ -506,11 +506,11 @@ internal static class DesktopAliceAssistant
         }
 
         string summary = IsPreviewRuleset(rulesetId)
-            ? $"ALICE suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for an SR4 {FormatChoiceLabel(archetype)} preview with a {optimization} bias."
-            : $"ALICE suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for a {FormatChoiceLabel(archetype)} with a {optimization} bias.";
+            ? $"Alice suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for an SR4 {FormatChoiceLabel(archetype)} preview with a {optimization} bias."
+            : $"Alice suggests adding {request.Name} on the {plan.SurfaceLabel.ToLowerInvariant()} surface for a {FormatChoiceLabel(archetype)} with a {optimization} bias.";
         string applyNotice = IsPreviewRuleset(rulesetId)
-            ? $"ALICE added SR4 preview item '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}."
-            : $"ALICE added '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}.";
+            ? $"Alice added SR4 preview item '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}."
+            : $"Alice added '{request.Name}' to {plan.SurfaceLabel.ToLowerInvariant()}.";
 
         return new AliceProposal(
             $"Review the {plan.SurfaceLabel.ToLowerInvariant()} proposal, then apply it explicitly.",
@@ -576,12 +576,12 @@ internal static class DesktopAliceAssistant
             $"Legality posture | {legality}{Environment.NewLine}" +
             $"Archetype anchor | {FormatChoiceLabel(archetype)}{FormatGmRequirementLine(gmRequirements)}";
         string warningList = IsPreviewRuleset(rulesetId)
-            ? "SR4 remains a preview lane. Settings changes still require the named settings form, and ALICE is only suggesting safer defaults here."
-            : "Settings changes still require the named settings lane. ALICE is only suggesting defaults here.";
+            ? "SR4 remains a preview lane. Settings changes still require the named settings form, and Alice is only suggesting safer defaults here."
+            : "Settings changes still require the named settings lane. Alice is only suggesting defaults here.";
         warningList = AppendGmRequirementWarning(warningList, gmRequirements);
         string summary = IsPreviewRuleset(rulesetId)
-            ? $"ALICE suggests calmer SR4 preview defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit."
-            : $"ALICE suggests calmer defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit.";
+            ? $"Alice suggests calmer SR4 preview defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit."
+            : $"Alice suggests calmer defaults for a {FormatChoiceLabel(archetype)} workflow, then hands you back to settings for the actual edit.";
 
         return new AliceProposal(
             "Review the suggested defaults, then open the settings lane.",

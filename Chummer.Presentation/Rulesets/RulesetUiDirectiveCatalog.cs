@@ -36,22 +36,22 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shared shell",
         PostureLabel: "cross-ruleset",
         FileExtension: "ruleset codecs",
-        HomeSpotlight: "Select a ruleset before trusting the home cockpit for build, rules, export, or release results.",
-        ResumeLaneSummary: "Resume the current character only after ruleset and runtime status are confirmed.",
-        OpenWorkspaceLabel: "Open grounded workspace",
+        HomeSpotlight: "Select a ruleset before using build, rules, export, or release tools.",
+        ResumeLaneSummary: "Resume the current character after ruleset and runtime status are loaded.",
+        OpenWorkspaceLabel: "Open workspace",
         BuildFollowThroughLabel: "Open build details",
         WorkspaceFollowThroughLabel: "Open character details",
         NextActionPrefix: "Next step",
-        DefaultSectionSummary: "Select or restore a grounded ruleset before you trust rules, build, or export depth.",
-        BuildLabSectionSummary: "Choose a ruleset to unlock the matching builder, browser, and compatibility checks.",
-        RulesSectionSummary: "Choose a ruleset to load the matching rules checks and diagnostics.",
-        UngroundedHomeSummary: "the first restored character still needs a real runtime fingerprint before build, explain, and export depth are trustworthy.",
-        PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but the rules-aware surface still needs grounded section state before it is trustworthy.",
-        GroundedHomeSummary: "shared-shell posture only; restore a grounded ruleset before claiming per-ruleset completion.",
+        DefaultSectionSummary: "Select or restore a ruleset before using rules, build, or export tools.",
+        BuildLabSectionSummary: "Choose a ruleset to load the matching builder and browser.",
+        RulesSectionSummary: "Choose a ruleset to load the matching rules diagnostics.",
+        UngroundedHomeSummary: "the first restored character still needs runtime status before build, rules, and export tools are ready.",
+        PinnedRuntimeHomeSummary: "runtime status is loaded; open a ruleset section to continue.",
+        GroundedHomeSummary: "shared shell selected; restore a ruleset-specific character to continue.",
         BuildExplainWatchouts:
         [
-            "Shared shell posture alone is not proof that any one ruleset is fully implemented.",
-            "Restore a grounded ruleset and runtime before you trust build, explain, import, export, or print depth."
+            "Pick a ruleset before using edition-specific tools.",
+            "Restore a character before running build, import, export, or print actions."
         ]);
 
     private static readonly RulesetUiDirective Sr4 = new(
@@ -59,22 +59,22 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shadowrun 4",
         PostureLabel: "import tools",
         FileExtension: ".chum4",
-        HomeSpotlight: "SR4 home cockpit opens to import intake, parity receipts, and character review before any full editor claim.",
-        ResumeLaneSummary: "Resume the SR4 runner with codec proof, import receipts, and parity evidence visible.",
+        HomeSpotlight: "SR4 opens to import intake and character review before full editing.",
+        ResumeLaneSummary: "Resume the SR4 runner with import details visible.",
         OpenWorkspaceLabel: "Open SR4 runner",
         BuildFollowThroughLabel: "Open SR4 intake details",
         WorkspaceFollowThroughLabel: "Open SR4 runner details",
         NextActionPrefix: "SR4 intake",
-        DefaultSectionSummary: "SR4 stays import-tools first: favor import review and parity receipts over assuming full editor parity.",
+        DefaultSectionSummary: "SR4 starts with import review before full editing.",
         BuildLabSectionSummary: "SR4 intake focuses on imported runners, safe export paths, and codec-backed flows.",
-        RulesSectionSummary: "SR4 rules and validation stay parity-gated until deterministic providers replace the experimental host.",
-        UngroundedHomeSummary: "import receipts, codec proof, and parity evidence come before full editor claims.",
-        PinnedRuntimeHomeSummary: "an intake/runtime fingerprint is pinned, but codec and parity proof still gate trustworthy rules and workflow depth.",
-        GroundedHomeSummary: "import-tools posture keeps intake, export, and explain honest while parity proof is still growing.",
+        RulesSectionSummary: "SR4 rules and validation are limited until the SR4 engine is complete.",
+        UngroundedHomeSummary: "import details come before full editor claims.",
+        PinnedRuntimeHomeSummary: "SR4 runtime status is loaded; review import details before editing.",
+        GroundedHomeSummary: "SR4 import tools keep intake, export, and rules review clear.",
         BuildExplainWatchouts:
         [
-            "SR4 remains parity-gated, so import/export and parity receipts are safer than assuming full editor parity.",
-            "SR4 rules and validation still depend on experimental-provider gaps being made explicit."
+            "SR4 is import-first, so review import and export details before editing.",
+            "SR4 rules and validation are still limited."
         ]);
 
     private static readonly RulesetUiDirective Sr5 = new(
@@ -82,22 +82,22 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shadowrun 5",
         PostureLabel: "main editor",
         FileExtension: ".chum5",
-        HomeSpotlight: "SR5 home cockpit opens to the main character editor with runtime and provider truth visible.",
-        ResumeLaneSummary: "Resume the SR5 character with runtime and provider truth visible.",
+        HomeSpotlight: "SR5 opens to the main character editor with runtime status visible.",
+        ResumeLaneSummary: "Resume the SR5 character with runtime status visible.",
         OpenWorkspaceLabel: "Open SR5 character",
         BuildFollowThroughLabel: "Open SR5 build details",
         WorkspaceFollowThroughLabel: "Open SR5 character details",
         NextActionPrefix: "SR5",
-        DefaultSectionSummary: "SR5 is the main desktop editor. Keep runtime and profile status visible instead of implying the deterministic host gap is already closed.",
+        DefaultSectionSummary: "SR5 is the main desktop editor. Keep runtime and profile status visible.",
         BuildLabSectionSummary: "SR5 Build stays grounded in the main desktop editor with runtime and profile compatibility visible before apply, export, and campaign return.",
-        RulesSectionSummary: "SR5 rules and validation must surface provider-unavailable or rebind diagnostics honestly until the deterministic host is complete.",
-        UngroundedHomeSummary: "the main editor still needs a grounded runtime fingerprint before build, explain, and support closure are trustworthy.",
-        PinnedRuntimeHomeSummary: "a runtime fingerprint is pinned, but provider truth and refreshed rules sections still gate trustworthy editor claims.",
-        GroundedHomeSummary: "the main desktop editor keeps provider and runtime truth visible while deterministic-host completion is still in flight.",
+        RulesSectionSummary: "SR5 rules and validation show unavailable or rebind diagnostics until the rules engine is complete.",
+        UngroundedHomeSummary: "the main editor still needs runtime status before build, rules, and support actions are ready.",
+        PinnedRuntimeHomeSummary: "runtime status is loaded; open the refreshed rules section before making rules changes.",
+        GroundedHomeSummary: "the main desktop editor keeps runtime status visible while rules work continues.",
         BuildExplainWatchouts:
         [
-            "SR5 is the primary desktop editor, but runtime/profile honesty still matters for explain, validate, and runtime inspector flows.",
-            "SR5 import, export, and print affordances should keep .chum5 reality explicit instead of implying cross-ruleset parity."
+            "SR5 is the primary desktop editor, but runtime and profile status still matter for rules and validation.",
+            "SR5 import, export, and print actions should keep .chum5 behavior explicit."
         ]);
 
     private static readonly RulesetUiDirective Sr6 = new(
@@ -105,22 +105,22 @@ public static class RulesetUiDirectiveCatalog
         DisplayName: "Shadowrun 6",
         PostureLabel: "setup tools",
         FileExtension: ".chum6",
-        HomeSpotlight: "SR6 home cockpit opens to guided setup, starter kits, and explicit runtime honesty before parity claims.",
-        ResumeLaneSummary: "Resume the SR6 runner with runtime honesty and starter-kit guidance visible.",
+        HomeSpotlight: "SR6 opens to guided setup and starter kits before full editing.",
+        ResumeLaneSummary: "Resume the SR6 runner with runtime status and starter-kit guidance visible.",
         OpenWorkspaceLabel: "Open SR6 runner",
         BuildFollowThroughLabel: "Open SR6 setup details",
         WorkspaceFollowThroughLabel: "Open SR6 runner details",
         NextActionPrefix: "SR6",
-        DefaultSectionSummary: "SR6 stays setup-tools first: curated starts are safe, but the experimental host still limits depth.",
-        BuildLabSectionSummary: "SR6 build emphasizes curated setup, edge-first flows, and guided follow-through rather than claiming full parity.",
-        RulesSectionSummary: "SR6 rules and validation stay setup-gated until deterministic providers replace the experimental host.",
-        UngroundedHomeSummary: "starter-kit proof, runtime honesty, and preview-safe guidance come before full parity claims.",
-        PinnedRuntimeHomeSummary: "a guided-runtime fingerprint is pinned, but experimental-host honesty still gates trustworthy rules and workflow depth.",
-        GroundedHomeSummary: "setup-tools posture keeps curated setup and experimental-host honesty visible while deterministic providers are still landing.",
+        DefaultSectionSummary: "SR6 starts with guided setup while deeper editor work continues.",
+        BuildLabSectionSummary: "SR6 build emphasizes curated setup, edge-first flows, and guided follow-through before full editor depth.",
+        RulesSectionSummary: "SR6 rules and validation stay guided until the SR6 engine is complete.",
+        UngroundedHomeSummary: "starter kits and guided setup come before full editing.",
+        PinnedRuntimeHomeSummary: "SR6 runtime status is loaded; use guided setup before deeper rules edits.",
+        GroundedHomeSummary: "SR6 setup tools keep curated setup and rules review clear.",
         BuildExplainWatchouts:
         [
-            "SR6 remains setup-gated until deterministic providers replace the experimental host.",
-            "SR6 starter, rules, and export affordances should keep .chum6 setup-tools posture explicit."
+            "SR6 remains setup-first while deeper rules work continues.",
+            "SR6 starter, rules, and export actions should keep .chum6 setup behavior explicit."
         ]);
 
     public static RulesetUiDirective Resolve(string? rulesetId)
@@ -614,13 +614,13 @@ public static class RulesetUiDirectiveCatalog
         {
             RulesetDefaults.Sr4 => hasWarnings
                 ? "preview runtime attention required"
-                : "import-tools runtime remains parity-gated",
+                : "import runtime is limited",
             RulesetDefaults.Sr5 => hasWarnings
                 ? "runtime attention required"
                 : "runtime service is available",
             RulesetDefaults.Sr6 => hasWarnings
                 ? "runtime warnings remain active"
-                : "setup-tools runtime honesty remains visible",
+                : "setup runtime is available",
             _ => hasWarnings
                 ? "runtime attention required"
                 : "ruleset still unresolved"

@@ -303,7 +303,7 @@ public class DialogCoordinatorTests
         await coordinator.CoordinateAsync(DesktopAliceAssistant.PreviewActionId, context, CancellationToken.None);
 
         Assert.IsNotNull(published.ActiveDialog);
-        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "ALICE suggests");
+        StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalSummary"), "Alice suggests");
         StringAssert.Contains(DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "autoAliceProposalChanges"), "Add |");
         CollectionAssert.Contains(
             published.ActiveDialog!.Actions.Select(action => action.Id).ToArray(),
@@ -380,7 +380,7 @@ public class DialogCoordinatorTests
         Assert.IsNotNull(capturedRequest);
         Assert.AreEqual(WorkspaceQuickAddKinds.Skill, capturedRequest!.Kind);
         Assert.AreEqual("Perception", capturedRequest.Name);
-        StringAssert.Contains(published.Notice ?? string.Empty, "ALICE added");
+        StringAssert.Contains(published.Notice ?? string.Empty, "Alice added");
         Assert.IsNull(published.ActiveDialog);
     }
 
@@ -657,6 +657,43 @@ public class DialogCoordinatorTests
         Assert.AreEqual("dialog.new_character.origin_wizard", published.ActiveDialog?.Id);
         Assert.AreEqual("Nova", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterName"));
         Assert.AreEqual("Cipher", DesktopDialogFieldValueParser.GetValue(published.ActiveDialog!, "newCharacterAlias"));
+    }
+
+    [TestMethod]
+    public async Task CoordinateAsync_start_from_origin_respects_disabled_helper_features()
+    {
+        DialogCoordinator coordinator = new();
+        DesktopDialogState newCharacterDialog = new(
+            Id: "dialog.new_character",
+            Title: "New Character",
+            Message: null,
+            Fields:
+            [
+                new DesktopDialogField("newCharacterName", "Name", "Nova", "New Character"),
+                new DesktopDialogField("newCharacterAlias", "Alias", "Cipher", "Runner"),
+                new DesktopDialogField("newCharacterRulesetId", "Ruleset", "sr4", "sr5")
+            ],
+            Actions:
+            [
+                new DesktopDialogAction("start_from_origin", "Start Origin Dossier", true)
+            ]);
+        CharacterOverviewState published = CharacterOverviewState.Empty with
+        {
+            ActiveDialog = newCharacterDialog,
+            Preferences = DesktopPreferenceState.Default with { DisableAiFeatures = true }
+        };
+
+        DialogCoordinationContext context = new(
+            State: published,
+            Publish: state => published = state,
+            ImportAsync: static (_, _) => Task.CompletedTask,
+            UpdateMetadataAsync: static (_, _) => Task.CompletedTask,
+            GetState: () => published);
+
+        await coordinator.CoordinateAsync("start_from_origin", context, CancellationToken.None);
+
+        Assert.AreEqual("dialog.new_character", published.ActiveDialog?.Id);
+        Assert.AreEqual("Helper features are disabled.", published.Error);
     }
 
     [TestMethod]

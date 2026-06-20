@@ -406,7 +406,7 @@ public sealed class MainWindowShellFrameProjectorTests
                 RequiresOpenCharacter: true,
                 EnabledByDefault: true,
                 RulesetId: RulesetDefaults.Sr4),
-            "Parity Check"
+            "Character Review"
         ),
         (
             RulesetDefaults.Sr6,

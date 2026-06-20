@@ -565,7 +565,7 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
             new("face", "Face"),
             new("rigger", "Rigger"),
             new("technomancer", "Technomancer"),
-            new("auto", "Let ALICE infer")
+            new("auto", "Fit the story")
         ];
 
     private static DesktopDialogFieldOption[] BuildOriginMetatypeOptions(DesktopPreferenceState preferences)
@@ -652,11 +652,20 @@ public sealed class DesktopDialogFactory : IDesktopDialogFactory
                     IsReadOnly: true,
                     LayoutSlot: DesktopDialogFieldLayoutSlots.Hidden)
             ],
-            [
-                new DesktopDialogAction("start_from_origin", "Start Origin Dossier"),
-                new DesktopDialogAction("create_character", "OK", true),
-                new DesktopDialogAction("cancel", "Cancel")
-            ]);
+            BuildNewCharacterDialogActions(preferences));
+    }
+
+    private static IReadOnlyList<DesktopDialogAction> BuildNewCharacterDialogActions(DesktopPreferenceState preferences)
+    {
+        List<DesktopDialogAction> actions = [];
+        if (!preferences.DisableAiFeatures)
+        {
+            actions.Add(new DesktopDialogAction("start_from_origin", "Start Origin Dossier"));
+        }
+
+        actions.Add(new DesktopDialogAction("create_character", "OK", true));
+        actions.Add(new DesktopDialogAction("cancel", "Cancel"));
+        return actions;
     }
 
     internal static DesktopDialogState BuildNewCharacterOriginWizardDialog(

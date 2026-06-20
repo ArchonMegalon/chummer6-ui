@@ -1788,6 +1788,10 @@ public class DesktopDialogFactoryTests
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterHouseRulesEnabled"));
         Assert.AreEqual("true", DesktopDialogFieldValueParser.GetValue(dialog, "newCharacterDisableAiFeatures"));
         StringAssert.Contains(dialog.Message ?? string.Empty, "House rules are enabled");
+        CollectionAssert.AreEqual(
+            new[] { "create_character", "cancel" },
+            dialog.Actions.Select(action => action.Id).ToArray(),
+            "Disabling helper features must remove Origin Dossier from the new-character surface.");
     }
 
     [TestMethod]

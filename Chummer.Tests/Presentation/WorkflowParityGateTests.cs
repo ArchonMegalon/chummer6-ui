@@ -395,7 +395,7 @@ public sealed class WorkflowParityGateTests
             ("face", "Face"),
             ("rigger", "Rigger"),
             ("technomancer", "Technomancer"),
-            ("auto", "Let ALICE infer"));
+            ("auto", "Fit the story"));
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, originWizard.Fields.Single(field => string.Equals(field.Id, "newCharacterOriginBuildPreference", StringComparison.Ordinal)).LayoutSlot);
         Assert.AreEqual(DesktopDialogFieldLayoutSlots.Hidden, originWizard.Fields.Single(field => string.Equals(field.Id, "newCharacterOriginGmConstraintPreset", StringComparison.Ordinal)).LayoutSlot);
         Assert.IsTrue(originWizard.Actions.Single(action => string.Equals(action.Id, "generate_fitting_build", StringComparison.Ordinal)).IsPrimary);
@@ -1066,7 +1066,7 @@ public sealed class WorkflowParityGateTests
                 ("face", "Face"),
                 ("rigger", "Rigger"),
                 ("technomancer", "Technomancer"),
-                ("auto", "Let ALICE infer")),
+                ("auto", "Fit the story")),
 
             ("dialog.global_settings", "globalLanguage", _)
                 or ("dialog.global_settings", "globalSheetLanguage", _) => Create(
