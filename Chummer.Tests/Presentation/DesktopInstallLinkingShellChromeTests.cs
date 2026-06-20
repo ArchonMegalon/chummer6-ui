@@ -222,6 +222,15 @@ public sealed class DesktopInstallLinkingShellChromeTests
         Assert.IsFalse(
             localizationSource.Contains("Anmeldelink", StringComparison.Ordinal),
             "German Devices and Access copy should use the current claim-copy wording instead of old login/link wording.");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.title\"] = \"Diese Kopie beanspruchen\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.heading\"] = \"Diese Desktop-Kopie beanspruchen\"");
+        StringAssert.Contains(localizationSource, "localized[\"desktop.install_link.button.link_copy\"] = \"Diese Kopie beanspruchen\"");
+        StringAssert.Contains(localizationSource, "Downloads bleiben unverandert. Beanspruchen Sie diese Kopie online");
+        Assert.IsFalse(
+            localizationSource.Contains("localized[\"desktop.install_link.title\"] = \"Diese Kopie verkn", StringComparison.Ordinal)
+            || localizationSource.Contains("localized[\"desktop.install_link.heading\"] = \"Diese Desktop-Kopie mit Ihrem Konto verkn", StringComparison.Ordinal)
+            || localizationSource.Contains("localized[\"desktop.install_link.button.link_copy\"] = \"Diese Kopie verkn", StringComparison.Ordinal),
+            "German first-run claim copy must not frame the normal account flow as install linking.");
         StringAssert.Contains(localizationSource, "Claim your copy");
         string devicesSource = File.ReadAllText(FindPath("Chummer.Avalonia", "DesktopDevicesAccessWindow.cs"));
         StringAssert.Contains(devicesSource, "desktop.install_link.button.login_website");
